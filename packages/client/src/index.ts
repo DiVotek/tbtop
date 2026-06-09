@@ -85,3 +85,10 @@ export type {
 	TableController,
 	TableOptions,
 } from "./structure/types";
+
+// Inertia integration — server-authored pages
+export { AdminPage } from "./inertia/AdminPage";
+export { defineCustomAction } from "./inertia/customActions";
+export { executeEffects, readEffects, type ServerEffect } from "./inertia/effects";
+export { materialize, type MaterializeInput } from "./inertia/materialize";
+export { compileConstraints, type FieldConstraints } from "./inertia/constraints";

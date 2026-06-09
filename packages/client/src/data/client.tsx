@@ -108,8 +108,23 @@ function buildHeaders(payload: RequestPayload): Record<string, string> {
 	const csrf = csrfToken();
 	if (csrf) {
 		headers["X-CSRF-TOKEN"] = csrf;
+	} else {
+		const xsrf = xsrfCookie();
+		if (xsrf) {
+			headers["X-XSRF-TOKEN"] = xsrf;
+		}
 	}
 	return headers;
+}
+
+// Fallback: Laravel always issues an XSRF-TOKEN cookie and accepts
+// it back via X-XSRF-TOKEN when no csrf-token meta is in the layout.
+function xsrfCookie(): string | null {
+	if (typeof document === "undefined") {
+		return null;
+	}
+	const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+	return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
 function buildBody(payload: RequestPayload): BodyInit | undefined {
