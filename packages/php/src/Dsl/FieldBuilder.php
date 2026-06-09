@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use InvalidArgumentException;
 use JsonSerializable;
 use Tbtop\Admin\Validation\ConstraintMap;
 
@@ -39,6 +40,11 @@ final class FieldBuilder implements JsonSerializable
     /** @param  string|list<string>  $rules Laravel rule string ('max:200|email') or list. */
     public function rules(string|array $rules): self
     {
+        if (is_string($rules) && str_contains($rules, 'regex:')) {
+            throw new InvalidArgumentException(
+                "Field \"{$this->name}\": pass regex rules as an array - '|' inside the pattern would be split.",
+            );
+        }
         $list = is_string($rules) ? explode('|', $rules) : $rules;
         $this->ruleList = array_values(array_unique([...$this->ruleList, ...$list]));
 

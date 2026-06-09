@@ -38,7 +38,7 @@ test("upload posts multipart to the entity upload route and returns the row", as
 	}
 	expect(result.data.url).toBe("/uploads/pic.png");
 	const req = captured as Request | null;
-	expect(req?.url).toBe("http://api/v1/media/upload");
+	expect(req?.url).toBe("http://api/admin/uploads/media");
 	expect(req?.method).toBe("POST");
 });
 

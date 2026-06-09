@@ -1,5 +1,6 @@
 <?php
 
+use Opis\JsonSchema\Errors\ErrorFormatter;
 use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\S;
@@ -17,7 +18,7 @@ function validateAgainstSchema(mixed $data, string $pointer = ''): void
     $error = $result->error();
 
     expect($result->isValid())->toBeTrue(
-        $error ? json_encode((new Opis\JsonSchema\Errors\ErrorFormatter)->format($error)) : '',
+        $error ? json_encode((new ErrorFormatter)->format($error)) : '',
     );
 }
 

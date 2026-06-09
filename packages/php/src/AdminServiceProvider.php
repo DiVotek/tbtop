@@ -22,6 +22,7 @@ class AdminServiceProvider extends PackageServiceProvider
         Inertia::share('tbtop', static fn () => [
             'effects' => session('tbtop.effects', []),
             'nav' => NavBuilder::build(),
+            'prefix' => '/'.trim((string) config('tbtop-admin.prefix'), '/'),
         ]);
     }
 }

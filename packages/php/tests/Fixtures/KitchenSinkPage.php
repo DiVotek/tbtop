@@ -39,7 +39,7 @@ class KitchenSinkPage extends Page
                         ['value' => 'admin', 'label' => 'Admin'],
                     ])->rules('in:admin,editor'),
                     $s->translatable('intro')->set('locales', ['en', 'uk']),
-                    $s->slug('slug')->set('fromField', 'title')->rules('regex:/^[a-z0-9-]+$/'),
+                    $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
                     $s->repeater('sections')->rules('array|max:10')->set('fields', [
                         $s->text('heading')->required(),
                         $s->textarea('text'),

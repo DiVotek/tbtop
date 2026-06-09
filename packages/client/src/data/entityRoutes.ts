@@ -1,7 +1,13 @@
 import type { AdminClient, QueryParams } from "./client";
 
-// Path-shape mirror of the old hc route helpers: one place owns the
-// `/v1/<entity>` URL convention, hooks stay route-agnostic.
+// One place owns the admin URL convention; hooks stay route-agnostic.
+// The base is the Laravel admin prefix, hydrated from shared props.
+
+let routesBase = "/admin";
+
+export function setRoutesBase(prefix: string): void {
+	routesBase = prefix.startsWith("/") ? prefix : `/${prefix}`;
+}
 
 interface EntityCollectionRoutes {
 	list: (query?: QueryParams) => Promise<unknown>;
@@ -20,15 +26,15 @@ interface SingleRoutes {
 }
 
 export function collectionPath(entityName: string): string {
-	return `/v1/${entityName}`;
+	return `${routesBase}/${entityName}`;
 }
 
 export function itemPath(entityName: string, id: string): string {
-	return `/v1/${entityName}/${encodeURIComponent(id)}`;
+	return `${routesBase}/${entityName}/${encodeURIComponent(id)}`;
 }
 
-export function uploadPath(entityName: string): string {
-	return `/v1/${entityName}/upload`;
+export function uploadPath(profile: string): string {
+	return `${routesBase}/uploads/${profile}`;
 }
 
 export function collection(client: AdminClient, entityName: string): EntityCollectionRoutes {

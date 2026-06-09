@@ -47,7 +47,7 @@ describe("UploadForm", () => {
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
-		expect(seen[0]).toBe("http://test/v1/media/upload");
+		expect(seen[0]).toBe("http://test/admin/uploads/media");
 		expect(captured.at(-1)).toEqual({
 			filename: "hello.png",
 			url: "/uploads/hello.png",

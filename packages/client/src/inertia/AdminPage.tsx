@@ -5,6 +5,7 @@ import { AdminLayout } from "../app/AdminLayout";
 import { AuthUserProvider } from "../app/authUser";
 import { PageParamsProvider } from "../app/pageParams";
 import { ClientProvider } from "../data/client";
+import { setRoutesBase } from "../data/entityRoutes";
 import { I18nProvider } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
@@ -18,7 +19,7 @@ interface AdminPageProps {
 	structure: StructureNode;
 	data: Record<string, Record<string, unknown>>;
 	params?: Record<string, string>;
-	tbtop?: { effects?: unknown };
+	tbtop?: { effects?: unknown; prefix?: string };
 	auth?: { user?: AuthUser | null };
 	[key: string]: unknown;
 }
@@ -31,6 +32,9 @@ export function AdminPage() {
 	const page = usePage<AdminPageProps>();
 	const { structure, data, params, title, tbtop, auth } = page.props;
 	ensureBuiltinsRegistered();
+	if (tbtop?.prefix) {
+		setRoutesBase(tbtop.prefix);
+	}
 
 	const basePath = page.url.split("?")[0] ?? "";
 	const node = useMemo(

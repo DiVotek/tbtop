@@ -20,7 +20,7 @@ final class ActionController
             throw new NotFoundHttpException("Action \"{$tbtopAction}\" has no server handler on this page.");
         }
 
-        $result = $handler(ActionCtx::fromRequest($request));
+        $result = $handler(ActionCtx::fromRequest($request, ResolvedPage::routeParams($request)));
 
         return response()->json([
             'effects' => $result instanceof Effects ? $result : [],

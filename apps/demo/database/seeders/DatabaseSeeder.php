@@ -2,22 +2,116 @@
 
 namespace Database\Seeders;
 
+use App\Models\Post;
+use App\Models\Setting;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@admin.com'],
+            ['name' => 'Admin', 'password' => 'password', 'role' => 'admin'],
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        foreach ($this->posts($admin->id) as $post) {
+            Post::updateOrCreate(['slug' => $post['slug']], $post);
+        }
+
+        Setting::firstOrCreate([]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function posts(int $authorId): array
+    {
+        $now = Carbon::now();
+
+        return [
+            [
+                'title' => 'Hello Tabletop',
+                'slug' => 'hello-tabletop',
+                'intro' => ['en' => 'First post', 'uk' => 'Перший допис'],
+                'published' => true,
+                'published_at' => $now->copy()->subMonths(5),
+                'views' => 320,
+                'rating' => 4.5,
+                'author_id' => $authorId,
+                'sections' => [['heading' => 'Welcome', 'body' => 'Welcome to the demo.']],
+                'created_at' => $now->copy()->subMonths(5),
+            ],
+            [
+                'title' => 'Designing the admin DSL',
+                'slug' => 'designing-the-admin-dsl',
+                'intro' => ['en' => 'How the structure DSL works', 'uk' => 'Як працює DSL структури'],
+                'published' => true,
+                'published_at' => $now->copy()->subMonths(4),
+                'views' => 210,
+                'rating' => 4.0,
+                'author_id' => $authorId,
+                'created_at' => $now->copy()->subMonths(4),
+            ],
+            [
+                'title' => 'Server-driven forms',
+                'slug' => 'server-driven-forms',
+                'published' => true,
+                'published_at' => $now->copy()->subMonths(4)->addDays(10),
+                'views' => 95,
+                'author_id' => $authorId,
+                'created_at' => $now->copy()->subMonths(4)->addDays(10),
+            ],
+            [
+                'title' => 'Charts and dashboards',
+                'slug' => 'charts-and-dashboards',
+                'published' => false,
+                'views' => 12,
+                'rating' => 3.5,
+                'author_id' => $authorId,
+                'created_at' => $now->copy()->subMonths(3),
+            ],
+            [
+                'title' => 'Table actions in depth',
+                'slug' => 'table-actions-in-depth',
+                'published' => true,
+                'published_at' => $now->copy()->subMonths(2),
+                'views' => 540,
+                'rating' => 4.8,
+                'author_id' => $authorId,
+                'sections' => [
+                    ['heading' => 'Row actions', 'body' => 'Edit and delete.'],
+                    ['heading' => 'Bulk actions', 'body' => 'Selection-driven.'],
+                ],
+                'created_at' => $now->copy()->subMonths(2),
+            ],
+            [
+                'title' => 'Validation round-trips',
+                'slug' => 'validation-round-trips',
+                'published' => false,
+                'views' => 7,
+                'author_id' => $authorId,
+                'created_at' => $now->copy()->subMonths(2)->addDays(12),
+            ],
+            [
+                'title' => 'Inertia under the hood',
+                'slug' => 'inertia-under-the-hood',
+                'published' => true,
+                'published_at' => $now->copy()->subMonth(),
+                'views' => 130,
+                'rating' => 4.2,
+                'author_id' => $authorId,
+                'created_at' => $now->copy()->subMonth(),
+            ],
+            [
+                'title' => 'Roadmap: relations and uploads',
+                'slug' => 'roadmap-relations-and-uploads',
+                'intro' => ['en' => 'What lands next', 'uk' => 'Що буде далі'],
+                'published' => false,
+                'views' => 41,
+                'author_id' => $authorId,
+                'created_at' => $now->copy()->subDays(6),
+            ],
+        ];
     }
 }

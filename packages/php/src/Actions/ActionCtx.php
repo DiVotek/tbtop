@@ -22,7 +22,8 @@ final class ActionCtx
         public readonly array $params = [],
     ) {}
 
-    public static function fromRequest(Request $request): self
+    /** @param  array<string, string>  $routeParams Server-derived params; trusted over client payload. */
+    public static function fromRequest(Request $request, array $routeParams = []): self
     {
         $payload = $request->input('payload', []);
         $payload = is_array($payload) ? $payload : [];
@@ -33,7 +34,7 @@ final class ActionCtx
             form: self::arrayOf($payload, 'form'),
             selection: array_values(self::arrayOf($payload, 'selection')),
             row: self::arrayOf($payload, 'row'),
-            params: self::arrayOf($payload, 'params'),
+            params: [...self::arrayOf($payload, 'params'), ...$routeParams],
         );
     }
 

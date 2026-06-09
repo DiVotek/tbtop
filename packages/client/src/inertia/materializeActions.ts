@@ -40,7 +40,16 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 		return base;
 	}
 	if (spec.type === "visit") {
-		return { ...base, url: spec.href };
+		// Row-aware templating: '/admin/posts/{row.id}/edit' resolves
+		// against the nearest table row at render time.
+		const href = spec.href ?? "";
+		if (href.includes("{row.")) {
+			return {
+				...base,
+				url: (actionCtx: ClientActionContext) => fillRowTemplate(href, actionCtx),
+			};
+		}
+		return { ...base, url: href };
 	}
 	if (spec.type === "modal") {
 		return { ...base, modal: materializeModal(spec, ctx) };
@@ -50,6 +59,12 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 		return { ...base, modal: confirmModal(base, confirm, handler) };
 	}
 	return { ...base, handler };
+}
+
+function fillRowTemplate(template: string, ctx: ClientActionContext): string {
+	return template.replace(/\{row\.([a-zA-Z0-9_]+)\}/g, (_, key: string) =>
+		String(ctx.row?.[key] ?? ""),
+	);
 }
 
 function buildHandler(node: StructureNode, spec: ActionSpec, ctx: ActionMaterializeCtx): Handler {
