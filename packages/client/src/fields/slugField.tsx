@@ -1,0 +1,92 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNearestFormController } from "../structure/formContext";
+import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { slugify } from "./slugify";
+
+interface SlugOptionsBag {
+	fromField?: string;
+}
+
+export function SlugCell({ value }: FieldCellProps<string>) {
+	return <span>{value ?? ""}</span>;
+}
+
+export function SlugForm({
+	name,
+	value,
+	onChange,
+	options,
+}: FieldFormProps<string, SlugOptionsBag>) {
+	const fromField = options?.fromField ?? "";
+	const ctrl = useNearestFormController();
+	const syncBroken = useRef(false);
+	const [isEditing, setIsEditing] = useState(false);
+	const onChangeRef = useRef(onChange);
+	onChangeRef.current = onChange;
+
+	const currentSlug = typeof value === "string" ? value : "";
+	const sourceValue = ctrl ? String(ctrl.data[fromField] ?? "") : "";
+
+	const emitDerived = useCallback((source: string) => {
+		const derived = slugify(source);
+		onChangeRef.current(derived === "" ? null : derived);
+	}, []);
+
+	useEffect(() => {
+		if (syncBroken.current) {
+			return;
+		}
+		emitDerived(sourceValue);
+	}, [sourceValue, emitDerived]);
+
+	function handleInputChange(next: string): void {
+		syncBroken.current = true;
+		onChangeRef.current(next === "" ? null : next);
+	}
+
+	function handleClear(): void {
+		syncBroken.current = false;
+		setIsEditing(false);
+		onChangeRef.current(null);
+	}
+
+	function handleGenerate(): void {
+		syncBroken.current = false;
+		setIsEditing(false);
+		emitDerived(sourceValue);
+	}
+
+	return (
+		<div data-field={name} className="flex flex-col gap-2">
+			<div className="flex items-center gap-2">
+				<input
+					type="text"
+					value={currentSlug}
+					readOnly={!isEditing}
+					onChange={(e) => handleInputChange(e.target.value)}
+					onFocus={() => setIsEditing(true)}
+					onBlur={() => {
+						if (!syncBroken.current) {
+							setIsEditing(false);
+						}
+					}}
+					className="flex-1 rounded border border-input bg-background px-3 py-1.5 text-sm font-mono"
+				/>
+				<button
+					type="button"
+					onClick={handleClear}
+					className="rounded border border-input px-2 py-1.5 text-sm"
+				>
+					Clear
+				</button>
+				<button
+					type="button"
+					onClick={handleGenerate}
+					className="rounded border border-input px-2 py-1.5 text-sm"
+				>
+					Generate
+				</button>
+			</div>
+		</div>
+	);
+}
