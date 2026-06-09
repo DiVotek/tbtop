@@ -62,7 +62,9 @@ export function UploadForm({
 			setError(t("field.upload.noData"));
 			return;
 		}
-		onChange({ filename: res.data.filename, url: res.data.url });
+		// Pass the full UploadRow through: server-side submit handlers
+		// persist mimeType/filesize/dimensions/sizes, not just the link.
+		onChange({ ...res.data });
 	};
 	if (value) {
 		return (

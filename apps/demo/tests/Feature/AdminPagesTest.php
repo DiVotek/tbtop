@@ -13,6 +13,19 @@ class AdminPagesTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+    }
+
+    public function test_unauthenticated_requests_are_redirected_to_login(): void
+    {
+        $this->app['auth']->forgetGuards();
+
+        $this->get('/admin/posts')->assertRedirect('/login');
+    }
+
     public function test_each_admin_page_renders_the_admin_page_component(): void
     {
         $post = $this->makePost();

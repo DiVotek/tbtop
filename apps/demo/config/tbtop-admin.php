@@ -1,6 +1,9 @@
 <?php
 
 use App\Admin\Pages\DashboardPage;
+use App\Admin\Pages\MediaEditPage;
+use App\Admin\Pages\MediaIndexPage;
+use App\Admin\Pages\MediaNewPage;
 use App\Admin\Pages\PlaygroundPage;
 use App\Admin\Pages\PostCreatePage;
 use App\Admin\Pages\PostEditPage;
@@ -12,8 +15,7 @@ return [
     'prefix' => 'admin',
 
     // Middleware stack for pages, form submits and actions.
-    // TODO(shell phase): restore 'auth' once session login is wired.
-    'middleware' => ['web'],
+    'middleware' => ['web', 'auth'],
 
     // Registered page classes (list of class-strings extending Pages\Page).
     'pages' => [
@@ -21,7 +23,21 @@ return [
         PostsIndexPage::class,
         PostCreatePage::class,
         PostEditPage::class,
+        MediaIndexPage::class,
+        MediaNewPage::class,
+        MediaEditPage::class,
         SettingsPage::class,
         PlaygroundPage::class,
+    ],
+
+    // Upload profiles consumed by POST /{prefix}/uploads/{profile}.
+    'uploads' => [
+        'media' => [
+            'disk' => 'public',
+            'dir' => 'uploads',
+            'accept' => ['image/*'],
+            'maxSize' => 5 * 1024 * 1024,
+            'sizes' => ['thumb' => [128, 128]],
+        ],
     ],
 ];

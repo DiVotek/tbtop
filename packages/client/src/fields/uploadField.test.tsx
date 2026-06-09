@@ -48,9 +48,11 @@ describe("UploadForm", () => {
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
 		expect(seen[0]).toBe("http://test/admin/uploads/media");
-		expect(captured.at(-1)).toEqual({
+		// Full UploadRow flows through so submit handlers can persist metadata.
+		expect(captured.at(-1)).toMatchObject({
 			filename: "hello.png",
 			url: "/uploads/hello.png",
+			mimeType: "image/png",
 		});
 	});
 
