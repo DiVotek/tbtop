@@ -87,9 +87,25 @@ function submitHandler(basePath: string, formName: string): Handler {
 				preserveScroll: true,
 				preserveState: true,
 				onSuccess: () => resolve(),
-				onError: (errors) => reject({ errors }),
+				onError: (errors) => reject({ errors: liftNestedErrors(errors) }),
 			});
 		});
+}
+
+/**
+ * Laravel keys nested errors as 'sections.0.heading'; field components
+ * look up by root name. Lift the first nested message onto the root key
+ * so repeater/array validation failures stay visible.
+ */
+function liftNestedErrors(errors: Record<string, string>): Record<string, string> {
+	const lifted: Record<string, string> = { ...errors };
+	for (const [key, message] of Object.entries(errors)) {
+		const root = key.split(".")[0] ?? key;
+		if (root !== key && lifted[root] === undefined) {
+			lifted[root] = message;
+		}
+	}
+	return lifted;
 }
 
 function serverHandler(basePath: string, name: string, needs: string[]): Handler {

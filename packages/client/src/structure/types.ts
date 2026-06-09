@@ -138,5 +138,7 @@ export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncB
 export interface TableColumn<TRow = unknown> {
 	name: string;
 	label?: string;
+	/** Field kind whose cell component renders the value (server-authored tables). */
+	kind?: string;
 	render?: (row: TRow) => ReactNode;
 }

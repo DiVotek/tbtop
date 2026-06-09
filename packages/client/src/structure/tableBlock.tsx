@@ -1,4 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
+import { getBlockDescriptor } from "../render/blockRegistry";
+import { renderDescriptor } from "../render/renderDescriptor";
 import { ActionBlock } from "./actionBlock";
 import { useClientActionContext } from "./actionContext";
 import type { AsyncBlock } from "./asyncBlock";
@@ -192,7 +194,7 @@ function TableRow(props: TableRowProps) {
 			)}
 			{props.columns.map((col) => (
 				<td key={col.name} className="px-3 py-2">
-					{col.render ? col.render(props.row) : String(props.row[col.name] ?? "")}
+					{renderCell(col, props.row)}
 				</td>
 			))}
 			{props.hasRowActions && (
@@ -208,6 +210,27 @@ function TableRow(props: TableRowProps) {
 			)}
 		</tr>
 	);
+}
+
+function renderCell(col: TableColumn, row: Record<string, unknown>): ReactNode {
+	if (col.render) {
+		return col.render(row);
+	}
+	const descriptor = col.kind ? getBlockDescriptor(col.kind) : undefined;
+	if (descriptor?.behavior === "field") {
+		return renderDescriptor(descriptor, {
+			kind: col.kind ?? "",
+			options: { name: col.name },
+			meta: {},
+			ctx: {
+				surface: "cell",
+				binding: { name: col.name, value: row[col.name], onChange: () => {} },
+			},
+			children: undefined,
+			renderChild: () => null,
+		});
+	}
+	return String(row[col.name] ?? "");
 }
 
 function isSelected(selectedIds: string[], row: Record<string, unknown>): boolean {
