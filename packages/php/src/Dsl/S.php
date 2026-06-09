@@ -100,6 +100,14 @@ final class S
         return new Node('divider');
     }
 
+    /** @param  list<array{label: string, body: mixed}>  $tabs @param  array<string, mixed>  $opts */
+    public function tabs(array $tabs, array $opts = []): Node
+    {
+        [$options, $meta] = Meta::split($opts);
+
+        return new Node('tabs', [...$options, 'tabs' => $tabs], null, $meta);
+    }
+
     /** @param  list<mixed>  $children */
     public function form(string $name, array $children): FormBuilder
     {

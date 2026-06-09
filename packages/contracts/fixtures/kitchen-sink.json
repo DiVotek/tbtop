@@ -1,0 +1,361 @@
+{
+    "kind": "stack",
+    "options": {
+        "children": [
+            {
+                "kind": "heading",
+                "options": {
+                    "text": "Kitchen sink",
+                    "level": 2
+                },
+                "meta": {}
+            },
+            {
+                "kind": "description",
+                "options": {
+                    "text": "Every node kind the PHP DSL can emit."
+                },
+                "meta": {}
+            },
+            {
+                "kind": "divider",
+                "options": {},
+                "meta": {}
+            },
+            {
+                "kind": "grid",
+                "options": {
+                    "cols": 2,
+                    "children": [
+                        {
+                            "kind": "chart:line",
+                            "options": {
+                                "xKey": "month",
+                                "source": "byMonth",
+                                "type": "line"
+                            },
+                            "meta": {},
+                            "name": "byMonth"
+                        },
+                        {
+                            "kind": "chart:donut",
+                            "options": {
+                                "nameKey": "status",
+                                "source": "byStatus",
+                                "type": "donut"
+                            },
+                            "meta": {},
+                            "name": "byStatus"
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "section",
+                "options": {
+                    "title": "Form",
+                    "children": [
+                        {
+                            "kind": "form",
+                            "options": {
+                                "name": "post",
+                                "children": [
+                                    {
+                                        "kind": "text",
+                                        "options": {
+                                            "label": "Title",
+                                            "required": true,
+                                            "constraints": {
+                                                "required": true,
+                                                "max": 200
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "title"
+                                    },
+                                    {
+                                        "kind": "textarea",
+                                        "options": {
+                                            "label": "Body"
+                                        },
+                                        "meta": {},
+                                        "name": "body"
+                                    },
+                                    {
+                                        "kind": "number",
+                                        "options": {
+                                            "constraints": {
+                                                "integer": true,
+                                                "min": 0,
+                                                "max": 5
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "rating"
+                                    },
+                                    {
+                                        "kind": "boolean",
+                                        "options": {},
+                                        "meta": {},
+                                        "name": "published"
+                                    },
+                                    {
+                                        "kind": "date",
+                                        "options": {},
+                                        "meta": {},
+                                        "name": "publishedAt"
+                                    },
+                                    {
+                                        "kind": "select",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "admin",
+                                                    "label": "Admin"
+                                                }
+                                            ],
+                                            "constraints": {
+                                                "in": [
+                                                    "admin",
+                                                    "editor"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "role"
+                                    },
+                                    {
+                                        "kind": "translatable",
+                                        "options": {
+                                            "locales": [
+                                                "en",
+                                                "uk"
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "intro"
+                                    },
+                                    {
+                                        "kind": "slug",
+                                        "options": {
+                                            "fromField": "title",
+                                            "constraints": {
+                                                "regex": "/^[a-z0-9-]+$/"
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "slug"
+                                    },
+                                    {
+                                        "kind": "repeater",
+                                        "options": {
+                                            "fields": [
+                                                {
+                                                    "kind": "text",
+                                                    "options": {
+                                                        "required": true,
+                                                        "constraints": {
+                                                            "required": true
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "heading"
+                                                },
+                                                {
+                                                    "kind": "textarea",
+                                                    "options": {},
+                                                    "meta": {},
+                                                    "name": "text"
+                                                }
+                                            ],
+                                            "constraints": {
+                                                "max": 10
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "sections"
+                                    },
+                                    {
+                                        "kind": "row",
+                                        "options": {
+                                            "children": [
+                                                {
+                                                    "kind": "action",
+                                                    "options": {
+                                                        "label": "Save",
+                                                        "color": "primary",
+                                                        "keybinding": "mod+s",
+                                                        "spec": {
+                                                            "type": "submit"
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "save"
+                                                },
+                                                {
+                                                    "kind": "action",
+                                                    "options": {
+                                                        "label": "Cancel",
+                                                        "spec": {
+                                                            "type": "visit",
+                                                            "href": "/admin/posts"
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "cancel"
+                                                }
+                                            ]
+                                        },
+                                        "meta": {}
+                                    }
+                                ]
+                            },
+                            "meta": {},
+                            "name": "post"
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "tabs",
+                "options": {
+                    "tabs": [
+                        {
+                            "label": "Main",
+                            "body": {
+                                "kind": "heading",
+                                "options": {
+                                    "text": "Tab body",
+                                    "level": 3
+                                },
+                                "meta": {}
+                            }
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "table",
+                "options": {
+                    "searchable": true,
+                    "defaultSort": {
+                        "field": "views",
+                        "dir": "desc"
+                    },
+                    "rowActions": [
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Edit",
+                                "spec": {
+                                    "type": "server",
+                                    "needs": [
+                                        "row"
+                                    ]
+                                }
+                            },
+                            "meta": {},
+                            "name": "edit"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Delete",
+                                "color": "danger",
+                                "confirm": {
+                                    "title": "Delete?",
+                                    "description": "No undo."
+                                },
+                                "spec": {
+                                    "type": "server",
+                                    "needs": [
+                                        "row"
+                                    ]
+                                }
+                            },
+                            "meta": {},
+                            "name": "delete"
+                        }
+                    ],
+                    "bulkActions": [
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Delete selected",
+                                "spec": {
+                                    "type": "server",
+                                    "needs": [
+                                        "selection"
+                                    ]
+                                }
+                            },
+                            "meta": {},
+                            "name": "bulk-delete"
+                        }
+                    ],
+                    "name": "posts",
+                    "columns": [
+                        {
+                            "name": "title",
+                            "label": "Title",
+                            "kind": "text"
+                        },
+                        {
+                            "name": "views",
+                            "label": "Views",
+                            "kind": "text"
+                        }
+                    ]
+                },
+                "meta": {},
+                "name": "posts"
+            },
+            {
+                "kind": "row",
+                "options": {
+                    "children": [
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "About",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "About",
+                                    "body": {
+                                        "kind": "description",
+                                        "options": {
+                                            "text": "Modal body"
+                                        },
+                                        "meta": {}
+                                    }
+                                }
+                            },
+                            "meta": {},
+                            "name": "info"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Copy",
+                                "spec": {
+                                    "type": "custom",
+                                    "handler": "clipboard",
+                                    "params": {
+                                        "text": "hi"
+                                    }
+                                }
+                            },
+                            "meta": {},
+                            "name": "copy"
+                        }
+                    ]
+                },
+                "meta": {}
+            }
+        ]
+    },
+    "meta": {}
+}

@@ -1,0 +1,215 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://tbtop.dev/contracts/structure.schema.json",
+	"version": 1,
+	"title": "Tabletop wire structure grammar v1",
+	"$ref": "#/$defs/node",
+	"$defs": {
+		"node": {
+			"type": "object",
+			"required": ["kind", "options", "meta"],
+			"properties": {
+				"kind": { "type": "string", "minLength": 1 },
+				"name": { "type": "string" },
+				"options": { "$ref": "#/$defs/containerOptions" },
+				"meta": { "type": "object" }
+			},
+			"additionalProperties": false,
+			"allOf": [
+				{
+					"if": { "properties": { "kind": { "const": "action" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["spec"],
+								"properties": { "spec": { "$ref": "#/$defs/actionSpec" } }
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "enum": ["heading", "description"] } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["text"],
+								"properties": { "text": { "type": "string" } }
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "form" } } },
+					"then": {
+						"properties": {
+							"options": { "required": ["name", "children"] }
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "table" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["name", "columns"],
+								"properties": { "columns": { "$ref": "#/$defs/columns" } }
+							}
+						}
+					}
+				}
+			]
+		},
+		"containerOptions": {
+			"type": "object",
+			"properties": {
+				"children": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+				"fields": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+				"rowActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+				"bulkActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+				"tabs": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"required": ["label", "body"],
+						"properties": {
+							"label": { "type": "string" },
+							"body": { "$ref": "#/$defs/node" }
+						}
+					}
+				},
+				"constraints": { "$ref": "#/$defs/constraints" }
+			}
+		},
+		"columns": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name"],
+				"properties": {
+					"name": { "type": "string" },
+					"label": { "type": "string" },
+					"kind": { "type": "string" }
+				}
+			}
+		},
+		"constraints": {
+			"type": "object",
+			"properties": {
+				"required": { "type": "boolean" },
+				"min": { "type": "number" },
+				"max": { "type": "number" },
+				"email": { "type": "boolean" },
+				"url": { "type": "boolean" },
+				"integer": { "type": "boolean" },
+				"regex": { "type": "string" },
+				"in": { "type": "array", "items": { "type": "string" } }
+			},
+			"additionalProperties": false
+		},
+		"actionSpec": {
+			"oneOf": [
+				{
+					"type": "object",
+					"required": ["type", "href"],
+					"properties": {
+						"type": { "const": "visit" },
+						"href": { "type": "string" }
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["type"],
+					"properties": {
+						"type": { "const": "submit" },
+						"form": { "type": "string" }
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["type", "needs"],
+					"properties": {
+						"type": { "const": "server" },
+						"needs": {
+							"type": "array",
+							"items": { "enum": ["form", "row", "selection"] }
+						}
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["type", "title"],
+					"properties": {
+						"type": { "const": "modal" },
+						"title": { "type": "string" },
+						"description": { "type": "string" },
+						"body": { "$ref": "#/$defs/node" }
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["type", "handler", "params"],
+					"properties": {
+						"type": { "const": "custom" },
+						"handler": { "type": "string" },
+						"params": { "type": "object" }
+					},
+					"additionalProperties": false
+				}
+			]
+		},
+		"effects": {
+			"type": "array",
+			"items": {
+				"oneOf": [
+					{
+						"type": "object",
+						"required": ["kind", "message"],
+						"properties": {
+							"kind": { "const": "notify" },
+							"message": { "type": "string" },
+							"level": { "enum": ["info", "success", "error", "warning"] }
+						},
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind", "href"],
+						"properties": {
+							"kind": { "const": "redirect" },
+							"href": { "type": "string" }
+						},
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind"],
+						"properties": {
+							"kind": { "const": "refreshTable" },
+							"table": { "type": "string" }
+						},
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind"],
+						"properties": {
+							"kind": { "const": "resetForm" },
+							"form": { "type": "string" }
+						},
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind"],
+						"properties": { "kind": { "const": "closeModal" } },
+						"additionalProperties": false
+					}
+				]
+			}
+		}
+	}
+}
