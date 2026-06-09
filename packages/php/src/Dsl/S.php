@@ -41,6 +41,12 @@ final class S
     /** @var array<string, ActionBuilder> */
     private array $actions = [];
 
+    /** @var array<string, TableBuilder> */
+    private array $tables = [];
+
+    /** @var array<string, ChartBuilder> */
+    private array $charts = [];
+
     /** @param  list<mixed>  $args */
     public function __call(string $kind, array $args): FieldBuilder
     {
@@ -100,20 +106,15 @@ final class S
         return $this->forms[$name] = new FormBuilder($name, $children);
     }
 
-    /** @param  array<string, mixed>  $opts */
-    public function table(string $name, array $opts): Node
+    public function table(string $name): TableBuilder
     {
-        [$options, $meta] = Meta::split($opts);
-
-        return new Node('table', [...$options, 'name' => $name], $name, $meta);
+        return $this->tables[$name] = new TableBuilder($name);
     }
 
     /** @param  array<string, mixed>  $opts */
-    public function chart(string $type, array $opts): Node
+    public function chart(string $name, string $type, array $opts = []): ChartBuilder
     {
-        [$options, $meta] = Meta::split($opts);
-
-        return new Node("chart:{$type}", [...$options, 'type' => $type], null, $meta);
+        return $this->charts[$name] = new ChartBuilder($name, $type, $opts);
     }
 
     public function action(string $name): ActionBuilder
@@ -137,6 +138,18 @@ final class S
     public function collectedActions(): array
     {
         return $this->actions;
+    }
+
+    /** @return array<string, TableBuilder> */
+    public function collectedTables(): array
+    {
+        return $this->tables;
+    }
+
+    /** @return array<string, ChartBuilder> */
+    public function collectedCharts(): array
+    {
+        return $this->charts;
     }
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */

@@ -2,8 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Tbtop\Admin\Http\ActionController;
+use Tbtop\Admin\Http\DataController;
 use Tbtop\Admin\Http\FormSubmitController;
 use Tbtop\Admin\Http\PageController;
+use Tbtop\Admin\Http\TableController;
 use Tbtop\Admin\Pages\Page;
 
 /** @var list<class-string<Page>> $pages */
@@ -23,5 +25,11 @@ Route::middleware(config('tbtop-admin.middleware'))
             Route::post("{$path}/actions/{tbtopAction}", ActionController::class)
                 ->defaults('tbtopPage', $class)
                 ->name('tbtop.'.$class::slug().'.action');
+            Route::get("{$path}/tables/{tbtopTable}", TableController::class)
+                ->defaults('tbtopPage', $class)
+                ->name('tbtop.'.$class::slug().'.table');
+            Route::get("{$path}/data/{tbtopData}", DataController::class)
+                ->defaults('tbtopPage', $class)
+                ->name('tbtop.'.$class::slug().'.data');
         }
     });

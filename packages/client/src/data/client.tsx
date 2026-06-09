@@ -151,7 +151,9 @@ function trimTrailingSlash(url: string): string {
 	return url.endsWith("/") ? url.slice(0, -1) : url;
 }
 
-const defaultFetch: typeof fetch = (input, init) => globalThis.fetch(input, init);
+// Bound wrapper: a bare `fetch` reference loses its window binding in browsers.
+const defaultFetch = ((input: RequestInfo | URL, init?: RequestInit) =>
+	globalThis.fetch(input, init)) as typeof fetch;
 
 async function safeJson(response: Response): Promise<unknown> {
 	try {
