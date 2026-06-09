@@ -1,12 +1,14 @@
 import { usePage } from "@inertiajs/react";
-import { useEffect, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { Toaster, toast } from "sonner";
+import { AdminLayout } from "../app/AdminLayout";
+import { AuthUserProvider } from "../app/authUser";
 import { PageParamsProvider } from "../app/pageParams";
 import { ClientProvider } from "../data/client";
 import { I18nProvider } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
-import type { StructureNode } from "../structure/types";
+import type { AuthUser, StructureNode } from "../structure/types";
 import { executeEffects, readEffects } from "./effects";
 import { materialize } from "./materialize";
 
@@ -17,6 +19,7 @@ interface AdminPageProps {
 	data: Record<string, Record<string, unknown>>;
 	params?: Record<string, string>;
 	tbtop?: { effects?: unknown };
+	auth?: { user?: AuthUser | null };
 	[key: string]: unknown;
 }
 
@@ -26,7 +29,7 @@ interface AdminPageProps {
  */
 export function AdminPage() {
 	const page = usePage<AdminPageProps>();
-	const { structure, data, params, title, tbtop } = page.props;
+	const { structure, data, params, title, tbtop, auth } = page.props;
 	ensureBuiltinsRegistered();
 
 	const basePath = page.url.split("?")[0] ?? "";
@@ -47,18 +50,23 @@ export function AdminPage() {
 
 	return (
 		<ClientProvider>
-			<PageParamsProvider params={params ?? {}}>
-				<I18nProvider>
-					<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
-						<h1 className="text-2xl font-semibold">{title}</h1>
-						{renderNode(node)}
-					</div>
-					<Toaster />
-				</I18nProvider>
-			</PageParamsProvider>
+			<AuthUserProvider user={auth?.user ?? null}>
+				<PageParamsProvider params={params ?? {}}>
+					<I18nProvider>
+						<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+							<h1 className="text-2xl font-semibold">{title}</h1>
+							{renderNode(node)}
+						</div>
+						<Toaster />
+					</I18nProvider>
+				</PageParamsProvider>
+			</AuthUserProvider>
 		</ClientProvider>
 	);
 }
+
+// Inertia persistent layout: the shell survives page visits unmounted.
+AdminPage.layout = (page: ReactNode) => <AdminLayout>{page}</AdminLayout>;
 
 function notifyToast(kind: string | undefined, message: string): void {
 	if (kind === "error") {

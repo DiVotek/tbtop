@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { useAuthUser } from "../app/authUser";
 import { useNavigate } from "../app/navigate";
 import { useParams } from "../app/pageParams";
 import { useClient } from "../data/client";
@@ -24,15 +25,14 @@ export function useClientActionContext(): ClientActionContext {
 	const tableHandle = useNearestTableController();
 	const row = useNearestRow();
 	const modal = useNearestModal();
+	const user = useAuthUser();
 
 	return useMemo(() => {
 		const formCtl = formHandle ? toFormController(formHandle) : undefined;
 		const tableCtl = tableHandle ? toTableController(tableHandle) : undefined;
 		return {
 			client,
-			// TODO(inertia-layout): hydrate from the Inertia shared `auth.user` page prop
-			// once the Laravel layout lands; token auth was removed with the SPA shell.
-			user: null,
+			user,
 			params,
 			navigate: (path) => navigate(path),
 			notify: (msg) => emitNotification(msg),
@@ -42,7 +42,7 @@ export function useClientActionContext(): ClientActionContext {
 			row: row ?? undefined,
 			modal: modal ?? undefined,
 		};
-	}, [client, navigate, params, t, formHandle, tableHandle, row, modal]);
+	}, [client, navigate, params, t, formHandle, tableHandle, row, modal, user]);
 }
 
 function toTableController(handle: TableController): TableController {

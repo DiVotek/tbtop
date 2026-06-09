@@ -7,6 +7,10 @@ function node(kind: string, options: Record<string, unknown>, name?: string): St
 	return { kind, options, meta: {}, ...(name ? { name } : {}) } as StructureNode;
 }
 
+function opts(n: StructureNode): Record<string, unknown> {
+	return n.options as Record<string, unknown>;
+}
+
 function fakeCtx(overrides: Partial<ClientActionContext> = {}): ClientActionContext {
 	return {
 		client: {} as AdminClient,
@@ -27,8 +31,8 @@ describe("materialize actions", () => {
 			node("action", { label: "Back", spec: { type: "visit", href: "/admin" } }, "back"),
 			BASE,
 		);
-		expect(out.options.url).toBe("/admin");
-		expect(out.options.spec).toBeUndefined();
+		expect(opts(out).url).toBe("/admin");
+		expect(opts(out).spec).toBeUndefined();
 	});
 
 	it("maps a server spec to a handler posting needs-driven payload and running effects", async () => {
@@ -45,7 +49,7 @@ describe("materialize actions", () => {
 			node("action", { spec: { type: "server", needs: ["row", "selection"] } }, "publish"),
 			BASE,
 		);
-		const handler = out.options.handler as (ctx: ClientActionContext) => Promise<void>;
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
 		await handler(
 			fakeCtx({
 				client,
@@ -82,12 +86,12 @@ describe("materialize actions", () => {
 			),
 			BASE,
 		);
-		const modal = out.options.modal as {
+		const modal = opts(out).modal as {
 			title: string;
 			body: { options: { children: { options: { handler: unknown } }[] } };
 		};
 		expect(modal.title).toBe("Really?");
-		expect(out.options.handler).toBeUndefined();
+		expect(opts(out).handler).toBeUndefined();
 		const confirmButton = modal.body.options.children[0];
 		expect(typeof confirmButton?.options.handler).toBe("function");
 	});
@@ -108,13 +112,13 @@ describe("materialize form", () => {
 
 	it("resolves initial data from page props, not the network", async () => {
 		const out = materialize(form, { ...BASE, data: { post: { title: "Hi" } } });
-		const query = out.options.query as () => Promise<unknown>;
+		const query = opts(out).query as () => Promise<unknown>;
 		expect(await query()).toEqual({ title: "Hi" });
 	});
 
 	it("compiles field constraints into a blur-validation schema", () => {
 		const out = materialize(form, { ...BASE, data: {} });
-		const schema = out.options.schema as { parse: (i: unknown) => unknown };
+		const schema = opts(out).schema as { parse: (i: unknown) => unknown };
 		expect(() => schema.parse({ title: "toolong" })).toThrow();
 		expect(schema.parse({ title: "ok" })).toEqual({ title: "ok" });
 	});
@@ -122,7 +126,7 @@ describe("materialize form", () => {
 
 describe("materialize table", () => {
 	it("queries the page-scoped endpoint with list params and unwraps the envelope", async () => {
-		let captured: { path: string; query: unknown } | null = null;
+		let captured = null as { path: string; query: unknown } | null;
 		const client = {
 			get: async (path: string, query: unknown) => {
 				captured = { path, query };
@@ -134,7 +138,7 @@ describe("materialize table", () => {
 			node("table", { columns: [{ name: "title" }], rowActions: [] }, "posts"),
 			BASE,
 		);
-		const query = out.options.query as (ctx: ClientActionContext) => Promise<unknown>;
+		const query = opts(out).query as (ctx: ClientActionContext) => Promise<unknown>;
 		const result = await query(
 			fakeCtx({
 				client,

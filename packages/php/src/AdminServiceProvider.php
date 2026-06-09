@@ -5,6 +5,7 @@ namespace Tbtop\Admin;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Tbtop\Admin\Navigation\NavBuilder;
 
 class AdminServiceProvider extends PackageServiceProvider
 {
@@ -20,6 +21,7 @@ class AdminServiceProvider extends PackageServiceProvider
     {
         Inertia::share('tbtop', static fn () => [
             'effects' => session('tbtop.effects', []),
+            'nav' => NavBuilder::build(),
         ]);
     }
 }

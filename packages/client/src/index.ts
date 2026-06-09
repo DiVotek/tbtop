@@ -92,3 +92,5 @@ export { defineCustomAction } from "./inertia/customActions";
 export { executeEffects, readEffects, type ServerEffect } from "./inertia/effects";
 export { materialize, type MaterializeInput } from "./inertia/materialize";
 export { compileConstraints, type FieldConstraints } from "./inertia/constraints";
+export { AdminLayout } from "./app/AdminLayout";
+export { AuthUserProvider, useAuthUser } from "./app/authUser";
