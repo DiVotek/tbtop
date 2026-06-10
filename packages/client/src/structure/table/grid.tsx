@@ -8,6 +8,7 @@ import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { Button } from "../../ui/button";
+import { ReloadOverlay } from "../../ui/spinner";
 import { ActionBlock } from "../actionBlock";
 import { useClientActionContext } from "../actionContext";
 import { RowProvider } from "../rowContext";
@@ -55,14 +56,7 @@ export function TableGrid(props: TableGridProps) {
 	return (
 		<div className="relative overflow-hidden rounded-md border">
 			{/* Reload overlay — keeps previous data visible with dimming */}
-			{props.isReloading && (
-				<div
-					className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 pointer-events-none"
-					data-testid="table-reloading-overlay"
-				>
-					<div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-				</div>
-			)}
+			{props.isReloading && <ReloadOverlay testId="table-reloading-overlay" />}
 
 			<table className="w-full text-sm">
 				<thead className="bg-muted/50 text-left">

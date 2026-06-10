@@ -2,20 +2,12 @@
  * TableToolbar — search input, filter panel, column visibility dropdown.
  * Extracted from tableBlock.tsx.
  */
-import { type ReactNode, useCallback } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { useDebounce } from "../../lib/useDebounce";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { Button } from "../../ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "../../ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -23,6 +15,7 @@ import {
 	DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import { Input } from "../../ui/input";
+import { ModalShell } from "../../ui/modal-shell";
 import type { ListQueryParams, StructureNode, TableColumn } from "../types";
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
@@ -172,37 +165,42 @@ function ModalFilters({
 	activeCount,
 }: FiltersProps) {
 	const t = useTranslation();
+	const [open, setOpen] = useState(false);
 	return (
-		<Dialog>
-			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" data-testid="table-filters-trigger">
-					{t("table.filters.label")}
-					{activeCount > 0 && (
-						<span
-							className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground"
-							data-testid="filter-badge"
-						>
-							{activeCount}
-						</span>
-					)}
-				</Button>
-			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>{t("table.filters.label")}</DialogTitle>
-				</DialogHeader>
-				<div className="flex flex-col gap-4">
-					{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
-				</div>
-				<DialogFooter>
-					{activeCount > 0 && (
+		<>
+			<Button
+				variant="outline"
+				size="sm"
+				data-testid="table-filters-trigger"
+				onClick={() => setOpen(true)}
+			>
+				{t("table.filters.label")}
+				{activeCount > 0 && (
+					<span
+						className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground"
+						data-testid="filter-badge"
+					>
+						{activeCount}
+					</span>
+				)}
+			</Button>
+			<ModalShell
+				open={open}
+				onOpenChange={setOpen}
+				title={t("table.filters.label")}
+				footer={
+					activeCount > 0 ? (
 						<Button variant="outline" onClick={onReset}>
 							{t("table.filters.reset")}
 						</Button>
-					)}
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+					) : undefined
+				}
+			>
+				<div className="flex flex-col gap-4">
+					{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
+				</div>
+			</ModalShell>
+		</>
 	);
 }
 

@@ -1,4 +1,4 @@
-import { useTranslation } from "../i18n/i18n";
+import { AsyncErrorBox } from "./asyncErrorBox";
 
 export function ChartSkeleton() {
 	return (
@@ -12,13 +12,5 @@ export function ChartSkeleton() {
 }
 
 export function ChartError({ message }: { message?: string }) {
-	const t = useTranslation();
-	return (
-		<div
-			className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-			data-testid="chart-error"
-		>
-			{message ?? t("state.error")}
-		</div>
-	);
+	return <AsyncErrorBox testId="chart-error" message={message} />;
 }

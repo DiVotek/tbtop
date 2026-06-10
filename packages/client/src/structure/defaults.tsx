@@ -1,4 +1,4 @@
-import { useTranslation } from "../i18n/i18n";
+import { AsyncErrorBox } from "./asyncErrorBox";
 
 export function FormSkeleton() {
 	return (
@@ -11,15 +11,7 @@ export function FormSkeleton() {
 }
 
 export function FormError({ message }: { message?: string }) {
-	const t = useTranslation();
-	return (
-		<div
-			className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-			data-testid="form-error"
-		>
-			{message ?? t("state.error")}
-		</div>
-	);
+	return <AsyncErrorBox testId="form-error" message={message} />;
 }
 
 export function TableSkeleton() {
@@ -33,13 +25,5 @@ export function TableSkeleton() {
 }
 
 export function TableError({ message }: { message?: string }) {
-	const t = useTranslation();
-	return (
-		<div
-			className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-			data-testid="table-error"
-		>
-			{message ?? t("state.error")}
-		</div>
-	);
+	return <AsyncErrorBox testId="table-error" message={message} />;
 }
