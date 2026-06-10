@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
@@ -37,6 +38,11 @@ final class FormSubmitController
             return redirect($result);
         }
 
-        return back()->with('tbtop.effects', $result instanceof Effects ? $result->jsonSerialize() : []);
+        // Native Inertia flash: re-delivered per response (shared props are
+        // deduped by preserveEqualProps on identical consecutive submits)
+        // and excluded from history state (no toast replay on back-nav).
+        Inertia::flash('tbtop.effects', $result instanceof Effects ? $result->jsonSerialize() : []);
+
+        return back();
     }
 }

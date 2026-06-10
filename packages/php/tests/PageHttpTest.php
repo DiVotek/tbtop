@@ -24,13 +24,33 @@ it('validates and runs the form submit handler, flashing effects', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('tbtop.effects', [
-        ['kind' => 'notify', 'message' => 'Saved', 'level' => 'success'],
-    ]);
+    // Effects travel via Inertia native flash — delivery is asserted by the
+    // consecutive-submit test below.
     expect(PostEditPage::$submitted)->toBe([
         'title' => 'Updated',
         'sections' => [['heading' => 'One', 'body' => 'b']],
     ]);
+});
+
+it('delivers form effects via inertia native flash on every consecutive submit', function () {
+    // Regression: effects lived in shared props; Inertia v3 preserveEqualProps
+    // reused the old reference on identical consecutive saves, so the client
+    // effect never re-fired (toasts stopped after the first save). Native
+    // page-level flash is re-delivered per response and skips that dedup.
+    $payload = ['title' => 'Updated', 'sections' => [['heading' => 'One', 'body' => 'b']]];
+    $expected = [['kind' => 'notify', 'message' => 'Saved', 'level' => 'success']];
+
+    $this->from('/admin/posts/1/edit')
+        ->post('/admin/posts/1/edit/forms/post', $payload)
+        ->assertRedirect();
+    $first = $this->get('/admin/posts/1/edit', ['X-Inertia' => 'true']);
+    expect($first->json('flash')['tbtop.effects'] ?? null)->toBe($expected);
+
+    $this->from('/admin/posts/1/edit')
+        ->post('/admin/posts/1/edit/forms/post', $payload)
+        ->assertRedirect();
+    $second = $this->get('/admin/posts/1/edit', ['X-Inertia' => 'true']);
+    expect($second->json('flash')['tbtop.effects'] ?? null)->toBe($expected);
 });
 
 it('rejects invalid form data with field errors and skips the handler', function () {

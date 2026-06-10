@@ -23,7 +23,6 @@ interface AdminPageProps {
 	breadcrumbs?: BreadcrumbItem[];
 	params?: Record<string, string>;
 	tbtop?: {
-		effects?: unknown;
 		prefix?: string;
 		apiBase?: string;
 		locale?: string;
@@ -55,7 +54,10 @@ export function AdminPage() {
 		[structure, basePath, data],
 	);
 
-	const flash = tbtop?.effects;
+	// Native Inertia flash: the adapter delivers a fresh object per response,
+	// so identical consecutive effects still re-trigger this (shared props
+	// would be reference-deduped by preserveEqualProps and fire only once).
+	const flash = (page.flash as Record<string, unknown> | undefined)?.["tbtop.effects"];
 	useEffect(() => {
 		const effects = readEffects(flash);
 		if (effects.length > 0) {

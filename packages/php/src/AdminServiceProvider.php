@@ -31,7 +31,6 @@ class AdminServiceProvider extends PackageServiceProvider
             $prefix = '/'.trim((string) config('tbtop-admin.prefix'), '/');
 
             return [
-                'effects' => session('tbtop.effects', []),
                 'nav' => NavBuilder::build(),
                 'prefix' => $prefix,
                 'apiBase' => $prefix.'/api',
