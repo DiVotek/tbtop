@@ -31,4 +31,28 @@ return [
     // Whether to build and send the breadcrumbs prop.
     // Set to false to suppress breadcrumbs globally (prop is omitted from page response).
     'breadcrumbs' => true,
+
+    // Media manager configuration.
+    'media' => [
+        // Storage disk for uploaded media files.
+        'disk' => 'public',
+
+        // Accepted MIME types (fnmatch patterns). Empty = allow all.
+        'accept' => ['image/*'],
+
+        // Maximum upload size in KB.
+        'max_size' => 10240,
+
+        // Conversion profiles: name => [maxWidth, maxHeight].
+        // Files are scaled to fit inside the given box (aspect-ratio preserved).
+        'profiles' => [
+            'thumb' => [320, 320],
+        ],
+
+        // URL import settings.
+        'url_import' => [
+            'timeout' => 30,
+            'max_size' => 10240,
+        ],
+    ],
 ];

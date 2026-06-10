@@ -15,6 +15,10 @@ class AdminServiceProvider extends PackageServiceProvider
         $package
             ->name('tbtop-admin')
             ->hasConfigFile()
+            ->hasMigrations([
+                '2026_01_01_000001_create_tbtop_media_folders_table',
+                '2026_01_01_000002_create_tbtop_media_table',
+            ])
             ->hasRoute('admin')
             ->hasTranslations();
     }

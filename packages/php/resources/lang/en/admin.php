@@ -90,6 +90,27 @@ return [
         'title' => 'Tabletop',
         'language' => 'Language',
     ],
+    'media' => [
+        'upload_success' => 'File uploaded',
+        'import_success' => 'File imported',
+        'update_success' => 'Updated',
+        'delete_success' => 'Deleted',
+        'delete_confirm' => [
+            'title' => 'Delete file?',
+            'body' => 'The file and all its conversions will be permanently removed.',
+        ],
+        'folder_delete_confirm' => [
+            'title' => 'Delete folder?',
+            'body' => 'The folder must be empty before it can be deleted.',
+        ],
+        'errors' => [
+            'blocked_url' => 'The URL is not allowed (blocked for security reasons).',
+            'download_failed' => 'Could not download the file from the given URL.',
+            'file_too_large' => 'The file exceeds the maximum allowed size.',
+            'mime_not_allowed' => 'This file type is not allowed.',
+            'folder_not_empty' => 'The folder is not empty.',
+        ],
+    ],
     'field' => [
         'password' => [
             'hide' => 'Hide password',
