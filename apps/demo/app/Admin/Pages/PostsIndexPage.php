@@ -6,6 +6,8 @@ use App\Models\Post;
 use App\Models\User;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Color;
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Select;
@@ -38,12 +40,36 @@ class PostsIndexPage extends Page
             ]),
             $s->table('posts')
                 ->columns([
-                    ['name' => 'title', 'label' => 'Title', 'kind' => 'text', 'translatable' => true],
-                    ['name' => 'slug', 'label' => 'Slug', 'kind' => 'text'],
-                    ['name' => 'published', 'label' => 'Published', 'kind' => 'text'],
-                    ['name' => 'views', 'label' => 'Views', 'kind' => 'text'],
+                    Column::make('title')
+                        ->label('Title')
+                        ->kind('text')
+                        ->translatable()
+                        ->sortable()
+                        ->searchable(),
+                    Column::make('slug')
+                        ->label('Slug')
+                        ->kind('text'),
+                    Column::make('published')
+                        ->label('Status')
+                        ->badge([
+                            '1' => Color::Success,
+                            '0' => Color::Gray,
+                        ])
+                        ->toggleable(),
+                    Column::make('active')
+                        ->label('Active')
+                        ->boolean('check', 'x', Color::Success, Color::Gray),
+                    Column::make('published_at')
+                        ->label('Published')
+                        ->date('Y-m-d')
+                        ->sortable()
+                        ->toggleable(true, true),
+                    Column::make('views')
+                        ->label('Views')
+                        ->number()
+                        ->sortable()
+                        ->align('right'),
                 ])
-                ->searchable(['title'])
                 ->filters([
                     Select::make('published')
                         ->label('Status')
@@ -68,6 +94,7 @@ class PostsIndexPage extends Page
                 ])
                 ->filtersIn('modal')
                 ->defaultSort('created_at', 'desc')
+                ->paginate(25, [10, 25, 50, 100])
                 ->query(fn () => Post::query())
                 ->rowActions([
                     // Visit specs are static strings; a per-row URL needs the
