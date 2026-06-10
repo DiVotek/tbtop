@@ -156,7 +156,11 @@ function TableBody(props: TableBodyProps) {
 	);
 
 	const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultVisible);
-	const [filterValues, setFilterValues] = useState<Record<string, unknown>>({});
+	// Seed filter UI state from URL-persisted query params so the controls
+	// reflect the active filter values when the page loads with a pre-set URL.
+	const [filterValues, setFilterValues] = useState<Record<string, unknown>>(
+		() => props.queryParams.filters ?? {},
+	);
 
 	// Restore column visibility from localStorage
 	useEffect(() => {

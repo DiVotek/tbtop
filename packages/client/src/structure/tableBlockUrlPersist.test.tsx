@@ -206,6 +206,66 @@ describe("TableBlock URL persist: mount seeds state from URL", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Scenario 4b: filter control shows selected value when seeded from URL
+// ---------------------------------------------------------------------------
+
+describe("TableBlock URL persist: filter UI reflects URL-seeded filter value", () => {
+	let originalReplaceState: typeof window.history.replaceState;
+
+	beforeEach(() => {
+		originalReplaceState = window.history.replaceState.bind(window.history);
+	});
+
+	afterEach(() => {
+		window.history.replaceState = originalReplaceState;
+		originalReplaceState(null, "", "http://localhost/");
+	});
+
+	test("TableBlock: select filter reflects URL-seeded value on mount", async () => {
+		// Seed URL with a filter value for the "posts" table
+		const sp = new URLSearchParams();
+		sp.set("t[posts][status]", "draft");
+		originalReplaceState(null, "", `/?${sp.toString()}`);
+
+		const baseNode = tableNode("posts");
+		const nodeWithSelectFilter: StructureNode = {
+			...baseNode,
+			options: {
+				...(baseNode.options as Record<string, unknown>),
+				filters: [
+					{
+						kind: "select",
+						name: "status",
+						options: {
+							label: "Status",
+							options: [
+								{ value: "draft", label: "Draft" },
+								{ value: "published", label: "Published" },
+							],
+						},
+						meta: {},
+					},
+				],
+				filtersIn: "inline",
+			},
+		};
+		const node = materialize(nodeWithSelectFilter, { basePath: "/admin/posts", data: {} });
+
+		const Wrap = wrapForStructureFetch(
+			() => new Response(JSON.stringify({ data: [{ id: "1", title: "Alpha" }] })),
+		);
+
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		await findByTestId("table-filters-inline");
+
+		// The select trigger should show the seeded value "Draft", not the placeholder.
+		const trigger = await findByTestId("select-status");
+		expect(trigger.textContent).toContain("Draft");
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Scenario 4: two tables on one page don't clobber each other's URL namespace
 // ---------------------------------------------------------------------------
 
