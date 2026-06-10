@@ -265,7 +265,11 @@ export interface StructureBuilders<TForm = unknown> {
 		children: StructureNode[],
 	) => StructureNode;
 	aside: (children: StructureNode[], opts?: NodeMeta) => StructureNode;
-	actionGroup: (label: string, actions: StructureNode[]) => StructureNode;
+	actionGroup: (
+		label: string,
+		actions: StructureNode[],
+		as?: "buttons" | "dropdown",
+	) => StructureNode;
 }
 
 export type StructureBuilder = StructureBuilders;

@@ -130,8 +130,16 @@ export function buildAside(children: StructureNode[], opts?: Bag): StructureNode
 	return { kind: "aside", options: { ...split.options, children }, meta: split.meta };
 }
 
-export function buildActionGroup(label: string, children: StructureNode[]): StructureNode {
-	return { kind: "actionGroup", options: { label, children }, meta: {} };
+export function buildActionGroup(
+	label: string,
+	children: StructureNode[],
+	as?: "buttons" | "dropdown",
+): StructureNode {
+	const options: Record<string, unknown> = { label, children };
+	if (as !== undefined) {
+		options.as = as;
+	}
+	return { kind: "actionGroup", options, meta: {} };
 }
 
 const DEFAULT_HEADING_LEVEL = 3;
