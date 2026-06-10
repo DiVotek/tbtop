@@ -38,7 +38,20 @@ return [
         'disk' => 'public',
 
         // Accepted MIME types (fnmatch patterns). Empty = allow all.
-        'accept' => ['image/*'],
+        // Note: image/* matches svg+xml — narrow it when the disk serves
+        // files inline (stored SVG can carry scripts).
+        'accept' => [
+            'image/*',
+            'application/pdf',
+            'text/*', // md, csv, txt
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/zip',
+            'audio/*',
+            'video/*',
+        ],
 
         // Maximum upload size in KB.
         'max_size' => 10240,

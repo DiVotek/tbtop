@@ -57,10 +57,21 @@ return [
         ],
     ],
 
-    // Media manager (POST /admin/media/upload, import-url, etc.).
+    // Media manager (POST /admin/api/media/upload, import-url, etc.).
     'media' => [
         'disk' => 'public',
-        'accept' => ['image/*'],
+        'accept' => [
+            'image/*',
+            'application/pdf',
+            'text/*',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/zip',
+            'audio/*',
+            'video/*',
+        ],
         'max_size' => 10240,
         'profiles' => [
             'thumb' => [320, 320],
