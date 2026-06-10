@@ -2,8 +2,6 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
-use Tbtop\Admin\Dsl\FieldBuilder;
-
 final class Repeater extends Field
 {
     protected function kind(): string
@@ -11,7 +9,7 @@ final class Repeater extends Field
         return 'repeater';
     }
 
-    /** @param  list<Field|FieldBuilder>  $fields */
+    /** @param  list<Field>  $fields */
     public function fields(array $fields): static
     {
         return $this->set('fields', $fields);

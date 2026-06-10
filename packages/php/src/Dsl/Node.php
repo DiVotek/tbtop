@@ -19,7 +19,7 @@ final class Node implements JsonSerializable
     ) {}
 
     /**
-     * Cascade translatable flag onto all descendant FieldBuilders.
+     * Cascade translatable flag onto all descendant Fields.
      * Returns a new Node with the cascade applied (immutable).
      */
     public function translatable(): self

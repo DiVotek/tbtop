@@ -15,7 +15,7 @@ final class ChartBuilder implements JsonSerializable
 {
     private ?Closure $query = null;
 
-    /** @var list<Field|FieldBuilder> */
+    /** @var list<Field> */
     private array $paramFields = [];
 
     /** @param  array<string, mixed>  $opts */
@@ -33,7 +33,7 @@ final class ChartBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<Field|FieldBuilder>  $fields */
+    /** @param  list<Field>  $fields */
     public function params(array $fields): self
     {
         $this->paramFields = $fields;
@@ -41,7 +41,7 @@ final class ChartBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @return list<Field|FieldBuilder> */
+    /** @return list<Field> */
     public function paramFields(): array
     {
         return $this->paramFields;
@@ -63,7 +63,7 @@ final class ChartBuilder implements JsonSerializable
     {
         [$options, $meta] = Meta::split($this->opts);
         if ($this->paramFields !== []) {
-            $options['params'] = array_map(fn (Field|FieldBuilder $f) => $f->toNode(), $this->paramFields);
+            $options['params'] = array_map(fn (Field $f) => $f->toNode(), $this->paramFields);
         }
 
         return new Node("chart:{$this->type}", [...$options, 'type' => $this->type], $this->name, $meta);

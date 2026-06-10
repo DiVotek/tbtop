@@ -149,7 +149,7 @@ final class S
     }
 
     /**
-     * Cascade ->translatable() onto every Field / FieldBuilder in $children (recursive).
+     * Cascade ->translatable() onto every Field in $children (recursive).
      * A field that explicitly called ->translatable(false) is skipped.
      *
      * @param  list<mixed>  $children
@@ -158,7 +158,7 @@ final class S
     public static function cascadeTranslatable(array $children): array
     {
         return array_map(static function (mixed $child): mixed {
-            if (($child instanceof Field || $child instanceof FieldBuilder)
+            if (($child instanceof Field)
                 && ! $child->isTranslatableOptedOut()
                 && ! $child->isTranslatableField()
             ) {
