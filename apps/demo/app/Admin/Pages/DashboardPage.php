@@ -19,6 +19,11 @@ class DashboardPage extends Page
         return ['group' => 'Overview', 'label' => 'Dashboard', 'order' => 0];
     }
 
+    public static function can(): ?string
+    {
+        return 'view-dashboard';
+    }
+
     public function title(): string
     {
         return 'Dashboard';

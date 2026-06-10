@@ -29,4 +29,10 @@ abstract class Page
     {
         return null;
     }
+
+    /** Gate ability required to view this page. Null means no gate (public to authenticated). */
+    public static function can(): ?string
+    {
+        return null;
+    }
 }

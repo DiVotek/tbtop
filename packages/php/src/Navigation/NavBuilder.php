@@ -2,13 +2,14 @@
 
 namespace Tbtop\Admin\Navigation;
 
+use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Pages\Page;
 
 final class NavBuilder
 {
     /**
      * Builds the sidebar tree from registered pages' nav() declarations.
-     * Pages with route params or null nav() are skipped.
+     * Pages with route params, null nav(), or a failing gate are skipped.
      *
      * @return list<array{group: string, items: list<array{label: string, href: string, order: int}>}>
      */
@@ -23,6 +24,10 @@ final class NavBuilder
             $nav = $class::nav();
             $path = $class::path();
             if ($nav === null || str_contains($path, '{')) {
+                continue;
+            }
+            $gate = $class::can();
+            if ($gate !== null && ! Gate::allows($gate)) {
                 continue;
             }
             $group = (string) ($nav['group'] ?? 'General');
