@@ -15,8 +15,12 @@ use Tbtop\Admin\Dsl\RuleWalker;
  */
 final class SelectCreateController
 {
+    use AuthorizesPage;
+
     public function __invoke(Request $request): JsonResponse
     {
+        $this->authorizePageGate($request);
+
         $fieldName = (string) $request->route('tbtopField');
         $resolved = ResolvedPage::fromRequest($request);
         $field = $resolved->s->findCreatableSelect($fieldName);

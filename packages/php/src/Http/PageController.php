@@ -3,23 +3,16 @@
 namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Tbtop\Admin\Pages\Page;
 
 final class PageController
 {
+    use AuthorizesPage;
+
     public function show(Request $request): Response
     {
-        $class = $request->route()?->parameter('tbtopPage');
-
-        if (is_string($class) && is_subclass_of($class, Page::class)) {
-            $gate = $class::can();
-            if ($gate !== null) {
-                Gate::authorize($gate);
-            }
-        }
+        $this->authorizePageGate($request);
 
         $resolved = ResolvedPage::fromRequest($request);
         $data = [];

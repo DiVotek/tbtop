@@ -8,8 +8,12 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class TableController
 {
+    use AuthorizesPage;
+
     public function __invoke(Request $request): JsonResponse
     {
+        $this->authorizePageGate($request);
+
         $name = (string) $request->route('tbtopTable');
         $resolved = ResolvedPage::fromRequest($request);
         $table = $resolved->s->collectedTables()[$name] ?? null;

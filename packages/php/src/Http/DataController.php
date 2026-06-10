@@ -9,8 +9,12 @@ use Tbtop\Admin\Dsl\Fields\Field;
 
 final class DataController
 {
+    use AuthorizesPage;
+
     public function __invoke(Request $request): JsonResponse
     {
+        $this->authorizePageGate($request);
+
         $name = (string) $request->route('tbtopData');
         $resolved = ResolvedPage::fromRequest($request);
         $chart = $resolved->s->collectedCharts()[$name] ?? null;

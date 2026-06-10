@@ -10,8 +10,12 @@ use Tbtop\Admin\Actions\Effects;
 
 final class ActionController
 {
+    use AuthorizesPage;
+
     public function __invoke(Request $request): JsonResponse
     {
+        $this->authorizePageGate($request);
+
         $tbtopAction = (string) $request->route('tbtopAction');
         $resolved = ResolvedPage::fromRequest($request);
         $action = $resolved->s->collectedActions()[$tbtopAction] ?? null;

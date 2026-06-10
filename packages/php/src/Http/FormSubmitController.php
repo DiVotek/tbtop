@@ -10,8 +10,12 @@ use Tbtop\Admin\Actions\Effects;
 
 final class FormSubmitController
 {
+    use AuthorizesPage;
+
     public function __invoke(Request $request): RedirectResponse
     {
+        $this->authorizePageGate($request);
+
         $tbtopForm = (string) $request->route('tbtopForm');
         $resolved = ResolvedPage::fromRequest($request);
         $form = $resolved->s->collectedForms()[$tbtopForm] ?? null;
