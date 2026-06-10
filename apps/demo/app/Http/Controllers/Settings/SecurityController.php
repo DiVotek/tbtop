@@ -13,8 +13,14 @@ class SecurityController extends Controller
     {
         $user = $request->user();
 
+        $passkeys = $user->passkeys()
+            ->orderByDesc('last_used_at')
+            ->get(['id', 'name', 'last_used_at', 'created_at'])
+            ->toArray();
+
         return Inertia::render('settings/security', [
             'twoFactorEnabled' => $user->hasTwoFactorEnabled(),
+            'passkeys' => $passkeys,
         ]);
     }
 }

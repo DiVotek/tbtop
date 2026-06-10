@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\WebAuthn;
+namespace App\Http\Responses;
 
 use Illuminate\Http\JsonResponse;
-use Laravel\Passkeys\Contracts\PasskeyRegistrationResponse;
+use Laravel\Passkeys\Contracts\PasskeyRegistrationResponse as PasskeyRegistrationResponseContract;
 use Laravel\Passkeys\Passkey;
 
-class WebAuthnRegisterController implements PasskeyRegistrationResponse
+class PasskeyRegistrationResponse implements PasskeyRegistrationResponseContract
 {
     private ?Passkey $passkey = null;
 

@@ -1,5 +1,8 @@
-import { Head, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { usePasskeyRegister } from "@laravel/passkeys/react";
+import { KeyRound, Trash2 } from "lucide-react";
 import { FormEventHandler, useState } from "react";
+
 import HeadingSmall from "@/components/heading-small";
 import InputError from "@/components/input-error";
 import { Button } from "@/components/ui/button";
@@ -16,11 +19,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 	},
 ];
 
+type PasskeyItem = {
+	id: number;
+	name: string;
+	last_used_at: string | null;
+};
+
 interface SecurityProps {
 	twoFactorEnabled: boolean;
 	twoFactorQrSvg?: string;
 	twoFactorSecret?: string;
 	recoveryCodes?: string[];
+	passkeys: PasskeyItem[];
 }
 
 export default function Security({
@@ -28,6 +38,7 @@ export default function Security({
 	twoFactorQrSvg,
 	twoFactorSecret,
 	recoveryCodes,
+	passkeys,
 }: SecurityProps) {
 	const [showQr, setShowQr] = useState(!!twoFactorQrSvg);
 	const [localRecoveryCodes, setLocalRecoveryCodes] = useState<string[] | null>(
@@ -173,7 +184,93 @@ export default function Security({
 						</div>
 					)}
 				</div>
+
+				<PasskeysSection passkeys={passkeys} />
 			</SettingsLayout>
 		</AppLayout>
+	);
+}
+
+function PasskeysSection({ passkeys }: { passkeys: PasskeyItem[] }) {
+	const [passkeyName, setPasskeyName] = useState("");
+	const [registerError, setRegisterError] = useState<string | null>(null);
+
+	const { register, isLoading } = usePasskeyRegister({
+		onSuccess: () => {
+			setPasskeyName("");
+			router.reload({ only: ["passkeys"] });
+		},
+		onError: (err) => {
+			setRegisterError(err);
+		},
+	});
+
+	const handleRegister = () => {
+		setRegisterError(null);
+		register(passkeyName);
+	};
+
+	const handleDelete = (id: number) => {
+		router.delete(`/user/passkeys/${id}`, {
+			preserveScroll: true,
+		});
+	};
+
+	return (
+		<div className="space-y-6">
+			<HeadingSmall
+				title="Passkeys"
+				description="Sign in without a password using your device's biometrics"
+			/>
+
+			{passkeys.length > 0 && (
+				<ul className="divide-y rounded border">
+					{passkeys.map((pk) => (
+						<li key={pk.id} className="flex items-center justify-between px-4 py-3">
+							<div className="flex items-center gap-3">
+								<KeyRound className="h-4 w-4 text-muted-foreground" />
+								<div>
+									<p className="text-sm font-medium">{pk.name}</p>
+									{pk.last_used_at && (
+										<p className="text-xs text-muted-foreground">
+											Last used{" "}
+											{new Date(pk.last_used_at).toLocaleDateString()}
+										</p>
+									)}
+								</div>
+							</div>
+							<Button
+								type="button"
+								size="icon"
+								variant="ghost"
+								aria-label={`Delete passkey ${pk.name}`}
+								onClick={() => handleDelete(pk.id)}
+							>
+								<Trash2 className="h-4 w-4" />
+							</Button>
+						</li>
+					))}
+				</ul>
+			)}
+
+			<div className="flex gap-2">
+				<Input
+					placeholder="Passkey name (e.g. MacBook Pro)"
+					value={passkeyName}
+					onChange={(e) => setPasskeyName(e.target.value)}
+					className="max-w-xs"
+				/>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={isLoading || !passkeyName}
+					onClick={handleRegister}
+				>
+					{isLoading ? "Registering…" : "Add passkey"}
+				</Button>
+			</div>
+
+			{registerError && <p className="text-sm text-destructive">{registerError}</p>}
+		</div>
 	);
 }

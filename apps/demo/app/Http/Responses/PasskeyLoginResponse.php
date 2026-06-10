@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\WebAuthn;
+namespace App\Http\Responses;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laravel\Passkeys\Contracts\PasskeyLoginResponse;
+use Laravel\Passkeys\Contracts\PasskeyLoginResponse as PasskeyLoginResponseContract;
 
-class WebAuthnLoginController implements PasskeyLoginResponse
+class PasskeyLoginResponse implements PasskeyLoginResponseContract
 {
     /**
      * After a successful passkey login, mark 2FA as completed and redirect.
