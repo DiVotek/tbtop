@@ -58,7 +58,7 @@ final class FormBuilder implements JsonSerializable
     /** @return array<string, mixed> */
     public function recordData(): array
     {
-        return $this->record;
+        return TranslatableRecord::normalize($this->record, $this->children);
     }
 
     /** Laravel validation rules collected from descendant fields. @return array<string, list<string>> */
