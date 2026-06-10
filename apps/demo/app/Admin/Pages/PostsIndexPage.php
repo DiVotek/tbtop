@@ -39,6 +39,7 @@ class PostsIndexPage extends Page
                 $s->action('new')->label('New post')->color('primary')->visit('/admin/posts/new'),
             ]),
             $s->table('posts')
+            ->rowClick('edit')
                 ->columns([
                     Column::make('title')
                         ->label('Title')
