@@ -179,6 +179,22 @@ it('import-url reports mime_not_allowed on disallowed content-type', function ()
     $response->assertStatus(422);
 });
 
+// ---- GET /admin/media/{id} ----
+
+it('returns a single media item by id', function () {
+    $media = Media::create(mediaRow(['name' => 'single.png']));
+
+    $response = $this->getJson("/admin/media/{$media->id}")->assertOk();
+
+    expect($response->json('id'))->toBe($media->id)
+        ->and($response->json('name'))->toBe('single.png')
+        ->and($response->json('mime'))->toBe('image/png');
+});
+
+it('returns 404 for unknown media id', function () {
+    $this->getJson('/admin/media/9999')->assertNotFound();
+});
+
 // ---- PATCH /admin/media/{id} ----
 
 it('updates media name, alt and folderId', function () {

@@ -40,6 +40,13 @@ final class MediaController
         ]);
     }
 
+    public function show(int $id): JsonResponse
+    {
+        $media = Media::findOrFail($id);
+
+        return response()->json(MediaResource::toItem($media));
+    }
+
     public function update(Request $request, int $id): JsonResponse
     {
         $media = Media::findOrFail($id);

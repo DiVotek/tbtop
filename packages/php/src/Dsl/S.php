@@ -11,6 +11,7 @@ use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Datetime;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Keyvalue;
+use Tbtop\Admin\Dsl\Fields\MediaPicker;
 use Tbtop\Admin\Dsl\Fields\Number;
 use Tbtop\Admin\Dsl\Fields\Password;
 use Tbtop\Admin\Dsl\Fields\Radio;
@@ -43,6 +44,7 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  * @method Keyvalue keyvalue(string $name)
  * @method Slug slug(string $name)
  * @method Upload upload(string $name)
+ * @method MediaPicker media(string $name)
  * @method Relation relation(string $name)
  * @method Repeater repeater(string $name)
  * @method Richtext richtext(string $name)
@@ -60,7 +62,7 @@ final class S
     public const BUILT_IN_KINDS = [
         'text', 'textarea', 'password', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'checkbox', 'colorpicker', 'keyvalue',
-        'slug', 'upload', 'relation', 'repeater', 'richtext', 'daterange',
+        'slug', 'upload', 'media', 'relation', 'repeater', 'richtext', 'daterange',
     ];
 
     /** @var array<string, FormBuilder> */
@@ -354,6 +356,7 @@ final class S
                 'keyvalue' => Keyvalue::class,
                 'slug' => Slug::class,
                 'upload' => Upload::class,
+                'media' => MediaPicker::class,
                 'relation' => Relation::class,
                 'repeater' => Repeater::class,
                 'richtext' => Richtext::class,

@@ -31,6 +31,7 @@ Route::middleware([...(array) config('tbtop-admin.middleware'), SetAdminLocale::
             Route::get('/', [MediaController::class, 'index'])->name('index');
             Route::post('/upload', MediaUploadController::class)->name('upload');
             Route::post('/import-url', MediaImportController::class)->name('import-url');
+            Route::get('/{id}', [MediaController::class, 'show'])->name('show')->whereNumber('id');
             Route::patch('/{id}', [MediaController::class, 'update'])->name('update')->whereNumber('id');
             Route::post('/{id}/replace', MediaReplaceController::class)->name('replace')->whereNumber('id');
             Route::delete('/{id}', [MediaController::class, 'destroy'])->name('destroy')->whereNumber('id');
