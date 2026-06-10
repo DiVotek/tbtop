@@ -3,7 +3,7 @@
  * 422 errors from the server are shown inline in the dialog.
  */
 import { type ReactNode, useState } from "react";
-import { useClient } from "../data/client";
+import { useMediaClient } from "./useMediaApi";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -25,7 +25,7 @@ export function ImportUrlDialog({
 	onImported,
 }: ImportUrlDialogProps): ReactNode {
 	const t = useTranslation();
-	const client = useClient();
+	const client = useMediaClient();
 	const [url, setUrl] = useState("");
 	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);

@@ -69,7 +69,7 @@ export function AdminPage() {
 	const defaultContentLocale = tbtop?.defaultContentLocale ?? contentLocales[0] ?? "en";
 
 	return (
-		<ClientProvider baseUrl={apiBase}>
+		<ClientProvider apiBase={apiBase}>
 			<AuthUserProvider user={auth?.user ?? null}>
 				<PageParamsProvider params={params ?? {}}>
 					<ContentLocaleConfigProvider

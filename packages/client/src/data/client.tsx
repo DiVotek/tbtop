@@ -39,15 +39,24 @@ export function createAdminClient(options: CreateAdminClientOptions = {}): Admin
 
 export interface ClientProviderProps {
 	baseUrl?: string;
+	/**
+	 * Admin API base (e.g. "/admin/api") for modules that build their own
+	 * paths (media). NOT applied to client requests — consumers like
+	 * tables/charts pass already-absolute paths, a global base would
+	 * double-prefix them (regression: media 404 fix broke table queries).
+	 */
+	apiBase?: string;
 	client?: AdminClient;
 	fetch?: typeof fetch;
 	children: ReactNode;
 }
 
 const ClientContext = createContext<AdminClient | null>(null);
+const ApiBaseContext = createContext<string>("");
 
 export function ClientProvider({
 	baseUrl,
+	apiBase = "",
 	client,
 	fetch: fetchImpl,
 	children,
@@ -56,7 +65,11 @@ export function ClientProvider({
 		() => client ?? createAdminClient({ baseUrl, fetch: fetchImpl }),
 		[baseUrl, client, fetchImpl],
 	);
-	return <ClientContext.Provider value={resolved}>{children}</ClientContext.Provider>;
+	return (
+		<ClientContext.Provider value={resolved}>
+			<ApiBaseContext.Provider value={apiBase}>{children}</ApiBaseContext.Provider>
+		</ClientContext.Provider>
+	);
 }
 
 export function useClient(): AdminClient {
@@ -65,6 +78,10 @@ export function useClient(): AdminClient {
 		throw new Error("useClient must be used within a ClientProvider");
 	}
 	return client;
+}
+
+export function useApiBase(): string {
+	return useContext(ApiBaseContext);
 }
 
 interface RequestPayload {

@@ -4,7 +4,7 @@
  */
 import { FileIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { type DragEvent, type ReactNode, useCallback, useRef, useState } from "react";
-import { useClient } from "../data/client";
+import { useMediaClient } from "./useMediaApi";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { TablePagination } from "../structure/table/pagination";
@@ -40,7 +40,7 @@ export function MediaGrid({
 	selectedIds,
 }: MediaGridProps): ReactNode {
 	const t = useTranslation();
-	const client = useClient();
+	const client = useMediaClient();
 	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [uploading, setUploading] = useState(false);

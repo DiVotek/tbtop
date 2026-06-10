@@ -10,7 +10,7 @@
  */
 import { FileIcon, XIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
-import { useClient } from "../data/client";
+import { useMediaClient } from "./useMediaApi";
 import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
@@ -61,7 +61,7 @@ export function MediaPickerForm({
 	options,
 }: FieldFormProps<MediaPickerValue, MediaPickerOptions>): ReactNode {
 	const t = useTranslation();
-	const client = useClient();
+	const client = useMediaClient();
 	const multiple = options?.multiple ?? false;
 	const accept = options?.accept;
 

@@ -1,6 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useClient } from "../data/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useApiBase, useClient } from "../data/client";
 import type { MediaFolder, MediaItem, MediaListResponse } from "./types";
+
+/**
+ * Media endpoints live under `{apiBase}/media/*` — wrap the neutral admin
+ * client so every media path gets the prefix. The base client stays
+ * prefix-free: tables/charts pass absolute paths and a global base would
+ * double-prefix them.
+ */
+export function useMediaClient(): ReturnType<typeof useClient> {
+	const client = useClient();
+	const apiBase = useApiBase();
+	return useMemo(
+		() => ({
+			get: (path, query) => client.get(`${apiBase}${path}`, query),
+			post: (path, body) => client.post(`${apiBase}${path}`, body),
+			patch: (path, body) => client.patch(`${apiBase}${path}`, body),
+			delete: (path) => client.delete(`${apiBase}${path}`),
+			upload: (path, formData, opts) => client.upload(`${apiBase}${path}`, formData, opts),
+		}),
+		[client, apiBase],
+	);
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +44,7 @@ export function useMediaItems(params: MediaQueryParams): {
 	state: MediaQueryState;
 	refetch: () => void;
 } {
-	const client = useClient();
+	const client = useMediaClient();
 	const [tick, setTick] = useState(0);
 	const [state, setState] = useState<MediaQueryState>({ kind: "loading" });
 
@@ -76,7 +97,7 @@ export function useMediaFolders(): {
 	loading: boolean;
 	refetch: () => void;
 } {
-	const client = useClient();
+	const client = useMediaClient();
 	const [tick, setTick] = useState(0);
 	const [folders, setFolders] = useState<MediaFolder[]>([]);
 	const [loading, setLoading] = useState(true);

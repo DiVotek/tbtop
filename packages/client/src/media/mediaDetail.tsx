@@ -4,7 +4,7 @@
  */
 import { FileIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
-import { useClient } from "../data/client";
+import { useMediaClient } from "./useMediaApi";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
@@ -66,7 +66,7 @@ function DetailShell({
 	onDeleted,
 }: DetailShellProps): ReactNode {
 	const t = useTranslation();
-	const client = useClient();
+	const client = useMediaClient();
 
 	const [name, setName] = useState(item.name);
 	const [alt, setAlt] = useState(item.alt ?? "");

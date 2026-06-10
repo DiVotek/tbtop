@@ -1,24 +1,26 @@
 /**
- * Regression tests for AdminPage: verifies that fetch calls issued by
- * media-API hooks are prefixed with the apiBase prop from the server.
+ * Regression tests for the apiBase wiring (media 404 fix, second iteration).
  *
- * Bug: ClientProvider was mounted without baseUrl so all media requests
- * went to /media/* (root) instead of /{prefix}/api/media/*.
+ * Bug history:
+ * 1. ClientProvider had no base — media requests went to /media/* (root) → 404.
+ * 2. First fix set ClientProvider baseUrl="/admin/api" globally — that
+ *    double-prefixed table/chart queries which pass already-absolute paths
+ *    (`/admin/<page>/tables/x` became `/admin/api/admin/<page>/tables/x`) → 404.
+ *
+ * Contract: the base client is prefix-free; only media paths get apiBase,
+ * via useMediaClient().
+ *
+ * NOTE: no mock.module("@inertiajs/react") here — bun module mocks are global
+ * for the whole run and leak into later test files.
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
 import { ClientProvider, useClient } from "../data/client";
+import { useMediaClient } from "../media/useMediaApi";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 
-// NOTE: no mock.module("@inertiajs/react") here — bun's module mocks are
-// global for the whole run and leak into later test files (broke
-// visitTemplate/actionGroupDropdown). These tests render ClientProvider
-// directly, so no Inertia context is needed.
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Captures fetch requests and returns an empty media-list response. */
+/** Captures fetch requests and returns an empty JSON response. */
 function makeCapturingFetch() {
 	const captured: string[] = [];
 	const impl = (input: RequestInfo | URL): Promise<Response> => {
@@ -35,19 +37,14 @@ function makeCapturingFetch() {
 	return { captured, impl: impl as unknown as typeof fetch };
 }
 
-/**
- * A tiny component that fires a GET /media request via useClient().
- * Used to assert that the ClientProvider baseUrl is correctly applied.
- */
-function MediaProbe({ onFetched }: { onFetched: (url: string) => void }) {
+function TableProbe() {
 	const client = useClient();
-	// Use an imperative call (not a hook) so we can fire it in a useEffect below.
 	return (
 		<button
-			data-testid="probe-btn"
+			data-testid="table-probe"
 			type="button"
 			onClick={() => {
-				void client.get("/media").then(() => onFetched("done"));
+				void client.get("/admin/posts/tables/posts");
 			}}
 		>
 			fetch
@@ -55,7 +52,20 @@ function MediaProbe({ onFetched }: { onFetched: (url: string) => void }) {
 	);
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+function MediaProbe() {
+	const client = useMediaClient();
+	return (
+		<button
+			data-testid="media-probe"
+			type="button"
+			onClick={() => {
+				void client.get("/media");
+			}}
+		>
+			fetch
+		</button>
+	);
+}
 
 beforeEach(() => {
 	clearBlockRegistry();
@@ -66,41 +76,52 @@ afterEach(() => {
 	clearBlockRegistry();
 });
 
-describe("AdminPage: ClientProvider baseUrl from tbtop.apiBase prop", () => {
-	test("media fetch uses the apiBase prefix from the tbtop prop", async () => {
+describe("apiBase wiring (AdminPage ClientProvider contract)", () => {
+	test("absolute table-style paths are NOT prefixed by apiBase", async () => {
 		const { captured, impl } = makeCapturingFetch();
 		const { getByTestId } = render(
-			// Replicate the ClientProvider setup that AdminPage does after the fix:
-			// baseUrl comes from tbtop.apiBase, not hardcoded "".
-			<ClientProvider baseUrl="/admin/api" fetch={impl}>
-				<MediaProbe onFetched={() => {}} />
+			<ClientProvider apiBase="/admin/api" fetch={impl}>
+				<TableProbe />
 			</ClientProvider>,
 		);
 
 		await act(async () => {
-			getByTestId("probe-btn").click();
+			getByTestId("table-probe").click();
 		});
 
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
-		// The URL must carry the /admin/api prefix, not just /media.
+		expect(captured[0]).toBe("/admin/posts/tables/posts");
+	});
+
+	test("media paths get the apiBase prefix via useMediaClient", async () => {
+		const { captured, impl } = makeCapturingFetch();
+		const { getByTestId } = render(
+			<ClientProvider apiBase="/admin/api" fetch={impl}>
+				<MediaProbe />
+			</ClientProvider>,
+		);
+
+		await act(async () => {
+			getByTestId("media-probe").click();
+		});
+
+		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
 		expect(captured[0]).toBe("/admin/api/media");
 	});
 
-	test("media fetch without baseUrl hits /media (root) — documents the pre-fix bug", async () => {
+	test("media paths stay relative without apiBase (defaults to empty)", async () => {
 		const { captured, impl } = makeCapturingFetch();
 		const { getByTestId } = render(
-			// Deliberately omit baseUrl to document the old (broken) behaviour.
 			<ClientProvider fetch={impl}>
-				<MediaProbe onFetched={() => {}} />
+				<MediaProbe />
 			</ClientProvider>,
 		);
 
 		await act(async () => {
-			getByTestId("probe-btn").click();
+			getByTestId("media-probe").click();
 		});
 
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
-		// Without baseUrl the request goes to /media — 404 under /admin/api/media routing.
 		expect(captured[0]).toBe("/media");
 	});
 });
