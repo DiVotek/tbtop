@@ -66,10 +66,14 @@ export interface ListQueryParams {
 
 export interface TableController {
 	rows: unknown[];
+	/** Total record count from paginated response; undefined for non-paginated. */
+	total?: number;
 	selectedIds: string[];
 	queryParams: ListQueryParams;
 	refresh: () => void;
 	setQuery: (params: Partial<ListQueryParams>) => void;
+	selectAll?: (ids: string[]) => void;
+	clearSelection?: () => void;
 }
 
 export interface NotificationConfig {
@@ -138,14 +142,46 @@ export interface FormOptions extends Partial<AsyncBlock> {
 	guardUnsaved?: boolean;
 }
 
+export interface PaginatedResponse<TRow = unknown> {
+	data: TRow[];
+	total: number;
+	page?: number;
+	perPage?: number;
+}
+
 export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncBlock {
-	query: (ctx: ClientActionContext) => Promise<TRow[]>;
+	query: (ctx: ClientActionContext) => Promise<TRow[] | PaginatedResponse<TRow>>;
 	columns: TableColumn<TRow>[];
 	rowActions?: ActionConfig<TBuilder>[];
 	bulkActions?: ActionConfig<TBuilder>[];
 	searchable?: string[];
 	filters?: StructureNode[];
 	filtersIn?: "modal" | "inline";
+	/** Server-provided pagination config. */
+	pagination?: TablePaginationOptions;
+	/** Server-assigned table name — used to namespace URL query state. */
+	name?: string;
+}
+
+export interface TableColumnIcon {
+	name: string;
+	position?: "left" | "right";
+}
+
+export interface TableColumnBadgeOptions {
+	colors?: Record<string, string>;
+}
+
+export interface TableColumnBooleanOptions {
+	trueIcon?: string;
+	falseIcon?: string;
+	trueColor?: string;
+	falseColor?: string;
+}
+
+export interface TableColumnIconMapEntry {
+	icon: string;
+	color?: string;
 }
 
 export interface TableColumn<TRow = unknown> {
@@ -154,4 +190,24 @@ export interface TableColumn<TRow = unknown> {
 	/** Field kind whose cell component renders the value (server-authored tables). */
 	kind?: string;
 	render?: (row: TRow) => ReactNode;
+
+	// --- wire-contract additions ---
+	sortable?: boolean;
+	searchable?: boolean;
+	toggleable?: boolean;
+	hiddenByDefault?: boolean;
+	align?: "left" | "center" | "right";
+	icon?: TableColumnIcon;
+	width?: string;
+	wrap?: boolean;
+	tooltip?: string;
+	translatable?: boolean;
+	badge?: TableColumnBadgeOptions;
+	boolean?: TableColumnBooleanOptions;
+	iconMap?: Record<string, TableColumnIconMapEntry>;
+}
+
+export interface TablePaginationOptions {
+	perPage?: number;
+	options?: number[];
 }

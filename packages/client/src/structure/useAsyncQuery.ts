@@ -4,6 +4,7 @@ import type { ClientActionContext } from "./types";
 export type AsyncState<T> =
 	| { kind: "loading" }
 	| { kind: "loaded"; data: T }
+	| { kind: "reloading"; data: T }
 	| { kind: "error"; message: string };
 
 interface UseAsyncQueryInput<T> {
@@ -34,7 +35,13 @@ export function useAsyncQuery<T>(input: UseAsyncQueryInput<T>): {
 			return;
 		}
 		let cancelled = false;
-		setState({ kind: "loading" });
+		// Keep previous data visible during reload — only go to `loading` on first fetch.
+		setState((prev) => {
+			if (prev.kind === "loaded" || prev.kind === "reloading") {
+				return { kind: "reloading", data: prev.data };
+			}
+			return { kind: "loading" };
+		});
 		queryFn(ctxRef.current).then(
 			(data) => {
 				if (!cancelled) {

@@ -73,6 +73,8 @@ export type {
 	StructureNode,
 } from "./structure/structure";
 export { makeField, registerStructureBuilder, s } from "./structure/structure";
+export { registerTableColor } from "./structure/table/colorRegistry";
+export { registerTableIcon } from "./structure/table/iconRegistry";
 export type {
 	ActionColor,
 	ActionConfig,
@@ -88,9 +90,15 @@ export type {
 	NodeId,
 	NodeMeta,
 	NotificationConfig,
+	PaginatedResponse,
 	TabItem,
 	TableColumn,
+	TableColumnBadgeOptions,
+	TableColumnBooleanOptions,
+	TableColumnIcon,
+	TableColumnIconMapEntry,
 	TableController,
 	TableOptions,
+	TablePaginationOptions,
 } from "./structure/types";
 export { Input } from "./ui/input";

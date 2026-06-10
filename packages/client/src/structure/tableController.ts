@@ -3,13 +3,17 @@ import type { ListQueryParams, TableController } from "./types";
 
 interface UseTableControllerInput {
 	rows: unknown[];
+	/** Total record count from paginated response; undefined for non-paginated. */
+	total?: number;
 	queryParams: ListQueryParams;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
 	onRefresh: () => void;
 }
 
-interface TableControllerInternal extends TableController {
+export interface TableControllerInternal extends TableController {
 	toggleSelection: (id: string) => void;
+	selectAll: (ids: string[]) => void;
+	clearSelection: () => void;
 }
 
 export function useTableController(input: UseTableControllerInput): TableControllerInternal {
@@ -38,15 +42,36 @@ export function useTableController(input: UseTableControllerInput): TableControl
 		);
 	}, []);
 
+	const selectAll = useCallback((ids: string[]) => {
+		setSelectedIds(ids);
+	}, []);
+
+	const clearSelection = useCallback(() => {
+		setSelectedIds([]);
+	}, []);
+
 	return useMemo<TableControllerInternal>(
 		() => ({
 			rows: input.rows,
+			total: input.total,
 			selectedIds,
 			queryParams: input.queryParams,
 			refresh,
 			setQuery,
 			toggleSelection,
+			selectAll,
+			clearSelection,
 		}),
-		[input.rows, selectedIds, input.queryParams, refresh, setQuery, toggleSelection],
+		[
+			input.rows,
+			input.total,
+			selectedIds,
+			input.queryParams,
+			refresh,
+			setQuery,
+			toggleSelection,
+			selectAll,
+			clearSelection,
+		],
 	);
 }
