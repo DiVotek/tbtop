@@ -9,12 +9,12 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import type { SerializedEditorState } from "lexical";
+import type { EditorState, SerializedEditorState } from "lexical";
 import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
-import { OnChangePlugin } from "./onChangePlugin";
 import { SlashMenuPlugin } from "./slashMenuPlugin";
 import { Toolbar } from "./toolbar";
 
@@ -147,7 +147,13 @@ export function RichtextEditor({
 				<ListPlugin />
 				<LinkPlugin />
 				<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-				<OnChangePlugin onChange={debouncedOnChange} />
+				{/* Both ignore-flags keep mount-time updates (history-merge,
+				    selection) from writing back and falsely dirtying the form. */}
+				<OnChangePlugin
+					onChange={(state: EditorState) => debouncedOnChange(state.toJSON())}
+					ignoreSelectionChange
+					ignoreHistoryMergeTagChange
+				/>
 				<SlashMenuPlugin />
 			</div>
 		</LexicalComposer>

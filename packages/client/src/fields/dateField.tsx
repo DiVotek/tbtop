@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { Input } from "../ui/input";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
 
@@ -24,9 +23,10 @@ export function DateTimeCell({ value }: FieldCellProps<string>) {
 	return <time dateTime={date.toISOString()}>{date.toLocaleString()}</time>;
 }
 
+// Display normalizes via defaultValue only — writing the normalized value
+// back into the controller on mount falsely dirtied untouched forms.
 export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
 	const isoDate = toIsoDate(value);
-	useNormalizedInitial(value, isoDate || null, onChange);
 	return (
 		<Input
 			id={id ?? name}
@@ -41,7 +41,6 @@ export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps
 
 export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
 	const local = toLocalDateTime(value);
-	useNormalizedInitial(value, localToIso(local), onChange);
 	return (
 		<Input
 			id={id ?? name}
@@ -56,7 +55,6 @@ export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormP
 
 export function TimeForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
 	const time = toTimeString(value);
-	useNormalizedInitial(value, time || null, onChange);
 	return (
 		<Input
 			id={id ?? name}
@@ -67,24 +65,6 @@ export function TimeForm({ id, name, value, onChange, disabled }: FieldFormProps
 			disabled={disabled}
 		/>
 	);
-}
-
-function useNormalizedInitial(
-	raw: unknown,
-	normalized: string | null,
-	onChange: (next: string | null) => void,
-): void {
-	const ranRef = useRef(false);
-	useEffect(() => {
-		if (ranRef.current) {
-			return;
-		}
-		ranRef.current = true;
-		if (raw === normalized) {
-			return;
-		}
-		onChange(normalized);
-	}, [raw, normalized, onChange]);
 }
 
 function toIsoDate(value: unknown): string {
