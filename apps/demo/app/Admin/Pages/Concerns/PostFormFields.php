@@ -35,6 +35,9 @@ trait PostFormFields
                     ->set('min', 0)->set('step', 0.1)
                     ->rules('nullable|numeric|min:0|max:5')
                     ->disabledIf(Cond::not(Cond::truthy('published'))),
+                $s->media('cover_media_id')->label('Cover image')
+                    ->accept(['image/*'])
+                    ->rules('nullable|integer'),
                 $s->select('author_id')->label('Author')
                     ->searchable()
                     ->set('options', $this->authorOptions())
