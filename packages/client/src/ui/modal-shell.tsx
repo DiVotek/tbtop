@@ -13,6 +13,7 @@
  */
 import { type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { cn } from "../lib/cn";
 import { Button } from "./button";
 import {
 	ResponsiveDialog,
@@ -66,7 +67,14 @@ export function ModalShell({
 }: ModalShellProps): ReactNode {
 	return (
 		<ResponsiveDialog open={open} onOpenChange={onOpenChange} onlyDialog={onlyDialog}>
-			<ResponsiveDialogContent className={SIZE_CLASS[size]} {...contentProps}>
+			{/* flex column (overrides the variant's grid) + min-h-0 on the body:
+			    without it the body row never shrinks below content height, the
+			    max-h on the container is ignored and tall dialogs (media picker)
+			    overflow the viewport instead of scrolling. */}
+			<ResponsiveDialogContent
+				className={cn("flex flex-col p-6", SIZE_CLASS[size])}
+				{...contentProps}
+			>
 				<ResponsiveDialogHeader>
 					<ResponsiveDialogTitle>{title}</ResponsiveDialogTitle>
 					{description && (
@@ -74,7 +82,9 @@ export function ModalShell({
 					)}
 				</ResponsiveDialogHeader>
 
-				<div className="flex flex-col gap-4 overflow-y-auto px-1 py-2">{children}</div>
+				<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2">
+					{children}
+				</div>
 
 				{footer && <ResponsiveDialogFooter>{footer}</ResponsiveDialogFooter>}
 			</ResponsiveDialogContent>

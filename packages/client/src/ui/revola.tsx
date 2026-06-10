@@ -149,7 +149,11 @@ export function ResponsiveDialogClose(props: ComponentProps<typeof DialogPrimiti
 	);
 }
 
-const responsiveDialogContentVariants = cva("fixed z-[9999] bg-background", {
+// z-50 matches the shared floating-layer scale (overlay, select/dropdown
+// popovers). Higher values bury portalled popovers opened from inside the
+// dialog — radix Select content (z-50) rendered behind the modal and looked
+// like it never opened.
+const responsiveDialogContentVariants = cva("fixed z-50 bg-background", {
 	variants: {
 		device: {
 			desktop:
