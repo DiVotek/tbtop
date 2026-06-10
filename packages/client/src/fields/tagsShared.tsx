@@ -17,9 +17,10 @@ interface ChipsInput {
 	value: string[];
 	onRemove: (v: string) => void;
 	labelFor: (v: string) => string;
+	disabled?: boolean;
 }
 
-export function Chips({ name, value, onRemove, labelFor }: ChipsInput) {
+export function Chips({ name, value, onRemove, labelFor, disabled }: ChipsInput) {
 	return (
 		<>
 			{value.map((v) => (
@@ -33,7 +34,8 @@ export function Chips({ name, value, onRemove, labelFor }: ChipsInput) {
 						type="button"
 						aria-label={`Remove ${labelFor(v)}`}
 						onClick={() => onRemove(v)}
-						className="text-muted-foreground hover:text-foreground"
+						disabled={disabled}
+						className="text-muted-foreground hover:text-foreground disabled:opacity-50"
 					>
 						×
 					</button>

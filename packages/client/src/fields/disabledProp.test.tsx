@@ -10,12 +10,14 @@ import { BooleanForm } from "./booleanField";
 import { CheckboxForm } from "./checkboxField";
 import { ColorpickerForm } from "./colorpickerField";
 import { DateForm, DateTimeForm, TimeForm } from "./dateField";
+import { KeyvalueForm } from "./keyvalueField";
 import { NumberForm } from "./numberField";
 import { PasswordForm } from "./passwordField";
 import { RadioForm } from "./radioField";
 import { RepeaterForm } from "./repeaterField";
 import { SelectForm } from "./selectField";
 import { SlugForm } from "./slugField";
+import { TagsForm } from "./tagsField";
 import { TextareaForm } from "./textareaField";
 import { TextForm } from "./textField";
 import { UploadForm } from "./uploadField";
@@ -183,5 +185,45 @@ describe("disabled threading: structured fields", () => {
 		);
 		const addBtn = getByRole("button", { name: "Add item" }) as HTMLButtonElement;
 		expect(addBtn.disabled).toBe(true);
+	});
+
+	test("TagsForm (open): input and chip-remove are disabled when disabled=true", () => {
+		const { container } = render(
+			<TagsForm name="tags" value={["a"]} onChange={noop} disabled />,
+		);
+		const input = container.querySelector("input") as HTMLInputElement;
+		expect(input.disabled).toBe(true);
+		const buttons = Array.from(container.querySelectorAll("button")) as HTMLButtonElement[];
+		expect(buttons.length).toBeGreaterThan(0);
+		expect(buttons.every((b) => b.disabled)).toBe(true);
+	});
+
+	test("TagsForm (closed): option buttons are disabled when disabled=true", () => {
+		const { container } = render(
+			<TagsForm
+				name="tags"
+				value={[]}
+				onChange={noop}
+				disabled
+				options={{ options: [{ value: "a", label: "A" }] }}
+			/>,
+		);
+		const buttons = Array.from(
+			container.querySelectorAll("button[role='option']"),
+		) as HTMLButtonElement[];
+		expect(buttons.length).toBeGreaterThan(0);
+		expect(buttons.every((b) => b.disabled)).toBe(true);
+	});
+
+	test("KeyvalueForm: inputs, remove and add-row buttons are disabled when disabled=true", () => {
+		const { container } = render(
+			<KeyvalueForm name="meta" value={{ a: "1" }} onChange={noop} disabled />,
+		);
+		const inputs = Array.from(container.querySelectorAll("input")) as HTMLInputElement[];
+		expect(inputs.length).toBeGreaterThan(0);
+		expect(inputs.every((i) => i.disabled)).toBe(true);
+		const buttons = Array.from(container.querySelectorAll("button")) as HTMLButtonElement[];
+		expect(buttons.length).toBeGreaterThan(0);
+		expect(buttons.every((b) => b.disabled)).toBe(true);
 	});
 });

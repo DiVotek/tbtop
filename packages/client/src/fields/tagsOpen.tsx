@@ -9,6 +9,7 @@ export function OpenTagsForm({
 	value,
 	onChange,
 	onBlur,
+	disabled,
 }: FieldFormProps<string[], TagsOptionsBag>) {
 	const t = useTranslation();
 	const current = Array.isArray(value) ? value : [];
@@ -40,10 +41,17 @@ export function OpenTagsForm({
 			className="flex flex-wrap items-center gap-2 rounded border border-input bg-background px-2 py-1"
 			data-testid={`tags-${name}`}
 		>
-			<Chips name={name} value={current} onRemove={remove} labelFor={(v) => v} />
+			<Chips
+				name={name}
+				value={current}
+				onRemove={remove}
+				labelFor={(v) => v}
+				disabled={disabled}
+			/>
 			<input
 				id={id ?? name}
 				value={input}
+				disabled={disabled}
 				onChange={(e) => setInput(e.target.value)}
 				onKeyDown={onKeyDown}
 				onBlur={onInputBlur}

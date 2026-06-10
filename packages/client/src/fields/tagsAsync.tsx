@@ -46,11 +46,13 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 					value={visible}
 					onRemove={remove}
 					labelFor={(v) => resolved.labels[v] ?? v}
+					disabled={props.disabled}
 				/>
 			</div>
 			<input
 				id={props.id ?? props.name}
 				value={search}
+				disabled={props.disabled}
 				onChange={(e) => setSearch(e.target.value)}
 				className="bg-transparent text-sm outline-none"
 				placeholder={t("field.search.placeholder")}
@@ -58,7 +60,13 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 			{searchState.kind === "loading" ? (
 				(opts.loading ?? <FormSkeleton />)
 			) : (
-				<AsyncSuggestions rows={rows} opts={opts} current={current} onPick={add} />
+				<AsyncSuggestions
+					rows={rows}
+					opts={opts}
+					current={current}
+					onPick={add}
+					disabled={props.disabled}
+				/>
 			)}
 		</fieldset>
 	);
@@ -69,9 +77,10 @@ interface SuggestionsInput {
 	opts: TagsOptionsBag;
 	current: string[];
 	onPick: (v: string) => void;
+	disabled?: boolean;
 }
 
-function AsyncSuggestions({ rows, opts, current, onPick }: SuggestionsInput) {
+function AsyncSuggestions({ rows, opts, current, onPick, disabled }: SuggestionsInput) {
 	return (
 		<div role="listbox" className="flex flex-wrap gap-2">
 			{rows.map((row) => {
@@ -84,7 +93,7 @@ function AsyncSuggestions({ rows, opts, current, onPick }: SuggestionsInput) {
 						type="button"
 						role="option"
 						aria-selected={selected}
-						disabled={selected}
+						disabled={selected || disabled}
 						onClick={() => onPick(v)}
 						className="rounded border border-input bg-background px-2 py-1 text-xs disabled:opacity-50"
 					>

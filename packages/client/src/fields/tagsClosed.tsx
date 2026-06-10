@@ -7,6 +7,7 @@ export function ClosedTagsForm({
 	onChange,
 	onBlur,
 	options,
+	disabled,
 }: FieldFormProps<string[], TagsOptionsBag>) {
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
@@ -30,11 +31,12 @@ export function ClosedTagsForm({
 						type="button"
 						role="option"
 						aria-selected={selected}
+						disabled={disabled}
 						onClick={() => toggle(opt.value)}
 						className={
 							selected
-								? "rounded border border-primary bg-primary px-2 py-1 text-primary-foreground text-xs"
-								: "rounded border border-input bg-background px-2 py-1 text-xs"
+								? "rounded border border-primary bg-primary px-2 py-1 text-primary-foreground text-xs disabled:opacity-50"
+								: "rounded border border-input bg-background px-2 py-1 text-xs disabled:opacity-50"
 						}
 					>
 						{opt.label}

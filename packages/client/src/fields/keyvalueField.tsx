@@ -24,6 +24,7 @@ export function KeyvalueForm({
 	name,
 	value,
 	onChange,
+	disabled,
 }: FieldFormProps<Record<string, string>>) {
 	const [rows, setRows] = useState<Row[]>(() => rowsFromValue(value));
 	const lastEmitted = useRef<Record<string, string> | null | undefined>(value);
@@ -73,12 +74,14 @@ export function KeyvalueForm({
 							type="text"
 							aria-label={t("field.keyvalue.key")}
 							value={row.key}
+							disabled={disabled}
 							onChange={(e) => updateKey(row.id, e.target.value)}
 						/>
 						<Input
 							type="text"
 							aria-label={t("field.keyvalue.value")}
 							value={row.value}
+							disabled={disabled}
 							onChange={(e) => updateValue(row.id, e.target.value)}
 						/>
 						<Button
@@ -86,6 +89,7 @@ export function KeyvalueForm({
 							variant="ghost"
 							size="sm"
 							aria-label={t("field.keyvalue.remove")}
+							disabled={disabled}
 							onClick={() => removeRow(row.id)}
 							className="text-destructive hover:text-destructive"
 						>
@@ -101,6 +105,7 @@ export function KeyvalueForm({
 				type="button"
 				variant="outline"
 				size="sm"
+				disabled={disabled}
 				onClick={addRow}
 				className="self-start"
 			>
