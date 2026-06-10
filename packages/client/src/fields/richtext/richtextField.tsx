@@ -13,12 +13,14 @@ interface RichtextOptionsBag {
 export function RichtextForm({
 	value,
 	onChange,
+	disabled,
 	options,
 }: FieldFormProps<RichtextValue, RichtextOptionsBag>) {
 	return (
 		<RichtextEditor
 			initialState={value ?? null}
 			placeholder={options?.placeholder}
+			disabled={disabled}
 			onChange={(next) => {
 				const text = lexicalToPlainText(next);
 				onChange(text ? next : null);

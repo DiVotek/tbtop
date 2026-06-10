@@ -24,7 +24,7 @@ export function DateTimeCell({ value }: FieldCellProps<string>) {
 	return <time dateTime={date.toISOString()}>{date.toLocaleString()}</time>;
 }
 
-export function DateForm({ id, name, value, onChange }: FieldFormProps<string>) {
+export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
 	const isoDate = toIsoDate(value);
 	useNormalizedInitial(value, isoDate || null, onChange);
 	return (
@@ -34,11 +34,12 @@ export function DateForm({ id, name, value, onChange }: FieldFormProps<string>) 
 			type="date"
 			defaultValue={isoDate}
 			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
+			disabled={disabled}
 		/>
 	);
 }
 
-export function DateTimeForm({ id, name, value, onChange }: FieldFormProps<string>) {
+export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
 	const local = toLocalDateTime(value);
 	useNormalizedInitial(value, localToIso(local), onChange);
 	return (
@@ -48,11 +49,12 @@ export function DateTimeForm({ id, name, value, onChange }: FieldFormProps<strin
 			type="datetime-local"
 			defaultValue={local}
 			onChange={(e) => onChange(localToIso(e.target.value))}
+			disabled={disabled}
 		/>
 	);
 }
 
-export function TimeForm({ id, name, value, onChange }: FieldFormProps<string>) {
+export function TimeForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
 	const time = toTimeString(value);
 	useNormalizedInitial(value, time || null, onChange);
 	return (
@@ -62,6 +64,7 @@ export function TimeForm({ id, name, value, onChange }: FieldFormProps<string>) 
 			type="time"
 			defaultValue={time}
 			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
+			disabled={disabled}
 		/>
 	);
 }

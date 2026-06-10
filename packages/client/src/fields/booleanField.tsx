@@ -8,7 +8,14 @@ export function BooleanCell({ value }: FieldCellProps<boolean>) {
 	return <span>{value ? "✓" : "—"}</span>;
 }
 
-export function BooleanForm({ id, name, value, onChange, onBlur }: FieldFormProps<boolean>) {
+export function BooleanForm({
+	id,
+	name,
+	value,
+	onChange,
+	onBlur,
+	disabled,
+}: FieldFormProps<boolean>) {
 	return (
 		<Switch
 			id={id ?? name}
@@ -16,6 +23,7 @@ export function BooleanForm({ id, name, value, onChange, onBlur }: FieldFormProp
 			checked={value === true}
 			onCheckedChange={(next) => onChange(next)}
 			onBlur={onBlur}
+			disabled={disabled}
 		/>
 	);
 }

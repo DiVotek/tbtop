@@ -25,6 +25,7 @@ function StaticMultiSelect({
 	value,
 	onChange,
 	onBlur,
+	disabled,
 	options,
 }: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const choices = options?.options ?? [];
@@ -47,6 +48,7 @@ function StaticMultiSelect({
 					key={opt.value}
 					label={opt.label}
 					selected={current.includes(opt.value)}
+					disabled={disabled}
 					onClick={() => toggle(opt.value)}
 				/>
 			))}
@@ -109,15 +111,17 @@ function AsyncMultiSelect(props: FieldFormProps<SelectValueType, SelectOptionsBa
 interface OptionButtonInput {
 	label: string;
 	selected: boolean;
+	disabled?: boolean;
 	onClick: () => void;
 }
 
-function OptionButton({ label, selected, onClick }: OptionButtonInput) {
+function OptionButton({ label, selected, disabled, onClick }: OptionButtonInput) {
 	return (
 		<button
 			type="button"
 			role="option"
 			aria-selected={selected}
+			disabled={disabled}
 			onClick={onClick}
 			className={
 				selected

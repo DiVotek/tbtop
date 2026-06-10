@@ -6,6 +6,13 @@ function ctx(data: Record<string, unknown> = {}): ConditionContext {
 	return { record: undefined, data, user: null };
 }
 
+function scopedCtx(
+	rootData: Record<string, unknown>,
+	currentData: Record<string, unknown>,
+): ConditionContext {
+	return { record: undefined, data: currentData, user: null, root: rootData };
+}
+
 describe("ConditionCompiler: field ops", () => {
 	it("ConditionCompiler: eq returns true when values match as-is", () => {
 		const fn = compileCondition({ op: "eq", field: "type", value: "video" });
@@ -200,5 +207,35 @@ describe("ConditionCompiler: fail-open cases", () => {
 		} finally {
 			spy.mockRestore();
 		}
+	});
+});
+
+describe("ConditionCompiler: scope chain", () => {
+	it("ConditionCompiler: bare field resolves against current scope", () => {
+		const fn = compileCondition({ op: "eq", field: "type", value: "video" });
+		// current scope has type=video, root scope has type=text
+		expect(fn(scopedCtx({ type: "text" }, { type: "video" }))).toBe(true);
+	});
+
+	it("ConditionCompiler: $root.-prefixed field resolves against root scope", () => {
+		const fn = compileCondition({ op: "eq", field: "$root.status", value: "draft" });
+		// root scope has status=draft; current scope does not
+		expect(fn(scopedCtx({ status: "draft" }, { type: "video" }))).toBe(true);
+	});
+
+	it("ConditionCompiler: $root. field does not see current scope", () => {
+		const fn = compileCondition({ op: "eq", field: "$root.type", value: "video" });
+		// only current scope has type=video; root does not
+		expect(fn(scopedCtx({ status: "draft" }, { type: "video" }))).toBe(false);
+	});
+
+	it("ConditionCompiler: single-scope ctx (no root) resolves bare field from data (slice-A regression)", () => {
+		const fn = compileCondition({ op: "eq", field: "status", value: "draft" });
+		expect(fn(ctx({ status: "draft" }))).toBe(true);
+	});
+
+	it("ConditionCompiler: $root. on single-scope ctx falls back to data", () => {
+		const fn = compileCondition({ op: "eq", field: "$root.status", value: "draft" });
+		expect(fn(ctx({ status: "draft" }))).toBe(true);
 	});
 });

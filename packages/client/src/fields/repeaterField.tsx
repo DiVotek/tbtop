@@ -30,6 +30,7 @@ export function RepeaterForm({
 	name,
 	value,
 	onChange,
+	disabled,
 	options,
 }: FieldFormProps<Item[], RepeaterOptions>) {
 	const t = useTranslation();
@@ -54,6 +55,7 @@ export function RepeaterForm({
 					itemCount={items.length}
 					subFields={subFields}
 					minItems={minItems}
+					disabled={disabled}
 					onSubFieldChange={(subName, next) => {
 						const nextItems = items.map((it, i) =>
 							i === index ? { ...it, [subName]: next } : it,
@@ -73,7 +75,7 @@ export function RepeaterForm({
 				type="button"
 				variant="outline"
 				size="sm"
-				disabled={maxItems !== undefined && items.length >= maxItems}
+				disabled={disabled || (maxItems !== undefined && items.length >= maxItems)}
 				onClick={() => emit(addItem(items, subFields), (k) => [...k, crypto.randomUUID()])}
 				className="self-start"
 			>

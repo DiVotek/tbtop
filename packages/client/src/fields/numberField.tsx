@@ -8,7 +8,7 @@ export function NumberCell({ value }: FieldCellProps<number>) {
 	return <span>{String(value)}</span>;
 }
 
-export function NumberForm({ id, name, value, onChange }: FieldFormProps<number>) {
+export function NumberForm({ id, name, value, onChange, disabled }: FieldFormProps<number>) {
 	return (
 		<Input
 			id={id ?? name}
@@ -16,6 +16,7 @@ export function NumberForm({ id, name, value, onChange }: FieldFormProps<number>
 			type="number"
 			defaultValue={typeof value === "number" ? String(value) : ""}
 			onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+			disabled={disabled}
 		/>
 	);
 }

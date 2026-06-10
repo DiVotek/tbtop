@@ -21,6 +21,7 @@ export function TextareaForm({
 	value,
 	onChange,
 	onBlur,
+	disabled,
 	options,
 }: FieldFormProps<string, TextareaOptionsBag>) {
 	const className = options?.autoresize ? undefined : "field-sizing-fixed";
@@ -34,6 +35,7 @@ export function TextareaForm({
 			value={typeof value === "string" ? value : ""}
 			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
 			onBlur={onBlur}
+			disabled={disabled}
 		/>
 	);
 }

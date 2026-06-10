@@ -17,6 +17,13 @@ export interface ConditionContext {
 	record: Record<string, unknown> | undefined;
 	data: Record<string, unknown>;
 	user: unknown;
+	/**
+	 * Root scope for $root.-prefixed field resolution.
+	 * Absent on root-level forms (treated as data). Present inside repeater
+	 * rows where data = item and root = form-level data.
+	 * Designed to support future $parent. multi-level nesting without wire changes.
+	 */
+	root?: Record<string, unknown>;
 }
 
 export type ConditionFn = (ctx: ConditionContext) => boolean;

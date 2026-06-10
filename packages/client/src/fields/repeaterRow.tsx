@@ -1,8 +1,12 @@
 import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { renderDescriptor } from "../render/renderDescriptor";
+import { useNearestFormController } from "../structure/formContext";
+import { isNodeDisabled, isNodeHidden } from "../structure/meta";
 import type { StructureNode } from "../structure/structure";
+import type { ConditionContext } from "../structure/types";
 import { Button } from "../ui/button";
+import { Label } from "../ui/label";
 
 type Item = Record<string, unknown>;
 
@@ -12,6 +16,7 @@ interface RepeaterRowProps {
 	itemCount: number;
 	subFields: StructureNode[];
 	minItems: number;
+	disabled?: boolean;
 	onSubFieldChange: (subName: string, next: unknown) => void;
 	onRemove: () => void;
 	onMoveUp: () => void;
@@ -20,7 +25,9 @@ interface RepeaterRowProps {
 
 export function RepeaterRow(props: RepeaterRowProps) {
 	const t = useTranslation();
-	const { item, index, itemCount, subFields, minItems } = props;
+	const ctrl = useNearestFormController();
+	const rootData = ctrl?.data ?? {};
+	const { item, index, itemCount, subFields, minItems, disabled } = props;
 	return (
 		<div className="flex flex-col gap-2 rounded-md border p-3" data-repeater-item={index}>
 			<div className="flex items-center justify-between">
@@ -31,7 +38,7 @@ export function RepeaterRow(props: RepeaterRowProps) {
 						variant="ghost"
 						size="xs"
 						aria-label={t("field.repeater.move_up")}
-						disabled={index === 0}
+						disabled={disabled || index === 0}
 						onClick={props.onMoveUp}
 					>
 						↑
@@ -41,7 +48,7 @@ export function RepeaterRow(props: RepeaterRowProps) {
 						variant="ghost"
 						size="xs"
 						aria-label={t("field.repeater.move_down")}
-						disabled={index === itemCount - 1}
+						disabled={disabled || index === itemCount - 1}
 						onClick={props.onMoveDown}
 					>
 						↓
@@ -51,7 +58,7 @@ export function RepeaterRow(props: RepeaterRowProps) {
 						variant="ghost"
 						size="xs"
 						aria-label={t("field.repeater.remove")}
-						disabled={itemCount <= minItems}
+						disabled={disabled || itemCount <= minItems}
 						onClick={props.onRemove}
 						className="text-destructive hover:text-destructive"
 					>
@@ -59,17 +66,24 @@ export function RepeaterRow(props: RepeaterRowProps) {
 					</Button>
 				</div>
 			</div>
-			{subFields.map((node, sIdx) =>
-				renderSubField({
+			{subFields.map((node, sIdx) => {
+				const condCtx = makeScopedCondCtx(item, rootData);
+				return renderSubField({
 					node,
 					nodeKey: `${index}.${node.name ?? sIdx}`,
 					scopedId: `${index}-${node.name ?? sIdx}`,
 					itemValue: item,
+					condCtx,
+					parentDisabled: disabled ?? false,
 					onChange: (next) => props.onSubFieldChange(node.name ?? "", next),
-				}),
-			)}
+				});
+			})}
 		</div>
 	);
+}
+
+function makeScopedCondCtx(itemData: Item, rootData: Record<string, unknown>): ConditionContext {
+	return { record: undefined, data: itemData, user: null, root: rootData };
 }
 
 interface RenderSubFieldInput {
@@ -77,11 +91,17 @@ interface RenderSubFieldInput {
 	nodeKey: string;
 	scopedId: string;
 	itemValue: Item;
+	condCtx: ConditionContext;
+	parentDisabled: boolean;
 	onChange: (next: unknown) => void;
 }
 
 function renderSubField(input: RenderSubFieldInput) {
-	const { node, nodeKey, scopedId, itemValue, onChange } = input;
+	const { node, nodeKey, scopedId, itemValue, condCtx, parentDisabled, onChange } = input;
+	if (isNodeHidden(node.meta, condCtx)) {
+		return null;
+	}
+	const fieldDisabled = parentDisabled || isNodeDisabled(node.meta, condCtx);
 	const descriptor = getBlockDescriptor(node.kind);
 	if (!descriptor || !node.name) {
 		return null;
@@ -97,7 +117,12 @@ function renderSubField(input: RenderSubFieldInput) {
 		meta: { ...node.meta, id: scopedId },
 		ctx: {
 			surface: "form",
-			binding: { name: subName, value: itemValue[subName] ?? null, onChange },
+			binding: {
+				name: subName,
+				value: itemValue[subName] ?? null,
+				onChange,
+				disabled: fieldDisabled,
+			},
 		},
 		children: undefined,
 		renderChild: () => null,
@@ -105,10 +130,10 @@ function renderSubField(input: RenderSubFieldInput) {
 	return (
 		<div key={nodeKey} className="flex flex-col gap-1.5">
 			{label && (
-				<label className="text-sm font-medium" htmlFor={scopedId}>
+				<Label htmlFor={scopedId}>
 					{label}
 					{required && <span className="text-destructive">*</span>}
-				</label>
+				</Label>
 			)}
 			{control}
 		</div>

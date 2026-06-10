@@ -94,14 +94,26 @@ function evaluate(ast: ConditionAst, ctx: ConditionContext): boolean {
 
 // ---------------------------------------------------------------------------
 // Field resolution: flat key first, then dotted-path traversal
+// $root. prefix → resolve against root scope (falls back to data when absent)
 // ---------------------------------------------------------------------------
 
+const ROOT_PREFIX = "$root.";
+
 function resolve(ctx: ConditionContext, field: string): unknown {
-	if (field in ctx.data) {
-		return ctx.data[field];
+	if (field.startsWith(ROOT_PREFIX)) {
+		const stripped = field.slice(ROOT_PREFIX.length);
+		const scope = ctx.root ?? ctx.data;
+		return resolveInScope(scope, stripped);
+	}
+	return resolveInScope(ctx.data, field);
+}
+
+function resolveInScope(scope: Record<string, unknown>, field: string): unknown {
+	if (field in scope) {
+		return scope[field];
 	}
 	const parts = field.split(".");
-	let current: unknown = ctx.data;
+	let current: unknown = scope;
 	for (const part of parts) {
 		if (current === null || current === undefined || typeof current !== "object") {
 			return undefined;

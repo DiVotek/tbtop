@@ -25,6 +25,7 @@ export function RadioForm({
 	value,
 	onChange,
 	onBlur,
+	disabled,
 	options,
 }: FieldFormProps<string, RadioOptionsBag>) {
 	const choices = options?.options ?? [];
@@ -35,6 +36,7 @@ export function RadioForm({
 			value={typeof value === "string" ? value : ""}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
+			disabled={disabled}
 			data-testid={`radio-${name}`}
 		>
 			{choices.map((opt) => {

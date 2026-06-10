@@ -31,6 +31,7 @@ export function ColorpickerForm({
 	name,
 	value,
 	onChange,
+	disabled,
 	options,
 }: FieldFormProps<string, ColorpickerOptionsBag>) {
 	const current = typeof value === "string" ? value : "";
@@ -38,7 +39,10 @@ export function ColorpickerForm({
 	const palette = options?.palette ?? [];
 	return (
 		<div data-field={name} className="flex flex-col gap-3">
-			<Picker color={current} onChange={(next) => onChange(next === "" ? null : next)} />
+			<Picker
+				color={current}
+				onChange={(next) => (disabled ? undefined : onChange(next === "" ? null : next))}
+			/>
 			{palette.length > 0 ? (
 				<div role="listbox" aria-label="Color palette" className="flex flex-wrap gap-1">
 					{palette.map((swatch) => (
@@ -48,6 +52,7 @@ export function ColorpickerForm({
 							role="option"
 							aria-selected={current === swatch}
 							aria-label={swatch}
+							disabled={disabled}
 							onClick={() => onChange(swatch)}
 							className="h-6 w-6 rounded border border-border"
 							style={{ backgroundColor: swatch }}

@@ -45,6 +45,13 @@ trait PostFormFields
                     ->set('fields', [
                         $s->text('heading')->label('Heading')->required(),
                         $s->textarea('body')->label('Body'),
+                        $s->select('type')->label('Type')
+                            ->set('options', [
+                                ['value' => 'text', 'label' => 'Text'],
+                                ['value' => 'link', 'label' => 'Link'],
+                            ]),
+                        $s->text('url')->label('URL')
+                            ->hiddenIf('type', '!=', 'link'),
                     ]),
             ]),
         ];

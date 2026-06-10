@@ -8,7 +8,14 @@ export function CheckboxCell({ value }: FieldCellProps<boolean>) {
 	return <span>{value ? "✓" : "—"}</span>;
 }
 
-export function CheckboxForm({ id, name, value, onChange, onBlur }: FieldFormProps<boolean>) {
+export function CheckboxForm({
+	id,
+	name,
+	value,
+	onChange,
+	onBlur,
+	disabled,
+}: FieldFormProps<boolean>) {
 	return (
 		<Checkbox
 			id={id ?? name}
@@ -16,6 +23,7 @@ export function CheckboxForm({ id, name, value, onChange, onBlur }: FieldFormPro
 			checked={value === true}
 			onCheckedChange={(next) => onChange(next === true)}
 			onBlur={onBlur}
+			disabled={disabled}
 		/>
 	);
 }

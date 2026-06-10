@@ -30,6 +30,7 @@ export function SlugForm({
 	name,
 	value,
 	onChange,
+	disabled,
 	options,
 }: FieldFormProps<string, SlugOptionsBag>) {
 	const fromField = options?.fromField ?? "";
@@ -79,6 +80,7 @@ export function SlugForm({
 					type="text"
 					value={currentSlug}
 					readOnly={!isEditing}
+					disabled={disabled}
 					onChange={(e) => handleInputChange(e.target.value)}
 					onFocus={() => setIsEditing(true)}
 					onBlur={() => {
@@ -90,6 +92,7 @@ export function SlugForm({
 				/>
 				<button
 					type="button"
+					disabled={disabled}
 					onClick={handleClear}
 					className="rounded border border-input px-2 py-1.5 text-sm"
 				>
@@ -97,6 +100,7 @@ export function SlugForm({
 				</button>
 				<button
 					type="button"
+					disabled={disabled}
 					onClick={handleGenerate}
 					className="rounded border border-input px-2 py-1.5 text-sm"
 				>

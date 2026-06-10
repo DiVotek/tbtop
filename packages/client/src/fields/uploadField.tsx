@@ -30,6 +30,7 @@ export function UploadForm({
 	name,
 	value,
 	onChange,
+	disabled,
 	options,
 }: FieldFormProps<UploadValue, UploadOptionsBag>) {
 	const t = useTranslation();
@@ -83,6 +84,7 @@ export function UploadForm({
 			name={name}
 			accept={options?.accept}
 			busy={busy}
+			disabled={disabled}
 			error={error}
 			onFiles={onFiles}
 		/>
@@ -120,11 +122,12 @@ interface PickerProps {
 	name: string;
 	accept?: string;
 	busy: boolean;
+	disabled?: boolean;
 	error: string | null;
 	onFiles: (files: FileList | null) => void;
 }
 
-function UploadPicker({ id, name, accept, busy, error, onFiles }: PickerProps) {
+function UploadPicker({ id, name, accept, busy, disabled, error, onFiles }: PickerProps) {
 	const t = useTranslation();
 	return (
 		<div className="space-y-2">
@@ -140,7 +143,7 @@ function UploadPicker({ id, name, accept, busy, error, onFiles }: PickerProps) {
 					type="file"
 					accept={accept}
 					className="sr-only"
-					disabled={busy}
+					disabled={busy || disabled}
 					onChange={(e) => onFiles(e.target.files)}
 				/>
 			</label>

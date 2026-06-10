@@ -47,6 +47,7 @@ function StaticSingleSelect({
 	value,
 	onChange,
 	onBlur,
+	disabled,
 	options,
 }: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const t = useTranslation();
@@ -55,6 +56,7 @@ function StaticSingleSelect({
 		<Select
 			value={typeof value === "string" ? value : ""}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
+			disabled={disabled}
 		>
 			<SelectTrigger
 				id={id ?? name}
@@ -93,6 +95,7 @@ function AsyncSingleSelect(props: FieldFormProps<SelectValueType, SelectOptionsB
 		<Select
 			value={value ?? ""}
 			onValueChange={(next) => props.onChange(next === "" ? null : next)}
+			disabled={props.disabled}
 		>
 			<SelectTrigger
 				id={props.id ?? props.name}

@@ -78,6 +78,10 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 			return { ...t, body: walk(t.body, ctx) };
 		});
 	}
+	// Walk repeater sub-field nodes so their meta (hiddenIf/disabledIf) is compiled.
+	if (Array.isArray(next.fields)) {
+		next.fields = next.fields.map((f) => walk(f as StructureNode, ctx));
+	}
 	return next;
 }
 

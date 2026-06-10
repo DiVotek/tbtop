@@ -21,6 +21,7 @@ import { Toolbar } from "./toolbar";
 interface RichtextEditorProps {
 	initialState: SerializedEditorState | string | null;
 	placeholder?: string;
+	disabled?: boolean;
 	onChange: (state: SerializedEditorState) => void;
 }
 
@@ -78,7 +79,12 @@ function resolveInitialEditorState(
 	return JSON.stringify(value);
 }
 
-export function RichtextEditor({ initialState, placeholder, onChange }: RichtextEditorProps) {
+export function RichtextEditor({
+	initialState,
+	placeholder,
+	disabled,
+	onChange,
+}: RichtextEditorProps) {
 	const t = useTranslation();
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const mountState = useRef(initialState);
@@ -96,6 +102,7 @@ export function RichtextEditor({ initialState, placeholder, onChange }: Richtext
 	const initialConfig = useMemo(
 		() => ({
 			namespace: "TabletopRichtextEditor",
+			editable: !disabled,
 			nodes: NODES,
 			theme: {
 				root: "tabletop-editor",
