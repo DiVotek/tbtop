@@ -7,7 +7,7 @@ import { executeEffects, readEffects } from "./effects";
 type Bag = Record<string, unknown>;
 type Handler = (ctx: ClientActionContext) => Promise<void>;
 
-export interface ActionMaterializeCtx {
+interface ActionMaterializeCtx {
 	basePath: string;
 	formName?: string;
 	materializeNode: (node: StructureNode) => StructureNode;

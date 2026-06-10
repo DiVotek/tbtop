@@ -7,7 +7,7 @@ export type PageParams = Record<string, string>;
 // useParams() with the react-router signature.
 export const PageParamsContext = createContext<PageParams>({});
 
-export interface PageParamsProviderProps {
+interface PageParamsProviderProps {
 	params: PageParams;
 	children: ReactNode;
 }

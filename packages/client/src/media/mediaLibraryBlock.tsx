@@ -13,7 +13,7 @@ import type { MediaItem } from "./types";
 import { useMediaFolders, useMediaItems } from "./useMediaApi";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface MediaLibraryOptions {}
+interface MediaLibraryOptions {}
 
 export function MediaLibraryBlock({
 	options: _options,

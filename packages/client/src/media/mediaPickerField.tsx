@@ -23,7 +23,7 @@ import { fetchMediaItem, isImageMime, useMediaFolders, useMediaItems } from "./u
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
-export interface MediaPickerOptions {
+interface MediaPickerOptions {
 	multiple?: boolean;
 	/** client-side MIME filter, e.g. ['image/*', 'application/pdf'] */
 	accept?: string[];

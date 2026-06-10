@@ -386,7 +386,7 @@ function isSelected(selectedIds: string[], row: Record<string, unknown>): boolea
 	return id ? selectedIds.includes(id) : false;
 }
 
-export function readId(row: Record<string, unknown>): string | undefined {
+function readId(row: Record<string, unknown>): string | undefined {
 	const id = row.id;
 	if (typeof id === "string") return id;
 	if (typeof id === "number" && Number.isFinite(id)) return String(id);

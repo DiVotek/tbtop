@@ -1,4 +1,4 @@
-export interface ParsedKeybinding {
+interface ParsedKeybinding {
 	key: string;
 	cmd: boolean;
 	ctrl: boolean;

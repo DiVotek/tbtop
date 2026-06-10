@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useDebounce } from "../lib/useDebounce";
 import type { RenderProps } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { invokeBlock } from "../render/renderDescriptor";
@@ -36,7 +37,7 @@ export interface ChartBlockOptions<TPoint extends ChartPoint = ChartPoint> {
 	error?: ReactNode | ((err: Error) => ReactNode);
 }
 
-export type ChartRenderer = (data: ChartPoint[], options: ChartBlockOptions) => ReactNode;
+type ChartRenderer = (data: ChartPoint[], options: ChartBlockOptions) => ReactNode;
 
 const DEBOUNCE_KINDS = new Set(["text", "textarea", "number", "password"]);
 
@@ -160,30 +161,4 @@ function ParamControl({ node, value, onChange }: ParamControlProps) {
 			})}
 		</>
 	);
-}
-
-function useDebounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number): T {
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const fnRef = useRef(fn);
-	fnRef.current = fn;
-
-	useEffect(() => {
-		return () => {
-			if (timerRef.current !== null) {
-				clearTimeout(timerRef.current);
-			}
-		};
-	}, []);
-
-	return useCallback(
-		(...args: Parameters<T>) => {
-			if (timerRef.current !== null) {
-				clearTimeout(timerRef.current);
-			}
-			timerRef.current = setTimeout(() => {
-				fnRef.current(...args);
-			}, ms);
-		},
-		[ms],
-	) as T;
 }

@@ -15,7 +15,7 @@ export interface AsyncMultiOptionsBag {
 	optionValue?: (row: unknown) => string;
 }
 
-export type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: Record<string, string> };
+type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: Record<string, string> };
 
 const ID_SEPARATOR = "";
 

@@ -2,8 +2,9 @@
  * TableToolbar — search input, filter panel, column visibility dropdown.
  * Extracted from tableBlock.tsx.
  */
-import { type ReactNode, useCallback, useRef } from "react";
+import { type ReactNode, useCallback } from "react";
 import { useTranslation } from "../../i18n/i18n";
+import { useDebounce } from "../../lib/useDebounce";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { Button } from "../../ui/button";
@@ -26,7 +27,7 @@ import type { ListQueryParams, StructureNode, TableColumn } from "../types";
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
-export interface TableToolbarProps {
+interface TableToolbarProps {
 	hasSearch: boolean;
 	hasFilters: boolean;
 	filtersIn: "modal" | "inline";
@@ -56,33 +57,26 @@ export function TableToolbar(props: TableToolbarProps) {
 	} = props;
 	const t = useTranslation();
 
-	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	const handleSearchChange = useCallback(
-		(value: string) => {
-			if (searchTimerRef.current) {
-				clearTimeout(searchTimerRef.current);
-			}
-			searchTimerRef.current = setTimeout(() => {
+	const handleSearchChange = useDebounce(
+		useCallback(
+			(value: string) => {
 				onChangeParams({ search: value || undefined, page: 1 });
-			}, 300);
-		},
-		[onChangeParams],
+			},
+			[onChangeParams],
+		),
+		300,
 	);
 
-	const handleFilterChange = useCallback(
-		(name: string, value: unknown) => {
-			const next = { ...filterValues, [name]: value };
-			setFilterValues(next);
-			if (filterTimerRef.current) {
-				clearTimeout(filterTimerRef.current);
-			}
-			filterTimerRef.current = setTimeout(() => {
+	const handleFilterChange = useDebounce(
+		useCallback(
+			(name: string, value: unknown) => {
+				const next = { ...filterValues, [name]: value };
+				setFilterValues(next);
 				onChangeParams({ filters: next, page: 1 });
-			}, 300);
-		},
-		[filterValues, setFilterValues, onChangeParams],
+			},
+			[filterValues, setFilterValues, onChangeParams],
+		),
+		300,
 	);
 
 	const handleReset = useCallback(() => {

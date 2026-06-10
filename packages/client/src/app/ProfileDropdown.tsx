@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 
-export type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark" | "system";
 
 const THEME_COOKIE = "tbtop_theme";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -28,7 +28,7 @@ function applyTheme(theme: Theme): void {
 	document.documentElement.classList.toggle("dark", isDark);
 }
 
-export interface ProfileDropdownUser {
+interface ProfileDropdownUser {
 	name?: string;
 	email?: string;
 }

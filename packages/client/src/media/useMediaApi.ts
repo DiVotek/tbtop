@@ -109,7 +109,7 @@ export function useMediaFolders(): {
 
 // ─── API helpers (non-hook) ────────────────────────────────────────────────────
 
-export interface UploadItemInput {
+interface UploadItemInput {
 	file: File;
 	folderId: string | null;
 }
@@ -126,7 +126,7 @@ export async function uploadMediaItem(
 	return (await client.upload("/media/upload", fd)) as MediaItem;
 }
 
-export interface ImportUrlInput {
+interface ImportUrlInput {
 	url: string;
 	name?: string;
 	folderId: string | null;
@@ -142,7 +142,7 @@ export async function importMediaUrl(
 	return (await client.post("/media/import-url", body)) as MediaItem;
 }
 
-export interface PatchItemInput {
+interface PatchItemInput {
 	name?: string;
 	alt?: string;
 	folderId?: string | null;
@@ -221,12 +221,4 @@ export function formatBytes(bytes: number): string {
 
 export function isImageMime(mime: string): boolean {
 	return mime.startsWith("image/");
-}
-
-export function mimeIcon(mime: string): string {
-	if (mime.startsWith("image/")) return "image";
-	if (mime.startsWith("video/")) return "video";
-	if (mime.startsWith("audio/")) return "audio";
-	if (mime === "application/pdf") return "file-text";
-	return "file";
 }

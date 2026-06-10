@@ -3,7 +3,7 @@ import type { AuthUser } from "../structure/types";
 
 const AuthUserContext = createContext<AuthUser | null>(null);
 
-export interface AuthUserProviderProps {
+interface AuthUserProviderProps {
 	user: AuthUser | null;
 	children: ReactNode;
 }

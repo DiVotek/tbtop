@@ -10,7 +10,7 @@ export interface ServerEffect {
 	form?: string;
 }
 
-export type EffectContext = Pick<ClientActionContext, "notify" | "table" | "form" | "modal">;
+type EffectContext = Pick<ClientActionContext, "notify" | "table" | "form" | "modal">;
 
 /**
  * Executes the closed server-effect vocabulary. A named refreshTable

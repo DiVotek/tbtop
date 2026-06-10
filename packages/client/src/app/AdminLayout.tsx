@@ -8,7 +8,7 @@ interface NavItem {
 	href: string;
 }
 
-export interface NavGroup {
+interface NavGroup {
 	group: string;
 	items: NavItem[];
 }
@@ -24,7 +24,7 @@ export interface AdminLayoutSlotProps {
 	user: { name?: string; email?: string } | null;
 }
 
-export interface AdminLayoutSlots {
+interface AdminLayoutSlots {
 	header?: (props: AdminLayoutSlotProps) => ReactNode;
 	sidebar?: (props: AdminLayoutSlotProps) => ReactNode;
 	footer?: (props: AdminLayoutSlotProps) => ReactNode;
@@ -36,7 +36,7 @@ interface AdminLayoutProps {
 	slots?: AdminLayoutSlots;
 }
 
-export interface AdminLayoutShellProps {
+interface AdminLayoutShellProps {
 	nav: NavGroup[];
 	user: { name?: string; email?: string } | null;
 	currentUrl: string;

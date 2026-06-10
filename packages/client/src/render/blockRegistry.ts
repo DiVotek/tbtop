@@ -40,7 +40,7 @@ export interface BlockDescriptor<TKind extends string = string, TOptions = unkno
 // The heterogeneous store. `render` is contravariant in TOptions, so no
 // generic BlockDescriptor is assignable to a shared one — the type-erased
 // existential. We close TOptions at registration and cast once, here.
-export type ErasedBlock = BlockDescriptor<string, unknown>;
+type ErasedBlock = BlockDescriptor<string, unknown>;
 
 const registry = new Map<string, ErasedBlock>();
 const warnedKinds = new Set<string>();

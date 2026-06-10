@@ -7,14 +7,14 @@ export interface AsyncBlock {
 	error?: ReactNode | ((err: Error) => ReactNode);
 }
 
-export interface AsyncSingleOptionsBlock<TRow, TValue = unknown> extends AsyncBlock {
+interface AsyncSingleOptionsBlock<TRow, TValue = unknown> extends AsyncBlock {
 	query: (ctx: ClientActionContext, search: string) => Promise<TRow[]>;
 	optionLabel: (row: TRow) => string;
 	optionValue: (row: TRow) => TValue;
 	onLoad?: (ctx: ClientActionContext, value: TValue) => Promise<TRow>;
 }
 
-export interface AsyncMultiOptionsBlock<TRow, TValue = unknown> extends AsyncBlock {
+interface AsyncMultiOptionsBlock<TRow, TValue = unknown> extends AsyncBlock {
 	query: (ctx: ClientActionContext, search: string) => Promise<TRow[]>;
 	optionLabel: (row: TRow) => string;
 	optionValue: (row: TRow) => TValue;

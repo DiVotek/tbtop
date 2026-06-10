@@ -213,7 +213,7 @@ const PLACEHOLDER_RE = /\{([^}]+)\}/g;
  * - Has placeholders + no row context → warn + return null.
  * - Has placeholders + row context, missing key → warn + return null.
  */
-export function interpolateTemplate(
+function interpolateTemplate(
 	href: string,
 	row: Record<string, unknown> | null,
 	actionName: string,

@@ -10,7 +10,7 @@ interface UseTableControllerInput {
 	onRefresh: () => void;
 }
 
-export interface TableControllerInternal extends TableController {
+interface TableControllerInternal extends TableController {
 	toggleSelection: (id: string) => void;
 	selectAll: (ids: string[]) => void;
 	clearSelection: () => void;

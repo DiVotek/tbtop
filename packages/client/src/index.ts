@@ -15,23 +15,12 @@ export type {
 	QueryValue,
 	UploadOptions,
 } from "./data/client";
-export { ClientProvider, createAdminClient, useClient } from "./data/client";
-export {
-	collection,
-	collectionPath,
-	item,
-	itemPath,
-	single,
-	uploadPath,
-} from "./data/entityRoutes";
-export type { Envelope, ErrorCode, TabletopError } from "./data/envelope";
-export { decode, isTabletopError, unwrap } from "./data/envelope";
+export { ClientProvider, useClient } from "./data/client";
+export { collection, item, single } from "./data/entityRoutes";
+export type { Envelope, TabletopError } from "./data/envelope";
+export { isTabletopError } from "./data/envelope";
 export type { UploadFileInput, UploadRow } from "./data/upload";
 export { uploadFile } from "./data/upload";
-export type { Row, RowsState } from "./data/useEntityRows";
-export { useEntityRows } from "./data/useEntityRows";
-export type { RecordState } from "./data/useRecord";
-export { useRecord, useSingleRecord } from "./data/useRecord";
 export type {
 	I18nState,
 	LocaleLoader,
@@ -40,7 +29,6 @@ export type {
 	Translate,
 } from "./i18n/i18n";
 export { defaultMessages, I18nProvider, useLocale, useTranslation } from "./i18n/i18n";
-export { LanguageSwitcher } from "./i18n/LanguageSwitcher";
 // Inertia integration — server-authored pages
 export { AdminPage } from "./inertia/AdminPage";
 export { compileConstraints, type FieldConstraints } from "./inertia/constraints";

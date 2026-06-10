@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ClientActionContext } from "../structure/types";
 
-export type SearchState =
+type SearchState =
 	| { kind: "loading" }
 	| { kind: "ready"; rows: unknown[] }
 	| { kind: "error"; message: string };

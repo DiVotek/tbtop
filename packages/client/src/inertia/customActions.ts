@@ -1,6 +1,6 @@
 import type { ClientActionContext } from "../structure/types";
 
-export type CustomActionHandler = (
+type CustomActionHandler = (
 	ctx: ClientActionContext,
 	params: Record<string, unknown>,
 ) => void | Promise<void>;
