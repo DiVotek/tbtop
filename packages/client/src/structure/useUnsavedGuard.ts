@@ -28,7 +28,15 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean, t: Tran
 
 		window.addEventListener("beforeunload", handleBeforeUnload);
 
-		const offBefore = router.on("before", () => {
+		const offBefore = router.on("before", (event) => {
+			// Only intercept GET navigation (page changes). POST/PATCH/DELETE
+			// visits are form submissions — block those and the save button itself
+			// would show the confirm dialog.
+			const method = (event as { detail?: { visit?: { method?: string } } }).detail?.visit
+				?.method;
+			if (method && method !== "get") {
+				return;
+			}
 			if (!isDirty) {
 				return;
 			}

@@ -20,7 +20,7 @@ import { wrapForStructure as wrap } from "./testFixtures";
 // Minimal router mock — captures listeners registered via router.on('before')
 // ---------------------------------------------------------------------------
 
-type BeforeListener = (event: { detail: { visit: unknown } }) => boolean | void;
+type BeforeListener = (event: { detail: { visit: { method?: string } } }) => boolean | void;
 
 const registeredBeforeListeners: BeforeListener[] = [];
 let routerOnCalled = false;
@@ -47,9 +47,9 @@ mock.module("@inertiajs/react", () => ({
 
 // Helper: fire a simulated Inertia 'before' event through the registered listeners.
 // Returns false if any listener returned false (navigation blocked).
-function fireInertiaNavigation(): boolean {
+function fireInertiaNavigation(method = "get"): boolean {
 	for (const listener of registeredBeforeListeners) {
-		const result = listener({ detail: { visit: {} } });
+		const result = listener({ detail: { visit: { method } } });
 		if (result === false) return false;
 	}
 	return true;
@@ -210,5 +210,30 @@ describe("Form unsaved guard — Inertia navigation", () => {
 		await waitFor(() => {});
 
 		expect(routerOnCalled).toBe(true);
+	});
+
+	test("guard does NOT block a POST visit (form submit) even when form is dirty", async () => {
+		// If confirm is called and returns false it would block — proves guard was invoked.
+		(global as unknown as { confirm: (msg: string) => boolean }).confirm = () => false;
+
+		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+			s.text({ name: "title" }),
+			s.action({
+				name: "edit",
+				handler: async (c) => c.form?.set("title", "Changed"),
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		// Make the form dirty
+		const editBtn = await findByTestId("action-edit");
+		await act(async () => {
+			fireEvent.click(editBtn);
+		});
+
+		// A POST visit (form submit) must NOT be blocked by the guard.
+		const allowed = fireInertiaNavigation("post");
+		expect(allowed).toBe(true);
 	});
 });
