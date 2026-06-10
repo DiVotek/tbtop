@@ -7,8 +7,13 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\WebAuthn\WebAuthnLoginController;
+use App\Http\Controllers\WebAuthn\WebAuthnRegisterController;
 use Illuminate\Support\Facades\Route;
+use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -53,4 +58,25 @@ Route::middleware('auth')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
+
+    Route::post('two-factor/setup', [TwoFactorController::class, 'setup'])
+        ->name('two-factor.setup');
+
+    Route::post('two-factor/confirm', [TwoFactorController::class, 'confirm'])
+        ->name('two-factor.confirm');
+
+    Route::post('two-factor/disable', [TwoFactorController::class, 'disable'])
+        ->name('two-factor.disable');
 });
+
+Route::get('two-factor-challenge', [TwoFactorChallengeController::class, 'show'])
+    ->name('two-factor.challenge');
+
+Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store']);
+
+WebAuthnRoutes::register(
+    attest: 'webauthn/register',
+    attestController: WebAuthnRegisterController::class,
+    assert: 'webauthn/login',
+    assertController: WebAuthnLoginController::class,
+);

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RequireFullAuth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -7,7 +8,7 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware([RequireFullAuth::class])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');

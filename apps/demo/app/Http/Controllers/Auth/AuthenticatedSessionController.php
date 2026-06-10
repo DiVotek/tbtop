@@ -13,32 +13,35 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Show the login page.
-     */
     public function create(Request $request): Response
     {
         return Inertia::render('auth/login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => $request->session()->get('status'),
+            'hasPasskeys' => Route::has('webauthn.login'),
         ]);
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
+
+        $user = Auth::user();
+
+        if ($user->hasTwoFactorEnabled()) {
+            $userId = $user->id;
+            Auth::logout();
+            $request->session()->put('auth.2fa.user_id', $userId);
+            $request->session()->put('auth.2fa.completed', false);
+
+            return redirect()->route('two-factor.challenge');
+        }
 
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
