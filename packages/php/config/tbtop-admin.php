@@ -27,4 +27,8 @@ return [
     // Global default for the unsaved-changes navigation guard on forms.
     // Per-form override: FormBuilder::guardUnsaved(bool).
     'unsaved_guard' => true,
+
+    // Whether to build and send the breadcrumbs prop.
+    // Set to false to suppress breadcrumbs globally (prop is omitted from page response).
+    'breadcrumbs' => true,
 ];

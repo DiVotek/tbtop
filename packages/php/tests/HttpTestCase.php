@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Tests;
 
+use Tbtop\Admin\Tests\Fixtures\NavPage;
 use Tbtop\Admin\Tests\Fixtures\PostEditPage;
 use Tbtop\Admin\Tests\Fixtures\PostsIndexPage;
 use Tbtop\Admin\Tests\Fixtures\TranslatablePostsPage;
@@ -23,6 +24,7 @@ class HttpTestCase extends TestCase
             PostEditPage::class,
             PostsIndexPage::class,
             TranslatablePostsPage::class,
+            NavPage::class,
         ]);
         $app['config']->set('tbtop-admin.locales', ['en', 'uk']);
         $app['config']->set('tbtop-admin.default_locale', 'en');

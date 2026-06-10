@@ -35,4 +35,16 @@ abstract class Page
     {
         return null;
     }
+
+    /**
+     * Breadcrumbs override. Return an array of [{label, url?}] items, or a Closure
+     * that receives the resolved page instance and returns the same array.
+     * Null means auto-build from nav tree.
+     *
+     * @return array<int, array{label: string, url?: string}>|\Closure|null
+     */
+    public function breadcrumbs(): array|\Closure|null
+    {
+        return null;
+    }
 }
