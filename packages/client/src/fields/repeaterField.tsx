@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useTranslation } from "../i18n/i18n";
 import type { StructureNode } from "../structure/structure";
 import { Button } from "../ui/button";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
@@ -14,10 +15,14 @@ interface RepeaterOptions {
 }
 
 export function RepeaterCell({ value }: FieldCellProps<Item[]>) {
+	const t = useTranslation();
 	if (!value || value.length === 0) {
 		return null;
 	}
-	const label = value.length === 1 ? "1 item" : `${value.length} items`;
+	const label =
+		value.length === 1
+			? t("field.repeater.item_singular")
+			: t("field.repeater.items").replace("{count}", String(value.length));
 	return <span className="text-xs text-muted-foreground">{label}</span>;
 }
 
@@ -27,6 +32,7 @@ export function RepeaterForm({
 	onChange,
 	options,
 }: FieldFormProps<Item[], RepeaterOptions>) {
+	const t = useTranslation();
 	const subFields = options?.fields ?? [];
 	const minItems = options?.minItems ?? 0;
 	const maxItems = options?.maxItems;
@@ -71,7 +77,7 @@ export function RepeaterForm({
 				onClick={() => emit(addItem(items, subFields), (k) => [...k, crypto.randomUUID()])}
 				className="self-start"
 			>
-				Add item
+				{t("field.repeater.add_item")}
 			</Button>
 		</div>
 	);

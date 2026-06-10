@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
@@ -35,6 +36,7 @@ export function KeyvalueForm({
 		setRows(rowsFromValue(value));
 	}, [value]);
 
+	const t = useTranslation();
 	const duplicates = findDuplicateKeys(rows);
 	const fieldId = id ?? name;
 
@@ -69,13 +71,13 @@ export function KeyvalueForm({
 						<Input
 							id={index === 0 ? fieldId : undefined}
 							type="text"
-							aria-label="Key"
+							aria-label={t("field.keyvalue.key")}
 							value={row.key}
 							onChange={(e) => updateKey(row.id, e.target.value)}
 						/>
 						<Input
 							type="text"
-							aria-label="Value"
+							aria-label={t("field.keyvalue.value")}
 							value={row.value}
 							onChange={(e) => updateValue(row.id, e.target.value)}
 						/>
@@ -83,15 +85,15 @@ export function KeyvalueForm({
 							type="button"
 							variant="ghost"
 							size="sm"
-							aria-label="Remove row"
+							aria-label={t("field.keyvalue.remove")}
 							onClick={() => removeRow(row.id)}
 							className="text-destructive hover:text-destructive"
 						>
-							Remove
+							{t("field.keyvalue.remove")}
 						</Button>
 					</div>
 					{duplicates.has(row.key) && (
-						<span className="text-xs text-amber-600">{`Duplicate key '${row.key}'`}</span>
+						<span className="text-xs text-amber-600">{`${t("field.keyvalue.duplicate_key")} '${row.key}'`}</span>
 					)}
 				</div>
 			))}
@@ -102,7 +104,7 @@ export function KeyvalueForm({
 				onClick={addRow}
 				className="self-start"
 			>
-				Add row
+				{t("field.keyvalue.add_row")}
 			</Button>
 		</div>
 	);

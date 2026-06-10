@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "../i18n/i18n";
 import { useNearestFormController } from "../structure/formContext";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
 import { slugify } from "./slugify";
@@ -70,6 +71,7 @@ export function SlugForm({
 		emitDerived(sourceValue);
 	}
 
+	const t = useTranslation();
 	return (
 		<div data-field={name} className="flex flex-col gap-2">
 			<div className="flex items-center gap-2">
@@ -91,14 +93,14 @@ export function SlugForm({
 					onClick={handleClear}
 					className="rounded border border-input px-2 py-1.5 text-sm"
 				>
-					Clear
+					{t("field.slug.clear")}
 				</button>
 				<button
 					type="button"
 					onClick={handleGenerate}
 					className="rounded border border-input px-2 py-1.5 text-sm"
 				>
-					Generate
+					{t("field.slug.generate")}
 				</button>
 			</div>
 		</div>

@@ -1,5 +1,5 @@
-import { usePage } from "@inertiajs/react";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { router, usePage } from "@inertiajs/react";
+import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Toaster, toast } from "sonner";
 import { AdminLayout } from "../app/AdminLayout";
 import { AuthUserProvider } from "../app/authUser";
@@ -19,7 +19,13 @@ interface AdminPageProps {
 	structure: StructureNode;
 	data: Record<string, Record<string, unknown>>;
 	params?: Record<string, string>;
-	tbtop?: { effects?: unknown; prefix?: string };
+	tbtop?: {
+		effects?: unknown;
+		prefix?: string;
+		locale?: string;
+		locales?: string[];
+		messages?: Record<string, string>;
+	};
 	auth?: { user?: AuthUser | null };
 	[key: string]: unknown;
 }
@@ -56,21 +62,52 @@ export function AdminPage() {
 		<ClientProvider>
 			<AuthUserProvider user={auth?.user ?? null}>
 				<PageParamsProvider params={params ?? {}}>
-					<I18nProvider>
-						<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
-							<h1 className="text-2xl font-semibold">{title}</h1>
-							{renderNode(node)}
-						</div>
-						<Toaster />
-					</I18nProvider>
+					<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+						<h1 className="text-2xl font-semibold">{title}</h1>
+						{renderNode(node)}
+					</div>
+					<Toaster />
 				</PageParamsProvider>
 			</AuthUserProvider>
 		</ClientProvider>
 	);
 }
 
-// Inertia persistent layout: the shell survives page visits unmounted.
-AdminPage.layout = (page: ReactNode) => <AdminLayout>{page}</AdminLayout>;
+// Inertia persistent layout wraps the shell + i18n provider so both the
+// sidebar/header (AdminLayout) and page content share the same translation
+// context. I18nProvider reads updated props on every Inertia visit.
+AdminPage.layout = (page: ReactNode) => <AdminShell>{page}</AdminShell>;
+
+function AdminShell({ children }: { children: ReactNode }) {
+	const { props } = usePage<AdminPageProps>();
+	const tbtop = props.tbtop;
+	const prefix = tbtop?.prefix ?? "";
+	const locale = tbtop?.locale ?? "en";
+	const locales = tbtop?.locales ?? [locale];
+	const messages = tbtop?.messages ?? {};
+	const pluginMessages: Record<string, Record<string, string>> = { [locale]: messages };
+	const languages = Object.fromEntries(locales.map((code) => [code, async () => ({})]));
+
+	// Round-trip: session stores the locale, redirect back
+	// delivers fresh tbtop.messages in shared props.
+	const persistLocale = useCallback(
+		(next: string) => {
+			router.post(`${prefix}/locale`, { locale: next }, { preserveScroll: true });
+		},
+		[prefix],
+	);
+
+	return (
+		<I18nProvider
+			defaultLang={locale}
+			languages={languages}
+			pluginMessages={pluginMessages}
+			onLocaleChange={persistLocale}
+		>
+			<AdminLayout>{children}</AdminLayout>
+		</I18nProvider>
+	);
+}
 
 function notifyToast(kind: string | undefined, message: string): void {
 	if (kind === "error") {

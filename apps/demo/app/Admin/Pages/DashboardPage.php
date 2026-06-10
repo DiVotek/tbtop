@@ -32,18 +32,24 @@ class DashboardPage extends Page
                 'xKey' => 'month',
                 'series' => [['dataKey' => 'count', 'label' => 'Posts']],
             ])
-                ->query(fn () => DB::table('posts')
+                ->query(fn() => DB::table('posts')
                     ->selectRaw("strftime('%Y-%m', created_at) as month, count(*) as count")
                     ->groupBy('month')
                     ->orderBy('month')
                     ->get())
                 ->toNode(),
+            $s->action('test')->label('test')->modal('test', $s->row([
+                $s->form('chart', [
+                  $s->text('asd')->label('Qwewqeq'),
+                  $s->action('save')->submit('chart')
+                ])
+            ])),
             $s->chart('byStatus', 'donut', [
                 'title' => 'Published vs draft',
                 'nameKey' => 'status',
                 'series' => [['dataKey' => 'total', 'label' => 'Posts']],
             ])
-                ->query(fn () => DB::table('posts')
+                ->query(fn() => DB::table('posts')
                     ->selectRaw("case when published = 1 then 'Published' else 'Draft' end as status, count(*) as total")
                     ->groupBy('published')
                     ->orderBy('total')

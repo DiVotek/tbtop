@@ -13,6 +13,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import type { SerializedEditorState } from "lexical";
 import { useCallback, useMemo, useRef } from "react";
+import { useTranslation } from "../../i18n/i18n";
 import { OnChangePlugin } from "./onChangePlugin";
 import { SlashMenuPlugin } from "./slashMenuPlugin";
 import { Toolbar } from "./toolbar";
@@ -78,6 +79,7 @@ function resolveInitialEditorState(
 }
 
 export function RichtextEditor({ initialState, placeholder, onChange }: RichtextEditorProps) {
+	const t = useTranslation();
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const mountState = useRef(initialState);
 
@@ -128,7 +130,7 @@ export function RichtextEditor({ initialState, placeholder, onChange }: Richtext
 						contentEditable={<ContentEditable />}
 						placeholder={
 							<div className="tabletop-editor-placeholder">
-								{placeholder ?? "Start typing, or press / for commands…"}
+								{placeholder ?? t("field.richtext.placeholder")}
 							</div>
 						}
 						ErrorBoundary={LexicalErrorBoundary}

@@ -40,6 +40,7 @@ import {
 	Undo,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "../../i18n/i18n";
 
 const ICON_SIZE = 18;
 
@@ -75,6 +76,7 @@ function Separator() {
 }
 
 export function Toolbar() {
+	const t = useTranslation();
 	const [editor] = useLexicalComposerContext();
 	const [isBold, setIsBold] = useState(false);
 	const [isItalic, setIsItalic] = useState(false);
@@ -182,28 +184,28 @@ export function Toolbar() {
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
 				active={isBold}
-				title="Bold"
+				title={t("field.richtext.bold")}
 			>
 				<Bold size={ICON_SIZE} />
 			</ToolbarButton>
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")}
 				active={isItalic}
-				title="Italic"
+				title={t("field.richtext.italic")}
 			>
 				<Italic size={ICON_SIZE} />
 			</ToolbarButton>
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")}
 				active={isUnderline}
-				title="Underline"
+				title={t("field.richtext.underline")}
 			>
 				<Underline size={ICON_SIZE} />
 			</ToolbarButton>
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")}
 				active={isStrikethrough}
-				title="Strikethrough"
+				title={t("field.richtext.strikethrough")}
 			>
 				<Strikethrough size={ICON_SIZE} />
 			</ToolbarButton>
@@ -213,21 +215,21 @@ export function Toolbar() {
 			<ToolbarButton
 				onClick={() => formatHeading("h1")}
 				active={blockType === "h1"}
-				title="Heading 1"
+				title={t("field.richtext.heading1")}
 			>
 				<Heading1 size={ICON_SIZE} />
 			</ToolbarButton>
 			<ToolbarButton
 				onClick={() => formatHeading("h2")}
 				active={blockType === "h2"}
-				title="Heading 2"
+				title={t("field.richtext.heading2")}
 			>
 				<Heading2 size={ICON_SIZE} />
 			</ToolbarButton>
 			<ToolbarButton
 				onClick={() => formatHeading("h3")}
 				active={blockType === "h3"}
-				title="Heading 3"
+				title={t("field.richtext.heading3")}
 			>
 				<Heading3 size={ICON_SIZE} />
 			</ToolbarButton>
@@ -237,27 +239,35 @@ export function Toolbar() {
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}
 				active={blockType === "ul"}
-				title="Bullet list"
+				title={t("field.richtext.bullet_list")}
 			>
 				<List size={ICON_SIZE} />
 			</ToolbarButton>
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)}
 				active={blockType === "ol"}
-				title="Ordered list"
+				title={t("field.richtext.ordered_list")}
 			>
 				<ListOrdered size={ICON_SIZE} />
 			</ToolbarButton>
 
 			<Separator />
 
-			<ToolbarButton onClick={insertLink} active={isLink} title="Link">
+			<ToolbarButton onClick={insertLink} active={isLink} title={t("field.richtext.link")}>
 				<Link size={ICON_SIZE} />
 			</ToolbarButton>
-			<ToolbarButton onClick={formatCode} active={blockType === "code"} title="Code block">
+			<ToolbarButton
+				onClick={formatCode}
+				active={blockType === "code"}
+				title={t("field.richtext.code_block")}
+			>
 				<Code size={ICON_SIZE} />
 			</ToolbarButton>
-			<ToolbarButton onClick={formatQuote} active={blockType === "quote"} title="Quote">
+			<ToolbarButton
+				onClick={formatQuote}
+				active={blockType === "quote"}
+				title={t("field.richtext.quote")}
+			>
 				<Quote size={ICON_SIZE} />
 			</ToolbarButton>
 
@@ -265,13 +275,13 @@ export function Toolbar() {
 
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
-				title="Undo"
+				title={t("field.richtext.undo")}
 			>
 				<Undo size={ICON_SIZE} />
 			</ToolbarButton>
 			<ToolbarButton
 				onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
-				title="Redo"
+				title={t("field.richtext.redo")}
 			>
 				<Redo size={ICON_SIZE} />
 			</ToolbarButton>

@@ -1,5 +1,7 @@
 import { Link, router, usePage } from "@inertiajs/react";
 import type { ReactNode } from "react";
+import { useTranslation } from "../i18n/i18n";
+import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
 import { Button } from "../ui/button";
 
 interface NavItem {
@@ -23,6 +25,7 @@ interface SharedProps {
  * topbar with the session user. Survives Inertia visits unmounted.
  */
 export function AdminLayout({ children }: { children: ReactNode }) {
+	const t = useTranslation();
 	const { props, url } = usePage<SharedProps>();
 	const nav = props.tbtop?.nav ?? [];
 	const user = props.auth?.user ?? null;
@@ -30,7 +33,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 	return (
 		<div className="flex min-h-screen bg-background text-foreground">
 			<aside className="flex w-56 shrink-0 flex-col gap-4 border-r p-4">
-				<div className="text-lg font-semibold">Tabletop</div>
+				<div className="text-lg font-semibold">{t("nav.title")}</div>
 				<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
 					{nav.map((group) => (
 						<NavGroupSection key={group.group} group={group} currentUrl={url} />
@@ -39,6 +42,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 			</aside>
 			<div className="flex min-w-0 flex-1 flex-col">
 				<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
+					<LanguageSwitcher />
 					{user && (
 						<span className="text-sm text-muted-foreground" data-testid="topbar-user">
 							{user.name ?? user.email}
@@ -46,7 +50,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 					)}
 					{user && (
 						<Button variant="outline" size="sm" onClick={() => router.post("/logout")}>
-							Logout
+							{t("action.logout")}
 						</Button>
 					)}
 				</header>

@@ -30,6 +30,12 @@ return [
         PlaygroundPage::class,
     ],
 
+    // Admin UI locales. First entry is the default.
+    'locales' => ['en', 'uk'],
+
+    // Fallback locale used when session has no preference.
+    'default_locale' => 'en',
+
     // Upload profiles consumed by POST /{prefix}/uploads/{profile}.
     'uploads' => [
         'media' => [

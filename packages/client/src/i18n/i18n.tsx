@@ -39,11 +39,13 @@ export function I18nProvider({
 	defaultLang,
 	languages,
 	pluginMessages,
+	onLocaleChange,
 	children,
 }: {
 	defaultLang?: string;
 	languages?: Record<string, LocaleLoader>;
 	pluginMessages?: PluginMessages;
+	onLocaleChange?: (locale: string) => void;
 	children: ReactNode;
 }) {
 	const fallbackLang = defaultLang ?? BUILTIN_DEFAULT_LANG;
@@ -81,8 +83,9 @@ export function I18nProvider({
 			}
 			writeStoredLocale(next);
 			setLocaleState(next);
+			onLocaleChange?.(next);
 		},
-		[available],
+		[available, onLocaleChange],
 	);
 
 	const translate = useMemo<Translate>(

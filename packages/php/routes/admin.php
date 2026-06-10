@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\DataController;
 use Tbtop\Admin\Http\FormSubmitController;
+use Tbtop\Admin\Http\LocaleController;
 use Tbtop\Admin\Http\PageController;
+use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\TableController;
 use Tbtop\Admin\Http\UploadController;
 use Tbtop\Admin\Pages\Page;
@@ -12,9 +14,10 @@ use Tbtop\Admin\Pages\Page;
 /** @var list<class-string<Page>> $pages */
 $pages = config('tbtop-admin.pages', []);
 
-Route::middleware(config('tbtop-admin.middleware'))
+Route::middleware([...(array) config('tbtop-admin.middleware'), SetAdminLocale::class])
     ->prefix(config('tbtop-admin.prefix'))
     ->group(function () use ($pages): void {
+        Route::post('locale', LocaleController::class)->name('tbtop.locale');
         Route::post('uploads/{tbtopProfile}', UploadController::class)->name('tbtop.upload');
         foreach ($pages as $class) {
             $path = trim($class::path(), '/');

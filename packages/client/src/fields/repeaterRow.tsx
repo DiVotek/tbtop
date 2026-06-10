@@ -1,3 +1,4 @@
+import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { renderDescriptor } from "../render/renderDescriptor";
 import type { StructureNode } from "../structure/structure";
@@ -18,17 +19,18 @@ interface RepeaterRowProps {
 }
 
 export function RepeaterRow(props: RepeaterRowProps) {
+	const t = useTranslation();
 	const { item, index, itemCount, subFields, minItems } = props;
 	return (
 		<div className="flex flex-col gap-2 rounded-md border p-3" data-repeater-item={index}>
 			<div className="flex items-center justify-between">
-				<span className="text-xs text-muted-foreground">{`Item ${index + 1}`}</span>
+				<span className="text-xs text-muted-foreground">{`${t("field.repeater.item_label")} ${index + 1}`}</span>
 				<div className="flex gap-1">
 					<Button
 						type="button"
 						variant="ghost"
 						size="xs"
-						aria-label="Move up"
+						aria-label={t("field.repeater.move_up")}
 						disabled={index === 0}
 						onClick={props.onMoveUp}
 					>
@@ -38,7 +40,7 @@ export function RepeaterRow(props: RepeaterRowProps) {
 						type="button"
 						variant="ghost"
 						size="xs"
-						aria-label="Move down"
+						aria-label={t("field.repeater.move_down")}
 						disabled={index === itemCount - 1}
 						onClick={props.onMoveDown}
 					>
@@ -48,12 +50,12 @@ export function RepeaterRow(props: RepeaterRowProps) {
 						type="button"
 						variant="ghost"
 						size="xs"
-						aria-label="Remove item"
+						aria-label={t("field.repeater.remove")}
 						disabled={itemCount <= minItems}
 						onClick={props.onRemove}
 						className="text-destructive hover:text-destructive"
 					>
-						Remove
+						{t("field.repeater.remove")}
 					</Button>
 				</div>
 			</div>

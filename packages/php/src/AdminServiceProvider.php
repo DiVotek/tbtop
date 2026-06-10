@@ -5,6 +5,7 @@ namespace Tbtop\Admin;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Tbtop\Admin\I18n\LocaleService;
 use Tbtop\Admin\Navigation\NavBuilder;
 
 class AdminServiceProvider extends PackageServiceProvider
@@ -14,15 +15,23 @@ class AdminServiceProvider extends PackageServiceProvider
         $package
             ->name('tbtop-admin')
             ->hasConfigFile()
-            ->hasRoute('admin');
+            ->hasRoute('admin')
+            ->hasTranslations();
     }
 
     public function packageBooted(): void
     {
-        Inertia::share('tbtop', static fn () => [
-            'effects' => session('tbtop.effects', []),
-            'nav' => NavBuilder::build(),
-            'prefix' => '/'.trim((string) config('tbtop-admin.prefix'), '/'),
-        ]);
+        Inertia::share('tbtop', static function (): array {
+            $locale = LocaleService::currentLocale();
+
+            return [
+                'effects' => session('tbtop.effects', []),
+                'nav' => NavBuilder::build(),
+                'prefix' => '/'.trim((string) config('tbtop-admin.prefix'), '/'),
+                'locale' => $locale,
+                'locales' => LocaleService::availableLocales(),
+                'messages' => LocaleService::messagesFor($locale),
+            ];
+        });
     }
 }

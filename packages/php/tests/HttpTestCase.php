@@ -19,5 +19,7 @@ class HttpTestCase extends TestCase
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('tbtop-admin.middleware', ['web']);
         $app['config']->set('tbtop-admin.pages', [PostEditPage::class, PostsIndexPage::class]);
+        $app['config']->set('tbtop-admin.locales', ['en', 'uk']);
+        $app['config']->set('tbtop-admin.default_locale', 'en');
     }
 }
