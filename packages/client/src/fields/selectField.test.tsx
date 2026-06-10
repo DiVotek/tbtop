@@ -78,6 +78,62 @@ describe("Select field — static mode", () => {
 	});
 });
 
+describe("Select field — int record values match string wire options", () => {
+	// Records arrive with int FKs (author_id: 1) while options are
+	// string-cast on the wire ("1"); controls must coerce before matching.
+	const INT_CHOICES = [
+		{ value: "1", label: "Alice" },
+		{ value: "2", label: "Bob" },
+	];
+	const asValue = (v: unknown) => v as Parameters<typeof SelectForm>[0]["value"];
+
+	test("static single select shows the label for an int value", () => {
+		const { container } = render(
+			<SelectForm
+				name="author_id"
+				value={asValue(1)}
+				onChange={() => {}}
+				options={{ options: INT_CHOICES }}
+			/>,
+		);
+		const trigger = container.querySelector('[data-slot="select-trigger"]');
+		expect(trigger?.textContent).toContain("Alice");
+	});
+
+	test("searchable static select shows the label for an int value", () => {
+		const { container } = render(
+			<SelectForm
+				name="author_id"
+				value={asValue(1)}
+				onChange={() => {}}
+				options={{ options: INT_CHOICES, searchable: true }}
+			/>,
+		);
+		const input = container.querySelector('[data-testid="select-search-author_id"]');
+		expect(input?.getAttribute("placeholder")).toBe("Alice");
+	});
+
+	test("static multi select marks int array values as selected", () => {
+		const { container } = render(
+			<SelectForm
+				name="author_ids"
+				value={asValue([1])}
+				onChange={() => {}}
+				options={{ options: INT_CHOICES, multiple: true }}
+			/>,
+		);
+		const selected = container.querySelector('[role="option"][aria-selected="true"]');
+		expect(selected?.textContent).toContain("Alice");
+	});
+
+	test("SelectCell renders the label for an int value", () => {
+		const { container } = render(
+			<SelectCell value={asValue(1) as never} options={{ options: INT_CHOICES }} />,
+		);
+		expect(container.textContent).toBe("Alice");
+	});
+});
+
 interface UserRow {
 	id: string;
 	name: string;

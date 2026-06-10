@@ -9,23 +9,25 @@ import { useAsyncSearch } from "./asyncSearch";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
-import type {
-	SelectCreateConfig,
-	SelectOptionsBag,
-	SelectSingleOptionsBag,
-	SelectValueType,
-	StaticOption,
+import {
+	coerceSelectValue,
+	type SelectCreateConfig,
+	type SelectOptionsBag,
+	type SelectSingleOptionsBag,
+	type SelectValueType,
+	type StaticOption,
 } from "./selectShared";
 
 export function SelectCell({ value, options }: FieldCellProps<SelectValueType, SelectOptionsBag>) {
-	if (value === null || value === undefined) {
+	const coerced = coerceSelectValue(value);
+	if (coerced === null) {
 		return null;
 	}
-	if (Array.isArray(value)) {
-		const labels = value.map((v) => labelForStatic(v, options?.options));
+	if (Array.isArray(coerced)) {
+		const labels = coerced.map((v) => labelForStatic(v, options?.options));
 		return <span>{labels.join(", ")}</span>;
 	}
-	return <span>{labelForStatic(value, options?.options)}</span>;
+	return <span>{labelForStatic(coerced, options?.options)}</span>;
 }
 
 function labelForStatic(value: string, choices: StaticOption[] | undefined): string {
@@ -33,7 +35,8 @@ function labelForStatic(value: string, choices: StaticOption[] | undefined): str
 	return match?.label ?? value;
 }
 
-export function SelectForm(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+export function SelectForm(rawProps: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+	const props = { ...rawProps, value: coerceSelectValue(rawProps.value) };
 	const opts = props.options ?? {};
 	if (opts.multiple === true) {
 		return <SelectMultiForm {...props} />;

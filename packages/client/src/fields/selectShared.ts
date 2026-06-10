@@ -32,3 +32,17 @@ export interface SelectMultiOptionsBag extends CommonSelectBag, AsyncMultiOption
 export type SelectOptionsBag = SelectSingleOptionsBag | SelectMultiOptionsBag;
 
 export type SelectValueType = string | string[];
+
+/**
+ * Records carry int FKs (author_id: 1) while wire options are
+ * string-cast ("1"); coerce before any option matching.
+ */
+export function coerceSelectValue(value: unknown): SelectValueType | null {
+	if (Array.isArray(value)) {
+		return value.map(String);
+	}
+	if (typeof value === "number") {
+		return String(value);
+	}
+	return typeof value === "string" ? value : null;
+}
