@@ -147,6 +147,8 @@ function materializeTable(node: StructureNode, ctx: WalkCtx): StructureNode {
 		...node,
 		options: {
 			...opts,
+			// Expose name so TableBlock can namespace its URL-persisted query state.
+			name,
 			rowActions: actionBags(opts.rowActions, ctx),
 			bulkActions: actionBags(opts.bulkActions, ctx),
 			...(compiledFilters !== undefined ? { filters: compiledFilters } : {}),

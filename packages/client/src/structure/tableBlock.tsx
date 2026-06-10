@@ -19,6 +19,7 @@ import { renderAsyncError } from "./renderAsyncError";
 import { RowProvider } from "./rowContext";
 import { TableControllerProvider } from "./tableContext";
 import { useTableController } from "./tableController";
+import { persistTableParams, seedTableParams } from "./tableUrlState";
 import type {
 	ActionConfig,
 	ClientActionContext,
@@ -30,6 +31,8 @@ import type {
 import { useAsyncQuery } from "./useAsyncQuery";
 
 interface TableBlockOptions extends AsyncBlock {
+	/** Server-assigned table name — used to namespace URL query state. */
+	name?: string;
 	query: (ctx: ClientActionContext) => Promise<unknown[]>;
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];
@@ -45,11 +48,26 @@ interface TableRenderProps {
 
 export function TableBlock({ options }: TableRenderProps) {
 	const ctx = useClientActionContext();
-	const [queryParams, setQueryParams] = useState<ListQueryParams>({});
+	const tableName = options.name ?? "";
+
+	// Seed initial state from URL when a name is available; falls back to {}.
+	const [queryParams, setQueryParams] = useState<ListQueryParams>(() =>
+		tableName ? seedTableParams(tableName) : {},
+	);
+
 	const mergeParams = useCallback(
 		(patch: Partial<ListQueryParams>) => setQueryParams((prev) => ({ ...prev, ...patch })),
 		[],
 	);
+
+	// Mirror query state into the URL via replaceState whenever params change.
+	// Runs after every render where queryParams reference changes.
+	useEffect(() => {
+		if (!tableName) {
+			return;
+		}
+		persistTableParams(tableName, queryParams);
+	}, [tableName, queryParams]);
 	const queryCtx = useMemo<ClientActionContext>(
 		() => ({ ...ctx, table: tableQueryStub(queryParams) }),
 		[ctx, queryParams],
