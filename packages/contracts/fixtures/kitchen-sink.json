@@ -148,6 +148,14 @@
                                         "name": "slug"
                                     },
                                     {
+                                        "kind": "richtext",
+                                        "options": {
+                                            "placeholder": "Start typing\u2026"
+                                        },
+                                        "meta": {},
+                                        "name": "content"
+                                    },
+                                    {
                                         "kind": "repeater",
                                         "options": {
                                             "fields": [

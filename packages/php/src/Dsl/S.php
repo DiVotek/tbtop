@@ -26,13 +26,14 @@ use InvalidArgumentException;
  * @method FieldBuilder upload(string $name)
  * @method FieldBuilder relation(string $name)
  * @method FieldBuilder repeater(string $name)
+ * @method FieldBuilder richtext(string $name)
  */
 final class S
 {
     private const FIELD_KINDS = [
         'text', 'textarea', 'password', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'checkbox', 'colorpicker', 'keyvalue',
-        'translatable', 'slug', 'upload', 'relation', 'repeater',
+        'translatable', 'slug', 'upload', 'relation', 'repeater', 'richtext',
     ];
 
     /** @var array<string, FormBuilder> */

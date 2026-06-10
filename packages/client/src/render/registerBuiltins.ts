@@ -9,6 +9,8 @@ import { PasswordCell, PasswordForm } from "../fields/passwordField";
 import { RadioCell, RadioForm } from "../fields/radioField";
 import { RelationCell, RelationForm } from "../fields/relationField";
 import { RepeaterCell, RepeaterForm } from "../fields/repeaterField";
+import { RichtextCell, type RichtextValue } from "../fields/richtext/richtextCell";
+import { RichtextFormLazy } from "../fields/richtext/richtextFormLazy";
 import { SelectCell, SelectForm } from "../fields/selectField";
 import { SlugCell, SlugForm } from "../fields/slugField";
 import { TagsCell, TagsForm } from "../fields/tagsField";
@@ -141,6 +143,10 @@ function registerStructuredFields(): void {
 	defineFieldClient<"repeater", Record<string, unknown>[]>("repeater", {
 		form: RepeaterForm,
 		cell: RepeaterCell,
+	});
+	defineFieldClient<"richtext", RichtextValue>("richtext", {
+		form: RichtextFormLazy,
+		cell: RichtextCell,
 	});
 	defineFieldClient<"unknown", unknown>("unknown", { form: UnknownForm, cell: UnknownCell });
 }

@@ -24,7 +24,8 @@ trait PostFormFields
                 $s->slug('slug')->label('Slug')->required()
                     ->set('fromField', 'title')
                     ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', $slugUniqueRule]),
-                $s->textarea('body')->label('Body'),
+                $s->richtext('body')->label('Body')
+                    ->set('placeholder', 'Write something…'),
             ]),
             $s->section(['title' => 'Publishing'], [
                 $s->boolean('published')->label('Published')->rules('boolean'),
