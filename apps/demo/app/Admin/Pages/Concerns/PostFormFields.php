@@ -2,6 +2,7 @@
 
 namespace App\Admin\Pages\Concerns;
 
+use App\Admin\Fields\Rating;
 use App\Models\User;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Node;
@@ -13,7 +14,7 @@ use Tbtop\Admin\Dsl\S;
  */
 trait PostFormFields
 {
-    /** @return list<Node|\Tbtop\Admin\Dsl\FieldBuilder> */
+    /** @return list<Node|\Tbtop\Admin\Dsl\Fields\Field> */
     protected function postFormSections(S $s, string $slugUniqueRule): array
     {
         return [
@@ -30,8 +31,8 @@ trait PostFormFields
                 $s->boolean('published')->label('Published')->rules('boolean'),
                 $s->date('published_at')->label('Published at')->rules('nullable|date')
                     ->hiddenIf('published', '=', false),
-                $s->number('rating')->label('Rating')
-                    ->set('min', 0)->set('max', 5)->set('step', 0.1)
+                Rating::make('rating')->label('Rating')->max(5)
+                    ->set('min', 0)->set('step', 0.1)
                     ->rules('nullable|numeric|min:0|max:5')
                     ->disabledIf(Cond::not(Cond::truthy('published'))),
                 $s->select('author_id')->label('Author')

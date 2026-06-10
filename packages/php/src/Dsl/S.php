@@ -3,33 +3,60 @@
 namespace Tbtop\Admin\Dsl;
 
 use InvalidArgumentException;
+use Tbtop\Admin\Dsl\Fields\Boolean;
+use Tbtop\Admin\Dsl\Fields\Checkbox;
+use Tbtop\Admin\Dsl\Fields\Colorpicker;
+use Tbtop\Admin\Dsl\Fields\Date;
+use Tbtop\Admin\Dsl\Fields\Datetime;
+use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Keyvalue;
+use Tbtop\Admin\Dsl\Fields\Number;
+use Tbtop\Admin\Dsl\Fields\Password;
+use Tbtop\Admin\Dsl\Fields\Radio;
+use Tbtop\Admin\Dsl\Fields\Relation;
+use Tbtop\Admin\Dsl\Fields\Repeater;
+use Tbtop\Admin\Dsl\Fields\Richtext;
+use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Dsl\Fields\Slug;
+use Tbtop\Admin\Dsl\Fields\Tags;
+use Tbtop\Admin\Dsl\Fields\Text;
+use Tbtop\Admin\Dsl\Fields\Textarea;
+use Tbtop\Admin\Dsl\Fields\Upload;
 
 /**
  * Structure DSL entry — mirrors the client `s.*` builders and collects
  * the request-scoped registries (forms, actions) the HTTP layer resolves.
  *
- * @method FieldBuilder text(string $name)
- * @method FieldBuilder textarea(string $name)
- * @method FieldBuilder password(string $name)
- * @method FieldBuilder number(string $name)
- * @method FieldBuilder date(string $name)
- * @method FieldBuilder datetime(string $name)
- * @method FieldBuilder boolean(string $name)
- * @method FieldBuilder select(string $name)
- * @method FieldBuilder radio(string $name)
- * @method FieldBuilder tags(string $name)
- * @method FieldBuilder checkbox(string $name)
- * @method FieldBuilder colorpicker(string $name)
- * @method FieldBuilder keyvalue(string $name)
- * @method FieldBuilder slug(string $name)
- * @method FieldBuilder upload(string $name)
- * @method FieldBuilder relation(string $name)
- * @method FieldBuilder repeater(string $name)
- * @method FieldBuilder richtext(string $name)
+ * @method Text text(string $name)
+ * @method Textarea textarea(string $name)
+ * @method Password password(string $name)
+ * @method Number number(string $name)
+ * @method Date date(string $name)
+ * @method Datetime datetime(string $name)
+ * @method \Tbtop\Admin\Dsl\Fields\Boolean boolean(string $name)
+ * @method Select select(string $name)
+ * @method Radio radio(string $name)
+ * @method Tags tags(string $name)
+ * @method Checkbox checkbox(string $name)
+ * @method Colorpicker colorpicker(string $name)
+ * @method Keyvalue keyvalue(string $name)
+ * @method Slug slug(string $name)
+ * @method Upload upload(string $name)
+ * @method Relation relation(string $name)
+ * @method Repeater repeater(string $name)
+ * @method Richtext richtext(string $name)
  */
 final class S
 {
-    private const FIELD_KINDS = [
+    /** @var array<string, class-string<Field>> */
+    private static array $kindMap = [];
+
+    /**
+     * Built-in kind identifiers, exposed for test datasets.
+     *
+     * @var list<string>
+     */
+    public const BUILT_IN_KINDS = [
         'text', 'textarea', 'password', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'checkbox', 'colorpicker', 'keyvalue',
         'slug', 'upload', 'relation', 'repeater', 'richtext',
@@ -47,19 +74,55 @@ final class S
     /** @var array<string, ChartBuilder> */
     private array $charts = [];
 
-    /** @param  list<mixed>  $args */
-    public function __call(string $kind, array $args): FieldBuilder
+    // -------------------------------------------------------------------------
+    // Registry
+    // -------------------------------------------------------------------------
+
+    /**
+     * Register (or override) a custom field kind.
+     * $fieldClass must extend Field.
+     *
+     * @param  class-string  $fieldClass
+     */
+    public static function register(string $kind, string $fieldClass): void
     {
-        if (! in_array($kind, self::FIELD_KINDS, true)) {
+        if (! is_subclass_of($fieldClass, Field::class)) {
+            throw new InvalidArgumentException(
+                "Cannot register \"{$fieldClass}\" for kind \"{$kind}\": class must extend ".Field::class.'.',
+            );
+        }
+        self::kindMap()[$kind] = $fieldClass;
+    }
+
+    /** Instantiate a field by kind string — used by __call and parity tests. */
+    public static function makeField(string $kind, string $name): Field
+    {
+        $map = self::kindMap();
+        if (! isset($map[$kind])) {
             throw new InvalidArgumentException("Unknown field kind \"{$kind}\".");
         }
+
+        return $map[$kind]::make($name);
+    }
+
+    // -------------------------------------------------------------------------
+    // Magic dispatch
+    // -------------------------------------------------------------------------
+
+    /** @param  list<mixed>  $args */
+    public function __call(string $kind, array $args): Field
+    {
         $name = $args[0] ?? null;
         if (! is_string($name)) {
             throw new InvalidArgumentException("Field \"{$kind}\" needs a name as first argument.");
         }
 
-        return new FieldBuilder($kind, $name);
+        return self::makeField($kind, $name);
     }
+
+    // -------------------------------------------------------------------------
+    // Layout builders
+    // -------------------------------------------------------------------------
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
     public function stack(array $children, array $opts = []): Node
@@ -86,7 +149,7 @@ final class S
     }
 
     /**
-     * Cascade ->translatable() onto every FieldBuilder in $children (recursive).
+     * Cascade ->translatable() onto every Field / FieldBuilder in $children (recursive).
      * A field that explicitly called ->translatable(false) is skipped.
      *
      * @param  list<mixed>  $children
@@ -95,7 +158,10 @@ final class S
     public static function cascadeTranslatable(array $children): array
     {
         return array_map(static function (mixed $child): mixed {
-            if ($child instanceof FieldBuilder && ! $child->isTranslatableOptedOut() && ! $child->isTranslatableField()) {
+            if (($child instanceof Field || $child instanceof FieldBuilder)
+                && ! $child->isTranslatableOptedOut()
+                && ! $child->isTranslatableField()
+            ) {
                 return $child->translatable();
             }
             if ($child instanceof Node) {
@@ -135,6 +201,10 @@ final class S
         return new Node('tabs', [...$options, 'tabs' => $tabs], null, $meta);
     }
 
+    // -------------------------------------------------------------------------
+    // Data builders
+    // -------------------------------------------------------------------------
+
     /** @param  list<mixed>  $children */
     public function form(string $name, array $children): FormBuilder
     {
@@ -163,6 +233,10 @@ final class S
         return new Node('row', ['children' => $actions]);
     }
 
+    // -------------------------------------------------------------------------
+    // Collectors
+    // -------------------------------------------------------------------------
+
     /** @return array<string, FormBuilder> */
     public function collectedForms(): array
     {
@@ -187,11 +261,49 @@ final class S
         return $this->charts;
     }
 
+    // -------------------------------------------------------------------------
+    // Internals
+    // -------------------------------------------------------------------------
+
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
     private static function layout(string $kind, array $children, array $opts): Node
     {
         [$options, $meta] = Meta::split($opts);
 
         return new Node($kind, [...$options, 'children' => $children], null, $meta);
+    }
+
+    /**
+     * Returns the mutable kind→class map, bootstrapping the built-in entries
+     * on first call.
+     *
+     * @return array<string, class-string<Field>>
+     */
+    private static function &kindMap(): array
+    {
+        if (self::$kindMap === []) {
+            self::$kindMap = [
+                'text' => Text::class,
+                'textarea' => Textarea::class,
+                'password' => Password::class,
+                'number' => Number::class,
+                'date' => Date::class,
+                'datetime' => Datetime::class,
+                'boolean' => Boolean::class,
+                'select' => Select::class,
+                'radio' => Radio::class,
+                'tags' => Tags::class,
+                'checkbox' => Checkbox::class,
+                'colorpicker' => Colorpicker::class,
+                'keyvalue' => Keyvalue::class,
+                'slug' => Slug::class,
+                'upload' => Upload::class,
+                'relation' => Relation::class,
+                'repeater' => Repeater::class,
+                'richtext' => Richtext::class,
+            ];
+        }
+
+        return self::$kindMap;
     }
 }

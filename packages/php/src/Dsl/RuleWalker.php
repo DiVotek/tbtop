@@ -2,10 +2,13 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Tbtop\Admin\Dsl\Fields\Field;
+
 final class RuleWalker
 {
     /**
-     * Walks a structure tree collecting Laravel rules from FieldBuilders.
+     * Walks a structure tree collecting Laravel validation rules from fields.
+     * Accepts both the legacy FieldBuilder and the new Field base class.
      * Repeater sub-fields become `parent.*.child` rules.
      * Translatable fields become `field.locale` dotted rules per locale.
      *
@@ -27,7 +30,7 @@ final class RuleWalker
     /** @return array<string, list<string>> */
     private static function fromChild(mixed $child, string $prefix): array
     {
-        if ($child instanceof FieldBuilder) {
+        if ($child instanceof Field || $child instanceof FieldBuilder) {
             return self::fromField($child, $prefix);
         }
         if ($child instanceof Node) {
@@ -39,8 +42,8 @@ final class RuleWalker
         return [];
     }
 
-    /** @return array<string, list<string>> */
-    private static function fromField(FieldBuilder $field, string $prefix): array
+    /** @param  Field|FieldBuilder  $field @return array<string, list<string>> */
+    private static function fromField(Field|FieldBuilder $field, string $prefix): array
     {
         if ($field->isTranslatableField()) {
             return self::fromTranslatableField($field, $prefix);
@@ -66,7 +69,7 @@ final class RuleWalker
      *
      * @return array<string, list<string>>
      */
-    private static function fromTranslatableField(FieldBuilder $field, string $prefix): array
+    private static function fromTranslatableField(Field|FieldBuilder $field, string $prefix): array
     {
         $key = $prefix.$field->name;
         $locales = self::contentLocales();

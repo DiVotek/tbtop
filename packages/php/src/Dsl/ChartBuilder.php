@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Fields\Field;
 
 /**
  * Chart node with an optional server-side data source.
@@ -14,7 +15,7 @@ final class ChartBuilder implements JsonSerializable
 {
     private ?Closure $query = null;
 
-    /** @var list<FieldBuilder> */
+    /** @var list<Field|FieldBuilder> */
     private array $paramFields = [];
 
     /** @param  array<string, mixed>  $opts */
@@ -32,7 +33,7 @@ final class ChartBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<FieldBuilder>  $fields */
+    /** @param  list<Field|FieldBuilder>  $fields */
     public function params(array $fields): self
     {
         $this->paramFields = $fields;
@@ -40,7 +41,7 @@ final class ChartBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @return list<FieldBuilder> */
+    /** @return list<Field|FieldBuilder> */
     public function paramFields(): array
     {
         return $this->paramFields;
@@ -62,7 +63,7 @@ final class ChartBuilder implements JsonSerializable
     {
         [$options, $meta] = Meta::split($this->opts);
         if ($this->paramFields !== []) {
-            $options['params'] = array_map(fn (FieldBuilder $f) => $f->toNode(), $this->paramFields);
+            $options['params'] = array_map(fn (Field|FieldBuilder $f) => $f->toNode(), $this->paramFields);
         }
 
         return new Node("chart:{$this->type}", [...$options, 'type' => $this->type], $this->name, $meta);

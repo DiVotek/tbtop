@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Admin\Fields\Rating;
 use Illuminate\Support\ServiceProvider;
+use Tbtop\Admin\Dsl\S;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        S::register('rating', Rating::class);
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Dsl\FieldBuilder;
+use Tbtop\Admin\Dsl\Fields\Field;
 
 final class DataController
 {
@@ -27,7 +28,7 @@ final class DataController
     /**
      * Build the param bag: only declared param names, query-string value or default.
      *
-     * @param  list<FieldBuilder>  $fields
+     * @param  list<Field|FieldBuilder>  $fields
      * @return array<string, mixed>
      */
     private function resolveParams(array $fields, Request $request): array

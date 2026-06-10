@@ -1,3 +1,5 @@
+export { AdminLayout } from "./app/AdminLayout";
+export { AuthUserProvider, useAuthUser } from "./app/authUser";
 export { type NavigateFn, useNavigate } from "./app/navigate";
 export {
 	type PageParams,
@@ -39,6 +41,12 @@ export type {
 } from "./i18n/i18n";
 export { defaultMessages, I18nProvider, useLocale, useTranslation } from "./i18n/i18n";
 export { LanguageSwitcher } from "./i18n/LanguageSwitcher";
+// Inertia integration — server-authored pages
+export { AdminPage } from "./inertia/AdminPage";
+export { compileConstraints, type FieldConstraints } from "./inertia/constraints";
+export { defineCustomAction } from "./inertia/customActions";
+export { executeEffects, readEffects, type ServerEffect } from "./inertia/effects";
+export { type MaterializeInput, materialize } from "./inertia/materialize";
 export type {
 	BlockBehavior,
 	BlockDescriptor,
@@ -47,7 +55,7 @@ export type {
 	RenderContext,
 	RenderProps,
 } from "./render/blockRegistry";
-export { getBlockDescriptor } from "./render/blockRegistry";
+export { getBlockDescriptor, registerBlock } from "./render/blockRegistry";
 export { defineBlock } from "./render/defineBlock";
 export type { FieldClientDescriptor } from "./render/defineFieldClient";
 export { defineFieldClient } from "./render/defineFieldClient";
@@ -85,12 +93,3 @@ export type {
 	TableController,
 	TableOptions,
 } from "./structure/types";
-
-// Inertia integration — server-authored pages
-export { AdminPage } from "./inertia/AdminPage";
-export { defineCustomAction } from "./inertia/customActions";
-export { executeEffects, readEffects, type ServerEffect } from "./inertia/effects";
-export { materialize, type MaterializeInput } from "./inertia/materialize";
-export { compileConstraints, type FieldConstraints } from "./inertia/constraints";
-export { AdminLayout } from "./app/AdminLayout";
-export { AuthUserProvider, useAuthUser } from "./app/authUser";
