@@ -13,13 +13,18 @@ use Tbtop\Admin\Dsl\Fields\Field;
  */
 final class TableBuilder implements JsonSerializable
 {
-    /** @var list<array<string, mixed>> */
-    private array $columns = [];
+    /**
+     * All column descriptors, including hidden ones (they need to participate
+     * in projection decisions but not in wire serialization).
+     *
+     * @var list<Column>
+     */
+    private array $columnObjects = [];
 
     /** @var array<string, mixed> */
     private array $opts = [];
 
-    /** @var list<string> */
+    /** @var list<string> — table-level searchable (back-compat) */
     private array $searchable = [];
 
     /** @var list<Field> */
@@ -29,15 +34,30 @@ final class TableBuilder implements JsonSerializable
 
     private ?Closure $query = null;
 
+    private int $paginatePerPage = 25;
+
+    /** @var list<int> */
+    private array $paginateOptions = [10, 25, 50, 100];
+
     public function __construct(public readonly string $name) {}
 
-    /** @param  array<int|string, mixed>  $columns  ['title' => 'Title'] or [['name' => ..., 'label' => ..., 'kind' => ...]] */
+    /**
+     * Accept Column instances, raw arrays, or shorthand ['name' => 'Label'].
+     *
+     * @param  array<int|string, mixed>  $columns
+     */
     public function columns(array $columns): self
     {
         foreach ($columns as $key => $value) {
-            $this->columns[] = is_array($value)
-                ? $value
-                : ['name' => (string) $key, 'label' => (string) $value, 'kind' => 'text'];
+            if ($value instanceof Column) {
+                $this->columnObjects[] = $value;
+            } elseif (is_array($value)) {
+                $this->columnObjects[] = self::columnFromArray($value);
+            } else {
+                // shorthand: 'name' => 'Label'
+                $col = Column::make((string) $key)->label((string) $value)->kind('text');
+                $this->columnObjects[] = $col;
+            }
         }
 
         return $this;
@@ -97,9 +117,27 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * @deprecated Use paginate() for the unified pagination config.
+     * Kept for back-compat; sets perPage on the pagination spec.
+     */
     public function perPage(int $perPage): self
     {
-        $this->opts['perPage'] = $perPage;
+        $this->paginatePerPage = $perPage;
+
+        return $this;
+    }
+
+    /**
+     * Configure pagination. Pagination is always active; this method just
+     * customises the defaults.
+     *
+     * @param  list<int>  $options  Allowed perPage values shown in the UI.
+     */
+    public function paginate(int $perPage = 25, array $options = [10, 25, 50, 100]): self
+    {
+        $this->paginatePerPage = $perPage;
+        $this->paginateOptions = $options;
 
         return $this;
     }
@@ -132,19 +170,68 @@ final class TableBuilder implements JsonSerializable
         return $this->query;
     }
 
-    /** @return list<string> */
+    /**
+     * All searchable fields: table-level list + per-column searchable() columns.
+     *
+     * @return list<string>
+     */
     public function searchableFields(): array
     {
-        return $this->searchable;
+        $fields = $this->searchable;
+        foreach ($this->columnObjects as $col) {
+            if ($col->isSearchable() && ! in_array($col->name, $fields, true)) {
+                $fields[] = $col->name;
+            }
+        }
+
+        return $fields;
     }
 
     /** @return list<string> Column names declared translatable */
     public function translatableColumns(): array
     {
         $names = [];
-        foreach ($this->columns as $column) {
-            if (($column['translatable'] ?? false) === true) {
-                $names[] = (string) $column['name'];
+        foreach ($this->columnObjects as $col) {
+            if ($col->isVisible() && $col->isTranslatable()) {
+                $names[] = $col->name;
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * All Column instances regardless of visibility — for projection pipeline.
+     *
+     * @return list<Column>
+     */
+    public function allColumns(): array
+    {
+        return $this->columnObjects;
+    }
+
+    /**
+     * Visible Column instances only — for wire serialization.
+     *
+     * @return list<Column>
+     */
+    public function visibleColumns(): array
+    {
+        return array_values(array_filter($this->columnObjects, fn (Column $c) => $c->isVisible()));
+    }
+
+    /**
+     * Names of columns that are explicitly declared sortable.
+     * The default-sort field is always implicitly allowed.
+     *
+     * @return list<string>
+     */
+    public function sortableColumnNames(): array
+    {
+        $names = [];
+        foreach ($this->columnObjects as $col) {
+            if ($col->isSortable()) {
+                $names[] = $col->name;
             }
         }
 
@@ -158,6 +245,15 @@ final class TableBuilder implements JsonSerializable
         return $this->opts['defaultSort'] ?? null;
     }
 
+    /** @return array{perPage: int, options: list<int>} */
+    public function paginationSpec(): array
+    {
+        return [
+            'perPage' => $this->paginatePerPage,
+            'options' => $this->paginateOptions,
+        ];
+    }
+
     public function toNode(): Node
     {
         $opts = $this->opts;
@@ -166,10 +262,19 @@ final class TableBuilder implements JsonSerializable
             $opts['filtersIn'] = $this->filtersIn ?? 'modal';
         }
 
+        // Only serialize visible columns
+        $columns = array_map(
+            fn (Column $c) => $c->jsonSerialize(),
+            $this->visibleColumns(),
+        );
+
+        // Pagination always present on wire
+        $opts['pagination'] = $this->paginationSpec();
+
         return new Node('table', [
             ...$opts,
             'name' => $this->name,
-            'columns' => $this->columns,
+            'columns' => $columns,
         ], $this->name);
     }
 
@@ -177,5 +282,37 @@ final class TableBuilder implements JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->toNode()->jsonSerialize();
+    }
+
+    // -------------------------------------------------------------------------
+    // Internals
+    // -------------------------------------------------------------------------
+
+    /**
+     * Build a Column from a legacy raw array like
+     * ['name' => 'title', 'label' => 'Title', 'kind' => 'text', 'translatable' => true].
+     *
+     * @param  array<string, mixed>  $raw
+     */
+    private static function columnFromArray(array $raw): Column
+    {
+        $col = Column::make((string) ($raw['name'] ?? ''));
+        if (isset($raw['label'])) {
+            $col->label((string) $raw['label']);
+        }
+        if (isset($raw['kind'])) {
+            $col->kind((string) $raw['kind']);
+        }
+        if (($raw['translatable'] ?? false) === true) {
+            $col->translatable();
+        }
+        if (($raw['sortable'] ?? false) === true) {
+            $col->sortable();
+        }
+        if (($raw['searchable'] ?? false) === true) {
+            $col->searchable();
+        }
+
+        return $col;
     }
 }

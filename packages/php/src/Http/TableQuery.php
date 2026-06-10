@@ -9,21 +9,29 @@ use Tbtop\Admin\Dsl\TableBuilder;
 
 final class TableQuery
 {
-    private const MAX_PER_PAGE = 100;
-
-    /** @return array{data: mixed, total: int} */
+    /** @return array{data: mixed, total: int, page: int, perPage: int} */
     public static function run(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): array
     {
         self::applySearch($table, $request, $builder);
         self::applyFilters($table, $request, $builder);
         self::applySort($table, $request, $builder);
 
-        $perPage = min(max((int) $request->query('perPage', '25'), 1), self::MAX_PER_PAGE);
+        $pagination = $table->paginationSpec();
+        $allowedPerPage = $pagination['options'];
+        $defaultPerPage = $pagination['perPage'];
+
+        $requestedPerPage = (int) $request->query('perPage', (string) $defaultPerPage);
+        $perPage = in_array($requestedPerPage, $allowedPerPage, true) ? $requestedPerPage : $defaultPerPage;
         $page = max((int) $request->query('page', '1'), 1);
         $total = (clone $builder)->count();
         $rows = $builder->forPage($page, $perPage)->get();
 
-        return ['data' => TranslatableProjection::apply($table, $rows), 'total' => $total];
+        return [
+            'data' => ColumnProjection::apply($table, $rows),
+            'total' => $total,
+            'page' => $page,
+            'perPage' => $perPage,
+        ];
     }
 
     private static function applySearch(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
@@ -64,11 +72,28 @@ final class TableQuery
     private static function applySort(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
     {
         $default = $table->defaultSortSpec();
-        $sort = (string) $request->query('sort', $default['field'] ?? '');
+        $requestedSort = (string) $request->query('sort', '');
         $dir = (string) $request->query('dir', $default['dir'] ?? 'asc');
-        if ($sort === '') {
-            return;
+
+        // Security whitelist: only allow explicitly declared sortable columns.
+        // The default-sort field is always implicitly allowed.
+        $allowed = $table->sortableColumnNames();
+        $defaultField = $default['field'] ?? null;
+
+        if ($requestedSort !== '') {
+            $isAllowed = in_array($requestedSort, $allowed, true)
+                || ($defaultField !== null && $requestedSort === $defaultField);
+
+            if ($isAllowed) {
+                $builder->orderBy($requestedSort, $dir === 'desc' ? 'desc' : 'asc');
+
+                return;
+            }
         }
-        $builder->orderBy($sort, $dir === 'desc' ? 'desc' : 'asc');
+
+        // Fall through to default sort
+        if ($defaultField !== null) {
+            $builder->orderBy($defaultField, $default['dir'] ?? 'asc');
+        }
     }
 }
