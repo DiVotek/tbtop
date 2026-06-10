@@ -45,7 +45,9 @@ function SelectTrigger({
 function SelectContent({
 	className,
 	children,
-	position = "item-aligned",
+	// popper drops the menu below the trigger (item-aligned overlays it) —
+	// matches the searchable select's dropdown placement.
+	position = "popper",
 	align = "center",
 	...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
