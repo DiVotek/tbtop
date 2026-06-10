@@ -94,6 +94,27 @@
 							}
 						}
 					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "mediaLibrary" } } },
+					"then": {
+						"properties": {
+							"options": { "type": "object" }
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "media" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"multiple": { "type": "boolean" },
+									"accept": { "type": "array", "items": { "type": "string" } }
+								}
+							}
+						}
+					}
 				}
 			]
 		},

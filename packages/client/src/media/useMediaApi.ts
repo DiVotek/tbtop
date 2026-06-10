@@ -173,6 +173,13 @@ export async function deleteMediaItem(
 	await client.delete(`/media/${id}`);
 }
 
+export async function fetchMediaItem(
+	client: ReturnType<typeof useClient>,
+	id: string,
+): Promise<MediaItem> {
+	return (await client.get(`/media/${id}`)) as MediaItem;
+}
+
 export async function createFolder(
 	client: ReturnType<typeof useClient>,
 	name: string,

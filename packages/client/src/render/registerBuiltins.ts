@@ -20,6 +20,7 @@ import { TextCell, TextForm } from "../fields/textField";
 import { UnknownCell, UnknownForm } from "../fields/unknownField";
 import { UploadCell, UploadForm, type UploadValue } from "../fields/uploadField";
 import { MediaLibraryBlock } from "../media/mediaLibraryBlock";
+import { MediaPickerCell, MediaPickerForm, type MediaPickerValue } from "../media/mediaPickerField";
 import { ActionBlock } from "../structure/actionBlock";
 import { ActionGroupBlock } from "../structure/actionGroupBlock";
 import { AsideBlock } from "../structure/asideBlock";
@@ -148,6 +149,10 @@ function registerStructuredFields(): void {
 		cell: KeyvalueCell,
 	});
 	defineFieldClient<"upload", UploadValue>("upload", { form: UploadForm, cell: UploadCell });
+	defineFieldClient<"media", MediaPickerValue>("media", {
+		form: MediaPickerForm,
+		cell: MediaPickerCell,
+	});
 	defineFieldClient<"repeater", Record<string, unknown>[]>("repeater", {
 		form: RepeaterForm,
 		cell: RepeaterCell,

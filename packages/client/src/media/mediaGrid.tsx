@@ -23,6 +23,8 @@ interface MediaGridProps {
 	onUploaded: (item: MediaItem) => void;
 	folderId: string | null;
 	onOpenImportUrl: () => void;
+	/** Optional: ids of items to render with a selected-state highlight (picker mode). */
+	selectedIds?: string[];
 }
 
 const PAGINATION_OPTIONS: TablePaginationOptions = { perPage: 24, options: [12, 24, 48, 96] };
@@ -35,6 +37,7 @@ export function MediaGrid({
 	onUploaded,
 	folderId,
 	onOpenImportUrl,
+	selectedIds,
 }: MediaGridProps): ReactNode {
 	const t = useTranslation();
 	const client = useClient();
@@ -193,7 +196,12 @@ export function MediaGrid({
 				{!isLoading && items.length > 0 && (
 					<div className="grid grid-cols-3 gap-3 p-1 sm:grid-cols-4 md:grid-cols-6">
 						{items.map((item) => (
-							<MediaCard key={item.id} item={item} onSelect={onSelect} />
+							<MediaCard
+								key={item.id}
+								item={item}
+								onSelect={onSelect}
+								selected={selectedIds?.includes(item.id) ?? false}
+							/>
 						))}
 					</div>
 				)}
@@ -232,17 +240,22 @@ export function MediaGrid({
 interface MediaCardProps {
 	item: MediaItem;
 	onSelect: (item: MediaItem) => void;
+	selected?: boolean;
 }
 
-function MediaCard({ item, onSelect }: MediaCardProps): ReactNode {
+function MediaCard({ item, onSelect, selected = false }: MediaCardProps): ReactNode {
 	const thumb = isImageMime(item.mime) ? (item.sizes.profile ?? item.url) : null;
 
 	return (
 		<button
 			type="button"
-			className="group flex flex-col gap-1 rounded-md border bg-card p-1.5 text-left transition-colors hover:border-primary hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			className={cn(
+				"group flex flex-col gap-1 rounded-md border bg-card p-1.5 text-left transition-colors hover:border-primary hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+				selected && "border-primary ring-2 ring-primary ring-offset-1",
+			)}
 			onClick={() => onSelect(item)}
 			data-testid={`media-card-${item.id}`}
+			aria-pressed={selected}
 		>
 			<div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-muted">
 				{thumb ? (

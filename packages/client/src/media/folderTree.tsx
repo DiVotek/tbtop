@@ -1,5 +1,6 @@
 /**
  * FolderTree — left-panel folder navigation with create/rename/delete via context menu.
+ * Folder mutations use proper dialogs instead of window.prompt / window.confirm.
  */
 import { FolderIcon, FolderOpenIcon, MoreHorizontalIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -13,6 +14,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { FolderDeleteDialog, FolderNameDialog } from "./folderDialogs";
 import type { MediaFolder } from "./types";
 import { createFolder, deleteFolder, renameFolder } from "./useMediaApi";
 
@@ -28,6 +30,14 @@ interface FolderTreeProps {
 	onSelect: (id: string | null) => void;
 	onMutated: () => void;
 }
+
+// ─── Dialog state ─────────────────────────────────────────────────────────────
+
+type DialogState =
+	| { kind: "closed" }
+	| { kind: "create"; parentId: string | null }
+	| { kind: "rename"; folder: MediaFolder }
+	| { kind: "delete"; folder: MediaFolder };
 
 // ─── Tree build ───────────────────────────────────────────────────────────────
 
@@ -57,33 +67,44 @@ export function FolderTree({
 }: FolderTreeProps): ReactNode {
 	const t = useTranslation();
 	const client = useClient();
+	const [dialog, setDialog] = useState<DialogState>({ kind: "closed" });
 	const [error, setError] = useState<string | null>(null);
 	const tree = buildTree(folders);
 
-	async function handleCreate(parentId: string | null) {
-		const name = window.prompt(t("media.folder.name_prompt"));
-		if (!name?.trim()) return;
+	// ─── Handlers ──────────────────────────────────────────────────────────────
+
+	async function handleCreateConfirm(name: string) {
+		if (dialog.kind !== "create") return;
+		const parentId = dialog.parentId;
+		setDialog({ kind: "closed" });
 		try {
-			await createFolder(client, name.trim(), parentId);
+			await createFolder(client, name, parentId);
 			onMutated();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		}
 	}
 
-	async function handleRename(folder: MediaFolder) {
-		const name = window.prompt(t("media.folder.rename_prompt"), folder.name);
-		if (!name?.trim() || name.trim() === folder.name) return;
+	async function handleRenameConfirm(name: string) {
+		if (dialog.kind !== "rename") return;
+		const folder = dialog.folder;
+		if (name === folder.name) {
+			setDialog({ kind: "closed" });
+			return;
+		}
+		setDialog({ kind: "closed" });
 		try {
-			await renameFolder(client, folder.id, name.trim());
+			await renameFolder(client, folder.id, name);
 			onMutated();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		}
 	}
 
-	async function handleDelete(folder: MediaFolder) {
-		if (!window.confirm(t("media.folder.delete_confirm"))) return;
+	async function handleDeleteConfirm() {
+		if (dialog.kind !== "delete") return;
+		const folder = dialog.folder;
+		setDialog({ kind: "closed" });
 		try {
 			await deleteFolder(client, folder.id);
 			if (selectedId === folder.id) onSelect(null);
@@ -93,6 +114,8 @@ export function FolderTree({
 			setError(msg);
 		}
 	}
+
+	// ─── Render ────────────────────────────────────────────────────────────────
 
 	return (
 		<div className="flex flex-col gap-1 p-2" data-testid="folder-tree">
@@ -115,7 +138,7 @@ export function FolderTree({
 				<ContextMenuButton
 					onRename={undefined}
 					onDelete={undefined}
-					onCreateChild={() => handleCreate(null)}
+					onCreateChild={() => setDialog({ kind: "create", parentId: null })}
 				/>
 			</button>
 
@@ -126,18 +149,40 @@ export function FolderTree({
 					node={node}
 					selectedId={selectedId}
 					onSelect={onSelect}
-					onRename={handleRename}
-					onDelete={handleDelete}
-					onCreateChild={handleCreate}
+					onRename={(folder) => setDialog({ kind: "rename", folder })}
+					onDelete={(folder) => setDialog({ kind: "delete", folder })}
+					onCreateChild={(parentId) => setDialog({ kind: "create", parentId })}
 					depth={0}
 				/>
 			))}
 
 			{error && (
-				<p className="text-xs text-destructive px-2" role="alert">
+				<p className="px-2 text-xs text-destructive" role="alert">
 					{error}
 				</p>
 			)}
+
+			{/* Dialogs */}
+			<FolderNameDialog
+				open={dialog.kind === "create"}
+				initial=""
+				title={t("media.folder.create_child")}
+				onConfirm={handleCreateConfirm}
+				onClose={() => setDialog({ kind: "closed" })}
+			/>
+			<FolderNameDialog
+				open={dialog.kind === "rename"}
+				initial={dialog.kind === "rename" ? dialog.folder.name : ""}
+				title={t("media.folder.rename")}
+				onConfirm={handleRenameConfirm}
+				onClose={() => setDialog({ kind: "closed" })}
+			/>
+			<FolderDeleteDialog
+				open={dialog.kind === "delete"}
+				folderName={dialog.kind === "delete" ? dialog.folder.name : ""}
+				onConfirm={handleDeleteConfirm}
+				onClose={() => setDialog({ kind: "closed" })}
+			/>
 		</div>
 	);
 }
