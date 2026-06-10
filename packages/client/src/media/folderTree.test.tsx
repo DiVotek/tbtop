@@ -221,7 +221,7 @@ describe("FolderTree: delete folder dialog", () => {
 
 		// Confirm delete
 		await act(async () => {
-			await user.click(getByTestId("folder-delete-confirm"));
+			await user.click(getByTestId("confirm-dialog-confirm"));
 		});
 
 		await waitFor(() => expect(deleteCalled).toBe(true));
@@ -265,7 +265,7 @@ describe("FolderTree: delete folder dialog", () => {
 		});
 		await findByTestId("folder-delete-dialog");
 		await act(async () => {
-			await user.click(getByTestId("folder-delete-confirm"));
+			await user.click(getByTestId("confirm-dialog-confirm"));
 		});
 
 		// Error message should be visible in the tree

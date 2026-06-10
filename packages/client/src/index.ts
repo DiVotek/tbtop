@@ -103,3 +103,5 @@ export type {
 	TablePaginationOptions,
 } from "./structure/types";
 export { Input } from "./ui/input";
+export type { ConfirmDialogProps, ModalShellProps, ModalSize } from "./ui/modal-shell";
+export { ConfirmDialog, ModalShell } from "./ui/modal-shell";

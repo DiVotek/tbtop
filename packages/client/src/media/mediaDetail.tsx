@@ -7,14 +7,8 @@ import { type ReactNode, useRef, useState } from "react";
 import { useClient } from "../data/client";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
-import {
-	ResponsiveDialog,
-	ResponsiveDialogClose,
-	ResponsiveDialogContent,
-	ResponsiveDialogFooter,
-	ResponsiveDialogHeader,
-	ResponsiveDialogTitle,
-} from "../ui/revola";
+import { ModalShell } from "../ui/modal-shell";
+import { ResponsiveDialogClose } from "../ui/revola";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import type { MediaFolder, MediaItem } from "./types";
 import {
@@ -40,26 +34,23 @@ export function MediaDetail({
 	onUpdated,
 	onDeleted,
 }: MediaDetailProps): ReactNode {
+	if (!item) return null;
+
 	return (
-		<ResponsiveDialog open={item !== null} onOpenChange={(v) => !v && onClose()} onlyDialog>
-			<ResponsiveDialogContent className="sm:max-w-md" data-testid="media-detail">
-				{item && (
-					<DetailBody
-						item={item}
-						folders={folders}
-						onClose={onClose}
-						onUpdated={onUpdated}
-						onDeleted={onDeleted}
-					/>
-				)}
-			</ResponsiveDialogContent>
-		</ResponsiveDialog>
+		<DetailShell
+			item={item}
+			folders={folders}
+			onClose={onClose}
+			onUpdated={onUpdated}
+			onDeleted={onDeleted}
+		/>
 	);
 }
 
-// ─── DetailBody ───────────────────────────────────────────────────────────────
+// ─── DetailShell ──────────────────────────────────────────────────────────────
+// Separate component so hooks aren't called conditionally in MediaDetail.
 
-interface DetailBodyProps {
+interface DetailShellProps {
 	item: MediaItem;
 	folders: MediaFolder[];
 	onClose: () => void;
@@ -67,7 +58,13 @@ interface DetailBodyProps {
 	onDeleted: (id: string) => void;
 }
 
-function DetailBody({ item, folders, onClose, onUpdated, onDeleted }: DetailBodyProps): ReactNode {
+function DetailShell({
+	item,
+	folders,
+	onClose,
+	onUpdated,
+	onDeleted,
+}: DetailShellProps): ReactNode {
 	const t = useTranslation();
 	const client = useClient();
 
@@ -126,179 +123,181 @@ function DetailBody({ item, folders, onClose, onUpdated, onDeleted }: DetailBody
 		}
 	}
 
-	return (
+	const footer = (
 		<>
-			<ResponsiveDialogHeader>
-				<ResponsiveDialogTitle>{t("media.detail.title")}</ResponsiveDialogTitle>
-			</ResponsiveDialogHeader>
-
-			<div className="flex flex-col gap-4 overflow-y-auto px-1 py-2">
-				{/* Preview */}
-				<div className="flex items-center justify-center rounded-md border bg-muted/40 p-4">
-					{thumb ? (
-						<img
-							src={thumb}
-							alt={item.alt ?? item.name}
-							className="max-h-48 max-w-full rounded object-contain"
-							data-testid="detail-preview-img"
-						/>
-					) : (
-						<FileIcon
-							className="h-16 w-16 text-muted-foreground"
-							data-testid="detail-preview-icon"
-						/>
-					)}
-				</div>
-
-				{/* Metadata */}
-				<dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-					<dt className="text-muted-foreground">{t("media.detail.mime")}</dt>
-					<dd className="truncate">{item.mime}</dd>
-					<dt className="text-muted-foreground">{t("media.detail.size")}</dt>
-					<dd>{formatBytes(item.size)}</dd>
-					<dt className="text-muted-foreground">{t("media.detail.created")}</dt>
-					<dd>{new Date(item.createdAt).toLocaleDateString()}</dd>
-				</dl>
-
-				{/* Name */}
-				<div className="flex flex-col gap-1.5">
-					<label className="text-sm font-medium" htmlFor="detail-name">
-						{t("media.detail.name")}
-					</label>
-					<input
-						id="detail-name"
-						className="h-9 w-full rounded-md border px-3 py-1 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						disabled={busy}
-						data-testid="detail-name-input"
-					/>
-				</div>
-
-				{/* Alt */}
-				<div className="flex flex-col gap-1.5">
-					<label className="text-sm font-medium" htmlFor="detail-alt">
-						{t("media.detail.alt")}
-					</label>
-					<textarea
-						id="detail-alt"
-						className="w-full rounded-md border px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
-						rows={2}
-						value={alt}
-						onChange={(e) => setAlt(e.target.value)}
-						disabled={busy}
-						data-testid="detail-alt-input"
-					/>
-				</div>
-
-				{/* Move to folder */}
-				<div className="flex flex-col gap-1.5">
-					<label className="text-sm font-medium">
-						{t("media.detail.move_to_folder")}
-					</label>
-					<Select value={folderId} onValueChange={setFolderId} disabled={busy}>
-						<SelectTrigger data-testid="detail-folder-select">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="__root__">{t("media.folder.all_files")}</SelectItem>
-							{folders.map((f) => (
-								<SelectItem key={f.id} value={f.id}>
-									{f.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
-				{error && (
-					<p role="alert" className="text-sm text-destructive" data-testid="detail-error">
-						{error}
-					</p>
-				)}
-
-				{/* Replace file */}
-				<div>
+			{/* Delete with confirm */}
+			{confirmDelete ? (
+				<div className="flex items-center gap-2 text-sm">
+					<span className="text-muted-foreground">
+						{t("media.detail.delete_confirm")}
+					</span>
 					<Button
 						type="button"
-						variant="outline"
+						variant="destructive"
 						size="sm"
+						onClick={handleDelete}
 						disabled={busy}
-						onClick={() => replaceRef.current?.click()}
-						data-testid="detail-replace-btn"
+						data-testid="detail-delete-confirm-btn"
 					>
-						<UploadIcon className="mr-1.5 h-4 w-4" />
-						{t("media.detail.replace")}
+						{t("action.delete")}
 					</Button>
-					<input
-						ref={replaceRef}
-						type="file"
-						className="sr-only"
-						onChange={(e) => handleReplace(e.target.files)}
-						data-testid="detail-replace-input"
-					/>
-				</div>
-			</div>
-
-			<ResponsiveDialogFooter>
-				{/* Delete with confirm */}
-				{confirmDelete ? (
-					<div className="flex items-center gap-2 text-sm">
-						<span className="text-muted-foreground">
-							{t("media.detail.delete_confirm")}
-						</span>
-						<Button
-							type="button"
-							variant="destructive"
-							size="sm"
-							onClick={handleDelete}
-							disabled={busy}
-							data-testid="detail-delete-confirm-btn"
-						>
-							{t("action.delete")}
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							onClick={() => setConfirmDelete(false)}
-							disabled={busy}
-						>
-							{t("action.cancel")}
-						</Button>
-					</div>
-				) : (
 					<Button
 						type="button"
 						variant="ghost"
 						size="sm"
-						className="text-destructive hover:text-destructive"
-						onClick={() => setConfirmDelete(true)}
+						onClick={() => setConfirmDelete(false)}
 						disabled={busy}
-						data-testid="detail-delete-btn"
 					>
-						<Trash2Icon className="mr-1.5 h-4 w-4" />
-						{t("action.delete")}
-					</Button>
-				)}
-
-				<div className="flex gap-2 ml-auto">
-					<ResponsiveDialogClose asChild>
-						<Button type="button" variant="outline" size="sm" disabled={busy}>
-							{t("action.cancel")}
-						</Button>
-					</ResponsiveDialogClose>
-					<Button
-						type="button"
-						size="sm"
-						onClick={handleSave}
-						disabled={busy}
-						data-testid="detail-save-btn"
-					>
-						{t("action.save")}
+						{t("action.cancel")}
 					</Button>
 				</div>
-			</ResponsiveDialogFooter>
+			) : (
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="text-destructive hover:text-destructive"
+					onClick={() => setConfirmDelete(true)}
+					disabled={busy}
+					data-testid="detail-delete-btn"
+				>
+					<Trash2Icon className="mr-1.5 h-4 w-4" />
+					{t("action.delete")}
+				</Button>
+			)}
+
+			<div className="ml-auto flex gap-2">
+				<ResponsiveDialogClose asChild>
+					<Button type="button" variant="outline" size="sm" disabled={busy}>
+						{t("action.cancel")}
+					</Button>
+				</ResponsiveDialogClose>
+				<Button
+					type="button"
+					size="sm"
+					onClick={handleSave}
+					disabled={busy}
+					data-testid="detail-save-btn"
+				>
+					{t("action.save")}
+				</Button>
+			</div>
 		</>
+	);
+
+	return (
+		<ModalShell
+			open={true}
+			onOpenChange={(v) => !v && onClose()}
+			title={t("media.detail.title")}
+			size="sm"
+			onlyDialog
+			footer={footer}
+			data-testid="media-detail"
+		>
+			{/* Preview */}
+			<div className="flex items-center justify-center rounded-md border bg-muted/40 p-4">
+				{thumb ? (
+					<img
+						src={thumb}
+						alt={item.alt ?? item.name}
+						className="max-h-48 max-w-full rounded object-contain"
+						data-testid="detail-preview-img"
+					/>
+				) : (
+					<FileIcon
+						className="h-16 w-16 text-muted-foreground"
+						data-testid="detail-preview-icon"
+					/>
+				)}
+			</div>
+
+			{/* Metadata */}
+			<dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+				<dt className="text-muted-foreground">{t("media.detail.mime")}</dt>
+				<dd className="truncate">{item.mime}</dd>
+				<dt className="text-muted-foreground">{t("media.detail.size")}</dt>
+				<dd>{formatBytes(item.size)}</dd>
+				<dt className="text-muted-foreground">{t("media.detail.created")}</dt>
+				<dd>{new Date(item.createdAt).toLocaleDateString()}</dd>
+			</dl>
+
+			{/* Name */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-sm font-medium" htmlFor="detail-name">
+					{t("media.detail.name")}
+				</label>
+				<input
+					id="detail-name"
+					className="h-9 w-full rounded-md border px-3 py-1 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
+					value={name}
+					onChange={(e) => setName(e.target.value)}
+					disabled={busy}
+					data-testid="detail-name-input"
+				/>
+			</div>
+
+			{/* Alt */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-sm font-medium" htmlFor="detail-alt">
+					{t("media.detail.alt")}
+				</label>
+				<textarea
+					id="detail-alt"
+					className="w-full rounded-md border px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
+					rows={2}
+					value={alt}
+					onChange={(e) => setAlt(e.target.value)}
+					disabled={busy}
+					data-testid="detail-alt-input"
+				/>
+			</div>
+
+			{/* Move to folder */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-sm font-medium">{t("media.detail.move_to_folder")}</label>
+				<Select value={folderId} onValueChange={setFolderId} disabled={busy}>
+					<SelectTrigger data-testid="detail-folder-select">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="__root__">{t("media.folder.all_files")}</SelectItem>
+						{folders.map((f) => (
+							<SelectItem key={f.id} value={f.id}>
+								{f.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+
+			{error && (
+				<p role="alert" className="text-sm text-destructive" data-testid="detail-error">
+					{error}
+				</p>
+			)}
+
+			{/* Replace file */}
+			<div>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={busy}
+					onClick={() => replaceRef.current?.click()}
+					data-testid="detail-replace-btn"
+				>
+					<UploadIcon className="mr-1.5 h-4 w-4" />
+					{t("media.detail.replace")}
+				</Button>
+				<input
+					ref={replaceRef}
+					type="file"
+					className="sr-only"
+					onChange={(e) => handleReplace(e.target.files)}
+					data-testid="detail-replace-input"
+				/>
+			</div>
+		</ModalShell>
 	);
 }

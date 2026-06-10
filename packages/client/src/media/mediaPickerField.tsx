@@ -14,7 +14,7 @@ import { useClient } from "../data/client";
 import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+import { ModalShell } from "../ui/modal-shell";
 import { FolderTree } from "./folderTree";
 import { MediaGrid } from "./mediaGrid";
 import type { MediaItem } from "./types";
@@ -312,58 +312,58 @@ function MediaPickerModal({
 			? { ...state, data: { ...state.data, data: filterByAccept(state.data.data, accept) } }
 			: state;
 
+	const footer = multiple ? (
+		<>
+			<Button type="button" variant="outline" onClick={handleClose}>
+				{t("action.cancel")}
+			</Button>
+			<Button
+				type="button"
+				onClick={handleConfirm}
+				disabled={selectedItems.length === 0}
+				data-testid="media-picker-confirm"
+			>
+				{t("media.picker.confirm")} ({selectedItems.length})
+			</Button>
+		</>
+	) : undefined;
+
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-			<DialogContent className="max-w-4xl" data-testid="media-picker-modal">
-				<DialogHeader>
-					<DialogTitle>
-						{multiple ? t("media.picker.title_multiple") : t("media.picker.title")}
-					</DialogTitle>
-				</DialogHeader>
+		<ModalShell
+			open={open}
+			onOpenChange={(v) => !v && handleClose()}
+			title={multiple ? t("media.picker.title_multiple") : t("media.picker.title")}
+			size="full"
+			onlyDialog
+			footer={footer}
+			data-testid="media-picker-modal"
+		>
+			<div className="flex min-h-0 gap-4" style={{ height: "60vh" }}>
+				{/* Folder tree */}
+				<aside className="w-44 shrink-0 overflow-y-auto rounded-md border">
+					<FolderTree
+						folders={folders}
+						selectedId={selectedFolder}
+						onSelect={handleFolderSelect}
+						onMutated={refetchFolders}
+					/>
+				</aside>
 
-				<div className="flex min-h-0 gap-4" style={{ height: "60vh" }}>
-					{/* Folder tree */}
-					<aside className="w-44 shrink-0 overflow-y-auto rounded-md border">
-						<FolderTree
-							folders={folders}
-							selectedId={selectedFolder}
-							onSelect={handleFolderSelect}
-							onMutated={refetchFolders}
-						/>
-					</aside>
-
-					{/* Grid */}
-					<div className="min-w-0 flex-1 overflow-y-auto">
-						<MediaGrid
-							state={filteredState}
-							params={queryParams}
-							onChangeParams={(patch) => setQueryParams((p) => ({ ...p, ...patch }))}
-							onSelect={handleCardClick}
-							onUploaded={() => refetch()}
-							folderId={selectedFolder}
-							onOpenImportUrl={() => {}}
-							selectedIds={selectedItems.map((i) => i.id)}
-						/>
-					</div>
+				{/* Grid */}
+				<div className="min-w-0 flex-1 overflow-y-auto">
+					<MediaGrid
+						state={filteredState}
+						params={queryParams}
+						onChangeParams={(patch) => setQueryParams((p) => ({ ...p, ...patch }))}
+						onSelect={handleCardClick}
+						onUploaded={() => refetch()}
+						folderId={selectedFolder}
+						onOpenImportUrl={() => {}}
+						selectedIds={selectedItems.map((i) => i.id)}
+					/>
 				</div>
-
-				{multiple && (
-					<DialogFooter>
-						<Button type="button" variant="outline" onClick={handleClose}>
-							{t("action.cancel")}
-						</Button>
-						<Button
-							type="button"
-							onClick={handleConfirm}
-							disabled={selectedItems.length === 0}
-							data-testid="media-picker-confirm"
-						>
-							{t("media.picker.confirm")} ({selectedItems.length})
-						</Button>
-					</DialogFooter>
-				)}
-			</DialogContent>
-		</Dialog>
+			</div>
+		</ModalShell>
 	);
 }
 

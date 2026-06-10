@@ -7,8 +7,8 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
+import { ConfirmDialog, ModalShell } from "../ui/modal-shell";
 
 // ─── FolderNameDialog ─────────────────────────────────────────────────────────
 
@@ -49,36 +49,41 @@ export function FolderNameDialog({
 		onConfirm(trimmed);
 	}
 
+	const footer = (
+		<>
+			<Button type="button" variant="outline" onClick={onClose}>
+				{t("action.cancel")}
+			</Button>
+			<Button
+				type="submit"
+				form="folder-name-form"
+				disabled={!value.trim()}
+				data-testid="folder-name-confirm"
+			>
+				{t("action.confirm")}
+			</Button>
+		</>
+	);
+
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent data-testid="folder-name-dialog">
-				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
-				</DialogHeader>
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
-					<Input
-						ref={inputRef}
-						value={value}
-						onChange={(e) => setValue(e.target.value)}
-						placeholder={t("media.folder.name_prompt")}
-						data-testid="folder-name-input"
-						autoComplete="off"
-					/>
-					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onClose}>
-							{t("action.cancel")}
-						</Button>
-						<Button
-							type="submit"
-							disabled={!value.trim()}
-							data-testid="folder-name-confirm"
-						>
-							{t("action.confirm")}
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
+		<ModalShell
+			open={open}
+			onOpenChange={(v) => !v && onClose()}
+			title={title}
+			footer={footer}
+			data-testid="folder-name-dialog"
+		>
+			<form id="folder-name-form" onSubmit={handleSubmit}>
+				<Input
+					ref={inputRef}
+					value={value}
+					onChange={(e) => setValue(e.target.value)}
+					placeholder={t("media.folder.name_prompt")}
+					data-testid="folder-name-input"
+					autoComplete="off"
+				/>
+			</form>
+		</ModalShell>
 	);
 }
 
@@ -100,29 +105,15 @@ export function FolderDeleteDialog({
 	const t = useTranslation();
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent data-testid="folder-delete-dialog">
-				<DialogHeader>
-					<DialogTitle>{t("media.folder.delete")}</DialogTitle>
-				</DialogHeader>
-				<p className="text-sm text-muted-foreground">
-					{t("media.folder.delete_confirm")}
-					{folderName ? ` "${folderName}"` : ""}
-				</p>
-				<DialogFooter>
-					<Button type="button" variant="outline" onClick={onClose}>
-						{t("action.cancel")}
-					</Button>
-					<Button
-						type="button"
-						variant="destructive"
-						onClick={onConfirm}
-						data-testid="folder-delete-confirm"
-					>
-						{t("action.delete")}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+		<ConfirmDialog
+			open={open}
+			onOpenChange={(v) => !v && onClose()}
+			title={t("media.folder.delete")}
+			body={`${t("media.folder.delete_confirm")}${folderName ? ` "${folderName}"` : ""}`}
+			confirmLabel={t("action.delete")}
+			destructive
+			onConfirm={onConfirm}
+			data-testid="folder-delete-dialog"
+		/>
 	);
 }

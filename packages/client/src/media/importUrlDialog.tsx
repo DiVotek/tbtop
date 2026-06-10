@@ -6,8 +6,8 @@ import { type ReactNode, useState } from "react";
 import { useClient } from "../data/client";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
+import { ModalShell } from "../ui/modal-shell";
 import type { MediaItem } from "./types";
 import { importMediaUrl } from "./useMediaApi";
 
@@ -63,70 +63,70 @@ export function ImportUrlDialog({
 		}
 	}
 
+	const footer = (
+		<>
+			<Button type="button" variant="outline" onClick={handleClose} disabled={busy}>
+				{t("action.cancel")}
+			</Button>
+			<Button
+				type="submit"
+				form="import-url-form"
+				disabled={busy || !url.trim()}
+				data-testid="import-url-submit"
+			>
+				{busy ? t("state.loading") : t("media.import_url.submit")}
+			</Button>
+		</>
+	);
+
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-			<DialogContent data-testid="import-url-dialog">
-				<DialogHeader>
-					<DialogTitle>{t("media.import_url.title")}</DialogTitle>
-				</DialogHeader>
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
-					<div className="flex flex-col gap-1.5">
-						<label className="text-sm font-medium" htmlFor="import-url-url">
-							{t("media.import_url.url_label")}
-						</label>
-						<Input
-							id="import-url-url"
-							type="url"
-							value={url}
-							onChange={(e) => setUrl(e.target.value)}
-							placeholder="https://example.com/image.jpg"
-							required
-							disabled={busy}
-							data-testid="import-url-input"
-						/>
-					</div>
-					<div className="flex flex-col gap-1.5">
-						<label className="text-sm font-medium" htmlFor="import-url-name">
-							{t("media.import_url.name_label")}
-						</label>
-						<Input
-							id="import-url-name"
-							type="text"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							placeholder={t("media.import_url.name_placeholder")}
-							disabled={busy}
-							data-testid="import-url-name-input"
-						/>
-					</div>
-					{error && (
-						<p
-							role="alert"
-							className="text-sm text-destructive"
-							data-testid="import-url-error"
-						>
-							{error}
-						</p>
-					)}
-					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={handleClose}
-							disabled={busy}
-						>
-							{t("action.cancel")}
-						</Button>
-						<Button
-							type="submit"
-							disabled={busy || !url.trim()}
-							data-testid="import-url-submit"
-						>
-							{busy ? t("state.loading") : t("media.import_url.submit")}
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
+		<ModalShell
+			open={open}
+			onOpenChange={(v) => !v && handleClose()}
+			title={t("media.import_url.title")}
+			footer={footer}
+			data-testid="import-url-dialog"
+		>
+			<form id="import-url-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+				<div className="flex flex-col gap-1.5">
+					<label className="text-sm font-medium" htmlFor="import-url-url">
+						{t("media.import_url.url_label")}
+					</label>
+					<Input
+						id="import-url-url"
+						type="url"
+						value={url}
+						onChange={(e) => setUrl(e.target.value)}
+						placeholder="https://example.com/image.jpg"
+						required
+						disabled={busy}
+						data-testid="import-url-input"
+					/>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<label className="text-sm font-medium" htmlFor="import-url-name">
+						{t("media.import_url.name_label")}
+					</label>
+					<Input
+						id="import-url-name"
+						type="text"
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						placeholder={t("media.import_url.name_placeholder")}
+						disabled={busy}
+						data-testid="import-url-name-input"
+					/>
+				</div>
+				{error && (
+					<p
+						role="alert"
+						className="text-sm text-destructive"
+						data-testid="import-url-error"
+					>
+						{error}
+					</p>
+				)}
+			</form>
+		</ModalShell>
 	);
 }
