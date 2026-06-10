@@ -32,6 +32,18 @@ it('stores an image, reports dimensions and generates the thumb variant', functi
     Storage::disk('public')->assertExists('uploads/'.$data['id']);
 });
 
+it('returns same-origin urls path-relative so stored links survive host changes', function () {
+    config()->set('app.url', 'http://localhost');
+    // Real public disk bakes APP_URL into urls; mirror that in the fake.
+    Storage::fake('public', ['url' => 'http://localhost/storage']);
+    $file = UploadedFile::fake()->image('photo.png', 600, 400);
+
+    $data = $this->postJson('/admin/uploads/media', ['file' => $file])->json('data');
+
+    expect($data['url'])->toStartWith('/storage/uploads/')
+        ->and($data['sizes'][0]['url'])->toStartWith('/storage/uploads/');
+});
+
 it('rejects disallowed mime types', function () {
     $file = UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf');
 

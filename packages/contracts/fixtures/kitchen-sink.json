@@ -141,7 +141,7 @@
                                         "options": {
                                             "fromField": "title",
                                             "constraints": {
-                                                "regex": "/^[a-z0-9-]+$/"
+                                                "regex": "^[a-z0-9-]+$"
                                             }
                                         },
                                         "meta": {},

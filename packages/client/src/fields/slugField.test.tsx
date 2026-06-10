@@ -178,6 +178,31 @@ describe("Slug field", () => {
 		});
 	});
 
+	test("Slug form-context sync: dotted fromField reads nested source (translatable)", async () => {
+		const node = s.form(
+			{ query: async () => ({ title: { en: "Hello World", uk: "Привіт" }, slug: "" }) },
+			[s.slug({ name: "slug", fromField: "title.en" })],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => {
+			const input = getByRole("textbox") as HTMLInputElement;
+			expect(input.value).toBe("hello-world");
+		});
+	});
+
+	test("Slug form-context sync: object source without path derives empty, not [object Object]", async () => {
+		const node = s.form({ query: async () => ({ title: { en: "Hello" }, slug: "" }) }, [
+			s.slug({ name: "slug", fromField: "title" }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => {
+			const input = getByRole("textbox") as HTMLInputElement;
+			expect(input.value).toBe("");
+		});
+	});
+
 	test("Slug form-context sync: empty source sets slug to empty string", async () => {
 		const node = s.form({ query: async () => ({ title: "", slug: "old" }) }, [
 			s.slug({ name: "slug", fromField: "title" }),

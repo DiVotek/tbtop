@@ -68,10 +68,46 @@ class MediaAdminTest extends TestCase
     {
         $media = $this->makeMedia();
 
-        $this->postJson("/admin/media/{$media->id}/edit/forms/media", ['alt' => 'A mountain'])
-            ->assertRedirect();
+        $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
+            'alt' => 'A mountain',
+            'file' => ['filename' => $media->filename, 'url' => $media->url],
+        ])->assertRedirect();
 
         $this->assertSame('A mountain', $media->refresh()->alt);
+    }
+
+    public function test_edit_form_submit_replaces_the_image_with_a_fresh_upload(): void
+    {
+        $media = $this->makeMedia();
+        $upload = $this->postJson('/admin/uploads/media', [
+            'file' => UploadedFile::fake()->image('replacement.png', 300, 200),
+        ])->assertOk()->json('data');
+
+        $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
+            'alt' => 'New picture',
+            'file' => $upload,
+        ])->assertRedirect();
+
+        $media->refresh();
+        $this->assertSame('replacement.png', $media->filename);
+        $this->assertSame($upload['url'], $media->url);
+        $this->assertSame(300, $media->width);
+        $this->assertSame('New picture', $media->alt);
+    }
+
+    public function test_edit_form_submit_keeps_file_columns_when_image_is_untouched(): void
+    {
+        $media = $this->makeMedia();
+
+        $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
+            'alt' => 'Only alt changed',
+            'file' => ['filename' => $media->filename, 'url' => $media->url],
+        ])->assertRedirect();
+
+        $media->refresh();
+        $this->assertSame('Only alt changed', $media->alt);
+        $this->assertSame(1234, $media->filesize);
+        $this->assertSame('image/png', $media->mime_type);
     }
 
     public function test_row_delete_action_deletes_the_media_row(): void

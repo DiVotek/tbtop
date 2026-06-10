@@ -182,32 +182,33 @@ function TableRow(props: TableRowProps) {
 	const id = readId(props.row);
 	return (
 		<tr className="border-t" data-testid={id ? `table-row-${id}` : undefined}>
-			{props.hasBulk && (
-				<td className="px-3 py-2">
-					<input
-						type="checkbox"
-						checked={props.selected}
-						onChange={() => id && props.onToggle(id)}
-						data-testid={id ? `table-select-${id}` : undefined}
-					/>
-				</td>
-			)}
-			{props.columns.map((col) => (
-				<td key={col.name} className="px-3 py-2">
-					{renderCell(col, props.row)}
-				</td>
-			))}
-			{props.hasRowActions && (
-				<td className="px-3 py-2">
-					<div className="flex justify-end gap-2">
-						<RowProvider value={props.row}>
+			{/* Row context feeds kind-cells (upload thumbs) and row actions. */}
+			<RowProvider value={props.row}>
+				{props.hasBulk && (
+					<td className="px-3 py-2">
+						<input
+							type="checkbox"
+							checked={props.selected}
+							onChange={() => id && props.onToggle(id)}
+							data-testid={id ? `table-select-${id}` : undefined}
+						/>
+					</td>
+				)}
+				{props.columns.map((col) => (
+					<td key={col.name} className="px-3 py-2">
+						{renderCell(col, props.row)}
+					</td>
+				))}
+				{props.hasRowActions && (
+					<td className="px-3 py-2">
+						<div className="flex justify-end gap-2">
 							{props.rowActions.map((cfg) => (
 								<ActionBlock key={cfg.name} options={cfg} meta={{}} />
 							))}
-						</RowProvider>
-					</div>
-				</td>
-			)}
+						</div>
+					</td>
+				)}
+			</RowProvider>
 		</tr>
 	);
 }

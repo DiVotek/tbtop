@@ -75,7 +75,7 @@ final class ImageSizes
         return [
             'name' => $name,
             'filename' => basename($variantPath),
-            'url' => Storage::disk($disk)->url($variantPath),
+            'url' => UploadUrl::make($disk, $variantPath),
             'width' => $newW,
             'height' => $newH,
             'mimeType' => 'image/png',

@@ -32,6 +32,17 @@ class PostEditPage extends Page
             $s->form('post', [
                 ...$this->postFormSections($s, "unique:posts,slug,{$post->id}"),
                 $s->actionsRow([
+                    $s->action('unpublish')->label('Unpublish')
+                        ->handle(function (ActionCtx $ctx): Effects {
+                            Post::query()->whereKey($ctx->request->route('post'))->update(
+                                [
+                                    'published' => false,
+                                    'published_at' => null
+                                ]
+                            );
+
+                            return Effects::make()->notify('Post unpublished');
+                        }),
                     $s->action('save')->label('Save')->color('primary')
                         ->keybinding('mod+s')->submit(),
                     $s->action('delete')->label('Delete')->color('danger')

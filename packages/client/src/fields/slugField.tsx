@@ -7,6 +7,20 @@ interface SlugOptionsBag {
 	fromField?: string;
 }
 
+// Dotted paths reach into nested sources, e.g. translatable "title.en".
+function sourceAt(data: Record<string, unknown>, path: string): string {
+	const resolved = path
+		.split(".")
+		.reduce<unknown>(
+			(acc, key) =>
+				acc !== null && typeof acc === "object"
+					? (acc as Record<string, unknown>)[key]
+					: undefined,
+			data,
+		);
+	return typeof resolved === "string" || typeof resolved === "number" ? String(resolved) : "";
+}
+
 export function SlugCell({ value }: FieldCellProps<string>) {
 	return <span>{value ?? ""}</span>;
 }
@@ -25,7 +39,7 @@ export function SlugForm({
 	onChangeRef.current = onChange;
 
 	const currentSlug = typeof value === "string" ? value : "";
-	const sourceValue = ctrl ? String(ctrl.data[fromField] ?? "") : "";
+	const sourceValue = ctrl ? sourceAt(ctrl.data, fromField) : "";
 
 	const emitDerived = useCallback((source: string) => {
 		const derived = slugify(source);

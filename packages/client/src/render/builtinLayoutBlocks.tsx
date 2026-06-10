@@ -35,9 +35,21 @@ export function RowBlock({ children, renderChild }: RenderProps<RowOptions>) {
 	return <div className="flex flex-row gap-2">{mapChildren(children, renderChild)}</div>;
 }
 
+// Static class map — Tailwind only emits classes it sees verbatim in source.
+const GRID_COLS: Record<number, string> = {
+	1: "grid-cols-1",
+	2: "grid-cols-2",
+	3: "grid-cols-3",
+	4: "grid-cols-4",
+	5: "grid-cols-5",
+	6: "grid-cols-6",
+	7: "grid-cols-7",
+	8: "grid-cols-8",
+};
+
 export function GridBlock({ options, children, renderChild }: RenderProps<GridOptions>) {
 	return (
-		<div className={`grid gap-4 grid-cols-${options.cols}`}>
+		<div className={`grid gap-4 ${GRID_COLS[options.cols] ?? "grid-cols-1"}`}>
 			{mapChildren(children, renderChild)}
 		</div>
 	);

@@ -5,9 +5,9 @@ namespace Tbtop\Admin\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Uploads\ImageSizes;
+use Tbtop\Admin\Uploads\UploadUrl;
 
 final class UploadController
 {
@@ -34,7 +34,7 @@ final class UploadController
             'filename' => $file->getClientOriginalName(),
             'mimeType' => (string) $file->getMimeType(),
             'filesize' => $file->getSize(),
-            'url' => Storage::disk($disk)->url($path),
+            'url' => UploadUrl::make($disk, $path),
             'width' => $width,
             'height' => $height,
             'sizes' => ImageSizes::generate($file, $path, $disk, $profile['sizes'] ?? []),

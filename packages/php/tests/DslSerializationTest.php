@@ -50,6 +50,18 @@ it('maps laravel rules to wire constraints and skips server-only rules', functio
     ]);
 });
 
+it('strips pcre delimiters from regex constraints for the js client', function () {
+    $constraints = ConstraintMap::toConstraints(['regex:/^[a-z0-9-]+$/']);
+
+    expect($constraints)->toBe(['regex' => '^[a-z0-9-]+$']);
+});
+
+it('strips delimiters and flags from non-slash regex constraints', function () {
+    $constraints = ConstraintMap::toConstraints(['regex:#^[a-z]+#i']);
+
+    expect($constraints)->toBe(['regex' => '^[a-z]+']);
+});
+
 it('emits field constraints from fluent rules', function () {
     $s = new S;
     $json = encode($s->text('title')->required()->rules('max:200'));

@@ -56,7 +56,12 @@ function StaticSingleSelect({
 			value={typeof value === "string" ? value : ""}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 		>
-			<SelectTrigger id={id ?? name} onBlur={onBlur} data-testid={`select-${name}`}>
+			<SelectTrigger
+				id={id ?? name}
+				onBlur={onBlur}
+				data-testid={`select-${name}`}
+				className="w-full"
+			>
 				<SelectValue placeholder={t("field.select.placeholder")} />
 			</SelectTrigger>
 			<SelectContent>
@@ -93,6 +98,7 @@ function AsyncSingleSelect(props: FieldFormProps<SelectValueType, SelectOptionsB
 				id={props.id ?? props.name}
 				onBlur={props.onBlur}
 				data-testid={`select-${props.name}`}
+				className="w-full"
 			>
 				<SelectValue placeholder={t("field.select.placeholder")}>{display}</SelectValue>
 			</SelectTrigger>

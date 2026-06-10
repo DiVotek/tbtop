@@ -50,6 +50,14 @@ test("Renderer emits a static grid-cols class so Tailwind can detect it", () => 
 	expect(grid?.className).toContain("grid-cols-3");
 });
 
+test("Renderer clamps grid cols outside the 1-8 class map to grid-cols-1", () => {
+	const node = s.grid({ cols: 9 }, [s.widget({ component: Hello, props: { name: "A" } })]);
+	const { container } = render(renderNode(node));
+	const grid = container.querySelector("div.grid");
+	expect(grid?.className).toContain("grid-cols-1");
+	expect(grid?.className).not.toContain("grid-cols-9");
+});
+
 test("Renderer renders UnknownBlock and warns once per kind per session", () => {
 	const warn = spyOn(console, "warn").mockImplementation(() => {});
 	const node = { kind: "mysteryWidget" } as never;

@@ -49,7 +49,26 @@ final class ConstraintMap
         if ($name === 'min' || $name === 'max') {
             return is_numeric($value) ? $value + 0 : $value;
         }
+        if ($name === 'regex') {
+            return self::bareJsPattern($value);
+        }
 
         return $value;
+    }
+
+    /**
+     * Laravel regex values carry PCRE delimiters (`/pat/i`); the client
+     * feeds the wire value to `new RegExp`, so emit the bare pattern.
+     * Flags are dropped - the server re-validates with the full rule.
+     */
+    private static function bareJsPattern(string $value): string
+    {
+        $delimiter = $value[0] ?? '';
+        $end = strrpos($value, $delimiter, 1);
+        if ($delimiter === '' || $end === false) {
+            return $value;
+        }
+
+        return substr($value, 1, $end - 1);
     }
 }

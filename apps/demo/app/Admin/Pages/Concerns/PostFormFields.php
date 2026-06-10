@@ -21,7 +21,8 @@ trait PostFormFields
                 $s->translatable('intro')->label('Intro')
                     ->set('locales', ['en', 'uk'])
                     ->rules('nullable|array'),
-                $s->text('slug')->label('Slug')->required()
+                $s->slug('slug')->label('Slug')->required()
+                    ->set('fromField', 'title')
                     ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', $slugUniqueRule]),
                 $s->textarea('body')->label('Body'),
             ]),
