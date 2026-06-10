@@ -10,10 +10,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\WebAuthn\WebAuthnLoginController;
-use App\Http\Controllers\WebAuthn\WebAuthnRegisterController;
 use Illuminate\Support\Facades\Route;
-use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -73,10 +70,3 @@ Route::get('two-factor-challenge', [TwoFactorChallengeController::class, 'show']
     ->name('two-factor.challenge');
 
 Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store']);
-
-WebAuthnRoutes::register(
-    attest: 'webauthn/register',
-    attestController: WebAuthnRegisterController::class,
-    assert: 'webauthn/login',
-    assertController: WebAuthnLoginController::class,
-);

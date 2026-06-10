@@ -6,13 +6,13 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
-use Laragear\WebAuthn\WebAuthnAuthentication;
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
 
-class User extends Authenticatable implements WebAuthnAuthenticatable
+class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, WebAuthnAuthentication;
+    use HasFactory, Notifiable, PasskeyAuthenticatable;
 
     /**
      * The attributes that are mass assignable.

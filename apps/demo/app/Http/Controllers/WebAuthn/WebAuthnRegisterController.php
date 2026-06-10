@@ -2,24 +2,28 @@
 
 namespace App\Http\Controllers\WebAuthn;
 
-use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Http\Response;
-use Laragear\WebAuthn\Http\Requests\AttestationRequest;
-use Laragear\WebAuthn\Http\Requests\AttestedRequest;
+use Illuminate\Http\JsonResponse;
+use Laravel\Passkeys\Contracts\PasskeyRegistrationResponse;
+use Laravel\Passkeys\Passkey;
 
-class WebAuthnRegisterController
+class WebAuthnRegisterController implements PasskeyRegistrationResponse
 {
-    public function options(AttestationRequest $request): Responsable
+    private ?Passkey $passkey = null;
+
+    /**
+     * After a successful passkey registration, log and return success.
+     */
+    public function toResponse($request): JsonResponse
     {
-        return $request->fastRegistration()->toCreate();
+        \Log::info('auth.passkey.registered', ['user_id' => auth()->id()]);
+
+        return response()->json(['status' => 'passkey-registered']);
     }
 
-    public function register(AttestedRequest $request): Response
+    public function withPasskey(Passkey $passkey): static
     {
-        $request->save(fn ($credential) => $credential->alias = $request->input('alias'));
+        $this->passkey = $passkey;
 
-        \Log::info('auth.passkey.registered', ['user_id' => $request->user()->id]);
-
-        return response()->noContent();
+        return $this;
     }
 }

@@ -2,32 +2,24 @@
 
 namespace App\Http\Controllers\WebAuthn;
 
-use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Http\Response;
-use Laragear\WebAuthn\Http\Requests\AssertedRequest;
-use Laragear\WebAuthn\Http\Requests\AssertionRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Laravel\Passkeys\Contracts\PasskeyLoginResponse;
 
-class WebAuthnLoginController
+class WebAuthnLoginController implements PasskeyLoginResponse
 {
-    public function options(AssertionRequest $request): Responsable
+    /**
+     * After a successful passkey login, mark 2FA as completed and redirect.
+     */
+    public function toResponse($request): JsonResponse
     {
-        return $request->toVerify(
-            $request->validate(['email' => 'sometimes|email|string'])
-        );
-    }
-
-    public function login(AssertedRequest $request): Response
-    {
-        $user = $request->login();
-
-        if (! $user) {
-            return response()->noContent(422);
-        }
-
+        /** @var Request $request */
         $request->session()->put('auth.2fa.completed', true);
 
-        \Log::info('auth.passkey.login', ['user_id' => $user->id]);
+        \Log::info('auth.passkey.login', ['user_id' => auth()->id()]);
 
-        return response()->noContent(204);
+        return response()->json([
+            'redirect' => redirect()->intended(config('passkeys.redirect', '/'))->getTargetUrl(),
+        ]);
     }
 }

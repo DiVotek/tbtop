@@ -108,7 +108,7 @@ export default function Login({ status, canResetPassword, hasPasskeys }: LoginPr
 							variant="outline"
 							className="w-full"
 							tabIndex={5}
-							onClick={() => (window.location.href = route("webauthn.login"))}
+							onClick={() => (window.location.href = route("passkey.login"))}
 						>
 							Sign in with passkey
 						</Button>
