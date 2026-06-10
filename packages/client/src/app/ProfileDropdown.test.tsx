@@ -165,4 +165,23 @@ describe("ProfileDropdown", () => {
 		await findByTestId("profile-menu");
 		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
 	});
+
+	test("ProfileDropdown: language section heading shows translated label, not raw key", async () => {
+		// nav.language was missing from defaultMessages so t() fell back to the
+		// key itself, rendering "nav.language" as a visible string in the UI.
+		const { getByTestId, findByTestId, container } = render(
+			<I18nProvider
+				defaultLang="en"
+				languages={{ en: async () => ({}), uk: async () => ({}) }}
+			>
+				<ProfileDropdown user={{ name: "Alice" }} />
+			</I18nProvider>,
+		);
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		await findByTestId("profile-menu");
+		// The heading must NOT contain the raw key "nav.language"
+		expect(container.textContent).not.toContain("nav.language");
+	});
 });

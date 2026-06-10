@@ -88,6 +88,7 @@ return [
     'nav' => [
         'home' => ['welcome' => 'Ласкаво просимо'],
         'title' => 'Tabletop',
+        'language' => 'Мова',
     ],
     'field' => [
         'password' => [
