@@ -11,6 +11,7 @@ import { useClientActionContext } from "./actionContext";
 import { useNearestFormController } from "./formContext";
 import { parseKeybinding, registerKeybinding } from "./keybinding";
 import { ModalActionBlock } from "./modalActionBlock";
+import { useNearestRow } from "./rowContext";
 import type { ClientActionContext } from "./types";
 
 type ActionOptions = ActionOptionsBag;
@@ -26,6 +27,7 @@ export function ActionBlock(props: ActionRenderProps) {
 function PlainActionBlock({ options: opts }: { options: ActionOptionsBag }) {
 	const ctx = useClientActionContext();
 	const formHandle = useNearestFormController();
+	const row = useNearestRow();
 	const [pending, setPending] = useState(false);
 	const variant = opts.color ? COLOR_TO_VARIANT[opts.color] : "outline";
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -42,7 +44,11 @@ function PlainActionBlock({ options: opts }: { options: ActionOptionsBag }) {
 	}, [opts.keybinding]);
 
 	if (opts.url !== undefined && opts.handler === undefined) {
-		const href = typeof opts.url === "function" ? opts.url(ctx) : opts.url;
+		const rawHref = typeof opts.url === "function" ? opts.url(ctx) : opts.url;
+		const interpolated = interpolateTemplate(rawHref, row, actionKey(opts));
+		if (interpolated === null) {
+			return null;
+		}
 		return (
 			<Button
 				asChild
@@ -50,7 +56,7 @@ function PlainActionBlock({ options: opts }: { options: ActionOptionsBag }) {
 				variant={variant}
 				data-testid={`action-${actionKey(opts)}`}
 			>
-				<Link href={href}>{opts.label ?? opts.name}</Link>
+				<Link href={interpolated}>{opts.label ?? opts.name}</Link>
 			</Button>
 		);
 	}
@@ -192,4 +198,52 @@ function normalizeFieldEntries(raw: unknown): Record<string, string> | null {
 		}
 	}
 	return Object.keys(entries).length === 0 ? null : entries;
+}
+
+// ─── Visit-template interpolation ────────────────────────────────────────────
+
+const PLACEHOLDER_RE = /\{([^}]+)\}/g;
+
+/**
+ * Interpolate `{field}` placeholders in a URL template from a row context.
+ * Returns the resolved href, or null if interpolation failed (hidden + warned).
+ *
+ * Rules:
+ * - No placeholders → return href unchanged (static visit always works).
+ * - Has placeholders + no row context → warn + return null.
+ * - Has placeholders + row context, missing key → warn + return null.
+ */
+export function interpolateTemplate(
+	href: string,
+	row: Record<string, unknown> | null,
+	actionName: string,
+): string | null {
+	const placeholders = [...href.matchAll(PLACEHOLDER_RE)].map((m) => m[1] as string);
+	if (placeholders.length === 0) {
+		return href;
+	}
+
+	if (row === null) {
+		if (process.env.NODE_ENV !== "production") {
+			console.warn(
+				`[tbtop] action "${actionName}": visit template "${href}" has placeholders but no row context — action hidden.`,
+			);
+		}
+		return null;
+	}
+
+	let result = href;
+	for (const key of placeholders) {
+		const val = row[key];
+		if (val === undefined || val === null) {
+			if (process.env.NODE_ENV !== "production") {
+				console.warn(
+					`[tbtop] action "${actionName}": visit template "${href}" — key "${key}" not found in row — action hidden.`,
+				);
+			}
+			return null;
+		}
+		result = result.replace(`{${key}}`, String(val));
+	}
+	return result;
 }
