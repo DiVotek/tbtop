@@ -26,8 +26,8 @@ Route::middleware([...(array) config('tbtop-admin.middleware'), SetAdminLocale::
         Route::post('locale', LocaleController::class)->name('tbtop.locale');
         Route::post('uploads/{tbtopProfile}', UploadController::class)->name('tbtop.upload');
 
-        // Media manager endpoints
-        Route::prefix('media')->name('tbtop.media.')->group(function (): void {
+        // Media manager endpoints (under api/ to avoid collision with page routes)
+        Route::prefix('api/media')->name('tbtop.media.')->group(function (): void {
             Route::get('/', [MediaController::class, 'index'])->name('index');
             Route::post('/upload', MediaUploadController::class)->name('upload');
             Route::post('/import-url', MediaImportController::class)->name('import-url');

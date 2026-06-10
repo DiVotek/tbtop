@@ -27,11 +27,13 @@ class AdminServiceProvider extends PackageServiceProvider
     {
         Inertia::share('tbtop', static function (): array {
             $locale = LocaleService::currentLocale();
+            $prefix = '/'.trim((string) config('tbtop-admin.prefix'), '/');
 
             return [
                 'effects' => session('tbtop.effects', []),
                 'nav' => NavBuilder::build(),
-                'prefix' => '/'.trim((string) config('tbtop-admin.prefix'), '/'),
+                'prefix' => $prefix,
+                'apiBase' => $prefix.'/api',
                 'locale' => $locale,
                 'locales' => LocaleService::availableLocales(),
                 'messages' => LocaleService::messagesFor($locale),

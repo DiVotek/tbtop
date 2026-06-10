@@ -25,6 +25,7 @@ interface AdminPageProps {
 	tbtop?: {
 		effects?: unknown;
 		prefix?: string;
+		apiBase?: string;
 		locale?: string;
 		locales?: string[];
 		messages?: Record<string, string>;
@@ -46,6 +47,7 @@ export function AdminPage() {
 	if (tbtop?.prefix) {
 		setRoutesBase(tbtop.prefix);
 	}
+	const apiBase = tbtop?.apiBase ?? "";
 
 	const basePath = page.url.split("?")[0] ?? "";
 	const node = useMemo(
@@ -67,7 +69,7 @@ export function AdminPage() {
 	const defaultContentLocale = tbtop?.defaultContentLocale ?? contentLocales[0] ?? "en";
 
 	return (
-		<ClientProvider>
+		<ClientProvider baseUrl={apiBase}>
 			<AuthUserProvider user={auth?.user ?? null}>
 				<PageParamsProvider params={params ?? {}}>
 					<ContentLocaleConfigProvider
