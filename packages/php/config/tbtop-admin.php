@@ -16,4 +16,11 @@ return [
 
     // Fallback locale used when session has no preference.
     'default_locale' => 'en',
+
+    // Content locales for translatable fields. First entry is the default.
+    // Separate from admin UI locales — these are the locales for page content.
+    'content_locales' => ['en'],
+
+    // Default content locale used for field validation rules.
+    'default_content_locale' => 'en',
 ];

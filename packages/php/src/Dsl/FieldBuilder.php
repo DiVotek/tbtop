@@ -20,6 +20,12 @@ final class FieldBuilder implements JsonSerializable
     /** @var list<string> */
     private array $ruleList = [];
 
+    /** null = not set, true = translatable, false = explicit opt-out */
+    private ?bool $translatableFlag = null;
+
+    /** @var array<string, list<string>> locale => rule list */
+    private array $localeRules = [];
+
     public function __construct(
         public readonly string $kind,
         public readonly string $name,
@@ -49,6 +55,40 @@ final class FieldBuilder implements JsonSerializable
         $this->ruleList = array_values(array_unique([...$this->ruleList, ...$list]));
 
         return $this;
+    }
+
+    /** Mark this field as translatable (value becomes {locale: inner}). Pass false to opt-out. */
+    public function translatable(bool $value = true): self
+    {
+        $this->translatableFlag = $value;
+
+        return $this;
+    }
+
+    /** Override validation rules for a specific content locale (e.g. 'uk'). */
+    public function rulesForLocale(string $locale, string|array $rules): self
+    {
+        $list = is_string($rules) ? explode('|', $rules) : $rules;
+        $this->localeRules[$locale] = array_values($list);
+
+        return $this;
+    }
+
+    public function isTranslatableField(): bool
+    {
+        return $this->translatableFlag === true;
+    }
+
+    /** True if ->translatable(false) was explicitly called — blocks cascade. */
+    public function isTranslatableOptedOut(): bool
+    {
+        return $this->translatableFlag === false;
+    }
+
+    /** @return array<string, list<string>> */
+    public function localeRuleEntries(): array
+    {
+        return $this->localeRules;
     }
 
     public function set(string $key, mixed $value): self
@@ -85,6 +125,9 @@ final class FieldBuilder implements JsonSerializable
         $constraints = ConstraintMap::toConstraints($this->ruleList);
         if ($constraints !== []) {
             $options['constraints'] = $constraints;
+        }
+        if ($this->translatableFlag === true) {
+            $options['translatable'] = true;
         }
 
         return new Node($this->kind, $options, $this->name, $this->metaBag);

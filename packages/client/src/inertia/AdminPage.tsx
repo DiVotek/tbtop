@@ -9,6 +9,7 @@ import { setRoutesBase } from "../data/entityRoutes";
 import { I18nProvider } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
+import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
 import type { AuthUser, StructureNode } from "../structure/types";
 import { executeEffects, readEffects } from "./effects";
 import { materialize } from "./materialize";
@@ -25,6 +26,8 @@ interface AdminPageProps {
 		locale?: string;
 		locales?: string[];
 		messages?: Record<string, string>;
+		contentLocales?: string[];
+		defaultContentLocale?: string;
 	};
 	auth?: { user?: AuthUser | null };
 	[key: string]: unknown;
@@ -58,15 +61,22 @@ export function AdminPage() {
 		}
 	}, [flash]);
 
+	const contentLocales = tbtop?.contentLocales ?? ["en"];
+	const defaultContentLocale = tbtop?.defaultContentLocale ?? contentLocales[0] ?? "en";
+
 	return (
 		<ClientProvider>
 			<AuthUserProvider user={auth?.user ?? null}>
 				<PageParamsProvider params={params ?? {}}>
-					<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
-						<h1 className="text-2xl font-semibold">{title}</h1>
-						{renderNode(node)}
-					</div>
-					<Toaster />
+					<ContentLocaleConfigProvider
+						config={{ locales: contentLocales, defaultLocale: defaultContentLocale }}
+					>
+						<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+							<h1 className="text-2xl font-semibold">{title}</h1>
+							{renderNode(node)}
+						</div>
+						<Toaster />
+					</ContentLocaleConfigProvider>
 				</PageParamsProvider>
 			</AuthUserProvider>
 		</ClientProvider>

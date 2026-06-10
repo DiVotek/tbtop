@@ -55,7 +55,7 @@ class AdminPagesTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('admin/page', false)
-                ->where('data.post.title', $post->title)
+                ->where('data.post.title.en', $post->title['en'])
                 ->where('data.post.intro.uk', 'Привіт')
                 ->where('data.post.sections.0.heading', 'One'));
     }
@@ -74,13 +74,13 @@ class AdminPagesTest extends TestCase
 
     public function test_posts_table_search_filters_by_title(): void
     {
-        $this->makePost(['title' => 'Needle in haystack']);
-        $this->makePost(['title' => 'Other']);
+        $this->makePost(['title' => ['en' => 'Needle in haystack', 'uk' => 'Голка в сіні']]);
+        $this->makePost(['title' => ['en' => 'Other']]);
 
         $response = $this->getJson('/admin/posts/tables/posts?search=Needle')->assertOk();
 
         $this->assertSame(1, $response->json('data.total'));
-        $this->assertSame('Needle in haystack', $response->json('data.data.0.title'));
+        $this->assertSame('Needle in haystack', $response->json('data.data.0.title.en'));
     }
 
     public function test_dashboard_chart_endpoints_return_aggregates(): void
@@ -104,10 +104,10 @@ class AdminPagesTest extends TestCase
         $post = $this->makePost();
 
         $this->postJson("/admin/posts/{$post->id}/edit/forms/post", [
-            'title' => 'Updated title',
+            'title' => ['en' => 'Updated title', 'uk' => 'Оновлена назва'],
             'intro' => ['en' => 'Updated', 'uk' => 'Оновлено'],
             'slug' => $post->slug,
-            'body' => 'Updated body',
+            'body' => ['en' => 'Updated body'],
             'published' => true,
             'published_at' => '2026-01-15 10:00:00',
             'rating' => 4.5,
@@ -116,7 +116,7 @@ class AdminPagesTest extends TestCase
         ])->assertRedirect();
 
         $post->refresh();
-        $this->assertSame('Updated title', $post->title);
+        $this->assertSame('Updated title', $post->title['en']);
         $this->assertSame('Оновлено', $post->intro['uk']);
         $this->assertTrue($post->published);
         $this->assertSame(4.5, $post->rating);
@@ -129,16 +129,16 @@ class AdminPagesTest extends TestCase
         $post = $this->makePost();
 
         $this->postJson("/admin/posts/{$post->id}/edit/forms/post", [
-            'title' => '',
+            'title' => [],
             'slug' => 'Has Spaces!',
             'rating' => 9,
-        ])->assertStatus(422)->assertJsonValidationErrors(['title', 'slug', 'rating']);
+        ])->assertStatus(422)->assertJsonValidationErrors(['title.en', 'slug', 'rating']);
     }
 
     public function test_post_create_form_submit_creates_and_redirects_to_edit(): void
     {
         $response = $this->postJson('/admin/posts/new/forms/post', [
-            'title' => 'Brand new',
+            'title' => ['en' => 'Brand new'],
             'slug' => 'brand-new',
             'published' => false,
             'sections' => [],
@@ -146,7 +146,7 @@ class AdminPagesTest extends TestCase
 
         $post = Post::where('slug', 'brand-new')->firstOrFail();
         $response->assertRedirect("/admin/posts/{$post->id}/edit");
-        $this->assertSame('Brand new', $post->title);
+        $this->assertSame('Brand new', $post->title['en']);
     }
 
     public function test_create_rejects_duplicate_slug(): void
@@ -232,7 +232,7 @@ class AdminPagesTest extends TestCase
         $i++;
 
         return Post::create([
-            'title' => "Post {$i}",
+            'title' => ['en' => "Post {$i}"],
             'slug' => "post-{$i}",
             ...$overrides,
         ]);

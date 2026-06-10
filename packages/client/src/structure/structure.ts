@@ -50,7 +50,6 @@ const builtins: Record<string, Builder> = {
 	checkbox: makeField("checkbox") as Builder,
 	colorpicker: makeField("colorpicker") as Builder,
 	keyvalue: makeField("keyvalue") as Builder,
-	translatable: makeField("translatable") as Builder,
 	slug: makeField("slug") as Builder,
 	upload: makeField("upload") as Builder,
 	relation: makeField("relation") as Builder,
@@ -189,13 +188,6 @@ interface KeyvalueOpts {
 	required?: boolean;
 }
 
-interface TranslatableOpts {
-	// Locales to render an input for — the i18n bundle's configured set.
-	locales: string[];
-	label?: string;
-	required?: boolean;
-}
-
 interface SlugOpts {
 	fromField: string;
 	label?: string;
@@ -248,7 +240,6 @@ export interface StructureBuilders<TForm = unknown> {
 	checkbox: (input: FieldInputFor<TForm, { label?: string }>) => StructureNode;
 	colorpicker: (input: FieldInputFor<TForm, ColorpickerOpts>) => StructureNode;
 	keyvalue: (input: FieldInputFor<TForm, KeyvalueOpts>) => StructureNode;
-	translatable: (input: FieldInputFor<TForm, TranslatableOpts>) => StructureNode;
 	slug: (input: FieldInputFor<TForm, SlugOpts>) => StructureNode;
 	upload: (input: FieldInputFor<TForm, UploadOpts>) => StructureNode;
 	relation: (input: FieldInputFor<TForm, { to: string; label?: string }>) => StructureNode;

@@ -3,6 +3,7 @@
 namespace App\Admin\Pages;
 
 use App\Models\Post;
+use App\Models\User;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Node;
@@ -41,12 +42,12 @@ class PostsIndexPage extends Page
                 ])
                 ->searchable(['title'])
                 ->defaultSort('created_at', 'desc')
-                ->query(fn () => Post::query())
+                ->query(fn() => Post::query())
                 ->rowActions([
                     // Visit specs are static strings; a per-row URL needs the
                     // row id, so edit goes through a server redirect effect.
                     $s->action('edit')->label('Edit')->handle(
-                        fn (ActionCtx $ctx): Effects => Effects::make()
+                        fn(ActionCtx $ctx): Effects => Effects::make()
                             ->redirect("/admin/posts/{$ctx->row['id']}/edit"),
                         needs: ['row'],
                     ),
@@ -70,6 +71,16 @@ class PostsIndexPage extends Page
                         }, needs: ['selection']),
                 ])
                 ->toNode(),
+            $s->table('users')
+                ->columns([
+                    'email' => 'Email',
+                    'slug' => 'Slug',
+                    'published' => 'Published',
+                    'views' => 'Views',
+                ])
+                ->searchable(['title'])
+                ->defaultSort('created_at', 'desc')
+                ->query(fn() => User::query())
         ]);
     }
 }

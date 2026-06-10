@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 200);
+            $table->json('title');
             $table->json('intro')->nullable();
             $table->string('slug')->unique();
             $table->json('body')->nullable();

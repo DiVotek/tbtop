@@ -21,7 +21,6 @@ use InvalidArgumentException;
  * @method FieldBuilder checkbox(string $name)
  * @method FieldBuilder colorpicker(string $name)
  * @method FieldBuilder keyvalue(string $name)
- * @method FieldBuilder translatable(string $name)
  * @method FieldBuilder slug(string $name)
  * @method FieldBuilder upload(string $name)
  * @method FieldBuilder relation(string $name)
@@ -33,7 +32,7 @@ final class S
     private const FIELD_KINDS = [
         'text', 'textarea', 'password', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'checkbox', 'colorpicker', 'keyvalue',
-        'translatable', 'slug', 'upload', 'relation', 'repeater', 'richtext',
+        'slug', 'upload', 'relation', 'repeater', 'richtext',
     ];
 
     /** @var array<string, FormBuilder> */
@@ -84,6 +83,33 @@ final class S
     public function section(array $opts, array $children): Node
     {
         return self::layout('section', $children, $opts);
+    }
+
+    /**
+     * Cascade ->translatable() onto every FieldBuilder in $children (recursive).
+     * A field that explicitly called ->translatable(false) is skipped.
+     *
+     * @param  list<mixed>  $children
+     * @return list<mixed>
+     */
+    public static function cascadeTranslatable(array $children): array
+    {
+        return array_map(static function (mixed $child): mixed {
+            if ($child instanceof FieldBuilder && ! $child->isTranslatableOptedOut() && ! $child->isTranslatableField()) {
+                return $child->translatable();
+            }
+            if ($child instanceof Node) {
+                $nested = $child->options['children'] ?? $child->options['fields'] ?? null;
+                if (is_array($nested)) {
+                    $key = isset($child->options['children']) ? 'children' : 'fields';
+                    $newOpts = array_merge($child->options, [$key => self::cascadeTranslatable($nested)]);
+
+                    return new Node($child->kind, $newOpts, $child->name, $child->meta);
+                }
+            }
+
+            return $child;
+        }, $children);
     }
 
     public function heading(string $text, int $level = 3): Node

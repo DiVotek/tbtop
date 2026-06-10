@@ -36,6 +36,12 @@ return [
     // Fallback locale used when session has no preference.
     'default_locale' => 'en',
 
+    // Content locales for translatable fields (separate from admin UI locales).
+    'content_locales' => ['en', 'uk'],
+
+    // Default content locale used for validation rules.
+    'default_content_locale' => 'en',
+
     // Upload profiles consumed by POST /{prefix}/uploads/{profile}.
     'uploads' => [
         'media' => [

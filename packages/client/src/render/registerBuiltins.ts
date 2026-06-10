@@ -16,7 +16,6 @@ import { SlugCell, SlugForm } from "../fields/slugField";
 import { TagsCell, TagsForm } from "../fields/tagsField";
 import { TextareaCell, TextareaForm } from "../fields/textareaField";
 import { TextCell, TextForm } from "../fields/textField";
-import { TranslatableCell, TranslatableForm } from "../fields/translatableField";
 import { UnknownCell, UnknownForm } from "../fields/unknownField";
 import { UploadCell, UploadForm, type UploadValue } from "../fields/uploadField";
 import { ActionBlock } from "../structure/actionBlock";
@@ -134,10 +133,6 @@ function registerStructuredFields(): void {
 	defineFieldClient<"keyvalue", Record<string, string>>("keyvalue", {
 		form: KeyvalueForm,
 		cell: KeyvalueCell,
-	});
-	defineFieldClient<"translatable", Record<string, string>>("translatable", {
-		form: TranslatableForm,
-		cell: TranslatableCell,
 	});
 	defineFieldClient<"upload", UploadValue>("upload", { form: UploadForm, cell: UploadCell });
 	defineFieldClient<"repeater", Record<string, unknown>[]>("repeater", {

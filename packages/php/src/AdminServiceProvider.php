@@ -31,6 +31,8 @@ class AdminServiceProvider extends PackageServiceProvider
                 'locale' => $locale,
                 'locales' => LocaleService::availableLocales(),
                 'messages' => LocaleService::messagesFor($locale),
+                'contentLocales' => LocaleService::contentLocales(),
+                'defaultContentLocale' => LocaleService::defaultContentLocale(),
             ];
         });
     }

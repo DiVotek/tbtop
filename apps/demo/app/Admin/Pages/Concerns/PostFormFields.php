@@ -17,15 +17,13 @@ trait PostFormFields
     {
         return [
             $s->section(['title' => 'Post'], [
-                $s->text('title')->label('Title')->required()->rules('max:200'),
-                $s->translatable('intro')->label('Intro')
-                    ->set('locales', ['en', 'uk'])
-                    ->rules('nullable|array'),
+                $s->text('title')->label('Title')->required()->rules('max:200')->translatable(),
+                $s->text('intro')->label('Intro')->translatable(),
                 $s->slug('slug')->label('Slug')->required()
                     ->set('fromField', 'title')
                     ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', $slugUniqueRule]),
                 $s->richtext('body')->label('Body')
-                    ->set('placeholder', 'Write something…'),
+                    ->set('placeholder', 'Write something…')->translatable(),
             ]),
             $s->section(['title' => 'Publishing'], [
                 $s->boolean('published')->label('Published')->rules('boolean'),
@@ -53,7 +51,7 @@ trait PostFormFields
     private function authorOptions(): array
     {
         return User::query()->orderBy('name')->get()
-            ->map(fn (User $user): array => [
+            ->map(fn(User $user): array => [
                 'value' => (string) $user->id,
                 'label' => $user->name ?? $user->email,
             ])

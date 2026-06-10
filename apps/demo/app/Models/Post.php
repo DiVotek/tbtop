@@ -18,6 +18,7 @@ class Post extends Model
     protected function casts(): array
     {
         return [
+            'title' => 'array',
             'intro' => 'array',
             'body' => 'array',
             'published' => 'boolean',

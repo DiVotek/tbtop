@@ -126,12 +126,9 @@
                                         "name": "role"
                                     },
                                     {
-                                        "kind": "translatable",
+                                        "kind": "text",
                                         "options": {
-                                            "locales": [
-                                                "en",
-                                                "uk"
-                                            ]
+                                            "translatable": true
                                         },
                                         "meta": {},
                                         "name": "intro"

@@ -35,8 +35,8 @@ class PostCreatePage extends Page
                 ]),
             ])
                 ->record([
-                    'title' => '',
-                    'intro' => ['en' => '', 'uk' => ''],
+                    'title' => null,
+                    'intro' => null,
                     'slug' => '',
                     'body' => null,
                     'published' => false,

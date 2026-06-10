@@ -1,10 +1,14 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
+import type { FieldFormProps } from "../fields/fieldProps";
+import { TranslatableWrapper } from "../fields/translatableWrapper";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
 import { Label } from "../ui/label";
 import { useClientActionContext } from "./actionContext";
 import type { AsyncBlock } from "./asyncBlock";
+import { ContentLocaleBar } from "./contentLocaleBar";
+import { ActiveLocaleProvider, useContentLocaleConfig } from "./contentLocaleContext";
 import { FormError, FormSkeleton } from "./defaults";
 import { FormControllerProvider } from "./formContext";
 import { useFormController } from "./formController";
@@ -51,15 +55,25 @@ interface BodyProps {
 
 function FormControllerBody({ initial, schema, children }: BodyProps) {
 	const ctrl = useFormController({ initial, schema });
+	const localeConfig = useContentLocaleConfig();
 	useSyncInitial(initial, ctrl.reset);
+	const hasTranslatable = detectTranslatableFields(children ?? []);
 	return (
 		<FormControllerProvider value={ctrl}>
-			<form className="flex flex-col gap-4" data-testid="form-block">
-				{(children ?? []).map((child, i) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: structure children are positional
-					<div key={i}>{renderFormChild(child, ctrl)}</div>
-				))}
-			</form>
+			<ActiveLocaleProvider defaultLocale={localeConfig.defaultLocale}>
+				{hasTranslatable && (
+					<ContentLocaleBar
+						locales={localeConfig.locales}
+						fieldErrors={ctrl.fieldErrors}
+					/>
+				)}
+				<form className="flex flex-col gap-4" data-testid="form-block">
+					{(children ?? []).map((child, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: structure children are positional
+						<div key={i}>{renderFormChild(child, ctrl, localeConfig.locales)}</div>
+					))}
+				</form>
+			</ActiveLocaleProvider>
 		</FormControllerProvider>
 	);
 }
@@ -75,7 +89,11 @@ function useSyncInitial(initial: Bag, reset: () => void): void {
 	}, [initial, reset]);
 }
 
-function renderFormChild(node: StructureNode, ctrl: ControllerHandle): ReactNode {
+function renderFormChild(
+	node: StructureNode,
+	ctrl: ControllerHandle,
+	locales: string[],
+): ReactNode {
 	const condCtx: ConditionContext = { record: undefined, data: ctrl.data, user: null };
 	if (isNodeHidden(node.meta, condCtx)) {
 		return null;
@@ -83,7 +101,7 @@ function renderFormChild(node: StructureNode, ctrl: ControllerHandle): ReactNode
 	const descriptor = getBlockDescriptor(node.kind);
 	const options = mergeName(node);
 	if (descriptor?.behavior === "field" && node.name) {
-		return renderFieldNode({ descriptor, node, options, ctrl });
+		return renderFieldNode({ descriptor, node, options, ctrl, locales });
 	}
 	return invokeBlock({
 		kind: node.kind,
@@ -91,7 +109,7 @@ function renderFormChild(node: StructureNode, ctrl: ControllerHandle): ReactNode
 		meta: node.meta,
 		ctx: { surface: "form" },
 		children: (options as { children?: StructureNode[] }).children,
-		renderChild: (child) => renderFormChild(child, ctrl),
+		renderChild: (child) => renderFormChild(child, ctrl, locales),
 	});
 }
 
@@ -100,34 +118,40 @@ interface RenderFieldInput {
 	node: StructureNode;
 	options: Bag;
 	ctrl: ControllerHandle;
+	locales: string[];
 }
 
 function renderFieldNode(input: RenderFieldInput): ReactNode {
-	const { descriptor, node, options, ctrl } = input;
+	const { descriptor, node, options, ctrl, locales } = input;
 	const name = node.name as string;
 	const fieldError = ctrl.fieldErrors[name];
 	const label = (options as { label?: string }).label;
 	const required = (options as { required?: boolean }).required === true;
 	const fieldId = node.meta.id ?? name;
-	const control = renderDescriptor(descriptor, {
-		kind: node.kind,
-		options,
-		meta: node.meta,
-		ctx: {
-			surface: "form",
-			binding: {
-				name,
-				value: ctrl.data[name],
-				onChange: (next) => ctrl.set(name, next),
-				onBlur: () => {
-					ctrl.markTouched(name);
-					revalidateField(ctrl, name);
+	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
+
+	const control = isTranslatable
+		? renderTranslatableField({ descriptor, node, options, ctrl, locales, name, fieldId })
+		: renderDescriptor(descriptor, {
+				kind: node.kind,
+				options,
+				meta: node.meta,
+				ctx: {
+					surface: "form",
+					binding: {
+						name,
+						value: ctrl.data[name],
+						onChange: (next) => ctrl.set(name, next),
+						onBlur: () => {
+							ctrl.markTouched(name);
+							revalidateField(ctrl, name);
+						},
+					},
 				},
-			},
-		},
-		children: undefined,
-		renderChild: (child) => renderFormChild(child, ctrl),
-	});
+				children: undefined,
+				renderChild: (child) => renderFormChild(child, ctrl, locales),
+			});
+
 	return (
 		<div className="flex flex-col gap-1.5">
 			{label && (
@@ -140,6 +164,98 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 			{fieldError && <FieldError name={name} message={fieldError} />}
 		</div>
 	);
+}
+
+interface TranslatableFieldInput {
+	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>;
+	node: StructureNode;
+	options: Bag;
+	ctrl: ControllerHandle;
+	locales: string[];
+	name: string;
+	fieldId: string;
+}
+
+function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
+	const { descriptor, node, options, ctrl, locales, name, fieldId } = input;
+	// Strip name + translatable before forwarding to the wrapper — the wrapper
+	// derives per-locale names itself and must not see the parent field name.
+	const {
+		name: _n,
+		translatable: _t,
+		...innerOptions
+	} = options as Bag & {
+		name?: string;
+		translatable?: boolean;
+	};
+	const renderInner = makeInnerRenderer(descriptor, node, innerOptions, locales, ctrl);
+	const value = normalizeTranslatableValue(ctrl.data[name], locales);
+	return (
+		<TranslatableWrapper
+			name={name}
+			id={fieldId}
+			value={value}
+			onChange={(next) => ctrl.set(name, next)}
+			onBlur={() => {
+				ctrl.markTouched(name);
+			}}
+			options={innerOptions}
+			renderInner={renderInner}
+			locales={locales}
+		/>
+	);
+}
+
+/**
+ * Builds a render FUNCTION (invoked, never mounted) that delegates to the
+ * descriptor's field component. Must not return a component type: a fresh
+ * component identity per render makes React remount the input on every
+ * keystroke, dropping focus. Caller strips name/translatable from options.
+ */
+function makeInnerRenderer(
+	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>,
+	node: StructureNode,
+	options: Bag,
+	locales: string[],
+	ctrl: ControllerHandle,
+): (props: FieldFormProps<unknown>) => ReactNode {
+	return (props: FieldFormProps<unknown>) =>
+		renderDescriptor(descriptor, {
+			kind: node.kind,
+			options: { ...options, ...props.options },
+			meta: node.meta,
+			ctx: {
+				surface: "form",
+				binding: {
+					name: props.name,
+					value: props.value,
+					onChange: props.onChange,
+					onBlur: props.onBlur,
+				},
+			},
+			children: undefined,
+			renderChild: (child) => renderFormChild(child, ctrl, locales),
+		}) as ReactNode;
+}
+
+/**
+ * Normalise a stored value to a locale map. Handles legacy: if the stored
+ * value is a non-object (string/number/boolean), initialise the default locale
+ * with that value and other locales as null.
+ */
+function normalizeTranslatableValue(raw: unknown, locales: string[]): Record<string, unknown> {
+	if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+		return raw as Record<string, unknown>;
+	}
+	const defaultLocale = locales[0] ?? "en";
+	const map: Record<string, unknown> = {};
+	for (const locale of locales) {
+		map[locale] = null;
+	}
+	if (raw !== null && raw !== undefined && typeof raw !== "object") {
+		map[defaultLocale] = raw;
+	}
+	return map;
 }
 
 export function revalidateField(ctrl: ControllerHandle, name: string): void {
@@ -186,4 +302,19 @@ function normalize(data: unknown): Bag {
 		return obj;
 	}
 	return {};
+}
+
+/** Recursively checks whether any field node in the tree has translatable:true. */
+function detectTranslatableFields(children: StructureNode[]): boolean {
+	for (const node of children) {
+		const opts = node.options as Bag | undefined;
+		if (opts?.translatable === true) {
+			return true;
+		}
+		const nested = (opts?.children ?? opts?.fields) as StructureNode[] | undefined;
+		if (nested && detectTranslatableFields(nested)) {
+			return true;
+		}
+	}
+	return false;
 }

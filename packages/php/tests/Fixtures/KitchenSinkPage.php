@@ -38,7 +38,7 @@ class KitchenSinkPage extends Page
                     $s->select('role')->set('options', [
                         ['value' => 'admin', 'label' => 'Admin'],
                     ])->rules('in:admin,editor'),
-                    $s->translatable('intro')->set('locales', ['en', 'uk']),
+                    $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
                     $s->richtext('content')->set('placeholder', 'Start typing…'),
                     $s->repeater('sections')->rules('array|max:10')->set('fields', [

@@ -38,12 +38,6 @@ class DashboardPage extends Page
                     ->orderBy('month')
                     ->get())
                 ->toNode(),
-            $s->action('test')->label('test')->modal('test', $s->row([
-                $s->form('chart', [
-                  $s->text('asd')->label('Qwewqeq'),
-                  $s->action('save')->submit('chart')
-                ])
-            ])),
             $s->chart('byStatus', 'donut', [
                 'title' => 'Published vs draft',
                 'nameKey' => 'status',

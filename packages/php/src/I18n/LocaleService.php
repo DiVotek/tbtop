@@ -25,6 +25,23 @@ class LocaleService
         return array_values((array) config('tbtop-admin.locales', ['en']));
     }
 
+    /** @return list<string> */
+    public static function contentLocales(): array
+    {
+        return array_values((array) config('tbtop-admin.content_locales', ['en']));
+    }
+
+    public static function defaultContentLocale(): string
+    {
+        $locales = self::contentLocales();
+        $configured = (string) config('tbtop-admin.default_content_locale', '');
+        if ($configured !== '' && in_array($configured, $locales, true)) {
+            return $configured;
+        }
+
+        return $locales[0] ?? 'en';
+    }
+
     /** @return array<string, string> Flat dot-notation messages for the client */
     public static function messagesFor(string $locale): array
     {
