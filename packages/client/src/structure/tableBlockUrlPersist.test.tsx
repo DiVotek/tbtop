@@ -266,6 +266,54 @@ describe("TableBlock URL persist: filter UI reflects URL-seeded filter value", (
 });
 
 // ---------------------------------------------------------------------------
+// Scenario 4c (regression): filter controls reflect a change IMMEDIATELY
+// ---------------------------------------------------------------------------
+
+describe("TableBlock filters: controls update synchronously, network is debounced", () => {
+	// Bug: setFilterValues sat inside the 300ms debounce, so controlled
+	// filter controls (select/switch) snapped back to the old value for
+	// 300ms after every interaction — selects looked broken, toggles dead.
+	test("boolean filter switch flips on click without waiting for the debounce", async () => {
+		const baseNode = tableNode("posts");
+		const nodeWithBoolFilter: StructureNode = {
+			...baseNode,
+			options: {
+				...(baseNode.options as Record<string, unknown>),
+				filters: [
+					{
+						kind: "boolean",
+						name: "with_rating",
+						options: { label: "Has rating" },
+						meta: {},
+					},
+				],
+				filtersIn: "inline",
+			},
+		};
+		const node = materialize(nodeWithBoolFilter, { basePath: "/admin/posts", data: {} });
+
+		const Wrap = wrapForStructureFetch(
+			() => new Response(JSON.stringify({ data: [{ id: "1", title: "Alpha" }] })),
+		);
+
+		const user = userEvent.setup({ delay: null });
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-filters-inline");
+
+		const switchEl = container.querySelector('button[role="switch"]') as HTMLElement;
+		expect(switchEl).not.toBeNull();
+		expect(switchEl.getAttribute("data-state")).toBe("unchecked");
+
+		await act(async () => {
+			await user.click(switchEl);
+		});
+
+		// Immediately after the click — no debounce wait — the control is on.
+		expect(switchEl.getAttribute("data-state")).toBe("checked");
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Scenario 4: two tables on one page don't clobber each other's URL namespace
 // ---------------------------------------------------------------------------
 

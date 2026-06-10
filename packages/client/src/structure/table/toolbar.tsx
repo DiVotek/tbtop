@@ -60,16 +60,25 @@ export function TableToolbar(props: TableToolbarProps) {
 		300,
 	);
 
-	const handleFilterChange = useDebounce(
+	// Controls are controlled by filterValues — update it synchronously so the
+	// UI reflects the interaction at once; only the refetch is debounced.
+	const pushFilters = useDebounce(
 		useCallback(
-			(name: string, value: unknown) => {
-				const next = { ...filterValues, [name]: value };
-				setFilterValues(next);
+			(next: Record<string, unknown>) => {
 				onChangeParams({ filters: next, page: 1 });
 			},
-			[filterValues, setFilterValues, onChangeParams],
+			[onChangeParams],
 		),
 		300,
+	);
+
+	const handleFilterChange = useCallback(
+		(name: string, value: unknown) => {
+			const next = { ...filterValues, [name]: value };
+			setFilterValues(next);
+			pushFilters(next);
+		},
+		[filterValues, setFilterValues, pushFilters],
 	);
 
 	const handleReset = useCallback(() => {
