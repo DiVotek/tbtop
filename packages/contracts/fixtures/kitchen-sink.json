@@ -324,7 +324,9 @@
             {
                 "kind": "table",
                 "options": {
-                    "searchable": true,
+                    "searchable": [
+                        "title"
+                    ],
                     "defaultSort": {
                         "field": "views",
                         "dir": "desc"

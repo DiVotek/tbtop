@@ -7,6 +7,7 @@ use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Checkbox;
 use Tbtop\Admin\Dsl\Fields\Colorpicker;
 use Tbtop\Admin\Dsl\Fields\Date;
+use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Datetime;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Keyvalue;
@@ -59,7 +60,7 @@ final class S
     public const BUILT_IN_KINDS = [
         'text', 'textarea', 'password', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'checkbox', 'colorpicker', 'keyvalue',
-        'slug', 'upload', 'relation', 'repeater', 'richtext',
+        'slug', 'upload', 'relation', 'repeater', 'richtext', 'daterange',
     ];
 
     /** @var array<string, FormBuilder> */
@@ -301,6 +302,7 @@ final class S
                 'relation' => Relation::class,
                 'repeater' => Repeater::class,
                 'richtext' => Richtext::class,
+                'daterange' => Daterange::class,
             ];
         }
 

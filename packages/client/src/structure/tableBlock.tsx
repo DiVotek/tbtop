@@ -1,6 +1,16 @@
-import { type ReactNode, useCallback, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { renderDescriptor } from "../render/renderDescriptor";
+import { Button } from "../ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
 import { ActionBlock } from "./actionBlock";
 import { useClientActionContext } from "./actionContext";
 import type { AsyncBlock } from "./asyncBlock";
@@ -13,6 +23,7 @@ import type {
 	ActionConfig,
 	ClientActionContext,
 	ListQueryParams,
+	StructureNode,
 	TableColumn,
 	TableController,
 } from "./types";
@@ -23,6 +34,9 @@ interface TableBlockOptions extends AsyncBlock {
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];
 	bulkActions?: ActionConfig[];
+	searchable?: string[];
+	filters?: StructureNode[];
+	filtersIn?: "modal" | "inline";
 }
 
 interface TableRenderProps {
@@ -63,6 +77,9 @@ export function TableBlock({ options }: TableRenderProps) {
 			queryParams={queryParams}
 			onChangeParams={mergeParams}
 			onRefresh={refetch}
+			searchable={options.searchable}
+			filters={options.filters}
+			filtersIn={options.filtersIn ?? "modal"}
 		/>
 	);
 }
@@ -85,6 +102,9 @@ interface TableBodyProps {
 	queryParams: ListQueryParams;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
 	onRefresh: () => void;
+	searchable?: string[];
+	filters?: StructureNode[];
+	filtersIn: "modal" | "inline";
 }
 
 function TableBody(props: TableBodyProps) {
@@ -96,13 +116,91 @@ function TableBody(props: TableBodyProps) {
 	});
 	const hasBulk = (props.bulkActions ?? []).length > 0;
 	const hasRowActions = (props.rowActions ?? []).length > 0;
+	const hasSearch = (props.searchable ?? []).length > 0;
+	const hasFilters = (props.filters ?? []).length > 0;
+	// Toolbar always visible for column dropdown; search/filters add more controls.
+	const showToolbar = true;
+
+	const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+		() => new Set(props.columns.map((c) => c.name)),
+	);
+	const [filterValues, setFilterValues] = useState<Record<string, unknown>>({});
+
+	const tableId = props.columns.map((c) => c.name).join("-");
+
+	// Restore column visibility from localStorage
+	useEffect(() => {
+		try {
+			const stored = localStorage.getItem(`tbtop.table.${tableId}.columns`);
+			if (stored) {
+				setVisibleColumns(new Set(JSON.parse(stored) as string[]));
+			}
+		} catch {
+			// Ignore storage errors
+		}
+	}, [tableId]);
+
+	const toggleColumn = useCallback(
+		(name: string) => {
+			setVisibleColumns((prev) => {
+				const next = new Set(prev);
+				if (next.has(name)) {
+					next.delete(name);
+				} else {
+					next.add(name);
+				}
+				try {
+					localStorage.setItem(
+						`tbtop.table.${tableId}.columns`,
+						JSON.stringify([...next]),
+					);
+				} catch {
+					// Ignore storage errors
+				}
+				return next;
+			});
+		},
+		[tableId],
+	);
+
+	const activeFilterCount = Object.values(filterValues).filter((v) => {
+		if (v === null || v === undefined || v === "") {
+			return false;
+		}
+		if (Array.isArray(v)) {
+			return v.length > 0;
+		}
+		if (typeof v === "object") {
+			const obj = v as Record<string, unknown>;
+			return Boolean(obj.from) || Boolean(obj.to);
+		}
+		return true;
+	}).length;
+
+	const visibleCols = props.columns.filter((c) => visibleColumns.has(c.name));
+
 	return (
 		<TableControllerProvider value={ctrl}>
 			<div className="flex flex-col gap-2" data-testid="table-block">
+				{showToolbar && (
+					<TableToolbar
+						hasSearch={hasSearch}
+						hasFilters={hasFilters}
+						filtersIn={props.filtersIn}
+						filters={props.filters ?? []}
+						filterValues={filterValues}
+						setFilterValues={setFilterValues}
+						activeFilterCount={activeFilterCount}
+						columns={props.columns}
+						visibleColumns={visibleColumns}
+						onToggleColumn={toggleColumn}
+						onChangeParams={props.onChangeParams}
+					/>
+				)}
 				{hasBulk && <BulkActionsRow actions={props.bulkActions ?? []} />}
 				<TableGrid
 					rows={props.rows}
-					columns={props.columns}
+					columns={visibleCols}
 					rowActions={props.rowActions ?? []}
 					selectedIds={ctrl.selectedIds}
 					onToggle={ctrl.toggleSelection}
@@ -111,6 +209,265 @@ function TableBody(props: TableBodyProps) {
 				/>
 			</div>
 		</TableControllerProvider>
+	);
+}
+
+interface TableToolbarProps {
+	hasSearch: boolean;
+	hasFilters: boolean;
+	filtersIn: "modal" | "inline";
+	filters: StructureNode[];
+	filterValues: Record<string, unknown>;
+	setFilterValues: (vals: Record<string, unknown>) => void;
+	activeFilterCount: number;
+	columns: TableColumn[];
+	visibleColumns: Set<string>;
+	onToggleColumn: (name: string) => void;
+	onChangeParams: (patch: Partial<ListQueryParams>) => void;
+}
+
+function TableToolbar(props: TableToolbarProps) {
+	const {
+		hasSearch,
+		hasFilters,
+		filtersIn,
+		filters,
+		filterValues,
+		setFilterValues,
+		activeFilterCount,
+		columns,
+		visibleColumns,
+		onToggleColumn,
+		onChangeParams,
+	} = props;
+
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const handleSearchChange = useCallback(
+		(value: string) => {
+			if (searchTimerRef.current) {
+				clearTimeout(searchTimerRef.current);
+			}
+			searchTimerRef.current = setTimeout(() => {
+				onChangeParams({ search: value || undefined });
+			}, 300);
+		},
+		[onChangeParams],
+	);
+
+	const handleFilterChange = useCallback(
+		(name: string, value: unknown) => {
+			const next = { ...filterValues, [name]: value };
+			setFilterValues(next);
+			if (filterTimerRef.current) {
+				clearTimeout(filterTimerRef.current);
+			}
+			filterTimerRef.current = setTimeout(() => {
+				onChangeParams({ filters: next });
+			}, 300);
+		},
+		[filterValues, setFilterValues, onChangeParams],
+	);
+
+	const handleReset = useCallback(() => {
+		setFilterValues({});
+		onChangeParams({ filters: {}, search: undefined });
+	}, [setFilterValues, onChangeParams]);
+
+	return (
+		<div className="flex items-center gap-2 flex-wrap" data-testid="table-toolbar">
+			{hasSearch && (
+				<Input
+					type="search"
+					placeholder="Search…"
+					className="max-w-xs"
+					data-testid="table-search-input"
+					onChange={(e) => handleSearchChange(e.target.value)}
+				/>
+			)}
+			{hasFilters && filtersIn === "inline" && (
+				<InlineFilters
+					filters={filters}
+					filterValues={filterValues}
+					onFilterChange={handleFilterChange}
+					onReset={handleReset}
+					activeCount={activeFilterCount}
+				/>
+			)}
+			{hasFilters && filtersIn === "modal" && (
+				<ModalFilters
+					filters={filters}
+					filterValues={filterValues}
+					onFilterChange={handleFilterChange}
+					onReset={handleReset}
+					activeCount={activeFilterCount}
+				/>
+			)}
+			<ColumnVisibilityDropdown
+				columns={columns}
+				visibleColumns={visibleColumns}
+				onToggle={onToggleColumn}
+			/>
+		</div>
+	);
+}
+
+interface FiltersProps {
+	filters: StructureNode[];
+	filterValues: Record<string, unknown>;
+	onFilterChange: (name: string, value: unknown) => void;
+	onReset: () => void;
+	activeCount: number;
+}
+
+function InlineFilters({
+	filters,
+	filterValues,
+	onFilterChange,
+	onReset,
+	activeCount,
+}: FiltersProps) {
+	return (
+		<div className="flex flex-col gap-2 w-full" data-testid="table-filters-inline">
+			<div className="flex items-center gap-2 flex-wrap">
+				{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
+				{activeCount > 0 && (
+					<Button variant="ghost" size="sm" onClick={onReset}>
+						Reset
+					</Button>
+				)}
+			</div>
+			{activeCount > 0 && (
+				<span className="text-xs text-muted-foreground" data-testid="filter-badge">
+					{activeCount}
+				</span>
+			)}
+		</div>
+	);
+}
+
+function ModalFilters({
+	filters,
+	filterValues,
+	onFilterChange,
+	onReset,
+	activeCount,
+}: FiltersProps) {
+	return (
+		<Dialog>
+			<DialogTrigger asChild>
+				<Button variant="outline" size="sm" data-testid="table-filters-trigger">
+					Filters
+					{activeCount > 0 && (
+						<span
+							className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground"
+							data-testid="filter-badge"
+						>
+							{activeCount}
+						</span>
+					)}
+				</Button>
+			</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Filters</DialogTitle>
+				</DialogHeader>
+				<div className="flex flex-col gap-4">
+					{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
+				</div>
+				<DialogFooter>
+					{activeCount > 0 && (
+						<Button variant="outline" onClick={onReset}>
+							Reset
+						</Button>
+					)}
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function renderFilterField(
+	node: StructureNode,
+	filterValues: Record<string, unknown>,
+	onFilterChange: (name: string, value: unknown) => void,
+): ReactNode {
+	const name = node.name ?? "";
+	if (!name) {
+		return null;
+	}
+	const descriptor = getBlockDescriptor(node.kind);
+	if (!descriptor || descriptor.behavior !== "field") {
+		return null;
+	}
+	const value = filterValues[name] ?? null;
+	const options = node.name
+		? { name, ...(node.options as Record<string, unknown>) }
+		: (node.options as Record<string, unknown>);
+	return (
+		<div key={name} className="flex flex-col gap-1.5">
+			{(options as { label?: string }).label && (
+				<label className="text-sm font-medium" htmlFor={`filter-${name}`}>
+					{(options as { label?: string }).label}
+				</label>
+			)}
+			{renderDescriptor(descriptor, {
+				kind: node.kind,
+				options,
+				meta: node.meta,
+				ctx: {
+					surface: "form",
+					binding: {
+						name,
+						value,
+						onChange: (next) => onFilterChange(name, next),
+					},
+				},
+				children: undefined,
+				renderChild: () => null,
+			})}
+		</div>
+	);
+}
+
+interface ColumnVisibilityProps {
+	columns: TableColumn[];
+	visibleColumns: Set<string>;
+	onToggle: (name: string) => void;
+}
+
+function ColumnVisibilityDropdown({ columns, visibleColumns, onToggle }: ColumnVisibilityProps) {
+	const [open, setOpen] = useState(false);
+	return (
+		<div className="relative" data-testid="column-visibility">
+			<Button
+				variant="outline"
+				size="sm"
+				onClick={() => setOpen((v) => !v)}
+				data-testid="column-visibility-trigger"
+			>
+				Columns
+			</Button>
+			{open && (
+				<div className="absolute right-0 top-full z-10 mt-1 min-w-[160px] rounded-md border bg-popover shadow-md">
+					{columns.map((col) => (
+						<label
+							key={col.name}
+							className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent"
+							data-testid={`column-toggle-${col.name}`}
+						>
+							<input
+								type="checkbox"
+								checked={visibleColumns.has(col.name)}
+								onChange={() => onToggle(col.name)}
+							/>
+							{col.label ?? col.name}
+						</label>
+					))}
+				</div>
+			)}
+		</div>
 	);
 }
 

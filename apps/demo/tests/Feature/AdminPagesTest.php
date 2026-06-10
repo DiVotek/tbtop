@@ -226,6 +226,58 @@ class AdminPagesTest extends TestCase
         $this->assertSame(25, $settings->max_upload_mb);
     }
 
+    public function test_posts_table_structure_carries_filters(): void
+    {
+        $this->get('/admin/posts')
+            ->assertOk()
+            ->assertInertia(function (Assert $page): void {
+                $page->component('admin/page', false);
+
+                $structure = $page->toArray()['props']['structure'];
+                $encoded = (array) json_decode((string) json_encode($structure), true);
+                $postsTable = $this->findTableNode($encoded, 'posts');
+
+                $this->assertNotNull($postsTable, 'Expected a table node named "posts"');
+                $this->assertArrayHasKey('filters', $postsTable['options'] ?? []);
+                $this->assertNotEmpty($postsTable['options']['filters']);
+            });
+    }
+
+    public function test_posts_table_filter_by_published_narrows_results(): void
+    {
+        $this->makePost(['published' => true]);
+        $this->makePost(['published' => true]);
+        $this->makePost(['published' => false]);
+
+        $response = $this->getJson('/admin/posts/tables/posts?filters[published]=1')->assertOk();
+
+        $this->assertSame(2, $response->json('data.total'));
+    }
+
+    /**
+     * Recursively find a table node by its name in the serialized structure tree.
+     *
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>|null
+     */
+    private function findTableNode(array $node, string $name): ?array
+    {
+        if (($node['kind'] ?? null) === 'table' && ($node['name'] ?? null) === $name) {
+            return $node;
+        }
+        $children = $node['options']['children'] ?? [];
+        foreach ($children as $child) {
+            if (is_array($child)) {
+                $found = $this->findTableNode($child, $name);
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /** @param  array<string, mixed>  $overrides */
     private function makePost(array $overrides = []): Post
     {

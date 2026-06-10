@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Fields\Field;
 
 /**
  * Fluent table surface — DSL boundary, method count is the API.
@@ -20,6 +21,11 @@ final class TableBuilder implements JsonSerializable
 
     /** @var list<string> */
     private array $searchable = [];
+
+    /** @var list<Field> */
+    private array $filterFields = [];
+
+    private ?string $filtersIn = null;
 
     private ?Closure $query = null;
 
@@ -48,9 +54,40 @@ final class TableBuilder implements JsonSerializable
     public function searchable(array $fields): self
     {
         $this->searchable = $fields;
-        $this->opts['searchable'] = true;
+        $this->opts['searchable'] = $fields;
 
         return $this;
+    }
+
+    /**
+     * Declare filter fields (same Field instances used in forms).
+     * Serialized into options.filters as field nodes.
+     * Also sets filtersIn to 'modal' if not already set.
+     *
+     * @param  list<Field>  $fields
+     */
+    public function filters(array $fields): self
+    {
+        $this->filterFields = $fields;
+        if ($this->filtersIn === null) {
+            $this->filtersIn = 'modal';
+        }
+
+        return $this;
+    }
+
+    /** @param  'modal'|'inline'  $mode */
+    public function filtersIn(string $mode): self
+    {
+        $this->filtersIn = $mode;
+
+        return $this;
+    }
+
+    /** @return list<Field> */
+    public function filterFields(): array
+    {
+        return $this->filterFields;
     }
 
     public function defaultSort(string $field, string $dir = 'asc'): self
@@ -123,8 +160,14 @@ final class TableBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
+        $opts = $this->opts;
+        if ($this->filterFields !== []) {
+            $opts['filters'] = array_map(fn (Field $f) => $f->toNode(), $this->filterFields);
+            $opts['filtersIn'] = $this->filtersIn ?? 'modal';
+        }
+
         return new Node('table', [
-            ...$this->opts,
+            ...$opts,
             'name' => $this->name,
             'columns' => $this->columns,
         ], $this->name);

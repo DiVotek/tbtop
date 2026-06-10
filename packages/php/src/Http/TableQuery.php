@@ -15,7 +15,7 @@ final class TableQuery
     public static function run(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): array
     {
         self::applySearch($table, $request, $builder);
-        self::applyFilters($request, $builder);
+        self::applyFilters($table, $request, $builder);
         self::applySort($table, $request, $builder);
 
         $perPage = min(max((int) $request->query('perPage', '25'), 1), self::MAX_PER_PAGE);
@@ -40,15 +40,23 @@ final class TableQuery
         });
     }
 
-    private static function applyFilters(Request $request, EloquentBuilder|QueryBuilder $builder): void
+    private static function applyFilters(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
     {
-        $filters = $request->query('filters', []);
-        if (! is_array($filters)) {
+        $raw = $request->query('filters', []);
+        if (! is_array($raw)) {
             return;
         }
-        foreach ($filters as $field => $value) {
-            if (is_string($field) && $value !== null && $value !== '') {
-                $builder->where($field, $value);
+        /** @var array<string, mixed> $filterValues */
+        $filterValues = $raw;
+        $fields = $table->filterFields();
+        if ($fields !== []) {
+            TableFilterApplier::apply($fields, $filterValues, $builder);
+        } else {
+            // Legacy: no declared filter fields — fall back to simple equality.
+            foreach ($filterValues as $field => $value) {
+                if ($value !== null && $value !== '') {
+                    $builder->where($field, $value);
+                }
             }
         }
     }

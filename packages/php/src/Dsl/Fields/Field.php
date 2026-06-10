@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
 use InvalidArgumentException;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Cond;
@@ -27,6 +28,9 @@ abstract class Field implements JsonSerializable
 
     /** null = not set, true = translatable, false = explicit opt-out */
     private ?bool $translatableFlag = null;
+
+    /** Server-only filter closure — never serialized to the wire. */
+    private ?Closure $filterClosure = null;
 
     /** @var array<string, list<string>> locale => rule list */
     private array $localeRules = [];
@@ -114,6 +118,22 @@ abstract class Field implements JsonSerializable
         $this->metaBag[$key] = $value;
 
         return $this;
+    }
+
+    /**
+     * Attach a server-side filter closure: fn($query, $value) => $query.
+     * Takes priority over kind-default mapping. NEVER serialized to the wire.
+     */
+    public function filterUsing(callable $fn): static
+    {
+        $this->filterClosure = Closure::fromCallable($fn);
+
+        return $this;
+    }
+
+    public function filterClosure(): ?Closure
+    {
+        return $this->filterClosure;
     }
 
     public function hiddenIf(Cond|string $condOrField, string $op = '', mixed $value = null): static

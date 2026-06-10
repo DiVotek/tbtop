@@ -82,6 +82,10 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 	if (Array.isArray(next.fields)) {
 		next.fields = next.fields.map((f) => walk(f as StructureNode, ctx));
 	}
+	// Walk table filter field nodes so their meta (hiddenIf/disabledIf) is compiled.
+	if (Array.isArray(next.filters)) {
+		next.filters = next.filters.map((f) => walk(f as StructureNode, ctx));
+	}
 	return next;
 }
 
@@ -123,12 +127,16 @@ function childNodes(opts: Bag): StructureNode[] {
 function materializeTable(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const opts = node.options as Bag;
 	const name = node.name ?? "";
+	const compiledFilters = Array.isArray(opts.filters)
+		? (opts.filters as StructureNode[]).map((f) => walk(f, ctx))
+		: undefined;
 	return {
 		...node,
 		options: {
 			...opts,
 			rowActions: actionBags(opts.rowActions, ctx),
 			bulkActions: actionBags(opts.bulkActions, ctx),
+			...(compiledFilters !== undefined ? { filters: compiledFilters } : {}),
 			query: (actionCtx: ClientActionContext) =>
 				actionCtx.client
 					.get(`${ctx.basePath}/tables/${name}`, tableQueryParams(actionCtx))
@@ -152,11 +160,36 @@ function tableQueryParams(ctx: ClientActionContext): QueryParams {
 		perPage: params.perPage,
 		sort: sort || undefined,
 		dir: dir || undefined,
+		search: params.search || undefined,
 	};
 	for (const [field, value] of Object.entries(params.filters ?? {})) {
-		query[`filters[${field}]`] = value as QueryParams[string];
+		const encoded = encodeFilterValue(field, value);
+		for (const [k, v] of Object.entries(encoded)) {
+			query[k] = v as QueryParams[string];
+		}
 	}
 	return query;
+}
+
+function encodeFilterValue(field: string, value: unknown): Record<string, unknown> {
+	if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+		// daterange: filters[field][from] / filters[field][to]
+		const obj = value as Record<string, unknown>;
+		const result: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(obj)) {
+			result[`filters[${field}][${k}]`] = v;
+		}
+		return result;
+	}
+	if (Array.isArray(value)) {
+		// tags: repeated params filters[field][]=v
+		const result: Record<string, unknown> = {};
+		value.forEach((v, i) => {
+			result[`filters[${field}][${i}]`] = v;
+		});
+		return result;
+	}
+	return { [`filters[${field}]`]: value };
 }
 
 function materializeChart(node: StructureNode, ctx: WalkCtx): StructureNode {

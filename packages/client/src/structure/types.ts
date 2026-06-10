@@ -60,6 +60,7 @@ export interface ListQueryParams {
 	page?: number;
 	perPage?: number;
 	sort?: string;
+	search?: string;
 	filters?: Record<string, unknown>;
 }
 
@@ -140,6 +141,9 @@ export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncB
 	columns: TableColumn<TRow>[];
 	rowActions?: ActionConfig<TBuilder>[];
 	bulkActions?: ActionConfig<TBuilder>[];
+	searchable?: string[];
+	filters?: StructureNode[];
+	filtersIn?: "modal" | "inline";
 }
 
 export interface TableColumn<TRow = unknown> {

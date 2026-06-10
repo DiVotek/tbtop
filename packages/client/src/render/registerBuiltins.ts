@@ -2,6 +2,7 @@ import { BooleanCell, BooleanForm } from "../fields/booleanField";
 import { CheckboxCell, CheckboxForm } from "../fields/checkboxField";
 import { ColorpickerCell, ColorpickerForm } from "../fields/colorpickerField";
 import { DateCell, DateForm, DateTimeCell, DateTimeForm, TimeForm } from "../fields/dateField";
+import { DaterangeForm, type DaterangeValue } from "../fields/daterangeField";
 import { JsonCell, JsonForm } from "../fields/jsonField";
 import { KeyvalueCell, KeyvalueForm } from "../fields/keyvalueField";
 import { NumberCell, NumberForm } from "../fields/numberField";
@@ -103,6 +104,10 @@ function registerInputFields(): void {
 		cell: DateTimeCell,
 	});
 	defineFieldClient<"time", string>("time", { form: TimeForm, cell: DateCell });
+	defineFieldClient<"daterange", DaterangeValue>("daterange", {
+		form: DaterangeForm,
+		cell: ({ value }) => (value ? `${value.from ?? ""} – ${value.to ?? ""}` : null),
+	});
 	defineFieldClient<"slug", string>("slug", { form: SlugForm, cell: SlugCell });
 }
 
