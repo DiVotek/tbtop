@@ -150,6 +150,17 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Set the row-click action: clicking a row triggers the named row action.
+     * Interpolated client-side; must match a name in rowActions().
+     */
+    public function rowClick(string $actionName): self
+    {
+        $this->opts['rowClick'] = $actionName;
+
+        return $this;
+    }
+
     /** @param  list<ActionBuilder>  $actions */
     public function bulkActions(array $actions): self
     {

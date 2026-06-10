@@ -60,7 +60,8 @@
 								"required": ["name", "columns"],
 								"properties": {
 									"columns": { "$ref": "#/$defs/columns" },
-									"pagination": { "$ref": "#/$defs/pagination" }
+									"pagination": { "$ref": "#/$defs/pagination" },
+									"rowClick": { "type": "string" }
 								}
 							}
 						}
@@ -87,7 +88,8 @@
 							"options": {
 								"required": ["label"],
 								"properties": {
-									"label": { "type": "string" }
+									"label": { "type": "string" },
+									"as": { "type": "string", "enum": ["buttons", "dropdown"] }
 								}
 							}
 						}

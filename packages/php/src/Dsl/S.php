@@ -174,13 +174,19 @@ final class S
     }
 
     /**
-     * Action-group node: a dropdown button containing multiple action items.
+     * Action-group node: a button group or dropdown containing multiple action items.
      *
      * @param  list<ActionBuilder>  $actions
+     * @param  'buttons'|'dropdown'|null  $as  Render mode — null omits the key (client defaults to buttons).
      */
-    public function actionGroup(string $label, array $actions): Node
+    public function actionGroup(string $label, array $actions, ?string $as = null): Node
     {
-        return new Node('actionGroup', ['label' => $label, 'children' => $actions]);
+        $opts = ['label' => $label, 'children' => $actions];
+        if ($as !== null) {
+            $opts['as'] = $as;
+        }
+
+        return new Node('actionGroup', $opts);
     }
 
     /**
