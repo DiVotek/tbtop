@@ -9,6 +9,7 @@ import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { Button } from "../../ui/button";
 import { ActionBlock } from "../actionBlock";
+import { useClientActionContext } from "../actionContext";
 import { RowProvider } from "../rowContext";
 import type { ActionConfig, ListQueryParams, TableColumn } from "../types";
 import { BadgeCell, BooleanIconCell, IconMapCell } from "./cellHelpers";
@@ -32,6 +33,8 @@ interface TableGridProps {
 	isReloading?: boolean;
 	hasActiveFilters: boolean;
 	onResetFilters: () => void;
+	/** Name of a row action to trigger on row click. */
+	rowClick?: string;
 }
 
 export function TableGrid(props: TableGridProps) {
@@ -116,6 +119,7 @@ export function TableGrid(props: TableGridProps) {
 								onToggle={props.onToggle}
 								hasBulk={props.hasBulk}
 								hasRowActions={props.hasRowActions}
+								rowClick={props.rowClick}
 							/>
 						))
 					)}
@@ -235,6 +239,9 @@ function EmptyState({
 
 // ─── TableRow ─────────────────────────────────────────────────────────────────
 
+// Selector for interactive elements that should NOT trigger rowClick.
+const INTERACTIVE_SELECTOR = "a, button, input, label, [role='checkbox'], [role='menuitem']";
+
 interface TableRowProps {
 	row: Record<string, unknown>;
 	columns: TableColumn[];
@@ -243,12 +250,52 @@ interface TableRowProps {
 	onToggle: (id: string) => void;
 	hasBulk: boolean;
 	hasRowActions: boolean;
+	rowClick?: string;
 }
 
 function TableRow(props: TableRowProps) {
 	const id = readId(props.row);
+	const ctx = useClientActionContext();
+
+	const rowClickAction = props.rowClick
+		? props.rowActions.find((a) => a.name === props.rowClick)
+		: undefined;
+
+	function handleRowClick(e: React.MouseEvent<HTMLTableRowElement>) {
+		if (!props.rowClick) return;
+		// Ignore clicks that land on or inside interactive elements.
+		if ((e.target as Element).closest(INTERACTIVE_SELECTOR)) return;
+		if (!rowClickAction) {
+			if (process.env.NODE_ENV !== "production") {
+				console.warn(
+					`[tbtop] rowClick: action "${props.rowClick}" not found in rowActions — click ignored.`,
+				);
+			}
+			return;
+		}
+		if ("handler" in rowClickAction && rowClickAction.handler) {
+			void Promise.resolve(rowClickAction.handler({ ...ctx, row: props.row })).catch(
+				() => {},
+			);
+		}
+	}
+
+	function handleRowKeyDown(e: React.KeyboardEvent<HTMLTableRowElement>) {
+		if (e.key === "Enter") {
+			e.currentTarget.click();
+		}
+	}
+
+	const isClickable = Boolean(props.rowClick);
+
 	return (
-		<tr className="border-t" data-testid={id ? `table-row-${id}` : undefined}>
+		<tr
+			className={cn("border-t", isClickable && "cursor-pointer")}
+			data-testid={id ? `table-row-${id}` : undefined}
+			onClick={isClickable ? handleRowClick : undefined}
+			onKeyDown={isClickable ? handleRowKeyDown : undefined}
+			tabIndex={isClickable ? 0 : undefined}
+		>
 			<RowProvider value={props.row}>
 				{props.hasBulk && (
 					<td className="px-3 py-2">

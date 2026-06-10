@@ -161,6 +161,11 @@ export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncB
 	pagination?: TablePaginationOptions;
 	/** Server-assigned table name — used to namespace URL query state. */
 	name?: string;
+	/**
+	 * Name of a row action to trigger when the user clicks a row.
+	 * Clicks on interactive elements (a, button, input, etc.) are ignored.
+	 */
+	rowClick?: string;
 }
 
 export interface TableColumnIcon {

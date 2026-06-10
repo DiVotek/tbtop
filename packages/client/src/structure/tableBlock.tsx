@@ -33,6 +33,7 @@ interface TableBlockOptions extends AsyncBlock {
 	filters?: StructureNode[];
 	filtersIn?: "modal" | "inline";
 	pagination?: TablePaginationOptions;
+	rowClick?: string;
 }
 
 interface TableRenderProps {
@@ -94,6 +95,7 @@ export function TableBlock({ options }: TableRenderProps) {
 			filtersIn={options.filtersIn ?? "modal"}
 			pagination={options.pagination}
 			tableName={tableName}
+			rowClick={options.rowClick}
 		/>
 	);
 }
@@ -123,6 +125,7 @@ interface TableBodyProps {
 	filtersIn: "modal" | "inline";
 	pagination?: TablePaginationOptions;
 	tableName: string;
+	rowClick?: string;
 }
 
 function TableBody(props: TableBodyProps) {
@@ -259,6 +262,7 @@ function TableBody(props: TableBodyProps) {
 					isReloading={props.isReloading}
 					hasActiveFilters={hasActiveFilters}
 					onResetFilters={handleResetFilters}
+					rowClick={props.rowClick}
 				/>
 
 				{showPagination && (
