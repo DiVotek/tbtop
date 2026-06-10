@@ -2,7 +2,7 @@
  * TableGrid — the <table> element: header (sort, select-all), rows, empty state.
  * Extracted from tableBlock.tsx.
  */
-import { type ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
@@ -250,13 +250,34 @@ interface TableRowProps {
 function TableRow(props: TableRowProps) {
 	const id = readId(props.row);
 	const ctx = useClientActionContext();
+	// Armed by pointerdown on the row itself. A click whose pointerdown
+	// happened elsewhere (e.g. on a confirm-dialog button or overlay that
+	// unmounted before click dispatch, retargeting the click to this row)
+	// must NOT count as a row click.
+	const armedRef = useRef(false);
 
 	const rowClickAction = props.rowClick
 		? props.rowActions.find((a) => a.name === props.rowClick)
 		: undefined;
 
+	// Row-action modals are React children of the <tr> but live in DOM portals.
+	// React bubbles portal events through the REACT tree, so clicks inside a
+	// modal (overlay, title, body) reach these handlers — only events whose
+	// target is a real DOM descendant of the row may count.
+	function isDomInsideRow(e: React.SyntheticEvent<HTMLTableRowElement>): boolean {
+		return e.currentTarget.contains(e.target as Node);
+	}
+
+	function handleRowPointerDown(e: React.PointerEvent<HTMLTableRowElement>) {
+		if (!isDomInsideRow(e)) return;
+		armedRef.current = true;
+	}
+
 	function handleRowClick(e: React.MouseEvent<HTMLTableRowElement>) {
-		if (!props.rowClick) return;
+		const armed = armedRef.current;
+		armedRef.current = false;
+		if (!props.rowClick || !armed) return;
+		if (!isDomInsideRow(e)) return;
 		// Ignore clicks whose target is no longer in the document — this happens
 		// when a Radix portal overlay (rendered outside the <tr>) is unmounted
 		// before the browser dispatches the resulting click on the row.
@@ -280,6 +301,7 @@ function TableRow(props: TableRowProps) {
 
 	function handleRowKeyDown(e: React.KeyboardEvent<HTMLTableRowElement>) {
 		if (e.key === "Enter") {
+			armedRef.current = true;
 			e.currentTarget.click();
 		}
 	}
@@ -290,6 +312,7 @@ function TableRow(props: TableRowProps) {
 		<tr
 			className={cn("border-t", isClickable && "cursor-pointer")}
 			data-testid={id ? `table-row-${id}` : undefined}
+			onPointerDown={isClickable ? handleRowPointerDown : undefined}
 			onClick={isClickable ? handleRowClick : undefined}
 			onKeyDown={isClickable ? handleRowKeyDown : undefined}
 			tabIndex={isClickable ? 0 : undefined}

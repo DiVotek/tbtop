@@ -8,6 +8,7 @@ import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
+import type { StructureNode } from "./types";
 
 beforeEach(() => {
 	clearBlockRegistry();
@@ -38,6 +39,7 @@ describe("Table rowClick", () => {
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		const row = await findByTestId("table-row-42");
 		await act(async () => {
+			fireEvent.pointerDown(row);
 			fireEvent.click(row);
 		});
 		expect(clickedId).toBe("42");
@@ -96,6 +98,7 @@ describe("Table rowClick", () => {
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		const row = await findByTestId("table-row-9");
 		await act(async () => {
+			fireEvent.pointerDown(row);
 			fireEvent.click(row);
 		});
 		console.warn = origWarn;
@@ -153,6 +156,7 @@ describe("Table rowClick", () => {
 
 		// Normal click → rowClick fires.
 		await act(async () => {
+			fireEvent.pointerDown(row);
 			fireEvent.click(row);
 		});
 		expect(clickCount).toBe(1);
@@ -171,6 +175,95 @@ describe("Table rowClick", () => {
 		});
 		// Must still be 1 — the detached-target click must NOT trigger rowClick.
 		expect(clickCount).toBe(1);
+	});
+
+	test("rowClick: click without pointerdown on the row does NOT trigger the action", async () => {
+		// Regression: cancelling a confirm dialog (click on its button/overlay)
+		// unmounts the portal before click dispatch — the browser retargets the
+		// click to the <tr> underneath. The target is connected and
+		// non-interactive, so only the pointerdown-origin guard catches it.
+		let clickCount = 0;
+		const node = s.table({
+			query: async () => [{ id: "11", title: "Q" }],
+			columns: [{ name: "title" }],
+			rowActions: [
+				{
+					name: "edit",
+					handler: async () => {
+						clickCount++;
+					},
+				},
+			],
+			rowClick: "edit",
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const row = await findByTestId("table-row-11");
+
+		// Click arrives with NO pointerdown on the row (portal-close retarget).
+		await act(async () => {
+			fireEvent.click(row);
+		});
+		expect(clickCount).toBe(0);
+	});
+
+	test("rowClick: clicking the overlay of a row-action modal does NOT trigger rowClick", async () => {
+		// Regression: the confirm modal is a React child of the <tr> (portal),
+		// and React bubbles portal events through the REACT tree — a click on
+		// the overlay (a plain div: passes the interactive-selector check,
+		// connected while the exit animation runs) reached the row handler.
+		// The DOM-containment guard must reject it: the overlay is not a DOM
+		// descendant of the row.
+		let editClicks = 0;
+		const node = s.table({
+			query: async () => [{ id: "8", title: "M" }],
+			columns: [{ name: "title" }],
+			rowActions: [
+				{
+					name: "edit",
+					handler: async () => {
+						editClicks++;
+					},
+				},
+				{
+					name: "delete",
+					modal: {
+						title: "Delete post?",
+						body: (): StructureNode => ({
+							kind: "action",
+							name: "confirm",
+							options: { name: "confirm", label: "Confirm", handler: async () => {} },
+							meta: {},
+						}),
+					},
+				},
+			],
+			rowClick: "edit",
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, baseElement } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		// Open the delete confirm modal.
+		const deleteBtn = await findByTestId("action-delete");
+		await act(async () => {
+			fireEvent.pointerDown(deleteBtn);
+			fireEvent.click(deleteBtn);
+		});
+		await findByTestId("modal-delete");
+
+		// Click a non-interactive element INSIDE the portalled dialog (the
+		// title). In the React tree it bubbles into the <tr>; in the DOM tree
+		// it is not a descendant of the row. (The overlay-cancel click is the
+		// same mechanism, but happy-dom unmounts the dialog between pointerdown
+		// and click, so the title is the deterministic stand-in.)
+		const title = baseElement.querySelector('[data-testid="modal-delete"] h2') as HTMLElement;
+		expect(title).not.toBeNull();
+		await act(async () => {
+			fireEvent.pointerDown(title);
+			fireEvent.click(title);
+		});
+
+		expect(editClicks).toBe(0);
 	});
 
 	test("rowClick: keyboard Enter on row triggers the action", async () => {
