@@ -263,6 +263,10 @@ function TableRow(props: TableRowProps) {
 
 	function handleRowClick(e: React.MouseEvent<HTMLTableRowElement>) {
 		if (!props.rowClick) return;
+		// Ignore clicks whose target is no longer in the document — this happens
+		// when a Radix portal overlay (rendered outside the <tr>) is unmounted
+		// before the browser dispatches the resulting click on the row.
+		if (!(e.target as Element).isConnected) return;
 		// Ignore clicks that land on or inside interactive elements.
 		if ((e.target as Element).closest(INTERACTIVE_SELECTOR)) return;
 		if (!rowClickAction) {
