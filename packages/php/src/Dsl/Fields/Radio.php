@@ -9,9 +9,9 @@ final class Radio extends Field
         return 'radio';
     }
 
-    /** @param  list<array{value: string, label: string}>  $options */
+    /** @param  list<array{value: mixed, label: string}>  $options */
     public function options(array $options): static
     {
-        return $this->set('options', $options);
+        return $this->set('options', self::normalizeOptionValues($options));
     }
 }

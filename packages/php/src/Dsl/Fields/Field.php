@@ -113,6 +113,20 @@ abstract class Field implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Wire contract: option values are strings (form data and URL params are).
+     *
+     * @param  list<array{value: mixed, label: string}>  $options
+     * @return list<array{value: string, label: string}>
+     */
+    protected static function normalizeOptionValues(array $options): array
+    {
+        return array_map(
+            fn (array $option) => ['value' => (string) $option['value']] + $option,
+            $options,
+        );
+    }
+
     public function meta(string $key, mixed $value): static
     {
         $this->metaBag[$key] = $value;

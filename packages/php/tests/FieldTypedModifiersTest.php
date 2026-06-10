@@ -1,5 +1,6 @@
 <?php
 
+use Tbtop\Admin\Dsl\Fields\Radio;
 use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\Fields\Select;
@@ -22,6 +23,28 @@ it('FieldTypedModifiers: Select::options() serializes same as ->set(options, ...
     $viaTyped = encodeModifier(Select::make('role')->options($opts));
 
     expect($viaTyped)->toBe($viaSet);
+});
+
+it('FieldTypedModifiers: Select::options() casts non-string values to strings on wire', function () {
+    $json = encodeModifier(Select::make('author_id')->options([
+        ['value' => 3, 'label' => 'a@b.c'],
+        ['value' => '7', 'label' => 'd@e.f'],
+    ]));
+
+    expect($json['options']['options'])->toBe([
+        ['value' => '3', 'label' => 'a@b.c'],
+        ['value' => '7', 'label' => 'd@e.f'],
+    ]);
+});
+
+it('FieldTypedModifiers: Radio::options() casts non-string values to strings on wire', function () {
+    $json = encodeModifier(Radio::make('rating')->options([
+        ['value' => 1, 'label' => 'One'],
+    ]));
+
+    expect($json['options']['options'])->toBe([
+        ['value' => '1', 'label' => 'One'],
+    ]);
 });
 
 it('FieldTypedModifiers: Select::searchable() serializes same as ->set(searchable, true)', function () {
