@@ -89,12 +89,14 @@ interface RunInput {
 
 async function runHandlerWithValidation(input: RunInput): Promise<void> {
 	if (input.formHandle && !preFlightSchemaParse(input.formHandle)) {
+		input.formHandle.notifyErrorsApplied();
 		return;
 	}
 	try {
 		await input.handler(input.ctx);
 	} catch (err) {
 		if (input.formHandle && tryApplyServerFieldErrors(err, input.formHandle)) {
+			input.formHandle.notifyErrorsApplied();
 			return;
 		}
 		reportActionError(err, input.ctx);

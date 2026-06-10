@@ -1,21 +1,28 @@
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 import type { FieldFormProps } from "../fields/fieldProps";
 import { TranslatableWrapper } from "../fields/translatableWrapper";
+import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
 import { Label } from "../ui/label";
 import { useClientActionContext } from "./actionContext";
 import type { AsyncBlock } from "./asyncBlock";
 import { ContentLocaleBar } from "./contentLocaleBar";
-import { ActiveLocaleProvider, useContentLocaleConfig } from "./contentLocaleContext";
+import {
+	ActiveLocaleProvider,
+	useActiveLocale,
+	useContentLocaleConfig,
+} from "./contentLocaleContext";
 import { FormError, FormSkeleton } from "./defaults";
 import { FormControllerProvider } from "./formContext";
 import { useFormController } from "./formController";
 import { isNodeDisabled, isNodeHidden } from "./meta";
 import { renderAsyncError } from "./renderAsyncError";
+import { scrollToFirstError } from "./scrollToFirstError";
 import type { ConditionContext, StructureNode } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
+import { useUnsavedGuard } from "./useUnsavedGuard";
 
 type Bag = Record<string, unknown>;
 type ControllerHandle = ReturnType<typeof useFormController>;
@@ -23,6 +30,8 @@ type ControllerHandle = ReturnType<typeof useFormController>;
 interface FormBlockOptions extends Partial<AsyncBlock> {
 	schema?: { parse: (input: unknown) => unknown };
 	children?: StructureNode[];
+	/** Show a confirm dialog when navigating away with unsaved changes. Defaults to true. */
+	guardUnsaved?: boolean;
 }
 
 interface FormRenderProps {
@@ -41,7 +50,11 @@ export function FormBlock({ options }: FormRenderProps) {
 		return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 	}
 	return (
-		<FormControllerBody initial={normalize(state.data)} schema={options.schema}>
+		<FormControllerBody
+			initial={normalize(state.data)}
+			schema={options.schema}
+			guardUnsaved={options.guardUnsaved ?? true}
+		>
 			{options.children}
 		</FormControllerBody>
 	);
@@ -51,13 +64,17 @@ interface BodyProps {
 	initial: Bag;
 	schema?: { parse: (input: unknown) => unknown };
 	children: StructureNode[] | undefined;
+	guardUnsaved: boolean;
 }
 
-function FormControllerBody({ initial, schema, children }: BodyProps) {
+function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyProps) {
 	const ctrl = useFormController({ initial, schema });
 	const localeConfig = useContentLocaleConfig();
+	const t = useTranslation();
 	useSyncInitial(initial, ctrl.reset);
+	useUnsavedGuard(ctrl.isDirty, guardUnsaved, t);
 	const hasTranslatable = detectTranslatableFields(children ?? []);
+	const formRef = useRef<HTMLFormElement | null>(null);
 	return (
 		<FormControllerProvider value={ctrl}>
 			<ActiveLocaleProvider defaultLocale={localeConfig.defaultLocale}>
@@ -67,7 +84,12 @@ function FormControllerBody({ initial, schema, children }: BodyProps) {
 						fieldErrors={ctrl.fieldErrors}
 					/>
 				)}
-				<form className="flex flex-col gap-4" data-testid="form-block">
+				<form ref={formRef} className="flex flex-col gap-4" data-testid="form-block">
+					<ScrollToErrorEffect
+						errorScrollTick={ctrl.errorScrollTick}
+						fieldErrors={ctrl.fieldErrors}
+						formRef={formRef}
+					/>
 					{(children ?? []).map((child, i) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: structure children are positional
 						<div key={i}>{renderFormChild(child, ctrl, localeConfig.locales)}</div>
@@ -76,6 +98,33 @@ function FormControllerBody({ initial, schema, children }: BodyProps) {
 			</ActiveLocaleProvider>
 		</FormControllerProvider>
 	);
+}
+
+/**
+ * Null-rendering component placed inside the <form> so it has access to
+ * the ActiveLocaleCtx (which is provided by the parent ActiveLocaleProvider).
+ * Watches errorScrollTick and calls scrollToFirstError when it increments.
+ */
+interface ScrollToErrorEffectProps {
+	errorScrollTick: number;
+	fieldErrors: Record<string, string>;
+	formRef: RefObject<HTMLFormElement | null>;
+}
+
+function ScrollToErrorEffect({ errorScrollTick, fieldErrors, formRef }: ScrollToErrorEffectProps) {
+	const localeCtx = useActiveLocale();
+	const setActiveLocale = localeCtx ? localeCtx.setActive : null;
+	const prevTickRef = useRef(0);
+
+	useEffect(() => {
+		if (errorScrollTick === 0 || errorScrollTick === prevTickRef.current) {
+			return;
+		}
+		prevTickRef.current = errorScrollTick;
+		scrollToFirstError(fieldErrors, formRef.current, setActiveLocale);
+	}, [errorScrollTick, fieldErrors, formRef, setActiveLocale]);
+
+	return null;
 }
 
 function useSyncInitial(initial: Bag, reset: () => void): void {
@@ -165,7 +214,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 			});
 
 	return (
-		<div className="flex flex-col gap-1.5">
+		<div className="flex flex-col gap-1.5" data-field-name={name}>
 			{label && (
 				<Label htmlFor={fieldId}>
 					{label}

@@ -15,6 +15,9 @@ interface FormControllerInternal extends FormController {
 	markTouched: (field: string) => void;
 	setFieldError: (field: string, message: string | null) => void;
 	resetTouched: () => void;
+	/** Incremented each time errors are applied after a failed submit — triggers scroll-to-error. */
+	errorScrollTick: number;
+	notifyErrorsApplied: () => void;
 }
 
 // oxlint-disable-next-line max-lines-per-function -- hook: 5 useCallbacks must stay inline (hook rules)
@@ -24,6 +27,7 @@ export function useFormController(input: UseFormControllerInput): FormController
 	const [data, setData] = useState<Bag>(() => ({ ...input.initial }));
 	const [touched, setTouched] = useState<Set<string>>(() => new Set());
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+	const [errorScrollTick, setErrorScrollTick] = useState(0);
 
 	const set = useCallback((field: string, value: unknown) => {
 		setData((prev) => ({ ...prev, [field]: value }));
@@ -58,6 +62,10 @@ export function useFormController(input: UseFormControllerInput): FormController
 
 	const resetTouched = useCallback(() => setTouched(new Set()), []);
 
+	const notifyErrorsApplied = useCallback(() => {
+		setErrorScrollTick((t) => t + 1);
+	}, []);
+
 	const changedFields = useMemo(() => diffKeys(input.initial, data), [input.initial, data]);
 	const isDirty = changedFields.length > 0;
 	const isValid = Object.keys(fieldErrors).length === 0;
@@ -76,6 +84,8 @@ export function useFormController(input: UseFormControllerInput): FormController
 		markTouched,
 		setFieldError,
 		resetTouched,
+		errorScrollTick,
+		notifyErrorsApplied,
 	};
 }
 

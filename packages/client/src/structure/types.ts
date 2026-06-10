@@ -134,6 +134,8 @@ export type ActionConfig<TBuilder = unknown> =
 export interface FormOptions extends Partial<AsyncBlock> {
 	query?: (ctx: ClientActionContext) => Promise<unknown>;
 	schema?: { parse: (input: unknown) => unknown };
+	/** Show a confirm dialog when navigating away with unsaved changes. Defaults to true. */
+	guardUnsaved?: boolean;
 }
 
 export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncBlock {
