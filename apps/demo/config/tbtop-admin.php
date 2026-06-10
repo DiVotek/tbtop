@@ -11,6 +11,7 @@ use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\SettingsPage;
 use App\Http\Middleware\RequireFullAuth;
 use App\Http\Middleware\SetAdminRootView;
+use Tbtop\Admin\Pages\MediaLibraryPage;
 
 return [
     // URL prefix all admin pages mount under.
@@ -30,6 +31,7 @@ return [
         MediaEditPage::class,
         SettingsPage::class,
         PlaygroundPage::class,
+        MediaLibraryPage::class,
     ],
 
     // Admin UI locales. First entry is the default.
@@ -52,6 +54,20 @@ return [
             'accept' => ['image/*'],
             'maxSize' => 5 * 1024 * 1024,
             'sizes' => ['thumb' => [128, 128]],
+        ],
+    ],
+
+    // Media manager (POST /admin/media/upload, import-url, etc.).
+    'media' => [
+        'disk' => 'public',
+        'accept' => ['image/*'],
+        'max_size' => 10240,
+        'profiles' => [
+            'thumb' => [320, 320],
+        ],
+        'url_import' => [
+            'timeout' => 30,
+            'max_size' => 10240,
         ],
     ],
 ];
