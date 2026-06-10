@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Idempotent: table may already exist via published copy of this migration.
+        if (Schema::hasTable('tbtop_media')) {
+            return;
+        }
+
         Schema::create('tbtop_media', function (Blueprint $table) {
             $table->id();
             $table->foreignId('folder_id')->nullable()->constrained('tbtop_media_folders')->nullOnDelete();

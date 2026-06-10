@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Idempotent: table may already exist via published copy of this migration.
+        if (Schema::hasTable('tbtop_media_folders')) {
+            return;
+        }
+
         Schema::create('tbtop_media_folders', function (Blueprint $table) {
             $table->id();
             $table->string('name');

@@ -19,6 +19,7 @@ class AdminServiceProvider extends PackageServiceProvider
                 '2026_01_01_000001_create_tbtop_media_folders_table',
                 '2026_01_01_000002_create_tbtop_media_table',
             ])
+            ->runsMigrations()
             ->hasRoute('admin')
             ->hasTranslations();
     }
