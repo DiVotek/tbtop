@@ -23,7 +23,7 @@ final class TableQuery
         $total = (clone $builder)->count();
         $rows = $builder->forPage($page, $perPage)->get();
 
-        return ['data' => $rows, 'total' => $total];
+        return ['data' => TranslatableProjection::apply($table, $rows), 'total' => $total];
     }
 
     private static function applySearch(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void

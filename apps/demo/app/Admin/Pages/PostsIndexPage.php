@@ -35,10 +35,10 @@ class PostsIndexPage extends Page
             ]),
             $s->table('posts')
                 ->columns([
-                    'title' => 'Title',
-                    'slug' => 'Slug',
-                    'published' => 'Published',
-                    'views' => 'Views',
+                    ['name' => 'title', 'label' => 'Title', 'kind' => 'text', 'translatable' => true],
+                    ['name' => 'slug', 'label' => 'Slug', 'kind' => 'text'],
+                    ['name' => 'published', 'label' => 'Published', 'kind' => 'text'],
+                    ['name' => 'views', 'label' => 'Views', 'kind' => 'text'],
                 ])
                 ->searchable(['title'])
                 ->defaultSort('created_at', 'desc')

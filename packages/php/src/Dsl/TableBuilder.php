@@ -101,6 +101,19 @@ final class TableBuilder implements JsonSerializable
         return $this->searchable;
     }
 
+    /** @return list<string> Column names declared translatable */
+    public function translatableColumns(): array
+    {
+        $names = [];
+        foreach ($this->columns as $column) {
+            if (($column['translatable'] ?? false) === true) {
+                $names[] = (string) $column['name'];
+            }
+        }
+
+        return $names;
+    }
+
     /** @return array{field: string, dir: string}|null */
     public function defaultSortSpec(): ?array
     {
