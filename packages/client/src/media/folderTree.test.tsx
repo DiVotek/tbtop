@@ -41,6 +41,37 @@ afterEach(() => {
 	clearBlockRegistry();
 });
 
+// ─── Markup validity ──────────────────────────────────────────────────────────
+
+describe("FolderTree: row markup", () => {
+	// Regression: folder rows were <button> wrapping the menu-trigger
+	// <button> — invalid HTML, hydration warning in React 19.
+	test("rows do not nest the menu trigger inside another button", async () => {
+		const user = userEvent.setup({ delay: null });
+		const selected: (string | null)[] = [];
+		const Wrap = wrap(async () => new Response("[]"));
+
+		const { container, getByTestId } = render(
+			<Wrap>
+				<FolderTree
+					folders={[FOLDER_A]}
+					selectedId={null}
+					onSelect={(id) => selected.push(id)}
+					onMutated={() => {}}
+				/>
+			</Wrap>,
+		);
+
+		expect(container.querySelector("button button")).toBeNull();
+
+		// Row still selects the folder on click.
+		await act(async () => {
+			await user.click(getByTestId("folder-item-f1"));
+		});
+		expect(selected.at(-1)).toBe("f1");
+	});
+});
+
 // ─── Create via dialog ────────────────────────────────────────────────────────
 
 describe("FolderTree: create folder dialog", () => {

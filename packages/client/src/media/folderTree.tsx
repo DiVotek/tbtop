@@ -4,7 +4,6 @@
  */
 import { FolderIcon, FolderOpenIcon, MoreHorizontalIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { useMediaClient } from "./useMediaApi";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { Button } from "../ui/button";
@@ -16,7 +15,7 @@ import {
 } from "../ui/dropdown-menu";
 import { FolderDeleteDialog, FolderNameDialog } from "./folderDialogs";
 import type { MediaFolder } from "./types";
-import { createFolder, deleteFolder, renameFolder } from "./useMediaApi";
+import { createFolder, deleteFolder, renameFolder, useMediaClient } from "./useMediaApi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +37,22 @@ type DialogState =
 	| { kind: "create"; parentId: string | null }
 	| { kind: "rename"; folder: MediaFolder }
 	| { kind: "delete"; folder: MediaFolder };
+
+// Rows host a real <button> (menu trigger), so the row itself must be a
+// div[role=button] — button-in-button is invalid HTML (hydration warning).
+function rowButtonProps(onActivate: () => void) {
+	return {
+		role: "button" as const,
+		tabIndex: 0,
+		onClick: onActivate,
+		onKeyDown: (e: React.KeyboardEvent) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				onActivate();
+			}
+		},
+	};
+}
 
 // ─── Tree build ───────────────────────────────────────────────────────────────
 
@@ -120,13 +135,12 @@ export function FolderTree({
 	return (
 		<div className="flex flex-col gap-1 p-2" data-testid="folder-tree">
 			{/* Root (All files) */}
-			<button
-				type="button"
+			<div
+				{...rowButtonProps(() => onSelect(null))}
 				className={cn(
-					"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+					"flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
 					selectedId === null && "bg-muted font-medium",
 				)}
-				onClick={() => onSelect(null)}
 				data-testid="folder-all"
 			>
 				{selectedId === null ? (
@@ -140,7 +154,7 @@ export function FolderTree({
 					onDelete={undefined}
 					onCreateChild={() => setDialog({ kind: "create", parentId: null })}
 				/>
-			</button>
+			</div>
 
 			{/* Folder list */}
 			{tree.map((node) => (
@@ -211,14 +225,13 @@ function FolderItem({
 	const isSelected = selectedId === node.id;
 	return (
 		<div>
-			<button
-				type="button"
+			<div
+				{...rowButtonProps(() => onSelect(node.id))}
 				className={cn(
-					"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+					"flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
 					isSelected && "bg-muted font-medium",
 				)}
 				style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
-				onClick={() => onSelect(node.id)}
 				data-testid={`folder-item-${node.id}`}
 			>
 				{isSelected ? (
@@ -232,7 +245,7 @@ function FolderItem({
 					onDelete={() => onDelete(node)}
 					onCreateChild={() => onCreateChild(node.id)}
 				/>
-			</button>
+			</div>
 			{node.children.map((child) => (
 				<FolderItem
 					key={child.id}
