@@ -124,6 +124,48 @@ describe("materialize form", () => {
 	});
 });
 
+describe("materialize chart", () => {
+	it("queries the data endpoint without params for a zero-param chart", async () => {
+		let captured = null as { path: string; query: unknown } | null;
+		const client = {
+			get: async (path: string, query: unknown) => {
+				captured = { path, query };
+				return { data: [{ x: 1 }] };
+			},
+		} as unknown as AdminClient;
+
+		const out = materialize(node("chart:bar", { source: "byMonth" }, "byMonth"), BASE);
+		const query = opts(out).query as (
+			ctx: ClientActionContext,
+			params?: Record<string, string>,
+		) => Promise<unknown>;
+		await query(fakeCtx({ client }));
+
+		expect(captured?.path).toBe("/admin/posts/data/byMonth");
+		expect(captured?.query).toEqual({});
+	});
+
+	it("passes declared param values as query args to the data endpoint", async () => {
+		let captured = null as { path: string; query: unknown } | null;
+		const client = {
+			get: async (path: string, query: unknown) => {
+				captured = { path, query };
+				return { data: [] };
+			},
+		} as unknown as AdminClient;
+
+		const out = materialize(node("chart:bar", { source: "byInterval" }, "byInterval"), BASE);
+		const query = opts(out).query as (
+			ctx: ClientActionContext,
+			params?: Record<string, string>,
+		) => Promise<unknown>;
+		await query(fakeCtx({ client }), { interval: "month", from: "2024-01-01" });
+
+		expect(captured?.path).toBe("/admin/posts/data/byInterval");
+		expect(captured?.query).toEqual({ interval: "month", from: "2024-01-01" });
+	});
+});
+
 describe("materialize table", () => {
 	it("queries the page-scoped endpoint with list params and unwraps the envelope", async () => {
 		let captured = null as { path: string; query: unknown } | null;

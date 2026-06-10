@@ -146,8 +146,10 @@ function materializeChart(node: StructureNode, ctx: WalkCtx): StructureNode {
 		...node,
 		options: {
 			...opts,
-			query: (actionCtx: ClientActionContext) =>
-				actionCtx.client.get(`${ctx.basePath}/data/${source}`).then(unwrapData),
+			query: (actionCtx: ClientActionContext, paramValues: Record<string, string> = {}) =>
+				actionCtx.client
+					.get(`${ctx.basePath}/data/${source}`, paramValues)
+					.then(unwrapData),
 		},
 	};
 }

@@ -91,6 +91,11 @@ final class FieldBuilder implements JsonSerializable
         return $this->localeRules;
     }
 
+    public function default(mixed $value): self
+    {
+        return $this->set('default', $value);
+    }
+
     public function set(string $key, mixed $value): self
     {
         $this->opts[$key] = $value;
@@ -109,6 +114,11 @@ final class FieldBuilder implements JsonSerializable
     public function ruleEntries(): array
     {
         return $this->ruleList;
+    }
+
+    public function defaultValue(): mixed
+    {
+        return $this->opts['default'] ?? null;
     }
 
     /** Sub-builders for repeater fields, [] for scalar kinds. @return list<mixed> */

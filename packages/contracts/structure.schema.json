@@ -64,6 +64,7 @@
 			"properties": {
 				"children": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 				"fields": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+				"params": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 				"rowActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 				"bulkActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 				"tabs": {

@@ -46,6 +46,46 @@
                             },
                             "meta": {},
                             "name": "byStatus"
+                        },
+                        {
+                            "kind": "chart:bar",
+                            "options": {
+                                "xKey": "period",
+                                "source": "byInterval",
+                                "params": [
+                                    {
+                                        "kind": "select",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "day",
+                                                    "label": "Day"
+                                                },
+                                                {
+                                                    "value": "week",
+                                                    "label": "Week"
+                                                },
+                                                {
+                                                    "value": "month",
+                                                    "label": "Month"
+                                                }
+                                            ],
+                                            "default": "day"
+                                        },
+                                        "meta": {},
+                                        "name": "interval"
+                                    },
+                                    {
+                                        "kind": "date",
+                                        "options": {},
+                                        "meta": {},
+                                        "name": "from"
+                                    }
+                                ],
+                                "type": "bar"
+                            },
+                            "meta": {},
+                            "name": "byInterval"
                         }
                     ]
                 },

@@ -27,6 +27,17 @@ class KitchenSinkPage extends Page
             $s->grid(['cols' => 2], [
                 $s->chart('byMonth', 'line', ['xKey' => 'month'])->query(fn () => [])->toNode(),
                 $s->chart('byStatus', 'donut', ['nameKey' => 'status'])->query(fn () => [])->toNode(),
+                $s->chart('byInterval', 'bar', ['xKey' => 'period'])
+                    ->query(fn () => [])
+                    ->params([
+                        $s->select('interval')->set('options', [
+                            ['value' => 'day', 'label' => 'Day'],
+                            ['value' => 'week', 'label' => 'Week'],
+                            ['value' => 'month', 'label' => 'Month'],
+                        ])->default('day'),
+                        $s->date('from'),
+                    ])
+                    ->toNode(),
             ]),
             $s->section(['title' => 'Form'], [
                 $s->form('post', [

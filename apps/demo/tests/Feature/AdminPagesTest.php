@@ -80,7 +80,8 @@ class AdminPagesTest extends TestCase
         $response = $this->getJson('/admin/posts/tables/posts?search=Needle')->assertOk();
 
         $this->assertSame(1, $response->json('data.total'));
-        $this->assertSame('Needle in haystack', $response->json('data.data.0.title.en'));
+        // Translatable columns project to the default content locale scalar.
+        $this->assertSame('Needle in haystack', $response->json('data.data.0.title'));
     }
 
     public function test_dashboard_chart_endpoints_return_aggregates(): void
@@ -88,10 +89,10 @@ class AdminPagesTest extends TestCase
         $this->makePost(['published' => true, 'created_at' => now()->subMonth()]);
         $this->makePost(['published' => false, 'created_at' => now()]);
 
-        $byMonth = $this->getJson('/admin/dashboard/data/byMonth')->assertOk();
-        $this->assertCount(2, $byMonth->json('data'));
-        $this->assertArrayHasKey('month', $byMonth->json('data.0'));
-        $this->assertArrayHasKey('count', $byMonth->json('data.0'));
+        $byInterval = $this->getJson('/admin/dashboard/data/byInterval?interval=month')->assertOk();
+        $this->assertCount(2, $byInterval->json('data'));
+        $this->assertArrayHasKey('period', $byInterval->json('data.0'));
+        $this->assertArrayHasKey('count', $byInterval->json('data.0'));
 
         $byStatus = $this->getJson('/admin/dashboard/data/byStatus')->assertOk();
         $statuses = array_column($byStatus->json('data'), 'total', 'status');

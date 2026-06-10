@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tbtop\Admin\Dsl\FieldBuilder;
 
 final class DataController
 {
@@ -18,6 +19,24 @@ final class DataController
             throw new NotFoundHttpException("Data source \"{$name}\" is not defined on this page.");
         }
 
-        return response()->json(['data' => $query($request)]);
+        $params = $this->resolveParams($chart->paramFields(), $request);
+
+        return response()->json(['data' => $query($request, $params)]);
+    }
+
+    /**
+     * Build the param bag: only declared param names, query-string value or default.
+     *
+     * @param  list<FieldBuilder>  $fields
+     * @return array<string, mixed>
+     */
+    private function resolveParams(array $fields, Request $request): array
+    {
+        $bag = [];
+        foreach ($fields as $field) {
+            $bag[$field->name] = $request->query($field->name, $field->defaultValue());
+        }
+
+        return $bag;
     }
 }
