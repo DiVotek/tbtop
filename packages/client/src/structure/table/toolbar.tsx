@@ -2,7 +2,7 @@
  * TableToolbar — search input, filter panel, column visibility dropdown.
  * Extracted from tableBlock.tsx.
  */
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { type ReactNode, useCallback, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
@@ -15,6 +15,12 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "../../ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "../../ui/dropdown-menu";
 import { Input } from "../../ui/input";
 import type { ListQueryParams, StructureNode, TableColumn } from "../types";
 
@@ -258,36 +264,28 @@ interface ColumnVisibilityProps {
 }
 
 function ColumnVisibilityDropdown({ columns, visibleColumns, onToggle }: ColumnVisibilityProps) {
-	const [open, setOpen] = useState(false);
 	const t = useTranslation();
 	return (
-		<div className="relative" data-testid="column-visibility">
-			<Button
-				variant="outline"
-				size="sm"
-				onClick={() => setOpen((v) => !v)}
-				data-testid="column-visibility-trigger"
-			>
-				{t("table.columns.label")}
-			</Button>
-			{open && (
-				<div className="absolute right-0 top-full z-10 mt-1 min-w-[160px] rounded-md border bg-popover shadow-md">
+		<div data-testid="column-visibility">
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant="outline" size="sm" data-testid="column-visibility-trigger">
+						{t("table.columns.label")}
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end">
 					{columns.map((col) => (
-						<label
+						<DropdownMenuCheckboxItem
 							key={col.name}
-							className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent"
+							checked={visibleColumns.has(col.name)}
+							onCheckedChange={() => onToggle(col.name)}
 							data-testid={`column-toggle-${col.name}`}
 						>
-							<input
-								type="checkbox"
-								checked={visibleColumns.has(col.name)}
-								onChange={() => onToggle(col.name)}
-							/>
 							{col.label ?? col.name}
-						</label>
+						</DropdownMenuCheckboxItem>
 					))}
-				</div>
-			)}
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</div>
 	);
 }

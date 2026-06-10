@@ -22,6 +22,15 @@ function getTableHeaders(container: HTMLElement): string[] {
 	);
 }
 
+/**
+ * Open the column-visibility Radix DropdownMenu.
+ * Radix listens to pointerdown on the trigger (not just click).
+ */
+function openColumnVisibility(trigger: HTMLElement): void {
+	fireEvent.pointerDown(trigger, { bubbles: true, cancelable: true, isPrimary: true });
+	fireEvent.click(trigger);
+}
+
 describe("Table: column visibility", () => {
 	test("TableColumnVisibility: toggle hides column from the grid", async () => {
 		const node = s.table({
@@ -39,7 +48,7 @@ describe("Table: column visibility", () => {
 
 		// Open dropdown and toggle off "Views"
 		act(() => {
-			fireEvent.click(getByTestId("column-visibility-trigger"));
+			openColumnVisibility(getByTestId("column-visibility-trigger"));
 		});
 		act(() => {
 			fireEvent.click(getByTestId("column-toggle-views"));
@@ -65,14 +74,17 @@ describe("Table: column visibility", () => {
 
 		// Toggle views off
 		act(() => {
-			fireEvent.click(getByTestId("column-visibility-trigger"));
+			openColumnVisibility(getByTestId("column-visibility-trigger"));
 		});
 		act(() => {
 			fireEvent.click(getByTestId("column-toggle-views"));
 		});
 		await waitFor(() => expect(getTableHeaders(container)).not.toContain("Views"));
 
-		// Toggle views on again (dropdown should still be open)
+		// Re-open dropdown and toggle views on again
+		act(() => {
+			openColumnVisibility(getByTestId("column-visibility-trigger"));
+		});
 		act(() => {
 			fireEvent.click(getByTestId("column-toggle-views"));
 		});
@@ -92,7 +104,7 @@ describe("Table: column visibility", () => {
 		await findByTestId("table-block");
 
 		act(() => {
-			fireEvent.click(getByTestId("column-visibility-trigger"));
+			openColumnVisibility(getByTestId("column-visibility-trigger"));
 		});
 		act(() => {
 			fireEvent.click(getByTestId("column-toggle-views"));
