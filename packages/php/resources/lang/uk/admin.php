@@ -64,6 +64,27 @@ return [
             'body' => 'Ви впевнені, що хочете покинути сторінку? Зміни буде втрачено.',
         ],
     ],
+    'table' => [
+        'search' => ['placeholder' => 'Пошук…'],
+        'filters' => [
+            'label' => 'Фільтри',
+            'reset' => 'Скинути',
+        ],
+        'columns' => ['label' => 'Колонки'],
+        'empty' => [
+            'no_records' => 'Записів немає',
+            'no_results' => 'Нічого не знайдено',
+            'reset' => 'Скинути фільтри',
+        ],
+        'pagination' => [
+            'of' => 'з',
+            'per_page' => 'На сторінці',
+            'prev' => 'Назад',
+            'next' => 'Вперед',
+        ],
+        'select_all' => 'Вибрати всі',
+        'selected_count' => ':count вибрано',
+    ],
     'nav' => [
         'home' => ['welcome' => 'Ласкаво просимо'],
         'title' => 'Tabletop',

@@ -64,6 +64,27 @@ return [
             'body' => 'Are you sure you want to leave? Your changes will be lost.',
         ],
     ],
+    'table' => [
+        'search' => ['placeholder' => 'Search…'],
+        'filters' => [
+            'label' => 'Filters',
+            'reset' => 'Reset',
+        ],
+        'columns' => ['label' => 'Columns'],
+        'empty' => [
+            'no_records' => 'No records',
+            'no_results' => 'Nothing matches your search',
+            'reset' => 'Reset filters',
+        ],
+        'pagination' => [
+            'of' => 'of',
+            'per_page' => 'Per page',
+            'prev' => 'Previous',
+            'next' => 'Next',
+        ],
+        'select_all' => 'Select all',
+        'selected_count' => ':count selected',
+    ],
     'nav' => [
         'home' => ['welcome' => 'Welcome'],
         'title' => 'Tabletop',
