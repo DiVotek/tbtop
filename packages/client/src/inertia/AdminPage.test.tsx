@@ -5,43 +5,16 @@
  * Bug: ClientProvider was mounted without baseUrl so all media requests
  * went to /media/* (root) instead of /{prefix}/api/media/*.
  */
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
 import { ClientProvider, useClient } from "../data/client";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 
-// ─── Mock @inertiajs/react ────────────────────────────────────────────────────
-
-// We mock the module so usePage() returns controlled props without a real
-// Inertia app context.
-mock.module("@inertiajs/react", () => ({
-	usePage: () => ({
-		url: "/admin/media",
-		props: {
-			slug: "media",
-			title: "Media",
-			structure: { kind: "text", options: { label: "x" }, name: "x", meta: {} },
-			data: {},
-			tbtop: {
-				prefix: "/admin",
-				apiBase: "/admin/api",
-				locale: "en",
-				locales: ["en"],
-				messages: {},
-				contentLocales: ["en"],
-				defaultContentLocale: "en",
-			},
-		},
-	}),
-	router: {
-		post: mock(() => {}),
-		on: mock(() => () => {}),
-	},
-	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
-		<a href={href}>{children}</a>
-	),
-}));
+// NOTE: no mock.module("@inertiajs/react") here — bun's module mocks are
+// global for the whole run and leak into later test files (broke
+// visitTemplate/actionGroupDropdown). These tests render ClientProvider
+// directly, so no Inertia context is needed.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

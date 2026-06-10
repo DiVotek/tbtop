@@ -21,10 +21,9 @@ class BundleSplitTest extends TestCase
         $response = $this->get('/admin/dashboard');
 
         $response->assertOk();
-        $this->assertStringContainsString(
-            'admin.tsx',
-            $response->getContent(),
-        );
+        // View name, not markup: asset filenames differ between dev
+        // (admin.tsx via hot file) and production build (hashed).
+        $response->assertViewIs('admin');
     }
 
     public function test_public_welcome_page_renders_using_the_default_root_view(): void
@@ -32,14 +31,7 @@ class BundleSplitTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $this->assertStringContainsString(
-            'app.tsx',
-            $response->getContent(),
-        );
-        $this->assertStringNotContainsString(
-            'admin.tsx',
-            $response->getContent(),
-        );
+        $response->assertViewIs('app');
     }
 
     public function test_admin_blade_includes_theme_class_from_cookie(): void
