@@ -12,6 +12,7 @@ export interface FieldBinding {
 	value: unknown;
 	onChange: (next: unknown) => void;
 	onBlur?: () => void;
+	disabled?: boolean;
 }
 
 export interface RenderContext {

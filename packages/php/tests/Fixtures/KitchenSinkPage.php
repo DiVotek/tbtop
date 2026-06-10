@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -45,7 +46,11 @@ class KitchenSinkPage extends Page
                     $s->textarea('body')->label('Body'),
                     $s->number('rating')->rules('integer|min:0|max:5'),
                     $s->boolean('published'),
-                    $s->date('publishedAt'),
+                    $s->date('publishedAt')->hiddenIf('published', '=', false),
+                    $s->text('video_url')->hiddenIf('type', '!=', 'video'),
+                    $s->text('caption')->disabledIf(
+                        Cond::all(Cond::eq('status', 'archived'), Cond::empty('published_at'))
+                    ),
                     $s->select('role')->set('options', [
                         ['value' => 'admin', 'label' => 'Admin'],
                     ])->rules('in:admin,editor'),

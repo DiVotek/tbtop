@@ -12,7 +12,13 @@
 				"kind": { "type": "string", "minLength": 1 },
 				"name": { "type": "string" },
 				"options": { "$ref": "#/$defs/containerOptions" },
-				"meta": { "type": "object" }
+				"meta": {
+					"type": "object",
+					"properties": {
+						"hiddenIf": { "$ref": "#/$defs/condition" },
+						"disabledIf": { "$ref": "#/$defs/condition" }
+					}
+				}
 			},
 			"additionalProperties": false,
 			"allOf": [
@@ -157,6 +163,63 @@
 						"type": { "const": "custom" },
 						"handler": { "type": "string" },
 						"params": { "type": "object" }
+					},
+					"additionalProperties": false
+				}
+			]
+		},
+		"condition": {
+			"oneOf": [
+				{
+					"type": "object",
+					"required": ["op", "field"],
+					"properties": {
+						"op": {
+							"enum": [
+								"eq",
+								"neq",
+								"in",
+								"notIn",
+								"empty",
+								"notEmpty",
+								"truthy",
+								"gt",
+								"gte",
+								"lt",
+								"lte"
+							]
+						},
+						"field": { "type": "string" },
+						"value": {}
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["op", "conds"],
+					"properties": {
+						"op": { "enum": ["all", "any"] },
+						"conds": {
+							"type": "array",
+							"items": { "$ref": "#/$defs/condition" }
+						}
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["op", "cond"],
+					"properties": {
+						"op": { "const": "not" },
+						"cond": { "$ref": "#/$defs/condition" }
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["op"],
+					"properties": {
+						"op": { "const": "server" }
 					},
 					"additionalProperties": false
 				}

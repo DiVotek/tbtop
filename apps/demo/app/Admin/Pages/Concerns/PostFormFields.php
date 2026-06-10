@@ -3,6 +3,7 @@
 namespace App\Admin\Pages\Concerns;
 
 use App\Models\User;
+use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
@@ -27,10 +28,12 @@ trait PostFormFields
             ]),
             $s->section(['title' => 'Publishing'], [
                 $s->boolean('published')->label('Published')->rules('boolean'),
-                $s->date('published_at')->label('Published at')->rules('nullable|date'),
+                $s->date('published_at')->label('Published at')->rules('nullable|date')
+                    ->hiddenIf('published', '=', false),
                 $s->number('rating')->label('Rating')
                     ->set('min', 0)->set('max', 5)->set('step', 0.1)
-                    ->rules('nullable|numeric|min:0|max:5'),
+                    ->rules('nullable|numeric|min:0|max:5')
+                    ->disabledIf(Cond::not(Cond::truthy('published'))),
                 $s->select('author_id')->label('Author')
                     ->set('options', $this->authorOptions())
                     ->rules('nullable|exists:users,id'),

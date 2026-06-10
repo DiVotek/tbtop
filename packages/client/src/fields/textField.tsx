@@ -9,7 +9,7 @@ export function TextCell({ value }: FieldCellProps<string>) {
 	return <span title={str}>{str.length > 80 ? `${str.slice(0, 80)}…` : str}</span>;
 }
 
-export function TextForm({ id, name, value, onChange, onBlur }: FieldFormProps<string>) {
+export function TextForm({ id, name, value, onChange, onBlur, disabled }: FieldFormProps<string>) {
 	return (
 		<Input
 			id={id ?? name}
@@ -17,6 +17,7 @@ export function TextForm({ id, name, value, onChange, onBlur }: FieldFormProps<s
 			value={typeof value === "string" ? value : ""}
 			onChange={(e) => onChange(e.target.value)}
 			onBlur={onBlur}
+			disabled={disabled}
 		/>
 	);
 }

@@ -4,7 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 final class Meta
 {
-    private const KEYS = ['id', 'hidden', 'disabled'];
+    private const KEYS = ['id', 'hidden', 'disabled', 'hiddenIf', 'disabledIf'];
 
     /**
      * Mirrors the client grammar: id/hidden/disabled live in meta.

@@ -1,6 +1,7 @@
 import type { QueryParams } from "../data/client";
 import { unwrapData } from "../data/envelope";
-import type { ClientActionContext, StructureNode } from "../structure/types";
+import type { ClientActionContext, ConditionFn, NodeMeta, StructureNode } from "../structure/types";
+import { type ConditionAst, compileCondition } from "./conditionCompiler";
 import { compileConstraints, type FieldConstraints } from "./constraints";
 import { materializeActionOptions } from "./materializeActions";
 
@@ -25,19 +26,37 @@ export function materialize(root: StructureNode, input: MaterializeInput): Struc
 }
 
 function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
+	const meta = compileMeta(node.meta);
 	if (node.kind === "action") {
-		return { ...node, options: actionOptions(node, ctx) };
+		return { ...node, meta, options: actionOptions(node, ctx) };
 	}
 	if (node.kind === "form") {
-		return materializeForm(node, ctx);
+		return materializeForm({ ...node, meta }, ctx);
 	}
 	if (node.kind === "table") {
-		return materializeTable(node, ctx);
+		return materializeTable({ ...node, meta }, ctx);
 	}
 	if (node.kind.startsWith("chart:")) {
-		return materializeChart(node, ctx);
+		return materializeChart({ ...node, meta }, ctx);
 	}
-	return { ...node, options: walkChildren(node.options as Bag, ctx) };
+	return { ...node, meta, options: walkChildren(node.options as Bag, ctx) };
+}
+
+/**
+ * Compiles wire-format hiddenIf / disabledIf ASTs into ConditionFn.
+ * Leaves all other meta keys intact.
+ */
+function compileMeta(raw: NodeMeta): NodeMeta {
+	const meta = { ...raw } as NodeMeta & Record<string, unknown>;
+	const rawHiddenIf = (raw as Record<string, unknown>).hiddenIf;
+	const rawDisabledIf = (raw as Record<string, unknown>).disabledIf;
+	if (rawHiddenIf !== undefined && typeof rawHiddenIf !== "function") {
+		meta.hidden = compileCondition(rawHiddenIf as ConditionAst);
+	}
+	if (rawDisabledIf !== undefined && typeof rawDisabledIf !== "function") {
+		meta.disabled = compileCondition(rawDisabledIf as ConditionAst);
+	}
+	return meta;
 }
 
 function actionOptions(node: StructureNode, ctx: WalkCtx): Bag {

@@ -110,6 +110,32 @@ final class FieldBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Add a hiddenIf condition. Two call forms:
+     *   - Object: hiddenIf(Cond::eq('field', 'value'))
+     *   - Shorthand: hiddenIf('field', '!=', 'value')  /  hiddenIf('field', 'empty')
+     */
+    public function hiddenIf(Cond|string $condOrField, string $op = '', mixed $value = null): self
+    {
+        $this->metaBag['hiddenIf'] = $condOrField instanceof Cond
+            ? $condOrField
+            : Cond::fromShorthand($condOrField, $op, $value);
+
+        return $this;
+    }
+
+    /**
+     * Add a disabledIf condition. Same two call forms as hiddenIf.
+     */
+    public function disabledIf(Cond|string $condOrField, string $op = '', mixed $value = null): self
+    {
+        $this->metaBag['disabledIf'] = $condOrField instanceof Cond
+            ? $condOrField
+            : Cond::fromShorthand($condOrField, $op, $value);
+
+        return $this;
+    }
+
     /** @return list<string> */
     public function ruleEntries(): array
     {

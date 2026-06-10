@@ -143,8 +143,47 @@
                                     {
                                         "kind": "date",
                                         "options": {},
-                                        "meta": {},
+                                        "meta": {
+                                            "hiddenIf": {
+                                                "op": "eq",
+                                                "field": "published",
+                                                "value": false
+                                            }
+                                        },
                                         "name": "publishedAt"
+                                    },
+                                    {
+                                        "kind": "text",
+                                        "options": {},
+                                        "meta": {
+                                            "hiddenIf": {
+                                                "op": "neq",
+                                                "field": "type",
+                                                "value": "video"
+                                            }
+                                        },
+                                        "name": "video_url"
+                                    },
+                                    {
+                                        "kind": "text",
+                                        "options": {},
+                                        "meta": {
+                                            "disabledIf": {
+                                                "op": "all",
+                                                "conds": [
+                                                    {
+                                                        "op": "eq",
+                                                        "field": "status",
+                                                        "value": "archived"
+                                                    },
+                                                    {
+                                                        "op": "empty",
+                                                        "field": "published_at"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "name": "caption"
                                     },
                                     {
                                         "kind": "select",

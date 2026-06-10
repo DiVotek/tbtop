@@ -12,7 +12,7 @@ import { ActiveLocaleProvider, useContentLocaleConfig } from "./contentLocaleCon
 import { FormError, FormSkeleton } from "./defaults";
 import { FormControllerProvider } from "./formContext";
 import { useFormController } from "./formController";
-import { isNodeHidden } from "./meta";
+import { isNodeDisabled, isNodeHidden } from "./meta";
 import { renderAsyncError } from "./renderAsyncError";
 import type { ConditionContext, StructureNode } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
@@ -98,10 +98,11 @@ function renderFormChild(
 	if (isNodeHidden(node.meta, condCtx)) {
 		return null;
 	}
+	const disabled = isNodeDisabled(node.meta, condCtx);
 	const descriptor = getBlockDescriptor(node.kind);
 	const options = mergeName(node);
 	if (descriptor?.behavior === "field" && node.name) {
-		return renderFieldNode({ descriptor, node, options, ctrl, locales });
+		return renderFieldNode({ descriptor, node, options, ctrl, locales, disabled });
 	}
 	return invokeBlock({
 		kind: node.kind,
@@ -119,10 +120,11 @@ interface RenderFieldInput {
 	options: Bag;
 	ctrl: ControllerHandle;
 	locales: string[];
+	disabled: boolean;
 }
 
 function renderFieldNode(input: RenderFieldInput): ReactNode {
-	const { descriptor, node, options, ctrl, locales } = input;
+	const { descriptor, node, options, ctrl, locales, disabled } = input;
 	const name = node.name as string;
 	const fieldError = ctrl.fieldErrors[name];
 	const label = (options as { label?: string }).label;
@@ -131,7 +133,16 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
 
 	const control = isTranslatable
-		? renderTranslatableField({ descriptor, node, options, ctrl, locales, name, fieldId })
+		? renderTranslatableField({
+				descriptor,
+				node,
+				options,
+				ctrl,
+				locales,
+				name,
+				fieldId,
+				disabled,
+			})
 		: renderDescriptor(descriptor, {
 				kind: node.kind,
 				options,
@@ -146,6 +157,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 							ctrl.markTouched(name);
 							revalidateField(ctrl, name);
 						},
+						disabled,
 					},
 				},
 				children: undefined,
@@ -174,10 +186,11 @@ interface TranslatableFieldInput {
 	locales: string[];
 	name: string;
 	fieldId: string;
+	disabled: boolean;
 }
 
 function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
-	const { descriptor, node, options, ctrl, locales, name, fieldId } = input;
+	const { descriptor, node, options, ctrl, locales, name, fieldId, disabled } = input;
 	// Strip name + translatable before forwarding to the wrapper — the wrapper
 	// derives per-locale names itself and must not see the parent field name.
 	const {
@@ -188,7 +201,7 @@ function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
 		name?: string;
 		translatable?: boolean;
 	};
-	const renderInner = makeInnerRenderer(descriptor, node, innerOptions, locales, ctrl);
+	const renderInner = makeInnerRenderer(descriptor, node, innerOptions, locales, ctrl, disabled);
 	const value = normalizeTranslatableValue(ctrl.data[name], locales);
 	return (
 		<TranslatableWrapper
@@ -218,6 +231,7 @@ function makeInnerRenderer(
 	options: Bag,
 	locales: string[],
 	ctrl: ControllerHandle,
+	disabled: boolean,
 ): (props: FieldFormProps<unknown>) => ReactNode {
 	return (props: FieldFormProps<unknown>) =>
 		renderDescriptor(descriptor, {
@@ -231,6 +245,7 @@ function makeInnerRenderer(
 					value: props.value,
 					onChange: props.onChange,
 					onBlur: props.onBlur,
+					disabled,
 				},
 			},
 			children: undefined,
