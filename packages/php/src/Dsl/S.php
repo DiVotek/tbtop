@@ -150,6 +150,40 @@ final class S
     }
 
     /**
+     * Collapsible layout node: a section with a chevron toggle.
+     * $opts must include 'label'; 'collapsed' defaults to false.
+     *
+     * @param  array<string, mixed>  $opts
+     * @param  list<mixed>  $children
+     */
+    public function collapsible(array $opts, array $children): Node
+    {
+        $opts = array_merge(['collapsed' => false], $opts);
+
+        return self::layout('collapsible', $children, $opts);
+    }
+
+    /**
+     * Aside layout node: renders as a right-column sticky panel on wide screens.
+     *
+     * @param  list<mixed>  $children
+     */
+    public function aside(array $children): Node
+    {
+        return self::layout('aside', $children, []);
+    }
+
+    /**
+     * Action-group node: a dropdown button containing multiple action items.
+     *
+     * @param  list<ActionBuilder>  $actions
+     */
+    public function actionGroup(string $label, array $actions): Node
+    {
+        return new Node('actionGroup', ['label' => $label, 'children' => $actions]);
+    }
+
+    /**
      * Cascade ->translatable() onto every Field in $children (recursive).
      * A field that explicitly called ->translatable(false) is skipped.
      *
@@ -260,6 +294,21 @@ final class S
     public function collectedCharts(): array
     {
         return $this->charts;
+    }
+
+    /**
+     * Find a Select field with a creatable closure by name, walking all registered forms.
+     */
+    public function findCreatableSelect(string $fieldName): ?Select
+    {
+        foreach ($this->forms as $form) {
+            $found = $form->findCreatableSelect($fieldName);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
     }
 
     // -------------------------------------------------------------------------

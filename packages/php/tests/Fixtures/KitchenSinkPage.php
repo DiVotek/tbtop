@@ -91,6 +91,17 @@ class KitchenSinkPage extends Page
                 $s->action('info')->label('About')->modal('About', $s->description('Modal body')),
                 $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi']),
             ]),
+            $s->collapsible(['label' => 'Advanced options'], [
+                $s->text('meta_title')->label('Meta title'),
+            ]),
+            $s->aside([
+                $s->text('sidebar_note')->label('Note'),
+            ]),
+            $s->actionGroup('Publish actions', [
+                $s->action('publish')->label('Publish')->visit('/admin/posts/publish'),
+                $s->action('archive')->label('Archive')
+                    ->handle(fn () => Effects::make(), needs: ['row']),
+            ]),
         ]);
     }
 }

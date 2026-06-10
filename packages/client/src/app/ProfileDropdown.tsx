@@ -1,0 +1,149 @@
+import { router } from "@inertiajs/react";
+import { MonitorIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "../i18n/i18n";
+import { Button } from "../ui/button";
+
+export type Theme = "light" | "dark" | "system";
+
+const THEME_COOKIE = "tbtop_theme";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function readThemeCookie(): Theme {
+	const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`));
+	const value = match?.[1];
+	if (value === "light" || value === "dark" || value === "system") {
+		return value;
+	}
+	return "system";
+}
+
+function writeThemeCookie(theme: Theme): void {
+	document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+}
+
+function applyTheme(theme: Theme): void {
+	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+	const isDark = theme === "dark" || (theme === "system" && prefersDark);
+	document.documentElement.classList.toggle("dark", isDark);
+}
+
+export interface ProfileDropdownUser {
+	name?: string;
+	email?: string;
+}
+
+interface ProfileDropdownProps {
+	user: ProfileDropdownUser | null;
+	logoutPath?: string;
+}
+
+const THEME_ICONS: Record<Theme, React.ReactNode> = {
+	light: <SunIcon className="size-4" />,
+	dark: <MoonIcon className="size-4" />,
+	system: <MonitorIcon className="size-4" />,
+};
+
+const THEMES: Theme[] = ["light", "dark", "system"];
+
+export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdownProps) {
+	const t = useTranslation();
+	const [open, setOpen] = useState(false);
+	const [theme, setThemeState] = useState<Theme>(() => readThemeCookie());
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	const setTheme = useCallback((next: Theme) => {
+		setThemeState(next);
+		writeThemeCookie(next);
+		applyTheme(next);
+	}, []);
+
+	useEffect(() => {
+		applyTheme(theme);
+	}, [theme]);
+
+	useEffect(() => {
+		function handleClickOutside(e: MouseEvent) {
+			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+				setOpen(false);
+			}
+		}
+		if (open) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [open]);
+
+	if (!user) {
+		return null;
+	}
+
+	const displayName = user.name ?? user.email ?? "";
+	const initials = getInitials(displayName);
+
+	return (
+		<div className="relative" ref={containerRef}>
+			<button
+				type="button"
+				className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+				onClick={() => setOpen((prev) => !prev)}
+				data-testid="profile-trigger"
+			>
+				<span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
+					{initials || <UserIcon className="size-4" />}
+				</span>
+				<span data-testid="profile-name">{displayName}</span>
+			</button>
+
+			{open && (
+				<div
+					className="absolute right-0 top-full z-50 mt-1 min-w-48 rounded-md border bg-popover p-1 shadow-md"
+					data-testid="profile-menu"
+				>
+					<div className="border-b pb-1 mb-1">
+						<div className="px-3 py-1.5 text-xs text-muted-foreground">
+							{t("auth.profile.title")}
+						</div>
+						<div className="px-3 py-1 text-sm font-medium">{displayName}</div>
+					</div>
+
+					<div className="border-b pb-1 mb-1">
+						<div className="px-3 py-1.5 text-xs text-muted-foreground">
+							{t("nav.title")}
+						</div>
+						{THEMES.map((th) => (
+							<button
+								key={th}
+								type="button"
+								className="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent data-[active=true]:font-medium"
+								data-active={theme === th}
+								data-testid={`theme-option-${th}`}
+								onClick={() => setTheme(th)}
+							>
+								{THEME_ICONS[th]}
+								<span className="capitalize">{th}</span>
+							</button>
+						))}
+					</div>
+
+					<button
+						type="button"
+						className="flex w-full items-center rounded-sm px-3 py-1.5 text-sm hover:bg-accent"
+						onClick={() => router.post(logoutPath)}
+						data-testid="profile-logout"
+					>
+						{t("action.logout")}
+					</button>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function getInitials(name: string): string {
+	const parts = name.trim().split(/\s+/);
+	if (parts.length >= 2) {
+		return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
+	}
+	return name.slice(0, 2).toUpperCase();
+}

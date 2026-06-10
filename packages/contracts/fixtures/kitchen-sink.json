@@ -440,6 +440,75 @@
                     ]
                 },
                 "meta": {}
+            },
+            {
+                "kind": "collapsible",
+                "options": {
+                    "collapsed": false,
+                    "label": "Advanced options",
+                    "children": [
+                        {
+                            "kind": "text",
+                            "options": {
+                                "label": "Meta title"
+                            },
+                            "meta": {},
+                            "name": "meta_title"
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "aside",
+                "options": {
+                    "children": [
+                        {
+                            "kind": "text",
+                            "options": {
+                                "label": "Note"
+                            },
+                            "meta": {},
+                            "name": "sidebar_note"
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "actionGroup",
+                "options": {
+                    "label": "Publish actions",
+                    "children": [
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Publish",
+                                "spec": {
+                                    "type": "visit",
+                                    "href": "/admin/posts/publish"
+                                }
+                            },
+                            "meta": {},
+                            "name": "publish"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Archive",
+                                "spec": {
+                                    "type": "server",
+                                    "needs": [
+                                        "row"
+                                    ]
+                                }
+                            },
+                            "meta": {},
+                            "name": "archive"
+                        }
+                    ]
+                },
+                "meta": {}
             }
         ]
     },

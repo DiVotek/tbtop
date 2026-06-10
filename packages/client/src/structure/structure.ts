@@ -1,6 +1,9 @@
 import type { ComponentType, ReactNode } from "react";
 import {
+	buildActionGroup,
+	buildAside,
 	buildChart,
+	buildCollapsible,
 	buildDescription,
 	buildDivider,
 	buildHeading,
@@ -33,6 +36,9 @@ const builtins: Record<string, Builder> = {
 	row: layoutChildrenFirst("row") as Builder,
 	grid: layoutOptsFirst("grid") as Builder,
 	section: layoutOptsFirst("section") as Builder,
+	collapsible: buildCollapsible as Builder,
+	aside: layoutChildrenFirst("aside") as Builder,
+	actionGroup: buildActionGroup as Builder,
 	tabs: buildTabs as Builder,
 	tab: buildTab as Builder,
 	table: buildTable as Builder,
@@ -254,6 +260,12 @@ export interface StructureBuilders<TForm = unknown> {
 	description: (
 		opts: NodeMeta & { text: string },
 	) => StructureNode<"description", { text: string }>;
+	collapsible: (
+		opts: NodeMeta & { label: string; collapsed?: boolean },
+		children: StructureNode[],
+	) => StructureNode;
+	aside: (children: StructureNode[], opts?: NodeMeta) => StructureNode;
+	actionGroup: (label: string, actions: StructureNode[]) => StructureNode;
 }
 
 export type StructureBuilder = StructureBuilders;

@@ -10,13 +10,14 @@ use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\SettingsPage;
 use App\Http\Middleware\RequireFullAuth;
+use App\Http\Middleware\SetAdminRootView;
 
 return [
     // URL prefix all admin pages mount under.
     'prefix' => 'admin',
 
     // Middleware stack for pages, form submits and actions.
-    'middleware' => ['web', RequireFullAuth::class],
+    'middleware' => ['web', RequireFullAuth::class, SetAdminRootView::class],
 
     // Registered page classes (list of class-strings extending Pages\Page).
     'pages' => [

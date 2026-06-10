@@ -62,6 +62,33 @@
 							}
 						}
 					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "collapsible" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["label"],
+								"properties": {
+									"label": { "type": "string" },
+									"collapsed": { "type": "boolean" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "actionGroup" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["label"],
+								"properties": {
+									"label": { "type": "string" }
+								}
+							}
+						}
+					}
 				}
 			]
 		},
@@ -85,7 +112,17 @@
 						}
 					}
 				},
-				"constraints": { "$ref": "#/$defs/constraints" }
+				"constraints": { "$ref": "#/$defs/constraints" },
+				"label": { "type": "string" },
+				"collapsed": { "type": "boolean" },
+				"create": {
+					"type": "object",
+					"required": ["fields"],
+					"properties": {
+						"fields": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+					},
+					"additionalProperties": false
+				}
 			}
 		},
 		"columns": {

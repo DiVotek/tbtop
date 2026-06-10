@@ -112,6 +112,28 @@ export function buildWidget(input: WidgetInput): StructureNode {
 	};
 }
 
+export function buildCollapsible(
+	opts: Bag & { label: string; collapsed?: boolean },
+	children: StructureNode[],
+): StructureNode {
+	const { collapsed = false, ...rest } = opts;
+	const split = splitMeta(rest);
+	return {
+		kind: "collapsible",
+		options: { ...split.options, collapsed, children },
+		meta: split.meta,
+	};
+}
+
+export function buildAside(children: StructureNode[], opts?: Bag): StructureNode {
+	const split = splitMeta(opts);
+	return { kind: "aside", options: { ...split.options, children }, meta: split.meta };
+}
+
+export function buildActionGroup(label: string, children: StructureNode[]): StructureNode {
+	return { kind: "actionGroup", options: { label, children }, meta: {} };
+}
+
 const DEFAULT_HEADING_LEVEL = 3;
 
 export function buildDivider(opts?: NodeMeta): StructureNode {
