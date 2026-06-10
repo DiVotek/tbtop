@@ -58,7 +58,10 @@
 						"properties": {
 							"options": {
 								"required": ["name", "columns"],
-								"properties": { "columns": { "$ref": "#/$defs/columns" } }
+								"properties": {
+									"columns": { "$ref": "#/$defs/columns" },
+									"pagination": { "$ref": "#/$defs/pagination" }
+								}
 							}
 						}
 					}
@@ -133,7 +136,54 @@
 				"properties": {
 					"name": { "type": "string" },
 					"label": { "type": "string" },
-					"kind": { "type": "string" }
+					"kind": { "type": "string" },
+					"sortable": { "type": "boolean" },
+					"searchable": { "type": "boolean" },
+					"toggleable": { "type": "boolean" },
+					"hiddenByDefault": { "type": "boolean" },
+					"align": { "type": "string", "enum": ["left", "center", "right"] },
+					"icon": {
+						"type": "object",
+						"required": ["name", "position"],
+						"properties": {
+							"name": { "type": "string" },
+							"position": { "type": "string", "enum": ["left", "right"] }
+						}
+					},
+					"width": { "type": "string" },
+					"wrap": { "type": "boolean" },
+					"tooltip": { "type": "string" },
+					"translatable": { "type": "boolean" },
+					"format": { "type": "string" },
+					"decimals": { "type": "integer" },
+					"currency": { "type": "string" },
+					"badge": {
+						"type": "object",
+						"properties": {
+							"colors": { "type": "object" }
+						}
+					},
+					"boolean": {
+						"type": "object",
+						"properties": {
+							"trueIcon": { "type": "string" },
+							"falseIcon": { "type": "string" },
+							"trueColor": { "type": "string" },
+							"falseColor": { "type": "string" }
+						}
+					},
+					"iconMap": { "type": "object" }
+				}
+			}
+		},
+		"pagination": {
+			"type": "object",
+			"required": ["perPage", "options"],
+			"properties": {
+				"perPage": { "type": "integer", "minimum": 1 },
+				"options": {
+					"type": "array",
+					"items": { "type": "integer", "minimum": 1 }
 				}
 			}
 		},

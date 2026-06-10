@@ -382,6 +382,15 @@
                             "name": "bulk-delete"
                         }
                     ],
+                    "pagination": {
+                        "perPage": 25,
+                        "options": [
+                            10,
+                            25,
+                            50,
+                            100
+                        ]
+                    },
                     "name": "posts",
                     "columns": [
                         {
