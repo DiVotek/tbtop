@@ -83,7 +83,7 @@ return [
             'next' => 'Next',
         ],
         'select_all' => 'Select all',
-        'selected_count' => ':count selected',
+        'selected_count' => '{count} selected',
     ],
     'nav' => [
         'home' => ['welcome' => 'Welcome'],
@@ -103,7 +103,7 @@ return [
         'search' => ['placeholder' => 'Search…'],
         'relation' => [
             'placeholder' => 'Related record id',
-            'items' => ':count items',
+            'items' => '{count} items',
         ],
         'select' => ['placeholder' => '—'],
         'slug' => [
@@ -123,7 +123,7 @@ return [
             'item_label' => 'Item',
             'move_up' => 'Move up',
             'move_down' => 'Move down',
-            'items' => ':count items',
+            'items' => '{count} items',
             'item_singular' => '1 item',
         ],
         'richtext' => [

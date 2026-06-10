@@ -83,7 +83,7 @@ return [
             'next' => 'Вперед',
         ],
         'select_all' => 'Вибрати всі',
-        'selected_count' => ':count вибрано',
+        'selected_count' => '{count} вибрано',
     ],
     'nav' => [
         'home' => ['welcome' => 'Ласкаво просимо'],
@@ -103,7 +103,7 @@ return [
         'search' => ['placeholder' => 'Пошук…'],
         'relation' => [
             'placeholder' => 'ID пов\'язаного запису',
-            'items' => ':count елементів',
+            'items' => '{count} елементів',
         ],
         'select' => ['placeholder' => '—'],
         'slug' => [
@@ -123,7 +123,7 @@ return [
             'item_label' => 'Елемент',
             'move_up' => 'Вгору',
             'move_down' => 'Вниз',
-            'items' => ':count елементів',
+            'items' => '{count} елементів',
             'item_singular' => '1 елемент',
         ],
         'richtext' => [

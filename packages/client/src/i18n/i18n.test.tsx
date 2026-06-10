@@ -263,3 +263,27 @@ test("i18n defaultMessages includes the documented A1 keys", () => {
 	expect(defaultMessages["state.forbidden"]).toBeDefined();
 	expect(defaultMessages["state.loading"]).toBeDefined();
 });
+
+test("i18n table.selected_count uses {count} placeholder so .replace works in tableBlock", () => {
+	// The PHP lang files historically used :count (Laravel convention) but the
+	// client consumer calls t("table.selected_count").replace("{count}", n).
+	// Both the defaultMessages and any loaded lang file must use {count}.
+	expect(defaultMessages["table.selected_count"]).toContain("{count}");
+});
+
+test("i18n pluginMessages with {count} placeholder interpolates correctly via replace", async () => {
+	// Simulates a lang file returning the correct {count} placeholder.
+	const { getByTestId } = render(
+		<I18nProvider
+			defaultLang="en"
+			languages={{
+				en: async () => ({ "table.selected_count": "{count} selected" }),
+			}}
+		>
+			<Probe k="table.selected_count" />
+		</I18nProvider>,
+	);
+	await waitFor(() =>
+		expect(getByTestId("out").textContent?.replace("{count}", "3")).toBe("3 selected"),
+	);
+});
