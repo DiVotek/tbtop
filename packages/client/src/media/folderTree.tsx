@@ -1,0 +1,257 @@
+/**
+ * FolderTree — left-panel folder navigation with create/rename/delete via context menu.
+ */
+import { FolderIcon, FolderOpenIcon, MoreHorizontalIcon } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { useClient } from "../data/client";
+import { useTranslation } from "../i18n/i18n";
+import { cn } from "../lib/cn";
+import { Button } from "../ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import type { MediaFolder } from "./types";
+import { createFolder, deleteFolder, renameFolder } from "./useMediaApi";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface FolderNode extends MediaFolder {
+	children: FolderNode[];
+}
+
+interface FolderTreeProps {
+	folders: MediaFolder[];
+	selectedId: string | null;
+	onSelect: (id: string | null) => void;
+	onMutated: () => void;
+}
+
+// ─── Tree build ───────────────────────────────────────────────────────────────
+
+function buildTree(folders: MediaFolder[]): FolderNode[] {
+	const map = new Map<string, FolderNode>();
+	for (const f of folders) {
+		map.set(f.id, { ...f, children: [] });
+	}
+	const roots: FolderNode[] = [];
+	for (const node of map.values()) {
+		if (node.parentId === null) {
+			roots.push(node);
+		} else {
+			map.get(node.parentId)?.children.push(node);
+		}
+	}
+	return roots;
+}
+
+// ─── FolderTree ───────────────────────────────────────────────────────────────
+
+export function FolderTree({
+	folders,
+	selectedId,
+	onSelect,
+	onMutated,
+}: FolderTreeProps): ReactNode {
+	const t = useTranslation();
+	const client = useClient();
+	const [error, setError] = useState<string | null>(null);
+	const tree = buildTree(folders);
+
+	async function handleCreate(parentId: string | null) {
+		const name = window.prompt(t("media.folder.name_prompt"));
+		if (!name?.trim()) return;
+		try {
+			await createFolder(client, name.trim(), parentId);
+			onMutated();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		}
+	}
+
+	async function handleRename(folder: MediaFolder) {
+		const name = window.prompt(t("media.folder.rename_prompt"), folder.name);
+		if (!name?.trim() || name.trim() === folder.name) return;
+		try {
+			await renameFolder(client, folder.id, name.trim());
+			onMutated();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		}
+	}
+
+	async function handleDelete(folder: MediaFolder) {
+		if (!window.confirm(t("media.folder.delete_confirm"))) return;
+		try {
+			await deleteFolder(client, folder.id);
+			if (selectedId === folder.id) onSelect(null);
+			onMutated();
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			setError(msg);
+		}
+	}
+
+	return (
+		<div className="flex flex-col gap-1 p-2" data-testid="folder-tree">
+			{/* Root (All files) */}
+			<button
+				type="button"
+				className={cn(
+					"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+					selectedId === null && "bg-muted font-medium",
+				)}
+				onClick={() => onSelect(null)}
+				data-testid="folder-all"
+			>
+				{selectedId === null ? (
+					<FolderOpenIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+				) : (
+					<FolderIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+				)}
+				<span className="flex-1 truncate text-left">{t("media.folder.all_files")}</span>
+				<ContextMenuButton
+					onRename={undefined}
+					onDelete={undefined}
+					onCreateChild={() => handleCreate(null)}
+				/>
+			</button>
+
+			{/* Folder list */}
+			{tree.map((node) => (
+				<FolderItem
+					key={node.id}
+					node={node}
+					selectedId={selectedId}
+					onSelect={onSelect}
+					onRename={handleRename}
+					onDelete={handleDelete}
+					onCreateChild={handleCreate}
+					depth={0}
+				/>
+			))}
+
+			{error && (
+				<p className="text-xs text-destructive px-2" role="alert">
+					{error}
+				</p>
+			)}
+		</div>
+	);
+}
+
+// ─── FolderItem ───────────────────────────────────────────────────────────────
+
+interface FolderItemProps {
+	node: FolderNode;
+	selectedId: string | null;
+	onSelect: (id: string | null) => void;
+	onRename: (folder: MediaFolder) => void;
+	onDelete: (folder: MediaFolder) => void;
+	onCreateChild: (parentId: string | null) => void;
+	depth: number;
+}
+
+function FolderItem({
+	node,
+	selectedId,
+	onSelect,
+	onRename,
+	onDelete,
+	onCreateChild,
+	depth,
+}: FolderItemProps): ReactNode {
+	const isSelected = selectedId === node.id;
+	return (
+		<div>
+			<button
+				type="button"
+				className={cn(
+					"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+					isSelected && "bg-muted font-medium",
+				)}
+				style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
+				onClick={() => onSelect(node.id)}
+				data-testid={`folder-item-${node.id}`}
+			>
+				{isSelected ? (
+					<FolderOpenIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+				) : (
+					<FolderIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+				)}
+				<span className="flex-1 truncate text-left">{node.name}</span>
+				<ContextMenuButton
+					onRename={() => onRename(node)}
+					onDelete={() => onDelete(node)}
+					onCreateChild={() => onCreateChild(node.id)}
+				/>
+			</button>
+			{node.children.map((child) => (
+				<FolderItem
+					key={child.id}
+					node={child}
+					selectedId={selectedId}
+					onSelect={onSelect}
+					onRename={onRename}
+					onDelete={onDelete}
+					onCreateChild={onCreateChild}
+					depth={depth + 1}
+				/>
+			))}
+		</div>
+	);
+}
+
+// ─── ContextMenuButton ────────────────────────────────────────────────────────
+
+interface ContextMenuButtonProps {
+	onRename: (() => void) | undefined;
+	onDelete: (() => void) | undefined;
+	onCreateChild: () => void;
+}
+
+function ContextMenuButton({
+	onRename,
+	onDelete,
+	onCreateChild,
+}: ContextMenuButtonProps): ReactNode {
+	const t = useTranslation();
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
+					onClick={(e) => e.stopPropagation()}
+					data-testid="folder-menu-trigger"
+				>
+					<MoreHorizontalIcon className="h-3 w-3" />
+					<span className="sr-only">{t("media.folder.menu_label")}</span>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				<DropdownMenuItem onSelect={onCreateChild} data-testid="folder-menu-create">
+					{t("media.folder.create_child")}
+				</DropdownMenuItem>
+				{onRename && (
+					<DropdownMenuItem onSelect={onRename} data-testid="folder-menu-rename">
+						{t("media.folder.rename")}
+					</DropdownMenuItem>
+				)}
+				{onDelete && (
+					<DropdownMenuItem
+						onSelect={onDelete}
+						className="text-destructive"
+						data-testid="folder-menu-delete"
+					>
+						{t("media.folder.delete")}
+					</DropdownMenuItem>
+				)}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}

@@ -19,6 +19,7 @@ import { TextareaCell, TextareaForm } from "../fields/textareaField";
 import { TextCell, TextForm } from "../fields/textField";
 import { UnknownCell, UnknownForm } from "../fields/unknownField";
 import { UploadCell, UploadForm, type UploadValue } from "../fields/uploadField";
+import { MediaLibraryBlock } from "../media/mediaLibraryBlock";
 import { ActionBlock } from "../structure/actionBlock";
 import { ActionGroupBlock } from "../structure/actionGroupBlock";
 import { AsideBlock } from "../structure/asideBlock";
@@ -77,6 +78,7 @@ function registerDataBlocks(): void {
 	defineBlock("form", { behavior: "container", render: FormBlock });
 	defineBlock("table", { behavior: "leaf", render: TableBlock });
 	defineBlock("action", { behavior: "leaf", render: ActionBlock });
+	defineBlock("mediaLibrary", { behavior: "leaf", render: MediaLibraryBlock });
 }
 
 function registerCharts(): void {
