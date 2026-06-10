@@ -58,6 +58,12 @@ return [
             'body' => 'This action cannot be undone.',
         ],
     ],
+    'form' => [
+        'unsaved_guard' => [
+            'title' => 'You have unsaved changes.',
+            'body' => 'Are you sure you want to leave? Your changes will be lost.',
+        ],
+    ],
     'nav' => [
         'home' => ['welcome' => 'Welcome'],
         'title' => 'Tabletop',

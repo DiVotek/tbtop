@@ -23,4 +23,8 @@ return [
 
     // Default content locale used for field validation rules.
     'default_content_locale' => 'en',
+
+    // Global default for the unsaved-changes navigation guard on forms.
+    // Per-form override: FormBuilder::guardUnsaved(bool).
+    'unsaved_guard' => true,
 ];

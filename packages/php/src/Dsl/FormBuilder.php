@@ -17,6 +17,8 @@ final class FormBuilder implements JsonSerializable
 
     private ?Closure $onSubmit = null;
 
+    private ?bool $guardUnsaved = null;
+
     /** @param  list<mixed>  $children Nodes and builders. */
     public function __construct(public readonly string $name, array $children = [])
     {
@@ -34,6 +36,14 @@ final class FormBuilder implements JsonSerializable
     public function onSubmit(Closure $handler): self
     {
         $this->onSubmit = $handler;
+
+        return $this;
+    }
+
+    /** Per-form override for the unsaved-changes navigation guard. */
+    public function guardUnsaved(bool $enabled): self
+    {
+        $this->guardUnsaved = $enabled;
 
         return $this;
     }
@@ -99,7 +109,13 @@ final class FormBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
-        return new Node('form', ['name' => $this->name, 'children' => $this->children], $this->name);
+        $options = ['name' => $this->name, 'children' => $this->children];
+
+        if ($this->guardUnsaved !== null) {
+            $options['guardUnsaved'] = $this->guardUnsaved;
+        }
+
+        return new Node('form', $options, $this->name);
     }
 
     /** @return array<string, mixed> */
