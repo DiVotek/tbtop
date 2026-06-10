@@ -6,6 +6,7 @@ use Tbtop\Admin\Http\DataController;
 use Tbtop\Admin\Http\FormSubmitController;
 use Tbtop\Admin\Http\LocaleController;
 use Tbtop\Admin\Http\PageController;
+use Tbtop\Admin\Http\SelectCreateController;
 use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\TableController;
 use Tbtop\Admin\Http\UploadController;
@@ -36,5 +37,8 @@ Route::middleware([...(array) config('tbtop-admin.middleware'), SetAdminLocale::
             Route::get("{$path}/data/{tbtopData}", DataController::class)
                 ->defaults('tbtopPage', $class)
                 ->name('tbtop.'.$class::slug().'.data');
+            Route::post("{$path}/select-create/{tbtopField}", SelectCreateController::class)
+                ->defaults('tbtopPage', $class)
+                ->name('tbtop.'.$class::slug().'.selectCreate');
         }
     });

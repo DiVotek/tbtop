@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
@@ -6,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
 import type {
+	SelectCreateConfig,
 	SelectOptionsBag,
 	SelectSingleOptionsBag,
 	SelectValueType,
@@ -36,9 +39,73 @@ export function SelectForm(props: FieldFormProps<SelectValueType, SelectOptionsB
 		return <SelectMultiForm {...props} />;
 	}
 	if (opts.query) {
-		return <AsyncSingleSelect {...props} />;
+		return <AsyncSingleSelectWithCreate {...props} />;
 	}
-	return <StaticSingleSelect {...props} />;
+	if (opts.searchable) {
+		return <SearchableStaticSelectWithCreate {...props} />;
+	}
+	return <StaticSingleSelectWithCreate {...props} />;
+}
+
+// ─── Create affordance wrapper ────────────────────────────────────────────────
+
+interface WithCreateProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
+	resolvedLabels?: Record<string, string>;
+	children: React.ReactNode;
+}
+
+function WithCreateAffordance({
+	name,
+	onChange,
+	options,
+	resolvedLabels,
+	children,
+}: WithCreateProps) {
+	const [open, setOpen] = useState(false);
+	const create = options?.create as SelectCreateConfig | undefined;
+	if (!create) {
+		return <>{children}</>;
+	}
+
+	function handleSuccess(value: string, label: string) {
+		if (resolvedLabels) {
+			resolvedLabels[value] = label;
+		}
+		onChange(value);
+		setOpen(false);
+	}
+
+	return (
+		<div className="flex flex-col gap-1">
+			{children}
+			<button
+				type="button"
+				data-testid={`select-create-${name}`}
+				onClick={() => setOpen(true)}
+				className="self-start text-xs text-primary underline"
+			>
+				+ Create
+			</button>
+			{open && (
+				<SelectCreateDialog
+					fieldName={name}
+					config={create}
+					onSuccess={handleSuccess}
+					onClose={() => setOpen(false)}
+				/>
+			)}
+		</div>
+	);
+}
+
+// ─── Static single select ─────────────────────────────────────────────────────
+
+function StaticSingleSelectWithCreate(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+	return (
+		<WithCreateAffordance {...props}>
+			<StaticSingleSelect {...props} />
+		</WithCreateAffordance>
+	);
 }
 
 function StaticSingleSelect({
@@ -77,20 +144,109 @@ function StaticSingleSelect({
 	);
 }
 
-function AsyncSingleSelect(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+// ─── Searchable static select ─────────────────────────────────────────────────
+
+function SearchableStaticSelectWithCreate(
+	props: FieldFormProps<SelectValueType, SelectOptionsBag>,
+) {
+	return (
+		<WithCreateAffordance {...props}>
+			<SearchableStaticSelect {...props} />
+		</WithCreateAffordance>
+	);
+}
+
+function SearchableStaticSelect({
+	id,
+	name,
+	value,
+	onChange,
+	onBlur,
+	disabled,
+	options,
+}: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const t = useTranslation();
+	const choices = options?.options ?? [];
+	const [search, setSearch] = useState("");
+	const filtered = search
+		? choices.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+		: choices;
+	const currentLabel =
+		typeof value === "string" ? (choices.find((o) => o.value === value)?.label ?? value) : "";
+	return (
+		<div id={id ?? name} className="relative" data-testid={`select-${name}`} onBlur={onBlur}>
+			<input
+				type="text"
+				data-testid={`select-search-${name}`}
+				placeholder={t("field.select.placeholder")}
+				value={search}
+				onChange={(e) => setSearch(e.target.value)}
+				disabled={disabled}
+				className="w-full rounded border border-input bg-background px-3 py-2 text-sm"
+			/>
+			{currentLabel && !search && (
+				<div className="pointer-events-none absolute right-8 top-2 text-sm text-foreground">
+					{currentLabel}
+				</div>
+			)}
+			<div className="absolute z-10 mt-1 w-full rounded border border-input bg-background shadow-md">
+				{filtered.map((opt) => (
+					<button
+						key={opt.value}
+						type="button"
+						data-testid={`select-option-${name}`}
+						disabled={disabled}
+						onClick={() => {
+							onChange(opt.value);
+							setSearch("");
+						}}
+						className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+					>
+						{opt.label}
+					</button>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// ─── Async single select ──────────────────────────────────────────────────────
+
+function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
 	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
 	const resolved = useSingleResolvedLabel({ ctx, fieldName: props.name, value, opts });
+
+	if (resolved.kind === "loading") {
+		return <>{opts.loading ?? <FormSkeleton />}</>;
+	}
+
+	return (
+		<WithCreateAffordance {...props} resolvedLabels={resolved.labels}>
+			<AsyncSingleSelectInner {...props} resolved={resolved} />
+		</WithCreateAffordance>
+	);
+}
+
+interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
+	resolved: { kind: "ready"; labels: Record<string, string> };
+}
+
+function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
+	const t = useTranslation();
+	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
+	const ctx = useClientActionContext();
+	const value = typeof props.value === "string" ? props.value : null;
 	const search = useAsyncSearch(ctx, opts.query, "");
-	if (resolved.kind === "loading" || search.kind === "loading") {
+
+	if (search.kind === "loading") {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
 	if (search.kind === "error") {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
-	const display = value === null ? undefined : (resolved.labels[value] ?? value);
+	const display = value === null ? undefined : (props.resolved.labels[value] ?? value);
 	return (
 		<Select
 			value={value ?? ""}

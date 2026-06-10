@@ -4,6 +4,8 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Select;
 
 final class FormBuilder implements JsonSerializable
 {
@@ -51,6 +53,48 @@ final class FormBuilder implements JsonSerializable
     public function collectRules(): array
     {
         return RuleWalker::collect($this->children);
+    }
+
+    /**
+     * Find a Select field by name that has a creatable closure, walking nested children.
+     * Returns null when not found.
+     */
+    public function findCreatableSelect(string $name): ?Select
+    {
+        return self::searchCreatable($this->children, $name);
+    }
+
+    /** @param  list<mixed>  $children */
+    private static function searchCreatable(array $children, string $name): ?Select
+    {
+        foreach ($children as $child) {
+            if ($child instanceof Select
+                && $child->name === $name
+                && $child->creatableClosure() !== null
+            ) {
+                return $child;
+            }
+            if ($child instanceof Field) {
+                $sub = $child->childFields();
+                if ($sub !== []) {
+                    $found = self::searchCreatable($sub, $name);
+                    if ($found !== null) {
+                        return $found;
+                    }
+                }
+            }
+            if ($child instanceof Node) {
+                $nested = $child->options['children'] ?? $child->options['fields'] ?? [];
+                if (is_array($nested)) {
+                    $found = self::searchCreatable(array_values($nested), $name);
+                    if ($found !== null) {
+                        return $found;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public function toNode(): Node

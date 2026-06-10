@@ -39,6 +39,9 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	if (node.kind.startsWith("chart:")) {
 		return materializeChart({ ...node, meta }, ctx);
 	}
+	if (node.kind === "select" && node.name) {
+		return materializeSelect({ ...node, meta }, ctx);
+	}
 	return { ...node, meta, options: walkChildren(node.options as Bag, ctx) };
 }
 
@@ -85,6 +88,16 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 	// Walk table filter field nodes so their meta (hiddenIf/disabledIf) is compiled.
 	if (Array.isArray(next.filters)) {
 		next.filters = next.filters.map((f) => walk(f as StructureNode, ctx));
+	}
+	// Walk select create mini-form fields so hiddenIf/disabledIf is compiled.
+	if (next.create !== null && typeof next.create === "object") {
+		const create = next.create as Bag;
+		if (Array.isArray(create.fields)) {
+			next.create = {
+				...create,
+				fields: create.fields.map((f) => walk(f as StructureNode, ctx)),
+			};
+		}
 	}
 	return next;
 }
@@ -190,6 +203,28 @@ function encodeFilterValue(field: string, value: unknown): Record<string, unknow
 		return result;
 	}
 	return { [`filters[${field}]`]: value };
+}
+
+function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {
+	const opts = walkChildren(node.options as Bag, ctx);
+	const create = opts.create as Bag | undefined;
+	if (!create) {
+		return { ...node, options: opts };
+	}
+	const fieldName = node.name as string;
+	return {
+		...node,
+		options: {
+			...opts,
+			create: {
+				...create,
+				post: (actionCtx: ClientActionContext, data: Record<string, unknown>) =>
+					actionCtx.client
+						.post(`${ctx.basePath}/select-create/${fieldName}`, data)
+						.then((r) => r as { value: string; label: string }),
+			},
+		},
+	};
 }
 
 function materializeChart(node: StructureNode, ctx: WalkCtx): StructureNode {

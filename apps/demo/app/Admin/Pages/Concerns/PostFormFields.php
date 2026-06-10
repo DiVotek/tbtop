@@ -36,8 +36,23 @@ trait PostFormFields
                     ->rules('nullable|numeric|min:0|max:5')
                     ->disabledIf(Cond::not(Cond::truthy('published'))),
                 $s->select('author_id')->label('Author')
+                    ->searchable()
                     ->set('options', $this->authorOptions())
-                    ->rules('nullable|exists:users,id'),
+                    ->rules('nullable|exists:users,id')
+                    ->creatable(
+                        fields: [
+                            $s->text('name')->label('Name')->required(),
+                        ],
+                        using: function (array $validated): array {
+                            $user = User::create([
+                                'name' => $validated['name'],
+                                'email' => $validated['name'].'@placeholder.local',
+                                'password' => '',
+                            ]);
+
+                            return ['value' => (string) $user->id, 'label' => $user->name ?? $user->email];
+                        },
+                    ),
             ]),
             $s->section(['title' => 'Sections'], [
                 $s->repeater('sections')->label('Sections')
