@@ -41,6 +41,27 @@ it('FormBuilder guardUnsaved is fluent (returns self)', function () {
     expect($result)->toBe($form);
 });
 
+it('FormBuilder serializes guardUnsaved false from global config when not set per-form', function () {
+    config()->set('tbtop-admin.unsaved_guard', false);
+
+    $form = new FormBuilder('post');
+
+    $json = encodeForm($form);
+
+    expect($json['options']['guardUnsaved'])->toBeFalse();
+});
+
+it('FormBuilder explicit guardUnsaved wins over global config off', function () {
+    config()->set('tbtop-admin.unsaved_guard', false);
+
+    $form = new FormBuilder('post');
+    $form->guardUnsaved(true);
+
+    $json = encodeForm($form);
+
+    expect($json['options']['guardUnsaved'])->toBeTrue();
+});
+
 it('S helper form node forwards guardUnsaved to wire via FormBuilder', function () {
     $s = new S;
     $form = $s->form('post', []);
