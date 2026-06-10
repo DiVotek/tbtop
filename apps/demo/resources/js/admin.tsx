@@ -1,7 +1,7 @@
 import "../css/app.css";
 
 import { createInertiaApp } from "@inertiajs/react";
-import { registerBlock } from "@tbtop/inertia-admin";
+import { Input, registerBlock } from "@tbtop/inertia-admin";
 import { createRoot } from "react-dom/client";
 import { route as routeFn } from "ziggy-js";
 
@@ -20,12 +20,12 @@ registerBlock<"rating", { max?: number; min?: number; step?: number }>({
 			return <span>{val ?? "–"}</span>;
 		}
 		return (
-			<input
+			<Input
 				type="number"
-				min={options.min ?? 0}
+				min={options.min ?? 1}
 				max={max}
 				step={options.step ?? 1}
-				defaultValue={(ctx.binding?.value as number | undefined) ?? 0}
+				defaultValue={(ctx.binding?.value as number | undefined) ?? ""}
 				onChange={(e) => ctx.binding?.onChange(Number(e.target.value))}
 			/>
 		);

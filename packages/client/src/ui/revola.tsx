@@ -25,6 +25,8 @@ type ResponsiveDialogContextValue = {
 	onlyDrawer: boolean;
 	onlyDialog: boolean;
 	alert: boolean;
+	// Resolved once by the root so all children agree on the same mode.
+	useDialog: boolean;
 };
 
 const ResponsiveDialogContext = createContext<ResponsiveDialogContextValue | null>(null);
@@ -38,15 +40,7 @@ function useResponsiveDialog(): ResponsiveDialogContextValue {
 }
 
 function useShouldUseDialog(): boolean {
-	const { onlyDialog, onlyDrawer } = useResponsiveDialog();
-	const isDesktop = useMediaQuery(MOBILE_BREAKPOINT);
-	if (onlyDialog) {
-		return true;
-	}
-	if (onlyDrawer) {
-		return false;
-	}
-	return isDesktop ?? true;
+	return useResponsiveDialog().useDialog;
 }
 
 export type ResponsiveDialogProps = ComponentProps<typeof DrawerPrimitive.Root> & {
@@ -73,8 +67,17 @@ export function ResponsiveDialog({
 	const onOpenChange = isUncontrolled ? setInternalOpen : controlledOnOpenChange;
 
 	const isDesktop = useMediaQuery(MOBILE_BREAKPOINT);
-	const shouldUseDialog = onlyDialog || (!onlyDrawer && (isDesktop ?? true));
-	const Root = shouldUseDialog ? DialogPrimitive.Root : DrawerPrimitive.Root;
+
+	// Resolve mode exactly once; guard until known so Dialog/Drawer portals are
+	// never mounted before their matching root (the "DialogPortal must be used
+	// within Dialog" mobile crash when matchMedia fires mid-tree).
+	if (!onlyDialog && !onlyDrawer && isDesktop === null) {
+		return null;
+	}
+
+	const useDialog = onlyDialog || (!onlyDrawer && (isDesktop ?? true));
+	const mode = useDialog ? "dialog" : "drawer";
+	const Root = useDialog ? DialogPrimitive.Root : DrawerPrimitive.Root;
 
 	const effectiveModal = alert ? true : modal;
 	const effectiveDismissible = alert ? true : dismissible;
@@ -88,9 +91,13 @@ export function ResponsiveDialog({
 				onlyDrawer,
 				onlyDialog,
 				alert,
+				useDialog,
 			}}
 		>
+			{/* key ensures the whole subtree unmounts and remounts atomically when
+			    the responsive mode flips, preventing portal/root mismatch errors. */}
 			<Root
+				key={mode}
 				modal={effectiveModal}
 				direction={direction}
 				dismissible={effectiveDismissible}
@@ -231,10 +238,8 @@ export const ResponsiveDialogContent = forwardRef<
 		ref,
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: vendored revola adapter; residual complexity is render-conditional JSX
 	) => {
-		const { direction, modal, dismissible, alert, onlyDrawer, onlyDialog } =
-			useResponsiveDialog();
-		const isDesktop = useMediaQuery(MOBILE_BREAKPOINT);
-		const shouldUseDialog = onlyDialog || (!onlyDrawer && (isDesktop ?? true));
+		const { direction, modal, dismissible, alert } = useResponsiveDialog();
+		const shouldUseDialog = useShouldUseDialog();
 		const Content = shouldUseDialog ? DialogPrimitive.Content : DrawerPrimitive.Content;
 
 		const shouldShowCloseButton = !alert && showCloseButton;

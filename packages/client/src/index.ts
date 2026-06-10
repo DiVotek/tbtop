@@ -93,3 +93,4 @@ export type {
 	TableController,
 	TableOptions,
 } from "./structure/types";
+export { Input } from "./ui/input";

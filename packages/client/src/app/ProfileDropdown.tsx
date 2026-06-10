@@ -1,7 +1,7 @@
 import { router } from "@inertiajs/react";
 import { MonitorIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "../i18n/i18n";
+import { useLocale, useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 
 export type Theme = "light" | "dark" | "system";
@@ -48,6 +48,7 @@ const THEMES: Theme[] = ["light", "dark", "system"];
 
 export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdownProps) {
 	const t = useTranslation();
+	const { locale, setLocale, available: availableLocales } = useLocale();
 	const [open, setOpen] = useState(false);
 	const [theme, setThemeState] = useState<Theme>(() => readThemeCookie());
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -125,6 +126,26 @@ export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdow
 							</button>
 						))}
 					</div>
+
+					{availableLocales.length >= 2 && (
+						<div className="border-b pb-1 mb-1">
+							<div className="px-3 py-1.5 text-xs text-muted-foreground">
+								{t("nav.language")}
+							</div>
+							{availableLocales.map((code) => (
+								<button
+									key={code}
+									type="button"
+									className="flex w-full items-center justify-between rounded-sm px-3 py-1.5 text-sm hover:bg-accent data-[active=true]:font-medium"
+									data-active={locale === code}
+									data-testid={`locale-option-${code}`}
+									onClick={() => setLocale(code)}
+								>
+									<span className="uppercase text-xs">{code}</span>
+								</button>
+							))}
+						</div>
+					)}
 
 					<button
 						type="button"

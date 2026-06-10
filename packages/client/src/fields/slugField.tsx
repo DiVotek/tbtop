@@ -48,12 +48,24 @@ export function SlugForm({
 		onChangeRef.current(derived === "" ? null : derived);
 	}, []);
 
+	// On mount: if a non-empty slug already exists and it differs from what
+	// the source would derive, treat it as a manually-set value and start in
+	// manual mode. This prevents the edit-page bug where opening an existing
+	// post silently regenerated its slug.
+	const isMountRef = useRef(true);
 	useEffect(() => {
+		if (isMountRef.current) {
+			isMountRef.current = false;
+			if (currentSlug !== "" && currentSlug !== slugify(sourceValue)) {
+				syncBroken.current = true;
+				return;
+			}
+		}
 		if (syncBroken.current) {
 			return;
 		}
 		emitDerived(sourceValue);
-	}, [sourceValue, emitDerived]);
+	}, [sourceValue, emitDerived, currentSlug]);
 
 	function handleInputChange(next: string): void {
 		syncBroken.current = true;

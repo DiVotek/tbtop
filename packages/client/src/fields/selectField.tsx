@@ -168,44 +168,79 @@ function SearchableStaticSelect({
 	const t = useTranslation();
 	const choices = options?.options ?? [];
 	const [search, setSearch] = useState("");
+	const [open, setOpen] = useState(false);
 	const filtered = search
 		? choices.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
 		: choices;
 	const currentLabel =
 		typeof value === "string" ? (choices.find((o) => o.value === value)?.label ?? value) : "";
+
+	function handleOpen(): void {
+		if (!disabled) {
+			setOpen(true);
+		}
+	}
+
+	function handleClose(): void {
+		setOpen(false);
+		setSearch("");
+		onBlur?.();
+	}
+
+	function handleSelect(optValue: string): void {
+		onChange(optValue);
+		setSearch("");
+		setOpen(false);
+	}
+
+	function handleKeyDown(e: React.KeyboardEvent): void {
+		if (e.key === "Escape") {
+			handleClose();
+		}
+	}
+
 	return (
-		<div id={id ?? name} className="relative" data-testid={`select-${name}`} onBlur={onBlur}>
+		<div
+			id={id ?? name}
+			className="relative"
+			data-testid={`select-${name}`}
+			onKeyDown={handleKeyDown}
+		>
 			<input
 				type="text"
 				data-testid={`select-search-${name}`}
-				placeholder={t("field.select.placeholder")}
+				placeholder={currentLabel || t("field.select.placeholder")}
 				value={search}
+				onClick={handleOpen}
+				onFocus={handleOpen}
 				onChange={(e) => setSearch(e.target.value)}
+				onBlur={(e) => {
+					// Delay so option button mousedown fires before blur closes the list.
+					const related = e.relatedTarget as HTMLElement | null;
+					if (!related?.closest(`[data-testid="select-${name}"]`)) {
+						handleClose();
+					}
+				}}
 				disabled={disabled}
 				className="w-full rounded border border-input bg-background px-3 py-2 text-sm"
 			/>
-			{currentLabel && !search && (
-				<div className="pointer-events-none absolute right-8 top-2 text-sm text-foreground">
-					{currentLabel}
+			{open && (
+				<div className="absolute z-10 mt-1 w-full rounded border border-input bg-background shadow-md">
+					{filtered.map((opt) => (
+						<button
+							key={opt.value}
+							type="button"
+							data-testid={`select-option-${name}`}
+							disabled={disabled}
+							onMouseDown={(e) => e.preventDefault()}
+							onClick={() => handleSelect(opt.value)}
+							className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+						>
+							{opt.label}
+						</button>
+					))}
 				</div>
 			)}
-			<div className="absolute z-10 mt-1 w-full rounded border border-input bg-background shadow-md">
-				{filtered.map((opt) => (
-					<button
-						key={opt.value}
-						type="button"
-						data-testid={`select-option-${name}`}
-						disabled={disabled}
-						onClick={() => {
-							onChange(opt.value);
-							setSearch("");
-						}}
-						className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
-					>
-						{opt.label}
-					</button>
-				))}
-			</div>
 		</div>
 	);
 }

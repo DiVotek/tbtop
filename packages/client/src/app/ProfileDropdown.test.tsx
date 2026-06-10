@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import { I18nProvider } from "../i18n/i18n";
 import { ProfileDropdown } from "./ProfileDropdown";
 
 const originalRouter = inertiaReact.router;
@@ -112,5 +113,56 @@ describe("ProfileDropdown", () => {
 			fireEvent.click(getByTestId("theme-option-dark"));
 		});
 		expect(window.document.cookie).toContain("tbtop_theme=dark");
+	});
+
+	test("ProfileDropdown: shows locale options in menu when multiple languages configured", async () => {
+		const { getByTestId, findByTestId, queryByTestId } = render(
+			<I18nProvider
+				defaultLang="en"
+				languages={{ en: async () => ({}), uk: async () => ({}) }}
+			>
+				<ProfileDropdown user={{ name: "Alice" }} />
+			</I18nProvider>,
+		);
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		await findByTestId("profile-menu");
+		expect(queryByTestId("locale-option-en")).not.toBeNull();
+		expect(queryByTestId("locale-option-uk")).not.toBeNull();
+	});
+
+	test("ProfileDropdown: clicking a locale option switches to that locale", async () => {
+		const changes: string[] = [];
+		const { getByTestId, findByTestId } = render(
+			<I18nProvider
+				defaultLang="en"
+				languages={{ en: async () => ({}), uk: async () => ({}) }}
+				onLocaleChange={(l) => changes.push(l)}
+			>
+				<ProfileDropdown user={{ name: "Alice" }} />
+			</I18nProvider>,
+		);
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		await findByTestId("profile-menu");
+		await act(async () => {
+			fireEvent.click(getByTestId("locale-option-uk"));
+		});
+		await waitFor(() => expect(changes).toEqual(["uk"]));
+	});
+
+	test("ProfileDropdown: hides locale section when only one language configured", async () => {
+		const { getByTestId, findByTestId, container } = render(
+			<I18nProvider defaultLang="en" languages={{ en: async () => ({}) }}>
+				<ProfileDropdown user={{ name: "Alice" }} />
+			</I18nProvider>,
+		);
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		await findByTestId("profile-menu");
+		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
 	});
 });

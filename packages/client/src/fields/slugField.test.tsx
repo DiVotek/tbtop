@@ -204,14 +204,60 @@ describe("Slug field", () => {
 	});
 
 	test("Slug form-context sync: empty source sets slug to empty string", async () => {
+		// NEW CONTRACT: slug:"old" with empty source → source differs from value → manual mode,
+		// slug stays "old" (not overwritten to empty).
 		const node = s.form({ query: async () => ({ title: "", slug: "old" }) }, [
 			s.slug({ name: "slug", fromField: "title" }),
 		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		// Wait for hydration to settle; value must remain "old".
 		await waitFor(() => {
 			const input = getByRole("textbox") as HTMLInputElement;
-			expect(input.value).toBe("");
+			expect(input.value).toBe("old");
+		});
+	});
+
+	test("Slug: prefilled value preserved on mount when source title differs (edit-page bug)", async () => {
+		// Regression for: opening an existing post with slug "custom-slug" while title is
+		// "Different Title" must NOT overwrite the slug on mount.
+		const node = s.form(
+			{ query: async () => ({ title: "Different Title", slug: "custom-slug" }) },
+			[s.slug({ name: "slug", fromField: "title" })],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => {
+			const input = getByRole("textbox") as HTMLInputElement;
+			expect(input.value).toBe("custom-slug");
+		});
+	});
+
+	test("Slug: in manual mode editing the source title must NOT regenerate the slug", async () => {
+		// After mount with a prefilled slug different from the derived title, the component
+		// starts in manual mode. Typing in the title source must leave the slug unchanged.
+		const user = userEvent.setup();
+		const node = s.form(
+			{ query: async () => ({ title: "Different Title", slug: "custom-slug" }) },
+			[
+				s.text({ name: "title", label: "Title" }),
+				s.slug({ name: "slug", fromField: "title" }),
+			],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		render(<Wrap>{renderNode(node)}</Wrap>);
+		let titleInput!: HTMLInputElement;
+		let slugInput!: HTMLInputElement;
+		await waitFor(() => {
+			titleInput = document.querySelector("#title") as HTMLInputElement;
+			slugInput = document.querySelector("[data-field='slug'] input") as HTMLInputElement;
+			expect(slugInput?.value).toBe("custom-slug");
+		});
+		await user.clear(titleInput);
+		await user.type(titleInput, "Brand New Title");
+		// Still manual mode — slug must not change.
+		await waitFor(() => {
+			expect(slugInput.value).toBe("custom-slug");
 		});
 	});
 });
