@@ -231,6 +231,16 @@ final class S
         return HtmlBlock::make($rawHtml);
     }
 
+    /**
+     * Markdown display block — converts markdown to HTML server-side and emits
+     * a `displayHtml` wire node. Embedded HTML is stripped by default; call
+     * ->allowHtml() on the returned block to pass it through.
+     */
+    public function markdown(string $content): MarkdownBlock
+    {
+        return MarkdownBlock::make($content);
+    }
+
     public function displayDivider(): Node
     {
         return new Node('displayDivider');

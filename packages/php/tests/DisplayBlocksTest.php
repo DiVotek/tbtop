@@ -3,6 +3,7 @@
 use Tbtop\Admin\Dsl\AlertBlock;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\HtmlBlock;
+use Tbtop\Admin\Dsl\MarkdownBlock;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\TextBlock;
 
@@ -126,4 +127,48 @@ it('AlertBlock is accessible via S::displayAlert', function () {
     expect($json['kind'])->toBe('displayAlert')
         ->and($json['options']['color'])->toBe('warning')
         ->and($json['options']['title'])->toBe('Note');
+});
+
+// ---------------------------------------------------------------------------
+// MarkdownBlock
+// ---------------------------------------------------------------------------
+
+it('MarkdownBlock serializes markdown to a displayHtml node', function () {
+    $block = MarkdownBlock::make('# Hi **there**');
+    $json = encodeDisplay($block);
+
+    expect($json['kind'])->toBe('displayHtml')
+        ->and($json['options']['html'])->toContain('<h1>')
+        ->and($json['options']['html'])->toContain('<strong>')
+        ->and($json['meta'])->toBe([]);
+});
+
+it('MarkdownBlock strips embedded HTML tags by default', function () {
+    $block = MarkdownBlock::make('Hello <script>alert(1)</script> world');
+    $json = encodeDisplay($block);
+
+    expect($json['options']['html'])->not->toContain('<script>');
+});
+
+it('MarkdownBlock passes raw HTML through when allowHtml is called', function () {
+    $block = MarkdownBlock::make('Hello <em>world</em>')->allowHtml();
+    $json = encodeDisplay($block);
+
+    expect($json['options']['html'])->toContain('<em>');
+});
+
+it('MarkdownBlock neutralizes unsafe links by default', function () {
+    $block = MarkdownBlock::make('[click](javascript:alert(1))');
+    $json = encodeDisplay($block);
+
+    expect($json['options']['html'])->not->toContain('javascript:');
+});
+
+it('MarkdownBlock is accessible via S::markdown', function () {
+    $s = new S;
+    $json = encodeDisplay($s->markdown('# Hi **there**'));
+
+    expect($json['kind'])->toBe('displayHtml')
+        ->and($json['options']['html'])->toContain('<h1>')
+        ->and($json['options']['html'])->toContain('<strong>');
 });
