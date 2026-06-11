@@ -1,0 +1,88 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["unicorn", "typescript", "oxc", "react"],
+	"jsPlugins": ["./scripts/oxlint-plugins/comment-budget.js"],
+	"categories": {
+		"correctness": "error"
+	},
+	"rules": {
+		"comment-budget/comment-budget": "error",
+		"no-explicit-any": "error",
+		"curly": ["error", "all"],
+		"no-else-return": "error",
+		"no-param-reassign": "error",
+		"no-nested-ternary": "error",
+		"@typescript-eslint/no-non-null-assertion": "error",
+		"unicorn/no-useless-undefined": "error",
+		"unicorn/prefer-string-replace-all": "error",
+		"unicorn/prefer-dom-node-dataset": "error",
+		"unicorn/prefer-at": "error",
+		"unicorn/no-useless-promise-resolve-reject": "error",
+		"unicorn/no-immediate-mutation": "error",
+		"unicorn/prefer-type-error": "error",
+		"unicorn/prefer-native-coercion-functions": "error",
+		"unicorn/prefer-dom-node-append": "error",
+		"unicorn/no-typeof-undefined": "error",
+		"unicorn/no-object-as-default-parameter": "error",
+		"max-params": ["error", { "max": 3 }],
+		"max-lines-per-function": [
+			"error",
+			{ "max": 50, "skipBlankLines": true, "skipComments": true }
+		],
+		"max-lines": ["error", { "max": 200, "skipBlankLines": true, "skipComments": true }],
+		"max-depth": ["error", { "max": 2 }],
+		"complexity": ["error", { "max": 10 }]
+	},
+	"overrides": [
+		{
+			"files": [
+				"**/*.test.ts",
+				"**/*.test.tsx",
+				"**/*fixture*",
+				"**/*[Ff]ixtures*",
+				"**/migrations/**",
+				"**/*.gen.ts"
+			],
+			"rules": {
+				"comment-budget/comment-budget": "off",
+				"max-params": "off",
+				"max-lines-per-function": "off",
+				"max-lines": "off",
+				"max-depth": "off",
+				"complexity": "off",
+				"@typescript-eslint/no-non-null-assertion": "off",
+				"unicorn/prefer-dom-node-dataset": "off",
+				"unicorn/prefer-native-coercion-functions": "off",
+				"unicorn/no-object-as-default-parameter": "off",
+				"unicorn/no-useless-undefined": "off",
+				"unicorn/no-useless-promise-resolve-reject": "off",
+				"unicorn/prefer-at": "off"
+			}
+		},
+		{
+			"files": ["**/*.tsx"],
+			"rules": {
+				"max-lines-per-function": "off",
+				"max-lines": "off",
+				"complexity": "off"
+			}
+		},
+		{
+			"files": ["**/test-helpers.ts", "**/testHarness.ts"],
+			"rules": {
+				"complexity": "off",
+				"max-lines-per-function": "off",
+				"max-lines": "off",
+				"max-params": "off"
+			}
+		},
+		{
+			"files": ["**/templates/**"],
+			"rules": {
+				"comment-budget/comment-budget": "off",
+				"max-lines": "off",
+				"max-lines-per-function": "off"
+			}
+		}
+	]
+}
