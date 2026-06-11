@@ -110,6 +110,7 @@ function AdminShell({ children }: { children: ReactNode }) {
 	const { props } = usePage<AdminPageProps>();
 	const tbtop = props.tbtop;
 	const prefix = tbtop?.prefix ?? "";
+	const apiBase = tbtop?.apiBase ?? "";
 	const locale = tbtop?.locale ?? "en";
 	const locales = tbtop?.locales ?? [locale];
 	const messages = tbtop?.messages ?? {};
@@ -132,7 +133,11 @@ function AdminShell({ children }: { children: ReactNode }) {
 			pluginMessages={pluginMessages}
 			onLocaleChange={persistLocale}
 		>
-			<AdminLayout>{children}</AdminLayout>
+			{/* Chrome trees may carry action blocks; they resolve their client
+			    here, outside the page-level provider inside AdminPage. */}
+			<ClientProvider apiBase={apiBase}>
+				<AdminLayout>{children}</AdminLayout>
+			</ClientProvider>
 		</I18nProvider>
 	);
 }
