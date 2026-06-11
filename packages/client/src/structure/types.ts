@@ -62,6 +62,15 @@ export interface ListQueryParams {
 	sort?: string;
 	search?: string;
 	filters?: Record<string, unknown>;
+	/** Active predefined tab name; the first declared tab when absent. */
+	tab?: string;
+}
+
+/** Predefined table tab as declared on the wire (server Tab DSL). */
+export interface TableTab {
+	name: string;
+	label: string;
+	count: boolean;
 }
 
 export interface TableController {
@@ -158,6 +167,8 @@ export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncB
 	searchable?: string[];
 	filters?: StructureNode[];
 	filtersIn?: "modal" | "inline";
+	/** Predefined filter tabs rendered above the toolbar. */
+	tabs?: TableTab[];
 	/** Server-provided pagination config. */
 	pagination?: TablePaginationOptions;
 	/** Server-assigned table name — used to namespace URL query state. */
