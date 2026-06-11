@@ -128,15 +128,19 @@ final class S
     // -------------------------------------------------------------------------
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
-    public function stack(array $children, array $opts = []): Node
+    public function stack(array $children, array $opts = []): LayoutBuilder
     {
-        return self::layout('stack', $children, $opts);
+        [$options, $meta] = Meta::split($opts);
+
+        return new LayoutBuilder('stack', $children, $options, $meta);
     }
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
-    public function row(array $children, array $opts = []): Node
+    public function row(array $children, array $opts = []): LayoutBuilder
     {
-        return self::layout('row', $children, $opts);
+        [$options, $meta] = Meta::split($opts);
+
+        return new LayoutBuilder('row', $children, $options, $meta);
     }
 
     /** @param  array<string, mixed>  $opts @param  list<mixed>  $children */
@@ -206,6 +210,10 @@ final class S
                 && ! $child->isTranslatableField()
             ) {
                 return $child->translatable();
+            }
+            // LayoutBuilder wraps row/stack — materialise before recursing.
+            if ($child instanceof LayoutBuilder) {
+                $child = $child->toNode();
             }
             if ($child instanceof Node) {
                 $nested = $child->options['children'] ?? $child->options['fields'] ?? null;

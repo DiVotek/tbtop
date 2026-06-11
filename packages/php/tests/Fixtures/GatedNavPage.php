@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Tests\Fixtures;
 
+use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -23,7 +24,7 @@ class GatedNavPage extends Page
         return 'view-gated';
     }
 
-    public function view(S $s): Node
+    public function view(S $s): Node|LayoutBuilder
     {
         return $s->stack([$s->displayText('Gated page')->variant('heading')]);
     }

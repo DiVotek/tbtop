@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Tests\Fixtures;
 
 use Illuminate\Support\Facades\DB;
 use Tbtop\Admin\Dsl\Column;
+use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -19,7 +20,7 @@ class ColumnPostsPage extends Page
         return 'cposts';
     }
 
-    public function view(S $s): Node
+    public function view(S $s): Node|LayoutBuilder
     {
         return $s->stack([
             $s->table('cposts')
