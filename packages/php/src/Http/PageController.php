@@ -21,9 +21,17 @@ final class PageController
             $data[$name] = $form->recordData();
         }
 
+        $layout = $resolved->page->layout();
+        if (! in_array($layout, ['admin', 'center'], strict: true)) {
+            throw new \InvalidArgumentException(
+                "Invalid page layout '{$layout}'. Allowed values: 'admin', 'center'."
+            );
+        }
+
         $props = [
             'slug' => $resolved->page::slug(),
             'title' => $resolved->page->title(),
+            'layout' => $layout,
             'structure' => $resolved->tree,
             'data' => $data,
         ];
