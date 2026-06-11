@@ -8,8 +8,24 @@ uses(TestCase::class)->in('DslSerializationTest.php', 'RuleCollectionTest.php', 
 
 use Tbtop\Admin\Tests\ColumnProjectionHttpTestCase;
 use Tbtop\Admin\Tests\MediaHttpTestCase;
+use Tbtop\Admin\Tests\PanelsHttpTestCase;
 use Tbtop\Admin\Tests\RunsMigrationsTestCase;
 
 uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php');
 uses(MediaHttpTestCase::class)->in('MediaHttpTest.php');
 uses(RunsMigrationsTestCase::class)->in('PackageMigrationsTest.php');
+uses(PanelsHttpTestCase::class)->in('PanelsHttpTest.php');
+
+use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Panels\PanelConfig;
+
+/**
+ * A request-scoped panel for unit tests of builders that read CurrentPanel.
+ *
+ * @param  list<class-string<Page>>  $pages
+ */
+function panelWithPages(array $pages): CurrentPanel
+{
+    return new CurrentPanel((new PanelConfig)->id('admin')->prefix('admin')->pages($pages));
+}

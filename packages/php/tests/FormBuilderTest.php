@@ -2,10 +2,20 @@
 
 use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Panels\PanelConfig;
 
 function encodeForm(mixed $value): array
 {
     return json_decode(json_encode($value), true);
+}
+
+function bindPanelWithUnsavedGuardOff(): void
+{
+    app()->instance(
+        CurrentPanel::class,
+        new CurrentPanel((new PanelConfig)->id('admin')->unsavedGuard(false)),
+    );
 }
 
 it('FormBuilder serializes guardUnsaved true when set', function () {
@@ -41,8 +51,8 @@ it('FormBuilder guardUnsaved is fluent (returns self)', function () {
     expect($result)->toBe($form);
 });
 
-it('FormBuilder serializes guardUnsaved false from global config when not set per-form', function () {
-    config()->set('tbtop-admin.unsaved_guard', false);
+it('FormBuilder serializes guardUnsaved false from the panel default when not set per-form', function () {
+    bindPanelWithUnsavedGuardOff();
 
     $form = new FormBuilder('post');
 
@@ -51,8 +61,8 @@ it('FormBuilder serializes guardUnsaved false from global config when not set pe
     expect($json['options']['guardUnsaved'])->toBeFalse();
 });
 
-it('FormBuilder explicit guardUnsaved wins over global config off', function () {
-    config()->set('tbtop-admin.unsaved_guard', false);
+it('FormBuilder explicit guardUnsaved wins over the panel default off', function () {
+    bindPanelWithUnsavedGuardOff();
 
     $form = new FormBuilder('post');
     $form->guardUnsaved(true);

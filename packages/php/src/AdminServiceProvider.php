@@ -7,6 +7,8 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Tbtop\Admin\I18n\LocaleService;
 use Tbtop\Admin\Navigation\NavBuilder;
+use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Panels\PanelRegistry;
 
 class AdminServiceProvider extends PackageServiceProvider
 {
@@ -24,14 +26,25 @@ class AdminServiceProvider extends PackageServiceProvider
             ->hasTranslations();
     }
 
+    public function packageRegistered(): void
+    {
+        $this->app->singleton(PanelRegistry::class, static fn (): PanelRegistry => PanelRegistry::fromConfig());
+    }
+
     public function packageBooted(): void
     {
-        Inertia::share('tbtop', static function (): array {
+        Inertia::share('tbtop', static function (): ?array {
+            $panel = CurrentPanel::current();
+            if ($panel === null) {
+                return null;
+            }
+
             $locale = LocaleService::currentLocale();
-            $prefix = '/'.trim((string) config('tbtop-admin.prefix'), '/');
+            $prefix = $panel->pathPrefix();
 
             return [
-                'nav' => NavBuilder::build(),
+                'panel' => $panel->id(),
+                'nav' => NavBuilder::build($panel),
                 'prefix' => $prefix,
                 'apiBase' => $prefix.'/api',
                 'locale' => $locale,

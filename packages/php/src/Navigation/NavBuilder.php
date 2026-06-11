@@ -3,24 +3,22 @@
 namespace Tbtop\Admin\Navigation;
 
 use Illuminate\Support\Facades\Gate;
-use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\CurrentPanel;
 
 final class NavBuilder
 {
     /**
-     * Builds the sidebar tree from registered pages' nav() declarations.
+     * Builds the sidebar tree from the panel's pages' nav() declarations.
      * Pages with route params, null nav(), or a failing gate are skipped.
      *
      * @return list<array{group: string, items: list<array{label: string, href: string, order: int}>}>
      */
-    public static function build(): array
+    public static function build(CurrentPanel $panel): array
     {
-        $prefix = '/'.trim((string) config('tbtop-admin.prefix'), '/');
-        /** @var list<class-string<Page>> $pages */
-        $pages = config('tbtop-admin.pages', []);
+        $prefix = $panel->pathPrefix();
 
         $groups = [];
-        foreach ($pages as $class) {
+        foreach ($panel->pages() as $class) {
             $nav = $class::nav();
             $path = $class::path();
             if ($nav === null || str_contains($path, '{')) {

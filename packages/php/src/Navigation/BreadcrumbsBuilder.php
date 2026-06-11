@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Navigation;
 
 use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\CurrentPanel;
 
 /**
  * Resolves the breadcrumbs array for a given page.
@@ -17,7 +18,7 @@ final class BreadcrumbsBuilder
     /**
      * @return list<array{label: string, url?: string}>
      */
-    public static function build(Page $page): array
+    public static function build(Page $page, CurrentPanel $panel): array
     {
         // 1. Check for override on the instance
         $override = $page->breadcrumbs();
@@ -35,13 +36,13 @@ final class BreadcrumbsBuilder
         }
 
         // 2. Auto-build from nav declaration
-        return self::fromNav($page);
+        return self::fromNav($page, $panel);
     }
 
     /**
      * @return list<array{label: string, url?: string}>
      */
-    private static function fromNav(Page $page): array
+    private static function fromNav(Page $page, CurrentPanel $panel): array
     {
         $nav = $page::nav();
         $title = $page->title();
@@ -55,7 +56,7 @@ final class BreadcrumbsBuilder
 
         // Find if any nav item in this group corresponds to a page with the same path
         // (without route params) — if so, include href on the parent crumb.
-        $parentUrl = self::resolveGroupUrl($group, $page);
+        $parentUrl = self::resolveGroupUrl($group, $page, $panel);
 
         $parent = $parentUrl !== null
             ? ['label' => $group, 'url' => $parentUrl]
@@ -68,13 +69,11 @@ final class BreadcrumbsBuilder
      * Tries to find a page in the same nav group that has no route params and returns
      * its href. Returns null when no such page exists.
      */
-    private static function resolveGroupUrl(string $group, Page $skipPage): ?string
+    private static function resolveGroupUrl(string $group, Page $skipPage, CurrentPanel $panel): ?string
     {
-        $prefix = '/'.trim((string) config('tbtop-admin.prefix'), '/');
-        /** @var list<class-string<Page>> $pages */
-        $pages = config('tbtop-admin.pages', []);
+        $prefix = $panel->pathPrefix();
 
-        foreach ($pages as $class) {
+        foreach ($panel->pages() as $class) {
             if ($class === $skipPage::class) {
                 continue;
             }

@@ -2,15 +2,21 @@
 
 namespace Tbtop\Admin\Tests;
 
-use Tbtop\Admin\Tests\Fixtures\ChartParamsPage;
+use Illuminate\Foundation\Auth\User as AuthUser;
+use Tbtop\Admin\Tests\Fixtures\Panels\ChartPanel;
 
 class DataHttpTestCase extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(new AuthUser);
+    }
+
     public function getEnvironmentSetUp($app)
     {
         parent::getEnvironmentSetUp($app);
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
-        $app['config']->set('tbtop-admin.middleware', ['web']);
-        $app['config']->set('tbtop-admin.pages', [ChartParamsPage::class]);
+        $app['config']->set('tbtop-admin.panels', [ChartPanel::class]);
     }
 }
