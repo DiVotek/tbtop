@@ -54,6 +54,7 @@ Surveyed from source on 2026-06-11, not from the (stale, Node-era) PRDs.
 | **Stat/metric polish, sticky table header, filter chips, saved filters, per-column search** | 🟢 | Detail in `backlog.md`. |
 | **Mobile sidebar (drawer)** | 🟢 | End-of-polish. |
 | **Dark-mode completeness** (recharts + Lexical toolbar not theme-token-bound) | 🟢 | |
+| **Lint/format debt** | 🟢 | `inertia/` never ran oxlint/biome/pint — extraction first pointed them at the code. ~20 oxlint findings (client/demo) + Pint format misses (`S.php`, `StatDslTest.php`). CI `lint` job is non-blocking until a dedicated pass clears it. |
 
 ---
 
