@@ -1,5 +1,6 @@
 <?php
 
+use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\BreadcrumbsBuilder;
@@ -63,7 +64,7 @@ it('BreadcrumbsBuilder: parametrized page gets group url from non-parametrized s
             return 'Edit Item';
         }
 
-        public function view(S $s): Node
+        public function view(S $s): Node|LayoutBuilder
         {
             return $s->stack([]);
         }
@@ -106,7 +107,7 @@ it('BreadcrumbsBuilder: array override is returned as-is', function () {
             ];
         }
 
-        public function view(S $s): Node
+        public function view(S $s): Node|LayoutBuilder
         {
             return $s->stack([]);
         }
@@ -151,7 +152,7 @@ it('BreadcrumbsBuilder: closure override receives page instance and returns brea
             };
         }
 
-        public function view(S $s): Node
+        public function view(S $s): Node|LayoutBuilder
         {
             return $s->stack([]);
         }

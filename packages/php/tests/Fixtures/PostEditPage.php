@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Tests\Fixtures;
 
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -18,7 +19,7 @@ class PostEditPage extends Page
         return 'posts/{post}/edit';
     }
 
-    public function view(S $s): Node
+    public function view(S $s): Node|LayoutBuilder
     {
         return $s->stack([
             $s->displayText('Edit post')->variant('heading'),

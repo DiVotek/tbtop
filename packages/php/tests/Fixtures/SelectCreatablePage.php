@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Tests\Fixtures;
 
+use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -19,7 +20,7 @@ class SelectCreatablePage extends Page
         return 'select-create-page';
     }
 
-    public function view(S $s): Node
+    public function view(S $s): Node|LayoutBuilder
     {
         return $s->stack([
             $s->form('main', [

@@ -2,11 +2,21 @@ import { Fragment, type ReactNode } from "react";
 import type { StructureNode } from "../structure/structure";
 import type { RenderProps } from "./blockRegistry";
 
-interface StackOptions {
+type JustifyValue = "start" | "center" | "end" | "between" | "around" | "evenly";
+type AlignValue = "start" | "center" | "end" | "stretch" | "baseline";
+
+interface FlexOptions {
+	justify?: JustifyValue;
+	align?: AlignValue;
+	gap?: number;
+	wrap?: boolean;
+}
+
+interface StackOptions extends FlexOptions {
 	[key: string]: unknown;
 }
 
-interface RowOptions {
+interface RowOptions extends FlexOptions {
 	[key: string]: unknown;
 }
 
@@ -27,15 +37,66 @@ interface WidgetOptions {
 	props?: Record<string, unknown>;
 }
 
-export function StackBlock({ children, renderChild }: RenderProps<StackOptions>) {
-	return <div className="flex flex-col gap-4">{mapChildren(children, renderChild)}</div>;
+// Static class maps — Tailwind only emits classes it sees verbatim in source.
+// Never build class names by string interpolation; purge will silently drop them.
+
+const JUSTIFY: Record<JustifyValue, string> = {
+	start: "justify-start",
+	center: "justify-center",
+	end: "justify-end",
+	between: "justify-between",
+	around: "justify-around",
+	evenly: "justify-evenly",
+};
+
+const ALIGN: Record<AlignValue, string> = {
+	start: "items-start",
+	center: "items-center",
+	end: "items-end",
+	stretch: "items-stretch",
+	baseline: "items-baseline",
+};
+
+const GAP: Record<number, string> = {
+	0: "gap-0",
+	1: "gap-1",
+	2: "gap-2",
+	3: "gap-3",
+	4: "gap-4",
+	5: "gap-5",
+	6: "gap-6",
+	7: "gap-7",
+	8: "gap-8",
+	9: "gap-9",
+	10: "gap-10",
+	11: "gap-11",
+	12: "gap-12",
+};
+
+function flexClasses(base: string, defaultGap: string, opts: FlexOptions): string {
+	const justify = opts.justify != null ? (JUSTIFY[opts.justify] ?? "") : "";
+	const align = opts.align != null ? (ALIGN[opts.align] ?? "") : "";
+	const gap = opts.gap != null ? (GAP[opts.gap] ?? defaultGap) : defaultGap;
+	const wrap = opts.wrap ? "flex-wrap" : "";
+	return [base, justify, align, gap, wrap].filter(Boolean).join(" ");
 }
 
-export function RowBlock({ children, renderChild }: RenderProps<RowOptions>) {
-	return <div className="flex flex-row gap-2">{mapChildren(children, renderChild)}</div>;
+export function StackBlock({ options, children, renderChild }: RenderProps<StackOptions>) {
+	return (
+		<div className={flexClasses("flex flex-col", "gap-4", options)}>
+			{mapChildren(children, renderChild)}
+		</div>
+	);
 }
 
-// Static class map — Tailwind only emits classes it sees verbatim in source.
+export function RowBlock({ options, children, renderChild }: RenderProps<RowOptions>) {
+	return (
+		<div className={flexClasses("flex flex-row", "gap-2", options)}>
+			{mapChildren(children, renderChild)}
+		</div>
+	);
+}
+
 const GRID_COLS: Record<number, string> = {
 	1: "grid-cols-1",
 	2: "grid-cols-2",

@@ -520,6 +520,45 @@
                     ]
                 },
                 "meta": {}
+            },
+            {
+                "kind": "row",
+                "options": {
+                    "justify": "between",
+                    "align": "center",
+                    "gap": 4,
+                    "wrap": true,
+                    "children": [
+                        {
+                            "kind": "text",
+                            "options": {},
+                            "meta": {},
+                            "name": "first"
+                        },
+                        {
+                            "kind": "text",
+                            "options": {},
+                            "meta": {},
+                            "name": "second"
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "stack",
+                "options": {
+                    "gap": 6,
+                    "children": [
+                        {
+                            "kind": "text",
+                            "options": {},
+                            "meta": {},
+                            "name": "stacked"
+                        }
+                    ]
+                },
+                "meta": {}
             }
         ]
     },
