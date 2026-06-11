@@ -23,7 +23,9 @@ trait PostFormFields
                 $s->text('intro')->label('Intro')->translatable(),
                 $s->slug('slug')->label('Slug')->required()
                     ->set('fromField', 'title')
-                    ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', $slugUniqueRule]),
+                    ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', $slugUniqueRule])
+                    ->helperText('Auto-generated from the title. Lowercase letters and hyphens only.')
+                    ->tooltip('This appears in the post URL, e.g. /posts/my-post-slug.'),
                 $s->richtext('body')->label('Body')
                     ->set('placeholder', 'Write something…')->translatable(),
             ]),

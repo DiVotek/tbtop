@@ -43,7 +43,8 @@ class KitchenSinkPage extends Page
             $s->section(['title' => 'Form'], [
                 $s->form('post', [
                     $s->text('title')->label('Title')->required()->rules('max:200'),
-                    $s->textarea('body')->label('Body'),
+                    $s->textarea('body')->label('Body')
+                        ->helperText('Supports Markdown.')->tooltip('Write the post body here.'),
                     $s->number('rating')->rules('integer|min:0|max:5'),
                     $s->boolean('published'),
                     $s->date('publishedAt')->hiddenIf('published', '=', false),

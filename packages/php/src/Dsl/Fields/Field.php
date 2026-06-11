@@ -49,6 +49,18 @@ abstract class Field implements JsonSerializable
         return $this->set('label', $label);
     }
 
+    /** Muted hint text rendered below the input, above any validation error. */
+    public function helperText(string $text): static
+    {
+        return $this->set('helperText', $text);
+    }
+
+    /** Tooltip text shown in an info-icon popover next to the field label. */
+    public function tooltip(string $text): static
+    {
+        return $this->set('tooltip', $text);
+    }
+
     public function required(): static
     {
         $this->opts['required'] = true;
