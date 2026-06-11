@@ -42,6 +42,7 @@ import {
 } from "../ui/charts";
 import { getBlockDescriptor } from "./blockRegistry";
 import {
+	FlexBlock,
 	GridBlock,
 	RowBlock,
 	SectionBlock,
@@ -67,6 +68,7 @@ export function ensureBuiltinsRegistered(): void {
 function registerLayout(): void {
 	defineBlock("stack", { behavior: "container", render: StackBlock });
 	defineBlock("row", { behavior: "container", render: RowBlock });
+	defineBlock("flex", { behavior: "container", render: FlexBlock });
 	defineBlock("grid", { behavior: "container", render: GridBlock });
 	defineBlock("section", { behavior: "container", render: SectionBlock });
 	defineBlock("tabs", { behavior: "container", render: TabsBlock });

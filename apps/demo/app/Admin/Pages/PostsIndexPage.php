@@ -11,7 +11,6 @@ use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Select;
-use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Tab;
@@ -34,7 +33,7 @@ class PostsIndexPage extends Page
         return 'Posts';
     }
 
-    public function view(S $s): Node|LayoutBuilder
+    public function view(S $s): Node
     {
         return $s->stack([
             $s->actionsRow([

@@ -5,18 +5,11 @@ import type { RenderProps } from "./blockRegistry";
 type JustifyValue = "start" | "center" | "end" | "between" | "around" | "evenly";
 type AlignValue = "start" | "center" | "end" | "stretch" | "baseline";
 
-interface FlexOptions {
-	justify?: JustifyValue;
-	align?: AlignValue;
-	gap?: number;
-	wrap?: boolean;
-}
-
-interface StackOptions extends FlexOptions {
+interface StackOptions {
 	[key: string]: unknown;
 }
 
-interface RowOptions extends FlexOptions {
+interface RowOptions {
 	[key: string]: unknown;
 }
 
@@ -73,28 +66,32 @@ const GAP: Record<number, string> = {
 	12: "gap-12",
 };
 
-function flexClasses(base: string, defaultGap: string, opts: FlexOptions): string {
-	const justify = opts.justify != null ? (JUSTIFY[opts.justify] ?? "") : "";
-	const align = opts.align != null ? (ALIGN[opts.align] ?? "") : "";
-	const gap = opts.gap != null ? (GAP[opts.gap] ?? defaultGap) : defaultGap;
-	const wrap = opts.wrap ? "flex-wrap" : "";
-	return [base, justify, align, gap, wrap].filter(Boolean).join(" ");
+export function StackBlock({ children, renderChild }: RenderProps<StackOptions>) {
+	return <div className="flex flex-col gap-4">{mapChildren(children, renderChild)}</div>;
 }
 
-export function StackBlock({ options, children, renderChild }: RenderProps<StackOptions>) {
-	return (
-		<div className={flexClasses("flex flex-col", "gap-4", options)}>
-			{mapChildren(children, renderChild)}
-		</div>
-	);
+export function RowBlock({ children, renderChild }: RenderProps<RowOptions>) {
+	return <div className="flex flex-row gap-2">{mapChildren(children, renderChild)}</div>;
 }
 
-export function RowBlock({ options, children, renderChild }: RenderProps<RowOptions>) {
-	return (
-		<div className={flexClasses("flex flex-row", "gap-2", options)}>
-			{mapChildren(children, renderChild)}
-		</div>
-	);
+interface FlexBlockOptions {
+	direction: "row" | "col";
+	justify?: JustifyValue;
+	align?: AlignValue;
+	gap?: number;
+	wrap?: boolean;
+	[key: string]: unknown;
+}
+
+export function FlexBlock({ options, children, renderChild }: RenderProps<FlexBlockOptions>) {
+	const dir = options.direction === "col" ? "flex-col" : "flex-row";
+	const defaultGap = options.direction === "col" ? "gap-4" : "gap-2";
+	const justify = options.justify != null ? (JUSTIFY[options.justify] ?? "") : "";
+	const align = options.align != null ? (ALIGN[options.align] ?? "") : "";
+	const gap = options.gap != null ? (GAP[options.gap] ?? defaultGap) : defaultGap;
+	const wrap = options.wrap ? "flex-wrap" : "";
+	const className = ["flex", dir, justify, align, gap, wrap].filter(Boolean).join(" ");
+	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
 const GRID_COLS: Record<number, string> = {

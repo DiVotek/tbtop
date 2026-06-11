@@ -16,115 +16,128 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// Default class names — baseline unchanged when no flex options are set
+// Row / Stack — restored default classes, no flex options
 // ---------------------------------------------------------------------------
 
-test("RowBlock without options renders default flex-row gap-2", () => {
+test("RowBlock renders default flex-row gap-2", () => {
 	const node = s.row([]);
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toContain("flex");
-	expect(el.className).toContain("flex-row");
-	expect(el.className).toContain("gap-2");
+	expect(el.className).toBe("flex flex-row gap-2");
 });
 
-test("StackBlock without options renders default flex-col gap-4", () => {
+test("StackBlock renders default flex-col gap-4", () => {
 	const node = s.stack([]);
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toBe("flex flex-col gap-4");
+});
+
+// ---------------------------------------------------------------------------
+// FlexBlock — direction
+// ---------------------------------------------------------------------------
+
+test("FlexBlock direction:row renders flex flex-row", () => {
+	const node = { kind: "flex", options: { direction: "row", children: [] }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("flex-row");
 	expect(el.className).toContain("flex");
+});
+
+test("FlexBlock direction:col renders flex flex-col", () => {
+	const node = { kind: "flex", options: { direction: "col", children: [] }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toContain("flex-col");
+});
+
+// ---------------------------------------------------------------------------
+// FlexBlock — default gap depends on direction
+// ---------------------------------------------------------------------------
+
+test("FlexBlock direction:row defaults to gap-2", () => {
+	const node = { kind: "flex", options: { direction: "row", children: [] }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("gap-2");
+});
+
+test("FlexBlock direction:col defaults to gap-4", () => {
+	const node = { kind: "flex", options: { direction: "col", children: [] }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toContain("gap-4");
 });
 
 // ---------------------------------------------------------------------------
-// RowBlock with flex options
+// FlexBlock — flex options
 // ---------------------------------------------------------------------------
 
-test("RowBlock justify:between renders justify-between class", () => {
-	const node = s.row([], { justify: "between" });
+test("FlexBlock justify:between renders justify-between", () => {
+	const node = {
+		kind: "flex",
+		options: { direction: "row", justify: "between", children: [] },
+		meta: {},
+	} as never;
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toContain("justify-between");
 });
 
-test("RowBlock align:center renders items-center class", () => {
-	const node = s.row([], { align: "center" });
+test("FlexBlock align:center renders items-center", () => {
+	const node = {
+		kind: "flex",
+		options: { direction: "row", align: "center", children: [] },
+		meta: {},
+	} as never;
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toContain("items-center");
 });
 
-test("RowBlock gap:6 overrides default gap with gap-6", () => {
-	const node = s.row([], { gap: 6 });
+test("FlexBlock gap:6 renders gap-6", () => {
+	const node = {
+		kind: "flex",
+		options: { direction: "row", gap: 6, children: [] },
+		meta: {},
+	} as never;
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toContain("gap-6");
 	expect(el.className).not.toContain("gap-2");
 });
 
-test("RowBlock wrap:true renders flex-wrap class", () => {
-	const node = s.row([], { wrap: true });
+test("FlexBlock wrap:true renders flex-wrap", () => {
+	const node = {
+		kind: "flex",
+		options: { direction: "row", wrap: true, children: [] },
+		meta: {},
+	} as never;
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toContain("flex-wrap");
 });
 
-test("RowBlock with justify:between align:center wrap:true renders all mapped classes", () => {
-	const node = s.row([], { justify: "between", align: "center", gap: 4, wrap: true });
+test("FlexBlock with all options renders all mapped classes", () => {
+	const node = {
+		kind: "flex",
+		options: {
+			direction: "row",
+			justify: "between",
+			align: "center",
+			gap: 4,
+			wrap: true,
+			children: [],
+		},
+		meta: {},
+	} as never;
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("flex");
+	expect(el.className).toContain("flex-row");
 	expect(el.className).toContain("justify-between");
 	expect(el.className).toContain("items-center");
 	expect(el.className).toContain("gap-4");
 	expect(el.className).toContain("flex-wrap");
-	// Base classes still present
-	expect(el.className).toContain("flex");
-	expect(el.className).toContain("flex-row");
-});
-
-// ---------------------------------------------------------------------------
-// StackBlock with flex options
-// ---------------------------------------------------------------------------
-
-test("StackBlock gap:0 overrides default gap with gap-0", () => {
-	const node = s.stack([], { gap: 0 });
-	const { container } = render(renderNode(node));
-	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toContain("gap-0");
-	expect(el.className).not.toContain("gap-4");
-});
-
-test("StackBlock justify:center renders justify-center class", () => {
-	const node = s.stack([], { justify: "center" });
-	const { container } = render(renderNode(node));
-	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toContain("justify-center");
-});
-
-test("StackBlock align:stretch renders items-stretch class", () => {
-	const node = s.stack([], { align: "stretch" });
-	const { container } = render(renderNode(node));
-	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toContain("items-stretch");
-});
-
-test("StackBlock wrap:true renders flex-wrap class", () => {
-	const node = s.stack([], { wrap: true });
-	const { container } = render(renderNode(node));
-	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toContain("flex-wrap");
-});
-
-// ---------------------------------------------------------------------------
-// Unknown gap values fall back to the default gap
-// ---------------------------------------------------------------------------
-
-test("RowBlock unknown gap (> 12) falls back to default gap-2", () => {
-	// Simulate a raw node that bypasses TypeScript types
-	const node = { kind: "row", options: { gap: 99 }, meta: {} } as never;
-	const { container } = render(renderNode(node));
-	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toContain("gap-2");
-	expect(el.className).not.toContain("gap-99");
 });

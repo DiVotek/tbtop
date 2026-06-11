@@ -4,7 +4,6 @@ namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -31,9 +30,8 @@ final class ResolvedPage
         /** @var Page $page */
         $page = app($class);
         $s = new S;
-        $tree = $page->view($s);
 
-        return new self($page, $s, $tree instanceof LayoutBuilder ? $tree->toNode() : $tree);
+        return new self($page, $s, $page->view($s));
     }
 
     /** Route params excluding tbtop internals. @return array<string, string> */

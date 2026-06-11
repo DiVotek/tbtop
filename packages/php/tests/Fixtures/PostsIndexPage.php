@@ -3,7 +3,6 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Illuminate\Support\Facades\DB;
-use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -15,7 +14,7 @@ class PostsIndexPage extends Page
         return 'posts';
     }
 
-    public function view(S $s): Node|LayoutBuilder
+    public function view(S $s): Node
     {
         return $s->stack([
             $s->table('posts')

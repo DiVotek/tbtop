@@ -8,10 +8,10 @@ function encodeLayout(mixed $value): array
 }
 
 // ---------------------------------------------------------------------------
-// Bare row / stack — options must be identical to the pre-flex baseline
+// Bare row / stack — back to plain Node, no flex keys on wire
 // ---------------------------------------------------------------------------
 
-it('bare row serializes exactly as before (no flex keys on wire)', function () {
+it('bare row serializes without flex keys', function () {
     $s = new S;
     $json = encodeLayout($s->row([$s->text('title')]));
 
@@ -23,7 +23,7 @@ it('bare row serializes exactly as before (no flex keys on wire)', function () {
         ->and($json['options'])->not->toHaveKey('wrap');
 });
 
-it('bare stack serializes exactly as before (no flex keys on wire)', function () {
+it('bare stack serializes without flex keys', function () {
     $s = new S;
     $json = encodeLayout($s->stack([$s->text('body')]));
 
@@ -36,49 +36,67 @@ it('bare stack serializes exactly as before (no flex keys on wire)', function ()
 });
 
 // ---------------------------------------------------------------------------
-// Row with flex options
+// S::flex — serialization
 // ---------------------------------------------------------------------------
 
-it('row with justify serializes the justify option', function () {
+it('flex with direction row serializes kind flex and direction row', function () {
     $s = new S;
-    $json = encodeLayout($s->row([$s->text('a')])->justify('between'));
+    $json = encodeLayout($s->flex([$s->text('a')]));
 
-    expect($json['kind'])->toBe('row')
-        ->and($json['options']['justify'])->toBe('between');
+    expect($json['kind'])->toBe('flex')
+        ->and($json['options']['direction'])->toBe('row');
 });
 
-it('row with align serializes the align option', function () {
+it('flex with direction col serializes direction col', function () {
     $s = new S;
-    $json = encodeLayout($s->row([$s->text('a')])->align('center'));
+    $json = encodeLayout($s->flex([$s->text('a')], direction: 'col'));
+
+    expect($json['options']['direction'])->toBe('col');
+});
+
+it('flex with justify serializes the justify option', function () {
+    $s = new S;
+    $json = encodeLayout($s->flex([$s->text('a')], justify: 'between'));
+
+    expect($json['options']['justify'])->toBe('between');
+});
+
+it('flex with align serializes the align option', function () {
+    $s = new S;
+    $json = encodeLayout($s->flex([$s->text('a')], align: 'center'));
 
     expect($json['options']['align'])->toBe('center');
 });
 
-it('row with gap serializes the gap option', function () {
+it('flex with gap serializes the gap option', function () {
     $s = new S;
-    $json = encodeLayout($s->row([$s->text('a')])->gap(6));
+    $json = encodeLayout($s->flex([$s->text('a')], gap: 6));
 
     expect($json['options']['gap'])->toBe(6);
 });
 
-it('row with wrap serializes wrap: true', function () {
+it('flex with wrap:true serializes wrap: true', function () {
     $s = new S;
-    $json = encodeLayout($s->row([$s->text('a')])->wrap());
+    $json = encodeLayout($s->flex([$s->text('a')], wrap: true));
 
     expect($json['options']['wrap'])->toBeTrue();
 });
 
-it('row with all flex options set serializes all of them together', function () {
+it('flex with all options set serializes all of them', function () {
     $s = new S;
     $json = encodeLayout(
-        $s->row([$s->text('a'), $s->text('b')])
-            ->justify('between')
-            ->align('center')
-            ->gap(4)
-            ->wrap()
+        $s->flex(
+            [$s->text('a'), $s->text('b')],
+            direction: 'row',
+            justify: 'between',
+            align: 'center',
+            gap: 4,
+            wrap: true,
+        )
     );
 
-    expect($json['kind'])->toBe('row')
+    expect($json['kind'])->toBe('flex')
+        ->and($json['options']['direction'])->toBe('row')
         ->and($json['options']['justify'])->toBe('between')
         ->and($json['options']['align'])->toBe('center')
         ->and($json['options']['gap'])->toBe(4)
@@ -86,69 +104,41 @@ it('row with all flex options set serializes all of them together', function () 
         ->and($json['options']['children'])->toHaveCount(2);
 });
 
-// ---------------------------------------------------------------------------
-// Stack with flex options
-// ---------------------------------------------------------------------------
-
-it('stack with gap serializes the gap option', function () {
+it('flex omits justify when not set', function () {
     $s = new S;
-    $json = encodeLayout($s->stack([$s->text('a')])->gap(6));
+    $json = encodeLayout($s->flex([$s->text('a')]));
 
-    expect($json['kind'])->toBe('stack')
-        ->and($json['options']['gap'])->toBe(6);
-});
-
-it('stack with gap 0 serializes gap: 0', function () {
-    $s = new S;
-    $json = encodeLayout($s->stack([$s->text('a')])->gap(0));
-
-    expect($json['options']['gap'])->toBe(0);
-});
-
-it('stack with justify and wrap serializes correctly', function () {
-    $s = new S;
-    $json = encodeLayout($s->stack([$s->text('a')])->justify('center')->wrap());
-
-    expect($json['options']['justify'])->toBe('center')
-        ->and($json['options']['wrap'])->toBeTrue();
+    expect($json['options'])->not->toHaveKey('justify')
+        ->and($json['options'])->not->toHaveKey('align')
+        ->and($json['options'])->not->toHaveKey('gap')
+        ->and($json['options'])->not->toHaveKey('wrap');
 });
 
 // ---------------------------------------------------------------------------
-// Invalid values throw
+// S::flex — validation
 // ---------------------------------------------------------------------------
 
-it('invalid justify value throws InvalidArgumentException', function () {
+it('invalid direction throws InvalidArgumentException', function () {
     $s = new S;
-    $s->row([$s->text('a')])->justify('space-around');
+    $s->flex([$s->text('a')], direction: 'horizontal');
 })->throws(InvalidArgumentException::class);
 
-it('invalid align value throws InvalidArgumentException', function () {
+it('invalid justify throws InvalidArgumentException', function () {
     $s = new S;
-    $s->row([$s->text('a')])->align('top');
+    $s->flex([$s->text('a')], justify: 'space-around');
+})->throws(InvalidArgumentException::class);
+
+it('invalid align throws InvalidArgumentException', function () {
+    $s = new S;
+    $s->flex([$s->text('a')], align: 'top');
 })->throws(InvalidArgumentException::class);
 
 it('gap above 12 throws InvalidArgumentException', function () {
     $s = new S;
-    $s->row([$s->text('a')])->gap(13);
+    $s->flex([$s->text('a')], gap: 13);
 })->throws(InvalidArgumentException::class);
 
 it('negative gap throws InvalidArgumentException', function () {
     $s = new S;
-    $s->row([$s->text('a')])->gap(-1);
+    $s->flex([$s->text('a')], gap: -1);
 })->throws(InvalidArgumentException::class);
-
-// ---------------------------------------------------------------------------
-// Chaining is immutable (each call returns a new builder)
-// ---------------------------------------------------------------------------
-
-it('flex methods return a new builder leaving the original unchanged', function () {
-    $s = new S;
-    $base = $s->row([$s->text('a')]);
-    $withJustify = $base->justify('end');
-
-    $baseJson = encodeLayout($base);
-    $withJustifyJson = encodeLayout($withJustify);
-
-    expect($baseJson['options'])->not->toHaveKey('justify')
-        ->and($withJustifyJson['options']['justify'])->toBe('end');
-});

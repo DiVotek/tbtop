@@ -3,7 +3,6 @@
 namespace Tbtop\Admin\Pages;
 
 use Illuminate\Support\Str;
-use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
@@ -12,7 +11,7 @@ abstract class Page
     /** Laravel route URI relative to the admin prefix, e.g. 'posts/{post}/edit'. */
     abstract public static function path(): string;
 
-    abstract public function view(S $s): Node|LayoutBuilder;
+    abstract public function view(S $s): Node;
 
     /** Stable identifier used in action/form endpoint URLs. */
     public static function slug(): string
