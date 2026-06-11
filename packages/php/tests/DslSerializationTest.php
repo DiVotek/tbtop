@@ -91,3 +91,31 @@ it('serializes server actions without leaking the closure', function () {
         'spec' => ['type' => 'server', 'needs' => ['row']],
     ]);
 });
+
+it('serializes modal action with size', function () {
+    $s = new S;
+    $action = $s->action('open')->label('Open')->modal('Title')->size('lg');
+
+    expect(encode($action)['options']['spec'])->toBe([
+        'type' => 'modal',
+        'title' => 'Title',
+        'size' => 'lg',
+    ]);
+});
+
+it('omits size from modal spec when not set', function () {
+    $s = new S;
+    $action = $s->action('open')->label('Open')->modal('Title');
+
+    $spec = encode($action)['options']['spec'];
+    expect($spec)->toBe(['type' => 'modal', 'title' => 'Title'])
+        ->and(array_key_exists('size', $spec))->toBeFalse();
+});
+
+it('rejects invalid modal size value', function () {
+    (new ActionBuilder('open'))->modal('Title')->size('xl');
+})->throws(InvalidArgumentException::class);
+
+it('rejects size() on non-modal action', function () {
+    (new ActionBuilder('go'))->visit('/x')->size('sm')->toNode();
+})->throws(LogicException::class);

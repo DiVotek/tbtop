@@ -268,7 +268,8 @@
 						"type": { "const": "modal" },
 						"title": { "type": "string" },
 						"description": { "type": "string" },
-						"body": { "$ref": "#/$defs/node" }
+						"body": { "$ref": "#/$defs/node" },
+						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] }
 					},
 					"additionalProperties": false
 				},

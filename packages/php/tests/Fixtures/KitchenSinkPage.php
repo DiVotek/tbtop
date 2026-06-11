@@ -91,6 +91,7 @@ class KitchenSinkPage extends Page
                 ->toNode(),
             $s->actionsRow([
                 $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted')),
+                $s->action('details')->label('Details')->modal('Details', null, 'More info')->size('lg'),
                 $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi']),
             ]),
             $s->collapsible(['label' => 'Advanced options'], [

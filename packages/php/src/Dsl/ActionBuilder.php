@@ -20,6 +20,11 @@ final class ActionBuilder implements JsonSerializable
 
     private ?Closure $handler = null;
 
+    /** @var 'sm'|'md'|'lg'|'full'|null */
+    private ?string $modalSize = null;
+
+    private const MODAL_SIZES = ['sm', 'md', 'lg', 'full'];
+
     public function __construct(public readonly string $name) {}
 
     public function label(string $label): self
@@ -81,6 +86,24 @@ final class ActionBuilder implements JsonSerializable
         ]));
     }
 
+    /**
+     * Set the modal dialog size. Only valid on modal actions.
+     *
+     * @param  'sm'|'md'|'lg'|'full'  $size
+     */
+    public function size(string $size): self
+    {
+        if (! in_array($size, self::MODAL_SIZES, true)) {
+            throw new \InvalidArgumentException(
+                "Invalid modal size \"{$size}\". Allowed: ".implode(', ', self::MODAL_SIZES).'.'
+            );
+        }
+
+        $this->modalSize = $size;
+
+        return $this;
+    }
+
     /** @param  array<string, mixed>  $params */
     public function custom(string $handler, array $params = []): self
     {
@@ -98,7 +121,16 @@ final class ActionBuilder implements JsonSerializable
             throw new LogicException("Action \"{$this->name}\" needs one of visit/submit/handle/modal/custom.");
         }
 
-        return new Node('action', [...$this->opts, 'spec' => $this->spec], $this->name);
+        if ($this->modalSize !== null) {
+            if (($this->spec['type'] ?? '') !== 'modal') {
+                throw new LogicException("size() is only valid on modal actions (action \"{$this->name}\").");
+            }
+            $spec = [...$this->spec, 'size' => $this->modalSize];
+        } else {
+            $spec = $this->spec;
+        }
+
+        return new Node('action', [...$this->opts, 'spec' => $spec], $this->name);
     }
 
     /** @return array<string, mixed> */
