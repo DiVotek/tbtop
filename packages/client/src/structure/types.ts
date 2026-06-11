@@ -103,6 +103,7 @@ export interface ModalConfig<TBuilder = unknown> {
 	title: string;
 	description?: string;
 	body?: (s: TBuilder) => StructureNode;
+	size?: "sm" | "md" | "lg" | "full";
 }
 
 interface ActionConfigBase {

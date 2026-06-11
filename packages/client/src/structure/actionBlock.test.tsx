@@ -170,4 +170,24 @@ describe("Action with modal", () => {
 		expect(queryByText("Outer modal")).toBeNull();
 		expect(queryByText("Inner modal")).toBeNull();
 	});
+
+	test("Modal action with size passes it to ModalShell", async () => {
+		const node = s.action({
+			name: "open",
+			label: "Open",
+			modal: {
+				title: "Large modal",
+				size: "lg",
+			},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, baseElement } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const trigger = await findByTestId("action-open");
+		await act(async () => {
+			fireEvent.click(trigger);
+		});
+		// ModalShell with size="lg" applies sm:max-w-2xl on the dialog content
+		const dialog = baseElement.querySelector('[role="dialog"]');
+		expect(dialog?.className ?? "").toContain("sm:max-w-2xl");
+	});
 });

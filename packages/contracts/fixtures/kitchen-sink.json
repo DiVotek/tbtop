@@ -436,6 +436,20 @@
                         {
                             "kind": "action",
                             "options": {
+                                "label": "Details",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "Details",
+                                    "description": "More info",
+                                    "size": "lg"
+                                }
+                            },
+                            "meta": {},
+                            "name": "details"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
                                 "label": "Copy",
                                 "spec": {
                                     "type": "custom",
