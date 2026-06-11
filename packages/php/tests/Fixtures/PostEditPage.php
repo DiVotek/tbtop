@@ -21,7 +21,7 @@ class PostEditPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
-            $s->heading('Edit post'),
+            $s->displayText('Edit post')->variant('heading'),
             $s->form('post', [
                 $s->text('title')->label('Title')->required()->rules('max:200'),
                 $s->repeater('sections')->set('fields', [

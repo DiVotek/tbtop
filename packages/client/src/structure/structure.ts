@@ -4,9 +4,6 @@ import {
 	buildAside,
 	buildChart,
 	buildCollapsible,
-	buildDescription,
-	buildDivider,
-	buildHeading,
 	buildTab,
 	buildTable,
 	buildTabs,
@@ -61,9 +58,6 @@ const builtins: Record<string, Builder> = {
 	relation: makeField("relation") as Builder,
 	repeater: makeField("repeater") as Builder,
 	widget: buildWidget as Builder,
-	divider: buildDivider as Builder,
-	heading: buildHeading as Builder,
-	description: buildDescription as Builder,
 };
 
 type FieldName<TForm> = TForm extends object ? Extract<keyof TForm, string> : string;
@@ -253,13 +247,6 @@ export interface StructureBuilders<TForm = unknown> {
 	action: (config: ActionConfig<StructureBuilders>) => StructureNode;
 	actions: (configs: ActionConfig<StructureBuilders>[]) => StructureNode;
 	widget: <P>(opts: { component: ComponentType<P>; props?: P }) => StructureNode;
-	divider: (opts?: NodeMeta) => StructureNode<"divider", Record<string, never>>;
-	heading: (
-		opts: NodeMeta & { text: string; level?: 2 | 3 | 4 },
-	) => StructureNode<"heading", { text: string; level: 2 | 3 | 4 }>;
-	description: (
-		opts: NodeMeta & { text: string },
-	) => StructureNode<"description", { text: string }>;
 	collapsible: (
 		opts: NodeMeta & { label: string; collapsed?: boolean },
 		children: StructureNode[],

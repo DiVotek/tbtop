@@ -12,7 +12,7 @@ function encode(mixed $value): array
 it('serializes nodes to the client grammar shape', function () {
     $s = new S;
     $tree = $s->stack([
-        $s->heading('Hi'),
+        $s->displayText('Hi')->variant('heading'),
         $s->text('title')->label('Title'),
     ], ['gap' => 2, 'id' => 'root']);
 
@@ -22,8 +22,8 @@ it('serializes nodes to the client grammar shape', function () {
         ->and($json['options']['gap'])->toBe(2)
         ->and($json['meta'])->toBe(['id' => 'root'])
         ->and($json['options']['children'][0])->toBe([
-            'kind' => 'heading',
-            'options' => ['text' => 'Hi', 'level' => 3],
+            'kind' => 'displayText',
+            'options' => ['content' => 'Hi', 'variant' => 'heading'],
             'meta' => [],
         ])
         ->and($json['options']['children'][1]['name'])->toBe('title');
@@ -32,8 +32,8 @@ it('serializes nodes to the client grammar shape', function () {
 it('serializes empty options and meta as objects, not arrays', function () {
     $s = new S;
 
-    expect(json_encode($s->divider()))
-        ->toBe('{"kind":"divider","options":{},"meta":{}}');
+    expect(json_encode($s->displayDivider()))
+        ->toBe('{"kind":"displayDivider","options":{},"meta":{}}');
 });
 
 it('maps laravel rules to wire constraints and skips server-only rules', function () {

@@ -24,6 +24,9 @@ use Tbtop\Admin\Dsl\Fields\Tags;
 use Tbtop\Admin\Dsl\Fields\Text;
 use Tbtop\Admin\Dsl\Fields\Textarea;
 use Tbtop\Admin\Dsl\Fields\Upload;
+use Tbtop\Admin\Dsl\AlertBlock;
+use Tbtop\Admin\Dsl\HtmlBlock;
+use Tbtop\Admin\Dsl\TextBlock;
 
 /**
  * Structure DSL entry — mirrors the client `s.*` builders and collects
@@ -221,19 +224,24 @@ final class S
         }, $children);
     }
 
-    public function heading(string $text, int $level = 3): Node
+    public function displayText(string $content): TextBlock
     {
-        return new Node('heading', ['text' => $text, 'level' => $level]);
+        return TextBlock::make($content);
     }
 
-    public function description(string $text): Node
+    public function displayHtml(string $rawHtml): HtmlBlock
     {
-        return new Node('description', ['text' => $text]);
+        return HtmlBlock::make($rawHtml);
     }
 
-    public function divider(): Node
+    public function displayDivider(): Node
     {
-        return new Node('divider');
+        return new Node('displayDivider');
+    }
+
+    public function displayAlert(string $message): AlertBlock
+    {
+        return AlertBlock::make($message);
     }
 
     /** @param  list<array{label: string, body: mixed}>  $tabs @param  array<string, mixed>  $opts */
@@ -257,6 +265,11 @@ final class S
     public function table(string $name): TableBuilder
     {
         return $this->tables[$name] = new TableBuilder($name);
+    }
+
+    public function stat(string $label): Stat
+    {
+        return Stat::make($label);
     }
 
     /** @param  array<string, mixed>  $opts */

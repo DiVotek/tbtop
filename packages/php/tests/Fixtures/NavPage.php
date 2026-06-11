@@ -20,6 +20,6 @@ class NavPage extends Page
 
     public function view(S $s): Node
     {
-        return $s->stack([$s->heading('Nav demo')]);
+        return $s->stack([$s->displayText('Nav demo')->variant('heading')]);
     }
 }

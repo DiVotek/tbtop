@@ -5,6 +5,7 @@ namespace App\Admin\Pages;
 use App\Models\Setting;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -31,6 +32,13 @@ class SettingsPage extends Page
         $settings = Setting::firstOrCreate([]);
 
         return $s->stack([
+            $s->displayText('Site Settings')->variant('heading'),
+            $s->displayText('Manage your site configuration below.')->variant('muted'),
+            $s->displayAlert('Changes are applied immediately after saving.')
+                ->title('Heads up')
+                ->color(Color::Info),
+            $s->displayDivider(),
+            $s->displayHtml('<p>For help, visit <a href="https://example.com/docs" target="_blank">the docs</a>.</p>'),
             $s->form('settings', [
                 $s->section(['title' => 'Site'], [
                     $s->text('site_name')->label('Site name')->required()->rules('max:200'),

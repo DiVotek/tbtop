@@ -71,7 +71,7 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
-    public function modal(string $title, Node|FormBuilder|null $body = null, ?string $description = null): self
+    public function modal(string $title, Node|FormBuilder|JsonSerializable|null $body = null, ?string $description = null): self
     {
         return $this->setSpec(array_filter([
             'type' => 'modal',

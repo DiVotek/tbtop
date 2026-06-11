@@ -141,25 +141,3 @@ export function buildActionGroup(
 	}
 	return { kind: "actionGroup", options, meta: {} };
 }
-
-const DEFAULT_HEADING_LEVEL = 3;
-
-export function buildDivider(opts?: NodeMeta): StructureNode {
-	const split = splitMeta(opts as Bag | undefined);
-	return { kind: "divider", options: {}, meta: split.meta };
-}
-
-export function buildHeading(opts: Bag & { text: string }): StructureNode {
-	const split = splitMeta(opts);
-	const level = (split.options.level as number | undefined) ?? DEFAULT_HEADING_LEVEL;
-	return {
-		kind: "heading",
-		options: { ...split.options, level },
-		meta: split.meta,
-	};
-}
-
-export function buildDescription(opts: Bag & { text: string }): StructureNode {
-	const split = splitMeta(opts);
-	return { kind: "description", options: split.options, meta: split.meta };
-}

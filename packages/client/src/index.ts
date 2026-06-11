@@ -56,6 +56,13 @@ export type {
 	ChartSeries,
 	ChartType,
 } from "./structure/chartBlock";
+export { DisplayAlertBlock, displayAlertBlockDescriptor } from "./structure/displayAlertBlock";
+export {
+	DisplayDividerBlock,
+	displayDividerBlockDescriptor,
+} from "./structure/displayDividerBlock";
+export { DisplayHtmlBlock, displayHtmlBlockDescriptor } from "./structure/displayHtmlBlock";
+export { DisplayTextBlock, displayTextBlockDescriptor } from "./structure/displayTextBlock";
 export type {
 	StructureBuilder,
 	StructureBuilders,
@@ -90,6 +97,10 @@ export type {
 	TableOptions,
 	TablePaginationOptions,
 } from "./structure/types";
+export type { AlertProps, AlertVariant } from "./ui/alert";
+export { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+export type { StatDescriptor } from "./ui/charts";
+export { StatBlock, StatCard } from "./ui/charts";
 export { Input } from "./ui/input";
 export type { ConfirmDialogProps, ModalShellProps, ModalSize } from "./ui/modal-shell";
 export { ConfirmDialog, ModalShell } from "./ui/modal-shell";

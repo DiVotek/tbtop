@@ -23,7 +23,7 @@ class PlaygroundPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
-            $s->heading('Form round-trip', 2),
+            $s->displayText('Form round-trip')->variant('subheading'),
             $s->form('profile', [
                 $s->text('name')->label('Name')->required()->rules('max:50'),
                 $s->text('email')->label('Email')->required()->rules('email'),
@@ -34,8 +34,8 @@ class PlaygroundPage extends Page
                 ->record(['name' => 'Ada', 'email' => 'ada@example.com'])
                 ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
                     ->notify("Saved {$ctx->form['name']}")),
-            $s->divider(),
-            $s->heading('Server action', 2),
+            $s->displayDivider(),
+            $s->displayText('Server action')->variant('subheading'),
             $s->actionsRow([
                 $s->action('ping')->label('Ping server')->handle(
                     fn (ActionCtx $ctx): Effects => Effects::make()->notify('Pong', 'info'),

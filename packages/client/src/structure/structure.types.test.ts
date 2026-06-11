@@ -39,28 +39,6 @@ describe("structure field-name type-check via callback form", () => {
 	});
 });
 
-describe("structure helper-block type checks", () => {
-	test("structure heading rejects level 1 at build time", () => {
-		// @ts-expect-error level 1 is excluded — page chrome owns <h1>
-		s.heading({ text: "X", level: 1 });
-	});
-
-	test("structure heading rejects level 5 at build time", () => {
-		// @ts-expect-error level narrows to 2 | 3 | 4
-		s.heading({ text: "X", level: 5 });
-	});
-
-	test("structure divider rejects extra option keys beyond NodeMeta", () => {
-		// @ts-expect-error divider accepts only NodeMeta — text is not a valid key
-		s.divider({ text: "X" });
-	});
-
-	test("structure description requires a text key", () => {
-		// @ts-expect-error description requires text
-		s.description({});
-	});
-});
-
 describe("structure action discriminated-union type checks", () => {
 	test("action accepts a handler config", () => {
 		s.action({ name: "save", handler: () => {} });

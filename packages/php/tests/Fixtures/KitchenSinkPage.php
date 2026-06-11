@@ -22,9 +22,9 @@ class KitchenSinkPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
-            $s->heading('Kitchen sink', 2),
-            $s->description('Every node kind the PHP DSL can emit.'),
-            $s->divider(),
+            $s->displayText('Kitchen sink')->variant('heading'),
+            $s->displayText('Every node kind the PHP DSL can emit.')->variant('muted'),
+            $s->displayDivider(),
             $s->grid(['cols' => 2], [
                 $s->chart('byMonth', 'line', ['xKey' => 'month'])->query(fn () => [])->toNode(),
                 $s->chart('byStatus', 'donut', ['nameKey' => 'status'])->query(fn () => [])->toNode(),
@@ -69,7 +69,7 @@ class KitchenSinkPage extends Page
                 ])->record(['title' => 'Hello'])->onSubmit(fn () => Effects::make()),
             ]),
             $s->tabs([
-                ['label' => 'Main', 'body' => $s->heading('Tab body')],
+                ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading')],
             ]),
             $s->table('posts')
                 ->columns(['title' => 'Title', 'views' => 'Views'])
@@ -88,7 +88,7 @@ class KitchenSinkPage extends Page
                 ->query(fn () => null)
                 ->toNode(),
             $s->actionsRow([
-                $s->action('info')->label('About')->modal('About', $s->description('Modal body')),
+                $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted')),
                 $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi']),
             ]),
             $s->collapsible(['label' => 'Advanced options'], [

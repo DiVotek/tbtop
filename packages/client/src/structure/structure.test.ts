@@ -472,61 +472,6 @@ describe("structure data builders", () => {
 	});
 });
 
-describe("structure helper blocks", () => {
-	test("structure divider with no args has empty options and empty meta", () => {
-		expect(s.divider()).toEqual({
-			kind: "divider",
-			options: {},
-			meta: {},
-		});
-	});
-
-	test("structure divider splits id+hidden into meta and keeps options empty", () => {
-		const node = s.divider({ id: "d1", hidden: HIDDEN });
-		expect(node).toEqual({
-			kind: "divider",
-			options: {},
-			meta: { id: "d1", hidden: HIDDEN },
-		});
-	});
-
-	test("structure heading puts text+level in options and id in meta", () => {
-		const node = s.heading({ text: "Author info", level: 2, id: "h1" });
-		expect(node).toEqual({
-			kind: "heading",
-			options: { text: "Author info", level: 2 },
-			meta: { id: "h1" },
-		});
-	});
-
-	test("structure heading defaults level to 3 when omitted", () => {
-		const node = s.heading({ text: "Section title" });
-		expect(node).toEqual({
-			kind: "heading",
-			options: { text: "Section title", level: 3 },
-			meta: {},
-		});
-	});
-
-	test("structure description puts text in options", () => {
-		const node = s.description({ text: "These fields are visible only to admins." });
-		expect(node).toEqual({
-			kind: "description",
-			options: { text: "These fields are visible only to admins." },
-			meta: {},
-		});
-	});
-
-	test("structure description carries hidden predicate in meta", () => {
-		const node = s.description({ text: "D", hidden: HIDDEN });
-		expect(node).toEqual({
-			kind: "description",
-			options: { text: "D" },
-			meta: { hidden: HIDDEN },
-		});
-	});
-});
-
 describe("structure proxy", () => {
 	test("structure proxy unknown builder key returns undefined", () => {
 		const builder = s as unknown as Record<string, unknown>;

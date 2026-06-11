@@ -17,7 +17,13 @@ afterEach(() => {
 
 describe("Collapsible block", () => {
 	test("Collapsible: renders label and children visible when collapsed=false (default)", () => {
-		const node = s.collapsible({ label: "Advanced" }, [s.heading({ text: "Inside" })]);
+		const node = s.collapsible({ label: "Advanced" }, [
+			{
+				kind: "displayText" as const,
+				options: { content: "Inside", variant: "body" as const },
+				meta: {},
+			},
+		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
 		expect(getByText("Advanced")).toBeTruthy();
@@ -26,7 +32,11 @@ describe("Collapsible block", () => {
 
 	test("Collapsible: collapsed=true hides children initially", () => {
 		const node = s.collapsible({ label: "Advanced", collapsed: true }, [
-			s.heading({ text: "Hidden initially" }),
+			{
+				kind: "displayText" as const,
+				options: { content: "Hidden initially", variant: "body" as const },
+				meta: {},
+			},
 		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByText, queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);
@@ -36,7 +46,11 @@ describe("Collapsible block", () => {
 
 	test("Collapsible: clicking toggle button expands a collapsed section", async () => {
 		const node = s.collapsible({ label: "Show more", collapsed: true }, [
-			s.heading({ text: "Now visible" }),
+			{
+				kind: "displayText" as const,
+				options: { content: "Now visible", variant: "body" as const },
+				meta: {},
+			},
 		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByTestId, findByText, queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);
@@ -49,7 +63,11 @@ describe("Collapsible block", () => {
 
 	test("Collapsible: clicking toggle again collapses an open section", async () => {
 		const node = s.collapsible({ label: "Collapse me" }, [
-			s.heading({ text: "Will disappear" }),
+			{
+				kind: "displayText" as const,
+				options: { content: "Will disappear", variant: "body" as const },
+				meta: {},
+			},
 		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByTestId, queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);
@@ -64,7 +82,11 @@ describe("Collapsible block", () => {
 
 	test("Collapsible: hiddenIf=true hides the entire block including label", () => {
 		const node = s.collapsible({ label: "Hidden section", hidden: () => true }, [
-			s.heading({ text: "Inner" }),
+			{
+				kind: "displayText" as const,
+				options: { content: "Inner", variant: "body" as const },
+				meta: {},
+			},
 		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);

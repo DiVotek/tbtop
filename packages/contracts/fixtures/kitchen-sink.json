@@ -3,22 +3,23 @@
     "options": {
         "children": [
             {
-                "kind": "heading",
+                "kind": "displayText",
                 "options": {
-                    "text": "Kitchen sink",
-                    "level": 2
+                    "content": "Kitchen sink",
+                    "variant": "heading"
                 },
                 "meta": {}
             },
             {
-                "kind": "description",
+                "kind": "displayText",
                 "options": {
-                    "text": "Every node kind the PHP DSL can emit."
+                    "content": "Every node kind the PHP DSL can emit.",
+                    "variant": "muted"
                 },
                 "meta": {}
             },
             {
-                "kind": "divider",
+                "kind": "displayDivider",
                 "options": {},
                 "meta": {}
             },
@@ -309,10 +310,10 @@
                         {
                             "label": "Main",
                             "body": {
-                                "kind": "heading",
+                                "kind": "displayText",
                                 "options": {
-                                    "text": "Tab body",
-                                    "level": 3
+                                    "content": "Tab body",
+                                    "variant": "subheading"
                                 },
                                 "meta": {}
                             }
@@ -420,9 +421,10 @@
                                     "type": "modal",
                                     "title": "About",
                                     "body": {
-                                        "kind": "description",
+                                        "kind": "displayText",
                                         "options": {
-                                            "text": "Modal body"
+                                            "content": "Modal body",
+                                            "variant": "muted"
                                         },
                                         "meta": {}
                                     }

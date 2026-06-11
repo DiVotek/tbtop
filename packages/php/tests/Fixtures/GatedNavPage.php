@@ -25,6 +25,6 @@ class GatedNavPage extends Page
 
     public function view(S $s): Node
     {
-        return $s->stack([$s->heading('Gated page')]);
+        return $s->stack([$s->displayText('Gated page')->variant('heading')]);
     }
 }

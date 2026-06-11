@@ -26,8 +26,11 @@ import { ActionGroupBlock } from "../structure/actionGroupBlock";
 import { AsideBlock } from "../structure/asideBlock";
 import { createChartBlock } from "../structure/chartBlock";
 import { CollapsibleBlock } from "../structure/collapsibleBlock";
+import { DisplayAlertBlock } from "../structure/displayAlertBlock";
+import { DisplayDividerBlock } from "../structure/displayDividerBlock";
+import { DisplayHtmlBlock } from "../structure/displayHtmlBlock";
+import { DisplayTextBlock } from "../structure/displayTextBlock";
 import { FormBlock } from "../structure/formBlock";
-import { DescriptionBlock, DividerBlock, HeadingBlock } from "../structure/helperBlocks";
 import { TableBlock } from "../structure/tableBlock";
 import {
 	renderAreaChart,
@@ -35,6 +38,7 @@ import {
 	renderDonutChart,
 	renderLineChart,
 	renderPieChart,
+	StatBlock,
 } from "../ui/charts";
 import { getBlockDescriptor } from "./blockRegistry";
 import {
@@ -70,9 +74,10 @@ function registerLayout(): void {
 	defineBlock("aside", { behavior: "container", render: AsideBlock });
 	defineBlock("actionGroup", { behavior: "leaf", render: ActionGroupBlock });
 	defineBlock("widget", { behavior: "leaf", render: WidgetBlock });
-	defineBlock("divider", { behavior: "leaf", render: DividerBlock });
-	defineBlock("heading", { behavior: "leaf", render: HeadingBlock });
-	defineBlock("description", { behavior: "leaf", render: DescriptionBlock });
+	defineBlock("displayText", { behavior: "leaf", render: DisplayTextBlock });
+	defineBlock("displayHtml", { behavior: "leaf", render: DisplayHtmlBlock });
+	defineBlock("displayDivider", { behavior: "leaf", render: DisplayDividerBlock });
+	defineBlock("displayAlert", { behavior: "leaf", render: DisplayAlertBlock });
 }
 
 function registerDataBlocks(): void {
@@ -80,6 +85,7 @@ function registerDataBlocks(): void {
 	defineBlock("table", { behavior: "leaf", render: TableBlock });
 	defineBlock("action", { behavior: "leaf", render: ActionBlock });
 	defineBlock("mediaLibrary", { behavior: "leaf", render: MediaLibraryBlock });
+	defineBlock("stat", { behavior: "leaf", render: StatBlock });
 }
 
 function registerCharts(): void {

@@ -17,14 +17,26 @@ afterEach(() => {
 
 describe("Aside block", () => {
 	test("Aside: renders aside-block container", () => {
-		const node = s.aside([s.heading({ text: "Sidebar" })]);
+		const node = s.aside([
+			{
+				kind: "displayText" as const,
+				options: { content: "Sidebar", variant: "body" as const },
+				meta: {},
+			},
+		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		expect(getByTestId("aside-block")).toBeTruthy();
 	});
 
 	test("Aside: renders children inside the aside block", () => {
-		const node = s.aside([s.heading({ text: "Sidebar heading" })]);
+		const node = s.aside([
+			{
+				kind: "displayText" as const,
+				options: { content: "Sidebar heading", variant: "body" as const },
+				meta: {},
+			},
+		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
 		expect(getByText("Sidebar heading")).toBeTruthy();
@@ -32,8 +44,20 @@ describe("Aside block", () => {
 
 	test("Aside: top-level stack with aside renders two-column layout", () => {
 		const node = s.stack([
-			s.section({ title: "Main" }, [s.heading({ text: "Main content" })]),
-			s.aside([s.heading({ text: "Sidebar" })]),
+			s.section({ title: "Main" }, [
+				{
+					kind: "displayText" as const,
+					options: { content: "Main content", variant: "body" as const },
+					meta: {},
+				},
+			]),
+			s.aside([
+				{
+					kind: "displayText" as const,
+					options: { content: "Sidebar", variant: "body" as const },
+					meta: {},
+				},
+			]),
 		]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
@@ -53,7 +77,16 @@ describe("Aside block", () => {
 	});
 
 	test("Aside: hiddenIf=true hides the aside block entirely", () => {
-		const node = s.aside([s.heading({ text: "Hidden" })], { hidden: () => true });
+		const node = s.aside(
+			[
+				{
+					kind: "displayText" as const,
+					options: { content: "Hidden", variant: "body" as const },
+					meta: {},
+				},
+			],
+			{ hidden: () => true },
+		);
 		const Wrap = wrap(() => new Response("{}"));
 		const { queryByTestId, queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);
 		expect(queryByTestId("aside-block")).toBeNull();
@@ -63,8 +96,20 @@ describe("Aside block", () => {
 
 describe("Aside: page-level layout with sticky positioning", () => {
 	test("Aside: when page has aside node, a page-layout wrapper sets flex-row", () => {
-		const mainNode = s.section({ title: "Main" }, [s.heading({ text: "Content" })]);
-		const asideNode = s.aside([s.heading({ text: "Sidebar content" })]);
+		const mainNode = s.section({ title: "Main" }, [
+			{
+				kind: "displayText" as const,
+				options: { content: "Content", variant: "body" as const },
+				meta: {},
+			},
+		]);
+		const asideNode = s.aside([
+			{
+				kind: "displayText" as const,
+				options: { content: "Sidebar content", variant: "body" as const },
+				meta: {},
+			},
+		]);
 		const page = s.stack([mainNode, asideNode]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByTestId } = render(

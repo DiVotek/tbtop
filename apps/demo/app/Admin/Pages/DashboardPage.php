@@ -3,8 +3,10 @@
 namespace App\Admin\Pages;
 
 use Illuminate\Support\Facades\DB;
+use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\Stat;
 use Tbtop\Admin\Pages\Page;
 
 class DashboardPage extends Page
@@ -30,6 +32,77 @@ class DashboardPage extends Page
     }
 
     public function view(S $s): Node
+    {
+        return $s->stack([
+            $this->statsRow($s),
+            $this->chartsGrid($s),
+            $this->displayShowcase($s),
+        ]);
+    }
+
+    private function statsRow(S $s): Node
+    {
+        $totalPosts = fn () => DB::table('posts')->count();
+        $published  = fn () => DB::table('posts')->where('published', true)->count();
+        $draft      = fn () => DB::table('posts')->where('published', false)->count();
+        $recentTrend = fn () => DB::table('posts')
+            ->selectRaw('count(*) as n')
+            ->whereRaw("created_at >= date('now', '-6 months')")
+            ->value('n') ?? 0;
+
+        return $s->grid(['cols' => 4], [
+            Stat::make('Total Posts')
+                ->value($totalPosts)
+                ->description('All time')
+                ->icon('file-text')
+                ->color(Color::Primary)
+                ->toNode(),
+
+            Stat::make('Published')
+                ->value($published)
+                ->description('Live posts')
+                ->icon('globe')
+                ->color(Color::Success)
+                ->toNode(),
+
+            Stat::make('Drafts')
+                ->value($draft)
+                ->description('Unpublished')
+                ->icon('pencil')
+                ->color(Color::Warning)
+                ->toNode(),
+
+            Stat::make('Last 6 months')
+                ->value($recentTrend)
+                ->description('Posts created recently')
+                ->icon('clock')
+                ->color(Color::Info)
+                ->toNode(),
+        ]);
+    }
+
+    private function displayShowcase(S $s): Node
+    {
+        return $s->stack([
+            $s->displayDivider(),
+            $s->displayText('Display Blocks')->variant('heading'),
+            $s->displayText('A compact tour of every display primitive.')->variant('muted'),
+            $s->displayText('Body text renders at the default size.')->variant('body'),
+            $s->displayAlert('This is an informational notice.')
+                ->title('Info')
+                ->color(Color::Info),
+            $s->displayAlert('Post published successfully.')
+                ->title('Success')
+                ->color(Color::Success),
+            $s->displayAlert('Draft quota is almost full.')
+                ->title('Warning')
+                ->color(Color::Warning),
+            $s->displayDivider(),
+            $s->displayHtml('<p>Raw <strong>HTML</strong> block: embed <em>any markup</em> authored in the DSL.</p>'),
+        ]);
+    }
+
+    private function chartsGrid(S $s): Node
     {
         return $s->grid(['cols' => 2], [
             $s->chart('byInterval', 'bar', [

@@ -4,3 +4,7 @@ export { ChartCard } from "./ChartCard";
 export { renderLineChart } from "./ChartLine";
 export { renderDonutChart, renderPieChart } from "./ChartPie";
 export { CHART_COLORS } from "./chartColors";
+export { Sparkline } from "./Sparkline";
+export { StatBlock } from "./StatBlock";
+export type { StatDescriptor } from "./StatCard";
+export { StatCard } from "./StatCard";
