@@ -50,7 +50,11 @@
 								"properties": {
 									"columns": { "$ref": "#/$defs/columns" },
 									"pagination": { "$ref": "#/$defs/pagination" },
-									"rowClick": { "type": "string" }
+									"rowClick": { "type": "string" },
+									"tabs": {
+										"type": "array",
+										"items": { "$ref": "#/$defs/tableTab" }
+									}
 								}
 							}
 						}
@@ -119,12 +123,17 @@
 				"tabs": {
 					"type": "array",
 					"items": {
-						"type": "object",
-						"required": ["label", "body"],
-						"properties": {
-							"label": { "type": "string" },
-							"body": { "$ref": "#/$defs/node" }
-						}
+						"oneOf": [
+							{
+								"type": "object",
+								"required": ["label", "body"],
+								"properties": {
+									"label": { "type": "string" },
+									"body": { "$ref": "#/$defs/node" }
+								}
+							},
+							{ "$ref": "#/$defs/tableTab" }
+						]
 					}
 				},
 				"constraints": { "$ref": "#/$defs/constraints" },
@@ -203,6 +212,16 @@
 					"iconMap": { "type": "object" }
 				}
 			}
+		},
+		"tableTab": {
+			"type": "object",
+			"required": ["name", "label", "count"],
+			"properties": {
+				"name": { "type": "string", "minLength": 1 },
+				"label": { "type": "string" },
+				"count": { "type": "boolean" }
+			},
+			"additionalProperties": false
 		},
 		"pagination": {
 			"type": "object",

@@ -2,9 +2,12 @@
 
 namespace Tbtop\Admin\Http;
 
+use Closure;
 use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Dsl\TableBuilder;
 
 final class TableQuery
@@ -12,6 +15,7 @@ final class TableQuery
     /** @return array{data: mixed, total: int, page: int, perPage: int} */
     public static function run(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): array
     {
+        self::applyTab($table, $request, $builder);
         self::applySearch($table, $request, $builder);
         self::applyFilters($table, $request, $builder);
         self::applySort($table, $request, $builder);
@@ -32,6 +36,66 @@ final class TableQuery
             'page' => $page,
             'perPage' => $perPage,
         ];
+    }
+
+    /**
+     * Counts for count-enabled tabs, each computed on a fresh base builder
+     * with only that tab's scope applied — runtime filters/search never
+     * affect the badge numbers. Null when no declared tab opted in.
+     *
+     * @return array<string, int>|null
+     */
+    public static function tabCounts(TableBuilder $table, Closure $freshQuery): ?array
+    {
+        $countTabs = array_filter($table->tabObjects(), fn (Tab $t) => $t->hasCount());
+        if ($countTabs === []) {
+            return null;
+        }
+
+        $counts = [];
+        foreach ($countTabs as $tab) {
+            $builder = $freshQuery();
+            if (! $builder instanceof EloquentBuilder && ! $builder instanceof QueryBuilder) {
+                continue;
+            }
+            $scope = $tab->queryClosure();
+            if ($scope !== null) {
+                $scope($builder);
+            }
+            $counts[$tab->name] = $builder->count();
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Tab scope composes with (and applies before) filters/search/sort.
+     * No tab param → first declared tab. Unknown tab name → 422.
+     */
+    private static function applyTab(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
+    {
+        $tab = self::resolveTab($table, $request);
+        $scope = $tab?->queryClosure();
+        if ($scope !== null) {
+            $scope($builder);
+        }
+    }
+
+    private static function resolveTab(TableBuilder $table, Request $request): ?Tab
+    {
+        $requested = $request->query('tab');
+        if (! is_string($requested) || $requested === '') {
+            return $table->defaultTab();
+        }
+
+        $tab = $table->findTab($requested);
+        if ($tab === null) {
+            throw new UnprocessableEntityHttpException(
+                "Unknown tab \"{$requested}\" for table \"{$table->name}\"."
+            );
+        }
+
+        return $tab;
     }
 
     private static function applySearch(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void

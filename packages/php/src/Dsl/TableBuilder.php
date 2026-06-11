@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use Closure;
+use InvalidArgumentException;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Fields\Field;
 
@@ -29,6 +30,9 @@ final class TableBuilder implements JsonSerializable
 
     /** @var list<Field> */
     private array $filterFields = [];
+
+    /** @var list<Tab> */
+    private array $tabObjects = [];
 
     private ?string $filtersIn = null;
 
@@ -94,6 +98,51 @@ final class TableBuilder implements JsonSerializable
         }
 
         return $this;
+    }
+
+    /**
+     * Declare predefined filter tabs. Tab names must be unique per table;
+     * the first declared tab is the default when no tab param is sent.
+     *
+     * @param  list<Tab>  $tabs
+     */
+    public function tabs(array $tabs): self
+    {
+        $seen = [];
+        foreach ($tabs as $tab) {
+            if (isset($seen[$tab->name])) {
+                throw new InvalidArgumentException(
+                    "Duplicate tab name \"{$tab->name}\" on table \"{$this->name}\"."
+                );
+            }
+            $seen[$tab->name] = true;
+        }
+        $this->tabObjects = $tabs;
+
+        return $this;
+    }
+
+    /** @return list<Tab> */
+    public function tabObjects(): array
+    {
+        return $this->tabObjects;
+    }
+
+    public function findTab(string $name): ?Tab
+    {
+        foreach ($this->tabObjects as $tab) {
+            if ($tab->name === $name) {
+                return $tab;
+            }
+        }
+
+        return null;
+    }
+
+    /** First declared tab — the default when the request carries no tab param. */
+    public function defaultTab(): ?Tab
+    {
+        return $this->tabObjects[0] ?? null;
     }
 
     /** @param  'modal'|'inline'  $mode */
@@ -271,6 +320,10 @@ final class TableBuilder implements JsonSerializable
         if ($this->filterFields !== []) {
             $opts['filters'] = array_map(fn (Field $f) => $f->toNode(), $this->filterFields);
             $opts['filtersIn'] = $this->filtersIn ?? 'modal';
+        }
+        if ($this->tabObjects !== []) {
+            // Closures never serialize — only name/label/count go on the wire.
+            $opts['tabs'] = array_map(fn (Tab $t) => $t->toWire(), $this->tabObjects);
         }
 
         // Only serialize visible columns

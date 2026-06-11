@@ -385,6 +385,18 @@
                             "name": "bulk-delete"
                         }
                     ],
+                    "tabs": [
+                        {
+                            "name": "all",
+                            "label": "all",
+                            "count": false
+                        },
+                        {
+                            "name": "published",
+                            "label": "Published",
+                            "count": true
+                        }
+                    ],
                     "pagination": {
                         "perPage": 25,
                         "options": [
