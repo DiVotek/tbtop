@@ -8,8 +8,10 @@ uses(TestCase::class)->in('DslSerializationTest.php', 'RuleCollectionTest.php', 
 
 use Tbtop\Admin\Tests\ColumnProjectionHttpTestCase;
 use Tbtop\Admin\Tests\MediaHttpTestCase;
+use Tbtop\Admin\Tests\PageLayoutHttpTestCase;
 use Tbtop\Admin\Tests\RunsMigrationsTestCase;
 
 uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php');
 uses(MediaHttpTestCase::class)->in('MediaHttpTest.php');
+uses(PageLayoutHttpTestCase::class)->in('PageLayoutTest.php');
 uses(RunsMigrationsTestCase::class)->in('PackageMigrationsTest.php');

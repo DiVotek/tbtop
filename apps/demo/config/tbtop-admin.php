@@ -1,6 +1,7 @@
 <?php
 
 use App\Admin\Pages\DashboardPage;
+use App\Admin\Pages\LoginPreviewPage;
 use App\Admin\Pages\MediaEditPage;
 use App\Admin\Pages\MediaIndexPage;
 use App\Admin\Pages\MediaNewPage;
@@ -32,6 +33,7 @@ return [
         SettingsPage::class,
         PlaygroundPage::class,
         MediaLibraryPage::class,
+        LoginPreviewPage::class,
     ],
 
     // Admin UI locales. First entry is the default.

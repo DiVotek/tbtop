@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Toaster, toast } from "sonner";
 import { AdminLayout } from "../app/AdminLayout";
 import { AuthUserProvider } from "../app/authUser";
+import { CenterLayout } from "../app/CenterLayout";
 import { PageParamsProvider } from "../app/pageParams";
 import { ClientProvider } from "../data/client";
 import { setRoutesBase } from "../data/entityRoutes";
@@ -18,6 +19,7 @@ import { materialize } from "./materialize";
 interface AdminPageProps {
 	slug: string;
 	title: string;
+	layout?: "admin" | "center";
 	structure: StructureNode;
 	data: Record<string, Record<string, unknown>>;
 	breadcrumbs?: BreadcrumbItem[];
@@ -90,10 +92,18 @@ export function AdminPage() {
 	);
 }
 
-// Inertia persistent layout wraps the shell + i18n provider so both the
-// sidebar/header (AdminLayout) and page content share the same translation
-// context. I18nProvider reads updated props on every Inertia visit.
-AdminPage.layout = (page: ReactNode) => <AdminShell>{page}</AdminShell>;
+// Inertia persistent layout: dispatches to AdminShell or CenterShell based on
+// the 'layout' page prop. The Toaster is mounted inside AdminPage (page content)
+// so it is present regardless of which shell wraps the page.
+AdminPage.layout = (page: ReactNode) => <LayoutDispatcher>{page}</LayoutDispatcher>;
+
+function LayoutDispatcher({ children }: { children: ReactNode }) {
+	const { props } = usePage<AdminPageProps>();
+	if (props.layout === "center") {
+		return <CenterLayout>{children}</CenterLayout>;
+	}
+	return <AdminShell>{children}</AdminShell>;
+}
 
 function AdminShell({ children }: { children: ReactNode }) {
 	const { props } = usePage<AdminPageProps>();
