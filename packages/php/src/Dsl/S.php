@@ -128,19 +128,59 @@ final class S
     // -------------------------------------------------------------------------
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
-    public function stack(array $children, array $opts = []): LayoutBuilder
+    public function stack(array $children, array $opts = []): Node
     {
-        [$options, $meta] = Meta::split($opts);
-
-        return new LayoutBuilder('stack', $children, $options, $meta);
+        return self::layout('stack', $children, $opts);
     }
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
-    public function row(array $children, array $opts = []): LayoutBuilder
+    public function row(array $children, array $opts = []): Node
     {
-        [$options, $meta] = Meta::split($opts);
+        return self::layout('row', $children, $opts);
+    }
 
-        return new LayoutBuilder('row', $children, $options, $meta);
+    /**
+     * Flex layout node with explicit direction and optional alignment options.
+     *
+     * @param  list<mixed>  $children
+     * @param  'row'|'col'  $direction
+     * @param  'start'|'center'|'end'|'between'|'around'|'evenly'|null  $justify
+     * @param  'start'|'center'|'end'|'stretch'|'baseline'|null  $align
+     */
+    public function flex(
+        array $children,
+        string $direction = 'row',
+        ?string $justify = null,
+        ?string $align = null,
+        ?int $gap = null,
+        bool $wrap = false,
+    ): Node {
+        FlexValidator::direction($direction);
+        if ($justify !== null) {
+            FlexValidator::justify($justify);
+        }
+        if ($align !== null) {
+            FlexValidator::align($align);
+        }
+        if ($gap !== null) {
+            FlexValidator::gap($gap);
+        }
+
+        $opts = ['direction' => $direction, 'children' => $children];
+        if ($justify !== null) {
+            $opts['justify'] = $justify;
+        }
+        if ($align !== null) {
+            $opts['align'] = $align;
+        }
+        if ($gap !== null) {
+            $opts['gap'] = $gap;
+        }
+        if ($wrap) {
+            $opts['wrap'] = true;
+        }
+
+        return new Node('flex', $opts);
     }
 
     /** @param  array<string, mixed>  $opts @param  list<mixed>  $children */
@@ -210,10 +250,6 @@ final class S
                 && ! $child->isTranslatableField()
             ) {
                 return $child->translatable();
-            }
-            // LayoutBuilder wraps row/stack — materialise before recursing.
-            if ($child instanceof LayoutBuilder) {
-                $child = $child->toNode();
             }
             if ($child instanceof Node) {
                 $nested = $child->options['children'] ?? $child->options['fields'] ?? null;

@@ -550,41 +550,27 @@
                 "meta": {}
             },
             {
-                "kind": "row",
+                "kind": "flex",
                 "options": {
-                    "justify": "between",
-                    "align": "center",
-                    "gap": 4,
-                    "wrap": true,
+                    "direction": "row",
                     "children": [
                         {
                             "kind": "text",
                             "options": {},
                             "meta": {},
-                            "name": "first"
+                            "name": "flex_a"
                         },
                         {
                             "kind": "text",
                             "options": {},
                             "meta": {},
-                            "name": "second"
+                            "name": "flex_b"
                         }
-                    ]
-                },
-                "meta": {}
-            },
-            {
-                "kind": "stack",
-                "options": {
-                    "gap": 6,
-                    "children": [
-                        {
-                            "kind": "text",
-                            "options": {},
-                            "meta": {},
-                            "name": "stacked"
-                        }
-                    ]
+                    ],
+                    "justify": "between",
+                    "align": "center",
+                    "gap": 4,
+                    "wrap": true
                 },
                 "meta": {}
             }

@@ -108,6 +108,45 @@
 							}
 						}
 					}
+				},
+				{
+					"if": {
+						"properties": { "kind": { "const": "flex" } }
+					},
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["direction", "children"],
+								"properties": {
+									"direction": {
+										"type": "string",
+										"enum": ["row", "col"]
+									},
+									"justify": {
+										"type": "string",
+										"enum": [
+											"start",
+											"center",
+											"end",
+											"between",
+											"around",
+											"evenly"
+										]
+									},
+									"align": {
+										"type": "string",
+										"enum": ["start", "center", "end", "stretch", "baseline"]
+									},
+									"gap": {
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 12
+									},
+									"wrap": { "type": "boolean" }
+								}
+							}
+						}
+					}
 				}
 			]
 		},
@@ -148,21 +187,7 @@
 						"fields": { "type": "array", "items": { "$ref": "#/$defs/node" } }
 					},
 					"additionalProperties": false
-				},
-				"justify": {
-					"type": "string",
-					"enum": ["start", "center", "end", "between", "around", "evenly"]
-				},
-				"align": {
-					"type": "string",
-					"enum": ["start", "center", "end", "stretch", "baseline"]
-				},
-				"gap": {
-					"type": "integer",
-					"minimum": 0,
-					"maximum": 12
-				},
-				"wrap": { "type": "boolean" }
+				}
 			}
 		},
 		"columns": {

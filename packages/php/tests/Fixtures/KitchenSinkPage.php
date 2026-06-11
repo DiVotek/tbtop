@@ -4,7 +4,6 @@ namespace Tbtop\Admin\Tests\Fixtures;
 
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Cond;
-use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Tab;
@@ -21,7 +20,7 @@ class KitchenSinkPage extends Page
         return 'kitchen-sink';
     }
 
-    public function view(S $s): Node|LayoutBuilder
+    public function view(S $s): Node
     {
         return $s->stack([
             $s->displayText('Kitchen sink')->variant('heading'),
@@ -112,12 +111,7 @@ class KitchenSinkPage extends Page
                 $s->action('archive')->label('Archive')
                     ->handle(fn () => Effects::make(), needs: ['row']),
             ]),
-            $s->row([$s->text('first'), $s->text('second')])
-                ->justify('between')
-                ->align('center')
-                ->gap(4)
-                ->wrap(),
-            $s->stack([$s->text('stacked')])->gap(6),
+            $s->flex([$s->text('flex_a'), $s->text('flex_b')], direction: 'row', justify: 'between', align: 'center', gap: 4, wrap: true),
         ]);
     }
 }

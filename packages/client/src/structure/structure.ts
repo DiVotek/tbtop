@@ -71,17 +71,19 @@ import type {
 
 type Builder = (...args: unknown[]) => unknown;
 
-/** Flex options accepted by row and stack layout nodes. */
+/** Options for the standalone flex layout node (kind: "flex"). */
 export type FlexOpts = {
-	gap?: number;
+	direction: "row" | "col";
 	justify?: "start" | "center" | "end" | "between" | "around" | "evenly";
 	align?: "start" | "center" | "end" | "stretch" | "baseline";
+	gap?: number;
 	wrap?: boolean;
 };
 
 const builtins: Record<string, Builder> = {
 	stack: layoutChildrenFirst("stack") as Builder,
 	row: layoutChildrenFirst("row") as Builder,
+	flex: layoutChildrenFirst("flex") as Builder,
 	grid: layoutOptsFirst("grid") as Builder,
 	section: layoutOptsFirst("section") as Builder,
 	collapsible: buildCollapsible as Builder,
@@ -114,8 +116,9 @@ const builtins: Record<string, Builder> = {
 type FieldInputFor<TForm, TExtra> = NodeMeta & TExtra & { name: FieldName<TForm> };
 
 export interface StructureBuilders<TForm = unknown> {
-	stack: (children: StructureNode[], opts?: NodeMeta & FlexOpts) => StructureNode;
-	row: (children: StructureNode[], opts?: NodeMeta & FlexOpts) => StructureNode;
+	stack: (children: StructureNode[], opts?: NodeMeta & { gap?: number }) => StructureNode;
+	row: (children: StructureNode[], opts?: NodeMeta & { gap?: number }) => StructureNode;
+	flex: (children: StructureNode[], opts?: NodeMeta & FlexOpts) => StructureNode;
 	grid: (opts: NodeMeta & { cols: number }, children: StructureNode[]) => StructureNode;
 	section: (opts: NodeMeta & { title?: string }, children: StructureNode[]) => StructureNode;
 	tabs: (tabs: TabItem[], opts?: NodeMeta) => StructureNode;
