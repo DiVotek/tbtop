@@ -11,8 +11,10 @@ use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Pages\Page;
 
 class PostsIndexPage extends Page
@@ -32,7 +34,7 @@ class PostsIndexPage extends Page
         return 'Posts';
     }
 
-    public function view(S $s): Node
+    public function view(S $s): Node|LayoutBuilder
     {
         return $s->stack([
             $s->actionsRow([
@@ -94,6 +96,14 @@ class PostsIndexPage extends Page
                         ),
                 ])
                 ->filtersIn('modal')
+                ->tabs([
+                    Tab::make('all')->label('All'),
+                    Tab::make('published')->label('Published')
+                        ->query(fn ($q) => $q->where('published', true)),
+                    Tab::make('draft')->label('Draft')
+                        ->query(fn ($q) => $q->where('published', false))
+                        ->count(),
+                ])
                 ->defaultSort('created_at', 'desc')
                 ->paginate(25, [10, 25, 50, 100])
                 ->query(fn () => Post::query())
