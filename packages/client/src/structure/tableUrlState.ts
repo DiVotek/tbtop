@@ -14,6 +14,7 @@
  * Empty / default values are omitted: `t[posts][search]=` does not appear.
  */
 
+import { readFilters, writeFilterValue, writeScalar } from "./tableUrlStateHelpers";
 import type { ListQueryParams } from "./types";
 
 // Prefix used to namespace table state in the URL.
@@ -33,17 +34,22 @@ export function writeTableParams(
 ): URLSearchParams {
 	const next = new URLSearchParams(searchParams);
 	clearTableKeys(next, name);
-	writeScalar(next, name, "search", params.search);
-	writeScalar(next, name, "sort", params.sort);
-	writeScalar(next, name, "page", params.page !== undefined ? String(params.page) : undefined);
-	writeScalar(
-		next,
+	writeScalar({ params: next, name, key: "search", value: params.search });
+	writeScalar({ params: next, name, key: "sort", value: params.sort });
+	writeScalar({
+		params: next,
 		name,
-		"perPage",
-		params.perPage !== undefined ? String(params.perPage) : undefined,
-	);
+		key: "page",
+		value: params.page !== undefined ? String(params.page) : undefined,
+	});
+	writeScalar({
+		params: next,
+		name,
+		key: "perPage",
+		value: params.perPage !== undefined ? String(params.perPage) : undefined,
+	});
 	for (const [field, value] of Object.entries(params.filters ?? {})) {
-		writeFilterValue(next, name, field, value);
+		writeFilterValue({ params: next, name, field, value });
 	}
 	return next;
 }
@@ -132,103 +138,4 @@ function clearTableKeys(params: URLSearchParams, name: string): void {
 	for (const key of toDelete) {
 		params.delete(key);
 	}
-}
-
-function writeScalar(
-	params: URLSearchParams,
-	name: string,
-	key: string,
-	value: string | undefined,
-): void {
-	if (!value) {
-		return;
-	}
-	params.set(`${URL_NS}[${name}][${key}]`, value);
-}
-
-function writeFilterValue(
-	params: URLSearchParams,
-	name: string,
-	field: string,
-	value: unknown,
-): void {
-	const filterPrefix = `${URL_NS}[${name}][${field}]`;
-	if (value === null || value === undefined || value === "") {
-		return;
-	}
-	if (Array.isArray(value)) {
-		// tags / multi-select: t[name][field][0]=a&t[name][field][1]=b
-		value.forEach((v, i) => {
-			if (v !== null && v !== undefined && v !== "") {
-				params.set(`${filterPrefix}[${i}]`, String(v));
-			}
-		});
-		return;
-	}
-	if (typeof value === "object") {
-		// daterange: t[name][field][from]=...&t[name][field][to]=...
-		const obj = value as Record<string, unknown>;
-		for (const [k, v] of Object.entries(obj)) {
-			if (v !== null && v !== undefined && v !== "") {
-				params.set(`${filterPrefix}[${k}]`, String(v));
-			}
-		}
-		return;
-	}
-	params.set(filterPrefix, String(value));
-}
-
-function readFilters(
-	params: URLSearchParams,
-	name: string,
-	prefix: string,
-): Record<string, unknown> {
-	const filters: Record<string, unknown> = {};
-	const reserved = new Set(["search", "sort", "page", "perPage"]);
-
-	// Matches keys of the form: t[name][field] or t[name][field][sub]
-	// prefix = "t[name]", so we look for prefix + "[field]" + optional "[sub]"
-	const scalarRe = new RegExp(`^${escapeRegex(prefix)}\\[([^\\]]+)\\]$`);
-	const nestedRe = new RegExp(`^${escapeRegex(prefix)}\\[([^\\]]+)\\]\\[([^\\]]+)\\]$`);
-
-	for (const [key, value] of params.entries()) {
-		if (!key.startsWith(prefix)) {
-			continue;
-		}
-		const nested = nestedRe.exec(key);
-		if (nested) {
-			const [, field, sub] = nested;
-			if (!field || !sub) {
-				continue;
-			}
-			const idx = Number(sub);
-			if (Number.isFinite(idx) && String(idx) === sub) {
-				// Array element: t[name][field][0]
-				const arr = (filters[field] as unknown[] | undefined) ?? [];
-				arr[idx] = value;
-				filters[field] = arr;
-			} else {
-				// Object member: t[name][field][from]
-				const obj = (filters[field] as Record<string, unknown> | undefined) ?? {};
-				obj[sub] = value;
-				filters[field] = obj;
-			}
-			continue;
-		}
-		const scalar = scalarRe.exec(key);
-		if (scalar) {
-			const [, field] = scalar;
-			if (!field || reserved.has(field)) {
-				continue;
-			}
-			if (value) {
-				filters[field] = value;
-			}
-		}
-	}
-	return filters;
-}
-
-function escapeRegex(s: string): string {
-	return s.replaceAll(/[[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }

@@ -51,6 +51,10 @@ function checkField(value: unknown, c: FieldConstraints): string | null {
 }
 
 function checkPresent(value: unknown, c: FieldConstraints): string | null {
+	return checkSize(value, c) ?? checkFormat(value, c);
+}
+
+function checkSize(value: unknown, c: FieldConstraints): string | null {
 	const size = typeof value === "number" ? value : String(value).length;
 	if (c.min !== undefined && size < c.min) {
 		return `Must be at least ${c.min}`;
@@ -58,16 +62,21 @@ function checkPresent(value: unknown, c: FieldConstraints): string | null {
 	if (c.max !== undefined && size > c.max) {
 		return `Must be at most ${c.max}`;
 	}
+	return null;
+}
+
+function checkFormat(value: unknown, c: FieldConstraints): string | null {
+	const str = String(value);
 	if (c.integer && !Number.isInteger(Number(value))) {
 		return "Must be an integer";
 	}
-	if (c.email && !EMAIL_RE.test(String(value))) {
+	if (c.email && !EMAIL_RE.test(str)) {
 		return "Invalid email";
 	}
-	if (c.regex && !new RegExp(c.regex).test(String(value))) {
+	if (c.regex && !new RegExp(c.regex).test(str)) {
 		return "Invalid format";
 	}
-	if (c.in && !c.in.includes(String(value))) {
+	if (c.in && !c.in.includes(str)) {
 		return "Invalid choice";
 	}
 	return null;

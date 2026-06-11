@@ -2,7 +2,6 @@ import { router } from "@inertiajs/react";
 import { MonitorIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslation } from "../i18n/i18n";
-import { Button } from "../ui/button";
 
 type Theme = "light" | "dark" | "system";
 

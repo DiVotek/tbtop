@@ -378,7 +378,7 @@ describe("useMediaItems: folder navigation", () => {
 		// Test the hook behavior by rendering MediaGrid with state driven externally
 		// and verifying that onChangeParams carries the new folder id.
 		const changes: Array<Record<string, unknown>> = [];
-		const user = userEvent.setup({ delay: null });
+		const _user = userEvent.setup({ delay: null });
 		const Wrap = wrap(handler);
 		const params = { folder: null, search: "", page: 1, perPage: 24 };
 

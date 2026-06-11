@@ -9,7 +9,7 @@
  *  2. Server-side 422 (fieldErrors)
  *  3. Translatable field with error in inactive locale — active locale tab switches
  */
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { renderNode } from "../render/structureRenderer";
 import { type ContentLocaleConfig, ContentLocaleConfigProvider } from "./contentLocaleContext";

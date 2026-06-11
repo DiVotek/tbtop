@@ -24,8 +24,14 @@ import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 function makeCapturingFetch() {
 	const captured: string[] = [];
 	const impl = (input: RequestInfo | URL): Promise<Response> => {
-		const url =
-			typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+		let url: string;
+		if (typeof input === "string") {
+			url = input;
+		} else if (input instanceof URL) {
+			url = input.toString();
+		} else {
+			url = input.url;
+		}
 		captured.push(url);
 		return Promise.resolve(
 			new Response(JSON.stringify({ data: [], total: 0, page: 1, perPage: 24 }), {

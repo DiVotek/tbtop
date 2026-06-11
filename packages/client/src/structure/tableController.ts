@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ListQueryParams, TableController } from "./types";
 
+function toggleId(prev: string[], id: string): string[] {
+	return prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
+}
+
 interface UseTableControllerInput {
 	rows: unknown[];
 	/** Total record count from paginated response; undefined for non-paginated. */
@@ -36,19 +40,14 @@ export function useTableController(input: UseTableControllerInput): TableControl
 		[onChangeParams],
 	);
 
-	const toggleSelection = useCallback((id: string) => {
-		setSelectedIds((prev) =>
-			prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
-		);
-	}, []);
+	const toggleSelection = useCallback(
+		(id: string) => setSelectedIds((prev) => toggleId(prev, id)),
+		[],
+	);
 
-	const selectAll = useCallback((ids: string[]) => {
-		setSelectedIds(ids);
-	}, []);
+	const selectAll = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
-	const clearSelection = useCallback(() => {
-		setSelectedIds([]);
-	}, []);
+	const clearSelection = useCallback(() => setSelectedIds([]), []);
 
 	return useMemo<TableControllerInternal>(
 		() => ({

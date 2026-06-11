@@ -23,16 +23,32 @@ export function executeEffects(effects: ServerEffect[], ctx: EffectContext): voi
 }
 
 function applyEffect(effect: ServerEffect, ctx: EffectContext): void {
-	if (effect.kind === "notify") {
-		ctx.notify({ kind: effect.level ?? "success", message: effect.message ?? "" });
-	} else if (effect.kind === "redirect" && effect.href) {
+	switch (effect.kind) {
+		case "notify":
+			applyNotify(effect, ctx);
+			break;
+		case "redirect":
+			applyRedirect(effect);
+			break;
+		case "refreshTable":
+			refreshTable(ctx);
+			break;
+		case "resetForm":
+			ctx.form?.reset();
+			break;
+		case "closeModal":
+			ctx.modal?.close();
+			break;
+	}
+}
+
+function applyNotify(effect: ServerEffect, ctx: EffectContext): void {
+	ctx.notify({ kind: effect.level ?? "success", message: effect.message ?? "" });
+}
+
+function applyRedirect(effect: ServerEffect): void {
+	if (effect.href) {
 		router.visit(effect.href);
-	} else if (effect.kind === "refreshTable") {
-		refreshTable(ctx);
-	} else if (effect.kind === "resetForm") {
-		ctx.form?.reset();
-	} else if (effect.kind === "closeModal") {
-		ctx.modal?.close();
 	}
 }
 

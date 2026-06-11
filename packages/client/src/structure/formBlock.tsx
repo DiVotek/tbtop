@@ -250,7 +250,14 @@ function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
 		name?: string;
 		translatable?: boolean;
 	};
-	const renderInner = makeInnerRenderer(descriptor, node, innerOptions, locales, ctrl, disabled);
+	const renderInner = makeInnerRenderer({
+		descriptor,
+		node,
+		options: innerOptions,
+		locales,
+		ctrl,
+		disabled,
+	});
 	const value = normalizeTranslatableValue(ctrl.data[name], locales);
 	return (
 		<TranslatableWrapper
@@ -268,20 +275,29 @@ function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
 	);
 }
 
+type MakeInnerRendererInput = {
+	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>;
+	node: StructureNode;
+	options: Bag;
+	locales: string[];
+	ctrl: ControllerHandle;
+	disabled: boolean;
+};
+
 /**
  * Builds a render FUNCTION (invoked, never mounted) that delegates to the
  * descriptor's field component. Must not return a component type: a fresh
  * component identity per render makes React remount the input on every
  * keystroke, dropping focus. Caller strips name/translatable from options.
  */
-function makeInnerRenderer(
-	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>,
-	node: StructureNode,
-	options: Bag,
-	locales: string[],
-	ctrl: ControllerHandle,
-	disabled: boolean,
-): (props: FieldFormProps<unknown>) => ReactNode {
+function makeInnerRenderer({
+	descriptor,
+	node,
+	options,
+	locales,
+	ctrl,
+	disabled,
+}: MakeInnerRendererInput): (props: FieldFormProps<unknown>) => ReactNode {
 	return (props: FieldFormProps<unknown>) =>
 		renderDescriptor(descriptor, {
 			kind: node.kind,

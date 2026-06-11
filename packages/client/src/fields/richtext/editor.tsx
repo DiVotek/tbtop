@@ -47,7 +47,7 @@ function resolveInitialEditorState(
 	// Plain string: wrap as a single paragraph node so the editor shows the
 	// text instead of crashing on legacy data.
 	if (typeof value === "string") {
-		const escaped = value.replaceAll(/\\/g, "\\\\").replaceAll(/"/g, '\\"');
+		const escaped = value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 		return JSON.stringify({
 			root: {
 				children: [
@@ -127,7 +127,7 @@ export function RichtextEditor({
 				console.error("Lexical error:", error);
 			},
 		}),
-		[],
+		[disabled],
 	);
 
 	return (

@@ -236,14 +236,18 @@ function interpolateTemplate(
 	for (const key of placeholders) {
 		const val = row[key];
 		if (val === undefined || val === null) {
-			if (process.env.NODE_ENV !== "production") {
-				console.warn(
-					`[tbtop] action "${actionName}": visit template "${href}" — key "${key}" not found in row — action hidden.`,
-				);
-			}
+			warnMissingKey(actionName, href, key);
 			return null;
 		}
 		result = result.replace(`{${key}}`, String(val));
 	}
 	return result;
+}
+
+function warnMissingKey(actionName: string, href: string, key: string): void {
+	if (process.env.NODE_ENV !== "production") {
+		console.warn(
+			`[tbtop] action "${actionName}": visit template "${href}" — key "${key}" not found in row — action hidden.`,
+		);
+	}
 }

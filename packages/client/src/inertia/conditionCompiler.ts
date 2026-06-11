@@ -48,29 +48,72 @@ export function compileCondition(ast: ConditionAst): ConditionFn {
 // ---------------------------------------------------------------------------
 
 function evaluate(ast: ConditionAst, ctx: ConditionContext): boolean {
+	if (isFieldCond(ast)) {
+		return evalFieldOp(ast, ctx);
+	}
+	return evalCompositeOp(ast, ctx);
+}
+
+const FIELD_OPS = new Set<string>([
+	"eq",
+	"neq",
+	"in",
+	"notIn",
+	"empty",
+	"notEmpty",
+	"truthy",
+	"gt",
+	"gte",
+	"lt",
+	"lte",
+]);
+
+function isFieldCond(ast: ConditionAst): ast is FieldCond {
+	return FIELD_OPS.has(ast.op);
+}
+
+function evalFieldOp(ast: FieldCond, ctx: ConditionContext): boolean {
+	const val = resolve(ctx, ast.field);
 	switch (ast.op) {
 		case "eq":
-			return evalEq(resolve(ctx, ast.field), ast.value);
+			return evalEq(val, ast.value);
 		case "neq":
-			return !evalEq(resolve(ctx, ast.field), ast.value);
+			return !evalEq(val, ast.value);
 		case "in":
-			return evalIn(resolve(ctx, ast.field), ast.value as unknown[]);
+			return evalIn(val, ast.value as unknown[]);
 		case "notIn":
-			return !evalIn(resolve(ctx, ast.field), ast.value as unknown[]);
+			return !evalIn(val, ast.value as unknown[]);
 		case "empty":
-			return evalEmpty(resolve(ctx, ast.field));
+			return evalEmpty(val);
 		case "notEmpty":
-			return !evalEmpty(resolve(ctx, ast.field));
+			return !evalEmpty(val);
 		case "truthy":
-			return Boolean(resolve(ctx, ast.field));
+			return Boolean(val);
+		default:
+			return evalNumericOp(ast, val);
+	}
+}
+
+function evalNumericOp(ast: FieldCond, val: unknown): boolean {
+	switch (ast.op) {
 		case "gt":
-			return evalNumeric(resolve(ctx, ast.field), ast.value, (a, b) => a > b);
+			return evalNumeric(val, ast.value, (a, b) => a > b);
 		case "gte":
-			return evalNumeric(resolve(ctx, ast.field), ast.value, (a, b) => a >= b);
+			return evalNumeric(val, ast.value, (a, b) => a >= b);
 		case "lt":
-			return evalNumeric(resolve(ctx, ast.field), ast.value, (a, b) => a < b);
+			return evalNumeric(val, ast.value, (a, b) => a < b);
 		case "lte":
-			return evalNumeric(resolve(ctx, ast.field), ast.value, (a, b) => a <= b);
+			return evalNumeric(val, ast.value, (a, b) => a <= b);
+		default:
+			return false;
+	}
+}
+
+function evalCompositeOp(
+	ast: AllCond | AnyCond | NotCond | ServerCond,
+	ctx: ConditionContext,
+): boolean {
+	switch (ast.op) {
 		case "all":
 			return (ast as AllCond).conds.every((c) => evaluate(c, ctx));
 		case "any":

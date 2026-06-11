@@ -46,7 +46,6 @@ describe("ActionGroup block", () => {
 	});
 
 	test("ActionGroup: visit action inside group dispatches navigation on click", async () => {
-		const visited: string[] = [];
 		const node = s.actionGroup("Publish actions", [
 			s.action({
 				name: "go-live",

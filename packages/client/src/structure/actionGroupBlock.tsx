@@ -26,28 +26,22 @@ export function ActionGroupBlock({
 
 	if (asMode === "dropdown") {
 		return (
-			<ActionGroupDropdown
-				label={options.label}
-				children={children}
-				renderChild={renderChild}
-			/>
+			<ActionGroupDropdown label={options.label} nodes={children} renderChild={renderChild} />
 		);
 	}
 
-	return (
-		<ActionGroupButtons label={options.label} children={children} renderChild={renderChild} />
-	);
+	return <ActionGroupButtons label={options.label} nodes={children} renderChild={renderChild} />;
 }
 
 // ─── Dropdown mode (Radix) ────────────────────────────────────────────────────
 
 interface GroupProps {
 	label: string;
-	children: StructureNode[] | undefined;
+	nodes: StructureNode[] | undefined;
 	renderChild: (node: StructureNode) => React.ReactNode;
 }
 
-function ActionGroupDropdown({ label, children, renderChild }: GroupProps) {
+function ActionGroupDropdown({ label, nodes, renderChild }: GroupProps) {
 	const row = useNearestRow();
 
 	// Inside a table row: icon-only trigger (MoreHorizontal); outside: label + chevron.
@@ -72,7 +66,7 @@ function ActionGroupDropdown({ label, children, renderChild }: GroupProps) {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" data-testid="action-group-menu">
-				{children?.map((child, i) => (
+				{nodes?.map((child, i) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: structure nodes are positional
 					<DropdownMenuItem key={i} asChild>
 						<div className="w-full">{renderChild(child)}</div>
@@ -85,7 +79,7 @@ function ActionGroupDropdown({ label, children, renderChild }: GroupProps) {
 
 // ─── Buttons mode (default, backward-compat) ─────────────────────────────────
 
-function ActionGroupButtons({ label, children, renderChild }: GroupProps) {
+function ActionGroupButtons({ label, nodes, renderChild }: GroupProps) {
 	const [open, setOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +100,7 @@ function ActionGroupButtons({ label, children, renderChild }: GroupProps) {
 					data-testid="action-group-menu"
 					onPointerDown={(e) => e.stopPropagation()}
 				>
-					{renderMenuItems(children, renderChild, () => setOpen(false))}
+					{renderMenuItems(nodes, renderChild, () => setOpen(false))}
 				</div>
 			)}
 		</div>
@@ -114,14 +108,14 @@ function ActionGroupButtons({ label, children, renderChild }: GroupProps) {
 }
 
 function renderMenuItems(
-	children: StructureNode[] | undefined,
+	nodes: StructureNode[] | undefined,
 	renderChild: (node: StructureNode) => React.ReactNode,
 	_close: () => void,
 ): React.ReactNode {
-	if (!children) {
+	if (!nodes) {
 		return null;
 	}
-	return children.map((child, i) => (
+	return nodes.map((child, i) => (
 		// biome-ignore lint/suspicious/noArrayIndexKey: structure nodes are positional
 		<div key={i} className="px-1 py-0.5">
 			{renderChild(child)}

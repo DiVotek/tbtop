@@ -12,7 +12,7 @@ import { ReloadOverlay } from "../../ui/spinner";
 import { ActionBlock } from "../actionBlock";
 import { useClientActionContext } from "../actionContext";
 import { RowProvider } from "../rowContext";
-import type { ActionConfig, ListQueryParams, TableColumn } from "../types";
+import type { ActionConfig, TableColumn } from "../types";
 import { BadgeCell, BooleanIconCell, IconMapCell } from "./cellHelpers";
 import { resolveIcon } from "./iconRegistry";
 
@@ -30,7 +30,7 @@ interface TableGridProps {
 	hasRowActions: boolean;
 	/** Currently applied sort, e.g. "title:asc" */
 	sort?: string;
-	onSort: (col: string, dir: "asc" | "desc" | undefined) => void;
+	onSort: (col: string, dir?: "asc" | "desc") => void;
 	isReloading?: boolean;
 	hasActiveFilters: boolean;
 	onResetFilters: () => void;
@@ -130,7 +130,17 @@ export function TableGrid(props: TableGridProps) {
 interface SortableHeaderProps {
 	col: TableColumn;
 	sort?: string;
-	onSort: (col: string, dir: "asc" | "desc" | undefined) => void;
+	onSort: (col: string, dir?: "asc" | "desc") => void;
+}
+
+function headerAlignClass(align: TableColumn["align"]): string {
+	if (align === "center") {
+		return "text-center";
+	}
+	if (align === "right") {
+		return "text-right";
+	}
+	return "text-left";
 }
 
 function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
@@ -138,8 +148,7 @@ function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 	const isActive = currentCol === col.name;
 	const dir = isActive ? (currentDir as "asc" | "desc") : undefined;
 
-	const alignClass =
-		col.align === "center" ? "text-center" : col.align === "right" ? "text-right" : "text-left";
+	const alignClass = headerAlignClass(col.align);
 	const widthStyle = col.width ? { width: col.width } : undefined;
 
 	const HeadingIcon = col.icon ? resolveIcon(col.icon.name) : undefined;
@@ -153,17 +162,21 @@ function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 		} else if (dir === "asc") {
 			onSort(col.name, "desc");
 		} else {
-			onSort(col.name, undefined);
+			onSort(col.name);
 		}
 	}
 
-	const ariaSort: "ascending" | "descending" | "none" | undefined = isActive
-		? dir === "asc"
-			? "ascending"
-			: "descending"
-		: col.sortable
-			? "none"
-			: undefined;
+	function resolveAriaSort(): "ascending" | "descending" | "none" | undefined {
+		if (isActive) {
+			return dir === "asc" ? "ascending" : "descending";
+		}
+		if (col.sortable) {
+			return "none";
+		}
+		return undefined;
+	}
+
+	const ariaSort = resolveAriaSort();
 
 	return (
 		<th
@@ -236,6 +249,16 @@ function EmptyState({
 }
 
 // ─── TableRow ─────────────────────────────────────────────────────────────────
+
+function rowColAlignClass(align: TableColumn["align"]): string {
+	if (align === "center") {
+		return "text-center";
+	}
+	if (align === "right") {
+		return "text-right";
+	}
+	return "";
+}
 
 // Selector for interactive elements that should NOT trigger rowClick.
 const INTERACTIVE_SELECTOR = "a, button, input, label, [role='checkbox'], [role='menuitem']";
@@ -343,12 +366,7 @@ function TableRow(props: TableRowProps) {
 					</td>
 				)}
 				{props.columns.map((col) => {
-					const alignClass =
-						col.align === "center"
-							? "text-center"
-							: col.align === "right"
-								? "text-right"
-								: "";
+					const alignClass = rowColAlignClass(col.align);
 					const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
 					return (
 						<td

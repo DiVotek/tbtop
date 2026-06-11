@@ -28,12 +28,20 @@ export function createAdminClient(options: CreateAdminClientOptions = {}): Admin
 	const base = trimTrailingSlash(options.baseUrl ?? "");
 	const impl = options.fetch ?? defaultFetch;
 	return {
-		get: (path, query) => request(impl, base, "GET", withQuery(path, query)),
-		post: (path, body) => request(impl, base, "POST", path, { json: body }),
-		patch: (path, body) => request(impl, base, "PATCH", path, { json: body }),
-		delete: (path) => request(impl, base, "DELETE", path),
+		get: (path, query) => request({ impl, base, method: "GET", path: withQuery(path, query) }),
+		post: (path, body) =>
+			request({ impl, base, method: "POST", path, payload: { json: body } }),
+		patch: (path, body) =>
+			request({ impl, base, method: "PATCH", path, payload: { json: body } }),
+		delete: (path) => request({ impl, base, method: "DELETE", path }),
 		upload: (path, formData, opts) =>
-			request(impl, base, "POST", path, { formData, signal: opts?.signal }),
+			request({
+				impl,
+				base,
+				method: "POST",
+				path,
+				payload: { formData, signal: opts?.signal },
+			}),
 	};
 }
 
@@ -90,13 +98,15 @@ interface RequestPayload {
 	signal?: AbortSignal;
 }
 
-async function request(
-	impl: typeof fetch,
-	base: string,
-	method: string,
-	path: string,
-	payload: RequestPayload = {},
-): Promise<unknown> {
+interface RequestInput {
+	impl: typeof fetch;
+	base: string;
+	method: string;
+	path: string;
+	payload?: RequestPayload;
+}
+
+async function request({ impl, base, method, path, payload = {} }: RequestInput): Promise<unknown> {
 	const res = await impl(`${base}${path}`, {
 		method,
 		headers: buildHeaders(payload),

@@ -1,0 +1,72 @@
+import type { QueryParams } from "../data/client";
+import type { ClientActionContext, StructureNode } from "../structure/types";
+import type { FieldConstraints } from "./constraints";
+
+type Bag = Record<string, unknown>;
+
+// ---------------------------------------------------------------------------
+// Constraint collection
+// ---------------------------------------------------------------------------
+
+export function collectConstraints(
+	node: StructureNode,
+	acc: Record<string, FieldConstraints>,
+): Record<string, FieldConstraints> {
+	const opts = node.options as Bag;
+	if (node.name && opts.constraints && node.kind !== "form") {
+		acc[node.name] = opts.constraints as FieldConstraints;
+	}
+	for (const child of childNodes(opts)) {
+		collectConstraints(child, acc);
+	}
+	return acc;
+}
+
+export function childNodes(opts: Bag): StructureNode[] {
+	const children = Array.isArray(opts.children) ? opts.children : [];
+	return children as StructureNode[];
+}
+
+// ---------------------------------------------------------------------------
+// Table query param encoding
+// ---------------------------------------------------------------------------
+
+export function tableQueryParams(ctx: ClientActionContext): QueryParams {
+	const params = ctx.table?.queryParams ?? {};
+	const [sort, dir] = (params.sort ?? "").split(":");
+	const query: QueryParams = {
+		page: params.page,
+		perPage: params.perPage,
+		sort: sort || undefined,
+		dir: dir || undefined,
+		search: params.search || undefined,
+	};
+	for (const [field, value] of Object.entries(params.filters ?? {})) {
+		const encoded = encodeFilterValue(field, value);
+		for (const [k, v] of Object.entries(encoded)) {
+			query[k] = v as QueryParams[string];
+		}
+	}
+	return query;
+}
+
+export function encodeFilterValue(field: string, value: unknown): Record<string, unknown> {
+	if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+		// daterange: filters[field][from] / filters[field][to]
+		const obj = value as Record<string, unknown>;
+		const result: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(obj)) {
+			result[`filters[${field}][${k}]`] = v;
+		}
+		return result;
+	}
+	if (Array.isArray(value)) {
+		// tags: repeated params filters[field][]=v
+		const result: Record<string, unknown> = {};
+		value.forEach((v, i) => {
+			result[`filters[${field}][${i}]`] = v;
+		});
+		return result;
+	}
+	return { [`filters[${field}]`]: value };
+}

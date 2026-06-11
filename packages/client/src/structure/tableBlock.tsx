@@ -212,26 +212,28 @@ function TableBody(props: TableBodyProps) {
 
 	const hasActiveFilters = activeFilterCount > 0 || Boolean(props.queryParams.search);
 
+	const { onChangeParams } = props;
+
 	const handleResetFilters = useCallback(() => {
 		setFilterValues({});
-		props.onChangeParams({ filters: {}, search: undefined, page: 1 });
-	}, [props.onChangeParams]);
+		onChangeParams({ filters: {}, search: undefined, page: 1 });
+	}, [onChangeParams]);
 
 	const handleSort = useCallback(
 		(col: string, dir: "asc" | "desc" | undefined) => {
-			props.onChangeParams({
+			onChangeParams({
 				sort: dir ? `${col}:${dir}` : undefined,
 				page: 1,
 			});
 		},
-		[props.onChangeParams],
+		[onChangeParams],
 	);
 
 	const visibleCols = props.columns.filter((c) => visibleColumns.has(c.name));
 
-	// Resolve pagination: only show footer when server sends pagination config
-	// AND we have a total count from the response.
-	const showPagination = props.pagination !== undefined && props.total !== undefined;
+	// Footer shows only when server sends pagination config and a total.
+	const { total, pagination } = props;
+	const showPagination = pagination !== undefined && total !== undefined;
 
 	return (
 		<TableControllerProvider value={ctrl}>
@@ -277,9 +279,9 @@ function TableBody(props: TableBodyProps) {
 
 				{showPagination && (
 					<TablePagination
-						total={props.total!}
+						total={total}
 						queryParams={props.queryParams}
-						paginationOptions={props.pagination!}
+						paginationOptions={pagination}
 						onChangeParams={props.onChangeParams}
 					/>
 				)}

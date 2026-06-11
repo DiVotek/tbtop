@@ -1,7 +1,6 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType } from "react";
 import {
 	buildActionGroup,
-	buildAside,
 	buildChart,
 	buildCollapsible,
 	buildTab,
@@ -17,8 +16,52 @@ import {
 import { makeBuildAction, makeBuildActions } from "./builders.actions";
 import type { ChartBlockOptions, ChartPoint } from "./chartBlock";
 import type {
+	ColorpickerOpts,
+	DateOpts,
+	DatetimeOpts,
+	FieldName,
+	KeyvalueOpts,
+	NumberOpts,
+	PasswordOpts,
+	RadioOpts,
+	RepeaterOpts,
+	SelectOpts,
+	SlugOpts,
+	TagsOpts,
+	TextareaOpts,
+	TextOpts,
+	UploadOpts,
+} from "./structureFieldOpts";
+
+export type {
+	AsyncChoiceMulti,
+	AsyncChoiceShared,
+	AsyncChoiceSingle,
+	ChoiceOption,
+	ColorpickerOpts,
+	DateOpts,
+	DatetimeOpts,
+	KeyvalueOpts,
+	NumberOpts,
+	PasswordOpts,
+	RadioOpts,
+	RepeaterOpts,
+	SelectAsyncMultiOpts,
+	SelectAsyncSingleOpts,
+	SelectOpts,
+	SelectStaticMultiOpts,
+	SelectStaticSingleOpts,
+	SlugOpts,
+	TagsAsyncOpts,
+	TagsClosedOrOpenOpts,
+	TagsOpts,
+	TextareaOpts,
+	TextOpts,
+	UploadOpts,
+} from "./structureFieldOpts";
+
+import type {
 	ActionConfig,
-	ClientActionContext,
 	FormOptions,
 	NodeMeta,
 	StructureNode,
@@ -60,155 +103,7 @@ const builtins: Record<string, Builder> = {
 	widget: buildWidget as Builder,
 };
 
-type FieldName<TForm> = TForm extends object ? Extract<keyof TForm, string> : string;
-
 type FieldInputFor<TForm, TExtra> = NodeMeta & TExtra & { name: FieldName<TForm> };
-
-interface TextOpts {
-	label?: string;
-	required?: boolean;
-	maxLength?: number;
-}
-
-interface TextareaOpts {
-	label?: string;
-	required?: boolean;
-	placeholder?: string;
-	rows?: number;
-	autoresize?: boolean;
-}
-
-interface PasswordOpts {
-	label?: string;
-	required?: boolean;
-	placeholder?: string;
-	autoComplete?: "current-password" | "new-password" | "off";
-}
-
-interface NumberOpts {
-	label?: string;
-	min?: number;
-	max?: number;
-	step?: number;
-}
-
-interface ChoiceOption {
-	value: string;
-	label: string;
-}
-
-interface DateOpts {
-	label?: string;
-	format?: string;
-}
-
-interface DatetimeOpts {
-	label?: string;
-	required?: boolean;
-	placeholder?: string;
-}
-
-type ErrorSlot = ReactNode | ((err: Error) => ReactNode);
-
-interface AsyncChoiceShared<TRow> {
-	query: (ctx: ClientActionContext, search: string) => Promise<TRow[]>;
-	optionLabel: (row: TRow) => string;
-	optionValue: (row: TRow) => string;
-	loading?: ReactNode;
-	error?: ErrorSlot;
-}
-
-interface AsyncChoiceSingle<TRow> extends AsyncChoiceShared<TRow> {
-	onLoad?: (ctx: ClientActionContext, value: string) => Promise<TRow>;
-}
-
-interface AsyncChoiceMulti<TRow> extends AsyncChoiceShared<TRow> {
-	onLoad?: (ctx: ClientActionContext, values: string[]) => Promise<TRow[]>;
-}
-
-interface SelectStaticSingleOpts {
-	label?: string;
-	required?: boolean;
-	options: ChoiceOption[];
-	multiple?: false;
-}
-
-interface SelectStaticMultiOpts {
-	label?: string;
-	required?: boolean;
-	options: ChoiceOption[];
-	multiple: true;
-}
-
-interface SelectAsyncSingleOpts<TRow> extends AsyncChoiceSingle<TRow> {
-	label?: string;
-	required?: boolean;
-	multiple?: false;
-}
-
-interface SelectAsyncMultiOpts<TRow> extends AsyncChoiceMulti<TRow> {
-	label?: string;
-	required?: boolean;
-	multiple: true;
-}
-
-type SelectOpts<TRow = unknown> =
-	| SelectStaticSingleOpts
-	| SelectStaticMultiOpts
-	| SelectAsyncSingleOpts<TRow>
-	| SelectAsyncMultiOpts<TRow>;
-
-interface RadioOpts {
-	label?: string;
-	required?: boolean;
-	options: ChoiceOption[];
-}
-
-interface TagsClosedOrOpenOpts {
-	label?: string;
-	required?: boolean;
-	options?: ChoiceOption[];
-}
-
-interface TagsAsyncOpts<TRow> extends AsyncChoiceMulti<TRow> {
-	label?: string;
-	required?: boolean;
-}
-
-type TagsOpts<TRow = unknown> = TagsClosedOrOpenOpts | TagsAsyncOpts<TRow>;
-
-interface ColorpickerOpts {
-	label?: string;
-	required?: boolean;
-	palette?: string[];
-}
-
-interface KeyvalueOpts {
-	label?: string;
-	required?: boolean;
-}
-
-interface SlugOpts {
-	fromField: string;
-	label?: string;
-	required?: boolean;
-}
-
-interface UploadOpts {
-	entity: string;
-	label?: string;
-	required?: boolean;
-	accept?: string;
-	maxFileSize?: number;
-}
-
-interface RepeaterOpts {
-	fields: (s: StructureBuilders) => StructureNode[];
-	label?: string;
-	required?: boolean;
-	minItems?: number;
-	maxItems?: number;
-}
 
 export interface StructureBuilders<TForm = unknown> {
 	stack: (children: StructureNode[], opts?: NodeMeta & { gap?: number }) => StructureNode;
@@ -243,7 +138,7 @@ export interface StructureBuilders<TForm = unknown> {
 	slug: (input: FieldInputFor<TForm, SlugOpts>) => StructureNode;
 	upload: (input: FieldInputFor<TForm, UploadOpts>) => StructureNode;
 	relation: (input: FieldInputFor<TForm, { to: string; label?: string }>) => StructureNode;
-	repeater: (input: FieldInputFor<TForm, RepeaterOpts>) => StructureNode;
+	repeater: (input: FieldInputFor<TForm, RepeaterOpts<StructureBuilders>>) => StructureNode;
 	action: (config: ActionConfig<StructureBuilders>) => StructureNode;
 	actions: (configs: ActionConfig<StructureBuilders>[]) => StructureNode;
 	widget: <P>(opts: { component: ComponentType<P>; props?: P }) => StructureNode;

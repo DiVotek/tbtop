@@ -6,7 +6,7 @@
  *   GET /media?...  → MediaListResponse
  *   GET /media/folders → MediaFolder[]
  */
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";

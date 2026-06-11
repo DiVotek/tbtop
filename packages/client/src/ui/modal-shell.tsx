@@ -67,10 +67,8 @@ export function ModalShell({
 }: ModalShellProps): ReactNode {
 	return (
 		<ResponsiveDialog open={open} onOpenChange={onOpenChange} onlyDialog={onlyDialog}>
-			{/* flex column (overrides the variant's grid) + min-h-0 on the body:
-			    without it the body row never shrinks below content height, the
-			    max-h on the container is ignored and tall dialogs (media picker)
-			    overflow the viewport instead of scrolling. */}
+			{/* flex column + min-h-0 body: lets tall dialogs scroll */}
+			{/* instead of overflowing the viewport (grid variant won't shrink). */}
 			<ResponsiveDialogContent
 				className={cn("flex flex-col p-6", SIZE_CLASS[size])}
 				{...contentProps}

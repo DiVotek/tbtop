@@ -35,6 +35,12 @@
 	},
 	"overrides": [
 		{
+			"files": ["**/fields/richtext/**"],
+			"rules": {
+				"unicorn/no-useless-undefined": "off"
+			}
+		},
+		{
 			"files": [
 				"**/*.test.ts",
 				"**/*.test.tsx",

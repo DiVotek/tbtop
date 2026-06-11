@@ -153,11 +153,9 @@ describe("tableUrlState: persistTableParams calls history.replaceState", () => {
 	});
 
 	test("tableUrlState: persistTableParams does NOT change window.location.href", () => {
-		const hrefBefore = window.location.href;
 		persistTableParams("posts", { search: "query" });
-		// location.href may change due to replaceState updating the URL, but the
-		// test verifies no full navigation (page reload) happens — we check that
-		// window.location.pathname is preserved.
+		// replaceState may update the URL but must not trigger a full navigation.
+		// Verify that pathname is preserved.
 		expect(window.location.pathname).toBe("/");
 	});
 });

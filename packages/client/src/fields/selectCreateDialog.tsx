@@ -22,7 +22,12 @@ interface DialogProps {
 	onClose: () => void;
 }
 
-export function SelectCreateDialog({ fieldName, config, onSuccess, onClose }: DialogProps) {
+export function SelectCreateDialog({
+	fieldName: _fieldName,
+	config,
+	onSuccess,
+	onClose,
+}: DialogProps) {
 	const ctx = useClientActionContext();
 	const ctrl = useFormController({ initial: {} });
 	const t = useTranslation();
@@ -37,13 +42,11 @@ export function SelectCreateDialog({ fieldName, config, onSuccess, onClose }: Di
 			onSuccess(result.value, result.label);
 		} catch (err: unknown) {
 			const errors = getErrors(err);
-			if (errors !== null) {
-				for (const [field, message] of Object.entries(errors)) {
-					ctrl.setFieldError(field, message);
-				}
-			} else {
+			if (errors === null) {
 				setSubmitError(err instanceof Error ? err.message : "Create failed");
+				return;
 			}
+			applyFieldErrors(ctrl, errors);
 		} finally {
 			setSubmitting(false);
 		}
@@ -147,6 +150,12 @@ function renderMiniField(node: StructureNode, ctrl: Ctrl): ReactNode {
 function mergeName(node: StructureNode): Bag {
 	const opts = node.options as Bag;
 	return node.name ? { ...opts, name: node.name } : opts;
+}
+
+function applyFieldErrors(ctrl: Ctrl, errors: Record<string, string>): void {
+	for (const [field, message] of Object.entries(errors)) {
+		ctrl.setFieldError(field, message);
+	}
 }
 
 function getErrors(err: unknown): Record<string, string> | null {

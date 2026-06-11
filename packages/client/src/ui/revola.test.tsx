@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogTitle } from "./revola";
 

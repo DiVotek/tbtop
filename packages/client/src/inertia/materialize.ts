@@ -1,9 +1,9 @@
-import type { QueryParams } from "../data/client";
 import { unwrapData } from "../data/envelope";
-import type { ClientActionContext, ConditionFn, NodeMeta, StructureNode } from "../structure/types";
+import type { ClientActionContext, NodeMeta, StructureNode } from "../structure/types";
 import { type ConditionAst, compileCondition } from "./conditionCompiler";
-import { compileConstraints, type FieldConstraints } from "./constraints";
+import { compileConstraints } from "./constraints";
 import { materializeActionOptions } from "./materializeActions";
+import { collectConstraints, tableQueryParams } from "./materializeHelpers";
 
 type Bag = Record<string, unknown>;
 
@@ -118,25 +118,6 @@ function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
 	};
 }
 
-function collectConstraints(
-	node: StructureNode,
-	acc: Record<string, FieldConstraints>,
-): Record<string, FieldConstraints> {
-	const opts = node.options as Bag;
-	if (node.name && opts.constraints && node.kind !== "form") {
-		acc[node.name] = opts.constraints as FieldConstraints;
-	}
-	for (const child of childNodes(opts)) {
-		collectConstraints(child, acc);
-	}
-	return acc;
-}
-
-function childNodes(opts: Bag): StructureNode[] {
-	const children = Array.isArray(opts.children) ? opts.children : [];
-	return children as StructureNode[];
-}
-
 function materializeTable(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const opts = node.options as Bag;
 	const name = node.name ?? "";
@@ -165,46 +146,6 @@ function actionBags(raw: unknown, ctx: WalkCtx): Bag[] {
 		return [];
 	}
 	return (raw as StructureNode[]).map((n) => actionOptions(n, ctx));
-}
-
-function tableQueryParams(ctx: ClientActionContext): QueryParams {
-	const params = ctx.table?.queryParams ?? {};
-	const [sort, dir] = (params.sort ?? "").split(":");
-	const query: QueryParams = {
-		page: params.page,
-		perPage: params.perPage,
-		sort: sort || undefined,
-		dir: dir || undefined,
-		search: params.search || undefined,
-	};
-	for (const [field, value] of Object.entries(params.filters ?? {})) {
-		const encoded = encodeFilterValue(field, value);
-		for (const [k, v] of Object.entries(encoded)) {
-			query[k] = v as QueryParams[string];
-		}
-	}
-	return query;
-}
-
-function encodeFilterValue(field: string, value: unknown): Record<string, unknown> {
-	if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-		// daterange: filters[field][from] / filters[field][to]
-		const obj = value as Record<string, unknown>;
-		const result: Record<string, unknown> = {};
-		for (const [k, v] of Object.entries(obj)) {
-			result[`filters[${field}][${k}]`] = v;
-		}
-		return result;
-	}
-	if (Array.isArray(value)) {
-		// tags: repeated params filters[field][]=v
-		const result: Record<string, unknown> = {};
-		value.forEach((v, i) => {
-			result[`filters[${field}][${i}]`] = v;
-		});
-		return result;
-	}
-	return { [`filters[${field}]`]: value };
 }
 
 function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {

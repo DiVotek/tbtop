@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDebounce } from "../lib/useDebounce";
 import type { RenderProps } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";

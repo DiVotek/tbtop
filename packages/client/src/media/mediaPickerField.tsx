@@ -77,11 +77,16 @@ export function MediaPickerForm({
 	const [resolvedItems, setResolvedItems] = useState<MediaItem[]>([]);
 	const [pickerOpen, setPickerOpen] = useState(false);
 
-	const ids: string[] = value
-		? Array.isArray(value)
-			? (value as string[])
-			: [value as string]
-		: [];
+	function resolveIds(v: MediaPickerValue | null | undefined): string[] {
+		if (!v) {
+			return [];
+		}
+		if (Array.isArray(v)) {
+			return v as string[];
+		}
+		return [v as string];
+	}
+	const ids = resolveIds(value);
 
 	// Fetch items for known ids when value changes externally (e.g. form pre-fill)
 	useEffect(() => {
@@ -136,7 +141,13 @@ export function MediaPickerForm({
 	function handleRemove(id: string) {
 		const next = ids.filter((i) => i !== id);
 		setResolvedItems((prev) => prev.filter((i) => i.id !== id));
-		onChange(next.length === 0 ? null : multiple ? next : (next[0] ?? null));
+		if (next.length === 0) {
+			onChange(null);
+		} else if (multiple) {
+			onChange(next);
+		} else {
+			onChange(next[0] ?? null);
+		}
 	}
 
 	const hasValue = ids.length > 0;
