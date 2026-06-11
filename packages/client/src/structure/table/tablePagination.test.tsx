@@ -76,7 +76,9 @@ describe("TablePagination: page navigation", () => {
 		const replaceStateCalls: string[] = [];
 		const origReplaceState = window.history.replaceState.bind(window.history);
 		window.history.replaceState = (state, title, url) => {
-			if (url != null) replaceStateCalls.push(String(url));
+			if (url != null) {
+				replaceStateCalls.push(String(url));
+			}
 			origReplaceState(state, title, url);
 		};
 

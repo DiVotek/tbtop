@@ -119,16 +119,22 @@ function buildPageNumbers(current: number, total: number): (number | "...")[] {
 	}
 	const result: (number | "...")[] = [];
 	const add = (n: number | "...") => {
-		const last = result[result.length - 1];
-		if (last !== n) result.push(n);
+		const last = result.at(-1);
+		if (last !== n) {
+			result.push(n);
+		}
 	};
 
 	add(1);
-	if (current > 3) add("...");
+	if (current > 3) {
+		add("...");
+	}
 	for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) {
 		add(p);
 	}
-	if (current < total - 2) add("...");
+	if (current < total - 2) {
+		add("...");
+	}
 	add(total);
 
 	return result;

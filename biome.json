@@ -7,7 +7,17 @@
 	},
 	"files": {
 		"ignoreUnknown": true,
-		"includes": ["**", "!**/dist", "!**/node_modules", "!**/vendor", "!**/.vite"]
+		"includes": [
+			"**",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/vendor",
+			"!**/.vite",
+			"!**/composer.json",
+			"!**/composer.lock",
+			"!packages/contracts/fixtures/**",
+			"!packages/contracts/structure.schema.json"
+		]
 	},
 	"formatter": {
 		"enabled": true,

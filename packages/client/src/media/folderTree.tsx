@@ -89,7 +89,9 @@ export function FolderTree({
 	// ─── Handlers ──────────────────────────────────────────────────────────────
 
 	async function handleCreateConfirm(name: string) {
-		if (dialog.kind !== "create") return;
+		if (dialog.kind !== "create") {
+			return;
+		}
 		const parentId = dialog.parentId;
 		setDialog({ kind: "closed" });
 		try {
@@ -101,7 +103,9 @@ export function FolderTree({
 	}
 
 	async function handleRenameConfirm(name: string) {
-		if (dialog.kind !== "rename") return;
+		if (dialog.kind !== "rename") {
+			return;
+		}
 		const folder = dialog.folder;
 		if (name === folder.name) {
 			setDialog({ kind: "closed" });
@@ -117,12 +121,16 @@ export function FolderTree({
 	}
 
 	async function handleDeleteConfirm() {
-		if (dialog.kind !== "delete") return;
+		if (dialog.kind !== "delete") {
+			return;
+		}
 		const folder = dialog.folder;
 		setDialog({ kind: "closed" });
 		try {
 			await deleteFolder(client, folder.id);
-			if (selectedId === folder.id) onSelect(null);
+			if (selectedId === folder.id) {
+				onSelect(null);
+			}
 			onMutated();
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);

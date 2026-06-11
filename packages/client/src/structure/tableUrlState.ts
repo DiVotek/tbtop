@@ -230,5 +230,5 @@ function readFilters(
 }
 
 function escapeRegex(s: string): string {
-	return s.replace(/[[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+	return s.replaceAll(/[[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }

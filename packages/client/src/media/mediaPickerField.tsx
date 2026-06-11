@@ -10,7 +10,6 @@
  */
 import { FileIcon, XIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
-import { useMediaClient } from "./useMediaApi";
 import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
@@ -19,7 +18,13 @@ import { FolderTree } from "./folderTree";
 import { MediaGrid } from "./mediaGrid";
 import type { MediaItem } from "./types";
 import type { MediaQueryParams } from "./useMediaApi";
-import { fetchMediaItem, isImageMime, useMediaFolders, useMediaItems } from "./useMediaApi";
+import {
+	fetchMediaItem,
+	isImageMime,
+	useMediaClient,
+	useMediaFolders,
+	useMediaItems,
+} from "./useMediaApi";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -37,7 +42,9 @@ export type MediaPickerValue = string | string[];
 // ─── accept helpers ───────────────────────────────────────────────────────────
 
 function matchesAccept(mime: string, accept: string[]): boolean {
-	if (accept.length === 0) return true;
+	if (accept.length === 0) {
+		return true;
+	}
 	return accept.some((pattern) => {
 		if (pattern.endsWith("/*")) {
 			return mime.startsWith(pattern.slice(0, -1));
@@ -47,7 +54,9 @@ function matchesAccept(mime: string, accept: string[]): boolean {
 }
 
 function filterByAccept(items: MediaItem[], accept: string[] | undefined): MediaItem[] {
-	if (!accept || accept.length === 0) return items;
+	if (!accept || accept.length === 0) {
+		return items;
+	}
 	return items.filter((item) => matchesAccept(item.mime, accept));
 }
 
@@ -83,14 +92,18 @@ export function MediaPickerForm({
 		const resolvedIds = resolvedItems.map((i) => i.id);
 		const same =
 			ids.length === resolvedIds.length && ids.every((id) => resolvedIds.includes(id));
-		if (same) return;
+		if (same) {
+			return;
+		}
 
 		const missing = ids.filter((id) => !resolvedIds.includes(id));
 		Promise.all(missing.map((id) => fetchMediaItem(client, id)))
 			.then((fetched) => {
 				setResolvedItems((prev) => {
 					const map = new Map(prev.map((i) => [i.id, i]));
-					for (const item of fetched) map.set(item.id, item);
+					for (const item of fetched) {
+						map.set(item.id, item);
+					}
 					return ids.map((id) => map.get(id)).filter(Boolean) as MediaItem[];
 				});
 			})
@@ -373,7 +386,9 @@ export function MediaPickerCell({
 	value,
 }: FieldCellProps<MediaPickerValue, MediaPickerOptions>): ReactNode {
 	const id = Array.isArray(value) ? value[0] : value;
-	if (!id) return null;
+	if (!id) {
+		return null;
+	}
 
 	// Cells don't fetch — show icon + id stub. Demo can enrich via column mapping.
 	return (

@@ -62,7 +62,7 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 }
 
 function fillRowTemplate(template: string, ctx: ClientActionContext): string {
-	return template.replace(/\{row\.([a-zA-Z0-9_]+)\}/g, (_, key: string) =>
+	return template.replaceAll(/\{row\.([a-zA-Z0-9_]+)\}/g, (_, key: string) =>
 		String(ctx.row?.[key] ?? ""),
 	);
 }

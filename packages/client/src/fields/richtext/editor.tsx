@@ -41,11 +41,13 @@ const DEBOUNCE_MS = 300;
 function resolveInitialEditorState(
 	value: SerializedEditorState | string | null,
 ): string | undefined {
-	if (!value) return undefined;
+	if (!value) {
+		return undefined;
+	}
 	// Plain string: wrap as a single paragraph node so the editor shows the
 	// text instead of crashing on legacy data.
 	if (typeof value === "string") {
-		const escaped = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+		const escaped = value.replaceAll(/\\/g, "\\\\").replaceAll(/"/g, '\\"');
 		return JSON.stringify({
 			root: {
 				children: [

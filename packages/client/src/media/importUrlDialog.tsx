@@ -3,13 +3,12 @@
  * 422 errors from the server are shown inline in the dialog.
  */
 import { type ReactNode, useState } from "react";
-import { useMediaClient } from "./useMediaApi";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { ModalShell } from "../ui/modal-shell";
 import type { MediaItem } from "./types";
-import { importMediaUrl } from "./useMediaApi";
+import { importMediaUrl, useMediaClient } from "./useMediaApi";
 
 interface ImportUrlDialogProps {
 	open: boolean;
@@ -45,7 +44,9 @@ export function ImportUrlDialog({
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!url.trim()) return;
+		if (!url.trim()) {
+			return;
+		}
 		setBusy(true);
 		setError(null);
 		try {

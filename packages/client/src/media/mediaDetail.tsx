@@ -33,7 +33,9 @@ export function MediaDetail({
 	onUpdated,
 	onDeleted,
 }: MediaDetailProps): ReactNode {
-	if (!item) return null;
+	if (!item) {
+		return null;
+	}
 
 	return (
 		<DetailShell
@@ -96,7 +98,9 @@ function DetailShell({
 
 	async function handleReplace(files: FileList | null) {
 		const file = files?.[0];
-		if (!file) return;
+		if (!file) {
+			return;
+		}
 		setBusy(true);
 		setError(null);
 		try {

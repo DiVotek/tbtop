@@ -67,7 +67,9 @@ export function TableGrid(props: TableGridProps) {
 									type="checkbox"
 									checked={allSelected}
 									ref={(el) => {
-										if (el) el.indeterminate = someSelected;
+										if (el) {
+											el.indeterminate = someSelected;
+										}
 									}}
 									onChange={(e) => handleSelectAll(e.target.checked)}
 									aria-label={t("table.select_all")}
@@ -143,7 +145,9 @@ function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 	const HeadingIcon = col.icon ? resolveIcon(col.icon.name) : undefined;
 
 	function handleClick() {
-		if (!col.sortable) return;
+		if (!col.sortable) {
+			return;
+		}
 		if (!isActive || !dir) {
 			onSort(col.name, "asc");
 		} else if (dir === "asc") {
@@ -269,21 +273,31 @@ function TableRow(props: TableRowProps) {
 	}
 
 	function handleRowPointerDown(e: React.PointerEvent<HTMLTableRowElement>) {
-		if (!isDomInsideRow(e)) return;
+		if (!isDomInsideRow(e)) {
+			return;
+		}
 		armedRef.current = true;
 	}
 
 	function handleRowClick(e: React.MouseEvent<HTMLTableRowElement>) {
 		const armed = armedRef.current;
 		armedRef.current = false;
-		if (!props.rowClick || !armed) return;
-		if (!isDomInsideRow(e)) return;
+		if (!props.rowClick || !armed) {
+			return;
+		}
+		if (!isDomInsideRow(e)) {
+			return;
+		}
 		// Ignore clicks whose target is no longer in the document — this happens
 		// when a Radix portal overlay (rendered outside the <tr>) is unmounted
 		// before the browser dispatches the resulting click on the row.
-		if (!(e.target as Element).isConnected) return;
+		if (!(e.target as Element).isConnected) {
+			return;
+		}
 		// Ignore clicks that land on or inside interactive elements.
-		if ((e.target as Element).closest(INTERACTIVE_SELECTOR)) return;
+		if ((e.target as Element).closest(INTERACTIVE_SELECTOR)) {
+			return;
+		}
 		if (!rowClickAction) {
 			if (process.env.NODE_ENV !== "production") {
 				console.warn(
@@ -405,8 +419,12 @@ function isSelected(selectedIds: string[], row: Record<string, unknown>): boolea
 
 function readId(row: Record<string, unknown>): string | undefined {
 	const id = row.id;
-	if (typeof id === "string") return id;
-	if (typeof id === "number" && Number.isFinite(id)) return String(id);
+	if (typeof id === "string") {
+		return id;
+	}
+	if (typeof id === "number" && Number.isFinite(id)) {
+		return String(id);
+	}
 	return undefined;
 }
 
@@ -428,8 +446,12 @@ export function normalizeRows(data: unknown): {
 }
 
 export function parseSortParam(sort?: string): { col: string; dir: "asc" | "desc" } | undefined {
-	if (!sort) return undefined;
+	if (!sort) {
+		return undefined;
+	}
 	const [col, dir] = sort.split(":");
-	if (!col) return undefined;
+	if (!col) {
+		return undefined;
+	}
 	return { col, dir: dir === "desc" ? "desc" : "asc" };
 }

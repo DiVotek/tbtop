@@ -41,7 +41,7 @@ describe("TableToolbar: search", () => {
 		const capturedParams: Record<string, unknown>[] = [];
 		const node = s.table({
 			query: async (ctx) => {
-				capturedParams.push({ ...(ctx.table?.queryParams ?? {}) });
+				capturedParams.push({ ...ctx.table?.queryParams });
 				return [{ id: "1", title: "Alpha" }];
 			},
 			columns: [{ name: "title" }],

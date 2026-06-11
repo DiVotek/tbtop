@@ -45,7 +45,9 @@ export function FolderNameDialog({
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		const trimmed = value.trim();
-		if (!trimmed) return;
+		if (!trimmed) {
+			return;
+		}
 		onConfirm(trimmed);
 	}
 

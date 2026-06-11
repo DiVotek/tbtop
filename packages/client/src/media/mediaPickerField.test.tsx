@@ -114,7 +114,9 @@ describe("MediaPickerForm: picker modal opens", () => {
 	test("clicking Choose opens the picker modal", async () => {
 		const user = userEvent.setup({ delay: null });
 		const handler: FetchHandler = (req) => {
-			if (req.url.includes("/media/folders")) return new Response("[]");
+			if (req.url.includes("/media/folders")) {
+				return new Response("[]");
+			}
 			return mediaListResponse([]);
 		};
 		const Wrap = wrap(handler);
@@ -142,7 +144,9 @@ describe("MediaPickerForm: single select", () => {
 		const user = userEvent.setup({ delay: null });
 		const changes: Array<unknown> = [];
 		const handler: FetchHandler = (req) => {
-			if (req.url.includes("/media/folders")) return new Response("[]");
+			if (req.url.includes("/media/folders")) {
+				return new Response("[]");
+			}
 			return mediaListResponse([ITEM_IMG]);
 		};
 		const Wrap = wrap(handler);
@@ -183,7 +187,9 @@ describe("MediaPickerForm: multiple select", () => {
 		const user = userEvent.setup({ delay: null });
 		const changes: Array<unknown> = [];
 		const handler: FetchHandler = (req) => {
-			if (req.url.includes("/media/folders")) return new Response("[]");
+			if (req.url.includes("/media/folders")) {
+				return new Response("[]");
+			}
 			return mediaListResponse([ITEM_IMG, ITEM_PDF]);
 		};
 		const Wrap = wrap(handler);

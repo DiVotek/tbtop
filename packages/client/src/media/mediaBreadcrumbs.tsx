@@ -59,7 +59,9 @@ export function MediaBreadcrumbs({
 }
 
 function buildCrumbs(folders: MediaFolder[], selectedId: string | null): MediaFolder[] {
-	if (selectedId === null) return [];
+	if (selectedId === null) {
+		return [];
+	}
 	const map = new Map(folders.map((f) => [f.id, f]));
 	const result: MediaFolder[] = [];
 	let current = map.get(selectedId);

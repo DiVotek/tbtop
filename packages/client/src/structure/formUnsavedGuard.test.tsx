@@ -39,7 +39,9 @@ mock.module("@inertiajs/react", () => ({
 			// Return an off() function
 			return () => {
 				const idx = registeredBeforeListeners.indexOf(listener);
-				if (idx !== -1) registeredBeforeListeners.splice(idx, 1);
+				if (idx !== -1) {
+					registeredBeforeListeners.splice(idx, 1);
+				}
 			};
 		}),
 	},
@@ -50,7 +52,9 @@ mock.module("@inertiajs/react", () => ({
 function fireInertiaNavigation(method = "get"): boolean {
 	for (const listener of registeredBeforeListeners) {
 		const result = listener({ detail: { visit: { method } } });
-		if (result === false) return false;
+		if (result === false) {
+			return false;
+		}
 	}
 	return true;
 }

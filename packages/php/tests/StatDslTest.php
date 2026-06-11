@@ -111,13 +111,13 @@ it('Stat: full chain produces expected descriptor shape', function (): void {
 
     expect($json['kind'])->toBe('stat')
         ->and($json['options'])->toBe([
-            'label'       => 'Monthly Revenue',
-            'value'       => '$12,400',
+            'label' => 'Monthly Revenue',
+            'value' => '$12,400',
             'description' => 'vs last month',
-            'delta'       => ['text' => '+8%', 'direction' => 'up'],
-            'icon'        => 'dollar-sign',
-            'color'       => 'success',
-            'sparkline'   => [100, 120, 115, 140, 160],
+            'delta' => ['text' => '+8%', 'direction' => 'up'],
+            'icon' => 'dollar-sign',
+            'color' => 'success',
+            'sparkline' => [100, 120, 115, 140, 160],
         ])
         ->and($json)->toHaveKey('meta');
 });

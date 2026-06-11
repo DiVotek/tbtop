@@ -175,13 +175,17 @@ export function SlashMenuPlugin() {
 			editor.getEditorState().read(() => {
 				const selection = $getSelection();
 				if (!$isRangeSelection(selection)) {
-					if (isOpen) close();
+					if (isOpen) {
+						close();
+					}
 					return;
 				}
 
 				const anchorNode = selection.anchor.getNode();
 				if (!(anchorNode instanceof TextNode)) {
-					if (isOpen) close();
+					if (isOpen) {
+						close();
+					}
 					return;
 				}
 
@@ -191,7 +195,9 @@ export function SlashMenuPlugin() {
 
 				const match = textBefore.match(/(?:^|\s)\/([^\s]*)$/);
 				if (!match) {
-					if (isOpen) close();
+					if (isOpen) {
+						close();
+					}
 					return;
 				}
 
@@ -201,7 +207,9 @@ export function SlashMenuPlugin() {
 
 				if (!isOpen) {
 					const pos = caretPosition(editor.getRootElement());
-					if (pos) setPosition(pos);
+					if (pos) {
+						setPosition(pos);
+					}
 					setIsOpen(true);
 				}
 			});
@@ -209,9 +217,13 @@ export function SlashMenuPlugin() {
 	}, [editor, isOpen, close]);
 
 	useEffect(() => {
-		if (!isOpen) return;
+		if (!isOpen) {
+			return;
+		}
 		const root = editor.getRootElement();
-		if (!root) return;
+		if (!root) {
+			return;
+		}
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: menu-open key interception
 		function onKeyDown(e: KeyboardEvent) {
@@ -244,10 +256,14 @@ export function SlashMenuPlugin() {
 		return () => root.removeEventListener("keydown", onKeyDown, { capture: true });
 	}, [editor, isOpen, filtered.length, selectedIndex, executeCommand, close]);
 
-	if (!isOpen || filtered.length === 0) return null;
+	if (!isOpen || filtered.length === 0) {
+		return null;
+	}
 
 	const editorRoot = editor.getRootElement();
-	if (!editorRoot) return null;
+	if (!editorRoot) {
+		return null;
+	}
 
 	return createPortal(
 		<div

@@ -71,7 +71,9 @@ describe("TableBlock URL persist: filter change goes through XHR client, not nav
 		// Find the inline filter text input (the only non-search input in the filters panel)
 		const filtersPanel = await findByTestId("table-filters-inline");
 		const filterInput = filtersPanel.querySelector("input") as HTMLInputElement;
-		if (!filterInput) throw new Error("no filter input found");
+		if (!filterInput) {
+			throw new Error("no filter input found");
+		}
 		await act(async () => {
 			await user.type(filterInput, "draft");
 		});
@@ -354,7 +356,9 @@ describe("TableBlock URL persist: two tables have independent URL namespaces", (
 		await findAllByTestId("table-block");
 		const searchInputs = await findAllByTestId("table-search-input");
 		const firstInput = searchInputs[0];
-		if (!firstInput) throw new Error("no search input");
+		if (!firstInput) {
+			throw new Error("no search input");
+		}
 
 		await act(async () => {
 			await user.type(firstInput, "hello");

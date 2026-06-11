@@ -68,7 +68,7 @@ describe("MaterializeTableFilters: hiddenIf on filter fields", () => {
 		const hiddenFn = filters[0]?.meta?.hidden;
 
 		if (typeof hiddenFn !== "function") {
-			throw new Error("hiddenFn should be a function");
+			throw new TypeError("hiddenFn should be a function");
 		}
 
 		const ctxNews: ConditionContext = { record: undefined, data: { type: "news" }, user: null };

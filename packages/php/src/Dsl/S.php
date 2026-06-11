@@ -24,9 +24,6 @@ use Tbtop\Admin\Dsl\Fields\Tags;
 use Tbtop\Admin\Dsl\Fields\Text;
 use Tbtop\Admin\Dsl\Fields\Textarea;
 use Tbtop\Admin\Dsl\Fields\Upload;
-use Tbtop\Admin\Dsl\AlertBlock;
-use Tbtop\Admin\Dsl\HtmlBlock;
-use Tbtop\Admin\Dsl\TextBlock;
 
 /**
  * Structure DSL entry — mirrors the client `s.*` builders and collects

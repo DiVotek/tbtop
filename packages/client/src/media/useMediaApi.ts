@@ -66,8 +66,12 @@ export function useMediaItems(params: MediaQueryParams): {
 			page: p.page,
 			perPage: p.perPage,
 		};
-		if (p.folder !== null) query.folder = p.folder;
-		if (p.search) query.search = p.search;
+		if (p.folder !== null) {
+			query.folder = p.folder;
+		}
+		if (p.search) {
+			query.search = p.search;
+		}
 
 		client.get("/media", query as Record<string, string>).then(
 			(raw) => {
@@ -158,8 +162,12 @@ export async function importMediaUrl(
 	input: ImportUrlInput,
 ): Promise<MediaItem> {
 	const body: Record<string, string> = { url: input.url };
-	if (input.name) body.name = input.name;
-	if (input.folderId !== null) body.folderId = input.folderId;
+	if (input.name) {
+		body.name = input.name;
+	}
+	if (input.folderId !== null) {
+		body.folderId = input.folderId;
+	}
 	return (await client.post("/media/import-url", body)) as MediaItem;
 }
 
@@ -207,7 +215,9 @@ export async function createFolder(
 	parentId: string | null,
 ): Promise<MediaFolder> {
 	const body: Record<string, string> = { name };
-	if (parentId !== null) body.parentId = parentId;
+	if (parentId !== null) {
+		body.parentId = parentId;
+	}
 	return (await client.post("/media/folders", body)) as MediaFolder;
 }
 
@@ -229,14 +239,22 @@ export async function deleteFolder(
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 function extractMessage(err: unknown): string {
-	if (err instanceof Error) return err.message;
-	if (typeof err === "string") return err;
+	if (err instanceof Error) {
+		return err.message;
+	}
+	if (typeof err === "string") {
+		return err;
+	}
 	return "Request failed";
 }
 
 export function formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	if (bytes < 1024) {
+		return `${bytes} B`;
+	}
+	if (bytes < 1024 * 1024) {
+		return `${(bytes / 1024).toFixed(1)} KB`;
+	}
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 

@@ -4,7 +4,6 @@
  */
 import { FileIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { type DragEvent, type ReactNode, useCallback, useRef, useState } from "react";
-import { useMediaClient } from "./useMediaApi";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { TablePagination } from "../structure/table/pagination";
@@ -13,7 +12,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import type { MediaItem } from "./types";
 import type { MediaQueryParams, MediaQueryState } from "./useMediaApi";
-import { formatBytes, isImageMime, uploadMediaItem } from "./useMediaApi";
+import { formatBytes, isImageMime, uploadMediaItem, useMediaClient } from "./useMediaApi";
 
 interface MediaGridProps {
 	state: MediaQueryState;
@@ -51,7 +50,9 @@ export function MediaGrid({
 
 	const handleSearch = useCallback(
 		(value: string) => {
-			if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+			if (searchTimerRef.current) {
+				clearTimeout(searchTimerRef.current);
+			}
 			searchTimerRef.current = setTimeout(() => {
 				onChangeParams({ search: value, page: 1 });
 			}, 300);

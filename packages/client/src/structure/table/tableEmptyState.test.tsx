@@ -86,7 +86,7 @@ describe("TableEmptyState: active search shows different text and reset", () => 
 		const node = s.table({
 			name: "posts",
 			query: async (ctx) => {
-				queries.push({ ...(ctx.table?.queryParams ?? {}) });
+				queries.push({ ...ctx.table?.queryParams });
 				return [];
 			},
 			columns: [{ name: "title" }],

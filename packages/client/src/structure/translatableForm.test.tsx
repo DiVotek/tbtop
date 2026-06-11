@@ -37,7 +37,9 @@ function wrapWithLocales(locales: string[], defaultLocale: string) {
 /** Query input by its name attribute (works for translatable sub-inputs). */
 function inputByName(container: HTMLElement, name: string): HTMLInputElement {
 	const el = container.querySelector<HTMLInputElement>(`input[name="${name}"]`);
-	if (!el) throw new Error(`No input[name="${name}"] found`);
+	if (!el) {
+		throw new Error(`No input[name="${name}"] found`);
+	}
 	return el;
 }
 

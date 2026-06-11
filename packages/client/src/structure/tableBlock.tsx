@@ -54,7 +54,9 @@ export function TableBlock({ options }: TableRenderProps) {
 	);
 
 	useEffect(() => {
-		if (!tableName) return;
+		if (!tableName) {
+			return;
+		}
 		persistTableParams(tableName, queryParams);
 	}, [tableName, queryParams]);
 
@@ -195,8 +197,12 @@ function TableBody(props: TableBodyProps) {
 	);
 
 	const activeFilterCount = Object.values(filterValues).filter((v) => {
-		if (v === null || v === undefined || v === "") return false;
-		if (Array.isArray(v)) return v.length > 0;
+		if (v === null || v === undefined || v === "") {
+			return false;
+		}
+		if (Array.isArray(v)) {
+			return v.length > 0;
+		}
 		if (typeof v === "object") {
 			const obj = v as Record<string, unknown>;
 			return Boolean(obj.from) || Boolean(obj.to);
