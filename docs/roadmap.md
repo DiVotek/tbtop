@@ -55,6 +55,7 @@ Surveyed from source on 2026-06-11, not from the (stale, Node-era) PRDs.
 | **Mobile sidebar (drawer)** | 🟢 | End-of-polish. |
 | **Dark-mode completeness** (recharts + Lexical toolbar not theme-token-bound) | 🟢 | |
 | **Lint/format debt** | 🟢 | `inertia/` never ran oxlint/biome/pint — extraction first pointed them at the code. ~20 oxlint findings (client/demo) + Pint format misses (`S.php`, `StatDslTest.php`). CI `lint` job is non-blocking until a dedicated pass clears it. |
+| **Client test network leak** | 🟡 | 4 tests (`visitTemplate`, one `ActionGroup`) pass locally but time out on CI with `ECONNREFUSED` — Inertia `<Link>` prefetch escapes the fixture's fetch stub. Pre-existing (inertia/ had no CI); the client `Test` CI step is red until the harness blocks network. Repro: clean sandbox, no localhost route. |
 
 ---
 
