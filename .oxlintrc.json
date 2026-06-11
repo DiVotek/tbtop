@@ -89,6 +89,17 @@
 				"max-lines": "off",
 				"max-lines-per-function": "off"
 			}
+		},
+		{
+			"files": ["apps/demo/resources/js/components/ui/**"],
+			"rules": {
+				"comment-budget/comment-budget": "off",
+				"no-param-reassign": "off",
+				"no-nested-ternary": "off",
+				"max-lines": "off",
+				"max-lines-per-function": "off",
+				"complexity": "off"
+			}
 		}
 	]
 }

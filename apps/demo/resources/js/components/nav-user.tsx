@@ -11,6 +11,7 @@ export function NavUser() {
     const { auth } = usePage<SharedData>().props;
     const { state } = useSidebar();
     const isMobile = useIsMobile();
+    const menuSide = !isMobile && state === 'collapsed' ? 'left' : 'bottom';
 
     return (
         <SidebarMenu>
@@ -22,11 +23,7 @@ export function NavUser() {
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        align="end"
-                        side={isMobile ? 'bottom' : state === 'collapsed' ? 'left' : 'bottom'}
-                    >
+                    <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg" align="end" side={menuSide}>
                         <UserMenuContent user={auth.user} />
                     </DropdownMenuContent>
                 </DropdownMenu>

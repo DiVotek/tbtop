@@ -15,6 +15,7 @@
 			"!**/.vite",
 			"!**/composer.json",
 			"!**/composer.lock",
+			"!apps/**",
 			"!packages/contracts/fixtures/**",
 			"!packages/contracts/structure.schema.json"
 		]

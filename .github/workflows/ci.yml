@@ -70,9 +70,6 @@ jobs:
   lint:
     name: Lint + format (oxlint + biome + pint)
     runs-on: ubuntu-latest
-    # Lint/format debt from the pre-extraction era is not yet cleared
-    # (inertia/ never ran these gates). Non-blocking until a dedicated pass lands.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
