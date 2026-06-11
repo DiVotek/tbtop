@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -17,8 +16,6 @@ class BulkPostsSeeder extends Seeder
 {
     private const CHUNK = 500;
 
-    private const TOPICS = ['charts', 'tables', 'forms', 'uploads', 'panels', 'filters', 'media', 'auth'];
-
     public function run(): void
     {
         $count = max(1, (int) env('BULK_POSTS', 5000));
@@ -26,44 +23,50 @@ class BulkPostsSeeder extends Seeder
 
         Post::where('slug', 'like', 'perf-post-%')->delete();
 
-        mt_srand(20260611);
-        $now = Carbon::now();
-
+        $index = 0;
         foreach (array_chunk(range(1, $count), self::CHUNK) as $chunk) {
-            DB::table('posts')->insert(array_map(
-                fn (int $i) => $this->post($i, $authorId, $now),
-                $chunk,
-            ));
+            $rows = Post::factory()
+                ->count(count($chunk))
+                ->make()
+                ->map(function (Post $post) use (&$index, $authorId) {
+                    $index++;
+
+                    return $this->toDbRow($post, $index, $authorId);
+                })
+                ->all();
+
+            DB::table('posts')->insert($rows);
         }
 
         $this->command?->info("Seeded {$count} perf posts.");
     }
 
-    /** @return array<string, mixed> */
-    private function post(int $i, ?int $authorId, Carbon $now): array
+    /**
+     * Map a factory-built Post instance to a raw DB row for bulk insert.
+     *
+     * JSON columns must be encoded; slug gets the perf-post- prefix.
+     *
+     * @return array<string, mixed>
+     */
+    private function toDbRow(Post $post, int $index, ?int $authorId): array
     {
-        $createdAt = $now->copy()->subMinutes(mt_rand(0, 60 * 24 * 365));
-        $published = mt_rand(1, 100) <= 70;
-        $topic = self::TOPICS[$i % count(self::TOPICS)];
+        $createdAt = $post->created_at;
+        $published = $post->published;
 
         return [
-            'title' => json_encode([
-                'en' => "Perf post {$i}: deep dive into {$topic}",
-                'uk' => "Тестовий допис {$i}: огляд {$topic}",
-            ]),
-            'slug' => sprintf('perf-post-%06d', $i),
-            'intro' => $i % 3 === 0
-                ? json_encode(['en' => "Generated intro {$i}", 'uk' => "Згенерований вступ {$i}"])
-                : null,
+            'title' => json_encode($post->title),
+            'slug' => sprintf('perf-post-%06d', $index),
+            'intro' => $post->intro !== null ? json_encode($post->intro) : null,
+            'body' => null,
             'published' => $published,
-            'published_at' => $published ? $createdAt->copy()->addHours(mt_rand(1, 72)) : null,
-            'views' => mt_rand(0, 5000),
-            'rating' => mt_rand(0, 100) < 80 ? mt_rand(10, 50) / 10 : null,
+            'published_at' => $published && $post->published_at
+                ? $post->published_at->toDateTimeString()
+                : null,
+            'views' => $post->views,
+            'rating' => $post->rating,
             'metadata' => '{}',
             'author_id' => $authorId,
-            'sections' => $i % 5 === 0
-                ? json_encode([['heading' => "Section {$i}", 'body' => 'Generated body.']])
-                : null,
+            'sections' => $post->sections !== null ? json_encode($post->sections) : null,
             'created_at' => $createdAt,
             'updated_at' => $createdAt,
         ];
