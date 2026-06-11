@@ -67,7 +67,9 @@ describe("Select field — creatable", () => {
 		const btn = container.querySelector('[data-testid="select-create-author"]') as HTMLElement;
 		await user.click(btn);
 		await waitFor(() => {
-			expect(container.querySelector('[data-testid="select-create-dialog"]')).not.toBeNull();
+			expect(
+				document.body.querySelector('[data-testid="select-create-dialog"]'),
+			).not.toBeNull();
 		});
 	});
 
@@ -99,18 +101,20 @@ describe("Select field — creatable", () => {
 			container.querySelector('[data-testid="select-create-author"]') as HTMLElement,
 		);
 		await waitFor(() =>
-			expect(container.querySelector('[data-testid="select-create-dialog"]')).not.toBeNull(),
+			expect(
+				document.body.querySelector('[data-testid="select-create-dialog"]'),
+			).not.toBeNull(),
 		);
 
 		// Fill in the name field
-		const nameInput = container.querySelector(
+		const nameInput = document.body.querySelector(
 			'input[name="name"], [data-testid="field-name"]',
 		) as HTMLInputElement;
 		expect(nameInput).not.toBeNull();
 		await user.type(nameInput, "Carol");
 
 		// Submit
-		const submitBtn = container.querySelector(
+		const submitBtn = document.body.querySelector(
 			'[data-testid="select-create-submit"]',
 		) as HTMLElement;
 		expect(submitBtn).not.toBeNull();
@@ -119,7 +123,7 @@ describe("Select field — creatable", () => {
 		await waitFor(() => {
 			expect(captured.at(-1)).toBe("99");
 			// Dialog closes
-			expect(container.querySelector('[data-testid="select-create-dialog"]')).toBeNull();
+			expect(document.body.querySelector('[data-testid="select-create-dialog"]')).toBeNull();
 		});
 	});
 
@@ -153,18 +157,22 @@ describe("Select field — creatable", () => {
 			container.querySelector('[data-testid="select-create-author"]') as HTMLElement,
 		);
 		await waitFor(() =>
-			expect(container.querySelector('[data-testid="select-create-dialog"]')).not.toBeNull(),
+			expect(
+				document.body.querySelector('[data-testid="select-create-dialog"]'),
+			).not.toBeNull(),
 		);
 
 		// Submit without filling in name
 		await user.click(
-			container.querySelector('[data-testid="select-create-submit"]') as HTMLElement,
+			document.body.querySelector('[data-testid="select-create-submit"]') as HTMLElement,
 		);
 
 		await waitFor(() => {
-			expect(container.textContent).toContain("Name is required");
+			expect(document.body.textContent).toContain("Name is required");
 			// Dialog stays open
-			expect(container.querySelector('[data-testid="select-create-dialog"]')).not.toBeNull();
+			expect(
+				document.body.querySelector('[data-testid="select-create-dialog"]'),
+			).not.toBeNull();
 		});
 	});
 });

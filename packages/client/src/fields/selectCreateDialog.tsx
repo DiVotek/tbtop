@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from "react";
+import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
 import { useClientActionContext } from "../structure/actionContext";
@@ -6,7 +7,9 @@ import { FormControllerProvider } from "../structure/formContext";
 import { useFormController } from "../structure/formController";
 import { isNodeDisabled, isNodeHidden } from "../structure/meta";
 import type { ConditionContext, StructureNode } from "../structure/types";
+import { Button } from "../ui/button";
 import { Label } from "../ui/label";
+import { ModalShell } from "../ui/modal-shell";
 import type { SelectCreateConfig } from "./selectShared";
 
 type Bag = Record<string, unknown>;
@@ -22,6 +25,7 @@ interface DialogProps {
 export function SelectCreateDialog({ fieldName, config, onSuccess, onClose }: DialogProps) {
 	const ctx = useClientActionContext();
 	const ctrl = useFormController({ initial: {} });
+	const t = useTranslation();
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -45,44 +49,41 @@ export function SelectCreateDialog({ fieldName, config, onSuccess, onClose }: Di
 		}
 	}
 
+	const footer = (
+		<>
+			<Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+				{t("action.cancel")}
+			</Button>
+			<Button
+				type="button"
+				data-testid="select-create-submit"
+				onClick={handleSubmit}
+				disabled={submitting}
+			>
+				{submitting ? t("state.loading") : t("action.create")}
+			</Button>
+		</>
+	);
+
 	return (
-		<div
-			role="dialog"
-			aria-modal="true"
+		<ModalShell
+			open={true}
+			onOpenChange={(v) => !v && onClose()}
+			title={t("action.create")}
+			footer={footer}
+			onlyDialog
 			data-testid="select-create-dialog"
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 		>
-			<div className="w-full max-w-md rounded-lg bg-background p-6 shadow-xl">
-				<FormControllerProvider value={ctrl}>
-					<div className="flex flex-col gap-4">
-						{config.fields.map((node, i) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: positional
-							<div key={i}>{renderMiniField(node, ctrl)}</div>
-						))}
-						{submitError && <p className="text-sm text-destructive">{submitError}</p>}
-						<div className="flex justify-end gap-2">
-							<button
-								type="button"
-								onClick={onClose}
-								disabled={submitting}
-								className="rounded px-3 py-1.5 text-sm"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								data-testid="select-create-submit"
-								onClick={handleSubmit}
-								disabled={submitting}
-								className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground"
-							>
-								{submitting ? "Creating…" : "Create"}
-							</button>
-						</div>
-					</div>
-				</FormControllerProvider>
-			</div>
-		</div>
+			<FormControllerProvider value={ctrl}>
+				<div className="flex flex-col gap-4">
+					{config.fields.map((node, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: positional
+						<div key={i}>{renderMiniField(node, ctrl)}</div>
+					))}
+					{submitError && <p className="text-sm text-destructive">{submitError}</p>}
+				</div>
+			</FormControllerProvider>
+		</ModalShell>
 	);
 }
 

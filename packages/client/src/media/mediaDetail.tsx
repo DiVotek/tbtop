@@ -4,11 +4,9 @@
  */
 import { FileIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
-import { useMediaClient } from "./useMediaApi";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
-import { ResponsiveDialogClose } from "../ui/revola";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import type { MediaFolder, MediaItem } from "./types";
 import {
@@ -17,6 +15,7 @@ import {
 	isImageMime,
 	patchMediaItem,
 	replaceMediaItem,
+	useMediaClient,
 } from "./useMediaApi";
 
 interface MediaDetailProps {
@@ -167,11 +166,9 @@ function DetailShell({
 			)}
 
 			<div className="ml-auto flex gap-2">
-				<ResponsiveDialogClose asChild>
-					<Button type="button" variant="outline" size="sm" disabled={busy}>
-						{t("action.cancel")}
-					</Button>
-				</ResponsiveDialogClose>
+				<Button type="button" variant="outline" size="sm" disabled={busy} onClick={onClose}>
+					{t("action.cancel")}
+				</Button>
 				<Button
 					type="button"
 					size="sm"

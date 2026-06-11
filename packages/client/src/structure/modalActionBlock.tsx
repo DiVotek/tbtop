@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { renderNode } from "../render/structureRenderer";
 import { Button } from "../ui/button";
-import {
-	ResponsiveDialog,
-	ResponsiveDialogContent,
-	ResponsiveDialogDescription,
-	ResponsiveDialogHeader,
-	ResponsiveDialogTitle,
-} from "../ui/revola";
+import { ModalShell } from "../ui/modal-shell";
 import {
 	type ActionModalOpts,
 	type ActionOptionsBag,
@@ -41,7 +35,7 @@ export function ModalActionBlock({ options: opts }: { options: ActionOptionsBag 
 	const body = resolveBody(modal.body);
 
 	return (
-		<ResponsiveDialog open={open} onOpenChange={setOpen}>
+		<>
 			<Button
 				type="button"
 				ref={buttonRef}
@@ -51,24 +45,20 @@ export function ModalActionBlock({ options: opts }: { options: ActionOptionsBag 
 			>
 				{opts.label ?? opts.name}
 			</Button>
-			<ResponsiveDialogContent data-testid={`modal-${actionKey(opts)}`}>
-				<div className="p-6">
-					<ResponsiveDialogHeader>
-						<ResponsiveDialogTitle>{modal.title}</ResponsiveDialogTitle>
-						{modal.description && (
-							<ResponsiveDialogDescription>
-								{modal.description}
-							</ResponsiveDialogDescription>
-						)}
-					</ResponsiveDialogHeader>
-					{body && (
-						<ModalProvider close={close} parent={parent}>
-							<div className="mt-4">{renderNode(body)}</div>
-						</ModalProvider>
-					)}
-				</div>
-			</ResponsiveDialogContent>
-		</ResponsiveDialog>
+			<ModalShell
+				open={open}
+				onOpenChange={setOpen}
+				title={modal.title}
+				description={modal.description}
+				data-testid={`modal-${actionKey(opts)}`}
+			>
+				{body && (
+					<ModalProvider close={close} parent={parent}>
+						{renderNode(body)}
+					</ModalProvider>
+				)}
+			</ModalShell>
+		</>
 	);
 }
 
