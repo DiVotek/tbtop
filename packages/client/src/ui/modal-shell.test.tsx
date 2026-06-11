@@ -1,12 +1,15 @@
 /**
- * ConfirmDialog behavioral tests.
+ * ModalShell layout regression tests + ConfirmDialog behavioral tests.
  *
- * Red-green contract:
+ * ModalShell layout contracts:
+ *   - canonical p-6 padding on the content element
+ *   - flex-column content with a scrollable min-h-0 body region
+ *   - scrollbar chrome hidden on the scrollable body (scrollbar-none utility)
+ *   - content on the shared z-50 floating layer (not z-[9999])
+ *
+ * ConfirmDialog behavioral contracts:
  *   - onConfirm fires when the confirm button is clicked
  *   - dialog closes (onOpenChange(false)) when cancel is clicked
- *
- * ModalShell itself has no behavior beyond what revola provides; layout/style
- * is not tested here — that's verified by the migrated media tests.
  */
 import { describe, expect, mock, test } from "bun:test";
 import { act, render } from "@testing-library/react";
@@ -49,6 +52,22 @@ describe("ModalShell", () => {
 		const body = content?.querySelector(".overflow-y-auto");
 		expect(body).not.toBeNull();
 		expect(body?.className ?? "").toContain("min-h-0");
+	});
+
+	// Parity with shadcn/radix Dialog: the scrollable body must hide the
+	// scrollbar chrome while remaining scrollable. The scrollbar-none utility
+	// in styles.css applies scrollbar-width:none + ::-webkit-scrollbar{display:none}.
+	test("scrollable body carries scrollbar-none to hide the scrollbar chrome", () => {
+		const { baseElement } = render(
+			wrap(
+				<ModalShell open onOpenChange={() => {}} title="Title" onlyDialog>
+					<p>body</p>
+				</ModalShell>,
+			),
+		);
+		const content = baseElement.querySelector('[role="dialog"]');
+		const body = content?.querySelector(".overflow-y-auto");
+		expect(body?.className ?? "").toContain("scrollbar-none");
 	});
 
 	// Regression: revola hiked dialog content to z-[9999]; radix Select and
