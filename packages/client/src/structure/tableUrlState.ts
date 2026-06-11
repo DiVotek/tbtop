@@ -36,6 +36,7 @@ export function writeTableParams(
 	clearTableKeys(next, name);
 	writeScalar({ params: next, name, key: "search", value: params.search });
 	writeScalar({ params: next, name, key: "sort", value: params.sort });
+	writeScalar({ params: next, name, key: "tab", value: params.tab });
 	writeScalar({
 		params: next,
 		name,
@@ -74,20 +75,19 @@ export function readTableParams(searchParams: URLSearchParams, name: string): Li
 		params.sort = sort;
 	}
 
-	const page = searchParams.get(`${prefix}[page]`);
-	if (page) {
-		const n = Number(page);
-		if (Number.isFinite(n) && n > 0) {
-			params.page = n;
-		}
+	const tab = searchParams.get(`${prefix}[tab]`);
+	if (tab) {
+		params.tab = tab;
 	}
 
-	const perPage = searchParams.get(`${prefix}[perPage]`);
-	if (perPage) {
-		const n = Number(perPage);
-		if (Number.isFinite(n) && n > 0) {
-			params.perPage = n;
-		}
+	const page = readPositiveInt(searchParams, `${prefix}[page]`);
+	if (page !== undefined) {
+		params.page = page;
+	}
+
+	const perPage = readPositiveInt(searchParams, `${prefix}[perPage]`);
+	if (perPage !== undefined) {
+		params.perPage = perPage;
 	}
 
 	const filters = readFilters(searchParams, name, prefix);
@@ -126,6 +126,15 @@ export function seedTableParams(name: string): ListQueryParams {
 }
 
 // ─── internal helpers ─────────────────────────────────────────────────────────
+
+function readPositiveInt(searchParams: URLSearchParams, key: string): number | undefined {
+	const raw = searchParams.get(key);
+	if (!raw) {
+		return undefined;
+	}
+	const n = Number(raw);
+	return Number.isFinite(n) && n > 0 ? n : undefined;
+}
 
 function clearTableKeys(params: URLSearchParams, name: string): void {
 	const prefix = `${URL_NS}[${name}]`;

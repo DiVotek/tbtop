@@ -7,6 +7,7 @@ use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\LayoutBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -77,6 +78,12 @@ class KitchenSinkPage extends Page
                 ->columns(['title' => 'Title', 'views' => 'Views'])
                 ->searchable(['title'])
                 ->defaultSort('views', 'desc')
+                ->tabs([
+                    Tab::make('all'),
+                    Tab::make('published')->label('Published')
+                        ->query(fn ($q) => $q->where('published', true))
+                        ->count(),
+                ])
                 ->rowActions([
                     $s->action('edit')->label('Edit')->handle(fn () => Effects::make(), needs: ['row']),
                     $s->action('delete')->label('Delete')->color('danger')

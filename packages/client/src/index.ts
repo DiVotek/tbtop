@@ -96,6 +96,7 @@ export type {
 	TableController,
 	TableOptions,
 	TablePaginationOptions,
+	TableTab,
 } from "./structure/types";
 export type { AlertProps, AlertVariant } from "./ui/alert";
 export { Alert, AlertDescription, AlertTitle } from "./ui/alert";

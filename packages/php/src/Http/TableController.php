@@ -22,6 +22,12 @@ final class TableController
             throw new NotFoundHttpException("Table \"{$name}\" has no query on this page.");
         }
 
-        return response()->json(['data' => TableQuery::run($table, $request, $query())]);
+        $result = TableQuery::run($table, $request, $query());
+        $tabCounts = TableQuery::tabCounts($table, $query);
+        if ($tabCounts !== null) {
+            $result['tabCounts'] = $tabCounts;
+        }
+
+        return response()->json(['data' => $result]);
     }
 }

@@ -16,7 +16,8 @@ import {
 } from "../../ui/dropdown-menu";
 import { Input } from "../../ui/input";
 import { ModalShell } from "../../ui/modal-shell";
-import type { ListQueryParams, StructureNode, TableColumn } from "../types";
+import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
+import type { ListQueryParams, StructureNode, TableColumn, TableTab } from "../types";
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
@@ -126,6 +127,42 @@ export function TableToolbar(props: TableToolbarProps) {
 				onToggle={onToggleColumn}
 			/>
 		</div>
+	);
+}
+
+// ─── Tab bar ─────────────────────────────────────────────────────────────────
+
+interface TableTabBarProps {
+	tabs: TableTab[];
+	/** Active tab name; the first declared tab when no param is set. */
+	activeTab: string | undefined;
+	tabCounts?: Record<string, number>;
+	onSelect: (name: string) => void;
+}
+
+export function TableTabBar({ tabs, activeTab, tabCounts, onSelect }: TableTabBarProps) {
+	return (
+		<Tabs value={activeTab} onValueChange={onSelect}>
+			<TabsList data-testid="table-tabs">
+				{tabs.map((tab) => (
+					<TabsTrigger
+						key={tab.name}
+						value={tab.name}
+						data-testid={`table-tab-${tab.name}`}
+					>
+						{tab.label}
+						{tab.count && tabCounts?.[tab.name] !== undefined && (
+							<span
+								className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
+								data-testid={`table-tab-count-${tab.name}`}
+							>
+								{tabCounts[tab.name]}
+							</span>
+						)}
+					</TabsTrigger>
+				))}
+			</TabsList>
+		</Tabs>
 	);
 }
 
