@@ -56,6 +56,28 @@ it('rejects the staff user on the web-guarded panel', function () {
     $this->getJson('/admin/nav-demo')->assertUnauthorized();
 });
 
+it('shares chrome trees per panel: package default and the panel-configured class', function () {
+    $this->actingAs(new AuthUser);
+    $adminChrome = $this->get('/admin/nav-demo', ['X-Inertia' => 'true'])
+        ->assertOk()
+        ->json('props.tbtop.chrome');
+
+    $this->actingAs(new AuthUser, 'staff');
+    $opsChrome = $this->get('/ops/nav-demo', ['X-Inertia' => 'true'])
+        ->assertOk()
+        ->json('props.tbtop.chrome');
+
+    $kinds = fn (array $area): array => array_column($area['options']['children'], 'kind');
+
+    // AdminPanel sets no chrome class → package default.
+    expect($adminChrome['sidebar']['kind'])->toBe('stack')
+        ->and($kinds($adminChrome['sidebar']))->toBe(['logo', 'navMenu'])
+        ->and($kinds($adminChrome['header']))->toBe(['userMenu'])
+        ->and($adminChrome['footer'])->toBeNull()
+        // OpsPanel resolves its own Chrome class with an appended action.
+        ->and($kinds($opsChrome['header']))->toBe(['userMenu', 'action']);
+});
+
 it('shares the panel id and the panel UI locales per request', function () {
     $this->actingAs(new AuthUser);
     $adminProps = $this->get('/admin/nav-demo', ['X-Inertia' => 'true'])

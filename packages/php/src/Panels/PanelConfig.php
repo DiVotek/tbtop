@@ -34,7 +34,7 @@ final class PanelConfig
 
     private string $rootView = 'app';
 
-    /** @var class-string|null */
+    /** Untyped on purpose: validated against Chrome at serialization time. @var class-string|null */
     private ?string $chrome = null;
 
     public function id(string $id): static
@@ -120,7 +120,7 @@ final class PanelConfig
         return $this;
     }
 
-    /** Chrome class slot (header/sidebar/footer DSL). Implementation lands separately. @param  class-string  $chrome */
+    /** Chrome class serialized into the shell areas (header/sidebar/footer DSL). @param  class-string<Chrome>  $chrome */
     public function chrome(string $chrome): static
     {
         $this->chrome = $chrome;

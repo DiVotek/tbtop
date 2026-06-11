@@ -41,6 +41,7 @@ class AdminPanel extends Panel
             ])
             ->locales(['en', 'uk'])
             ->defaultLocale('en')
+            ->chrome(DemoChrome::class)
             ->rootView('admin');
     }
 }

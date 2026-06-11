@@ -1,3 +1,10 @@
+import {
+	LocaleSwitcherBlock,
+	LogoBlock,
+	NavMenuBlock,
+	SpacerBlock,
+	UserMenuBlock,
+} from "../app/chromeBlocks";
 import { BooleanCell, BooleanForm } from "../fields/booleanField";
 import { CheckboxCell, CheckboxForm } from "../fields/checkboxField";
 import { ColorpickerCell, ColorpickerForm } from "../fields/colorpickerField";
@@ -60,9 +67,20 @@ export function ensureBuiltinsRegistered(): void {
 		return;
 	}
 	registerLayout();
+	registerChrome();
 	registerDataBlocks();
 	registerCharts();
 	registerFields();
+}
+
+// Shell chrome kinds — option-less; they read shared-prop data from
+// ChromeDataContext (provided by AdminLayoutShell).
+function registerChrome(): void {
+	defineBlock("navMenu", { behavior: "leaf", render: NavMenuBlock });
+	defineBlock("userMenu", { behavior: "leaf", render: UserMenuBlock });
+	defineBlock("logo", { behavior: "leaf", render: LogoBlock });
+	defineBlock("localeSwitcher", { behavior: "leaf", render: LocaleSwitcherBlock });
+	defineBlock("spacer", { behavior: "leaf", render: SpacerBlock });
 }
 
 function registerLayout(): void {

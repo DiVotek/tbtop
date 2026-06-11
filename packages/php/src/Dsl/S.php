@@ -304,6 +304,43 @@ final class S
     }
 
     // -------------------------------------------------------------------------
+    // Chrome blocks
+    // -------------------------------------------------------------------------
+    // Option-less by design: the client reads their data from shared props
+    // (nav, auth user, locales, brand). Used by Chrome trees; pages may embed
+    // them too, but the shell is their home.
+
+    /** Sidebar navigation groups built from the panel pages. */
+    public function navMenu(): Node
+    {
+        return new Node('navMenu');
+    }
+
+    /** Profile dropdown: user identity, theme, locale, logout. */
+    public function userMenu(): Node
+    {
+        return new Node('userMenu');
+    }
+
+    /** Panel brand text (falls back to the nav.title translation). */
+    public function logo(): Node
+    {
+        return new Node('logo');
+    }
+
+    /** Standalone UI-locale switcher; hidden when the panel has one locale. */
+    public function localeSwitcher(): Node
+    {
+        return new Node('localeSwitcher');
+    }
+
+    /** Flex spacer pushing the following siblings to the far edge. */
+    public function spacer(): Node
+    {
+        return new Node('spacer');
+    }
+
+    // -------------------------------------------------------------------------
     // Data builders
     // -------------------------------------------------------------------------
 

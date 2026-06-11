@@ -8,6 +8,7 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Tbtop\Admin\Commands\MakePageCommand;
 use Tbtop\Admin\I18n\LocaleService;
 use Tbtop\Admin\Navigation\NavBuilder;
+use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelRegistry;
 
@@ -47,6 +48,8 @@ class AdminServiceProvider extends PackageServiceProvider
             return [
                 'panel' => $panel->id(),
                 'nav' => NavBuilder::build($panel),
+                'chrome' => ChromeSerializer::forPanel($panel),
+                'brand' => $panel->brand(),
                 'prefix' => $prefix,
                 'apiBase' => $prefix.'/api',
                 'locale' => $locale,
