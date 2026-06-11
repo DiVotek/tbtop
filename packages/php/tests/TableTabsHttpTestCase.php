@@ -2,7 +2,8 @@
 
 namespace Tbtop\Admin\Tests;
 
-use Tbtop\Admin\Tests\Fixtures\TabbedPostsPage;
+use Illuminate\Foundation\Auth\User as AuthUser;
+use Tbtop\Admin\Tests\Fixtures\Panels\TabsPanel;
 
 class TableTabsHttpTestCase extends TestCase
 {
@@ -10,7 +11,12 @@ class TableTabsHttpTestCase extends TestCase
     {
         parent::getEnvironmentSetUp($app);
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
-        $app['config']->set('tbtop-admin.middleware', ['web']);
-        $app['config']->set('tbtop-admin.pages', [TabbedPostsPage::class]);
+        $app['config']->set('tbtop-admin.panels', [TabsPanel::class]);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(new AuthUser);
     }
 }
