@@ -2,10 +2,10 @@
 
 namespace Tbtop\Admin\Tests;
 
-use Tbtop\Admin\Tests\Fixtures\NavPage;
+use Illuminate\Foundation\Auth\User as AuthUser;
+use Tbtop\Admin\Tests\Fixtures\Panels\AdminPanel;
+use Tbtop\Admin\Tests\Fixtures\Panels\PlainPanel;
 use Tbtop\Admin\Tests\Fixtures\PostEditPage;
-use Tbtop\Admin\Tests\Fixtures\PostsIndexPage;
-use Tbtop\Admin\Tests\Fixtures\TranslatablePostsPage;
 
 class HttpTestCase extends TestCase
 {
@@ -13,20 +13,16 @@ class HttpTestCase extends TestCase
     {
         parent::setUp();
         PostEditPage::$submitted = null;
+        $this->actingAs(new AuthUser);
     }
 
     public function getEnvironmentSetUp($app)
     {
         parent::getEnvironmentSetUp($app);
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
-        $app['config']->set('tbtop-admin.middleware', ['web']);
-        $app['config']->set('tbtop-admin.pages', [
-            PostEditPage::class,
-            PostsIndexPage::class,
-            TranslatablePostsPage::class,
-            NavPage::class,
+        $app['config']->set('tbtop-admin.panels', [
+            AdminPanel::class,
+            PlainPanel::class,
         ]);
-        $app['config']->set('tbtop-admin.locales', ['en', 'uk']);
-        $app['config']->set('tbtop-admin.default_locale', 'en');
     }
 }

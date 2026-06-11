@@ -25,6 +25,7 @@ interface AdminPageProps {
 	breadcrumbs?: BreadcrumbItem[];
 	params?: Record<string, string>;
 	tbtop?: {
+		panel?: string;
 		prefix?: string;
 		apiBase?: string;
 		locale?: string;

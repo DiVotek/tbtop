@@ -6,12 +6,13 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Tbtop\Admin\Navigation\BreadcrumbsBuilder;
+use Tbtop\Admin\Panels\CurrentPanel;
 
 final class PageController
 {
     use AuthorizesPage;
 
-    public function show(Request $request): Response
+    public function show(Request $request, CurrentPanel $panel): Response
     {
         $this->authorizePageGate($request);
 
@@ -36,10 +37,10 @@ final class PageController
             'data' => $data,
         ];
 
-        if (config('tbtop-admin.breadcrumbs', true)) {
-            $props['breadcrumbs'] = BreadcrumbsBuilder::build($resolved->page);
+        if ($panel->breadcrumbs()) {
+            $props['breadcrumbs'] = BreadcrumbsBuilder::build($resolved->page, $panel);
         }
 
-        return Inertia::render('admin/page', $props);
+        return Inertia::render('admin/page', $props)->rootView($panel->rootView());
     }
 }

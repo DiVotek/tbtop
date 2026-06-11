@@ -8,7 +8,7 @@ use Tbtop\Admin\Dsl\S;
 /**
  * Package-provided page for the media library.
  * Emits a `mediaLibrary` node — the client renderer handles the UI.
- * Register this class in your `tbtop-admin.pages` config to mount it.
+ * Register this class in a panel's pages() list to mount it.
  */
 class MediaLibraryPage extends Page
 {

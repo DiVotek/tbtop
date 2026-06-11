@@ -3,26 +3,27 @@
 namespace Tbtop\Admin\I18n;
 
 use Illuminate\Support\Facades\Session;
+use Tbtop\Admin\Panels\CurrentPanel;
 
 class LocaleService
 {
     public static function currentLocale(): string
     {
-        $configured = (array) config('tbtop-admin.locales', ['en']);
-        $default = (string) config('tbtop-admin.default_locale', $configured[0] ?? 'en');
+        $available = self::availableLocales();
+        $default = CurrentPanel::current()?->defaultLocale() ?? 'en';
         $stored = Session::get('tbtop.locale');
 
-        if (is_string($stored) && in_array($stored, $configured, true)) {
+        if (is_string($stored) && in_array($stored, $available, true)) {
             return $stored;
         }
 
         return $default;
     }
 
-    /** @return list<string> */
+    /** UI locales of the current panel; ['en'] outside panel requests. @return list<string> */
     public static function availableLocales(): array
     {
-        return array_values((array) config('tbtop-admin.locales', ['en']));
+        return CurrentPanel::current()?->locales() ?? ['en'];
     }
 
     /** @return list<string> */
