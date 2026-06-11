@@ -118,7 +118,9 @@
                                     {
                                         "kind": "textarea",
                                         "options": {
-                                            "label": "Body"
+                                            "label": "Body",
+                                            "helperText": "Supports Markdown.",
+                                            "tooltip": "Write the post body here."
                                         },
                                         "meta": {},
                                         "name": "body"

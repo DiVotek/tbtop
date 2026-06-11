@@ -129,6 +129,8 @@
 				},
 				"constraints": { "$ref": "#/$defs/constraints" },
 				"label": { "type": "string" },
+				"helperText": { "type": "string" },
+				"tooltip": { "type": "string" },
 				"collapsed": { "type": "boolean" },
 				"create": {
 					"type": "object",
