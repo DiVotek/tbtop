@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Tests\Fixtures\Panels;
 
 use Tbtop\Admin\Panels\Panel;
 use Tbtop\Admin\Panels\PanelConfig;
+use Tbtop\Admin\Tests\Fixtures\Chromes\HeaderActionChrome;
 use Tbtop\Admin\Tests\Fixtures\NavPage;
 use Tbtop\Admin\Tests\Fixtures\OpsOnlyPage;
 
@@ -19,6 +20,7 @@ class OpsPanel extends Panel
             ->middleware(['web'])
             ->pages([NavPage::class, OpsOnlyPage::class])
             ->locales(['fr', 'en'])
-            ->defaultLocale('fr');
+            ->defaultLocale('fr')
+            ->chrome(HeaderActionChrome::class);
     }
 }

@@ -4,6 +4,7 @@ use Opis\JsonSchema\Errors\ErrorFormatter;
 use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Tests\Fixtures\KitchenSinkPage;
 
 const SCHEMA_PATH = __DIR__.'/../../contracts/structure.schema.json';
@@ -41,6 +42,12 @@ it('kitchen-sink serialization matches the committed fixture snapshot', function
     }
 
     expect($current."\n")->toBe((string) file_get_contents(FIXTURE_PATH));
+});
+
+it('default chrome serialization conforms to the chrome contract', function () {
+    $chrome = ChromeSerializer::forPanel(panelWithPages([]));
+
+    validateAgainstSchema(json_decode(json_encode($chrome)), '#/$defs/chrome');
 });
 
 it('effects serialization conforms to the effects schema', function () {

@@ -573,6 +573,39 @@
                     "wrap": true
                 },
                 "meta": {}
+            },
+            {
+                "kind": "row",
+                "options": {
+                    "children": [
+                        {
+                            "kind": "logo",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "navMenu",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "spacer",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "localeSwitcher",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "userMenu",
+                            "options": {},
+                            "meta": {}
+                        }
+                    ]
+                },
+                "meta": {}
             }
         ]
     },

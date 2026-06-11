@@ -111,6 +111,23 @@
 				},
 				{
 					"if": {
+						"properties": {
+							"kind": {
+								"enum": ["navMenu", "userMenu", "logo", "localeSwitcher", "spacer"]
+							}
+						}
+					},
+					"then": {
+						"properties": {
+							"options": {
+								"additionalProperties": false,
+								"properties": {}
+							}
+						}
+					}
+				},
+				{
+					"if": {
 						"properties": { "kind": { "const": "flex" } }
 					},
 					"then": {
@@ -385,6 +402,16 @@
 					"additionalProperties": false
 				}
 			]
+		},
+		"chrome": {
+			"type": "object",
+			"required": ["header", "sidebar", "footer"],
+			"properties": {
+				"header": { "oneOf": [{ "$ref": "#/$defs/node" }, { "type": "null" }] },
+				"sidebar": { "oneOf": [{ "$ref": "#/$defs/node" }, { "type": "null" }] },
+				"footer": { "oneOf": [{ "$ref": "#/$defs/node" }, { "type": "null" }] }
+			},
+			"additionalProperties": false
 		},
 		"effects": {
 			"type": "array",

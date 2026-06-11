@@ -112,6 +112,13 @@ class KitchenSinkPage extends Page
                     ->handle(fn () => Effects::make(), needs: ['row']),
             ]),
             $s->flex([$s->text('flex_a'), $s->text('flex_b')], direction: 'row', justify: 'between', align: 'center', gap: 4, wrap: true),
+            $s->row([
+                $s->logo(),
+                $s->navMenu(),
+                $s->spacer(),
+                $s->localeSwitcher(),
+                $s->userMenu(),
+            ]),
         ]);
     }
 }
