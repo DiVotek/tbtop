@@ -4,6 +4,11 @@ PHP-DSL admin pages, rendered by a React client over Inertia. **No Livewire.**
 See `docs/roadmap.md` for release plan, `PROJECT.md` for vision (note: vision was written
 for the Node stack — philosophy holds, the runtime is now Laravel; re-read with that lens).
 
+> **Public docs are English-only.** This repo is going open-source. README, docs,
+> code comments, commit messages, and any consumer-facing text are written in
+> English. Non-Latin strings in tests/seeders/locale files are deliberate i18n
+> fixtures (e.g. `uk` translatable data) — leave them; they prove the feature.
+
 ## What this is
 
 A consumer writes admin pages in a **PHP DSL** (`S` builder, Filament-shaped). Pages

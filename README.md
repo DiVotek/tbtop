@@ -1,18 +1,19 @@
-# Tabletop on Laravel + Inertia — прототип
+# Tabletop — Laravel + Inertia admin builder
 
-Admin-билдер: страницы авторятся PHP-DSL, сериализуются как JSON-структура в
-Inertia-props, рендерятся React-интерпретатором. Filament-модель без Livewire.
+An admin builder: pages are authored in a PHP DSL, serialized to a JSON
+structure in Inertia props, and rendered by a React interpreter. Filament's
+authoring model, without Livewire.
 
-## Состав
+## Layout
 
-| Пакет | Что это |
+| Package | What it is |
 |---|---|
-| `packages/php` | composer `tbtop/admin` — DSL, контроллеры, Effects, nav, uploads |
-| `packages/client` | npm `@tbtop/inertia-admin` — render-слой + Inertia-интеграция |
-| `packages/contracts` | JSON Schema грамматики + kitchen-sink фикстура (контракт двух сторон) |
-| `apps/demo` | Laravel 12 + Inertia v3, копия tabletop-демо (acceptance) |
+| `packages/php` | composer `tbtop/admin` — DSL, controllers, Effects, nav, uploads |
+| `packages/client` | npm `@tbtop/inertia-admin` — render layer + Inertia integration |
+| `packages/contracts` | JSON Schema grammar + kitchen-sink fixture (the contract shared by both sides) |
+| `apps/demo` | Laravel 12 + Inertia v3 reference app (acceptance) |
 
-## Запуск демо
+## Run the demo
 
 ```bash
 cd apps/demo
@@ -22,7 +23,7 @@ php artisan serve --port=8090   # + npm run dev (vite)
 # http://127.0.0.1:8090/admin/posts — admin@admin.com / password
 ```
 
-## Страница за 30 секунд
+## A page in 30 seconds
 
 ```php
 class PostsIndexPage extends Page
@@ -44,7 +45,7 @@ class PostsIndexPage extends Page
                 ->query(fn () => Post::query())
                 ->rowActions([
                     $s->action('edit')->label('Edit')
-                        ->visit('/admin/posts/{row.id}/edit'),   // row-шаблон
+                        ->visit('/admin/posts/{row.id}/edit'),   // row template
                     $s->action('delete')->label('Delete')->color('danger')
                         ->confirm('Delete this post?')
                         ->handle(function (ActionCtx $ctx): Effects {
@@ -58,10 +59,11 @@ class PostsIndexPage extends Page
 }
 ```
 
-Регистрация: класс в `config/tbtop-admin.php` → `'pages'`. Роуты, endpoints
-таблиц/данных/форм/actions поднимаются автоматически под `prefix` + `middleware`.
+Registration: add the class to `config/tbtop-admin.php` → `'pages'`. Routes and
+the table/data/form/action endpoints are wired automatically under the
+configured `prefix` + `middleware`.
 
-## Формы
+## Forms
 
 ```php
 $s->form('post', [
@@ -81,45 +83,50 @@ $s->form('post', [
 });
 ```
 
-- Валидацией владеет Laravel: rules собираются с полей (repeater → `parent.*.child`),
-  `validate()` → 422 → ошибки в полях. Regex-rules — только array-формой.
-- Декларативное подмножество rules едет на клиент как `constraints` → blur-валидация.
-- Submit — Inertia `router.post` (errors bag, history); success-эффекты — через flash.
-- Поле без rules получает baseline `nullable` (иначе Laravel выкинет его из validated).
+- Laravel owns validation: rules are collected from the fields (repeater →
+  `parent.*.child`), `validate()` → 422 → errors land on the fields. Regex rules
+  must use the array form.
+- The declarative subset of rules ships to the client as `constraints` for
+  on-blur validation.
+- Submit goes through Inertia `router.post` (errors bag, history); success
+  effects arrive via flash.
+- A field with no rules gets a baseline `nullable` (otherwise Laravel drops it
+  from the validated payload).
 
-## Actions — пять видов
+## Actions — five kinds
 
-| Spec | Что делает |
+| Spec | What it does |
 |---|---|
-| `->visit(url)` | Inertia-переход; поддерживает `{row.id}`-шаблоны |
-| `->submit()` | submit ближайшей (или именованной) формы |
-| `->handle(fn, needs: [...])` | POST на server-closure; payload по `needs`: form/row/selection |
-| `->modal(title, $node)` | клиентский модал со StructureNode-телом |
-| `->custom('name', params)` | клиентский реестр `defineCustomAction()` |
+| `->visit(url)` | Inertia visit; supports `{row.id}` templates |
+| `->submit()` | submit the nearest (or a named) form |
+| `->handle(fn, needs: [...])` | POST to a server closure; payload by `needs`: form/row/selection |
+| `->modal(title, $node)` | client modal with a StructureNode body |
+| `->custom('name', params)` | client registry via `defineCustomAction()` |
 
-`->confirm(title)` оборачивает server-action в confirm-модал. Server-closures
-резолвятся по имени per-request — на провод никогда не едут.
+`->confirm(title)` wraps a server action in a confirm modal. Server closures
+resolve by name per-request — they never travel over the wire.
 
-**Effects** (закрытый словарь): `notify | redirect | refreshTable | resetForm | closeModal`.
-Расширение = минорный bump контракта; нестандартное — через `custom`.
+**Effects** (a closed set): `notify | redirect | refreshTable | resetForm | closeModal`.
+Extending the set is a minor contract bump; anything non-standard goes through
+`custom`.
 
 ## Uploads
 
-Профили в конфиге (`'uploads' => ['media' => [disk, dir, accept, maxSize, sizes]]`),
-endpoint `POST {prefix}/uploads/{profile}`, GD-варианты fit-inside. Поле:
-`$s->upload('file')->set('entity', 'media')` — в `$ctx->form['file']` приходит
-полный UploadRow (url, mimeType, filesize, width/height, sizes).
+Profiles live in config (`'uploads' => ['media' => [disk, dir, accept, maxSize, sizes]]`),
+the endpoint is `POST {prefix}/uploads/{profile}`, with GD fit-inside variants.
+The field `$s->upload('file')->set('entity', 'media')` delivers a full UploadRow
+to `$ctx->form['file']` (url, mimeType, filesize, width/height, sizes).
 
-## Контракт
+## The contract
 
-`contracts/structure.schema.json` — грамматика провода. Гейты:
-- PHP: kitchen-sink страница валидируется против схемы + snapshot
-  (`UPDATE_FIXTURES=1 vendor/bin/pest` для регенерации);
-- клиент: та же фикстура проходит zod-зеркало и рендер-smoke.
+`contracts/structure.schema.json` is the wire grammar. Gates:
+- PHP: the kitchen-sink page validates against the schema + a snapshot
+  (`UPDATE_FIXTURES=1 vendor/bin/pest` to regenerate);
+- client: the same fixture passes the zod mirror and a render smoke test.
 
-Новый блок = обновить схему + zod-зеркало + фикстуру в одном PR.
+A new block = update the schema + the zod mirror + the fixture in one PR.
 
-## Гейты качества
+## Quality gates
 
 ```bash
 cd packages/php && vendor/bin/pest && vendor/bin/phpstan analyse && vendor/bin/pint --test
@@ -127,10 +134,10 @@ cd packages/client && bun test && bunx tsc --noEmit
 cd apps/demo && php artisan test
 ```
 
-phpstan — level 5 (skeleton-дефолт, поднимается в `phpstan.neon.dist`).
+phpstan runs at level 5 (the skeleton default; raise it in `phpstan.neon.dist`).
 
-## Известные гэпы
+## Status
 
-Lexical rich-text (пока textarea), async-опции relation-полей (статический select),
-UI-локализация админки (content-translatable работает), параметры chart/data-endpoints,
-per-locale валидация translatable. План и решения: `docs/migration/inertia-pivot.md`.
+See `docs/roadmap.md` for the release plan and the current gap list (auth-page
+layout and the relation field are the known blockers). Per-package contributor
+notes live in the root `CLAUDE.md`.
