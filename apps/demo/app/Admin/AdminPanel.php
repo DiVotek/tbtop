@@ -11,6 +11,7 @@ use App\Admin\Pages\PlaygroundPage;
 use App\Admin\Pages\PostCreatePage;
 use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
+use App\Admin\Pages\RelationDemoPage;
 use App\Admin\Pages\SettingsPage;
 use App\Http\Middleware\RequireFullAuth;
 use Tbtop\Admin\Pages\MediaLibraryPage;
@@ -38,6 +39,7 @@ class AdminPanel extends Panel
                 PlaygroundPage::class,
                 MediaLibraryPage::class,
                 LoginPreviewPage::class,
+                RelationDemoPage::class,
             ])
             ->locales(['en', 'uk'])
             ->defaultLocale('en')

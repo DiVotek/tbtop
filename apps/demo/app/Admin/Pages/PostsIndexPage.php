@@ -10,6 +10,7 @@ use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
+use Tbtop\Admin\Dsl\Fields\InFilter;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
@@ -73,7 +74,7 @@ class PostsIndexPage extends Page
                         ->align('right'),
                 ])
                 ->filters([
-                    Select::make('published')
+                    InFilter::make('published')
                         ->label('Status')
                         ->options([
                             ['value' => '1', 'label' => 'Published'],

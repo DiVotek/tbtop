@@ -10,6 +10,7 @@
 /.phpunit.cache
 /.vscode
 /.zed
+/.claude
 /bootstrap/ssr
 /node_modules
 /public/build
@@ -23,3 +24,4 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+/test-results

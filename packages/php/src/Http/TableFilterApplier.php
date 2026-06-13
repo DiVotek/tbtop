@@ -80,6 +80,13 @@ final class TableFilterApplier
             return;
         }
 
+        if ($kind === 'in') {
+            $values = is_array($value) ? $value : [$value];
+            $builder->whereIn($name, $values);
+
+            return;
+        }
+
         if ($kind === 'daterange') {
             self::applyDaterange($name, $value, $builder);
 

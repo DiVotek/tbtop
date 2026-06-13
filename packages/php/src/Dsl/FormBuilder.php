@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Panels\CurrentPanel;
 
@@ -75,37 +76,83 @@ final class FormBuilder implements JsonSerializable
         return self::searchCreatable($this->children, $name);
     }
 
+    /**
+     * Find a Relation field with a query closure by name, walking nested children.
+     * Returns null when not found.
+     */
+    public function findRelationField(string $name): ?Relation
+    {
+        return self::searchRelation($this->children, $name);
+    }
+
     /** @param  list<mixed>  $children */
     private static function searchCreatable(array $children, string $name): ?Select
     {
+        $found = self::searchField(
+            $children,
+            static fn (Field $f): bool => $f instanceof Select
+                && $f->name === $name
+                && $f->creatableClosure() !== null,
+        );
+
+        return $found instanceof Select ? $found : null;
+    }
+
+    /** @param  list<mixed>  $children */
+    private static function searchRelation(array $children, string $name): ?Relation
+    {
+        $found = self::searchField(
+            $children,
+            static fn (Field $f): bool => $f instanceof Relation
+                && $f->name === $name
+                && $f->queryClosure() !== null,
+        );
+
+        return $found instanceof Relation ? $found : null;
+    }
+
+    /**
+     * Depth-first walk of form children, returning the first Field the
+     * predicate accepts. Recurses into nested fields and Node containers.
+     *
+     * @param  list<mixed>  $children
+     * @param  callable(Field): bool  $matches
+     */
+    private static function searchField(array $children, callable $matches): ?Field
+    {
         foreach ($children as $child) {
-            if ($child instanceof Select
-                && $child->name === $name
-                && $child->creatableClosure() !== null
-            ) {
+            if ($child instanceof Field && $matches($child)) {
                 return $child;
             }
-            if ($child instanceof Field) {
-                $sub = $child->childFields();
-                if ($sub !== []) {
-                    $found = self::searchCreatable($sub, $name);
-                    if ($found !== null) {
-                        return $found;
-                    }
-                }
-            }
-            if ($child instanceof Node) {
-                $nested = $child->options['children'] ?? $child->options['fields'] ?? [];
-                if (is_array($nested)) {
-                    $found = self::searchCreatable(array_values($nested), $name);
-                    if ($found !== null) {
-                        return $found;
-                    }
+            $nested = self::nestedChildren($child);
+            if ($nested !== []) {
+                $found = self::searchField($nested, $matches);
+                if ($found !== null) {
+                    return $found;
                 }
             }
         }
 
         return null;
+    }
+
+    /**
+     * Child fields nested inside a Field or a Node container.
+     *
+     * @return list<mixed>
+     */
+    private static function nestedChildren(mixed $child): array
+    {
+        if ($child instanceof Field) {
+            return $child->childFields();
+        }
+        if ($child instanceof Node) {
+            $nested = $child->options['children'] ?? $child->options['fields'] ?? [];
+
+            return is_array($nested) ? array_values($nested) : [];
+        }
+
+        return [];
     }
 
     public function toNode(): Node
