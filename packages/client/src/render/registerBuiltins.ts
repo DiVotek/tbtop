@@ -158,6 +158,7 @@ function registerChoiceFields(): void {
 	});
 	defineFieldClient<"radio", string>("radio", { form: RadioForm, cell: RadioCell });
 	defineFieldClient<"tags", string[]>("tags", { form: TagsForm, cell: TagsCell });
+	defineFieldClient<"in", string[]>("in", { form: TagsForm, cell: TagsCell });
 	defineFieldClient<"colorpicker", string>("colorpicker", {
 		form: ColorpickerForm,
 		cell: ColorpickerCell,
