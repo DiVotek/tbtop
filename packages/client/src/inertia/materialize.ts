@@ -42,6 +42,9 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	if (node.kind === "select" && node.name) {
 		return materializeSelect({ ...node, meta }, ctx);
 	}
+	if (node.kind === "relation" && node.name) {
+		return materializeRelation({ ...node, meta }, ctx);
+	}
 	return { ...node, meta, options: walkChildren(node.options as Bag, ctx) };
 }
 
@@ -166,6 +169,37 @@ function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {
 						.post(`${ctx.basePath}/select-create/${fieldName}`, data)
 						.then((r) => r as { value: string; label: string }),
 			},
+		},
+	};
+}
+
+interface RelationRow {
+	value: string;
+	label: string;
+}
+
+function materializeRelation(node: StructureNode, ctx: WalkCtx): StructureNode {
+	const opts = node.options as Bag;
+	const fieldName = node.name as string;
+	const endpoint = `${ctx.basePath}/relation-search/${fieldName}`;
+	return {
+		...node,
+		options: {
+			...opts,
+			query: (actionCtx: ClientActionContext, search: string) =>
+				actionCtx.client
+					.post(endpoint, { search })
+					.then((r) => (r as { options: RelationRow[] }).options),
+			onLoad: (actionCtx: ClientActionContext, value: string) =>
+				actionCtx.client.post(endpoint, { value }).then((r) => {
+					const opt = (r as { option: RelationRow | null }).option;
+					if (opt === null) {
+						throw new Error("not found");
+					}
+					return opt;
+				}),
+			optionLabel: (row: unknown) => (row as RelationRow).label,
+			optionValue: (row: unknown) => (row as RelationRow).value,
 		},
 	};
 }
