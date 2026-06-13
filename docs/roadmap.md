@@ -3,7 +3,7 @@
 > Living doc. The entry point for "what ships when and why." Detail backlog lives in
 > `docs/backlog.md`; this file is the index + ordering + value rationale.
 > Stack: Laravel package (`tbtop/admin`) + React client (`@tbtop/inertia-admin`).
-> Last revised: 2026-06-11.
+> Last revised: 2026-06-11 (panels/layout/chrome design locked — `packages/php/adr/panels.md`).
 
 ## The product in one line
 
@@ -46,7 +46,8 @@ Surveyed from source on 2026-06-11, not from the (stale, Node-era) PRDs.
 |---|---|---|
 | **Auth-page layout** | 🔴 blocks EasyCar | Auth *backend* exists; there's no centered/chrome-less layout to render login/register pages. Only `AdminLayout` (sidebar shell) exists. |
 | **Relation field is a stub** | 🔴 blocks EasyCar | `RelationForm` is a plain `<Input>` writing raw IDs. Async machinery exists (`useAsyncSearch`, async select works) — fix is wiring, not new infra. |
-| **Extraction** | 🔴 blocks Phase 1 | Code lives in `inertia/` on a branch. No "package to consume" until extracted + lockstep-released, OR consumed in-place. |
+| **Extraction** | 🟡 partially done | Own repo extracted 2026-06-11. Remaining: lockstep composer+npm release packaging (1.3). |
+| **Multi-panel** | 🔴 architectural | Single-instance assumptions baked into config/routes/share. Design locked in `packages/php/adr/panels.md` — lands first, retrofit is expensive. |
 | **Soft-delete macro** | 🟡 | Trashed filter + restore/force actions. Expressible by hand via `->query()` today. |
 | **Infolist / read-only detail view** | 🟡 | Record display without a form. |
 | **CSV export / import** | 🟡 | Export actions (Filament does via queues). |
@@ -71,10 +72,8 @@ need it to ship?" — not on backlog completeness.
   backend *is* Laravel: queues, notifications, money casts, validation, policies, jobs are
   native. Produce a fresh doc mapping each entity/feature to: admin-DSL page · plain Laravel
   (model/migration/policy/job) · genuine `@tbtop/admin` gap. **This is the alignment step.**
-- **Extraction timing.** In-place (build EasyCar against `inertia/` dir, extract after it
-  proves out) vs extract-first (own repo + lockstep release, then consume). Recommendation:
-  **in-place first** — validate on a real project before paying extraction cost. Matches the
-  logic that kept `inertia/` a subdir rather than a new repo.
+- **Extraction timing.** ~~In-place vs extract-first.~~ **Resolved 2026-06-11: extracted**
+  to its own repo. Lockstep release packaging remains in 1.3.
 
 ### 1.1 — Pre-EasyCar primitives (must land before the CRM)
 
@@ -82,9 +81,17 @@ Ordered by EasyCar dependency.
 
 | # | Item | Value | Effort |
 |---|---|---|---|
-| 1 | **Layout primitive + auth-page layout** | Every consumer needs login/register pages. `Page` gains a `layout()` hint (`admin`/`auth`/`blank`); client gets an `AuthLayout` (centered, no nav). Auth backend already done — this renders it. Developer owns the auth *method*; pages are composed from existing fields + a `submit` to their controller. Passkeys = action calling the existing WebAuthn endpoint. | S (1–2 d) |
-| 2 | **Relation field — real async** | CRM is relation-dense (every booking → customer/car/location). Wire `RelationForm` to the existing async-select infra + `labelKey`/`query`. Stub → working is small. | S |
-| 3 | **`in` filter kind** (verify) | Permission-matrix list scoping (`allowedLocations`, `allowedCategories`) needs `WHERE col IN (...)`. Confirm the filter API covers it; if not, add. | XS–S |
+| 1 | **Panel core (multi-admin)** | Class-based `Panel` (id/prefix/guard/pages/locales/chrome/rootView), request-scoped `CurrentPanel`, per-panel route groups `tbtop.{panel}.{slug}`, per-panel media/upload/locale routes. Clean break from flat config. Design locked in `adr/panels.md`. Lands first — routes/share/nav all hang off it. | M (2–3 d) |
+| 2 | **Page layouts (`admin`/`center`) + auth pages** | `Page::layout()` hint, default `admin` (inherited); client dispatches `AdminLayout` vs `CenterLayout` (centered, no chrome). Login/register pages use `center` — auth backend already done, this renders it. Independent of panels, can run parallel. | S (1–2 d) |
+| 3 | **Chrome-as-DSL** | Per-panel `Chrome` class (`header/sidebar/footer(S $s)`); current shell pieces become predefined blocks (`navMenu`, `userMenu`, `logo`, `localeSwitcher`, `spacer`). Main case: append branding/actions to defaults. Depends on panels. Contract gate: new kinds → schema + kitchen-sink + contract tests in the same change. | M |
+| 4 | **Relation field — real async** | CRM is relation-dense (every booking → customer/car/location). Wire `RelationForm` to the existing async-select infra + `labelKey`/`query`. Stub → working is small. | S |
+| 5 | **`in` filter kind** (verify) | Permission-matrix list scoping (`allowedLocations`, `allowedCategories`) needs `WHERE col IN (...)`. Confirm the filter API covers it; if not, add. | XS–S |
+
+**Small wave (parallel, worktree agents — after the lint pass lands):** modal fixes
+(center animation bug, hidden scrollbar, `size` on `ActionBuilder::modal()`),
+`S::markdown` (server-side commonmark → `displayHtml` node), flex options on `row`/`stack`
+(justify/align/gap/wrap), `Field::helperText()` + `Field::tooltip()`, `tbtop:page`
+scaffold command, table filter tabs. No architecture impact; detail in `backlog.md`.
 
 ### 1.2 — EasyCar build (the validation driver)
 
@@ -96,9 +103,9 @@ for Laravel). Likely surfaces:
 - Infolist / read-only detail (customer profile, booking summary) → promote if needed.
 - XOR-FK / status-engine guards → plain Laravel model hooks (project code, not framework).
 
-### 1.3 — Extraction + first release
+### 1.3 — First release
 
-- Extract `inertia/` → own repo (or finalize in-place packaging).
+- ~~Extract `inertia/` → own repo~~ done 2026-06-11.
 - Lockstep composer + npm versioning (`tbtop/admin` + `@tbtop/inertia-admin`).
 - Re-enable changesets — internal release **is** the first real consumer (CLAUDE.md
   currently says skip "until real consumers"; this flips it on).
@@ -175,10 +182,13 @@ driver and the external adoption need point the same way.
 ## Sequencing summary
 
 ```
-NOW ──► EasyCar re-map doc + extraction-timing decision        (1.0)
-     ──► Layout/auth-page primitive  +  relation field  +  `in` filter   (1.1)
+NOW ──► Panel core ─► layouts (parallel) ─► chrome-as-DSL      (1.1 #1–3)
+  ╲──► Small wave in worktrees: modal, markdown, flex,
+       helperText/tooltip, scaffold, filter tabs               (1.1, after lint pass)
+     ──► Relation field + `in` filter                          (1.1 #4–5)
+     ──► EasyCar re-map doc                                    (1.0)
      ──► Build EasyCar; promote backlog items it demands       (1.2)
-     ──► Extract + lockstep release + changesets on            (1.3)   ◄── Phase 1 gate
+     ──► Lockstep release + changesets on                      (1.3)   ◄── Phase 1 gate
      ──► Quickstart + DSL reference + Filament migration guide  (2.1)
      ──► Site + changelog + public roadmap                      (2.2)
      ──► Adoption-gap features (soft-delete, infolist, relation managers) (2.3)

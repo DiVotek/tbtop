@@ -118,7 +118,9 @@
                                     {
                                         "kind": "textarea",
                                         "options": {
-                                            "label": "Body"
+                                            "label": "Body",
+                                            "helperText": "Supports Markdown.",
+                                            "tooltip": "Write the post body here."
                                         },
                                         "meta": {},
                                         "name": "body"
@@ -383,6 +385,18 @@
                             "name": "bulk-delete"
                         }
                     ],
+                    "tabs": [
+                        {
+                            "name": "all",
+                            "label": "all",
+                            "count": false
+                        },
+                        {
+                            "name": "published",
+                            "label": "Published",
+                            "count": true
+                        }
+                    ],
                     "pagination": {
                         "perPage": 25,
                         "options": [
@@ -432,6 +446,20 @@
                             },
                             "meta": {},
                             "name": "info"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Details",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "Details",
+                                    "description": "More info",
+                                    "size": "lg"
+                                }
+                            },
+                            "meta": {},
+                            "name": "details"
                         },
                         {
                             "kind": "action",
@@ -516,6 +544,64 @@
                             },
                             "meta": {},
                             "name": "archive"
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "flex",
+                "options": {
+                    "direction": "row",
+                    "children": [
+                        {
+                            "kind": "text",
+                            "options": {},
+                            "meta": {},
+                            "name": "flex_a"
+                        },
+                        {
+                            "kind": "text",
+                            "options": {},
+                            "meta": {},
+                            "name": "flex_b"
+                        }
+                    ],
+                    "justify": "between",
+                    "align": "center",
+                    "gap": 4,
+                    "wrap": true
+                },
+                "meta": {}
+            },
+            {
+                "kind": "row",
+                "options": {
+                    "children": [
+                        {
+                            "kind": "logo",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "navMenu",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "spacer",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "localeSwitcher",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
+                            "kind": "userMenu",
+                            "options": {},
+                            "meta": {}
                         }
                     ]
                 },

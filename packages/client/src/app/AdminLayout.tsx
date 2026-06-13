@@ -1,27 +1,32 @@
-import { Link, usePage } from "@inertiajs/react";
-import type { ReactNode } from "react";
-import { useTranslation } from "../i18n/i18n";
-import { ProfileDropdown } from "./ProfileDropdown";
+import { usePage } from "@inertiajs/react";
+import { type ReactNode, useMemo } from "react";
+import { materialize } from "../inertia/materialize";
+import { renderNode } from "../render/structureRenderer";
+import type { StructureNode } from "../structure/types";
+import { LogoBlock, NavMenuBlock, UserMenuBlock } from "./chromeBlocks";
+import {
+	type ChromeData,
+	ChromeDataContext,
+	type ChromeUser,
+	type NavGroup,
+} from "./chromeContext";
 
-interface NavItem {
-	label: string;
-	href: string;
-}
-
-interface NavGroup {
-	group: string;
-	items: NavItem[];
+/** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
+export interface ChromeTrees {
+	header?: StructureNode | null;
+	sidebar?: StructureNode | null;
+	footer?: StructureNode | null;
 }
 
 interface SharedProps {
-	tbtop?: { nav?: NavGroup[] };
-	auth?: { user?: { name?: string; email?: string } | null };
+	tbtop?: { nav?: NavGroup[]; chrome?: ChromeTrees; brand?: string | null };
+	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
 }
 
 export interface AdminLayoutSlotProps {
 	nav: NavGroup[];
-	user: { name?: string; email?: string } | null;
+	user: ChromeUser | null;
 }
 
 interface AdminLayoutSlots {
@@ -38,14 +43,18 @@ interface AdminLayoutProps {
 
 interface AdminLayoutShellProps {
 	nav: NavGroup[];
-	user: { name?: string; email?: string } | null;
+	user: ChromeUser | null;
 	currentUrl: string;
 	children: ReactNode;
 	slots?: AdminLayoutSlots;
+	chrome?: ChromeTrees | null;
+	brand?: string | null;
 }
 
 /**
- * Pure shell — testable without Inertia context. Receives nav/user/url as props.
+ * Pure shell — testable without Inertia context. Receives nav/user/url
+ * as props. Each area resolves React `slots` first (escape hatch), then
+ * the server-authored chrome tree, then the built-in default.
  */
 export function AdminLayoutShell({
 	nav,
@@ -53,37 +62,46 @@ export function AdminLayoutShell({
 	currentUrl,
 	children,
 	slots,
+	chrome,
+	brand,
 }: AdminLayoutShellProps) {
-	const t = useTranslation();
 	const slotProps: AdminLayoutSlotProps = { nav, user };
+	const chromeData: ChromeData = {
+		nav,
+		user,
+		currentUrl,
+		brand: brand ?? null,
+		logoSlot: slots?.logo?.(slotProps),
+	};
 
-	const sidebar = slots?.sidebar ? (
-		slots.sidebar(slotProps)
-	) : (
-		<DefaultSidebar nav={nav} currentUrl={currentUrl} t={t} logo={slots?.logo?.(slotProps)} />
-	);
-
-	const header = slots?.header ? slots.header(slotProps) : <DefaultHeader user={user} />;
-
-	const footer = slots?.footer ? slots.footer(slotProps) : null;
+	const sidebar = slots?.sidebar
+		? slots.sidebar(slotProps)
+		: renderArea(chrome?.sidebar, <DefaultSidebar />);
+	const header = slots?.header
+		? slots.header(slotProps)
+		: renderArea(chrome?.header, <DefaultHeader />);
+	const footer = slots?.footer ? slots.footer(slotProps) : renderArea(chrome?.footer, null);
 
 	return (
-		<div className="flex min-h-screen bg-background text-foreground">
-			<aside className="flex w-56 shrink-0 flex-col gap-4 border-r p-4">{sidebar}</aside>
-			<div className="flex min-w-0 flex-1 flex-col">
-				<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
-					{header}
-				</header>
-				<main className="min-w-0 flex-1">{children}</main>
-				{footer && <footer>{footer}</footer>}
+		<ChromeDataContext.Provider value={chromeData}>
+			<div className="flex min-h-screen bg-background text-foreground">
+				<aside className="flex w-56 shrink-0 flex-col gap-4 border-r p-4">{sidebar}</aside>
+				<div className="flex min-w-0 flex-1 flex-col">
+					<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
+						{header}
+					</header>
+					<main className="min-w-0 flex-1">{children}</main>
+					{footer && <footer>{footer}</footer>}
+				</div>
 			</div>
-		</div>
+		</ChromeDataContext.Provider>
 	);
 }
 
 /**
- * Persistent admin shell: sidebar from server-built nav shared props,
- * topbar with profile dropdown. Supports slot overrides for chrome customisation.
+ * Persistent admin shell: sidebar/header/footer come from the
+ * server-authored `tbtop.chrome` trees (default Chrome reproduces the
+ * stock shell). React `slots` remain the last-resort override.
  */
 export function AdminLayout({ children, slots }: AdminLayoutProps) {
 	const { props, url } = usePage<SharedProps>();
@@ -91,53 +109,42 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 	const user = props.auth?.user ?? null;
 
 	return (
-		<AdminLayoutShell nav={nav} user={user} currentUrl={url} slots={slots}>
+		<AdminLayoutShell
+			nav={nav}
+			user={user}
+			currentUrl={url}
+			slots={slots}
+			chrome={props.tbtop?.chrome}
+			brand={props.tbtop?.brand}
+		>
 			{children}
 		</AdminLayoutShell>
 	);
 }
 
-interface DefaultSidebarProps {
-	nav: NavGroup[];
-	currentUrl: string;
-	t: (key: string) => string;
-	logo?: ReactNode;
+function renderArea(tree: StructureNode | null | undefined, fallback: ReactNode): ReactNode {
+	return tree ? <ChromeTree tree={tree} /> : fallback;
 }
 
-function DefaultSidebar({ nav, currentUrl, t, logo }: DefaultSidebarProps) {
+function ChromeTree({ tree }: { tree: StructureNode }) {
+	// Chrome trees are page-independent: server actions are rejected at
+	// serialization time, so no page basePath or data bag is needed here.
+	const node = useMemo(() => materialize(tree, { basePath: "", data: {} }), [tree]);
+	return <>{renderNode(node)}</>;
+}
+
+// Legacy in-React defaults, used only when neither a slot nor a chrome
+// tree is supplied (e.g. shell rendered outside an Inertia page). Same
+// components the chrome kinds resolve to — parity by construction.
+function DefaultSidebar() {
 	return (
 		<>
-			<div className="text-lg font-semibold">{logo ?? t("nav.title")}</div>
-			<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
-				{nav.map((group) => (
-					<NavGroupSection key={group.group} group={group} currentUrl={currentUrl} />
-				))}
-			</nav>
+			<LogoBlock />
+			<NavMenuBlock />
 		</>
 	);
 }
 
-function DefaultHeader({ user }: { user: { name?: string; email?: string } | null }) {
-	return <ProfileDropdown user={user} />;
-}
-
-function NavGroupSection({ group, currentUrl }: { group: NavGroup; currentUrl: string }) {
-	return (
-		<div className="flex flex-col gap-1">
-			<div className="px-2 text-xs font-medium uppercase text-muted-foreground">
-				{group.group}
-			</div>
-			{group.items.map((item) => (
-				<Link
-					key={item.href}
-					href={item.href}
-					className={`rounded-md px-2 py-1.5 text-sm hover:bg-accent ${
-						currentUrl.startsWith(item.href) ? "bg-accent font-medium" : ""
-					}`}
-				>
-					{item.label}
-				</Link>
-			))}
-		</div>
-	);
+function DefaultHeader() {
+	return <UserMenuBlock />;
 }

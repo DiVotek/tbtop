@@ -65,7 +65,7 @@ export function readFilters(
 	prefix: string,
 ): Record<string, unknown> {
 	const filters: Record<string, unknown> = {};
-	const reserved = new Set(["search", "sort", "page", "perPage"]);
+	const reserved = new Set(["search", "sort", "page", "perPage", "tab"]);
 	const scalarRe = new RegExp(`^${escapeRegex(prefix)}\\[([^\\]]+)\\]$`);
 	const nestedRe = new RegExp(`^${escapeRegex(prefix)}\\[([^\\]]+)\\]\\[([^\\]]+)\\]$`);
 

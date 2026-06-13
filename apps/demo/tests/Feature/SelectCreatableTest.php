@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Post;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -78,10 +79,12 @@ class SelectCreatableTest extends TestCase
         $this->app['auth']->forgetGuards();
         $post = $this->makePost();
 
+        // The panel guard (auth:web) rejects JSON guests with 401 — it runs
+        // before RequireFullAuth, which used to redirect.
         $this->postJson(
             "/admin/posts/{$post->id}/edit/select-create/author_id",
             ['name' => 'Bob', 'email' => 'bob@example.com'],
-        )->assertRedirect();
+        )->assertUnauthorized();
     }
 
     /**
@@ -111,12 +114,12 @@ class SelectCreatableTest extends TestCase
     }
 
     /** @param  array<string, mixed>  $overrides */
-    private function makePost(array $overrides = []): \App\Models\Post
+    private function makePost(array $overrides = []): Post
     {
         static $i = 0;
         $i++;
 
-        return \App\Models\Post::create([
+        return Post::create([
             'title' => ['en' => "Post {$i}"],
             'slug' => "post-{$i}",
             ...$overrides,

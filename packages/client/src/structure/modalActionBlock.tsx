@@ -50,6 +50,7 @@ export function ModalActionBlock({ options: opts }: { options: ActionOptionsBag 
 				onOpenChange={setOpen}
 				title={modal.title}
 				description={modal.description}
+				size={modal.size}
 				data-testid={`modal-${actionKey(opts)}`}
 			>
 				{body && (

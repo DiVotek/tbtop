@@ -2,11 +2,19 @@
 
 namespace Tbtop\Admin\Tests;
 
+use Illuminate\Foundation\Auth\User as AuthUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tbtop\Admin\Tests\Fixtures\Panels\MediaPanel;
 
 class MediaHttpTestCase extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(new AuthUser);
+    }
 
     public function getEnvironmentSetUp($app): void
     {
@@ -18,8 +26,7 @@ class MediaHttpTestCase extends TestCase
             'prefix' => '',
         ]);
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
-        $app['config']->set('tbtop-admin.middleware', ['web']);
-        $app['config']->set('tbtop-admin.pages', []);
+        $app['config']->set('tbtop-admin.panels', [MediaPanel::class]);
         $app['config']->set('tbtop-admin.media', [
             'disk' => 'public',
             'accept' => ['image/*'],

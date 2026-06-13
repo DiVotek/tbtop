@@ -16,12 +16,10 @@ it('PageController: breadcrumbs prop is included in page response by default', f
 });
 
 // --------------------------------------------------------------------------
-// breadcrumbs prop is absent when config breadcrumbs = false
+// breadcrumbs prop is absent when the panel disables it (PlainPanel, /plain)
 // --------------------------------------------------------------------------
-it('PageController: breadcrumbs prop is absent when config disables it', function () {
-    config()->set('tbtop-admin.breadcrumbs', false);
-
-    $response = $this->get('/admin/nav-demo', ['X-Inertia' => 'true']);
+it('PageController: breadcrumbs prop is absent when the panel disables it', function () {
+    $response = $this->get('/plain/nav-demo', ['X-Inertia' => 'true']);
 
     $response->assertOk();
     $props = $response->json('props');

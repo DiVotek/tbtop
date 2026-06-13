@@ -1,5 +1,5 @@
 import type { QueryParams } from "../data/client";
-import type { ClientActionContext, StructureNode } from "../structure/types";
+import type { ClientActionContext, ListQueryParams, StructureNode } from "../structure/types";
 import type { FieldConstraints } from "./constraints";
 
 type Bag = Record<string, unknown>;
@@ -33,14 +33,7 @@ export function childNodes(opts: Bag): StructureNode[] {
 
 export function tableQueryParams(ctx: ClientActionContext): QueryParams {
 	const params = ctx.table?.queryParams ?? {};
-	const [sort, dir] = (params.sort ?? "").split(":");
-	const query: QueryParams = {
-		page: params.page,
-		perPage: params.perPage,
-		sort: sort || undefined,
-		dir: dir || undefined,
-		search: params.search || undefined,
-	};
+	const query = scalarQueryParams(params);
 	for (const [field, value] of Object.entries(params.filters ?? {})) {
 		const encoded = encodeFilterValue(field, value);
 		for (const [k, v] of Object.entries(encoded)) {
@@ -48,6 +41,18 @@ export function tableQueryParams(ctx: ClientActionContext): QueryParams {
 		}
 	}
 	return query;
+}
+
+function scalarQueryParams(params: ListQueryParams): QueryParams {
+	const [sort, dir] = (params.sort ?? "").split(":");
+	return {
+		page: params.page,
+		perPage: params.perPage,
+		sort: sort || undefined,
+		dir: dir || undefined,
+		search: params.search || undefined,
+		tab: params.tab || undefined,
+	};
 }
 
 export function encodeFilterValue(field: string, value: unknown): Record<string, unknown> {

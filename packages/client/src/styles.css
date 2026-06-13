@@ -134,6 +134,17 @@ html.dark {
 	}
 }
 
+/* ── Scrollbar hide utility ──────────────────────────────────────── */
+/* Keeps the element scrollable but hides the scrollbar chrome across       */
+/* all browsers. Used on the ModalShell body to match shadcn/radix parity.  */
+/* Not using a Tailwind scrollbar plugin — a single rule is cheaper.        */
+@utility scrollbar-none {
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
 /* ── Lexical rich-text editor ─────────────────────────────────────── */
 
 .tabletop-editor {

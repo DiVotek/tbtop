@@ -7,7 +7,7 @@ import { TableError, TableSkeleton } from "./defaults";
 import { renderAsyncError } from "./renderAsyncError";
 import { normalizeRows, parseSortParam, TableGrid } from "./table/grid";
 import { TablePagination } from "./table/pagination";
-import { TableToolbar } from "./table/toolbar";
+import { TableTabBar, TableToolbar } from "./table/toolbar";
 import { TableControllerProvider } from "./tableContext";
 import { useTableController } from "./tableController";
 import { persistTableParams, seedTableParams } from "./tableUrlState";
@@ -19,6 +19,7 @@ import type {
 	TableColumn,
 	TableController,
 	TablePaginationOptions,
+	TableTab,
 } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
 
@@ -32,6 +33,7 @@ interface TableBlockOptions extends AsyncBlock {
 	searchable?: string[];
 	filters?: StructureNode[];
 	filtersIn?: "modal" | "inline";
+	tabs?: TableTab[];
 	pagination?: TablePaginationOptions;
 	rowClick?: string;
 }
@@ -79,7 +81,7 @@ export function TableBlock({ options }: TableRenderProps) {
 		return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 	}
 
-	const { rows, total } = normalizeRows(state.data);
+	const { rows, total, tabCounts } = normalizeRows(state.data);
 
 	return (
 		<TableBody
@@ -95,6 +97,8 @@ export function TableBlock({ options }: TableRenderProps) {
 			searchable={options.searchable}
 			filters={options.filters}
 			filtersIn={options.filtersIn ?? "modal"}
+			tabs={options.tabs}
+			tabCounts={tabCounts}
 			pagination={options.pagination}
 			tableName={tableName}
 			rowClick={options.rowClick}
@@ -125,6 +129,8 @@ interface TableBodyProps {
 	searchable?: string[];
 	filters?: StructureNode[];
 	filtersIn: "modal" | "inline";
+	tabs?: TableTab[];
+	tabCounts?: Record<string, number>;
 	pagination?: TablePaginationOptions;
 	tableName: string;
 	rowClick?: string;
@@ -229,6 +235,16 @@ function TableBody(props: TableBodyProps) {
 		[onChangeParams],
 	);
 
+	const handleSelectTab = useCallback(
+		(name: string) => {
+			onChangeParams({ tab: name, page: 1 });
+		},
+		[onChangeParams],
+	);
+
+	const tabs = props.tabs ?? [];
+	const activeTab = props.queryParams.tab ?? tabs[0]?.name;
+
 	const visibleCols = props.columns.filter((c) => visibleColumns.has(c.name));
 
 	// Footer shows only when server sends pagination config and a total.
@@ -238,6 +254,15 @@ function TableBody(props: TableBodyProps) {
 	return (
 		<TableControllerProvider value={ctrl}>
 			<div className="flex flex-col gap-2" data-testid="table-block">
+				{tabs.length > 0 && (
+					<TableTabBar
+						tabs={tabs}
+						activeTab={activeTab}
+						tabCounts={props.tabCounts}
+						onSelect={handleSelectTab}
+					/>
+				)}
+
 				<TableToolbar
 					hasSearch={hasSearch}
 					hasFilters={hasFilters}

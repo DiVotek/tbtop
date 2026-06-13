@@ -1,9 +1,11 @@
+import type { ModalSize } from "../ui/modal-shell";
 import type { ActionColor, ActionConfig, StructureNode } from "./types";
 
 export interface ActionModalOpts {
 	title: string;
 	description?: string;
 	body?: StructureNode | ((s: unknown) => StructureNode);
+	size?: ModalSize;
 }
 
 export interface ActionOptionsBag {

@@ -139,6 +139,50 @@ final class S
         return self::layout('row', $children, $opts);
     }
 
+    /**
+     * Flex layout node with explicit direction and optional alignment options.
+     *
+     * @param  list<mixed>  $children
+     * @param  'row'|'col'  $direction
+     * @param  'start'|'center'|'end'|'between'|'around'|'evenly'|null  $justify
+     * @param  'start'|'center'|'end'|'stretch'|'baseline'|null  $align
+     */
+    public function flex(
+        array $children,
+        string $direction = 'row',
+        ?string $justify = null,
+        ?string $align = null,
+        ?int $gap = null,
+        bool $wrap = false,
+    ): Node {
+        FlexValidator::direction($direction);
+        if ($justify !== null) {
+            FlexValidator::justify($justify);
+        }
+        if ($align !== null) {
+            FlexValidator::align($align);
+        }
+        if ($gap !== null) {
+            FlexValidator::gap($gap);
+        }
+
+        $opts = ['direction' => $direction, 'children' => $children];
+        if ($justify !== null) {
+            $opts['justify'] = $justify;
+        }
+        if ($align !== null) {
+            $opts['align'] = $align;
+        }
+        if ($gap !== null) {
+            $opts['gap'] = $gap;
+        }
+        if ($wrap) {
+            $opts['wrap'] = true;
+        }
+
+        return new Node('flex', $opts);
+    }
+
     /** @param  array<string, mixed>  $opts @param  list<mixed>  $children */
     public function grid(array $opts, array $children): Node
     {
@@ -231,6 +275,16 @@ final class S
         return HtmlBlock::make($rawHtml);
     }
 
+    /**
+     * Markdown display block — converts markdown to HTML server-side and emits
+     * a `displayHtml` wire node. Embedded HTML is stripped by default; call
+     * ->allowHtml() on the returned block to pass it through.
+     */
+    public function markdown(string $content): MarkdownBlock
+    {
+        return MarkdownBlock::make($content);
+    }
+
     public function displayDivider(): Node
     {
         return new Node('displayDivider');
@@ -247,6 +301,43 @@ final class S
         [$options, $meta] = Meta::split($opts);
 
         return new Node('tabs', [...$options, 'tabs' => $tabs], null, $meta);
+    }
+
+    // -------------------------------------------------------------------------
+    // Chrome blocks
+    // -------------------------------------------------------------------------
+    // Option-less by design: the client reads their data from shared props
+    // (nav, auth user, locales, brand). Used by Chrome trees; pages may embed
+    // them too, but the shell is their home.
+
+    /** Sidebar navigation groups built from the panel pages. */
+    public function navMenu(): Node
+    {
+        return new Node('navMenu');
+    }
+
+    /** Profile dropdown: user identity, theme, locale, logout. */
+    public function userMenu(): Node
+    {
+        return new Node('userMenu');
+    }
+
+    /** Panel brand text (falls back to the nav.title translation). */
+    public function logo(): Node
+    {
+        return new Node('logo');
+    }
+
+    /** Standalone UI-locale switcher; hidden when the panel has one locale. */
+    public function localeSwitcher(): Node
+    {
+        return new Node('localeSwitcher');
+    }
+
+    /** Flex spacer pushing the following siblings to the far edge. */
+    public function spacer(): Node
+    {
+        return new Node('spacer');
     }
 
     // -------------------------------------------------------------------------

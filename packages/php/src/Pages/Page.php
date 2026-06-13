@@ -47,4 +47,14 @@ abstract class Page
     {
         return null;
     }
+
+    /**
+     * Shell layout to use when rendering this page.
+     * 'admin' = full admin shell with sidebar/header.
+     * 'center' = chrome-less, content centered horizontally and vertically.
+     */
+    public function layout(): string
+    {
+        return 'admin';
+    }
 }

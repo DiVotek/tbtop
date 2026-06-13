@@ -1,3 +1,4 @@
+import { InfoIcon } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 import type { FieldFormProps } from "../fields/fieldProps";
@@ -6,6 +7,7 @@ import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
 import { Label } from "../ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useClientActionContext } from "./actionContext";
 import type { AsyncBlock } from "./asyncBlock";
 import { ContentLocaleBar } from "./contentLocaleBar";
@@ -178,6 +180,8 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 	const fieldError = ctrl.fieldErrors[name];
 	const label = (options as { label?: string }).label;
 	const required = (options as { required?: boolean }).required === true;
+	const helperText = (options as { helperText?: string }).helperText;
+	const tooltip = (options as { tooltip?: string }).tooltip;
 	const fieldId = node.meta.id ?? name;
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
 
@@ -219,9 +223,11 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 				<Label htmlFor={fieldId}>
 					{label}
 					{required && <span className="text-destructive">*</span>}
+					{tooltip && <FieldTooltip text={tooltip} />}
 				</Label>
 			)}
 			{control}
+			{helperText && <FieldHelperText text={helperText} />}
 			{fieldError && <FieldError name={name} message={fieldError} />}
 		</div>
 	);
@@ -365,6 +371,29 @@ function FieldError({ name, message }: { name: string; message: string }) {
 		<p role="alert" className="text-sm text-destructive" data-testid={`field-error-${name}`}>
 			{message}
 		</p>
+	);
+}
+
+function FieldHelperText({ text }: { text: string }) {
+	return (
+		<p className="text-sm text-muted-foreground" data-testid="field-helper-text">
+			{text}
+		</p>
+	);
+}
+
+function FieldTooltip({ text }: { text: string }) {
+	return (
+		<Tooltip>
+			<TooltipTrigger
+				type="button"
+				aria-label={text}
+				className="inline-flex items-center text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			>
+				<InfoIcon className="size-3.5" aria-hidden />
+			</TooltipTrigger>
+			<TooltipContent>{text}</TooltipContent>
+		</Tooltip>
 	);
 }
 

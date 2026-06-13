@@ -1,3 +1,4 @@
+import type { ModalSize } from "../ui/modal-shell";
 import type { ActionConfig, StructureNode } from "./types";
 
 function assertActionConfig(cfg: ActionConfig): void {
@@ -21,12 +22,13 @@ interface ResolvedModal {
 	title: string;
 	description?: string;
 	body?: StructureNode;
+	size?: ModalSize;
 }
 
 type ModalBodyInput = StructureNode | ((s: unknown) => StructureNode) | undefined;
 
 function resolveModal(
-	modal: { title: string; description?: string; body?: ModalBodyInput },
+	modal: { title: string; description?: string; body?: ModalBodyInput; size?: ModalSize },
 	sProxy: unknown,
 ): ResolvedModal {
 	const resolved: ResolvedModal = { title: modal.title };
@@ -35,6 +37,9 @@ function resolveModal(
 	}
 	if (modal.body !== undefined) {
 		resolved.body = typeof modal.body === "function" ? modal.body(sProxy) : modal.body;
+	}
+	if (modal.size !== undefined) {
+		resolved.size = modal.size;
 	}
 	return resolved;
 }

@@ -1,0 +1,194 @@
+<?php
+
+namespace Tbtop\Admin\Panels;
+
+use Tbtop\Admin\Pages\Page;
+
+/**
+ * Fluent per-panel configuration, produced by Panel::configure().
+ */
+final class PanelConfig
+{
+    private string $id = '';
+
+    private string $prefix = '';
+
+    private string $guard = 'web';
+
+    /** @var list<string> */
+    private array $middleware = ['web'];
+
+    /** @var list<class-string<Page>> */
+    private array $pages = [];
+
+    /** @var list<string> */
+    private array $locales = ['en'];
+
+    private ?string $defaultLocale = null;
+
+    private bool $unsavedGuard = true;
+
+    private bool $breadcrumbs = true;
+
+    private ?string $brand = null;
+
+    private string $rootView = 'app';
+
+    /** Untyped on purpose: validated against Chrome at serialization time. @var class-string|null */
+    private ?string $chrome = null;
+
+    public function id(string $id): static
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    public function prefix(string $prefix): static
+    {
+        $this->prefix = $prefix;
+
+        return $this;
+    }
+
+    public function guard(string $guard): static
+    {
+        $this->guard = $guard;
+
+        return $this;
+    }
+
+    /** @param  list<string>  $middleware */
+    public function middleware(array $middleware): static
+    {
+        $this->middleware = $middleware;
+
+        return $this;
+    }
+
+    /** @param  list<class-string<Page>>  $pages */
+    public function pages(array $pages): static
+    {
+        $this->pages = $pages;
+
+        return $this;
+    }
+
+    /** Admin UI locales. First entry is the default unless defaultLocale() is set. @param  list<string>  $locales */
+    public function locales(array $locales): static
+    {
+        $this->locales = $locales;
+
+        return $this;
+    }
+
+    public function defaultLocale(string $locale): static
+    {
+        $this->defaultLocale = $locale;
+
+        return $this;
+    }
+
+    /** Default for the unsaved-changes navigation guard on forms. */
+    public function unsavedGuard(bool $enabled = true): static
+    {
+        $this->unsavedGuard = $enabled;
+
+        return $this;
+    }
+
+    /** Whether pages build and send the breadcrumbs prop. */
+    public function breadcrumbs(bool $enabled = true): static
+    {
+        $this->breadcrumbs = $enabled;
+
+        return $this;
+    }
+
+    public function brand(string $brand): static
+    {
+        $this->brand = $brand;
+
+        return $this;
+    }
+
+    /** Blade root view rendered on first visit (per-panel Vite entry escape hatch). */
+    public function rootView(string $view): static
+    {
+        $this->rootView = $view;
+
+        return $this;
+    }
+
+    /** Chrome class serialized into the shell areas (header/sidebar/footer DSL). @param  class-string<Chrome>  $chrome */
+    public function chrome(string $chrome): static
+    {
+        $this->chrome = $chrome;
+
+        return $this;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getPrefix(): string
+    {
+        return $this->prefix !== '' ? $this->prefix : $this->id;
+    }
+
+    public function getGuard(): string
+    {
+        return $this->guard;
+    }
+
+    /** @return list<string> */
+    public function getMiddleware(): array
+    {
+        return $this->middleware;
+    }
+
+    /** @return list<class-string<Page>> */
+    public function getPages(): array
+    {
+        return $this->pages;
+    }
+
+    /** @return list<string> */
+    public function getLocales(): array
+    {
+        return $this->locales;
+    }
+
+    public function getDefaultLocale(): string
+    {
+        return $this->defaultLocale ?? $this->locales[0] ?? 'en';
+    }
+
+    public function hasUnsavedGuard(): bool
+    {
+        return $this->unsavedGuard;
+    }
+
+    public function hasBreadcrumbs(): bool
+    {
+        return $this->breadcrumbs;
+    }
+
+    public function getBrand(): ?string
+    {
+        return $this->brand;
+    }
+
+    public function getRootView(): string
+    {
+        return $this->rootView;
+    }
+
+    /** @return class-string|null */
+    public function getChrome(): ?string
+    {
+        return $this->chrome;
+    }
+}

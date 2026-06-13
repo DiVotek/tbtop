@@ -1,3 +1,10 @@
+import {
+	LocaleSwitcherBlock,
+	LogoBlock,
+	NavMenuBlock,
+	SpacerBlock,
+	UserMenuBlock,
+} from "../app/chromeBlocks";
 import { BooleanCell, BooleanForm } from "../fields/booleanField";
 import { CheckboxCell, CheckboxForm } from "../fields/checkboxField";
 import { ColorpickerCell, ColorpickerForm } from "../fields/colorpickerField";
@@ -42,6 +49,7 @@ import {
 } from "../ui/charts";
 import { getBlockDescriptor } from "./blockRegistry";
 import {
+	FlexBlock,
 	GridBlock,
 	RowBlock,
 	SectionBlock,
@@ -59,14 +67,26 @@ export function ensureBuiltinsRegistered(): void {
 		return;
 	}
 	registerLayout();
+	registerChrome();
 	registerDataBlocks();
 	registerCharts();
 	registerFields();
 }
 
+// Shell chrome kinds — option-less; they read shared-prop data from
+// ChromeDataContext (provided by AdminLayoutShell).
+function registerChrome(): void {
+	defineBlock("navMenu", { behavior: "leaf", render: NavMenuBlock });
+	defineBlock("userMenu", { behavior: "leaf", render: UserMenuBlock });
+	defineBlock("logo", { behavior: "leaf", render: LogoBlock });
+	defineBlock("localeSwitcher", { behavior: "leaf", render: LocaleSwitcherBlock });
+	defineBlock("spacer", { behavior: "leaf", render: SpacerBlock });
+}
+
 function registerLayout(): void {
 	defineBlock("stack", { behavior: "container", render: StackBlock });
 	defineBlock("row", { behavior: "container", render: RowBlock });
+	defineBlock("flex", { behavior: "container", render: FlexBlock });
 	defineBlock("grid", { behavior: "container", render: GridBlock });
 	defineBlock("section", { behavior: "container", render: SectionBlock });
 	defineBlock("tabs", { behavior: "container", render: TabsBlock });

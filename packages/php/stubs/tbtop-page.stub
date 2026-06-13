@@ -1,0 +1,27 @@
+<?php
+
+namespace {{ namespace }};
+
+use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page;
+
+class {{ class }} extends Page
+{
+    public static function path(): string
+    {
+        return '{{ path }}';
+    }
+
+    public static function nav(): ?array
+    {
+        return ['group' => '{{ group }}', 'label' => '{{ label }}'];
+    }
+
+    public function view(S $s): Node
+    {
+        return $s->stack([
+            $s->displayText('{{ label }}')->variant('heading'),
+        ]);
+    }
+}

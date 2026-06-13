@@ -50,7 +50,11 @@
 								"properties": {
 									"columns": { "$ref": "#/$defs/columns" },
 									"pagination": { "$ref": "#/$defs/pagination" },
-									"rowClick": { "type": "string" }
+									"rowClick": { "type": "string" },
+									"tabs": {
+										"type": "array",
+										"items": { "$ref": "#/$defs/tableTab" }
+									}
 								}
 							}
 						}
@@ -104,6 +108,62 @@
 							}
 						}
 					}
+				},
+				{
+					"if": {
+						"properties": {
+							"kind": {
+								"enum": ["navMenu", "userMenu", "logo", "localeSwitcher", "spacer"]
+							}
+						}
+					},
+					"then": {
+						"properties": {
+							"options": {
+								"additionalProperties": false,
+								"properties": {}
+							}
+						}
+					}
+				},
+				{
+					"if": {
+						"properties": { "kind": { "const": "flex" } }
+					},
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["direction", "children"],
+								"properties": {
+									"direction": {
+										"type": "string",
+										"enum": ["row", "col"]
+									},
+									"justify": {
+										"type": "string",
+										"enum": [
+											"start",
+											"center",
+											"end",
+											"between",
+											"around",
+											"evenly"
+										]
+									},
+									"align": {
+										"type": "string",
+										"enum": ["start", "center", "end", "stretch", "baseline"]
+									},
+									"gap": {
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 12
+									},
+									"wrap": { "type": "boolean" }
+								}
+							}
+						}
+					}
 				}
 			]
 		},
@@ -119,16 +179,23 @@
 				"tabs": {
 					"type": "array",
 					"items": {
-						"type": "object",
-						"required": ["label", "body"],
-						"properties": {
-							"label": { "type": "string" },
-							"body": { "$ref": "#/$defs/node" }
-						}
+						"oneOf": [
+							{
+								"type": "object",
+								"required": ["label", "body"],
+								"properties": {
+									"label": { "type": "string" },
+									"body": { "$ref": "#/$defs/node" }
+								}
+							},
+							{ "$ref": "#/$defs/tableTab" }
+						]
 					}
 				},
 				"constraints": { "$ref": "#/$defs/constraints" },
 				"label": { "type": "string" },
+				"helperText": { "type": "string" },
+				"tooltip": { "type": "string" },
 				"collapsed": { "type": "boolean" },
 				"create": {
 					"type": "object",
@@ -187,6 +254,16 @@
 					"iconMap": { "type": "object" }
 				}
 			}
+		},
+		"tableTab": {
+			"type": "object",
+			"required": ["name", "label", "count"],
+			"properties": {
+				"name": { "type": "string", "minLength": 1 },
+				"label": { "type": "string" },
+				"count": { "type": "boolean" }
+			},
+			"additionalProperties": false
 		},
 		"pagination": {
 			"type": "object",
@@ -252,7 +329,8 @@
 						"type": { "const": "modal" },
 						"title": { "type": "string" },
 						"description": { "type": "string" },
-						"body": { "$ref": "#/$defs/node" }
+						"body": { "$ref": "#/$defs/node" },
+						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] }
 					},
 					"additionalProperties": false
 				},
@@ -324,6 +402,16 @@
 					"additionalProperties": false
 				}
 			]
+		},
+		"chrome": {
+			"type": "object",
+			"required": ["header", "sidebar", "footer"],
+			"properties": {
+				"header": { "oneOf": [{ "$ref": "#/$defs/node" }, { "type": "null" }] },
+				"sidebar": { "oneOf": [{ "$ref": "#/$defs/node" }, { "type": "null" }] },
+				"footer": { "oneOf": [{ "$ref": "#/$defs/node" }, { "type": "null" }] }
+			},
+			"additionalProperties": false
 		},
 		"effects": {
 			"type": "array",

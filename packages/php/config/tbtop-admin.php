@@ -1,38 +1,21 @@
 <?php
 
 return [
-    // URL prefix all admin pages mount under.
-    'prefix' => 'admin',
-
-    // Middleware stack for pages, form submits and actions.
-    'middleware' => ['web', 'auth'],
-
-    // Registered page classes (list of class-strings extending Pages\Page).
-    'pages' => [],
-
-    // Admin UI locales. First entry is the default.
-    // Current locale is stored in the session under 'tbtop.locale'.
-    'locales' => ['en'],
-
-    // Fallback locale used when session has no preference.
-    'default_locale' => 'en',
+    // Registered panels (list of class-strings extending Panels\Panel).
+    // Per-panel settings (prefix, guard, middleware, pages, UI locales,
+    // unsaved guard, breadcrumbs, brand, root view, chrome) live in each
+    // panel's configure() method.
+    'panels' => [],
 
     // Content locales for translatable fields. First entry is the default.
-    // Separate from admin UI locales — these are the locales for page content.
+    // Global on purpose: content locales describe the data, not a panel.
     'content_locales' => ['en'],
 
     // Default content locale used for field validation rules.
     'default_content_locale' => 'en',
 
-    // Global default for the unsaved-changes navigation guard on forms.
-    // Per-form override: FormBuilder::guardUnsaved(bool).
-    'unsaved_guard' => true,
-
-    // Whether to build and send the breadcrumbs prop.
-    // Set to false to suppress breadcrumbs globally (prop is omitted from page response).
-    'breadcrumbs' => true,
-
-    // Media manager configuration.
+    // Media manager configuration. Global on purpose: media storage is
+    // shared across panels (per-panel media scoping is tenancy — out of scope).
     'media' => [
         // Storage disk for uploaded media files.
         'disk' => 'public',

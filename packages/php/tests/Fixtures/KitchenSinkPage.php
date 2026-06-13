@@ -6,6 +6,7 @@ use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -43,7 +44,8 @@ class KitchenSinkPage extends Page
             $s->section(['title' => 'Form'], [
                 $s->form('post', [
                     $s->text('title')->label('Title')->required()->rules('max:200'),
-                    $s->textarea('body')->label('Body'),
+                    $s->textarea('body')->label('Body')
+                        ->helperText('Supports Markdown.')->tooltip('Write the post body here.'),
                     $s->number('rating')->rules('integer|min:0|max:5'),
                     $s->boolean('published'),
                     $s->date('publishedAt')->hiddenIf('published', '=', false),
@@ -75,6 +77,12 @@ class KitchenSinkPage extends Page
                 ->columns(['title' => 'Title', 'views' => 'Views'])
                 ->searchable(['title'])
                 ->defaultSort('views', 'desc')
+                ->tabs([
+                    Tab::make('all'),
+                    Tab::make('published')->label('Published')
+                        ->query(fn ($q) => $q->where('published', true))
+                        ->count(),
+                ])
                 ->rowActions([
                     $s->action('edit')->label('Edit')->handle(fn () => Effects::make(), needs: ['row']),
                     $s->action('delete')->label('Delete')->color('danger')
@@ -89,6 +97,7 @@ class KitchenSinkPage extends Page
                 ->toNode(),
             $s->actionsRow([
                 $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted')),
+                $s->action('details')->label('Details')->modal('Details', null, 'More info')->size('lg'),
                 $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi']),
             ]),
             $s->collapsible(['label' => 'Advanced options'], [
@@ -101,6 +110,14 @@ class KitchenSinkPage extends Page
                 $s->action('publish')->label('Publish')->visit('/admin/posts/publish'),
                 $s->action('archive')->label('Archive')
                     ->handle(fn () => Effects::make(), needs: ['row']),
+            ]),
+            $s->flex([$s->text('flex_a'), $s->text('flex_b')], direction: 'row', justify: 'between', align: 'center', gap: 4, wrap: true),
+            $s->row([
+                $s->logo(),
+                $s->navMenu(),
+                $s->spacer(),
+                $s->localeSwitcher(),
+                $s->userMenu(),
             ]),
         ]);
     }

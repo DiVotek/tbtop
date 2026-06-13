@@ -24,6 +24,10 @@ const ROUND_TRIP_CASES: RoundTripCase[] = [
 	{ label: "sort only", params: { sort: "title:desc" } },
 	{ label: "page only", params: { page: 3 } },
 	{ label: "perPage only", params: { perPage: 50 } },
+	// Round-trip equality also proves "tab" stays a scalar and never
+	// leaks into the filters bag (it is a reserved key).
+	{ label: "tab only", params: { tab: "published" } },
+	{ label: "tab + filter", params: { tab: "draft", filters: { status: "old" } } },
 	{
 		label: "scalar filter",
 		params: { filters: { status: "draft" } },

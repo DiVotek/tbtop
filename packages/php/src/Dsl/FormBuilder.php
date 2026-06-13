@@ -3,11 +3,10 @@
 namespace Tbtop\Admin\Dsl;
 
 use Closure;
-use Illuminate\Container\Container;
-use Illuminate\Contracts\Config\Repository;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Panels\CurrentPanel;
 
 final class FormBuilder implements JsonSerializable
 {
@@ -128,17 +127,9 @@ final class FormBuilder implements JsonSerializable
         return $this->toNode()->jsonSerialize();
     }
 
-    /** True when no container/config available — client defaults to guarded. */
+    /** Panel default; true when no panel is bound — client defaults to guarded. */
     private static function guardUnsavedConfigDefault(): bool
     {
-        $container = Container::getInstance();
-        if (! $container->bound('config')) {
-            return true;
-        }
-
-        /** @var Repository $config */
-        $config = $container->make('config');
-
-        return (bool) $config->get('tbtop-admin.unsaved_guard', true);
+        return CurrentPanel::current()?->unsavedGuard() ?? true;
     }
 }
