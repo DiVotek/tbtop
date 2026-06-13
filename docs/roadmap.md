@@ -33,12 +33,12 @@ Surveyed from source on 2026-06-13, after the panels wave merged (PR #1, `bfad03
 - **Multi-panel** (PR #1): `Panel` class + `PanelConfig`, per-panel prefix/guard/middleware/pages/locales, `tbtop.{panel}.{slug}` route names, request-scoped `CurrentPanel`. Design in `packages/php/adr/panels.md`.
 - **Page layouts** (PR #1): `Page::layout()` → `'admin'` (sidebar shell) | `'center'` (chrome-less, centered). Client dispatches `AdminLayout` vs `CenterLayout`.
 - **Chrome-as-DSL** (PR #1): per-panel `Chrome` class with `header/sidebar/footer(S): Node`; predefined block kinds `navMenu/userMenu/logo/localeSwitcher/spacer`; React `slots` as escape hatch.
-- **Tables**: columns with kinds (text/date/money/badge/boolean/icon), sort, pagination, global search, per-field filters (modal/inline), filter tabs (URL-state, opt-in counts — PR #1), row actions, bulk actions, row-click, column visibility, URL-state persistence.
-- **Forms**: async record load, validation (PHP rules → wire constraints → zod-on-blur), unsaved guard, scroll-to-error, nested repeaters, translatable fields with per-locale tabs, `helperText`/`tooltip` (PR #1).
+- **Tables**: columns with kinds (text/date/money/badge/boolean/icon), sort, pagination, global search, per-field filters (modal/inline), filter tabs (URL-state, opt-in counts — PR #1), generic `in` (multi-value `WHERE IN`) filter (PR #2), row actions, bulk actions, row-click, column visibility, URL-state persistence.
+- **Forms**: async record load, validation (PHP rules → wire constraints → zod-on-blur), unsaved guard, scroll-to-error, nested repeaters, translatable fields with per-locale tabs, `helperText`/`tooltip` (PR #1), server-driven async relation field (search endpoint + `labelKey`/`query` — PR #2).
 - **Charts + stats**: line/bar/area/pie/donut with runtime params; stat cards with delta/sparkline/icon.
 - **Display**: static blocks + `S::markdown()` (server-side commonmark → `displayHtml`, PR #1); flex options on `row`/`stack` (`justify/align/gap/wrap`, PR #1).
 - **Actions/effects**: closed effect set (`notify/redirect/refreshTable/resetForm/closeModal`), confirm dialogs, modal actions (`->size()` sm/md/lg/full — PR #1), custom client-handler escape hatch.
-- **Auth** (Fortify-based, server-side): login, register, password reset, email verification, **2FA** (enroll/challenge/disable/recovery), password confirmation, **passkeys** (management + bypass-2FA). All test-covered. *Backend only — no example login/register Page classes yet (developer composes them; see 1.1).*
+- **Auth** (server-side, demo via Breeze controllers): login, register, password reset, email verification, **2FA** (enroll/challenge/disable/recovery), password confirmation, **passkeys** (management + bypass-2FA). *Backend lives in the demo, not the package — no package-side auth backend or example login/register Page classes yet (see 1.1).*
 - **Media manager**: library, folders, upload with image variants (GD), picker field, SSRF guard, replace-keeping-id.
 - **i18n**: translation hook, locale switching, layered messages, content-translatable fields; per-panel UI locales (PR #1).
 - **DX**: `make:tbtop-page` scaffold command, `PostFactory` + bulk seeder (PR #1).
@@ -49,9 +49,7 @@ Surveyed from source on 2026-06-13, after the panels wave merged (PR #1, `bfad03
 
 | Gap | Severity | Note |
 |---|---|---|
-| **Relation field is a stub** | 🔴 blocks EasyCar | `RelationForm` (`packages/client/src/fields/relationField.tsx`) is a plain `<Input>` writing raw IDs. The wiring target already exists: `SelectMultiForm` dispatches to `AsyncMultiSelect` when `opts.query` is set (`selectMulti.tsx` + `asyncOptions.ts`/`asyncSearch.ts`). Fix is wiring `labelKey`/`query`, not new infra. |
-| **`in` filter kind** | 🔴 blocks EasyCar | No generic multi-value `WHERE col IN (...)` filter. `TableFilterApplier` has `tags` (uses `whereIn`) but no reusable `in` kind for permission-matrix scoping. **Add**, not just verify. |
-| **Example auth pages** | 🟡 | Layout primitive is done (`center`); only `LoginPreviewPage` demo stub exists. EasyCar composes real login/register from existing fields + a `submit` (developer owns the auth method). Ship as documented example, not framework code. |
+| **Example auth pages** | 🟡 | Layout primitive is done (`center`); only `LoginPreviewPage` demo stub exists. Needs a backend-story design session (demo uses Breeze, no Fortify / no package-side auth backend): pages + thin controllers in package vs pages-only vs adopt `laravel/fortify`. |
 | **Extraction** | 🟡 partially done | Own repo extracted 2026-06-11. Remaining: lockstep composer+npm release packaging (1.3). |
 | **Soft-delete macro** | 🟡 | Trashed filter + restore/force actions. Expressible by hand via `->query()` today. |
 | **Infolist / read-only detail view** | 🟡 | Record display without a form. |
@@ -82,17 +80,19 @@ need it to ship?" — not on backlog completeness.
 
 ### 1.1 — Pre-EasyCar primitives
 
-**Mostly landed in PR #1 (panels wave, 2026-06-13):** ✅ panel core (multi-admin) ·
+**Landed in PR #1 (panels wave, 2026-06-13):** ✅ panel core (multi-admin) ·
 ✅ page layouts (`admin`/`center`) · ✅ chrome-as-DSL · plus the small wave (modal fixes,
 `S::markdown`, flex options, `helperText`/`tooltip`, `make:tbtop-page`, filter tabs).
 
-**Still open — these block the CRM:**
+**Landed in PR #2 (this branch, 2026-06-13):** ✅ relation field — real async (server
+search endpoint mirroring `select-create`; client wires the existing async single-select) ·
+✅ generic `in` filter kind (`whereIn`, fixed-options multi-select).
+
+**Still open — blocks the CRM:**
 
 | # | Item | Value | Effort |
 |---|---|---|---|
-| 1 | **Relation field — real async** | CRM is relation-dense (every booking → customer/car/location). Wire `RelationForm` to the existing async-select infra (`SelectMultiForm`→`AsyncMultiSelect` is the template) + `labelKey`/`query`. Stub → working is small. | S |
-| 2 | **`in` filter kind** | Permission-matrix list scoping (`allowedLocations`, `allowedCategories`) needs a reusable `WHERE col IN (...)` filter. `TableFilterApplier` has only `tags`-specific `whereIn` today — **add a generic `in` kind** (PHP applier + schema + client render). | XS–S |
-| 3 | **Example auth pages** | Opt-in login/register Page classes (`center` layout), overridable by extending. **Needs a design session first:** the demo uses Breeze controllers living in `apps/demo` — there is NO Fortify and NO package-side auth backend to reuse. Open choice: pages + thin controllers in package (self-contained) vs pages-only (dev wires backend) vs adopt `laravel/fortify`. Deferred out of the relation/`in`-filter wave. | M |
+| 1 | **Example auth pages** | Opt-in login/register Page classes (`center` layout), overridable by extending. **Needs a design session first:** the demo uses Breeze controllers living in `apps/demo` — there is NO Fortify and NO package-side auth backend to reuse. Open choice: pages + thin controllers in package (self-contained) vs pages-only (dev wires backend) vs adopt `laravel/fortify`. Deferred out of the relation/`in`-filter wave. | M |
 
 ### 1.2 — EasyCar build (the validation driver)
 
@@ -184,8 +184,9 @@ driver and the external adoption need point the same way.
 
 ```
 DONE ─► Panel core + layouts + chrome-as-DSL + small wave      (1.1 core, PR #1)
+DONE ─► Relation field (async) + generic `in` filter          (1.1, PR #2)
 NOW ──► EasyCar re-map doc                                     (1.0)
-     ──► Relation field + `in` filter + example auth pages     (1.1 remainder)
+     ──► Example auth pages (after a backend-story design)     (1.1 remainder)
      ──► Build EasyCar; promote backlog items it demands       (1.2)
      ──► Lockstep release + changesets on                      (1.3)   ◄── Phase 1 gate
      ──► Quickstart + DSL reference + Filament migration guide  (2.1)
