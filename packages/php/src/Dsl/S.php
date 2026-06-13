@@ -10,6 +10,7 @@ use Tbtop\Admin\Dsl\Fields\Date;
 use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Datetime;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\InFilter;
 use Tbtop\Admin\Dsl\Fields\Keyvalue;
 use Tbtop\Admin\Dsl\Fields\MediaPicker;
 use Tbtop\Admin\Dsl\Fields\Number;
@@ -61,7 +62,7 @@ final class S
      */
     public const BUILT_IN_KINDS = [
         'text', 'textarea', 'password', 'number', 'date', 'datetime', 'boolean',
-        'select', 'radio', 'tags', 'checkbox', 'colorpicker', 'keyvalue',
+        'select', 'radio', 'tags', 'in', 'checkbox', 'colorpicker', 'keyvalue',
         'slug', 'upload', 'media', 'relation', 'repeater', 'richtext', 'daterange',
     ];
 
@@ -121,6 +122,12 @@ final class S
         }
 
         return self::makeField($kind, $name);
+    }
+
+    /** Generic multi-value IN filter: fixed option list, applies WHERE col IN (...). */
+    public function inFilter(string $name): InFilter
+    {
+        return InFilter::make($name);
     }
 
     // -------------------------------------------------------------------------
@@ -420,6 +427,21 @@ final class S
         return null;
     }
 
+    /**
+     * Find a Relation field with a query closure by name, walking all registered forms.
+     */
+    public function findRelationField(string $fieldName): ?Relation
+    {
+        foreach ($this->forms as $form) {
+            $found = $form->findRelationField($fieldName);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
+    }
+
     // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------
@@ -452,6 +474,7 @@ final class S
                 'select' => Select::class,
                 'radio' => Radio::class,
                 'tags' => Tags::class,
+                'in' => InFilter::class,
                 'checkbox' => Checkbox::class,
                 'colorpicker' => Colorpicker::class,
                 'keyvalue' => Keyvalue::class,
