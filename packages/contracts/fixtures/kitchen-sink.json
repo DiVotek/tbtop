@@ -235,6 +235,15 @@
                                         "name": "content"
                                     },
                                     {
+                                        "kind": "relation",
+                                        "options": {
+                                            "labelKey": "name",
+                                            "searchable": true
+                                        },
+                                        "meta": {},
+                                        "name": "category_id"
+                                    },
+                                    {
                                         "kind": "repeater",
                                         "options": {
                                             "fields": [

@@ -59,6 +59,10 @@ class KitchenSinkPage extends Page
                     $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
                     $s->richtext('content')->set('placeholder', 'Start typing…'),
+                    $s->relation('category_id')
+                        ->labelKey('name')
+                        ->searchable()
+                        ->query(fn () => null),
                     $s->repeater('sections')->rules('array|max:10')->set('fields', [
                         $s->text('heading')->required(),
                         $s->textarea('text'),

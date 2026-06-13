@@ -11,6 +11,7 @@ use Tbtop\Admin\Http\Media\MediaImportController;
 use Tbtop\Admin\Http\Media\MediaReplaceController;
 use Tbtop\Admin\Http\Media\MediaUploadController;
 use Tbtop\Admin\Http\PageController;
+use Tbtop\Admin\Http\RelationSearchController;
 use Tbtop\Admin\Http\SelectCreateController;
 use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\SetCurrentPanel;
@@ -40,6 +41,9 @@ $registerPageRoutes = static function (PanelConfig $panel): void {
         Route::post("{$path}/select-create/{tbtopField}", SelectCreateController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.selectCreate');
+        Route::post("{$path}/relation-search/{tbtopField}", RelationSearchController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.relationSearch');
     }
 };
 

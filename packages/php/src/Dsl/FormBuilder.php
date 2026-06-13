@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Panels\CurrentPanel;
 
@@ -75,6 +76,15 @@ final class FormBuilder implements JsonSerializable
         return self::searchCreatable($this->children, $name);
     }
 
+    /**
+     * Find a Relation field with a query closure by name, walking nested children.
+     * Returns null when not found.
+     */
+    public function findRelationField(string $name): ?Relation
+    {
+        return self::searchRelation($this->children, $name);
+    }
+
     /** @param  list<mixed>  $children */
     private static function searchCreatable(array $children, string $name): ?Select
     {
@@ -98,6 +108,39 @@ final class FormBuilder implements JsonSerializable
                 $nested = $child->options['children'] ?? $child->options['fields'] ?? [];
                 if (is_array($nested)) {
                     $found = self::searchCreatable(array_values($nested), $name);
+                    if ($found !== null) {
+                        return $found;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** @param  list<mixed>  $children */
+    private static function searchRelation(array $children, string $name): ?Relation
+    {
+        foreach ($children as $child) {
+            if ($child instanceof Relation
+                && $child->name === $name
+                && $child->queryClosure() !== null
+            ) {
+                return $child;
+            }
+            if ($child instanceof Field) {
+                $sub = $child->childFields();
+                if ($sub !== []) {
+                    $found = self::searchRelation($sub, $name);
+                    if ($found !== null) {
+                        return $found;
+                    }
+                }
+            }
+            if ($child instanceof Node) {
+                $nested = $child->options['children'] ?? $child->options['fields'] ?? [];
+                if (is_array($nested)) {
+                    $found = self::searchRelation(array_values($nested), $name);
                     if ($found !== null) {
                         return $found;
                     }
