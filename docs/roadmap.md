@@ -3,7 +3,7 @@
 > Living doc. The entry point for "what ships when and why." Detail backlog lives in
 > `docs/backlog.md`; this file is the index + ordering + value rationale.
 > Stack: Laravel package (`tbtop/admin`) + React client (`@tbtop/inertia-admin`).
-> Last revised: 2026-06-11 (panels/layout/chrome design locked — `packages/php/adr/panels.md`).
+> Last revised: 2026-06-13 (panels/layout/chrome wave merged — PR #1, `bfad033`).
 
 ## The product in one line
 
@@ -25,29 +25,34 @@ docs + site + changelog + public roadmap on top of a validated core.
 
 ## Current state — ground truth (read before planning)
 
-Surveyed from source on 2026-06-11, not from the (stale, Node-era) PRDs.
+Surveyed from source on 2026-06-13, after the panels wave merged (PR #1, `bfad033`).
 
 ### Solid — ships as-is
 
-- **DSL authoring** (`S` builder): 20 field types, layout (stack/row/grid/section/tabs/collapsible/aside), display blocks, `Page` base class with `path/view/can/nav/breadcrumbs`.
-- **Tables**: columns with kinds (text/date/money/badge/boolean/icon), sort, pagination, global search, per-field filters (modal/inline), row actions, bulk actions, row-click, column visibility, URL-state persistence.
-- **Forms**: async record load, validation (PHP rules → wire constraints → zod-on-blur), unsaved guard, scroll-to-error, nested repeaters, translatable fields with per-locale tabs.
+- **DSL authoring** (`S` builder): 20 field types, layout (stack/row/grid/section/tabs/collapsible/aside), display blocks, `Page` base class with `path/view/can/nav/breadcrumbs/layout`.
+- **Multi-panel** (PR #1): `Panel` class + `PanelConfig`, per-panel prefix/guard/middleware/pages/locales, `tbtop.{panel}.{slug}` route names, request-scoped `CurrentPanel`. Design in `packages/php/adr/panels.md`.
+- **Page layouts** (PR #1): `Page::layout()` → `'admin'` (sidebar shell) | `'center'` (chrome-less, centered). Client dispatches `AdminLayout` vs `CenterLayout`.
+- **Chrome-as-DSL** (PR #1): per-panel `Chrome` class with `header/sidebar/footer(S): Node`; predefined block kinds `navMenu/userMenu/logo/localeSwitcher/spacer`; React `slots` as escape hatch.
+- **Tables**: columns with kinds (text/date/money/badge/boolean/icon), sort, pagination, global search, per-field filters (modal/inline), filter tabs (URL-state, opt-in counts — PR #1), row actions, bulk actions, row-click, column visibility, URL-state persistence.
+- **Forms**: async record load, validation (PHP rules → wire constraints → zod-on-blur), unsaved guard, scroll-to-error, nested repeaters, translatable fields with per-locale tabs, `helperText`/`tooltip` (PR #1).
 - **Charts + stats**: line/bar/area/pie/donut with runtime params; stat cards with delta/sparkline/icon.
-- **Actions/effects**: closed effect set (`notify/redirect/refreshTable/resetForm/closeModal`), confirm dialogs, modal actions, custom client-handler escape hatch.
-- **Auth** (Fortify-based, server-side): login, register, password reset, email verification, **2FA** (enroll/challenge/disable/recovery), password confirmation, **passkeys** (management + bypass-2FA). All test-covered.
+- **Display**: static blocks + `S::markdown()` (server-side commonmark → `displayHtml`, PR #1); flex options on `row`/`stack` (`justify/align/gap/wrap`, PR #1).
+- **Actions/effects**: closed effect set (`notify/redirect/refreshTable/resetForm/closeModal`), confirm dialogs, modal actions (`->size()` sm/md/lg/full — PR #1), custom client-handler escape hatch.
+- **Auth** (Fortify-based, server-side): login, register, password reset, email verification, **2FA** (enroll/challenge/disable/recovery), password confirmation, **passkeys** (management + bypass-2FA). All test-covered. *Backend only — no example login/register Page classes yet (developer composes them; see 1.1).*
 - **Media manager**: library, folders, upload with image variants (GD), picker field, SSRF guard, replace-keeping-id.
-- **i18n**: translation hook, locale switching, layered messages, content-translatable fields.
+- **i18n**: translation hook, locale switching, layered messages, content-translatable fields; per-panel UI locales (PR #1).
+- **DX**: `make:tbtop-page` scaffold command, `PostFactory` + bulk seeder (PR #1).
 - **Contract pipeline**: zod grammar → JSON Schema → PHP contract tests + shared kitchen-sink fixture (drift guard).
-- **Quality gates**: Pest (PHP) + bun test (client) with deep coverage (~80 PHP tests, ~80 client tests), phpstan/larastan, Pint, oxlint+Biome.
+- **Quality gates**: Pest (PHP, ~389) + bun test (client, ~664) with deep coverage, phpstan/larastan L5, Pint, oxlint+Biome — all blocking in CI except the client `Test` step (network-leak, below).
 
 ### Real gaps (narrow, known)
 
 | Gap | Severity | Note |
 |---|---|---|
-| **Auth-page layout** | 🔴 blocks EasyCar | Auth *backend* exists; there's no centered/chrome-less layout to render login/register pages. Only `AdminLayout` (sidebar shell) exists. |
-| **Relation field is a stub** | 🔴 blocks EasyCar | `RelationForm` is a plain `<Input>` writing raw IDs. Async machinery exists (`useAsyncSearch`, async select works) — fix is wiring, not new infra. |
+| **Relation field is a stub** | 🔴 blocks EasyCar | `RelationForm` (`packages/client/src/fields/relationField.tsx`) is a plain `<Input>` writing raw IDs. The wiring target already exists: `SelectMultiForm` dispatches to `AsyncMultiSelect` when `opts.query` is set (`selectMulti.tsx` + `asyncOptions.ts`/`asyncSearch.ts`). Fix is wiring `labelKey`/`query`, not new infra. |
+| **`in` filter kind** | 🔴 blocks EasyCar | No generic multi-value `WHERE col IN (...)` filter. `TableFilterApplier` has `tags` (uses `whereIn`) but no reusable `in` kind for permission-matrix scoping. **Add**, not just verify. |
+| **Example auth pages** | 🟡 | Layout primitive is done (`center`); only `LoginPreviewPage` demo stub exists. EasyCar composes real login/register from existing fields + a `submit` (developer owns the auth method). Ship as documented example, not framework code. |
 | **Extraction** | 🟡 partially done | Own repo extracted 2026-06-11. Remaining: lockstep composer+npm release packaging (1.3). |
-| **Multi-panel** | 🔴 architectural | Single-instance assumptions baked into config/routes/share. Design locked in `packages/php/adr/panels.md` — lands first, retrofit is expensive. |
 | **Soft-delete macro** | 🟡 | Trashed filter + restore/force actions. Expressible by hand via `->query()` today. |
 | **Infolist / read-only detail view** | 🟡 | Record display without a form. |
 | **CSV export / import** | 🟡 | Export actions (Filament does via queues). |
@@ -55,8 +60,7 @@ Surveyed from source on 2026-06-11, not from the (stale, Node-era) PRDs.
 | **Stat/metric polish, sticky table header, filter chips, saved filters, per-column search** | 🟢 | Detail in `backlog.md`. |
 | **Mobile sidebar (drawer)** | 🟢 | End-of-polish. |
 | **Dark-mode completeness** (recharts + Lexical toolbar not theme-token-bound) | 🟢 | |
-| **Lint/format debt** | 🟢 | `inertia/` never ran oxlint/biome/pint — extraction first pointed them at the code. ~20 oxlint findings (client/demo) + Pint format misses (`S.php`, `StatDslTest.php`). CI `lint` job is non-blocking until a dedicated pass clears it. |
-| **Client test network leak** | 🟡 | 4 tests (`visitTemplate`, one `ActionGroup`) pass locally but time out on CI with `ECONNREFUSED` — Inertia `<Link>` prefetch escapes the fixture's fetch stub. Pre-existing (inertia/ had no CI); the client `Test` CI step is red until the harness blocks network. Repro: clean sandbox, no localhost route. |
+| **Client test network leak** | 🟡 | 4 tests (`visitTemplate`, one `ActionGroup`) pass locally but time out on CI with `ECONNREFUSED` — Inertia `<Link>` prefetch escapes the fixture's fetch stub. The client `Test` CI step is non-blocking until the harness blocks network (NOT a blunt global stub). Repro: clean sandbox, no localhost route. |
 
 ---
 
@@ -65,33 +69,30 @@ Surveyed from source on 2026-06-11, not from the (stale, Node-era) PRDs.
 Goal: **EasyCar in production on the packages.** Everything here is gated on "does EasyCar
 need it to ship?" — not on backlog completeness.
 
-### 1.0 — Decisions to lock first (this session / next)
+### 1.0 — Decisions to lock first (next)
 
 - **EasyCar re-map onto the Laravel stack.** The existing EasyCar docs target the dead
   Node/Hono server (pipeline steps, `ctx.acc`, bundles, M-65/M-56 seams). On this stack the
   backend *is* Laravel: queues, notifications, money casts, validation, policies, jobs are
   native. Produce a fresh doc mapping each entity/feature to: admin-DSL page · plain Laravel
-  (model/migration/policy/job) · genuine `@tbtop/admin` gap. **This is the alignment step.**
+  (model/migration/policy/job) · genuine `@tbtop/admin` gap. **This is the alignment step —
+  still open.**
 - **Extraction timing.** ~~In-place vs extract-first.~~ **Resolved 2026-06-11: extracted**
   to its own repo. Lockstep release packaging remains in 1.3.
 
-### 1.1 — Pre-EasyCar primitives (must land before the CRM)
+### 1.1 — Pre-EasyCar primitives
 
-Ordered by EasyCar dependency.
+**Mostly landed in PR #1 (panels wave, 2026-06-13):** ✅ panel core (multi-admin) ·
+✅ page layouts (`admin`/`center`) · ✅ chrome-as-DSL · plus the small wave (modal fixes,
+`S::markdown`, flex options, `helperText`/`tooltip`, `make:tbtop-page`, filter tabs).
+
+**Still open — these block the CRM:**
 
 | # | Item | Value | Effort |
 |---|---|---|---|
-| 1 | **Panel core (multi-admin)** | Class-based `Panel` (id/prefix/guard/pages/locales/chrome/rootView), request-scoped `CurrentPanel`, per-panel route groups `tbtop.{panel}.{slug}`, per-panel media/upload/locale routes. Clean break from flat config. Design locked in `adr/panels.md`. Lands first — routes/share/nav all hang off it. | M (2–3 d) |
-| 2 | **Page layouts (`admin`/`center`) + auth pages** | `Page::layout()` hint, default `admin` (inherited); client dispatches `AdminLayout` vs `CenterLayout` (centered, no chrome). Login/register pages use `center` — auth backend already done, this renders it. Independent of panels, can run parallel. | S (1–2 d) |
-| 3 | **Chrome-as-DSL** | Per-panel `Chrome` class (`header/sidebar/footer(S $s)`); current shell pieces become predefined blocks (`navMenu`, `userMenu`, `logo`, `localeSwitcher`, `spacer`). Main case: append branding/actions to defaults. Depends on panels. Contract gate: new kinds → schema + kitchen-sink + contract tests in the same change. | M |
-| 4 | **Relation field — real async** | CRM is relation-dense (every booking → customer/car/location). Wire `RelationForm` to the existing async-select infra + `labelKey`/`query`. Stub → working is small. | S |
-| 5 | **`in` filter kind** (verify) | Permission-matrix list scoping (`allowedLocations`, `allowedCategories`) needs `WHERE col IN (...)`. Confirm the filter API covers it; if not, add. | XS–S |
-
-**Small wave (parallel, worktree agents — after the lint pass lands):** modal fixes
-(center animation bug, hidden scrollbar, `size` on `ActionBuilder::modal()`),
-`S::markdown` (server-side commonmark → `displayHtml` node), flex options on `row`/`stack`
-(justify/align/gap/wrap), `Field::helperText()` + `Field::tooltip()`, `tbtop:page`
-scaffold command, table filter tabs. No architecture impact; detail in `backlog.md`.
+| 1 | **Relation field — real async** | CRM is relation-dense (every booking → customer/car/location). Wire `RelationForm` to the existing async-select infra (`SelectMultiForm`→`AsyncMultiSelect` is the template) + `labelKey`/`query`. Stub → working is small. | S |
+| 2 | **`in` filter kind** | Permission-matrix list scoping (`allowedLocations`, `allowedCategories`) needs a reusable `WHERE col IN (...)` filter. `TableFilterApplier` has only `tags`-specific `whereIn` today — **add a generic `in` kind** (PHP applier + schema + client render). | XS–S |
+| 3 | **Example auth pages** | Opt-in login/register Page classes (`center` layout), overridable by extending. **Needs a design session first:** the demo uses Breeze controllers living in `apps/demo` — there is NO Fortify and NO package-side auth backend to reuse. Open choice: pages + thin controllers in package (self-contained) vs pages-only (dev wires backend) vs adopt `laravel/fortify`. Deferred out of the relation/`in`-filter wave. | M |
 
 ### 1.2 — EasyCar build (the validation driver)
 
@@ -182,11 +183,9 @@ driver and the external adoption need point the same way.
 ## Sequencing summary
 
 ```
-NOW ──► Panel core ─► layouts (parallel) ─► chrome-as-DSL      (1.1 #1–3)
-  ╲──► Small wave in worktrees: modal, markdown, flex,
-       helperText/tooltip, scaffold, filter tabs               (1.1, after lint pass)
-     ──► Relation field + `in` filter                          (1.1 #4–5)
-     ──► EasyCar re-map doc                                    (1.0)
+DONE ─► Panel core + layouts + chrome-as-DSL + small wave      (1.1 core, PR #1)
+NOW ──► EasyCar re-map doc                                     (1.0)
+     ──► Relation field + `in` filter + example auth pages     (1.1 remainder)
      ──► Build EasyCar; promote backlog items it demands       (1.2)
      ──► Lockstep release + changesets on                      (1.3)   ◄── Phase 1 gate
      ──► Quickstart + DSL reference + Filament migration guide  (2.1)
