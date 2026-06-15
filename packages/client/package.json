@@ -1,22 +1,32 @@
 {
 	"name": "@tbtop/inertia-admin",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Tabletop admin render layer for Laravel + Inertia: server-described pages, block registry, field clients.",
 	"license": "MIT",
 	"type": "module",
-	"sideEffects": false,
+	"sideEffects": [
+		"**/*.css"
+	],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"files": [
 		"dist",
 		"!dist/**/*.test.*"
 	],
 	"exports": {
 		".": {
-			"import": "./src/index.ts",
-			"types": "./src/index.ts"
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
 		},
-		"./styles.css": "./src/styles.css"
+		"./styles.css": "./dist/styles.css"
+	},
+	"publishConfig": {
+		"access": "public"
 	},
 	"scripts": {
+		"build": "tsup && bun scripts/copy-styles.ts",
+		"prepublishOnly": "bun run build",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	},
@@ -69,6 +79,7 @@
 		"happy-dom": "^15.11.0",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
+		"tsup": "^8.5.1",
 		"typescript": "^5.7.2",
 		"zod": "^4"
 	}

@@ -1,0 +1,42 @@
+{
+    "name": "tbtop/admin",
+    "description": "Inertia admin builder - PHP DSL pages rendered by the @tbtop React client",
+    "keywords": [
+        "Tbtop",
+        "laravel",
+        "admin"
+    ],
+    "homepage": "https://github.com/tbtop/admin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Max Boeko",
+            "email": "12crya34@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^11.0||^12.0||^13.0",
+        "inertiajs/inertia-laravel": "^3.1",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "autoload": {
+        "psr-4": {
+            "Tbtop\\Admin\\": "packages/php/src/",
+            "Tbtop\\Admin\\Database\\Factories\\": "packages/php/database/factories/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Tbtop\\Admin\\AdminServiceProvider"
+            ],
+            "aliases": {
+                "Admin": "Tbtop\\Admin\\Facades\\Admin"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
