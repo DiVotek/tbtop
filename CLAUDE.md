@@ -63,24 +63,28 @@ drift silently unless disciplined:
 
 Weak agents reinvent what exists. Before adding anything, confirm it's not already there:
 
-- **Fields (20 exist):** text, textarea, password, number, date, datetime, daterange,
-  boolean, checkbox, radio, select (static + async + creatable), tags, colorpicker, keyvalue,
-  slug, upload, media, relation, repeater, richtext (real Lexical). Grep
-  `packages/client/src/fields/` and `packages/php/src/Dsl/Fields/` first.
-- **Layout/display:** stack, row, grid, section, collapsible, aside, tabs, heading, divider,
-  description, displayText/Html/Alert/Divider, actionGroup. In `S.php`.
+- **Fields (21 + the `in` filter):** text, textarea, password, number, date, datetime,
+  daterange, boolean, checkbox, radio, select (static + async + creatable), tags, colorpicker,
+  keyvalue, slug, upload, media, relation, repeater, richtext (real Lexical); plus `inFilter`
+  (wire kind `in`, filter bars only). Grep `packages/client/src/fields/` and
+  `packages/php/src/Dsl/Fields/` first. Full lookup in `docs/ai/fields.md`.
+- **Layout/display:** stack, row, flex, grid, section, collapsible, aside, tabs,
+  displayText/Html/Alert/Divider (headings are `displayText()->variant('heading')` — there is
+  no bare `heading`/`divider` method), markdown, actionGroup. In `S.php`.
 - **Table features:** sort, pagination, global search, per-field filters (modal/inline), row
   actions, bulk actions, row-click, column visibility, URL-state. In `TableBuilder.php`.
 - **Auth:** login, register, password reset, email verification, 2FA, passkeys, password
-  confirmation — **all already exist** (Fortify, test-covered). Don't rebuild auth; the only
-  known gap is the auth-page *layout* (see roadmap).
+  confirmation — implemented in the **demo via Laravel Breeze controllers** (test-covered),
+  **not** in the package. There is NO Fortify and no package-side auth backend. Don't rebuild
+  the flows to learn them; the open gap is auth-page *layout* + a package-side backend story
+  (see roadmap §1.1).
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
   `apps/demo/resources/js/admin.tsx` for the rating-field example. Use this for app-specific
   fields instead of editing the packages.
 
-Known stubs/gaps (don't assume these work): **relation field form is a plain input**
-(async wiring pending), no auth-page layout, no soft-delete macro, no infolist. Full list in
-`docs/roadmap.md` and `docs/backlog.md`.
+Known stubs/gaps (don't assume these work): no auth-page layout, no package-side auth
+backend, no soft-delete macro, no infolist. (The relation field shipped full async in PR #2 —
+no longer a stub.) Full list in `docs/roadmap.md` and `docs/backlog.md`.
 
 ## Commands
 
