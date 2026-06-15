@@ -136,9 +136,29 @@ Per-package `packages/<pkg>/adr/<domain>.md`, one file per domain. Frontmatter +
 bullets (append as they land) + short `## Why`. ~100 lines target, 200 cap. Edit superseded
 decisions in place with `> Replaces previous decision (see git history)`.
 
+## Releasing
+
+Both packages ship **lockstep** from one tag — `@tbtop/inertia-admin` (npm) and `tbtop/admin`
+(Packagist) always carry the same version. The single source of truth is the `version` field in
+`packages/client/package.json`; the git tag is derived from it (PHP has no version field — its
+version *is* the tag).
+
+Process (manual button, one run does both):
+1. Bump `version` in `packages/client/package.json` in a PR; merge to `main`.
+2. GitHub → Actions → **Release** → Run (from `main`). The `release.yml` workflow reads the
+   version, refuses if that tag exists, pushes `vX.Y.Z`, then:
+   - **npm** publishes inside the workflow via **Trusted Publishing (OIDC)** — no token. The
+     workflow filename `release.yml` is registered as the trusted publisher on npmjs.com;
+     renaming it breaks publishing.
+   - **Packagist** publishes itself from the pushed tag via its GitHub webhook (no step needed).
+   - A GitHub Release is created with generated notes.
+
+The build runs on **bun** (`prepublishOnly` → tsup), but `npm publish` needs **Node ≥ 22 /
+npm ≥ 11.5.1** for OIDC — the release job sets up both. The published npm package ships `dist`
+(see `tsup.config.ts`); the demo aliases the package to `src` in its Vite config for HMR.
+
 ## Changesets
 
 One per PR, only when public API changes (anything reachable from a package's `exports` /
-composer autoload). `tbtop/admin` and `@tbtop/inertia-admin` release **lockstep** — bump one,
-bump both. Skip for internal refactors, tests, docs. **Currently off** until first real
+composer autoload). Skip for internal refactors, tests, docs. **Currently off** until first real
 consumer (EasyCar) — flips on at the internal release (see roadmap §1.3).
