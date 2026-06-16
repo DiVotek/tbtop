@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { useMultiResolvedLabels } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import type { FieldFormProps } from "./fieldProps";
-import { WithMultiCreateAffordance } from "./selectMultiCreate";
+import { ComboboxOption, MultiComboboxShell, matchesQuery } from "./selectMultiShell";
 import type {
+	SelectCreateConfig,
 	SelectMultiOptionsBag,
 	SelectOptionsBag,
 	SelectValueType,
@@ -15,148 +17,97 @@ import type {
 export function SelectMultiForm(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const opts = props.options ?? {};
 	if (opts.query) {
-		return <AsyncMultiSelect {...props} />;
+		return <AsyncMultiCombobox {...props} />;
 	}
-	return <StaticMultiSelect {...props} />;
+	return <StaticMultiCombobox {...props} />;
 }
 
-function StaticMultiSelect(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
-	const { id, name, value, onChange, onBlur, disabled, options } = props;
+function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+	const { name, value, onChange, onBlur, disabled, options } = props;
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
-	function toggle(v: string): void {
-		const next = current.includes(v) ? current.filter((x) => x !== v) : [...current, v];
-		onChange(next);
+	const create = options?.create as SelectCreateConfig | undefined;
+
+	function staticGetLabel(v: string): string {
+		return choices.find((o) => o.value === v)?.label ?? v;
 	}
+
 	return (
-		<WithMultiCreateAffordance {...props}>
-			<div
-				id={id ?? name}
-				role="listbox"
-				aria-multiselectable="true"
-				className="flex flex-wrap gap-2"
-				data-testid={`select-${name}`}
-				onBlur={onBlur}
-			>
-				{choices.map((opt) => (
-					<OptionButton
-						key={opt.value}
-						label={opt.label}
-						selected={current.includes(opt.value)}
-						disabled={disabled}
-						onClick={() => toggle(opt.value)}
-					/>
-				))}
-			</div>
-		</WithMultiCreateAffordance>
+		<MultiComboboxShell
+			name={name}
+			value={current}
+			onChange={onChange}
+			onBlur={onBlur}
+			disabled={disabled}
+			create={create}
+			getLabel={staticGetLabel}
+		>
+			{(query) => {
+				const filtered = choices.filter((o) => matchesQuery(o.label, query));
+				return {
+					exactMatch: filtered.some(
+						(o) => o.label.toLowerCase() === query.trim().toLowerCase(),
+					),
+					nodes: filtered.map((opt) => (
+						<ComboboxOption key={opt.value} value={opt.value} label={opt.label} />
+					)),
+				};
+			}}
+		</MultiComboboxShell>
 	);
 }
 
-function AsyncMultiSelect(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const opts = (props.options ?? {}) as SelectMultiOptionsBag;
 	const ctx = useClientActionContext();
 	const current = Array.isArray(props.value) ? props.value : [];
 	const resolved = useMultiResolvedLabels({ ctx, fieldName: props.name, value: current, opts });
-	const search = useAsyncSearch(ctx, opts.query, "");
+	const [query, setQuery] = useState("");
+	const search = useAsyncSearch(ctx, opts.query, query);
+
 	if (resolved.kind === "loading" || search.kind === "loading") {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
 	if (search.kind === "error") {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
-	const hasOnLoad = opts.onLoad !== undefined;
-	const visible = hasOnLoad ? current.filter((v) => v in resolved.labels) : current;
-	function setValue(next: string[]): void {
-		props.onChange(next);
-	}
-	const resolvedLabels = resolved.kind === "ready" ? resolved.labels : undefined;
-	return (
-		<WithMultiCreateAffordance {...props} resolvedLabels={resolvedLabels}>
-			<div
-				role="listbox"
-				aria-multiselectable="true"
-				className="flex flex-wrap gap-2"
-				data-testid={`select-${props.name}`}
-				onBlur={props.onBlur}
-			>
-				{visible.map((v) => (
-					<SelectedChip
-						key={v}
-						value={v}
-						label={resolved.labels[v] ?? v}
-						onRemove={() => setValue(current.filter((x) => x !== v))}
-					/>
-				))}
-				{search.rows.map((row) => {
-					const v = String(opts.optionValue?.(row) ?? "");
-					const lbl = opts.optionLabel?.(row) ?? v;
-					const selected = current.includes(v);
-					return (
-						<OptionButton
-							key={v}
-							label={lbl}
-							selected={selected}
-							onClick={() =>
-								setValue(
-									selected ? current.filter((x) => x !== v) : [...current, v],
-								)
-							}
-						/>
-					);
-				})}
-			</div>
-		</WithMultiCreateAffordance>
-	);
-}
 
-interface OptionButtonInput {
-	label: string;
-	selected: boolean;
-	disabled?: boolean;
-	onClick: () => void;
-}
+	const resolvedLabels = resolved.kind === "ready" ? resolved.labels : {};
+	const create = opts.create as SelectCreateConfig | undefined;
 
-function OptionButton({ label, selected, disabled, onClick }: OptionButtonInput) {
+	// When onLoad is present, hide chips for values whose labels didn't resolve
+	// (partial onLoad results — preserves the original toggle-button behavior).
+	const visibleValues =
+		opts.onLoad !== undefined ? current.filter((v) => v in resolvedLabels) : current;
+
 	return (
-		<button
-			type="button"
-			role="option"
-			aria-selected={selected}
-			disabled={disabled}
-			onClick={onClick}
-			className={
-				selected
-					? "rounded border border-primary bg-primary px-2 py-1 text-primary-foreground text-xs"
-					: "rounded border border-input bg-background px-2 py-1 text-xs"
-			}
+		<MultiComboboxShell
+			name={props.name}
+			value={current}
+			visibleValues={visibleValues}
+			onChange={props.onChange}
+			onBlur={props.onBlur}
+			disabled={props.disabled}
+			create={create}
+			getLabel={(v) => resolvedLabels[v] ?? v}
+			resolvedLabels={resolvedLabels}
+			onQueryChange={setQuery}
 		>
-			{label}
-		</button>
-	);
-}
-
-interface SelectedChipInput {
-	value: string;
-	label: string;
-	onRemove: () => void;
-}
-
-function SelectedChip({ value, label, onRemove }: SelectedChipInput) {
-	return (
-		<span
-			data-testid={`chip-${value}`}
-			className="flex items-center gap-1 rounded border border-primary bg-primary px-2 py-1 text-primary-foreground text-xs"
-		>
-			{label}
-			<button
-				type="button"
-				aria-label={`Remove ${label}`}
-				onClick={onRemove}
-				className="text-primary-foreground hover:text-foreground"
-			>
-				×
-			</button>
-		</span>
+			{() => {
+				const rows = search.rows.map((row) => ({
+					value: String(opts.optionValue?.(row) ?? ""),
+					label: String(opts.optionLabel?.(row) ?? ""),
+				}));
+				return {
+					exactMatch: rows.some(
+						(r) => r.label.toLowerCase() === query.trim().toLowerCase(),
+					),
+					nodes: rows.map((r) => (
+						<ComboboxOption key={r.value} value={r.value} label={r.label} />
+					)),
+				};
+			}}
+		</MultiComboboxShell>
 	);
 }
 
