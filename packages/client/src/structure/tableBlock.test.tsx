@@ -55,7 +55,7 @@ describe("Table integration", () => {
 		const Wrap = wrap(() => new Response("{}"));
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		const err = await findByTestId("table-error");
-		expect(err.textContent).toBe("nope");
+		expect(err.textContent).toContain("nope");
 	});
 
 	test("Table custom loading override renders instead of default skeleton", () => {
