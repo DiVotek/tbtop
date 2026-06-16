@@ -1,8 +1,64 @@
 import type { QueryParams } from "../data/client";
+import { unwrapData } from "../data/envelope";
 import type { ClientActionContext, ListQueryParams, StructureNode } from "../structure/types";
 import type { FieldConstraints } from "./constraints";
 
 type Bag = Record<string, unknown>;
+
+// ---------------------------------------------------------------------------
+// Relation field materialization
+// ---------------------------------------------------------------------------
+
+interface RelationRow {
+	value: string;
+	label: string;
+}
+
+export function materializeRelation(node: StructureNode, basePath: string): StructureNode {
+	const opts = node.options as Bag;
+	const fieldName = node.name as string;
+	const endpoint = `${basePath}/relation-search/${fieldName}`;
+	return {
+		...node,
+		options: {
+			...opts,
+			query: (actionCtx: ClientActionContext, search: string) =>
+				actionCtx.client
+					.post(endpoint, { search })
+					.then((r) => (r as { options: RelationRow[] }).options),
+			onLoad: (actionCtx: ClientActionContext, value: string) =>
+				actionCtx.client.post(endpoint, { value }).then((r) => {
+					const opt = (r as { option: RelationRow | null }).option;
+					if (opt === null) {
+						throw new Error("not found");
+					}
+					return opt;
+				}),
+			optionLabel: (row: unknown) => (row as RelationRow).label,
+			optionValue: (row: unknown) => (row as RelationRow).value,
+		},
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Chart materialization
+// ---------------------------------------------------------------------------
+
+export function materializeChart(node: StructureNode, basePath: string): StructureNode {
+	const opts = node.options as Bag;
+	const source = opts.source as string | undefined;
+	if (!source) {
+		return node;
+	}
+	return {
+		...node,
+		options: {
+			...opts,
+			query: (actionCtx: ClientActionContext, paramValues: Record<string, string> = {}) =>
+				actionCtx.client.get(`${basePath}/data/${source}`, paramValues).then(unwrapData),
+		},
+	};
+}
 
 // ---------------------------------------------------------------------------
 // Constraint collection

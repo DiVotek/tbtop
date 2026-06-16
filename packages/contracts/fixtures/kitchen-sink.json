@@ -471,6 +471,26 @@
                             "name": "views",
                             "label": "Views",
                             "kind": "text"
+                        },
+                        {
+                            "name": "published",
+                            "label": "Published",
+                            "kind": "boolean",
+                            "editable": {
+                                "as": "boolean"
+                            }
+                        },
+                        {
+                            "name": "title_edit",
+                            "label": "Title (editable)",
+                            "kind": "text",
+                            "editable": {
+                                "as": "text",
+                                "constraints": {
+                                    "required": true,
+                                    "max": 200
+                                }
+                            }
                         }
                     ]
                 },

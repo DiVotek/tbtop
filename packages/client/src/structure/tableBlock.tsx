@@ -23,6 +23,8 @@ import type {
 } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
 
+type SaveCellArgs = { column: string; id: string; value: unknown };
+
 interface TableBlockOptions extends AsyncBlock {
 	/** Server-assigned table name — used to namespace URL query state. */
 	name?: string;
@@ -36,6 +38,8 @@ interface TableBlockOptions extends AsyncBlock {
 	tabs?: TableTab[];
 	pagination?: TablePaginationOptions;
 	rowClick?: string;
+	/** Materialized by materialize.ts — takes actionCtx + args; bound in TableBlock. */
+	saveCell?: (ctx: ClientActionContext, args: SaveCellArgs) => Promise<unknown>;
 }
 
 interface TableRenderProps {
@@ -73,6 +77,14 @@ export function TableBlock({ options }: TableRenderProps) {
 		deps: [queryParams],
 	});
 
+	const rawSaveCell = options.saveCell;
+	const saveCell = useMemo(
+		() => (rawSaveCell ? (args: SaveCellArgs) => rawSaveCell(ctx, args) : undefined),
+		// ctx reference is stable within a render cycle; rawSaveCell changes only on remount
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[rawSaveCell],
+	);
+
 	if (state.kind === "loading") {
 		return <>{options.loading ?? <TableSkeleton />}</>;
 	}
@@ -102,6 +114,7 @@ export function TableBlock({ options }: TableRenderProps) {
 			pagination={options.pagination}
 			tableName={tableName}
 			rowClick={options.rowClick}
+			saveCell={saveCell}
 		/>
 	);
 }
@@ -134,6 +147,7 @@ interface TableBodyProps {
 	pagination?: TablePaginationOptions;
 	tableName: string;
 	rowClick?: string;
+	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 }
 
 function TableBody(props: TableBodyProps) {
@@ -300,6 +314,7 @@ function TableBody(props: TableBodyProps) {
 					hasActiveFilters={hasActiveFilters}
 					onResetFilters={handleResetFilters}
 					rowClick={props.rowClick}
+					saveCell={props.saveCell}
 				/>
 
 				{showPagination && (

@@ -251,7 +251,16 @@
 							"falseColor": { "type": "string" }
 						}
 					},
-					"iconMap": { "type": "object" }
+					"iconMap": { "type": "object" },
+					"editable": {
+						"type": "object",
+						"required": ["as"],
+						"properties": {
+							"as": { "type": "string", "enum": ["boolean", "text"] },
+							"constraints": { "$ref": "#/$defs/constraints" }
+						},
+						"additionalProperties": false
+					}
 				}
 			}
 		},

@@ -42,7 +42,7 @@ export function compileConstraints(byField: Record<string, FieldConstraints>): {
 	};
 }
 
-function checkField(value: unknown, c: FieldConstraints): string | null {
+export function checkField(value: unknown, c: FieldConstraints): string | null {
 	const empty = value === undefined || value === null || value === "";
 	if (empty) {
 		return c.required ? "Required" : null;

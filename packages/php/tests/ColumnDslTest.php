@@ -277,3 +277,60 @@ it('TableBuilder: default pagination emits defaults when paginate() not called',
         'options' => [10, 25, 50, 100],
     ]);
 });
+
+// ---------------------------------------------------------------------------
+// Editable columns
+// ---------------------------------------------------------------------------
+
+it('Column: toggle() emits editable.as=boolean and kind=boolean', function (): void {
+    $json = encodeColumn(
+        Column::make('published')->toggle()->onSave(fn ($r, $v) => null)
+    );
+
+    expect($json['kind'])->toBe('boolean')
+        ->and($json['editable']['as'])->toBe('boolean')
+        ->and($json['editable'])->not->toHaveKey('constraints');
+});
+
+it('Column: textInput() + rules() emit editable.as=text with constraints', function (): void {
+    $json = encodeColumn(
+        Column::make('title')->textInput()->rules('required|max:200')->onSave(fn ($r, $v) => null)
+    );
+
+    expect($json['kind'])->toBe('text')
+        ->and($json['editable']['as'])->toBe('text')
+        ->and($json['editable']['constraints']['required'])->toBeTrue()
+        ->and($json['editable']['constraints']['max'])->toBe(200);
+});
+
+it('Column: onSave closure does NOT appear in jsonSerialize() output', function (): void {
+    $json = encodeColumn(
+        Column::make('published')->toggle()->onSave(fn ($r, $v) => null)
+    );
+
+    expect($json)->not->toHaveKey('onSaveClosure')
+        ->and($json)->not->toHaveKey('onSave');
+});
+
+it('Column: editRuleEntries() returns the rules passed via rules()', function (): void {
+    $col = Column::make('title')->textInput()->rules('required|max:200')->onSave(fn ($r, $v) => null);
+
+    expect($col->editRuleEntries())->toBe(['required', 'max:200']);
+});
+
+it('Column: non-editable column has no editable key in wire output', function (): void {
+    $json = encodeColumn(Column::make('title')->kind('text'));
+
+    expect($json)->not->toHaveKey('editable');
+});
+
+it('Column: toggle() without onSave() throws when added to a table via columns()', function (): void {
+    $s = new S;
+
+    expect(fn () => $s->table('posts')
+        ->columns([
+            Column::make('published')->toggle(),
+        ])
+        ->query(fn () => null)
+    )->toThrow(InvalidArgumentException::class, 'requires ->onSave()');
+});
