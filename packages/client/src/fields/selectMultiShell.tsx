@@ -75,14 +75,17 @@ export function MultiComboboxShell({
 				value={value}
 				onValueChange={handleValueChange}
 				disabled={disabled}
-				data-testid={`select-${name}`}
 				onOpenChange={(open) => {
 					if (!open) {
 						onBlur?.();
 					}
 				}}
 			>
-				<Combobox.Chips className="flex min-h-9 w-full flex-wrap items-center gap-1 rounded border border-input bg-background px-2 py-1">
+				{/* Root is a provider, not a DOM node — testid goes on Chips. */}
+				<Combobox.Chips
+					data-testid={`select-${name}`}
+					className="flex min-h-9 w-full flex-wrap items-center gap-1 rounded border border-input bg-background px-2 py-1"
+				>
 					{displayValues.map((v) => (
 						<Combobox.Chip
 							key={v}
