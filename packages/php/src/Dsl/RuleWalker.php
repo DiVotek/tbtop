@@ -74,8 +74,8 @@ final class RuleWalker
      */
     private static function fromMultipleSelectField(Select $field, string $prefix): array
     {
-        // Field-level: array/required/nullable/min/max; element-level: everything else.
-        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max'];
+        // Field-level: array constraints; element-level: everything else.
+        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
         $key = $prefix.$field->name;
         $allEntries = $field->ruleEntries();
 
