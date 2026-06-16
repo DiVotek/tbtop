@@ -332,3 +332,127 @@ describe("Select multi — create row visibility", () => {
 		expect(document.body.querySelector('[data-testid="select-create-tags"]')).toBeNull();
 	});
 });
+
+// ─── FIX 1: Async multi — shell stays mounted during refetch ─────────────────
+// Rule: after the first successful load, a query-driven refetch must NOT replace
+// the combobox shell with a skeleton. The input must remain in the DOM.
+
+interface UserRow {
+	id: string;
+	name: string;
+}
+
+describe("Select multi async — shell stays mounted during query refetch", () => {
+	test("input remains present when search transitions to loading after initial render", async () => {
+		// First call resolves immediately (initial load completes); subsequent
+		// calls block indefinitely (simulates in-flight refetch).
+		let callCount = 0;
+		const query = mock((_ctx: unknown, _search: string): Promise<UserRow[]> => {
+			callCount++;
+			if (callCount === 1) {
+				return Promise.resolve([{ id: "1", name: "Alice" }]);
+			}
+			// Block indefinitely — simulates loading state on keystroke.
+			return new Promise(() => {});
+		});
+		const user = userEvent.setup();
+		const Wrap = wrap(NO_RESP);
+		const { container } = render(
+			<Wrap>
+				<SelectForm
+					name="authorIds"
+					value={[]}
+					onChange={() => {}}
+					options={{
+						query,
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+						multiple: true,
+					}}
+				/>
+			</Wrap>,
+		);
+
+		// Wait for initial load to complete — input should appear.
+		await waitFor(() => expect(container.querySelector("input")).not.toBeNull());
+
+		// Type a character — triggers a refetch that never resolves (loading).
+		const input = container.querySelector("input") as HTMLInputElement;
+		await user.type(input, "a");
+
+		// The shell must still be mounted — input must still be in the DOM.
+		// (A skeleton would replace it and the input would be absent.)
+		await waitFor(() => expect(container.querySelector("input")).not.toBeNull());
+		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
+	});
+});
+
+// ─── FIX 4: onBlur fires on focus loss, not on option interaction ─────────────
+// Rule: removing a chip (a value-change interaction) must NOT call onBlur.
+
+describe("Select multi — onBlur does not fire on chip remove", () => {
+	test("removing a chip does not call onBlur", async () => {
+		const blurCalls: unknown[] = [];
+		const user = userEvent.setup();
+		const Wrap = wrap(NO_RESP);
+		const { container } = render(
+			<Wrap>
+				<SelectForm
+					name="tags"
+					value={["1", "2"]}
+					onChange={() => {}}
+					onBlur={() => blurCalls.push(true)}
+					options={{ options: CHOICES, multiple: true }}
+				/>
+			</Wrap>,
+		);
+
+		const removeBtn = container.querySelector(
+			'button[aria-label="Remove Alice"]',
+		) as HTMLElement;
+		expect(removeBtn).not.toBeNull();
+		await user.click(removeBtn);
+
+		// Give any async state updates a chance to settle.
+		await new Promise((r) => setTimeout(r, 50));
+		expect(blurCalls).toHaveLength(0);
+	});
+});
+
+// ─── FIX 3: id prop wired to Combobox.Input ──────────────────────────────────
+// Rule: an explicit id prop must appear on the focusable input element.
+
+describe("Select multi — id prop on input", () => {
+	test("explicit id appears on the combobox input element", () => {
+		const Wrap = wrap(NO_RESP);
+		const { container } = render(
+			<Wrap>
+				<SelectForm
+					id="my-field"
+					name="tags"
+					value={[]}
+					onChange={() => {}}
+					options={{ options: CHOICES, multiple: true }}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input");
+		expect(input?.id).toBe("my-field");
+	});
+
+	test("falls back to name when id is not provided", () => {
+		const Wrap = wrap(NO_RESP);
+		const { container } = render(
+			<Wrap>
+				<SelectForm
+					name="tags"
+					value={[]}
+					onChange={() => {}}
+					options={{ options: CHOICES, multiple: true }}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input");
+		expect(input?.id).toBe("tags");
+	});
+});

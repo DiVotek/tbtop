@@ -31,7 +31,6 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"peerDependencies": {
-		"@base-ui/react": "^1.5.0",
 		"react": "^19",
 		"react-dom": "^19"
 	},

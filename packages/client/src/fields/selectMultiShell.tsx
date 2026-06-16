@@ -9,6 +9,7 @@ export interface MultiShellRenderResult {
 }
 
 export interface MultiShellProps {
+	id?: string;
 	name: string;
 	value: string[];
 	/** Subset of value whose chips to display (for partial-onLoad async). Defaults to value. */
@@ -26,6 +27,7 @@ export interface MultiShellProps {
 }
 
 export function MultiComboboxShell({
+	id,
 	name,
 	value,
 	visibleValues,
@@ -75,15 +77,11 @@ export function MultiComboboxShell({
 				value={value}
 				onValueChange={handleValueChange}
 				disabled={disabled}
-				onOpenChange={(open) => {
-					if (!open) {
-						onBlur?.();
-					}
-				}}
 			>
 				{/* Root is a provider, not a DOM node — testid goes on Chips. */}
 				<Combobox.Chips
 					data-testid={`select-${name}`}
+					onBlur={onBlur}
 					className="flex min-h-9 w-full flex-wrap items-center gap-1 rounded border border-input bg-background px-2 py-1"
 				>
 					{displayValues.map((v) => (
@@ -102,6 +100,7 @@ export function MultiComboboxShell({
 						</Combobox.Chip>
 					))}
 					<Combobox.Input
+						id={id ?? name}
 						value={query}
 						onChange={(e) => handleQueryChange(e.target.value)}
 						className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
