@@ -26,7 +26,7 @@ it('Editable: toggle happy path — DB updated, response carries refreshTable ef
 
     $response = $this->postJson(
         '/admin/editable-posts/cells/ecposts/published',
-        ['id' => $post->id, 'value' => true],
+        ['payload' => ['id' => $post->id, 'value' => true]],
     );
 
     $response->assertOk();
@@ -43,7 +43,7 @@ it('Editable: textInput onSave returning custom Effects — DB updated, effects 
 
     $response = $this->postJson(
         '/admin/editable-posts/cells/ecposts/title',
-        ['id' => $post->id, 'value' => 'Updated Title'],
+        ['payload' => ['id' => $post->id, 'value' => 'Updated Title']],
     );
 
     $response->assertOk();
@@ -60,7 +60,7 @@ it('Editable: onSave returning void triggers default refreshTable effect', funct
 
     $response = $this->postJson(
         '/admin/editable-posts/cells/ecposts/note',
-        ['id' => $post->id, 'value' => 'bye'],
+        ['payload' => ['id' => $post->id, 'value' => 'bye']],
     );
 
     $response->assertOk();
@@ -77,7 +77,7 @@ it('Editable: oversized value fails validation with 422 and errors bag', functio
 
     $response = $this->postJson(
         '/admin/editable-posts/cells/ecposts/note',
-        ['id' => $post->id, 'value' => 'toolong_value'],
+        ['payload' => ['id' => $post->id, 'value' => 'toolong_value']],
     );
 
     $response->assertStatus(422)
@@ -93,7 +93,7 @@ it('Editable: non-editable column returns 404', function (): void {
 
     $this->postJson(
         '/admin/editable-posts/cells/ecposts/nonexistent_col',
-        ['id' => $post->id, 'value' => 'x'],
+        ['payload' => ['id' => $post->id, 'value' => 'x']],
     )->assertNotFound();
 });
 
@@ -104,8 +104,24 @@ it('Editable: non-editable column returns 404', function (): void {
 it('Editable: unknown table returns 404', function (): void {
     $this->postJson(
         '/admin/editable-posts/cells/no_such_table/title',
-        ['id' => 1, 'value' => 'x'],
+        ['payload' => ['id' => 1, 'value' => 'x']],
     )->assertNotFound();
+});
+
+// ---------------------------------------------------------------------------
+// Server-hidden column → 404 (visible(false) is an authz gate)
+// ---------------------------------------------------------------------------
+
+it('Editable: server-hidden column (visible false) returns 404 and does not save', function (): void {
+    $post = EcPost::where('title', 'First')->first();
+    $originalNote = $post->note;
+
+    $this->postJson(
+        '/admin/editable-posts/cells/ecposts/secret',
+        ['payload' => ['id' => $post->id, 'value' => 'leaked']],
+    )->assertNotFound();
+
+    expect(EcPost::find($post->id)->note)->toBe($originalNote);
 });
 
 // ---------------------------------------------------------------------------
@@ -118,6 +134,6 @@ it('Editable: id outside query scope (extra where clause) returns 404', function
 
     $this->postJson(
         '/admin/editable-posts/cells/ecposts_published/title',
-        ['id' => $unpublished->id, 'value' => 'Updated'],
+        ['payload' => ['id' => $unpublished->id, 'value' => 'Updated']],
     )->assertNotFound();
 });

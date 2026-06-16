@@ -52,6 +52,16 @@ class EditableColumnsPage extends Page
                             $record->note = $value;
                             $record->save();
                         }),
+                    // Editable but server-hidden: visible(false) is an authz gate,
+                    // so the cell endpoint must reject it (404), not honor the edit.
+                    Column::make('secret')
+                        ->label('Secret')
+                        ->visible(fn () => false)
+                        ->textInput()
+                        ->onSave(function (mixed $record, mixed $value): void {
+                            $record->note = $value;
+                            $record->save();
+                        }),
                 ])
                 ->query(fn () => EcPost::query())
                 ->toNode(),
