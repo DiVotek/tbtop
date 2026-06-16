@@ -208,6 +208,51 @@
                                         "name": "role"
                                     },
                                     {
+                                        "kind": "select",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "read",
+                                                    "label": "Read"
+                                                },
+                                                {
+                                                    "value": "write",
+                                                    "label": "Write"
+                                                },
+                                                {
+                                                    "value": "delete",
+                                                    "label": "Delete"
+                                                }
+                                            ],
+                                            "multiple": true,
+                                            "create": {
+                                                "fields": [
+                                                    {
+                                                        "kind": "text",
+                                                        "options": {
+                                                            "label": "Permission name",
+                                                            "required": true,
+                                                            "constraints": {
+                                                                "required": true
+                                                            }
+                                                        },
+                                                        "meta": {},
+                                                        "name": "name"
+                                                    }
+                                                ]
+                                            },
+                                            "constraints": {
+                                                "in": [
+                                                    "read",
+                                                    "write",
+                                                    "delete"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "permissions"
+                                    },
+                                    {
                                         "kind": "text",
                                         "options": {
                                             "translatable": true

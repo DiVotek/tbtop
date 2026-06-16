@@ -37,23 +37,28 @@ describe("Select field — static mode", () => {
 		expect(trigger?.textContent).toContain("Draft");
 	});
 
-	test("Select multi-mode emits string[] when toggling options", async () => {
+	test("Select multi-mode emits string[] when removing a chip", async () => {
+		// Rule: deselecting a chip removes the value from the string[].
+		// (Selecting via popup is covered by the browser smoke pass — the popup
+		// is portalled and not reliably interactable in happy-dom.)
 		const captured: (string | string[] | null)[] = [];
 		const user = userEvent.setup();
 		const { container } = render(
 			<SelectForm
 				name="tags"
-				value={[]}
+				value={["draft"]}
 				onChange={(next) => {
 					captured.push(next);
 				}}
 				options={{ options: STATIC_CHOICES, multiple: true }}
 			/>,
 		);
-		const buttons = container.querySelectorAll('[role="option"]');
-		expect(buttons.length).toBe(2);
-		await user.click(buttons[0] as HTMLElement);
-		expect(captured.at(-1)).toEqual(["draft"]);
+		const removeBtn = container.querySelector(
+			'[data-testid="chip-draft"] button[aria-label^="Remove"]',
+		) as HTMLElement;
+		expect(removeBtn).not.toBeNull();
+		await user.click(removeBtn);
+		expect(captured.at(-1)).toEqual([]);
 	});
 
 	test("SelectCell renders the label for a matching static option", () => {
@@ -113,7 +118,9 @@ describe("Select field — int record values match string wire options", () => {
 		expect(input?.getAttribute("placeholder")).toBe("Alice");
 	});
 
-	test("static multi select marks int array values as selected", () => {
+	test("static multi select renders a chip for the coerced int value", () => {
+		// Rule: int record values coerce to string before option matching.
+		// The chip for "1" should display "Alice" (matched from wire options).
 		const { container } = render(
 			<SelectForm
 				name="author_ids"
@@ -122,8 +129,8 @@ describe("Select field — int record values match string wire options", () => {
 				options={{ options: INT_CHOICES, multiple: true }}
 			/>,
 		);
-		const selected = container.querySelector('[role="option"][aria-selected="true"]');
-		expect(selected?.textContent).toContain("Alice");
+		const chip = container.querySelector('[data-testid="chip-1"]');
+		expect(chip?.textContent).toContain("Alice");
 	});
 
 	test("SelectCell renders the label for an int value", () => {

@@ -23,6 +23,17 @@ final class Select extends Field
         return $this->set('options', self::normalizeOptionValues($options));
     }
 
+    /** Allow selecting more than one value. */
+    public function multiple(bool $value = true): static
+    {
+        return $this->set('multiple', $value);
+    }
+
+    public function isMultiple(): bool
+    {
+        return ($this->opts['multiple'] ?? false) === true;
+    }
+
     public function searchable(bool $value = true): static
     {
         return $this->set('searchable', $value);

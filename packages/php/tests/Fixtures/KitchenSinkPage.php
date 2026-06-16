@@ -56,6 +56,15 @@ class KitchenSinkPage extends Page
                     $s->select('role')->set('options', [
                         ['value' => 'admin', 'label' => 'Admin'],
                     ])->rules('in:admin,editor'),
+                    $s->select('permissions')->options([
+                        ['value' => 'read', 'label' => 'Read'],
+                        ['value' => 'write', 'label' => 'Write'],
+                        ['value' => 'delete', 'label' => 'Delete'],
+                    ])->multiple()->rules('in:read,write,delete')
+                        ->creatable(
+                            fields: [$s->text('name')->label('Permission name')->required()],
+                            using: fn (array $v): array => ['value' => $v['name'], 'label' => $v['name']],
+                        ),
                     $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
                     $s->richtext('content')->set('placeholder', 'Start typing…'),

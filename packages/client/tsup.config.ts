@@ -5,6 +5,7 @@ import { defineConfig } from "tsup";
 const external = [
 	"react",
 	"react-dom",
+	"@base-ui/react",
 	"@inertiajs/react",
 	"@lexical/code",
 	"@lexical/link",
