@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Select;
 
 final class RuleWalker
 {
@@ -48,6 +49,9 @@ final class RuleWalker
         if ($field->isTranslatableField()) {
             return self::fromTranslatableField($field, $prefix);
         }
+        if ($field instanceof Select && $field->isMultiple()) {
+            return self::fromMultipleSelectField($field, $prefix);
+        }
 
         $key = $prefix.$field->name;
         // Rule-less fields get a permissive baseline so validate()
@@ -57,6 +61,41 @@ final class RuleWalker
         $subFields = $field->childFields();
         if ($subFields !== []) {
             $rules += self::collect($subFields, $key.'.*.');
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Multiple-select: field key gets `array` + field-level rules;
+     * element key (`field.*`) gets element-level rules.
+     *
+     * @return array<string, list<string>>
+     */
+    private static function fromMultipleSelectField(Select $field, string $prefix): array
+    {
+        // Field-level: array/required/nullable/min/max; element-level: everything else.
+        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max'];
+        $key = $prefix.$field->name;
+        $allEntries = $field->ruleEntries();
+
+        $fieldRules = ['array'];
+        $elementRules = [];
+
+        foreach ($allEntries as $entry) {
+            $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
+            if (in_array($name, $fieldLevel, true)) {
+                if ($entry !== 'array') {
+                    $fieldRules[] = $entry;
+                }
+            } else {
+                $elementRules[] = $entry;
+            }
+        }
+
+        $rules = [$key => $fieldRules];
+        if ($elementRules !== []) {
+            $rules[$key.'.*'] = $elementRules;
         }
 
         return $rules;
