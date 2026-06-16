@@ -94,15 +94,19 @@ export function FlexBlock({ options, children, renderChild }: RenderProps<FlexBl
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
+// Responsive collapse: multi-column grids stack to a single column on small
+// screens, expanding to the authored column count at md+. Static verbatim
+// classes so Tailwind's purge keeps them (interpolation would drop them). The
+// authored column count (the GRID_COLS contract, 1-8) maps to an `md:` variant.
 const GRID_COLS: Record<number, string> = {
 	1: "grid-cols-1",
-	2: "grid-cols-2",
-	3: "grid-cols-3",
-	4: "grid-cols-4",
-	5: "grid-cols-5",
-	6: "grid-cols-6",
-	7: "grid-cols-7",
-	8: "grid-cols-8",
+	2: "grid-cols-1 md:grid-cols-2",
+	3: "grid-cols-1 md:grid-cols-3",
+	4: "grid-cols-1 md:grid-cols-4",
+	5: "grid-cols-1 md:grid-cols-5",
+	6: "grid-cols-1 md:grid-cols-6",
+	7: "grid-cols-1 md:grid-cols-7",
+	8: "grid-cols-1 md:grid-cols-8",
 };
 
 export function GridBlock({ options, children, renderChild }: RenderProps<GridOptions>) {

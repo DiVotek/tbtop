@@ -56,7 +56,7 @@ export function TableGrid(props: TableGridProps) {
 	const colSpan = props.columns.length + (props.hasBulk ? 1 : 0) + (props.hasRowActions ? 1 : 0);
 
 	return (
-		<div className="relative overflow-hidden rounded-md border">
+		<div className="relative overflow-x-auto rounded-md border">
 			{/* Reload overlay sits below the sticky header (z-20 > overlay z-10). */}
 			{props.isReloading && <ReloadOverlay testId="table-reloading-overlay" />}
 

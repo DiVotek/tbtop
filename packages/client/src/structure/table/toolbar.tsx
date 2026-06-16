@@ -90,7 +90,7 @@ export function TableToolbar(props: TableToolbarProps) {
 				<Input
 					type="search"
 					placeholder={t("table.search.placeholder")}
-					className="max-w-xs"
+					className="w-full sm:max-w-xs"
 					data-testid="table-search-input"
 					onChange={(e) => handleSearchChange(e.target.value)}
 				/>
@@ -134,7 +134,7 @@ interface TableTabBarProps {
 
 export function TableTabBar({ tabs, activeTab, tabCounts, onSelect }: TableTabBarProps) {
 	return (
-		<Tabs value={activeTab} onValueChange={onSelect}>
+		<Tabs value={activeTab} onValueChange={onSelect} className="max-w-full overflow-x-auto">
 			<TabsList data-testid="table-tabs">
 				{tabs.map((tab) => (
 					<TabsTrigger

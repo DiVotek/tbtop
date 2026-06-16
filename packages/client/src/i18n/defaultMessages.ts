@@ -80,6 +80,7 @@ export const defaultMessages: Messages = {
 	"field.repeater.items": "{count} items",
 	"field.repeater.item_singular": "1 item",
 	"nav.title": "Tabletop",
+	"nav.open_sidebar": "Open navigation menu",
 	"form.unsaved_guard.title": "You have unsaved changes.",
 	"form.unsaved_guard.body": "Are you sure you want to leave? Your changes will be lost.",
 	"table.search.placeholder": "Search…",
