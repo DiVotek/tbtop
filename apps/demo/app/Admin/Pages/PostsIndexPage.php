@@ -6,7 +6,6 @@ use App\Models\Post;
 use App\Models\User;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
-use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
@@ -41,7 +40,7 @@ class PostsIndexPage extends Page
                 $s->action('new')->label('New post')->color('primary')->visit('/admin/posts/new'),
             ]),
             $s->table('posts')
-            ->rowClick('edit')
+                ->rowClick('edit')
                 ->columns([
                     Column::make('title')
                         ->label('Title')
@@ -53,15 +52,18 @@ class PostsIndexPage extends Page
                         ->label('Slug')
                         ->kind('text'),
                     Column::make('published')
-                        ->label('Status')
-                        ->badge([
-                            '1' => Color::Success,
-                            '0' => Color::Gray,
-                        ])
-                        ->toggleable(),
-                    Column::make('active')
-                        ->label('Active')
-                        ->boolean('check', 'x', Color::Success, Color::Gray),
+                        ->label('Published')
+                        ->toggle()
+                        ->onSave(function (Post $post, bool $value): Effects {
+                            $post->update([
+                                'published' => $value,
+                                'published_at' => $value ? now() : null,
+                            ]);
+
+                            return Effects::make()->notify(
+                                $value ? 'Post published' : 'Post unpublished'
+                            );
+                        }),
                     Column::make('published_at')
                         ->label('Published')
                         ->date('Y-m-d')
