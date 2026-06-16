@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Validation\ConstraintMap;
 
 /**
  * Fluent column descriptor for TableBuilder.
@@ -56,6 +57,19 @@ final class Column implements JsonSerializable
     private bool $alwaysHidden = false;
 
     private ?Closure $visibleClosure = null;
+
+    // -------------------------------------------------------------------------
+    // Editable-column state (server-side; onSaveClosure never serialized)
+    // -------------------------------------------------------------------------
+
+    /** 'boolean' | 'text' | null */
+    private ?string $editAs = null;
+
+    /** @var list<string> Laravel validation rules */
+    private array $editRules = [];
+
+    /** REQUIRED when editable — consumer provides the save logic. */
+    private ?Closure $onSaveClosure = null;
 
     public function __construct(public readonly string $name) {}
 
@@ -275,6 +289,72 @@ final class Column implements JsonSerializable
     }
 
     // -------------------------------------------------------------------------
+    // Editable-column fluent API
+    // -------------------------------------------------------------------------
+
+    /** Make the column an inline boolean toggle; sets kind = 'boolean'. */
+    public function toggle(): static
+    {
+        $this->editAs = 'boolean';
+        $this->kind = 'boolean';
+
+        return $this;
+    }
+
+    /** Make the column an inline text input; sets kind = 'text' when no kind is already set. */
+    public function textInput(): static
+    {
+        $this->editAs = 'text';
+        $this->kind ??= 'text';
+
+        return $this;
+    }
+
+    /**
+     * Laravel validation rules applied before the save closure runs.
+     * Accepts pipe-delimited string or an array; deduplicates entries.
+     *
+     * @param  string|list<string>  $rules
+     */
+    public function rules(string|array $rules): static
+    {
+        $list = is_string($rules) ? explode('|', $rules) : (array) $rules;
+        $this->editRules = array_values(
+            array_unique(array_merge($this->editRules, $list))
+        );
+
+        return $this;
+    }
+
+    /** Consumer-provided save closure — REQUIRED when column is editable. */
+    public function onSave(Closure $fn): static
+    {
+        $this->onSaveClosure = $fn;
+
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+    // Editable-column server-only accessors (never serialized)
+    // -------------------------------------------------------------------------
+
+    public function isEditable(): bool
+    {
+        return $this->editAs !== null;
+    }
+
+    /** @return list<string> */
+    public function editRuleEntries(): array
+    {
+        return $this->editRules;
+    }
+
+    public function onSaveClosure(): ?Closure
+    {
+        return $this->onSaveClosure;
+    }
+
+    // -------------------------------------------------------------------------
     // Server-side visibility
     // -------------------------------------------------------------------------
 
@@ -373,6 +453,16 @@ final class Column implements JsonSerializable
         // Kind-specific metadata: format, decimals, currency, badge, boolean, iconMap
         foreach ($this->kindMeta as $key => $value) {
             $out[$key] = $value;
+        }
+
+        // Editable: only emitted when editAs is set; onSaveClosure never serialized
+        if ($this->editAs !== null) {
+            $editable = ['as' => $this->editAs];
+            $constraints = ConstraintMap::toConstraints($this->editRules);
+            if ($constraints !== []) {
+                $editable['constraints'] = $constraints;
+            }
+            $out['editable'] = $editable;
         }
 
         return $out;

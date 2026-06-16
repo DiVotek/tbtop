@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\DataController;
+use Tbtop\Admin\Http\EditableColumnController;
 use Tbtop\Admin\Http\FormSubmitController;
 use Tbtop\Admin\Http\LocaleController;
 use Tbtop\Admin\Http\Media\MediaController;
@@ -44,6 +45,9 @@ $registerPageRoutes = static function (PanelConfig $panel): void {
         Route::post("{$path}/relation-search/{tbtopField}", RelationSearchController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.relationSearch');
+        Route::post("{$path}/cells/{tbtopTable}/{tbtopColumn}", EditableColumnController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.cell');
     }
 };
 

@@ -112,3 +112,14 @@ it('PageGate: gated select-create endpoint returns 200 when gate allows', functi
 
     $this->postJson('/admin/gated-endpoints/select-create/category_id', ['title' => 'X'])->assertOk();
 });
+
+// ---------------------------------------------------------------------------
+// Gate check: editable cell endpoint
+// ---------------------------------------------------------------------------
+
+it('PageGate: gated cell endpoint returns 403 when gate denies', function (): void {
+    Gate::define('view-gated-endpoints', fn (?object $user) => false);
+
+    $this->postJson('/admin/gated-endpoints/cells/items/name', ['payload' => ['id' => 1, 'value' => 'X']])
+        ->assertForbidden();
+});

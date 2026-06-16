@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Tests\Fixtures;
 use Illuminate\Support\Facades\DB;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -51,7 +52,12 @@ class GatedEndpointsPage extends Page
                 ->label('Ping')
                 ->handle(fn (ActionCtx $ctx): Effects => Effects::make()->notify('pong'), needs: []),
             $s->table('items')
-                ->columns(['name' => 'Name'])
+                ->columns([
+                    Column::make('name')
+                        ->label('Name')
+                        ->textInput()
+                        ->onSave(fn (mixed $record, mixed $value) => null),
+                ])
                 ->query(fn () => DB::table('items'))
                 ->toNode(),
             $s->chart('summary', 'donut', ['nameKey' => 'label'])

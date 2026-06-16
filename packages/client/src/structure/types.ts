@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { AdminClient } from "../data/client";
+import type { FieldConstraints } from "../inertia/constraints";
 import type { AsyncBlock } from "./asyncBlock";
 
 // Inlined from the old auth/AuthProvider — session auth lives on the Laravel
@@ -222,6 +223,10 @@ export interface TableColumn<TRow = unknown> {
 	badge?: TableColumnBadgeOptions;
 	boolean?: TableColumnBooleanOptions;
 	iconMap?: Record<string, TableColumnIconMapEntry>;
+	editable?: {
+		as: "boolean" | "text";
+		constraints?: FieldConstraints;
+	};
 }
 
 export interface TablePaginationOptions {

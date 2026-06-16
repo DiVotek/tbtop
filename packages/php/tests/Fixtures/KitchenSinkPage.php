@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
@@ -87,7 +88,19 @@ class KitchenSinkPage extends Page
                 ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading')],
             ]),
             $s->table('posts')
-                ->columns(['title' => 'Title', 'views' => 'Views'])
+                ->columns([
+                    'title' => 'Title',
+                    'views' => 'Views',
+                    Column::make('published')
+                        ->label('Published')
+                        ->toggle()
+                        ->onSave(fn ($record, $value) => Effects::make()->refreshTable('posts')),
+                    Column::make('title_edit')
+                        ->label('Title (editable)')
+                        ->textInput()
+                        ->rules('required|max:200')
+                        ->onSave(fn ($record, $value) => null),
+                ])
                 ->searchable(['title'])
                 ->defaultSort('views', 'desc')
                 ->tabs([

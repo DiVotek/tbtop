@@ -14,9 +14,12 @@ import { useClientActionContext } from "../actionContext";
 import { RowProvider } from "../rowContext";
 import type { ActionConfig, TableColumn } from "../types";
 import { BadgeCell, BooleanIconCell, IconMapCell } from "./cellHelpers";
+import { EditableCell } from "./editableCell";
 import { resolveIcon } from "./iconRegistry";
 
 // ─── TableGrid ────────────────────────────────────────────────────────────────
+
+type SaveCellArgs = { column: string; id: string; value: unknown };
 
 interface TableGridProps {
 	rows: Record<string, unknown>[];
@@ -36,6 +39,7 @@ interface TableGridProps {
 	onResetFilters: () => void;
 	/** Name of a row action to trigger on row click. */
 	rowClick?: string;
+	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 }
 
 export function TableGrid(props: TableGridProps) {
@@ -116,6 +120,7 @@ export function TableGrid(props: TableGridProps) {
 								hasBulk={props.hasBulk}
 								hasRowActions={props.hasRowActions}
 								rowClick={props.rowClick}
+								saveCell={props.saveCell}
 							/>
 						))
 					)}
@@ -272,6 +277,7 @@ interface TableRowProps {
 	hasBulk: boolean;
 	hasRowActions: boolean;
 	rowClick?: string;
+	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 }
 
 function TableRow(props: TableRowProps) {
@@ -375,7 +381,7 @@ function TableRow(props: TableRowProps) {
 							style={col.width ? { width: col.width } : undefined}
 							title={col.tooltip}
 						>
-							{renderCell(col, props.row)}
+							{renderCell(col, props.row, props.saveCell)}
 						</td>
 					);
 				})}
@@ -395,9 +401,23 @@ function TableRow(props: TableRowProps) {
 
 // ─── Cell renderer ────────────────────────────────────────────────────────────
 
-function renderCell(col: TableColumn, row: Record<string, unknown>): ReactNode {
+function renderCell(
+	col: TableColumn,
+	row: Record<string, unknown>,
+	saveCell?: (args: SaveCellArgs) => Promise<unknown>,
+): ReactNode {
 	if (col.render) {
 		return col.render(row);
+	}
+
+	if (col.editable) {
+		return (
+			<EditableCell
+				col={col as TableColumn & { editable: NonNullable<TableColumn["editable"]> }}
+				row={row}
+				saveCell={saveCell}
+			/>
+		);
 	}
 
 	// New wire kinds handled before falling through to block registry

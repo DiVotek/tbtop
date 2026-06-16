@@ -64,6 +64,14 @@ final class TableBuilder implements JsonSerializable
             }
         }
 
+        foreach ($this->columnObjects as $col) {
+            if ($col->isEditable() && $col->onSaveClosure() === null) {
+                throw new InvalidArgumentException(
+                    "Editable column \"{$col->name}\" requires ->onSave() to be set."
+                );
+            }
+        }
+
         return $this;
     }
 
