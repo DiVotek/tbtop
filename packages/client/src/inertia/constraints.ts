@@ -54,8 +54,19 @@ function checkPresent(value: unknown, c: FieldConstraints): string | null {
 	return checkSize(value, c) ?? checkFormat(value, c);
 }
 
+// Arrays (repeaters, tags) size by item count; numbers by value; else by char length.
+function sizeOf(value: unknown): number {
+	if (typeof value === "number") {
+		return value;
+	}
+	if (Array.isArray(value)) {
+		return value.length;
+	}
+	return String(value).length;
+}
+
 function checkSize(value: unknown, c: FieldConstraints): string | null {
-	const size = typeof value === "number" ? value : String(value).length;
+	const size = sizeOf(value);
 	if (c.min !== undefined && size < c.min) {
 		return `Must be at least ${c.min}`;
 	}
