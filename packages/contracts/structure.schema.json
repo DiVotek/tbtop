@@ -256,8 +256,19 @@
 						"type": "object",
 						"required": ["as"],
 						"properties": {
-							"as": { "type": "string", "enum": ["boolean", "text"] },
-							"constraints": { "$ref": "#/$defs/constraints" }
+							"as": { "type": "string", "enum": ["boolean", "text", "select"] },
+							"constraints": { "$ref": "#/$defs/constraints" },
+							"options": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": ["value", "label"],
+									"properties": {
+										"value": { "type": "string" },
+										"label": { "type": "string" }
+									}
+								}
+							}
 						},
 						"additionalProperties": false
 					}

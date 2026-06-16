@@ -303,6 +303,64 @@ it('Column: textInput() + rules() emit editable.as=text with constraints', funct
         ->and($json['editable']['constraints']['max'])->toBe(200);
 });
 
+it('Column: selectColumn() + options() emit editable.as=select with options and kind=select', function (): void {
+    $json = encodeColumn(
+        Column::make('status')
+            ->selectColumn()
+            ->options([
+                ['value' => 'draft', 'label' => 'Draft'],
+                ['value' => 'published', 'label' => 'Published'],
+            ])
+            ->rules('required|in:draft,published')
+            ->onSave(fn ($r, $v) => null)
+    );
+
+    expect($json['kind'])->toBe('select')
+        ->and($json['editable']['as'])->toBe('select')
+        ->and($json['editable']['options'])->toBe([
+            ['value' => 'draft', 'label' => 'Draft'],
+            ['value' => 'published', 'label' => 'Published'],
+        ])
+        ->and($json['editable']['constraints']['required'])->toBeTrue();
+});
+
+it('Column: selectColumn() normalizes non-string option values to strings', function (): void {
+    $json = encodeColumn(
+        Column::make('priority')
+            ->selectColumn()
+            ->options([
+                ['value' => 1, 'label' => 'Low'],
+                ['value' => 2, 'label' => 'High'],
+            ])
+            ->onSave(fn ($r, $v) => null)
+    );
+
+    expect($json['editable']['options'])->toBe([
+        ['value' => '1', 'label' => 'Low'],
+        ['value' => '2', 'label' => 'High'],
+    ]);
+});
+
+it('Column: selectColumn() without options() omits the options key', function (): void {
+    $json = encodeColumn(
+        Column::make('status')->selectColumn()->onSave(fn ($r, $v) => null)
+    );
+
+    expect($json['editable']['as'])->toBe('select')
+        ->and($json['editable'])->not->toHaveKey('options');
+});
+
+it('Column: selectColumn() without onSave() throws when added to a table via columns()', function (): void {
+    $s = new S;
+
+    expect(fn () => $s->table('posts')
+        ->columns([
+            Column::make('status')->selectColumn()->options([['value' => 'a', 'label' => 'A']]),
+        ])
+        ->query(fn () => null)
+    )->toThrow(InvalidArgumentException::class, 'requires ->onSave()');
+});
+
 it('Column: onSave closure does NOT appear in jsonSerialize() output', function (): void {
     $json = encodeColumn(
         Column::make('published')->toggle()->onSave(fn ($r, $v) => null)

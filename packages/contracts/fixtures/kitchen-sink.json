@@ -491,6 +491,31 @@
                                     "max": 200
                                 }
                             }
+                        },
+                        {
+                            "name": "status_edit",
+                            "label": "Status (editable)",
+                            "kind": "select",
+                            "editable": {
+                                "as": "select",
+                                "constraints": {
+                                    "required": true,
+                                    "in": [
+                                        "draft",
+                                        "published"
+                                    ]
+                                },
+                                "options": [
+                                    {
+                                        "value": "draft",
+                                        "label": "Draft"
+                                    },
+                                    {
+                                        "value": "published",
+                                        "label": "Published"
+                                    }
+                                ]
+                            }
                         }
                     ]
                 },

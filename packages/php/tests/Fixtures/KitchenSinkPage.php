@@ -100,6 +100,15 @@ class KitchenSinkPage extends Page
                         ->textInput()
                         ->rules('required|max:200')
                         ->onSave(fn ($record, $value) => null),
+                    Column::make('status_edit')
+                        ->label('Status (editable)')
+                        ->selectColumn()
+                        ->options([
+                            ['value' => 'draft', 'label' => 'Draft'],
+                            ['value' => 'published', 'label' => 'Published'],
+                        ])
+                        ->rules('required|in:draft,published')
+                        ->onSave(fn ($record, $value) => null),
                 ])
                 ->searchable(['title'])
                 ->defaultSort('views', 'desc')
