@@ -4,6 +4,7 @@ import { renderAsyncError } from "../structure/renderAsyncError";
 import { useMultiResolvedLabels } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import type { FieldFormProps } from "./fieldProps";
+import { WithMultiCreateAffordance } from "./selectMultiCreate";
 import type {
 	SelectMultiOptionsBag,
 	SelectOptionsBag,
@@ -19,15 +20,8 @@ export function SelectMultiForm(props: FieldFormProps<SelectValueType, SelectOpt
 	return <StaticMultiSelect {...props} />;
 }
 
-function StaticMultiSelect({
-	id,
-	name,
-	value,
-	onChange,
-	onBlur,
-	disabled,
-	options,
-}: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+function StaticMultiSelect(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+	const { id, name, value, onChange, onBlur, disabled, options } = props;
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
 	function toggle(v: string): void {
@@ -35,24 +29,26 @@ function StaticMultiSelect({
 		onChange(next);
 	}
 	return (
-		<div
-			id={id ?? name}
-			role="listbox"
-			aria-multiselectable="true"
-			className="flex flex-wrap gap-2"
-			data-testid={`select-${name}`}
-			onBlur={onBlur}
-		>
-			{choices.map((opt) => (
-				<OptionButton
-					key={opt.value}
-					label={opt.label}
-					selected={current.includes(opt.value)}
-					disabled={disabled}
-					onClick={() => toggle(opt.value)}
-				/>
-			))}
-		</div>
+		<WithMultiCreateAffordance {...props}>
+			<div
+				id={id ?? name}
+				role="listbox"
+				aria-multiselectable="true"
+				className="flex flex-wrap gap-2"
+				data-testid={`select-${name}`}
+				onBlur={onBlur}
+			>
+				{choices.map((opt) => (
+					<OptionButton
+						key={opt.value}
+						label={opt.label}
+						selected={current.includes(opt.value)}
+						disabled={disabled}
+						onClick={() => toggle(opt.value)}
+					/>
+				))}
+			</div>
+		</WithMultiCreateAffordance>
 	);
 }
 
@@ -73,38 +69,43 @@ function AsyncMultiSelect(props: FieldFormProps<SelectValueType, SelectOptionsBa
 	function setValue(next: string[]): void {
 		props.onChange(next);
 	}
+	const resolvedLabels = resolved.kind === "ready" ? resolved.labels : undefined;
 	return (
-		<div
-			role="listbox"
-			aria-multiselectable="true"
-			className="flex flex-wrap gap-2"
-			data-testid={`select-${props.name}`}
-			onBlur={props.onBlur}
-		>
-			{visible.map((v) => (
-				<SelectedChip
-					key={v}
-					value={v}
-					label={resolved.labels[v] ?? v}
-					onRemove={() => setValue(current.filter((x) => x !== v))}
-				/>
-			))}
-			{search.rows.map((row) => {
-				const v = String(opts.optionValue?.(row) ?? "");
-				const lbl = opts.optionLabel?.(row) ?? v;
-				const selected = current.includes(v);
-				return (
-					<OptionButton
+		<WithMultiCreateAffordance {...props} resolvedLabels={resolvedLabels}>
+			<div
+				role="listbox"
+				aria-multiselectable="true"
+				className="flex flex-wrap gap-2"
+				data-testid={`select-${props.name}`}
+				onBlur={props.onBlur}
+			>
+				{visible.map((v) => (
+					<SelectedChip
 						key={v}
-						label={lbl}
-						selected={selected}
-						onClick={() =>
-							setValue(selected ? current.filter((x) => x !== v) : [...current, v])
-						}
+						value={v}
+						label={resolved.labels[v] ?? v}
+						onRemove={() => setValue(current.filter((x) => x !== v))}
 					/>
-				);
-			})}
-		</div>
+				))}
+				{search.rows.map((row) => {
+					const v = String(opts.optionValue?.(row) ?? "");
+					const lbl = opts.optionLabel?.(row) ?? v;
+					const selected = current.includes(v);
+					return (
+						<OptionButton
+							key={v}
+							label={lbl}
+							selected={selected}
+							onClick={() =>
+								setValue(
+									selected ? current.filter((x) => x !== v) : [...current, v],
+								)
+							}
+						/>
+					);
+				})}
+			</div>
+		</WithMultiCreateAffordance>
 	);
 }
 
