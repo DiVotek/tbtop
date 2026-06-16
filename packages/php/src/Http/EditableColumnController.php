@@ -38,22 +38,29 @@ final class EditableColumnController
             abort(404, "Column \"{$columnName}\" is not editable on table \"{$tableName}\".");
         }
 
-        $value = $this->validateValue($request, $col, $columnName);
+        // The client wraps the cell edit in a `payload` envelope, matching the
+        // action endpoint contract (see ActionCtx::fromRequest).
+        $payload = $request->input('payload', []);
+        $payload = is_array($payload) ? $payload : [];
+
+        $value = $this->validateValue($col, $columnName, $payload['value'] ?? null);
         $builder = $this->resolveBuilder($table);
-        $id = $request->input('id');
-        $record = $this->resolveRecord($builder, $id);
+        $record = $this->resolveRecord($builder, $payload['id'] ?? null);
         $effects = $this->runSave($col, $record, $value, $tableName);
 
         return response()->json(['effects' => $effects]);
     }
 
     /**
+     * Server-invisible columns (hidden() / visible(false)) are never editable,
+     * even when reachable by name — the visibility closure is an authz gate.
+     *
      * @param  list<Column>  $columns
      */
     private function findEditableColumn(array $columns, string $name): ?Column
     {
         foreach ($columns as $col) {
-            if ($col->name === $name && $col->isEditable()) {
+            if ($col->name === $name && $col->isEditable() && $col->isVisible()) {
                 return $col;
             }
         }
@@ -61,15 +68,15 @@ final class EditableColumnController
         return null;
     }
 
-    private function validateValue(Request $request, Column $col, string $columnName): mixed
+    private function validateValue(Column $col, string $columnName, mixed $value): mixed
     {
         $rules = $col->editRuleEntries();
         if ($rules === []) {
-            return $request->input('value');
+            return $value;
         }
 
         $validated = Validator::make(
-            [$columnName => $request->input('value')],
+            [$columnName => $value],
             [$columnName => $rules],
         )->validate();
 

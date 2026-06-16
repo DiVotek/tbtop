@@ -60,9 +60,11 @@ class PostsIndexPage extends Page
                                 'published_at' => $value ? now() : null,
                             ]);
 
-                            return Effects::make()->notify(
-                                $value ? 'Post published' : 'Post unpublished'
-                            );
+                            // refreshTable reconciles the published_at column in
+                            // the same row to the server-stamped value.
+                            return Effects::make()
+                                ->notify($value ? 'Post published' : 'Post unpublished')
+                                ->refreshTable('posts');
                         }),
                     Column::make('published_at')
                         ->label('Published')
