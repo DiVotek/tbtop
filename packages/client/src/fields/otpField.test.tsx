@@ -34,9 +34,11 @@ describe("Otp field", () => {
 		expect(input?.value).toBe("123");
 	});
 
-	test("OtpCell masks a non-empty value and renders nothing when empty", () => {
+	test("OtpCell masks one dot per character and renders nothing when empty", () => {
 		const { container, rerender } = render(<OtpCell value="123456" />);
 		expect(container.textContent).toBe("••••••");
+		rerender(<OtpCell value="1234" />); // length-4 code masks to 4 dots, not 6
+		expect(container.textContent).toBe("••••");
 		rerender(<OtpCell value={null} />);
 		expect(container.textContent).toBe("");
 		rerender(<OtpCell value="" />);

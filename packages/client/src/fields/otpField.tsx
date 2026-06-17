@@ -4,7 +4,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/inputOtp";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
 
 const DEFAULT_LENGTH = 6;
-const MASK = "••••••";
 
 interface OtpOptionsBag {
 	length?: number;
@@ -15,7 +14,8 @@ export function OtpCell({ value }: FieldCellProps<string>) {
 	if (value === null || value === undefined || value === "") {
 		return null;
 	}
-	return <span>{MASK}</span>;
+	// One dot per entered character, so any configured length masks correctly.
+	return <span>{"•".repeat(value.length)}</span>;
 }
 
 export function OtpForm({
