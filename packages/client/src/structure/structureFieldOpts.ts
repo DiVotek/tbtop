@@ -35,6 +35,13 @@ export interface NumberOpts {
 	step?: number;
 }
 
+export interface OtpOpts {
+	label?: string;
+	required?: boolean;
+	length?: number;
+	pattern?: string;
+}
+
 export interface ChoiceOption {
 	value: string;
 	label: string;

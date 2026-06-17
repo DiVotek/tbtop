@@ -116,6 +116,15 @@
                                         "name": "title"
                                     },
                                     {
+                                        "kind": "otp",
+                                        "options": {
+                                            "label": "Code",
+                                            "length": 6
+                                        },
+                                        "meta": {},
+                                        "name": "auth_code"
+                                    },
+                                    {
                                         "kind": "textarea",
                                         "options": {
                                             "label": "Body",

@@ -45,6 +45,7 @@ class KitchenSinkPage extends Page
             $s->section(['title' => 'Form'], [
                 $s->form('post', [
                     $s->text('title')->label('Title')->required()->rules('max:200'),
+                    $s->otp('auth_code')->label('Code')->length(6)->rules('digits:6'),
                     $s->textarea('body')->label('Body')
                         ->helperText('Supports Markdown.')->tooltip('Write the post body here.'),
                     $s->number('rating')->rules('integer|min:0|max:5'),

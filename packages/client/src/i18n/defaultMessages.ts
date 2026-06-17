@@ -40,6 +40,7 @@ export const defaultMessages: Messages = {
 	"nav.home.welcome": "Welcome",
 	"nav.language": "Language",
 	"state.pageNotFound": "Page not found",
+	"field.otp.label": "One-time code",
 	"field.password.hide": "Hide password",
 	"field.password.show": "Show password",
 	"field.upload.noData": "Upload returned no data",

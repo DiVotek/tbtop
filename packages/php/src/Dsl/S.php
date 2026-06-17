@@ -14,6 +14,7 @@ use Tbtop\Admin\Dsl\Fields\InFilter;
 use Tbtop\Admin\Dsl\Fields\Keyvalue;
 use Tbtop\Admin\Dsl\Fields\MediaPicker;
 use Tbtop\Admin\Dsl\Fields\Number;
+use Tbtop\Admin\Dsl\Fields\Otp;
 use Tbtop\Admin\Dsl\Fields\Password;
 use Tbtop\Admin\Dsl\Fields\Radio;
 use Tbtop\Admin\Dsl\Fields\Relation;
@@ -33,6 +34,7 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  * @method Text text(string $name)
  * @method Textarea textarea(string $name)
  * @method Password password(string $name)
+ * @method Otp otp(string $name)
  * @method Number number(string $name)
  * @method Date date(string $name)
  * @method Datetime datetime(string $name)
@@ -61,7 +63,7 @@ final class S
      * @var list<string>
      */
     public const BUILT_IN_KINDS = [
-        'text', 'textarea', 'password', 'number', 'date', 'datetime', 'boolean',
+        'text', 'textarea', 'password', 'otp', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'in', 'checkbox', 'colorpicker', 'keyvalue',
         'slug', 'upload', 'media', 'relation', 'repeater', 'richtext', 'daterange',
     ];
@@ -467,6 +469,7 @@ final class S
                 'text' => Text::class,
                 'textarea' => Textarea::class,
                 'password' => Password::class,
+                'otp' => Otp::class,
                 'number' => Number::class,
                 'date' => Date::class,
                 'datetime' => Datetime::class,
