@@ -134,4 +134,7 @@ export const defaultMessages: Messages = {
 	"media.picker.choose": "Choose",
 	"media.picker.confirm": "Confirm selection",
 	"media.picker.no_selection": "No file selected",
+	"media.preview.open": "Open",
+	"media.preview.download": "Download",
+	"media.preview.download_started": "Download started",
 };

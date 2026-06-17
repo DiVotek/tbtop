@@ -16,15 +16,10 @@ import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
 import { FolderTree } from "./folderTree";
 import { MediaGrid } from "./mediaGrid";
+import { MediaThumb } from "./mediaThumb";
 import type { MediaItem } from "./types";
 import type { MediaQueryParams } from "./useMediaApi";
-import {
-	fetchMediaItem,
-	isImageMime,
-	useMediaClient,
-	useMediaFolders,
-	useMediaItems,
-} from "./useMediaApi";
+import { fetchMediaItem, useMediaClient, useMediaFolders, useMediaItems } from "./useMediaApi";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -236,24 +231,14 @@ function MediaPreviewChip({
 	onRemove: () => void;
 	disabled?: boolean;
 }): ReactNode {
-	const thumb = isImageMime(item.mime) ? (item.sizes.profile ?? item.url) : null;
-
 	return (
 		<div
 			className="group relative flex items-center gap-2 rounded-md border bg-card p-1.5"
 			data-testid={`media-preview-${item.id}`}
 		>
-			{thumb ? (
-				<img
-					src={thumb}
-					alt={item.alt ?? item.name}
-					className="h-10 w-10 rounded object-cover"
-				/>
-			) : (
-				<div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
-					<FileIcon className="h-5 w-5 text-muted-foreground" />
-				</div>
-			)}
+			<div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded bg-muted">
+				<MediaThumb item={item} size="sm" />
+			</div>
 			<span className="max-w-[120px] truncate text-xs">{item.name}</span>
 			{!disabled && (
 				<Button

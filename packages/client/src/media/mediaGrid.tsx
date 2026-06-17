@@ -10,9 +10,10 @@ import { TablePagination } from "../structure/table/pagination";
 import type { TablePaginationOptions } from "../structure/types";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { MediaThumb } from "./mediaThumb";
 import type { MediaItem } from "./types";
 import type { MediaQueryParams, MediaQueryState } from "./useMediaApi";
-import { formatBytes, isImageMime, uploadMediaItem, useMediaClient } from "./useMediaApi";
+import { formatBytes, uploadMediaItem, useMediaClient } from "./useMediaApi";
 
 interface MediaGridProps {
 	state: MediaQueryState;
@@ -245,8 +246,6 @@ interface MediaCardProps {
 }
 
 function MediaCard({ item, onSelect, selected = false }: MediaCardProps): ReactNode {
-	const thumb = isImageMime(item.mime) ? (item.sizes.profile ?? item.url) : null;
-
 	return (
 		<button
 			type="button"
@@ -259,19 +258,12 @@ function MediaCard({ item, onSelect, selected = false }: MediaCardProps): ReactN
 			aria-pressed={selected}
 		>
 			<div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-muted">
-				{thumb ? (
-					<img
-						src={thumb}
-						alt={item.alt ?? item.name}
-						className="h-full w-full object-cover"
-						data-testid={`media-thumb-${item.id}`}
-					/>
-				) : (
-					<FileIcon
-						className="h-8 w-8 text-muted-foreground"
-						data-testid={`media-icon-${item.id}`}
-					/>
-				)}
+				<MediaThumb
+					item={item}
+					size="md"
+					imgTestId={`media-thumb-${item.id}`}
+					iconTestId={`media-icon-${item.id}`}
+				/>
 			</div>
 			<p className="truncate text-xs font-medium leading-tight" title={item.name}>
 				{item.name}

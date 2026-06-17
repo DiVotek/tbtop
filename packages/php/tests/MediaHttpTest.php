@@ -98,6 +98,50 @@ it('upload assigns folder when folderId provided', function () {
     expect($data['folderId'])->toBe($folder->id);
 });
 
+it('upload sanitizes svg by stripping scripts and event handlers', function () {
+    $dirty = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">'
+        .'<script>alert(2)</script><rect width="10" height="10" /></svg>';
+    $file = UploadedFile::fake()->createWithContent('logo.svg', $dirty);
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201);
+
+    $stored = Storage::disk('public')->get((string) Media::firstOrFail()->path);
+    expect($stored)->not->toContain('<script')
+        ->and($stored)->not->toContain('onload')
+        ->and($stored)->not->toContain('alert');
+});
+
+it('upload keeps a clean svg intact and succeeds', function () {
+    $clean = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+        .'<rect width="10" height="10" /></svg>';
+    $file = UploadedFile::fake()->createWithContent('clean.svg', $clean);
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201);
+
+    $stored = Storage::disk('public')->get((string) Media::firstOrFail()->path);
+    expect($stored)->toContain('<svg')
+        ->and($stored)->toContain('<rect');
+});
+
+it('replace sanitizes a replacement svg', function () {
+    $media = Media::create(mediaRow(['path' => 'tbtop-media/old.svg', 'mime' => 'image/svg+xml']));
+    Storage::disk('public')->put('tbtop-media/old.svg', '<svg></svg>');
+
+    $dirty = '<svg xmlns="http://www.w3.org/2000/svg">'
+        .'<script>alert(1)</script><rect /></svg>';
+    $file = UploadedFile::fake()->createWithContent('new.svg', $dirty);
+
+    $media->refresh();
+    $this->post("/admin/api/media/{$media->id}/replace", ['file' => $file])
+        ->assertOk();
+
+    $stored = Storage::disk('public')->get($media->refresh()->path);
+    expect($stored)->not->toContain('<script')
+        ->and($stored)->not->toContain('alert');
+});
+
 it('upload rejects disallowed mime type', function () {
     $file = UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf');
 
@@ -193,6 +237,28 @@ it('returns a single media item by id', function () {
 
 it('returns 404 for unknown media id', function () {
     $this->getJson('/admin/api/media/9999')->assertNotFound();
+});
+
+// ---- GET /admin/api/media/{id}/download ----
+
+it('downloads a media file as an attachment with the original filename', function () {
+    Storage::disk('public')->put('tbtop-media/report.pdf', 'PDF BYTES');
+    $media = Media::create(mediaRow([
+        'name' => 'Quarterly Report.pdf',
+        'path' => 'tbtop-media/report.pdf',
+        'mime' => 'application/pdf',
+    ]));
+
+    $response = $this->get("/admin/api/media/{$media->id}/download")->assertOk();
+
+    expect($response->headers->get('content-disposition'))
+        ->toContain('attachment')
+        ->toContain('Quarterly Report.pdf')
+        ->and($response->headers->get('x-content-type-options'))->toBe('nosniff');
+});
+
+it('download returns 404 for unknown media id', function () {
+    $this->get('/admin/api/media/9999/download')->assertNotFound();
 });
 
 // ---- PATCH /admin/api/media/{id} ----

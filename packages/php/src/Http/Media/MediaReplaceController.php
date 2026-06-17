@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\Models\Media;
+use Tbtop\Admin\Media\SvgSanitizer;
 
 final class MediaReplaceController
 {
@@ -36,6 +37,8 @@ final class MediaReplaceController
         if ($path === false) {
             abort(500, 'Upload failed.');
         }
+
+        SvgSanitizer::sanitizeStored($disk, $path, (string) $file->getMimeType());
 
         /** @var array<string, array{0: int, 1: int}> $profiles */
         $profiles = (array) ($config['profiles'] ?? []);

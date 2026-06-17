@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\SsrfGuard;
+use Tbtop\Admin\Media\SvgSanitizer;
 
 final class MediaImportController
 {
@@ -93,6 +94,8 @@ final class MediaImportController
             if ($path === false) {
                 return $this->error422('media.errors.download_failed');
             }
+
+            SvgSanitizer::sanitizeStored($disk, $path, $detectedMime);
 
             /** @var array<string, array{0: int, 1: int}> $profiles */
             $profiles = (array) ($config2['profiles'] ?? []);

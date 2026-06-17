@@ -2,17 +2,17 @@
  * MediaDetail — side panel / responsive dialog for a selected MediaItem.
  * Shows preview, inline name/alt editing, folder move, replace, delete.
  */
-import { FileIcon, Trash2Icon, UploadIcon } from "lucide-react";
+import { Trash2Icon, UploadIcon } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { FilePreview } from "./filePreview";
 import type { MediaFolder, MediaItem } from "./types";
 import {
 	deleteMediaItem,
 	formatBytes,
-	isImageMime,
 	patchMediaItem,
 	replaceMediaItem,
 	useMediaClient,
@@ -76,8 +76,6 @@ function DetailShell({
 	const [error, setError] = useState<string | null>(null);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const replaceRef = useRef<HTMLInputElement>(null);
-
-	const thumb = isImageMime(item.mime) ? (item.sizes.profile ?? item.url) : null;
 
 	async function handleSave() {
 		setBusy(true);
@@ -198,19 +196,7 @@ function DetailShell({
 		>
 			{/* Preview */}
 			<div className="flex items-center justify-center rounded-md border bg-muted/40 p-4">
-				{thumb ? (
-					<img
-						src={thumb}
-						alt={item.alt ?? item.name}
-						className="max-h-48 max-w-full rounded object-contain"
-						data-testid="detail-preview-img"
-					/>
-				) : (
-					<FileIcon
-						className="h-16 w-16 text-muted-foreground"
-						data-testid="detail-preview-icon"
-					/>
-				)}
+				<FilePreview item={item} />
 			</div>
 
 			{/* Metadata */}

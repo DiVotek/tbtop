@@ -7,6 +7,7 @@ use Tbtop\Admin\Http\EditableColumnController;
 use Tbtop\Admin\Http\FormSubmitController;
 use Tbtop\Admin\Http\LocaleController;
 use Tbtop\Admin\Http\Media\MediaController;
+use Tbtop\Admin\Http\Media\MediaDownloadController;
 use Tbtop\Admin\Http\Media\MediaFolderController;
 use Tbtop\Admin\Http\Media\MediaImportController;
 use Tbtop\Admin\Http\Media\MediaReplaceController;
@@ -72,6 +73,7 @@ $registerChromeRoutes = static function (): void {
         Route::post('/upload', MediaUploadController::class)->name('upload');
         Route::post('/import-url', MediaImportController::class)->name('import-url');
         Route::get('/{id}', [MediaController::class, 'show'])->name('show')->whereNumber('id');
+        Route::get('/{id}/download', MediaDownloadController::class)->name('download')->whereNumber('id');
         Route::patch('/{id}', [MediaController::class, 'update'])->name('update')->whereNumber('id');
         Route::post('/{id}/replace', MediaReplaceController::class)->name('replace')->whereNumber('id');
         Route::delete('/{id}', [MediaController::class, 'destroy'])->name('destroy')->whereNumber('id');
