@@ -149,6 +149,18 @@ final class PanelConfig
         return $this->middleware;
     }
 
+    /**
+     * The panel's auth/app middleware layer a page spreads to add to it, e.g.
+     * middleware(PanelConfig $p): array { return [...$p->authStack(), 'can:x']; }.
+     * Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those.
+     *
+     * @return list<string>
+     */
+    public function authStack(): array
+    {
+        return [...$this->middleware, 'auth:'.$this->guard];
+    }
+
     /** @return list<class-string<Page>> */
     public function getPages(): array
     {
