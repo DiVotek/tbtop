@@ -66,10 +66,13 @@ jobs:
           echo "$TAG is free"
 
       # Pushing the tag lets Packagist publish the PHP package via its webhook.
+      # Annotated tag needs a tagger identity — the runner has none by default.
       - name: Create and push tag
         env:
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
 
