@@ -10,6 +10,7 @@ import {
 	type ChromeUser,
 	type NavGroup,
 } from "./chromeContext";
+import { SidebarDrawer } from "./SidebarDrawer";
 
 /** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
 export interface ChromeTrees {
@@ -85,9 +86,12 @@ export function AdminLayoutShell({
 	return (
 		<ChromeDataContext.Provider value={chromeData}>
 			<div className="flex min-h-screen bg-background text-foreground">
-				<aside className="flex w-56 shrink-0 flex-col gap-4 border-r p-4">{sidebar}</aside>
+				<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
+					{sidebar}
+				</aside>
 				<div className="flex min-w-0 flex-1 flex-col">
 					<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
+						<SidebarDrawer sidebar={sidebar} />
 						{header}
 					</header>
 					<main className="min-w-0 flex-1">{children}</main>

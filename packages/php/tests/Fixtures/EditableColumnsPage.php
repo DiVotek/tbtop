@@ -52,6 +52,22 @@ class EditableColumnsPage extends Page
                             $record->note = $value;
                             $record->save();
                         }),
+                    // Inline (sync) select: persists exactly like a text value via
+                    // the same /cells endpoint; validation stays server-side via rules().
+                    Column::make('status')
+                        ->label('Status')
+                        ->selectColumn()
+                        ->options([
+                            ['value' => 'draft', 'label' => 'Draft'],
+                            ['value' => 'published', 'label' => 'Published'],
+                        ])
+                        ->rules('required|in:draft,published')
+                        ->onSave(function (mixed $record, mixed $value): Effects {
+                            $record->status = $value;
+                            $record->save();
+
+                            return Effects::make()->refreshTable('ecposts');
+                        }),
                     // Editable but server-hidden: visible(false) is an authz gate,
                     // so the cell endpoint must reject it (404), not honor the edit.
                     Column::make('secret')

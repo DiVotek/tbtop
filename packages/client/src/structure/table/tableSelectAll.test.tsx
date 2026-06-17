@@ -82,6 +82,22 @@ describe("TableSelectAll", () => {
 		expect(countEl.textContent).toContain("1");
 	});
 
+	test("bulk action buttons hidden until a row is selected", async () => {
+		const node = makeTableWithBulk();
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await findByTestId("table-select-a");
+		expect(queryByTestId("action-do")).toBeNull();
+
+		const checkboxA = await findByTestId("table-select-a");
+		await act(async () => {
+			fireEvent.click(checkboxA);
+		});
+
+		expect(await findByTestId("action-do")).toBeTruthy();
+	});
+
 	test("select-all not present when no bulkActions", async () => {
 		const node = s.table({
 			query: async () => [{ id: "a", title: "A" }],

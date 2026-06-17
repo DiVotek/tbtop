@@ -52,11 +52,15 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 		return <span>{String(value ?? "")}</span>;
 	}
 
+	// boolean + select commit on change; text commits on blur only
+	const persistsOnChange = col.editable.as === "boolean" || col.editable.as === "select";
+
 	return (
 		<div onClick={(e) => e.stopPropagation()}>
 			{renderDescriptor(descriptor, {
 				kind: col.editable.as,
-				options: { name: col.name },
+				// Forward static select options so the Select renders its choices
+				options: { name: col.name, options: col.editable.options },
 				meta: {},
 				ctx: {
 					surface: "form",
@@ -66,13 +70,12 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 						onChange: (v: unknown) => {
 							setValue(v);
 							valueRef.current = v;
-							// boolean: persist on change; text: persist on blur only
-							if (col.editable.as === "boolean") {
+							if (persistsOnChange) {
 								void save(v);
 							}
 						},
 						onBlur: () => {
-							if (col.editable.as !== "boolean") {
+							if (!persistsOnChange) {
 								void save(valueRef.current);
 							}
 						},

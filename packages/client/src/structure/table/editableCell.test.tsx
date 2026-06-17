@@ -64,8 +64,33 @@ function textCol(name = "title"): EditableCellTestCol {
 	return { name, editable: { as: "text" } };
 }
 
+function selectCol(name = "status"): EditableCellTestCol {
+	return {
+		name,
+		editable: {
+			as: "select",
+			options: [
+				{ value: "draft", label: "Draft" },
+				{ value: "published", label: "Published" },
+			],
+		},
+	};
+}
+
 function row(id: string, values: Record<string, unknown> = {}): Record<string, unknown> {
 	return { id, ...values };
+}
+
+// Radix Select portals its listbox to document.body; find the option by label.
+async function waitForOption(label: string): Promise<HTMLElement> {
+	return await waitFor(() => {
+		const items = Array.from(document.body.querySelectorAll('[role="option"]'));
+		const match = items.find((el) => el.textContent?.includes(label));
+		if (!match) {
+			throw new Error(`option "${label}" not found`);
+		}
+		return match as HTMLElement;
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +183,100 @@ describe("EditableCell: text input", () => {
 		)[0];
 		expect(call.column).toBe("title");
 		expect(call.id).toBe("2");
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Select (static) — forwards options, persists on change (not blur)
+// ---------------------------------------------------------------------------
+
+describe("EditableCell: static select", () => {
+	test("forwards static options — trigger renders the current value's label", () => {
+		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
+
+		const { container } = render(
+			<EditableCell
+				col={selectCol()}
+				row={row("1", { status: "published" })}
+				saveCell={saveCell}
+			/>,
+		);
+
+		const trigger = container.querySelector('[data-slot="select-trigger"]') as HTMLElement;
+		expect(trigger).toBeTruthy();
+		// Forwarded options let the Select resolve the value to its label
+		expect(trigger.textContent).toContain("Published");
+	});
+
+	test("persists on change, not on blur (select commits on selection)", async () => {
+		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
+
+		const { container } = render(
+			<EditableCell
+				col={selectCol()}
+				row={row("7", { status: "draft" })}
+				saveCell={saveCell}
+			/>,
+		);
+
+		const trigger = container.querySelector('[data-slot="select-trigger"]') as HTMLElement;
+
+		// Blur alone must not save (select is not a blur-commit field)
+		await act(async () => {
+			fireEvent.blur(trigger);
+		});
+		expect(saveCell).toHaveBeenCalledTimes(0);
+
+		// Open the listbox and pick a different option → commits on change
+		await act(async () => {
+			fireEvent.keyDown(trigger, { key: "Enter" });
+		});
+		const option = await waitForOption("Published");
+		await act(async () => {
+			fireEvent.click(option);
+		});
+
+		await waitFor(() => {
+			expect(saveCell).toHaveBeenCalledTimes(1);
+		});
+		const call = (
+			saveCell.mock.calls[0] as [{ column: string; id: string; value: unknown }]
+		)[0];
+		expect(call.column).toBe("status");
+		expect(call.id).toBe("7");
+		expect(call.value).toBe("published");
+	});
+
+	test("rolls back and shows inline 422 error when saveCell rejects", async () => {
+		const saveCell = mock((_args: unknown) =>
+			Promise.reject({ errors: { status: ["Invalid status"] } }),
+		);
+
+		const { container, findByTestId } = render(
+			<EditableCell
+				col={selectCol()}
+				row={row("8", { status: "draft" })}
+				saveCell={saveCell}
+			/>,
+		);
+
+		const trigger = container.querySelector('[data-slot="select-trigger"]') as HTMLElement;
+		await act(async () => {
+			fireEvent.keyDown(trigger, { key: "Enter" });
+		});
+		const option = await waitForOption("Published");
+		await act(async () => {
+			fireEvent.click(option);
+		});
+
+		const errorEl = await findByTestId("cell-error-status");
+		expect(errorEl.textContent).toBe("Invalid status");
+
+		// Optimistic value rolled back to the original "Draft"
+		const updatedTrigger = container.querySelector(
+			'[data-slot="select-trigger"]',
+		) as HTMLElement;
+		expect(updatedTrigger.textContent).toContain("Draft");
 	});
 });
 

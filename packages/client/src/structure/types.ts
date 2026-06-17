@@ -224,8 +224,10 @@ export interface TableColumn<TRow = unknown> {
 	boolean?: TableColumnBooleanOptions;
 	iconMap?: Record<string, TableColumnIconMapEntry>;
 	editable?: {
-		as: "boolean" | "text";
+		as: "boolean" | "text" | "select";
 		constraints?: FieldConstraints;
+		/** Static options for an inline select column ({value, label}). */
+		options?: Array<{ value: string; label: string }>;
 	};
 }
 

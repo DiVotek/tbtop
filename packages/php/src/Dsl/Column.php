@@ -62,8 +62,11 @@ final class Column implements JsonSerializable
     // Editable-column state (server-side; onSaveClosure never serialized)
     // -------------------------------------------------------------------------
 
-    /** 'boolean' | 'text' | null */
+    /** 'boolean' | 'text' | 'select' | null */
     private ?string $editAs = null;
+
+    /** @var list<array{value: string, label?: string}> Static options for an editable select column. */
+    private array $editOptions = [];
 
     /** @var list<string> Laravel validation rules */
     private array $editRules = [];
@@ -310,6 +313,31 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Make the column an inline (sync) select; sets kind = 'select' when no kind is already set. */
+    public function selectColumn(): static
+    {
+        $this->editAs = 'select';
+        $this->kind ??= 'select';
+
+        return $this;
+    }
+
+    /**
+     * Static options for an editable select column. Uses the same {value, label}
+     * normalization the Select field emits so the wire shape matches.
+     *
+     * @param  list<array{value: mixed, label: string}>  $options
+     */
+    public function options(array $options): static
+    {
+        $this->editOptions = array_map(
+            fn (array $option) => ['value' => (string) $option['value']] + $option,
+            $options,
+        );
+
+        return $this;
+    }
+
     /**
      * Laravel validation rules applied before the save closure runs.
      * Accepts pipe-delimited string or an array; deduplicates entries.
@@ -461,6 +489,9 @@ final class Column implements JsonSerializable
             $constraints = ConstraintMap::toConstraints($this->editRules);
             if ($constraints !== []) {
                 $editable['constraints'] = $constraints;
+            }
+            if ($this->editOptions !== []) {
+                $editable['options'] = $this->editOptions;
             }
             $out['editable'] = $editable;
         }

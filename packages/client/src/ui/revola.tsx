@@ -188,13 +188,13 @@ const responsiveDialogContentVariants = cva("fixed z-50 bg-background", {
 			device: "mobile",
 			direction: "left",
 			className:
-				"bottom-2 left-2 top-2 flex w-[310px] bg-transparent outline-none [--initial-transform:calc(100%+8px)]",
+				"bottom-2 left-2 top-2 flex w-[310px] bg-background outline-none [--initial-transform:calc(100%+8px)]",
 		},
 		{
 			device: "mobile",
 			direction: "right",
 			className:
-				"bottom-2 right-2 top-2 w-[310px] bg-transparent outline-none [--initial-transform:calc(100%+8px)]",
+				"bottom-2 right-2 top-2 w-[310px] bg-background outline-none [--initial-transform:calc(100%+8px)]",
 		},
 	],
 });
