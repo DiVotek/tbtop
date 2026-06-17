@@ -44,7 +44,7 @@ class TwoFactorChallengeTest extends TestCase
 
         $response = $this->actingAs($user)->get('/admin/dashboard');
 
-        $response->assertRedirect(route('two-factor.challenge'));
+        $response->assertRedirect(route('tbtop.admin.two-factor-challenge-page'));
     }
 
     public function test_wrong_otp_on_challenge_is_rejected(): void

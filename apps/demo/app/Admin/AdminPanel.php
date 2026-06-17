@@ -3,6 +3,7 @@
 namespace App\Admin;
 
 use App\Admin\Pages\DashboardPage;
+use App\Admin\Pages\LoginPage;
 use App\Admin\Pages\LoginPreviewPage;
 use App\Admin\Pages\MediaEditPage;
 use App\Admin\Pages\MediaIndexPage;
@@ -13,6 +14,8 @@ use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\RelationDemoPage;
 use App\Admin\Pages\SettingsPage;
+use App\Admin\Pages\TwoFactorChallengePage;
+use App\Admin\Pages\TwoFactorSetupPage;
 use App\Http\Middleware\RequireFullAuth;
 use Tbtop\Admin\Pages\MediaLibraryPage;
 use Tbtop\Admin\Panels\Panel;
@@ -40,6 +43,9 @@ class AdminPanel extends Panel
                 MediaLibraryPage::class,
                 LoginPreviewPage::class,
                 RelationDemoPage::class,
+                TwoFactorSetupPage::class,
+                LoginPage::class,
+                TwoFactorChallengePage::class,
             ])
             ->locales(['en', 'uk'])
             ->defaultLocale('en')

@@ -23,7 +23,7 @@ class AdminPagesTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
 
-        $this->get('/admin/posts')->assertRedirect('/login');
+        $this->get('/admin/posts')->assertRedirect('/admin/login');
     }
 
     public function test_each_admin_page_renders_the_admin_page_component(): void

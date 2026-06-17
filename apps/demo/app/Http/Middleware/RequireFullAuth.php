@@ -11,14 +11,14 @@ class RequireFullAuth
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()) {
-            return redirect()->route('login');
+            return redirect()->route('tbtop.admin.login-page');
         }
 
         if ($request->user()->hasTwoFactorEnabled()) {
             $completed = $request->session()->get('auth.2fa.completed', false);
 
             if (! $completed) {
-                return redirect()->route('two-factor.challenge');
+                return redirect()->route('tbtop.admin.two-factor-challenge-page');
             }
         }
 
