@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,9 +14,18 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
+
+// Browser smoke suite — separated from the default run and CI. `tests/Browser` is NOT
+// registered as a phpunit.xml testsuite, so `vendor/bin/phpunit` (CI) and the default
+// `vendor/bin/pest` never discover it. Reach it only via `vendor/bin/pest tests/Browser`
+// (what `composer smoke` runs). The `smoke` group additionally tags these tests.
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->group('smoke')
+    ->in('Browser');
 
 /*
 |--------------------------------------------------------------------------
