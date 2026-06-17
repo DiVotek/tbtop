@@ -13,7 +13,7 @@ class EcPost extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['title', 'published', 'note'];
+    protected $fillable = ['title', 'published', 'note', 'status'];
 
     protected $casts = ['published' => 'boolean'];
 }

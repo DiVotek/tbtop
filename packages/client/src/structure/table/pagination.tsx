@@ -1,6 +1,7 @@
 /**
  * Table pagination footer: record range counter, page buttons, per-page selector.
  */
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { Button } from "../../ui/button";
@@ -50,13 +51,13 @@ export function TablePagination({
 			<div className="flex items-center gap-1" data-testid="pagination-pages">
 				<Button
 					variant="outline"
-					size="sm"
+					size="icon-sm"
 					onClick={() => goTo(page - 1)}
 					disabled={page <= 1}
 					aria-label={t("table.pagination.prev")}
 					data-testid="pagination-prev"
 				>
-					‹
+					<ChevronLeft className="size-4" aria-hidden />
 				</Button>
 
 				{pages.map((p, i) =>
@@ -79,13 +80,13 @@ export function TablePagination({
 
 				<Button
 					variant="outline"
-					size="sm"
+					size="icon-sm"
 					onClick={() => goTo(page + 1)}
 					disabled={page >= totalPages}
 					aria-label={t("table.pagination.next")}
 					data-testid="pagination-next"
 				>
-					›
+					<ChevronRight className="size-4" aria-hidden />
 				</Button>
 			</div>
 
@@ -96,7 +97,7 @@ export function TablePagination({
 					value={String(perPage)}
 					onValueChange={(v) => onChangeParams({ perPage: Number(v), page: 1 })}
 				>
-					<SelectTrigger className="h-7 w-16 text-xs" data-testid="pagination-per-page">
+					<SelectTrigger className="h-8 w-16 text-xs" data-testid="pagination-per-page">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>

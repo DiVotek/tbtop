@@ -12,9 +12,10 @@ beforeEach(function (): void {
         $table->string('title');
         $table->boolean('published')->default(false);
         $table->string('note')->default('');
+        $table->string('status')->default('draft');
     });
-    EcPost::create(['title' => 'First',  'published' => false, 'note' => 'hi']);
-    EcPost::create(['title' => 'Second', 'published' => true,  'note' => 'ok']);
+    EcPost::create(['title' => 'First',  'published' => false, 'note' => 'hi', 'status' => 'draft']);
+    EcPost::create(['title' => 'Second', 'published' => true,  'note' => 'ok', 'status' => 'draft']);
 });
 
 // ---------------------------------------------------------------------------
@@ -66,6 +67,34 @@ it('Editable: onSave returning void triggers default refreshTable effect', funct
     $response->assertOk();
     expect($response->json('effects'))->toContain(['kind' => 'refreshTable', 'table' => 'ecposts']);
     expect(EcPost::find($post->id)->note)->toBe('bye');
+});
+
+// ---------------------------------------------------------------------------
+// Select column — value persists like text through the same /cells endpoint
+// ---------------------------------------------------------------------------
+
+it('Editable: select value saves through the existing /cells endpoint', function (): void {
+    $post = EcPost::where('title', 'First')->first();
+
+    $response = $this->postJson(
+        '/admin/editable-posts/cells/ecposts/status',
+        ['payload' => ['id' => $post->id, 'value' => 'published']],
+    );
+
+    $response->assertOk();
+    expect($response->json('effects'))->toContain(['kind' => 'refreshTable', 'table' => 'ecposts']);
+    expect(EcPost::find($post->id)->status)->toBe('published');
+});
+
+it('Editable: select value outside the in: rule fails validation with 422', function (): void {
+    $post = EcPost::where('title', 'First')->first();
+
+    $this->postJson(
+        '/admin/editable-posts/cells/ecposts/status',
+        ['payload' => ['id' => $post->id, 'value' => 'archived']],
+    )->assertStatus(422)->assertJsonValidationErrors(['status']);
+
+    expect(EcPost::find($post->id)->status)->toBe('draft');
 });
 
 // ---------------------------------------------------------------------------

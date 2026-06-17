@@ -41,6 +41,12 @@ describe("TableKeepPrevious: skeleton only on first load", () => {
 		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		await findByTestId("table-block");
 
+		// Select a row so the bulk action becomes available.
+		const selectRow = await findByTestId("table-select-1");
+		await act(async () => {
+			fireEvent.click(selectRow);
+		});
+
 		// Trigger a refetch
 		const btn = await findByTestId("action-refresh");
 		await act(async () => {
