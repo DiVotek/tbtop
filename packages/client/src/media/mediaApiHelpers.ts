@@ -47,6 +47,8 @@ export async function importMediaUrl(
 interface PatchItemInput {
 	name?: string;
 	alt?: string;
+	description?: string | null;
+	tags?: string[];
 	folderId?: string | null;
 }
 

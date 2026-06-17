@@ -34,6 +34,8 @@ const ITEM_IMG: MediaItem = {
 	url: "/storage/photo.jpg",
 	sizes: { profile: "/storage/photo-thumb.jpg" },
 	alt: "A photo",
+	description: null,
+	tags: [],
 	createdAt: "2024-01-15T10:00:00Z",
 };
 
@@ -46,6 +48,8 @@ const ITEM_PDF: MediaItem = {
 	url: "/storage/document.pdf",
 	sizes: {},
 	alt: null,
+	description: null,
+	tags: [],
 	createdAt: "2024-01-16T10:00:00Z",
 };
 
@@ -92,6 +96,7 @@ describe("MediaGrid: renders items", () => {
 					params={params}
 					onChangeParams={() => {}}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}
@@ -113,6 +118,7 @@ describe("MediaGrid: renders items", () => {
 					params={params}
 					onChangeParams={() => {}}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}
@@ -132,6 +138,7 @@ describe("MediaGrid: renders items", () => {
 					params={params}
 					onChangeParams={() => {}}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}
@@ -154,6 +161,7 @@ describe("MediaGrid: renders items", () => {
 					params={params}
 					onChangeParams={() => {}}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}
@@ -162,6 +170,161 @@ describe("MediaGrid: renders items", () => {
 		);
 		expect(getByTestId("media-reloading-overlay")).toBeTruthy();
 		expect(getByTestId("media-card-img1")).toBeTruthy();
+	});
+});
+
+// ─── MediaGrid: folder cards ──────────────────────────────────────────────────
+
+describe("MediaGrid: folder cards", () => {
+	const CHILD: MediaFolder = { id: "c1", name: "Receipts", parentId: null };
+
+	test("renders folder cards before file cards", () => {
+		const Wrap = wrap(() => new Response("{}"));
+		const params = { folder: null, search: "", page: 1, perPage: 24 };
+		const { getByTestId } = render(
+			<Wrap>
+				<MediaGrid
+					state={{
+						kind: "loaded",
+						data: {
+							data: [ITEM_IMG],
+							folders: [CHILD],
+							total: 1,
+							page: 1,
+							perPage: 24,
+						},
+					}}
+					params={params}
+					onChangeParams={() => {}}
+					onSelect={() => {}}
+					onSelectFolder={() => {}}
+					onUploaded={() => {}}
+					folderId={null}
+					onOpenImportUrl={() => {}}
+				/>
+			</Wrap>,
+		);
+		const grid = getByTestId("media-grid");
+		const folderCard = getByTestId("folder-card-c1");
+		const fileCard = getByTestId("media-card-img1");
+		const order = Array.from(grid.querySelectorAll("[data-testid]"))
+			.map((el) => el.getAttribute("data-testid"))
+			.filter((id) => id === "folder-card-c1" || id === "media-card-img1");
+		expect(order).toEqual(["folder-card-c1", "media-card-img1"]);
+		expect(folderCard).toBeTruthy();
+		expect(fileCard).toBeTruthy();
+	});
+
+	test("clicking a folder card calls onSelectFolder with the folder id", async () => {
+		const user = userEvent.setup({ delay: null });
+		const navigated: string[] = [];
+		const Wrap = wrap(() => new Response("{}"));
+		const params = { folder: null, search: "", page: 1, perPage: 24 };
+		const { getByTestId } = render(
+			<Wrap>
+				<MediaGrid
+					state={{
+						kind: "loaded",
+						data: { data: [], folders: [CHILD], total: 0, page: 1, perPage: 24 },
+					}}
+					params={params}
+					onChangeParams={() => {}}
+					onSelect={() => {}}
+					onSelectFolder={(id) => navigated.push(id)}
+					onUploaded={() => {}}
+					folderId={null}
+					onOpenImportUrl={() => {}}
+				/>
+			</Wrap>,
+		);
+		await act(async () => {
+			await user.click(getByTestId("folder-card-c1"));
+		});
+		expect(navigated).toEqual(["c1"]);
+	});
+
+	test("shows folders even when there are no files (no empty state)", () => {
+		const Wrap = wrap(() => new Response("{}"));
+		const params = { folder: null, search: "", page: 1, perPage: 24 };
+		const { getByTestId, queryByTestId } = render(
+			<Wrap>
+				<MediaGrid
+					state={{
+						kind: "loaded",
+						data: { data: [], folders: [CHILD], total: 0, page: 1, perPage: 24 },
+					}}
+					params={params}
+					onChangeParams={() => {}}
+					onSelect={() => {}}
+					onSelectFolder={() => {}}
+					onUploaded={() => {}}
+					folderId={null}
+					onOpenImportUrl={() => {}}
+				/>
+			</Wrap>,
+		);
+		expect(getByTestId("folder-card-c1")).toBeTruthy();
+		expect(queryByTestId("media-empty")).toBeNull();
+	});
+});
+
+// ─── MediaGrid: grid/list view toggle ─────────────────────────────────────────
+
+describe("MediaGrid: view toggle", () => {
+	const LOADED = {
+		kind: "loaded" as const,
+		data: { data: [ITEM_IMG, ITEM_PDF], total: 2, page: 1, perPage: 24 },
+	};
+	const params = { folder: null, search: "", page: 1, perPage: 24 };
+
+	function renderGrid() {
+		const Wrap = wrap(() => new Response("{}"));
+		return render(
+			<Wrap>
+				<MediaGrid
+					state={LOADED}
+					params={params}
+					onChangeParams={() => {}}
+					onSelect={() => {}}
+					onSelectFolder={() => {}}
+					onUploaded={() => {}}
+					folderId={null}
+					onOpenImportUrl={() => {}}
+				/>
+			</Wrap>,
+		);
+	}
+
+	beforeEach(() => {
+		window.localStorage.removeItem("tbtop.media.view");
+	});
+
+	afterEach(() => {
+		window.localStorage.removeItem("tbtop.media.view");
+	});
+
+	test("clicking the list toggle switches grid → list and persists to localStorage", async () => {
+		const user = userEvent.setup({ delay: null });
+		const { getByTestId, queryByTestId } = renderGrid();
+		// Defaults to grid.
+		expect(getByTestId("media-card-img1")).toBeTruthy();
+		expect(queryByTestId("media-list")).toBeNull();
+
+		await act(async () => {
+			await user.click(getByTestId("media-view-list"));
+		});
+
+		expect(getByTestId("media-list")).toBeTruthy();
+		expect(queryByTestId("media-card-img1")).toBeNull();
+		expect(window.localStorage.getItem("tbtop.media.view")).toBe("list");
+		expect(getByTestId("media-view-list").getAttribute("aria-pressed")).toBe("true");
+	});
+
+	test("restores list view from localStorage on mount", () => {
+		window.localStorage.setItem("tbtop.media.view", "list");
+		const { getByTestId, queryByTestId } = renderGrid();
+		expect(getByTestId("media-list")).toBeTruthy();
+		expect(queryByTestId("media-card-img1")).toBeNull();
 	});
 });
 
@@ -180,6 +343,7 @@ describe("MediaGrid: search debounce", () => {
 					params={params}
 					onChangeParams={(p) => changes.push(p)}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}
@@ -212,6 +376,7 @@ describe("MediaGrid: pagination", () => {
 					params={params}
 					onChangeParams={() => {}}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}
@@ -236,6 +401,7 @@ describe("MediaGrid: pagination", () => {
 					params={params}
 					onChangeParams={(p) => changes.push(p)}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}
@@ -282,11 +448,25 @@ describe("MediaDetail: PATCH on save", () => {
 			await user.clear(nameInput);
 			await user.type(nameInput, "renamed.jpg");
 		});
+		// Add a description
+		await act(async () => {
+			await user.type(getByTestId("detail-description-input"), "A signed contract.");
+		});
+		// Add a tag (Enter commits it)
+		await act(async () => {
+			await user.type(getByTestId("tags-tags").querySelector("input")!, "legal{enter}");
+		});
 		await act(async () => {
 			await user.click(getByTestId("detail-save-btn"));
 		});
 		await waitFor(() => expect(updated).toHaveLength(1));
 		expect(updated[0]?.name).toBe("renamed.jpg");
+		expect(patches).toHaveLength(1);
+		expect(patches[0]).toMatchObject({
+			name: "renamed.jpg",
+			description: "A signed contract.",
+			tags: ["legal"],
+		});
 	});
 });
 
@@ -392,6 +572,7 @@ describe("useMediaItems: folder navigation", () => {
 					params={params}
 					onChangeParams={(p) => changes.push(p)}
 					onSelect={() => {}}
+					onSelectFolder={() => {}}
 					onUploaded={() => {}}
 					folderId={null}
 					onOpenImportUrl={() => {}}

@@ -365,6 +365,7 @@ function MediaPickerModal({
 						params={queryParams}
 						onChangeParams={(patch) => setQueryParams((p) => ({ ...p, ...patch }))}
 						onSelect={handleCardClick}
+						onSelectFolder={handleFolderSelect}
 						onUploaded={() => refetch()}
 						folderId={selectedFolder}
 						onOpenImportUrl={() => {}}

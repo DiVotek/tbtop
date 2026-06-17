@@ -60,6 +60,80 @@ it('paginates media results', function () {
         ->and($response->json('data'))->toHaveCount(2);
 });
 
+it('lists root-level child folders when no folder param', function () {
+    MediaFolder::create(['name' => 'Beta']);
+    MediaFolder::create(['name' => 'Alpha']);
+    $nested = MediaFolder::create(['name' => 'Parent']);
+    MediaFolder::create(['name' => 'Child', 'parent_id' => $nested->id]);
+
+    $folders = $this->getJson('/admin/api/media')->assertOk()->json('folders');
+
+    expect($folders)->toHaveCount(3)
+        ->and(array_column($folders, 'name'))->toBe(['Alpha', 'Beta', 'Parent'])
+        ->and($folders[0]['parentId'])->toBeNull();
+});
+
+it('lists a folders child folders and files when folder param given', function () {
+    $parent = MediaFolder::create(['name' => 'Parent']);
+    $child = MediaFolder::create(['name' => 'Child', 'parent_id' => $parent->id]);
+    MediaFolder::create(['name' => 'Root sibling']);
+    Media::create(mediaRow(['folder_id' => $parent->id, 'name' => 'in-parent.png']));
+
+    $response = $this->getJson('/admin/api/media?folder='.$parent->id)->assertOk();
+
+    expect($response->json('folders'))->toHaveCount(1)
+        ->and($response->json('folders.0.name'))->toBe('Child')
+        ->and($response->json('folders.0.parentId'))->toBe($parent->id)
+        ->and($response->json('data.0.name'))->toBe('in-parent.png');
+    expect($child->id)->toBe($response->json('folders.0.id'));
+});
+
+it('total counts files only, not child folders', function () {
+    MediaFolder::create(['name' => 'A']);
+    MediaFolder::create(['name' => 'B']);
+    Media::create(mediaRow(['name' => 'only-file.png']));
+
+    $response = $this->getJson('/admin/api/media')->assertOk();
+
+    expect($response->json('total'))->toBe(1)
+        ->and($response->json('folders'))->toHaveCount(2);
+});
+
+it('orders files by name ascending when sort=name&dir=asc', function () {
+    Media::create(mediaRow(['name' => 'charlie.png']));
+    Media::create(mediaRow(['name' => 'alpha.png']));
+    Media::create(mediaRow(['name' => 'bravo.png']));
+
+    $names = $this->getJson('/admin/api/media?sort=name&dir=asc')->assertOk()
+        ->json('data.*.name');
+
+    expect($names)->toBe(['alpha.png', 'bravo.png', 'charlie.png']);
+});
+
+it('orders files by size descending when sort=size&dir=desc', function () {
+    Media::create(mediaRow(['name' => 'small.png', 'size' => 100]));
+    Media::create(mediaRow(['name' => 'big.png', 'size' => 9000]));
+    Media::create(mediaRow(['name' => 'mid.png', 'size' => 500]));
+
+    $names = $this->getJson('/admin/api/media?sort=size&dir=desc')->assertOk()
+        ->json('data.*.name');
+
+    expect($names)->toBe(['big.png', 'mid.png', 'small.png']);
+});
+
+it('falls back to created_at desc for an unknown sort column without erroring', function () {
+    $first = Media::create(mediaRow(['name' => 'first.png']));
+    $first->forceFill(['created_at' => now()->subDay()])->save();
+    $second = Media::create(mediaRow(['name' => 'second.png']));
+    $second->forceFill(['created_at' => now()])->save();
+
+    // Unknown / injection-y column is ignored, not passed to orderBy.
+    $names = $this->getJson('/admin/api/media?sort=id);drop&dir=sideways')->assertOk()
+        ->json('data.*.name');
+
+    expect($names)->toBe(['second.png', 'first.png']);
+});
+
 // ---- POST /admin/api/media/upload ----
 
 it('uploads an image and returns 201 MediaItem', function () {
@@ -280,6 +354,49 @@ it('updates media name, alt and folderId', function () {
 
 it('patch returns 404 for unknown media', function () {
     $this->patchJson('/admin/api/media/9999', ['name' => 'x'])->assertNotFound();
+});
+
+it('updates description and tags and returns them', function () {
+    $media = Media::create(mediaRow());
+
+    $response = $this->patchJson("/admin/api/media/{$media->id}", [
+        'description' => 'A signed contract scan.',
+        'tags' => ['contract', 'legal', '2026'],
+    ])->assertOk();
+
+    expect($response->json('description'))->toBe('A signed contract scan.')
+        ->and($response->json('tags'))->toBe(['contract', 'legal', '2026']);
+
+    $fresh = $media->refresh();
+    expect($fresh->description)->toBe('A signed contract scan.')
+        ->and($fresh->tags)->toBe(['contract', 'legal', '2026']);
+});
+
+it('rejects more than 30 tags', function () {
+    $media = Media::create(mediaRow());
+    $tags = array_map(fn (int $i) => "tag{$i}", range(1, 31));
+
+    $this->patchJson("/admin/api/media/{$media->id}", ['tags' => $tags])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('tags');
+});
+
+it('rejects a tag longer than 50 chars', function () {
+    $media = Media::create(mediaRow());
+
+    $this->patchJson("/admin/api/media/{$media->id}", ['tags' => [str_repeat('x', 51)]])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('tags.0');
+});
+
+it('upload returns null description and empty tags by default', function () {
+    $file = UploadedFile::fake()->image('photo.png', 100, 100);
+
+    $data = $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201)->json();
+
+    expect($data['description'])->toBeNull()
+        ->and($data['tags'])->toBe([]);
 });
 
 // ---- POST /admin/api/media/{id}/replace ----

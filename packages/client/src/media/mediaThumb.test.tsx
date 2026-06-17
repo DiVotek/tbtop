@@ -12,6 +12,8 @@ const IMAGE: MediaItem = {
 	url: "/storage/photo.jpg",
 	sizes: { profile: "/storage/photo-thumb.jpg" },
 	alt: "A photo",
+	description: null,
+	tags: [],
 	createdAt: "2024-01-15T10:00:00Z",
 };
 
@@ -24,6 +26,8 @@ const PDF: MediaItem = {
 	url: "/storage/report.pdf",
 	sizes: {},
 	alt: null,
+	description: null,
+	tags: [],
 	createdAt: "2024-01-16T10:00:00Z",
 };
 

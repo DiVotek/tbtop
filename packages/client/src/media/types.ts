@@ -9,6 +9,8 @@ export interface MediaItem {
 	url: string;
 	sizes: Record<string, string>;
 	alt: string | null;
+	description: string | null;
+	tags: string[];
 	createdAt: string;
 }
 
@@ -40,6 +42,8 @@ export interface MediaFolder {
 
 export interface MediaListResponse {
 	data: MediaItem[];
+	/** Child folders of the current level. Optional: older payloads omit it. */
+	folders?: MediaFolder[];
 	total: number;
 	page: number;
 	perPage: number;

@@ -4,10 +4,12 @@
  */
 import { Trash2Icon, UploadIcon } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
+import { OpenTagsForm } from "../fields/tagsOpen";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
 import { FilePreview } from "./filePreview";
 import type { MediaFolder, MediaItem } from "./types";
 import {
@@ -71,6 +73,8 @@ function DetailShell({
 
 	const [name, setName] = useState(item.name);
 	const [alt, setAlt] = useState(item.alt ?? "");
+	const [description, setDescription] = useState(item.description ?? "");
+	const [tags, setTags] = useState<string[]>(item.tags ?? []);
 	const [folderId, setFolderId] = useState<string>(item.folderId ?? "__root__");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -84,6 +88,8 @@ function DetailShell({
 			const updated = await patchMediaItem(client, item.id, {
 				name: name.trim() || item.name,
 				alt: alt || undefined,
+				description: description.trim() === "" ? null : description,
+				tags,
 				folderId: folderId === "__root__" ? null : folderId,
 			});
 			onUpdated(updated);
@@ -237,6 +243,35 @@ function DetailShell({
 					onChange={(e) => setAlt(e.target.value)}
 					disabled={busy}
 					data-testid="detail-alt-input"
+				/>
+			</div>
+
+			{/* Description */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-sm font-medium" htmlFor="detail-description">
+					{t("media.detail.description")}
+				</label>
+				<Textarea
+					id="detail-description"
+					rows={3}
+					value={description}
+					onChange={(e) => setDescription(e.target.value)}
+					disabled={busy}
+					data-testid="detail-description-input"
+				/>
+			</div>
+
+			{/* Tags */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-sm font-medium" htmlFor="detail-tags">
+					{t("media.detail.tags")}
+				</label>
+				<OpenTagsForm
+					id="detail-tags"
+					name="tags"
+					value={tags}
+					onChange={(next) => setTags(next ?? [])}
+					disabled={busy}
 				/>
 			</div>
 
