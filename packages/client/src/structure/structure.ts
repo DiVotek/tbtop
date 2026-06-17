@@ -22,6 +22,7 @@ import type {
 	FieldName,
 	KeyvalueOpts,
 	NumberOpts,
+	OtpOpts,
 	PasswordOpts,
 	RadioOpts,
 	RepeaterOpts,
@@ -43,6 +44,7 @@ export type {
 	DatetimeOpts,
 	KeyvalueOpts,
 	NumberOpts,
+	OtpOpts,
 	PasswordOpts,
 	RadioOpts,
 	RepeaterOpts,
@@ -96,6 +98,7 @@ const builtins: Record<string, Builder> = {
 	text: makeField("text") as Builder,
 	textarea: makeField("textarea") as Builder,
 	password: makeField("password") as Builder,
+	otp: makeField("otp") as Builder,
 	number: makeField("number") as Builder,
 	date: makeField("date") as Builder,
 	datetime: makeField("datetime") as Builder,
@@ -136,6 +139,7 @@ export interface StructureBuilders<TForm = unknown> {
 	text: (input: FieldInputFor<TForm, TextOpts>) => StructureNode;
 	textarea: (input: FieldInputFor<TForm, TextareaOpts>) => StructureNode;
 	password: (input: FieldInputFor<TForm, PasswordOpts>) => StructureNode;
+	otp: (input: FieldInputFor<TForm, OtpOpts>) => StructureNode;
 	number: (input: FieldInputFor<TForm, NumberOpts>) => StructureNode;
 	date: (input: FieldInputFor<TForm, DateOpts>) => StructureNode;
 	datetime: (input: FieldInputFor<TForm, DatetimeOpts>) => StructureNode;

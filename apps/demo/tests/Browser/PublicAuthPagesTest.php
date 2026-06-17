@@ -18,6 +18,15 @@ it('smokes the public login page while logged out', function () {
         ->assertNoSmoke();             // no console logs + no JavaScript errors
 });
 
+it('renders six OTP slots on the public two-factor challenge page', function () {
+    // The challenge page is public (middleware ['web']); the session check
+    // only fires on submit. A direct visit must render the OTP field.
+    visit('/admin/two-factor-challenge')
+        ->assertVisible('#app form')
+        ->assertCount('[data-slot="input-otp-slot"]', 6) // otp()->length(6)
+        ->assertNoSmoke();
+});
+
 it('redirects a guarded admin page to the admin login when logged out', function () {
     visit('/admin/dashboard')
         ->assertPathIs('/admin/login'); // RequireFullAuth → admin DSL login, not legacy /login

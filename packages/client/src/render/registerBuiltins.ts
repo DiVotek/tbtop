@@ -13,6 +13,7 @@ import { DaterangeForm, type DaterangeValue } from "../fields/daterangeField";
 import { JsonCell, JsonForm } from "../fields/jsonField";
 import { KeyvalueCell, KeyvalueForm } from "../fields/keyvalueField";
 import { NumberCell, NumberForm } from "../fields/numberField";
+import { OtpCell, OtpForm } from "../fields/otpField";
 import { PasswordCell, PasswordForm } from "../fields/passwordField";
 import { RadioCell, RadioForm } from "../fields/radioField";
 import { RelationCell, RelationForm } from "../fields/relationField";
@@ -144,6 +145,7 @@ function registerInputFields(): void {
 		cell: ({ value }) => (value ? `${value.from ?? ""} – ${value.to ?? ""}` : null),
 	});
 	defineFieldClient<"slug", string>("slug", { form: SlugForm, cell: SlugCell });
+	defineFieldClient<"otp", string>("otp", { form: OtpForm, cell: OtpCell });
 }
 
 function registerChoiceFields(): void {

@@ -52,7 +52,7 @@ class TwoFactorChallengePage extends Page
             $s->displayText('Enter the code from your authenticator app, or a recovery code.')
                 ->variant('muted'),
             $s->form('challenge', [
-                $s->text('code')->label('Code')->required(),
+                $s->otp('code')->label('Code')->length(6)->required(),
                 $s->actionsRow([
                     $s->action('submit')->label('Verify')->color('primary')->submit(),
                 ]),
