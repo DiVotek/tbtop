@@ -10,6 +10,7 @@ import type { MediaFolder, MediaItem } from "./types";
 interface UploadItemInput {
 	file: File;
 	folderId: string | null;
+	onProgress?: (loaded: number, total: number) => void;
 }
 
 export async function uploadMediaItem(
@@ -21,7 +22,9 @@ export async function uploadMediaItem(
 	if (input.folderId !== null) {
 		fd.append("folderId", input.folderId);
 	}
-	return (await client.upload("/media/upload", fd)) as MediaItem;
+	return (await client.upload("/media/upload", fd, {
+		onProgress: input.onProgress,
+	})) as MediaItem;
 }
 
 interface ImportUrlInput {

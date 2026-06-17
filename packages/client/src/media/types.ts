@@ -40,6 +40,16 @@ export interface MediaFolder {
 	parentId: string | null;
 }
 
+/** A single file in the sequential upload queue, with its live status. */
+export type UploadTaskStatus = "pending" | "uploading" | "done" | "error";
+
+export interface UploadTask {
+	id: string;
+	name: string;
+	status: UploadTaskStatus;
+	pct: number;
+}
+
 export interface MediaListResponse {
 	data: MediaItem[];
 	/** Child folders of the current level. Optional: older payloads omit it. */

@@ -149,4 +149,9 @@ export const defaultMessages: Messages = {
 	"media.preview.open": "Open",
 	"media.preview.download": "Download",
 	"media.preview.download_started": "Download started",
+	"media.upload.done": "Upload complete",
+	"media.upload.failed": "Upload failed",
+	"media.upload.status_uploading": "Uploading",
+	"media.upload.status_done": "Done",
+	"media.upload.status_error": "Failed",
 };

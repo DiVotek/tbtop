@@ -14,8 +14,10 @@ import { FolderCard } from "./folderCard";
 import { MediaList } from "./mediaList";
 import { MediaThumb } from "./mediaThumb";
 import type { MediaItem } from "./types";
+import { UploadProgressList } from "./uploadProgressList";
 import type { MediaQueryParams, MediaQueryState } from "./useMediaApi";
-import { formatBytes, uploadMediaItem, useMediaClient } from "./useMediaApi";
+import { formatBytes } from "./useMediaApi";
+import { useUploadQueue } from "./useUploadQueue";
 import { useViewMode } from "./useViewMode";
 
 interface MediaGridProps {
@@ -45,13 +47,11 @@ export function MediaGrid({
 	selectedIds,
 }: MediaGridProps): ReactNode {
 	const t = useTranslation();
-	const client = useMediaClient();
 	const { view, setView } = useViewMode();
 	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [uploading, setUploading] = useState(false);
-	const [uploadError, setUploadError] = useState<string | null>(null);
 	const [dragOver, setDragOver] = useState(false);
+	const { tasks, uploading, uploadFiles } = useUploadQueue({ folderId, onUploaded });
 
 	// ─── Search debounce ──────────────────────────────────────────────────────
 
@@ -66,23 +66,6 @@ export function MediaGrid({
 		},
 		[onChangeParams],
 	);
-
-	// ─── Upload ───────────────────────────────────────────────────────────────
-
-	async function uploadFiles(files: FileList | File[]) {
-		setUploading(true);
-		setUploadError(null);
-		const arr = Array.from(files);
-		for (const file of arr) {
-			try {
-				const item = await uploadMediaItem(client, { file, folderId });
-				onUploaded(item);
-			} catch (err) {
-				setUploadError(err instanceof Error ? err.message : t("state.error"));
-			}
-		}
-		setUploading(false);
-	}
 
 	// ─── Drag and drop ────────────────────────────────────────────────────────
 
@@ -192,15 +175,7 @@ export function MediaGrid({
 				</div>
 			</div>
 
-			{uploadError && (
-				<p
-					role="alert"
-					className="text-sm text-destructive"
-					data-testid="media-upload-error"
-				>
-					{uploadError}
-				</p>
-			)}
+			<UploadProgressList tasks={tasks} />
 
 			{/* Grid area with drag-and-drop */}
 			<div
