@@ -1,7 +1,6 @@
 /**
- * SortableHeader + SortIndicator — the <th> for a column, with click-to-sort
- * cycling (asc → desc → clear), aria-sort, and a lucide sort glyph.
- * Extracted from grid.tsx.
+ * SortableHeader + SortIndicator — a column <th> with click-to-sort
+ * cycling (asc → desc → clear), aria-sort, and a sort glyph.
  */
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "../../lib/cn";

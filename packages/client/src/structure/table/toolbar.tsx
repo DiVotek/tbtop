@@ -1,7 +1,4 @@
-/**
- * TableToolbar — search input, filter panel, column visibility dropdown.
- * Extracted from tableBlock.tsx.
- */
+/** TableToolbar — search, filter panel, column-visibility dropdown. */
 import { useCallback } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { useDebounce } from "../../lib/useDebounce";
@@ -10,8 +7,6 @@ import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import type { ListQueryParams, StructureNode, TableColumn, TableTab } from "../types";
 import { ColumnVisibilityDropdown } from "./columnVisibility";
 import { InlineFilters, ModalFilters } from "./filters";
-
-// ─── Toolbar ─────────────────────────────────────────────────────────────────
 
 interface TableToolbarProps {
 	hasSearch: boolean;
@@ -121,8 +116,6 @@ export function TableToolbar(props: TableToolbarProps) {
 		</div>
 	);
 }
-
-// ─── Tab bar ─────────────────────────────────────────────────────────────────
 
 interface TableTabBarProps {
 	tabs: TableTab[];

@@ -1,7 +1,6 @@
 /**
- * RowDataCell + renderCell — a single <td> and the value-rendering rules
- * (custom render → editable → badge/boolean/icon kinds → field descriptor →
- * string fallback). Extracted from tableRow.tsx.
+ * RowDataCell + renderCell — one <td> and its render chain:
+ * custom → editable → kind badge/boolean/icon → field → string.
  */
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";

@@ -10,10 +10,8 @@ interface SidebarDrawerProps {
 }
 
 /**
- * Mobile-only sidebar: a burger button (lg:hidden) that opens the sidebar in a
- * left-edge drawer. Reuses the shared revola primitive (vaul + Radix) so no new
- * deps. Auto-closes on Inertia navigation, guarded so it no-ops when the shell
- * renders outside an Inertia app (e.g. AdminLayoutShell unit tests).
+ * Mobile-only sidebar: a burger (lg:hidden) opens the sidebar in a
+ * left-edge revola drawer; auto-closes on Inertia navigation.
  */
 export function SidebarDrawer({ sidebar }: SidebarDrawerProps) {
 	const t = useTranslation();

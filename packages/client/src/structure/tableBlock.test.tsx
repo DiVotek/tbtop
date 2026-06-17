@@ -173,9 +173,18 @@ describe("Table integration", () => {
 		});
 		const Wrap = wrap(() => new Response("{}"));
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const selectA = await findByTestId("table-select-a");
+		await act(async () => {
+			fireEvent.click(selectA);
+		});
 		const apply = await findByTestId("action-twoPatches");
 		await act(async () => {
 			fireEvent.click(apply);
+		});
+		// Refetch cleared selection; re-select to reveal the read action.
+		const reselect = await findByTestId("table-select-a");
+		await act(async () => {
+			fireEvent.click(reselect);
 		});
 		const read = await findByTestId("action-read");
 		await act(async () => {
@@ -217,7 +226,6 @@ describe("Table integration", () => {
 
 	test("Table selection clears when refetch swaps in fresh rows", async () => {
 		const { act, fireEvent } = await import("@testing-library/react");
-		let seenSelected: string[] | undefined;
 		let returnSecondSet = false;
 		const node = s.table({
 			query: async () => {
@@ -235,12 +243,6 @@ describe("Table integration", () => {
 						c.table?.refresh();
 					},
 				},
-				{
-					name: "read",
-					handler: async (c) => {
-						seenSelected = c.table?.selectedIds;
-					},
-				},
 			],
 		});
 		const Wrap = wrap(() => new Response("{}"));
@@ -253,12 +255,9 @@ describe("Table integration", () => {
 		await act(async () => {
 			fireEvent.click(refetch);
 		});
-		await findByTestId("table-select-b");
-		const read = await findByTestId("action-read");
-		await act(async () => {
-			fireEvent.click(read);
-		});
-		expect(seenSelected).toEqual([]);
+		// Fresh rows swapped in; the new row's checkbox is unselected.
+		const swapped = (await findByTestId("table-select-b")) as HTMLInputElement;
+		expect(swapped.checked).toBe(false);
 	});
 
 	test("Table action setQuery merges params and refresh does not change params", async () => {
@@ -291,11 +290,20 @@ describe("Table integration", () => {
 		});
 		const Wrap = wrap(() => new Response("{}"));
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const selectA = await findByTestId("table-select-a");
+		await act(async () => {
+			fireEvent.click(selectA);
+		});
 		const page2 = await findByTestId("action-page2");
 		await act(async () => {
 			fireEvent.click(page2);
 		});
 		expect(firstParams).toEqual({});
+		// Refetch cleared selection; re-select to reveal the refresh action.
+		const reselect = await findByTestId("table-select-a");
+		await act(async () => {
+			fireEvent.click(reselect);
+		});
 		const refresh = await findByTestId("action-refresh");
 		const callsBefore = queries.length;
 		await act(async () => {

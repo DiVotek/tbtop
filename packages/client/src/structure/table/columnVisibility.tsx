@@ -1,7 +1,4 @@
-/**
- * ColumnVisibilityDropdown — toggles which columns are shown in the grid.
- * Extracted from toolbar.tsx.
- */
+/** ColumnVisibilityDropdown — toggles which columns the grid shows. */
 import { Columns3 } from "lucide-react";
 import { useTranslation } from "../../i18n/i18n";
 import { Button } from "../../ui/button";

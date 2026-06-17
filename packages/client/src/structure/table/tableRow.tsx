@@ -1,7 +1,6 @@
 /**
- * TableRow + cell rendering. Handles row-click arming (pointerdown → click)
- * with DOM-containment + isConnected guards so portal/modal clicks never
- * count as a row click. Extracted from grid.tsx.
+ * TableRow + cell rendering. Row-click arming (pointerdown → click)
+ * with DOM-containment guards so portal clicks never count.
  */
 import { useRef } from "react";
 import { cn } from "../../lib/cn";
@@ -32,9 +31,8 @@ interface TableRowProps {
 export function TableRow(props: TableRowProps) {
 	const id = readId(props.row);
 	const ctx = useClientActionContext();
-	// Armed by pointerdown on the row itself. A click whose pointerdown happened
-	// elsewhere (e.g. a confirm-dialog button/overlay that unmounted before click
-	// dispatch, retargeting the click to this row) must NOT count as a row click.
+	// Armed by pointerdown on the row; a click retargeted here
+	// from an unmounted overlay must not count.
 	const armedRef = useRef(false);
 
 	const rowClickAction = props.rowClick
@@ -115,10 +113,8 @@ export function TableRow(props: TableRowProps) {
 	);
 }
 
-// Row-action modals are React children of the <tr> but live in DOM portals.
-// React bubbles portal events through the REACT tree, so clicks inside a modal
-// reach these handlers — only events whose target is a real DOM descendant of
-// the row may count.
+// Portal modals bubble through React's tree, not the DOM, so
+// only a real DOM descendant of the row may count.
 function isDomInsideRow(e: React.SyntheticEvent<HTMLTableRowElement>): boolean {
 	return e.currentTarget.contains(e.target as Node);
 }

@@ -1,7 +1,6 @@
 /**
- * TableGrid — the <table> element: sticky header (sort, select-all), rows,
- * empty state, and reload overlay. Row + cell rendering lives in tableRow.tsx;
- * response/sort helpers in normalize.ts.
+ * TableGrid — the <table>: sticky header (sort, select-all),
+ * rows, empty state, and reload overlay.
  */
 import { useTranslation } from "../../i18n/i18n";
 import { ReloadOverlay } from "../../ui/spinner";

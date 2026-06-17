@@ -1,7 +1,6 @@
 /**
- * EmptyState — shown in the table body when no rows match. Distinguishes
- * "no records at all" from "no results for the active filters" and offers a
- * reset action in the latter case. Extracted from grid.tsx.
+ * EmptyState — empty table body. Separates "no records" from
+ * "no filter matches", offering a reset in the latter.
  */
 import { Inbox, SearchX } from "lucide-react";
 import { useTranslation } from "../../i18n/i18n";

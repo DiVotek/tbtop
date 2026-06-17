@@ -1,6 +1,6 @@
 /**
- * Memoized query-param mutation handlers for the table body (reset filters,
- * sort, select tab). Extracted from tableBlock.tsx.
+ * Memoized query-param handlers for the table body —
+ * reset filters, sort, select tab.
  */
 import { useCallback } from "react";
 import type { ListQueryParams } from "../types";

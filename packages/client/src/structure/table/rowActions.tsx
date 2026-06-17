@@ -1,8 +1,6 @@
 /**
- * RowActionsCell — renders a row's configured actions in the trailing cell.
- * Up to ROW_ACTION_INLINE_MAX render inline; more collapse into an overflow
- * DropdownMenu so wide rows stay tidy. Presentation only — each action is still
- * an ActionBlock, so handlers, modals, urls, and `action-*` testids are intact.
+ * RowActionsCell — trailing-cell actions; first ROW_ACTION_INLINE_MAX
+ * inline, the rest in an overflow menu. Each stays an ActionBlock.
  */
 import { MoreHorizontal } from "lucide-react";
 import { useTranslation } from "../../i18n/i18n";

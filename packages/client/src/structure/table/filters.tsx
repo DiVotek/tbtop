@@ -1,7 +1,6 @@
 /**
- * Table filter controls — inline (rendered in the toolbar) and modal (behind a
- * trigger button) variants, plus the shared per-field renderer.
- * Extracted from toolbar.tsx.
+ * Table filter controls — inline and modal variants,
+ * plus the shared per-field renderer.
  */
 import type { ReactNode } from "react";
 import { useState } from "react";
