@@ -4,6 +4,7 @@ import { createInertiaApp } from "@inertiajs/react";
 import { Input, registerBlock } from "@tbtop/inertia-admin";
 import { createRoot } from "react-dom/client";
 import { route as routeFn } from "ziggy-js";
+import { TwoFactorSetupBlock } from "./admin/TwoFactorSetupBlock";
 
 declare global {
 	const route: typeof routeFn;
@@ -30,6 +31,13 @@ registerBlock<"rating", { max?: number; min?: number; step?: number }>({
 			/>
 		);
 	},
+});
+
+// Register the custom two-factor setup block (owns its own JSON fetches).
+registerBlock<"twoFactorSetup", { setupUrl: string; confirmUrl: string }>({
+	kind: "twoFactorSetup",
+	behavior: "leaf",
+	render: TwoFactorSetupBlock,
 });
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
