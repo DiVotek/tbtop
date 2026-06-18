@@ -52,7 +52,13 @@ class UploadDemoPage extends Page
                         ->keybinding('mod+s')->submit(),
                 ]),
             ])
-                ->record(['doc' => null, 'secret' => null])
+                // Seed saved values (stored as paths) so the preview renders on
+                // page-enter: the private one via a fresh signed view url, the
+                // public one via /storage. Remove a preview to reveal the picker.
+                ->record([
+                    'doc' => ['path' => 'docs/sample.webp', 'filename' => 'public-sample.webp'],
+                    'secret' => ['path' => 'private-docs/sample.webp', 'filename' => 'confidential-sample.webp'],
+                ])
                 ->onSubmit(function (ActionCtx $ctx): string {
                     // Demo: no DB write — just confirm the uploads round-tripped.
                     return '/admin/upload-demo';

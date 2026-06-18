@@ -100,6 +100,23 @@ final class FormBuilder implements JsonSerializable
         return $found instanceof Upload ? $found : null;
     }
 
+    /**
+     * Every Upload field on the form, walking nested children.
+     *
+     * @return list<Upload>
+     */
+    public function uploadFields(): array
+    {
+        $out = [];
+        foreach (self::collectFields($this->children, static fn (Field $f): bool => $f instanceof Upload) as $field) {
+            if ($field instanceof Upload) {
+                $out[] = $field;
+            }
+        }
+
+        return $out;
+    }
+
     /** @param  list<mixed>  $children */
     private static function searchCreatable(array $children, string $name): ?Select
     {
@@ -149,6 +166,30 @@ final class FormBuilder implements JsonSerializable
         }
 
         return null;
+    }
+
+    /**
+     * Depth-first collect of every Field the predicate accepts. Recurses into
+     * nested fields and Node containers.
+     *
+     * @param  list<mixed>  $children
+     * @param  callable(Field): bool  $matches
+     * @return list<Field>
+     */
+    private static function collectFields(array $children, callable $matches): array
+    {
+        $out = [];
+        foreach ($children as $child) {
+            if ($child instanceof Field && $matches($child)) {
+                $out[] = $child;
+            }
+            $nested = self::nestedChildren($child);
+            if ($nested !== []) {
+                $out = [...$out, ...self::collectFields($nested, $matches)];
+            }
+        }
+
+        return $out;
     }
 
     /**

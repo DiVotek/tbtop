@@ -79,4 +79,24 @@ class UploadDemoPageTest extends TestCase
             'doc' => ['filename' => 'sample.png', 'url' => '/storage/docs/x.webp'],
         ])->assertRedirect('/admin/upload-demo');
     }
+
+    public function test_private_saved_value_renders_a_signed_view_url(): void
+    {
+        $url = $this->get('/admin/upload-demo', ['X-Inertia' => 'true'])
+            ->assertOk()
+            ->json('props.data.upload.secret.url');
+
+        $this->assertStringContainsString('/upload-demo/uploads/secret/view', $url);
+        $this->assertStringContainsString('signature=', $url);
+    }
+
+    public function test_public_saved_value_renders_a_storage_url(): void
+    {
+        $url = $this->get('/admin/upload-demo', ['X-Inertia' => 'true'])
+            ->assertOk()
+            ->json('props.data.upload.doc.url');
+
+        $this->assertStringStartsWith('/storage', $url);
+        $this->assertStringNotContainsString('signature=', $url);
+    }
 }

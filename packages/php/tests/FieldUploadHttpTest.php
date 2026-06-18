@@ -3,12 +3,14 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Tbtop\Admin\Tests\FieldUploadHttpTestCase;
 
 uses(FieldUploadHttpTestCase::class);
 
 beforeEach(function (): void {
     Storage::fake('public');
+    Storage::fake('local');
 });
 
 it('FieldUpload: stores using disk and directory from the node', function (): void {
@@ -81,4 +83,106 @@ it('FieldUpload: gated page allows the upload when the gate passes', function ()
 
     $this->postJson('/admin/gated-upload-page/uploads/avatar', ['file' => $file])
         ->assertOk();
+});
+
+// --- Private uploads: signed-url response + streaming view route ---------------
+
+it('FieldUpload: a private upload returns a signed view-route url, not /storage', function (): void {
+    $data = $this->postJson('/admin/upload-field-page/uploads/secret', [
+        'file' => UploadedFile::fake()->image('a.png'),
+    ])->assertOk()->json('data');
+
+    expect($data['url'])
+        ->toContain('/upload-field-page/uploads/secret/view')
+        ->toContain('signature=')
+        ->not->toContain('/storage');
+    Storage::disk('local')->assertExists('private-docs/'.$data['id']);
+});
+
+it('FieldUpload: the signed view url streams the private file with a nosniff header', function (): void {
+    $url = $this->postJson('/admin/upload-field-page/uploads/secret', [
+        'file' => UploadedFile::fake()->image('a.png'),
+    ])->json('data.url');
+
+    $this->get($url)
+        ->assertOk()
+        ->assertHeader('X-Content-Type-Options', 'nosniff');
+});
+
+it('FieldUpload: each private variant url is signed too', function (): void {
+    if (! function_exists('imagecreatefromstring')) {
+        $this->markTestSkipped('GD unavailable');
+    }
+    config()->set('tbtop-admin.uploads.thumbed', ['sizes' => ['thumb' => [64, 64]]]);
+
+    $data = $this->postJson('/admin/upload-field-page/uploads/sized', [
+        'file' => UploadedFile::fake()->image('a.png', 200, 200),
+    ])->assertOk()->json('data');
+
+    expect($data['sizes'])->not->toBeEmpty();
+    expect($data['sizes'][0]['url'])
+        ->toContain('/uploads/sized/view')
+        ->toContain('signature=');
+});
+
+it('FieldUpload: a custom save closure overrides storage and is still signed', function (): void {
+    $data = $this->postJson('/admin/upload-field-page/uploads/custom', [
+        'file' => UploadedFile::fake()->image('a.png'),
+    ])->assertOk()->json('data');
+
+    expect($data['filename'])->toBe('overridden.bin')
+        ->and($data['url'])->toContain('/uploads/custom/view')->toContain('signature=');
+});
+
+it('FieldUpload: a tampered signature is rejected', function (): void {
+    $url = $this->postJson('/admin/upload-field-page/uploads/secret', [
+        'file' => UploadedFile::fake()->image('a.png'),
+    ])->json('data.url');
+
+    $this->get($url.'tampered')->assertForbidden();
+});
+
+it('FieldUpload: an expired signature is rejected', function (): void {
+    $url = $this->postJson('/admin/upload-field-page/uploads/secret', [
+        'file' => UploadedFile::fake()->image('a.png'),
+    ])->json('data.url');
+
+    $this->travel(6)->minutes();
+    $this->get($url)->assertForbidden();
+});
+
+it('FieldUpload: a signed path outside the field directory is rejected by the zone guard', function (): void {
+    // Sign a malicious path so the signature passes and the zone check is the rejecter.
+    $escape = URL::temporarySignedRoute(
+        'tbtop.admin.upload-field-page.uploadView',
+        now()->addMinutes(5),
+        ['tbtopField' => 'secret', 'path' => 'other-dir/x.webp'],
+    );
+    $traverse = URL::temporarySignedRoute(
+        'tbtop.admin.upload-field-page.uploadView',
+        now()->addMinutes(5),
+        ['tbtopField' => 'secret', 'path' => '../private-docs/x.webp'],
+    );
+
+    $this->get($escape)->assertForbidden();
+    $this->get($traverse)->assertForbidden();
+});
+
+it('FieldUpload: the signed view route inherits the page gate', function (): void {
+    Gate::define('view-gated-uploads', fn (?object $user) => false);
+    $url = URL::temporarySignedRoute(
+        'tbtop.admin.gated-upload-page.uploadView',
+        now()->addMinutes(5),
+        ['tbtopField' => 'avatar', 'path' => 'private-docs/x.webp'],
+    );
+
+    $this->get($url)->assertForbidden();
+});
+
+it('FieldUpload: a public upload is unchanged — /storage url, no signature', function (): void {
+    $data = $this->postJson('/admin/upload-field-page/uploads/avatar', [
+        'file' => UploadedFile::fake()->image('a.png'),
+    ])->assertOk()->json('data');
+
+    expect($data['url'])->toContain('/storage')->not->toContain('signature=');
 });

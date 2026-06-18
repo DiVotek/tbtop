@@ -2,11 +2,38 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
+use Illuminate\Http\UploadedFile;
+use Tbtop\Admin\Uploads\UploadFieldConfig;
+
 final class Upload extends Field
 {
+    /** Server-side override for how an uploaded file is stored/persisted. */
+    private ?Closure $saveClosure = null;
+
     protected function kind(): string
     {
         return 'upload';
+    }
+
+    /**
+     * Override how an uploaded file is stored. The closure receives the
+     * UploadedFile and the resolved UploadFieldConfig and must return the wire
+     * envelope (id, filename, mimeType, filesize, url, width, height, sizes).
+     * Default stores to the configured disk. Never serialized to the client.
+     *
+     * @param  Closure(UploadedFile, UploadFieldConfig): array<string, mixed>  $fn
+     */
+    public function saveUsing(Closure $fn): static
+    {
+        $this->saveClosure = $fn;
+
+        return $this;
+    }
+
+    public function saveClosure(): ?Closure
+    {
+        return $this->saveClosure;
     }
 
     /** Accepted MIME types / extensions, e.g. 'image/*' or '.pdf'. */
