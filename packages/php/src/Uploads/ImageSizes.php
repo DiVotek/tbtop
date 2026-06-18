@@ -18,12 +18,19 @@ final class ImageSizes
     /**
      * Generates resized variants (fit: inside) next to the original.
      * Non-images and missing GD degrade to no variants.
+     * Format defaults to png; unsupported formats fall back to png per variant.
      *
      * @param  array<string, array{0: int, 1: int}>  $sizes
      * @return list<array<string, mixed>>
      */
-    public static function generate(UploadedFile $file, string $path, string $disk, array $sizes): array
-    {
+    public static function generate(
+        UploadedFile $file,
+        string $path,
+        string $disk,
+        array $sizes,
+        ?string $format = null,
+        ?int $quality = null,
+    ): array {
         if ($sizes === [] || ! function_exists('imagecreatefromstring')) {
             return [];
         }
@@ -32,9 +39,10 @@ final class ImageSizes
             return [];
         }
 
+        $fmt = $format ?? 'png';
         $out = [];
         foreach ($sizes as $name => [$maxW, $maxH]) {
-            $variant = self::variant($source, $path, $disk, (string) $name, $maxW, $maxH);
+            $variant = self::variant($source, $path, $disk, (string) $name, $maxW, $maxH, $fmt, $quality);
             if ($variant !== null) {
                 $out[] = $variant;
             }
@@ -52,6 +60,8 @@ final class ImageSizes
         string $name,
         int $maxW,
         int $maxH,
+        string $format,
+        ?int $quality,
     ): ?array {
         $w = imagesx($source);
         $h = imagesy($source);
@@ -63,14 +73,15 @@ final class ImageSizes
         if ($resized === false) {
             return null;
         }
-        ob_start();
-        imagepng($resized);
-        $blob = (string) ob_get_clean();
+        $enc = ImageEncoder::encode($resized, $format, $quality) ?? ImageEncoder::encode($resized, 'png');
         imagedestroy($resized);
+        if ($enc === null) {
+            return null;
+        }
 
         $info = pathinfo($path);
-        $variantPath = "{$info['dirname']}/{$info['filename']}-{$name}.png";
-        Storage::disk($disk)->put($variantPath, $blob);
+        $variantPath = "{$info['dirname']}/{$info['filename']}-{$name}.{$enc['ext']}";
+        Storage::disk($disk)->put($variantPath, $enc['blob']);
 
         return [
             'name' => $name,
@@ -78,8 +89,8 @@ final class ImageSizes
             'url' => UploadUrl::make($disk, $variantPath),
             'width' => $newW,
             'height' => $newH,
-            'mimeType' => 'image/png',
-            'filesize' => strlen($blob),
+            'mimeType' => $enc['mimeType'],
+            'filesize' => strlen($enc['blob']),
         ];
     }
 }
