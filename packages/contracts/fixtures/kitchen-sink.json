@@ -409,7 +409,13 @@
                                     ]
                                 }
                             },
-                            "meta": {},
+                            "meta": {
+                                "hiddenIf": {
+                                    "op": "eq",
+                                    "field": "published",
+                                    "value": true
+                                }
+                            },
                             "name": "edit"
                         },
                         {
@@ -428,7 +434,12 @@
                                     ]
                                 }
                             },
-                            "meta": {},
+                            "meta": {
+                                "disabledIf": {
+                                    "op": "truthy",
+                                    "field": "locked"
+                                }
+                            },
                             "name": "delete"
                         }
                     ],
@@ -444,7 +455,13 @@
                                     ]
                                 }
                             },
-                            "meta": {},
+                            "meta": {
+                                "hiddenIf": {
+                                    "op": "eq",
+                                    "field": "role",
+                                    "value": "manager"
+                                }
+                            },
                             "name": "bulk-delete"
                         }
                     ],

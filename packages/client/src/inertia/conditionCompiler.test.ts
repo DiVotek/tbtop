@@ -238,4 +238,20 @@ describe("ConditionCompiler: scope chain", () => {
 		const fn = compileCondition({ op: "eq", field: "$root.status", value: "draft" });
 		expect(fn(ctx({ status: "draft" }))).toBe(true);
 	});
+
+	it("ConditionCompiler: $user.-prefixed field resolves against the user (role-gating)", () => {
+		const fn = compileCondition({ op: "eq", field: "$user.role", value: "manager" });
+		const withUser: ConditionContext = {
+			record: undefined,
+			data: { role: "admin" },
+			user: { role: "manager" },
+		};
+		// resolves against user.role (manager), not data.role (admin)
+		expect(fn(withUser)).toBe(true);
+	});
+
+	it("ConditionCompiler: $user. with null user resolves to undefined (not hidden)", () => {
+		const fn = compileCondition({ op: "eq", field: "$user.role", value: "manager" });
+		expect(fn(ctx({ role: "manager" }))).toBe(false);
+	});
 });

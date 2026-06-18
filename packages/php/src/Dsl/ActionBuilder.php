@@ -18,6 +18,9 @@ final class ActionBuilder implements JsonSerializable
     /** @var array<string, mixed>|null */
     private ?array $spec = null;
 
+    /** @var array<string, mixed> */
+    private array $metaBag = [];
+
     private ?Closure $handler = null;
 
     /** @var 'sm'|'md'|'lg'|'full'|null */
@@ -110,6 +113,24 @@ final class ActionBuilder implements JsonSerializable
         return $this->setSpec(['type' => 'custom', 'handler' => $handler, 'params' => $params]);
     }
 
+    public function hiddenIf(Cond|string $condOrField, string $op = '', mixed $value = null): self
+    {
+        $this->metaBag['hiddenIf'] = $condOrField instanceof Cond
+            ? $condOrField
+            : Cond::fromShorthand($condOrField, $op, $value);
+
+        return $this;
+    }
+
+    public function disabledIf(Cond|string $condOrField, string $op = '', mixed $value = null): self
+    {
+        $this->metaBag['disabledIf'] = $condOrField instanceof Cond
+            ? $condOrField
+            : Cond::fromShorthand($condOrField, $op, $value);
+
+        return $this;
+    }
+
     public function handler(): ?Closure
     {
         return $this->handler;
@@ -130,7 +151,7 @@ final class ActionBuilder implements JsonSerializable
             $spec = $this->spec;
         }
 
-        return new Node('action', [...$this->opts, 'spec' => $spec], $this->name);
+        return new Node('action', [...$this->opts, 'spec' => $spec], $this->name, $this->metaBag);
     }
 
     /** @return array<string, mixed> */

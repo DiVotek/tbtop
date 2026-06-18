@@ -121,6 +121,8 @@ interface ActionConfigBase {
 	label?: string;
 	color?: ActionColor;
 	keybinding?: string;
+	/** Compiled hidden/disabled ConditionFns; evaluated per row (or user) at render. */
+	meta?: NodeMeta;
 }
 
 interface ActionConfigHandler extends ActionConfigBase {

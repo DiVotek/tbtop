@@ -13,7 +13,13 @@ import { ModalProvider, useNearestModal } from "./modalContext";
 import { s } from "./structure";
 import type { StructureNode } from "./types";
 
-export function ModalActionBlock({ options: opts }: { options: ActionOptionsBag }) {
+export function ModalActionBlock({
+	options: opts,
+	disabled = false,
+}: {
+	options: ActionOptionsBag;
+	disabled?: boolean;
+}) {
 	const variant = opts.color ? COLOR_TO_VARIANT[opts.color] : "outline";
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [open, setOpen] = useState(false);
@@ -40,6 +46,7 @@ export function ModalActionBlock({ options: opts }: { options: ActionOptionsBag 
 				type="button"
 				ref={buttonRef}
 				variant={variant}
+				disabled={disabled}
 				onClick={() => setOpen(true)}
 				data-testid={`action-${actionKey(opts)}`}
 			>
