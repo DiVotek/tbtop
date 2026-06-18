@@ -7,6 +7,7 @@ use JsonSerializable;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Panels\CurrentPanel;
 
 final class FormBuilder implements JsonSerializable
@@ -83,6 +84,20 @@ final class FormBuilder implements JsonSerializable
     public function findRelationField(string $name): ?Relation
     {
         return self::searchRelation($this->children, $name);
+    }
+
+    /**
+     * Find an Upload field by name, walking nested children.
+     * Returns null when not found.
+     */
+    public function findUploadField(string $name): ?Upload
+    {
+        $found = self::searchField(
+            $this->children,
+            static fn (Field $f): bool => $f instanceof Upload && $f->name === $name,
+        );
+
+        return $found instanceof Upload ? $found : null;
     }
 
     /** @param  list<mixed>  $children */

@@ -5,6 +5,7 @@ use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\ActionDataController;
 use Tbtop\Admin\Http\DataController;
 use Tbtop\Admin\Http\EditableColumnController;
+use Tbtop\Admin\Http\FieldUploadController;
 use Tbtop\Admin\Http\FormSubmitController;
 use Tbtop\Admin\Http\LocaleController;
 use Tbtop\Admin\Http\Media\MediaController;
@@ -56,6 +57,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/relation-search/{tbtopField}", RelationSearchController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.relationSearch');
+        Route::post("{$path}/uploads/{tbtopField}", FieldUploadController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.upload');
         Route::post("{$path}/cells/{tbtopTable}/{tbtopColumn}", EditableColumnController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.cell');
