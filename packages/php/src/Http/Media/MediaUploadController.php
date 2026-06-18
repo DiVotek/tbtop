@@ -34,7 +34,7 @@ final class MediaUploadController
             abort(500, 'Upload failed.');
         }
 
-        SvgSanitizer::sanitizeStored($disk, $path, (string) $file->getMimeType());
+        SvgSanitizer::sanitizeStored($disk, $path, $file->getClientOriginalName());
 
         /** @var array<string, array{0: int, 1: int}> $profiles */
         $profiles = (array) ($config['profiles'] ?? []);
@@ -65,11 +65,18 @@ final class MediaUploadController
     /** @param list<string> $accept */
     private function assertMime(UploadedFile $file, array $accept): void
     {
+        $mime = (string) $file->getMimeType();
+
+        // text/html is active content (the SVG-as-html XSS vector). Refuse it
+        // even when the accept list allows text/* — it is never a media file.
+        if (str_starts_with($mime, 'text/html')) {
+            abort(422, __('tbtop-admin::admin.media.errors.mime_not_allowed'));
+        }
+
         if ($accept === []) {
             return;
         }
 
-        $mime = (string) $file->getMimeType();
         foreach ($accept as $pattern) {
             if (fnmatch((string) $pattern, $mime)) {
                 return;

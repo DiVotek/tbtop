@@ -81,7 +81,9 @@ export function useUploadQueue({ folderId, onUploaded }: UseUploadQueueInput): U
 	const uploadFiles = useCallback(
 		async (files: FileList | File[]): Promise<void> => {
 			const queued = buildTasks(Array.from(files));
-			setTasks(() => queued.map((q) => q.task));
+			// Append, never replace: a second drop mid-upload must not wipe the
+			// in-flight batch's progress rows.
+			setTasks((prev) => [...prev, ...queued.map((q) => q.task)]);
 			const deps: RunInput = { client, folderId, setTasks, onUploaded };
 			let failed = 0;
 			for (const { file, task } of queued) {

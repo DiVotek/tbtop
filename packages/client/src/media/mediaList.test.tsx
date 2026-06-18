@@ -32,6 +32,7 @@ describe("MediaList", () => {
 				items={[ITEM_IMG]}
 				onSelect={() => {}}
 				onSelectFolder={() => {}}
+				onSort={() => {}}
 			/>,
 		);
 		const list = getByTestId("media-list");
@@ -48,6 +49,7 @@ describe("MediaList", () => {
 				items={[ITEM_IMG]}
 				onSelect={() => {}}
 				onSelectFolder={() => {}}
+				onSort={() => {}}
 			/>,
 		);
 		const row = getByTestId("media-list-row-img1");
@@ -66,6 +68,7 @@ describe("MediaList", () => {
 				items={[]}
 				onSelect={() => {}}
 				onSelectFolder={(id) => navigated.push(id)}
+				onSort={() => {}}
 			/>,
 		);
 		await act(async () => {
@@ -83,6 +86,7 @@ describe("MediaList", () => {
 				items={[ITEM_IMG]}
 				onSelect={(item) => selected.push(item)}
 				onSelectFolder={() => {}}
+				onSort={() => {}}
 			/>,
 		);
 		await act(async () => {
@@ -99,9 +103,28 @@ describe("MediaList", () => {
 				items={[ITEM_IMG]}
 				onSelect={() => {}}
 				onSelectFolder={() => {}}
+				onSort={() => {}}
 				selectedIds={["img1"]}
 			/>,
 		);
 		expect(getByTestId("media-list-row-img1").getAttribute("aria-selected")).toBe("true");
+	});
+
+	test("clicking a sortable header calls onSort with the server column", async () => {
+		const user = userEvent.setup({ delay: null });
+		const sorted: string[] = [];
+		const { getByTestId } = render(
+			<MediaList
+				folders={[]}
+				items={[ITEM_IMG]}
+				onSelect={() => {}}
+				onSelectFolder={() => {}}
+				onSort={(c) => sorted.push(c)}
+			/>,
+		);
+		await act(async () => {
+			await user.click(getByTestId("media-list-sort-date"));
+		});
+		expect(sorted).toEqual(["created_at"]);
 	});
 });

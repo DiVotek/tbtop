@@ -23,6 +23,8 @@ const MIME_KINDS: Record<string, FileKind> = {
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "word",
 	"application/vnd.ms-excel": "excel",
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "excel",
+	// CSV is text/* but reads as a spreadsheet — match before the text/ prefix.
+	"text/csv": "excel",
 	"application/zip": "archive",
 	"application/x-7z-compressed": "archive",
 	"application/x-rar-compressed": "archive",

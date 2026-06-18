@@ -36,6 +36,8 @@ describe("fileKindOf: mime → kind", () => {
 		["audio/mpeg", "track.mp3", "audio", FileAudioIcon],
 		["video/mp4", "clip.mp4", "video", FileVideoIcon],
 		["text/plain", "notes.txt", "text", FileTextIcon],
+		// text/csv is text/* but must read as a spreadsheet, not text.
+		["text/csv", "data.csv", "excel", FileSpreadsheetIcon],
 	])("%s resolves to %s", (mime, name, kind, Icon) => {
 		const info = fileKindOf(mime as string, name as string);
 		expect(info.kind as string).toBe(kind as string);

@@ -7,6 +7,7 @@ import { type ReactNode, useRef, useState } from "react";
 import { OpenTagsForm } from "../fields/tagsOpen";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { ModalShell } from "../ui/modal-shell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
@@ -220,9 +221,8 @@ function DetailShell({
 				<label className="text-sm font-medium" htmlFor="detail-name">
 					{t("media.detail.name")}
 				</label>
-				<input
+				<Input
 					id="detail-name"
-					className="h-9 w-full rounded-md border px-3 py-1 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
 					disabled={busy}
@@ -235,9 +235,8 @@ function DetailShell({
 				<label className="text-sm font-medium" htmlFor="detail-alt">
 					{t("media.detail.alt")}
 				</label>
-				<textarea
+				<Textarea
 					id="detail-alt"
-					className="w-full rounded-md border px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
 					rows={2}
 					value={alt}
 					onChange={(e) => setAlt(e.target.value)}

@@ -95,7 +95,7 @@ final class MediaImportController
                 return $this->error422('media.errors.download_failed');
             }
 
-            SvgSanitizer::sanitizeStored($disk, $path, $detectedMime);
+            SvgSanitizer::sanitizeStored($disk, $path, $filename);
 
             /** @var array<string, array{0: int, 1: int}> $profiles */
             $profiles = (array) ($config2['profiles'] ?? []);
@@ -183,6 +183,12 @@ final class MediaImportController
      */
     private function isAllowedMime(string $mime, array $accept): bool
     {
+        // text/html is active content (the SVG-as-html XSS vector). Refuse it
+        // even when the accept list allows text/* — it is never a media file.
+        if (str_starts_with($mime, 'text/html')) {
+            return false;
+        }
+
         if ($accept === []) {
             return true;
         }

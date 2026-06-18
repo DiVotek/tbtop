@@ -15,7 +15,7 @@ import { MediaList } from "./mediaList";
 import { MediaThumb } from "./mediaThumb";
 import type { MediaItem } from "./types";
 import { UploadProgressList } from "./uploadProgressList";
-import type { MediaQueryParams, MediaQueryState } from "./useMediaApi";
+import type { MediaQueryParams, MediaQueryState, MediaSortColumn } from "./useMediaApi";
 import { formatBytes } from "./useMediaApi";
 import { useUploadQueue } from "./useUploadQueue";
 import { useViewMode } from "./useViewMode";
@@ -65,6 +65,16 @@ export function MediaGrid({
 			}, 300);
 		},
 		[onChangeParams],
+	);
+
+	// ─── Sort ─────────────────────────────────────────────────────────────────
+
+	const handleSort = useCallback(
+		(column: MediaSortColumn) => {
+			const nextDir = params.sort === column && params.dir === "asc" ? "desc" : "asc";
+			onChangeParams({ sort: column, dir: nextDir, page: 1 });
+		},
+		[onChangeParams, params.sort, params.dir],
 	);
 
 	// ─── Drag and drop ────────────────────────────────────────────────────────
@@ -229,6 +239,9 @@ export function MediaGrid({
 						items={items}
 						onSelect={onSelect}
 						onSelectFolder={onSelectFolder}
+						sort={params.sort}
+						dir={params.dir}
+						onSort={handleSort}
 						selectedIds={selectedIds}
 					/>
 				)}

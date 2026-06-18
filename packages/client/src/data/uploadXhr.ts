@@ -67,7 +67,9 @@ export function uploadViaXhr(input: UploadViaXhrInput): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		const xhr = xhrFactory();
 		xhr.open("POST", url);
-		xhr.withCredentials = true; // ≡ credentials: "same-origin" for same-origin
+		// ≡ credentials: "include"; matches the fetch path's "same-origin" only
+		// because uploads are same-origin (cross-origin would diverge on cookies).
+		xhr.withCredentials = true;
 		applyHeaders(xhr, headers);
 		bindProgress(xhr, onProgress);
 		xhr.addEventListener("load", () => {

@@ -199,6 +199,31 @@ it('upload keeps a clean svg intact and succeeds', function () {
         ->and($stored)->toContain('<rect');
 });
 
+it('upload sanitizes an html-disguised scriptful svg (mime-spoof bypass)', function () {
+    // finfo classifies an html-wrapped svg as text/html → it lands as .html.
+    // Content sniffing must still strip the script before it is served inline.
+    $dirty = "<!-- logo -->\n<svg xmlns=\"http://www.w3.org/2000/svg\">"
+        .'<script>alert(1)</script><rect width="10" height="10" /></svg>';
+    $file = UploadedFile::fake()->createWithContent('logo.svg', $dirty);
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201);
+
+    $stored = Storage::disk('public')->get((string) Media::firstOrFail()->path);
+    expect($stored)->not->toContain('<script')
+        ->and($stored)->not->toContain('alert')
+        ->and($stored)->toContain('<rect');
+});
+
+it('upload refuses a text/html file even when text/* is accepted', function () {
+    $file = UploadedFile::fake()->createWithContent('page.html', '<html><body>hi</body></html>');
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(422);
+
+    expect(Media::count())->toBe(0);
+});
+
 it('replace sanitizes a replacement svg', function () {
     $media = Media::create(mediaRow(['path' => 'tbtop-media/old.svg', 'mime' => 'image/svg+xml']));
     Storage::disk('public')->put('tbtop-media/old.svg', '<svg></svg>');
