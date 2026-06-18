@@ -21,6 +21,7 @@ class UploadDemoPageTest extends TestCase
     {
         parent::setUp();
         Storage::fake('public');
+        Storage::fake('local');
         $this->actingAs(User::factory()->create(['role' => 'admin']));
     }
 
@@ -46,6 +47,23 @@ class UploadDemoPageTest extends TestCase
         $this->assertSame('image/webp', $data['mimeType']);
         $this->assertStringEndsWith('.webp', $data['url']);
         Storage::disk('public')->assertExists('docs/'.$data['id']);
+    }
+
+    public function test_private_field_stores_on_the_local_disk_as_webp(): void
+    {
+        if (! function_exists('imagewebp')) {
+            $this->markTestSkipped('GD webp encoder unavailable');
+        }
+
+        $data = $this->postJson('/admin/upload-demo/uploads/secret', [
+            'file' => UploadedFile::fake()->image('confidential.png', 300, 200),
+        ])->assertOk()->json('data');
+
+        // Stored on the private `local` disk, converted to webp — never written
+        // to the public disk.
+        $this->assertSame('image/webp', $data['mimeType']);
+        Storage::disk('local')->assertExists('private-docs/'.$data['id']);
+        Storage::disk('public')->assertMissing('private-docs/'.$data['id']);
     }
 
     public function test_upload_rejects_a_mime_outside_the_accept_allowlist(): void

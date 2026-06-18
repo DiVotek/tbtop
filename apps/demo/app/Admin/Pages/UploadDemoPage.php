@@ -9,8 +9,10 @@ use Tbtop\Admin\Pages\Page;
 
 /**
  * Exercises the new inline-config upload path: disk/directory/visibility plus
- * image conversion live on the field, not a config profile. The page-scoped
- * endpoint stores under public:docs and re-encodes to webp at quality 80.
+ * image conversion live on the field, not a config profile. Two fields show the
+ * range: a public-disk upload (publicly linkable) and a private-disk upload
+ * (stored on the `local` disk, served only through the app). Both re-encode to
+ * webp at quality 80.
  */
 class UploadDemoPage extends Page
 {
@@ -34,8 +36,15 @@ class UploadDemoPage extends Page
         return $s->stack([
             $s->displayText('Inline-config upload')->variant('heading'),
             $s->form('upload', [
-                $s->upload('doc')->label('Document')->required()
+                // Public disk: stored under public:docs, publicly linkable.
+                $s->upload('doc')->label('Public document')->required()
                     ->disk('public')->directory('docs')->visibility('public')
+                    ->accept('image/*')->maxSize(5 * 1024 * 1024)
+                    ->convertTo('webp')->quality(80),
+                // Private disk: stored on `local` (storage/app/private), never
+                // symlinked to the web root — served only through the app.
+                $s->upload('secret')->label('Private document')
+                    ->disk('local')->directory('private-docs')->visibility('private')
                     ->accept('image/*')->maxSize(5 * 1024 * 1024)
                     ->convertTo('webp')->quality(80),
                 $s->actionsRow([
@@ -43,9 +52,9 @@ class UploadDemoPage extends Page
                         ->keybinding('mod+s')->submit(),
                 ]),
             ])
-                ->record(['doc' => null])
+                ->record(['doc' => null, 'secret' => null])
                 ->onSubmit(function (ActionCtx $ctx): string {
-                    // Demo: no DB write — just confirm the upload round-tripped.
+                    // Demo: no DB write — just confirm the uploads round-tripped.
                     return '/admin/upload-demo';
                 }),
         ]);
