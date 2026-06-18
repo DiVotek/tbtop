@@ -70,6 +70,10 @@ class KitchenSinkPage extends Page
                     $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
                     $s->richtext('content')->set('placeholder', 'Start typing…'),
+                    $s->upload('attachment')->label('Attachment')
+                        ->disk('public')->directory('docs')->visibility('public')
+                        ->accept('image/*')->maxSize(5 * 1024 * 1024)
+                        ->convertTo('webp')->quality(80),
                     $s->relation('category_id')
                         ->labelKey('name')
                         ->searchable()
