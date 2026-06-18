@@ -20,6 +20,7 @@ import { FormError, FormSkeleton } from "./defaults";
 import { FormControllerProvider } from "./formContext";
 import { useFormController } from "./formController";
 import { isNodeDisabled, isNodeHidden } from "./meta";
+import { useModalData } from "./modalDataContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { scrollToFirstError } from "./scrollToFirstError";
 import type { ConditionContext, StructureNode } from "./types";
@@ -42,8 +43,26 @@ interface FormRenderProps {
 
 export function FormBlock({ options }: FormRenderProps) {
 	const ctx = useClientActionContext();
-	const { state } = useAsyncQuery({ query: options.query, ctx });
+	const modalData = useModalData();
+	// Inside a data-modal the record comes from the modal's per-open fetch, not
+	// the page-static query — skip the form's own query in that case.
+	const hasModalData = modalData !== undefined;
+	const { state } = useAsyncQuery({
+		query: hasModalData ? undefined : options.query,
+		ctx,
+	});
 
+	if (hasModalData) {
+		return (
+			<FormControllerBody
+				initial={normalize(modalData)}
+				schema={options.schema}
+				guardUnsaved={options.guardUnsaved ?? true}
+			>
+				{options.children}
+			</FormControllerBody>
+		);
+	}
 	if (state.kind === "loading") {
 		return <>{options.loading ?? <FormSkeleton />}</>;
 	}

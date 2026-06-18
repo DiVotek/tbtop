@@ -114,6 +114,8 @@ export interface ModalConfig<TBuilder = unknown> {
 	description?: string;
 	body?: (s: TBuilder) => StructureNode;
 	size?: "sm" | "md" | "lg" | "full";
+	/** Backend data query: run on open, fed to the body via ModalDataProvider. */
+	query?: (ctx: ClientActionContext) => Promise<unknown>;
 }
 
 interface ActionConfigBase {
@@ -121,6 +123,8 @@ interface ActionConfigBase {
 	label?: string;
 	color?: ActionColor;
 	keybinding?: string;
+	/** Compiled hidden/disabled ConditionFns; evaluated per row (or user) at render. */
+	meta?: NodeMeta;
 }
 
 interface ActionConfigHandler extends ActionConfigBase {

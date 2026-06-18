@@ -1,11 +1,19 @@
 import type { ModalSize } from "../ui/modal-shell";
-import type { ActionColor, ActionConfig, StructureNode } from "./types";
+import type {
+	ActionColor,
+	ActionConfig,
+	ClientActionContext,
+	NodeMeta,
+	StructureNode,
+} from "./types";
 
 export interface ActionModalOpts {
 	title: string;
 	description?: string;
 	body?: StructureNode | ((s: unknown) => StructureNode);
 	size?: ModalSize;
+	/** Backend data query: run on open, fed to the body via ModalDataProvider. */
+	query?: (ctx: ClientActionContext) => Promise<unknown>;
 }
 
 export interface ActionOptionsBag {
@@ -20,7 +28,9 @@ export interface ActionOptionsBag {
 
 export interface ActionRenderProps {
 	options: ActionOptionsBag;
-	meta: { id?: string };
+	meta: NodeMeta;
+	/** Pre-evaluated disabledIf result; the row/bulk cell owns evaluation. */
+	disabled?: boolean;
 }
 
 export const COLOR_TO_VARIANT: Record<ActionColor, "default" | "destructive" | "outline"> = {

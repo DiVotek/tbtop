@@ -162,7 +162,12 @@ function actionBags(raw: unknown, ctx: WalkCtx): Bag[] {
 	if (!Array.isArray(raw)) {
 		return [];
 	}
-	return (raw as StructureNode[]).map((n) => actionOptions(n, ctx));
+	// Route through walk() so each action's meta (compiled hidden/disabled
+	// ConditionFns) rides onto the config; actionOptions alone drops it.
+	return (raw as StructureNode[]).map((n) => {
+		const m = walk(n, ctx);
+		return { ...(m.options as Bag), meta: m.meta };
+	});
 }
 
 function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {

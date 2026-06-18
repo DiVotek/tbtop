@@ -196,6 +196,36 @@ class AdminPagesTest extends TestCase
         $this->assertSame([$kept->id], Post::pluck('id')->all());
     }
 
+    public function test_edit_publication_data_query_prefills_from_the_row(): void
+    {
+        $post = $this->makePost([
+            'published' => true,
+            'published_at' => '2026-02-01 09:00:00',
+        ]);
+
+        $this->postJson('/admin/posts/actions/editPublication/data', [
+            'payload' => ['row' => ['id' => $post->id]],
+        ])->assertOk()
+            ->assertJsonPath('data.published', true)
+            ->assertJsonPath('data.published_at', '2026-02-01T09:00:00.000000Z');
+    }
+
+    public function test_edit_publication_save_updates_the_post(): void
+    {
+        $post = $this->makePost(['published' => true, 'published_at' => now()]);
+
+        $this->postJson('/admin/posts/actions/savePublication', [
+            'payload' => [
+                'row' => ['id' => $post->id],
+                'form' => ['published' => false, 'published_at' => null],
+            ],
+        ])->assertOk()->assertJsonPath('effects.0.kind', 'notify');
+
+        $post->refresh();
+        $this->assertFalse($post->published);
+        $this->assertNull($post->published_at);
+    }
+
     public function test_edit_page_delete_action_deletes_and_redirects(): void
     {
         $post = $this->makePost();
