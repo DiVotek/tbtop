@@ -23,6 +23,11 @@ final class ActionBuilder implements JsonSerializable
 
     private ?Closure $handler = null;
 
+    private ?Closure $queryClosure = null;
+
+    /** @var list<string> */
+    private array $queryNeeds = [];
+
     /** @var 'sm'|'md'|'lg'|'full'|null */
     private ?string $modalSize = null;
 
@@ -131,9 +136,29 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Backend data source for a modal action. The closure runs server-side when
+     * the modal opens, receives the row/selection context, and returns arbitrary
+     * data fed to the modal body (e.g. a record to prefill a form).
+     *
+     * @param  list<string>  $needs  Payload sources: row | selection | form.
+     */
+    public function query(Closure $fn, array $needs = ['row']): self
+    {
+        $this->queryClosure = $fn;
+        $this->queryNeeds = $needs;
+
+        return $this;
+    }
+
     public function handler(): ?Closure
     {
         return $this->handler;
+    }
+
+    public function queryClosure(): ?Closure
+    {
+        return $this->queryClosure;
     }
 
     public function toNode(): Node
@@ -149,6 +174,13 @@ final class ActionBuilder implements JsonSerializable
             $spec = [...$this->spec, 'size' => $this->modalSize];
         } else {
             $spec = $this->spec;
+        }
+
+        if ($this->queryClosure !== null) {
+            if (($spec['type'] ?? '') !== 'modal') {
+                throw new LogicException("query() is only valid on modal actions (action \"{$this->name}\").");
+            }
+            $spec = [...$spec, 'query' => true, 'queryNeeds' => $this->queryNeeds];
         }
 
         return new Node('action', [...$this->opts, 'spec' => $spec], $this->name, $this->metaBag);

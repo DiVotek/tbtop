@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Tbtop\Admin\Http\ActionController;
+use Tbtop\Admin\Http\ActionDataController;
 use Tbtop\Admin\Http\DataController;
 use Tbtop\Admin\Http\EditableColumnController;
 use Tbtop\Admin\Http\FormSubmitController;
@@ -40,6 +41,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/actions/{tbtopAction}", ActionController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.action');
+        Route::post("{$path}/actions/{tbtopAction}/data", ActionDataController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.actionData');
         Route::get("{$path}/tables/{tbtopTable}", TableController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.table');

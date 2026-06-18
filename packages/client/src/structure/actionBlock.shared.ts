@@ -1,11 +1,19 @@
 import type { ModalSize } from "../ui/modal-shell";
-import type { ActionColor, ActionConfig, NodeMeta, StructureNode } from "./types";
+import type {
+	ActionColor,
+	ActionConfig,
+	ClientActionContext,
+	NodeMeta,
+	StructureNode,
+} from "./types";
 
 export interface ActionModalOpts {
 	title: string;
 	description?: string;
 	body?: StructureNode | ((s: unknown) => StructureNode);
 	size?: ModalSize;
+	/** Backend data query: run on open, fed to the body via ModalDataProvider. */
+	query?: (ctx: ClientActionContext) => Promise<unknown>;
 }
 
 export interface ActionOptionsBag {

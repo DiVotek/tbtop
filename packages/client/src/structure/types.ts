@@ -114,6 +114,8 @@ export interface ModalConfig<TBuilder = unknown> {
 	description?: string;
 	body?: (s: TBuilder) => StructureNode;
 	size?: "sm" | "md" | "lg" | "full";
+	/** Backend data query: run on open, fed to the body via ModalDataProvider. */
+	query?: (ctx: ClientActionContext) => Promise<unknown>;
 }
 
 interface ActionConfigBase {

@@ -1,5 +1,7 @@
 import type { ModalSize } from "../ui/modal-shell";
-import type { ActionConfig, StructureNode } from "./types";
+import type { ActionConfig, ClientActionContext, StructureNode } from "./types";
+
+type ModalQuery = (ctx: ClientActionContext) => Promise<unknown>;
 
 function assertActionConfig(cfg: ActionConfig): void {
 	const hasHandler = typeof cfg.handler === "function";
@@ -23,14 +25,20 @@ interface ResolvedModal {
 	description?: string;
 	body?: StructureNode;
 	size?: ModalSize;
+	query?: ModalQuery;
 }
 
 type ModalBodyInput = StructureNode | ((s: unknown) => StructureNode) | undefined;
 
-function resolveModal(
-	modal: { title: string; description?: string; body?: ModalBodyInput; size?: ModalSize },
-	sProxy: unknown,
-): ResolvedModal {
+interface ModalInput {
+	title: string;
+	description?: string;
+	body?: ModalBodyInput;
+	size?: ModalSize;
+	query?: ModalQuery;
+}
+
+function resolveModal(modal: ModalInput, sProxy: unknown): ResolvedModal {
 	const resolved: ResolvedModal = { title: modal.title };
 	if (modal.description !== undefined) {
 		resolved.description = modal.description;
@@ -41,6 +49,9 @@ function resolveModal(
 	if (modal.size !== undefined) {
 		resolved.size = modal.size;
 	}
+	if (modal.query !== undefined) {
+		resolved.query = modal.query;
+	}
 	return resolved;
 }
 
@@ -48,7 +59,7 @@ export function makeBuildAction(sProxy: unknown) {
 	return function buildAction(cfg: ActionConfig): StructureNode {
 		assertActionConfig(cfg);
 		const { name, modal, ...rest } = cfg as ActionConfig & {
-			modal?: { title: string; description?: string; body?: ModalBodyInput };
+			modal?: ModalInput;
 		};
 		const options: Record<string, unknown> = { ...rest };
 		if (modal) {

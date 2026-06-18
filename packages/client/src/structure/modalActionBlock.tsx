@@ -8,10 +8,14 @@ import {
 	actionKey,
 	COLOR_TO_VARIANT,
 } from "./actionBlock.shared";
+import { useClientActionContext } from "./actionContext";
+import { FormError, FormSkeleton } from "./defaults";
 import { parseKeybinding, registerKeybinding } from "./keybinding";
 import { ModalProvider, useNearestModal } from "./modalContext";
+import { ModalDataProvider } from "./modalDataContext";
 import { s } from "./structure";
 import type { StructureNode } from "./types";
+import { useAsyncQuery } from "./useAsyncQuery";
 
 export function ModalActionBlock({
 	options: opts,
@@ -60,14 +64,35 @@ export function ModalActionBlock({
 				size={modal.size}
 				data-testid={`modal-${actionKey(opts)}`}
 			>
-				{body && (
+				{body && open && (
 					<ModalProvider close={close} parent={parent}>
-						{renderNode(body)}
+						<ModalBody body={body} query={modal.query} />
 					</ModalProvider>
 				)}
 			</ModalShell>
 		</>
 	);
+}
+
+/**
+ * Renders the modal body. When the modal declares a backend query, fetch it on
+ * mount (the modal only mounts its body while open) and feed the result to the
+ * body via ModalDataProvider. No query → renders the body directly.
+ */
+function ModalBody({ body, query }: { body: StructureNode; query?: ActionModalOpts["query"] }) {
+	const ctx = useClientActionContext();
+	const { state } = useAsyncQuery({ query, ctx });
+
+	if (!query) {
+		return <>{renderNode(body)}</>;
+	}
+	if (state.kind === "loading") {
+		return <FormSkeleton />;
+	}
+	if (state.kind === "error") {
+		return <FormError message={state.message} />;
+	}
+	return <ModalDataProvider value={state.data}>{renderNode(body)}</ModalDataProvider>;
 }
 
 function resolveBody(body: ActionModalOpts["body"]): StructureNode | undefined {
