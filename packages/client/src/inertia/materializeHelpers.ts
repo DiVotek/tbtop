@@ -41,6 +41,27 @@ export function materializeRelation(node: StructureNode, basePath: string): Stru
 }
 
 // ---------------------------------------------------------------------------
+// Upload field materialization
+// ---------------------------------------------------------------------------
+
+export function materializeUpload(node: StructureNode, basePath: string): StructureNode {
+	const opts = node.options as Bag;
+	const fieldName = node.name as string;
+	const endpoint = `${basePath}/uploads/${fieldName}`;
+	return {
+		...node,
+		options: {
+			...opts,
+			upload: (actionCtx: ClientActionContext, file: File, signal?: AbortSignal) => {
+				const body = new FormData();
+				body.append("file", file);
+				return actionCtx.client.upload(endpoint, body, { signal });
+			},
+		},
+	};
+}
+
+// ---------------------------------------------------------------------------
 // Chart materialization
 // ---------------------------------------------------------------------------
 

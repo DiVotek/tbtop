@@ -99,6 +99,47 @@ describe("UploadForm", () => {
 		expect(captured.at(-1)).toBeNull();
 	});
 
+	test("Upload uses the injected upload closure and emits the unwrapped row", async () => {
+		const seen: File[] = [];
+		const row = {
+			id: "u9",
+			filename: "doc.png",
+			url: "/uploads/doc.png",
+			mimeType: "image/png",
+			filesize: 1,
+			width: 10,
+			height: 10,
+			sizes: [],
+		};
+		const captured: (UploadValue | null)[] = [];
+		const Wrap = clientWrapper(() => uploadResponse());
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={null}
+					onChange={(v) => captured.push(v)}
+					options={{
+						upload: async (_ctx, file) => {
+							seen.push(file);
+							return { data: row };
+						},
+					}}
+				/>
+			</Wrap>,
+		);
+		const file = new File(["x"], "doc.png", { type: "image/png" });
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		await userEvent.upload(input, file);
+		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
+		expect(seen[0]).toBe(file);
+		expect(captured.at(-1)).toMatchObject({
+			filename: "doc.png",
+			url: "/uploads/doc.png",
+			mimeType: "image/png",
+		});
+	});
+
 	test("Upload accept attribute forwards to the file input", () => {
 		const Wrap = clientWrapper(() => uploadResponse());
 		const { container } = render(
