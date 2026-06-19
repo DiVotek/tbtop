@@ -444,6 +444,21 @@ final class S
         return null;
     }
 
+    /**
+     * Find an Upload field by name, walking all registered forms.
+     */
+    public function findUploadField(string $fieldName): ?Upload
+    {
+        foreach ($this->forms as $form) {
+            $found = $form->findUploadField($fieldName);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
+    }
+
     // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------

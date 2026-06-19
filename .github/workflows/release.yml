@@ -4,9 +4,12 @@
 # merge to main, then run this workflow from main. It:
 #   1. reads the version from package.json
 #   2. fails if that tag already exists
-#   3. creates and pushes the tag  -> Packagist publishes tbtop/admin via webhook
-#   4. npm publish (Trusted Publishing / OIDC, no token) -> @tbtop/inertia-admin
+#   3. npm publish (Trusted Publishing / OIDC, no token) -> @tbtop/inertia-admin
+#   4. creates and pushes the tag  -> Packagist publishes tbtop/admin via webhook
 #   5. creates a GitHub Release with generated notes
+#
+# npm goes BEFORE the tag on purpose: a npm failure then leaves no dangling tag,
+# so a re-run stays clean (the tag-exists guard wouldn't block it).
 #
 # npm publish lives here (not a tag-triggered workflow) because a tag pushed by
 # Actions does not trigger other workflows. One button, one run, both packages.
@@ -32,12 +35,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Node 22 ships npm >= 11.5.1, required for OIDC publishing.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
+
+      # Node 22 bundles npm 10.9.x; OIDC publishing needs npm >= 11.5.1.
+      # Without this, npm silently skips OIDC and publish fails as a masked E404.
+      - name: Upgrade npm for OIDC
+        run: npm install -g npm@latest
 
       # prepublishOnly builds dist via tsup, which runs on bun.
       - name: Setup Bun
@@ -65,6 +72,11 @@ jobs:
           fi
           echo "$TAG is free"
 
+      # npm first: if this fails, no tag is pushed, so a re-run stays clean.
+      # OIDC is auto-detected; provenance is generated automatically.
+      - name: Publish to npm
+        run: npm publish
+
       # Pushing the tag lets Packagist publish the PHP package via its webhook.
       # Annotated tag needs a tagger identity — the runner has none by default.
       - name: Create and push tag
@@ -75,10 +87,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
-
-      # OIDC is auto-detected; provenance is generated automatically.
-      - name: Publish to npm
-        run: npm publish
 
       - name: Create GitHub Release
         env:

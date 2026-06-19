@@ -1,5 +1,6 @@
 import type { FormDataConvertible } from "@inertiajs/core";
 import { router } from "@inertiajs/react";
+import { unwrapData } from "../data/envelope";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects } from "./effects";
@@ -23,6 +24,9 @@ interface ActionSpec {
 	body?: StructureNode;
 	handler?: string;
 	params?: Bag;
+	/** Modal backend data query: fetch on open, feed the body. */
+	query?: boolean;
+	queryNeeds?: string[];
 }
 
 /**
@@ -52,7 +56,7 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 		return { ...base, url: href };
 	}
 	if (spec.type === "modal") {
-		return { ...base, modal: materializeModal(spec, ctx) };
+		return { ...base, modal: materializeModal(node.name ?? "", spec, ctx) };
 	}
 	const handler = buildHandler(node, spec, ctx);
 	if (confirm) {
@@ -108,19 +112,25 @@ function liftNestedErrors(errors: Record<string, string>): Record<string, string
 	return lifted;
 }
 
+/** Shape the row/selection/form payload an action endpoint expects. */
+function actionPayload(ctx: ClientActionContext, needs: string[]): Bag {
+	const payload: Bag = {};
+	if (needs.includes("form")) {
+		payload.form = ctx.form?.data ?? {};
+	}
+	if (needs.includes("row")) {
+		payload.row = ctx.row ?? {};
+	}
+	if (needs.includes("selection")) {
+		payload.selection = ctx.table?.selectedIds ?? [];
+	}
+	payload.params = ctx.params;
+	return payload;
+}
+
 function serverHandler(basePath: string, name: string, needs: string[]): Handler {
 	return async (ctx) => {
-		const payload: Bag = {};
-		if (needs.includes("form")) {
-			payload.form = ctx.form?.data ?? {};
-		}
-		if (needs.includes("row")) {
-			payload.row = ctx.row ?? {};
-		}
-		if (needs.includes("selection")) {
-			payload.selection = ctx.table?.selectedIds ?? [];
-		}
-		payload.params = ctx.params;
+		const payload = actionPayload(ctx, needs);
 		const body = (await ctx.client.post(`${basePath}/actions/${name}`, { payload })) as {
 			effects?: unknown;
 		};
@@ -128,12 +138,27 @@ function serverHandler(basePath: string, name: string, needs: string[]): Handler
 	};
 }
 
-function materializeModal(spec: ActionSpec, ctx: ActionMaterializeCtx): Bag {
-	return {
+function modalDataQuery(
+	basePath: string,
+	name: string,
+	needs: string[],
+): (ctx: ClientActionContext) => Promise<unknown> {
+	return (ctx) =>
+		ctx.client
+			.post(`${basePath}/actions/${name}/data`, { payload: actionPayload(ctx, needs) })
+			.then(unwrapData);
+}
+
+function materializeModal(name: string, spec: ActionSpec, ctx: ActionMaterializeCtx): Bag {
+	const modal: Bag = {
 		title: spec.title ?? "",
 		description: spec.description,
 		body: spec.body ? ctx.materializeNode(spec.body) : undefined,
 	};
+	if (spec.query) {
+		modal.query = modalDataQuery(ctx.basePath, name, spec.queryNeeds ?? ["row"]);
+	}
+	return modal;
 }
 
 /** A server action with `confirm` renders as a modal with confirm/cancel. */

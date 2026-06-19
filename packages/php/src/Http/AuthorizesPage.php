@@ -17,7 +17,7 @@ trait AuthorizesPage
 {
     private function authorizePageGate(Request $request): void
     {
-        $class = $request->route()?->parameter('tbtopPage');
+        $class = $request->route()->parameter('tbtopPage');
 
         if (is_string($class) && is_subclass_of($class, Page::class)) {
             $gate = $class::can();

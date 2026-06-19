@@ -119,6 +119,35 @@ class PostsIndexPage extends Page
                             ->redirect("/admin/posts/{$ctx->row['id']}/edit"),
                         needs: ['row'],
                     ),
+                    // Modal edit-in-place: visible only when the post is published
+                    // (hiddenIf), prefilled per row via the backend query closure,
+                    // and submitted by a server action that gets row + form.
+                    $s->action('editPublication')->label('Publication')
+                        ->hiddenIf('published', '=', false)
+                        ->modal('Edit publication', $s->form('postPublication', [
+                            $s->boolean('published')->label('Published')->rules('boolean'),
+                            $s->date('published_at')->label('Published at')
+                                ->rules('nullable|date')
+                                ->hiddenIf('published', '=', false),
+                            $s->actionsRow([
+                                $s->action('savePublication')->label('Save')->color('primary')
+                                    ->handle(function (ActionCtx $ctx): Effects {
+                                        Post::whereKey($ctx->row['id'] ?? null)->update([
+                                            'published' => (bool) ($ctx->form['published'] ?? false),
+                                            'published_at' => $ctx->form['published_at'] ?? null,
+                                        ]);
+
+                                        return Effects::make()
+                                            ->notify('Publication updated')
+                                            ->closeModal()
+                                            ->refreshTable('posts');
+                                    }, needs: ['row', 'form']),
+                            ]),
+                        ]))
+                        ->query(fn (ActionCtx $ctx): array => Post::query()
+                            ->whereKey($ctx->row['id'] ?? null)
+                            ->firstOrFail()
+                            ->only(['published', 'published_at']), needs: ['row']),
                     $s->action('delete')->label('Delete')->color('danger')
                         ->confirm('Delete post?', 'This cannot be undone.')
                         ->handle(function (ActionCtx $ctx): Effects {

@@ -7,6 +7,7 @@ import {
 	collectConstraints,
 	materializeChart,
 	materializeRelation,
+	materializeUpload,
 	tableQueryParams,
 } from "./materializeHelpers";
 
@@ -47,10 +48,29 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	if (node.kind === "select" && node.name) {
 		return materializeSelect({ ...node, meta }, ctx);
 	}
-	if (node.kind === "relation" && node.name) {
-		return materializeRelation({ ...node, meta }, ctx.basePath);
+	const named = materializeNamedField(node, meta, ctx.basePath);
+	if (named) {
+		return named;
 	}
 	return { ...node, meta, options: walkChildren(node.options as Bag, ctx) };
+}
+
+// basePath-bound named fields (relation, upload); null when this node is neither.
+function materializeNamedField(
+	node: StructureNode,
+	meta: NodeMeta,
+	basePath: string,
+): StructureNode | null {
+	if (!node.name) {
+		return null;
+	}
+	if (node.kind === "relation") {
+		return materializeRelation({ ...node, meta }, basePath);
+	}
+	if (node.kind === "upload") {
+		return materializeUpload({ ...node, meta }, basePath);
+	}
+	return null;
 }
 
 /**
@@ -162,7 +182,12 @@ function actionBags(raw: unknown, ctx: WalkCtx): Bag[] {
 	if (!Array.isArray(raw)) {
 		return [];
 	}
-	return (raw as StructureNode[]).map((n) => actionOptions(n, ctx));
+	// Route through walk() so each action's meta (compiled hidden/disabled
+	// ConditionFns) rides onto the config; actionOptions alone drops it.
+	return (raw as StructureNode[]).map((n) => {
+		const m = walk(n, ctx);
+		return { ...(m.options as Bag), meta: m.meta };
+	});
 }
 
 function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {

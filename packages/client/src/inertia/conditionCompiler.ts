@@ -138,9 +138,11 @@ function evalCompositeOp(
 // ---------------------------------------------------------------------------
 // Field resolution: flat key first, then dotted-path traversal
 // $root. prefix → resolve against root scope (falls back to data when absent)
+// $user. prefix → resolve against the current user (role-gated actions)
 // ---------------------------------------------------------------------------
 
 const ROOT_PREFIX = "$root.";
+const USER_PREFIX = "$user.";
 
 function resolve(ctx: ConditionContext, field: string): unknown {
 	if (field.startsWith(ROOT_PREFIX)) {
@@ -148,7 +150,16 @@ function resolve(ctx: ConditionContext, field: string): unknown {
 		const scope = ctx.root ?? ctx.data;
 		return resolveInScope(scope, stripped);
 	}
+	if (field.startsWith(USER_PREFIX)) {
+		const stripped = field.slice(USER_PREFIX.length);
+		const scope = isObject(ctx.user) ? ctx.user : {};
+		return resolveInScope(scope, stripped);
+	}
 	return resolveInScope(ctx.data, field);
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object";
 }
 
 function resolveInScope(scope: Record<string, unknown>, field: string): unknown {

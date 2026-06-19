@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Tbtop\Admin\Navigation\BreadcrumbsBuilder;
 use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Uploads\UploadFieldUrl;
 
 final class PageController
 {
@@ -17,9 +18,10 @@ final class PageController
         $this->authorizePageGate($request);
 
         $resolved = ResolvedPage::fromRequest($request);
+        $pageRoute = $request->route()->getName();
         $data = [];
         foreach ($resolved->s->collectedForms() as $name => $form) {
-            $data[$name] = $form->recordData();
+            $data[$name] = UploadFieldUrl::applyToRecord($form->recordData(), $form->uploadFields(), $pageRoute);
         }
 
         $layout = $resolved->page->layout();

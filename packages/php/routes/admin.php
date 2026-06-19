@@ -1,9 +1,13 @@
 <?php
 
+use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Support\Facades\Route;
 use Tbtop\Admin\Http\ActionController;
+use Tbtop\Admin\Http\ActionDataController;
 use Tbtop\Admin\Http\DataController;
 use Tbtop\Admin\Http\EditableColumnController;
+use Tbtop\Admin\Http\FieldUploadController;
+use Tbtop\Admin\Http\FieldUploadViewController;
 use Tbtop\Admin\Http\FormSubmitController;
 use Tbtop\Admin\Http\LocaleController;
 use Tbtop\Admin\Http\Media\MediaController;
@@ -41,6 +45,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/actions/{tbtopAction}", ActionController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.action');
+        Route::post("{$path}/actions/{tbtopAction}/data", ActionDataController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.actionData');
         Route::get("{$path}/tables/{tbtopTable}", TableController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.table');
@@ -53,6 +60,13 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/relation-search/{tbtopField}", RelationSearchController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.relationSearch');
+        Route::post("{$path}/uploads/{tbtopField}", FieldUploadController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.upload');
+        Route::get("{$path}/uploads/{tbtopField}/view", FieldUploadViewController::class)
+            ->defaults('tbtopPage', $class)
+            ->middleware(ValidateSignature::class)
+            ->name($class::slug().'.uploadView');
         Route::post("{$path}/cells/{tbtopTable}/{tbtopColumn}", EditableColumnController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.cell');

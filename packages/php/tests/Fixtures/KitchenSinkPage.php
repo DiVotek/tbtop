@@ -70,6 +70,10 @@ class KitchenSinkPage extends Page
                     $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
                     $s->richtext('content')->set('placeholder', 'Start typing…'),
+                    $s->upload('attachment')->label('Attachment')
+                        ->disk('public')->directory('docs')->visibility('public')
+                        ->accept('image/*')->maxSize(5 * 1024 * 1024)
+                        ->convertTo('webp')->quality(80),
                     $s->relation('category_id')
                         ->labelKey('name')
                         ->searchable()
@@ -120,13 +124,17 @@ class KitchenSinkPage extends Page
                         ->count(),
                 ])
                 ->rowActions([
-                    $s->action('edit')->label('Edit')->handle(fn () => Effects::make(), needs: ['row']),
+                    $s->action('edit')->label('Edit')
+                        ->hiddenIf('published', '=', true)
+                        ->handle(fn () => Effects::make(), needs: ['row']),
                     $s->action('delete')->label('Delete')->color('danger')
+                        ->disabledIf('locked', 'truthy')
                         ->confirm('Delete?', 'No undo.')
                         ->handle(fn () => Effects::make(), needs: ['row']),
                 ])
                 ->bulkActions([
                     $s->action('bulk-delete')->label('Delete selected')
+                        ->hiddenIf('role', '=', 'manager')
                         ->handle(fn () => Effects::make(), needs: ['selection']),
                 ])
                 ->query(fn () => null)

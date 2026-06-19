@@ -19,12 +19,18 @@ type ActionOptions = ActionOptionsBag;
 export function ActionBlock(props: ActionRenderProps) {
 	const opts = props.options;
 	if (opts.modal) {
-		return <ModalActionBlock options={opts} />;
+		return <ModalActionBlock options={opts} disabled={props.disabled} />;
 	}
-	return <PlainActionBlock options={opts} />;
+	return <PlainActionBlock options={opts} disabled={props.disabled} />;
 }
 
-function PlainActionBlock({ options: opts }: { options: ActionOptionsBag }) {
+function PlainActionBlock({
+	options: opts,
+	disabled = false,
+}: {
+	options: ActionOptionsBag;
+	disabled?: boolean;
+}) {
 	const ctx = useClientActionContext();
 	const formHandle = useNearestFormController();
 	const row = useNearestRow();
@@ -48,6 +54,20 @@ function PlainActionBlock({ options: opts }: { options: ActionOptionsBag }) {
 		const interpolated = interpolateTemplate(rawHref, row, actionKey(opts));
 		if (interpolated === null) {
 			return null;
+		}
+		// A disabled visit action renders a dead button, not an active Link.
+		if (disabled) {
+			return (
+				<Button
+					type="button"
+					ref={buttonRef}
+					variant={variant}
+					disabled
+					data-testid={`action-${actionKey(opts)}`}
+				>
+					{opts.label ?? opts.name}
+				</Button>
+			);
 		}
 		return (
 			<Button
@@ -78,7 +98,7 @@ function PlainActionBlock({ options: opts }: { options: ActionOptionsBag }) {
 			type="button"
 			ref={buttonRef}
 			variant={variant}
-			disabled={pending}
+			disabled={pending || disabled}
 			onClick={onClick}
 			data-testid={`action-${actionKey(opts)}`}
 		>

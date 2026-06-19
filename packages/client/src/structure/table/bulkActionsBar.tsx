@@ -2,10 +2,12 @@
  * BulkActionsBar — selected-count and bulk actions, shown only
  * once at least one row is selected.
  */
+import { useAuthUser } from "../../app/authUser";
 import { useTranslation } from "../../i18n/i18n";
 import { cn } from "../../lib/cn";
 import { ActionBlock } from "../actionBlock";
-import type { ActionConfig } from "../types";
+import { isNodeDisabled, isNodeHidden } from "../meta";
+import type { ActionConfig, ConditionContext } from "../types";
 
 interface BulkActionsBarProps {
 	actions: ActionConfig[];
@@ -14,7 +16,12 @@ interface BulkActionsBarProps {
 
 export function BulkActionsBar({ actions, selectedCount }: BulkActionsBarProps) {
 	const t = useTranslation();
+	const user = useAuthUser();
 	const active = selectedCount > 0;
+	// No single row → conditions key off the current user (role-gating) or the
+	// selection size; row-field conditions are simply false here.
+	const condCtx: ConditionContext = { record: undefined, data: { selectedCount }, user };
+	const visible = actions.filter((cfg) => !isNodeHidden(cfg.meta, condCtx));
 	// Slot stays mounted; contents appear only with a selection.
 	return (
 		<div
@@ -30,8 +37,13 @@ export function BulkActionsBar({ actions, selectedCount }: BulkActionsBarProps) 
 						{t("table.selected_count").replace("{count}", String(selectedCount))}
 					</span>
 					<div className="ml-auto flex items-center gap-2">
-						{actions.map((cfg) => (
-							<ActionBlock key={cfg.name} options={cfg} meta={{}} />
+						{visible.map((cfg) => (
+							<ActionBlock
+								key={cfg.name}
+								options={cfg}
+								meta={cfg.meta ?? {}}
+								disabled={isNodeDisabled(cfg.meta, condCtx)}
+							/>
 						))}
 					</div>
 				</>

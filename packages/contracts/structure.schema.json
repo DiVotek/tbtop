@@ -110,6 +110,40 @@
 					}
 				},
 				{
+					"if": { "properties": { "kind": { "const": "upload" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"accept": { "type": "string" },
+									"maxSize": { "type": "integer", "minimum": 0 },
+									"disk": { "type": "string" },
+									"directory": { "type": "string" },
+									"profile": { "type": "string" },
+									"visibility": {
+										"type": "string",
+										"enum": ["public", "private"]
+									},
+									"image": {
+										"type": "object",
+										"properties": {
+											"convertTo": {
+												"type": "string",
+												"enum": ["webp", "jpeg", "png"]
+											},
+											"quality": {
+												"type": "integer",
+												"minimum": 1,
+												"maximum": 100
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
 					"if": {
 						"properties": {
 							"kind": {
