@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use LogicException;
+use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
  * Fluent action surface — DSL boundary, method count is the API.
@@ -12,14 +13,13 @@ use LogicException;
  */
 final class ActionBuilder implements JsonSerializable
 {
+    use WithMeta;
+
     /** @var array<string, mixed> */
     private array $opts = [];
 
     /** @var array<string, mixed>|null */
     private ?array $spec = null;
-
-    /** @var array<string, mixed> */
-    private array $metaBag = [];
 
     private ?Closure $handler = null;
 
@@ -116,24 +116,6 @@ final class ActionBuilder implements JsonSerializable
     public function custom(string $handler, array $params = []): self
     {
         return $this->setSpec(['type' => 'custom', 'handler' => $handler, 'params' => $params]);
-    }
-
-    public function hiddenIf(Cond|string $condOrField, string $op = '', mixed $value = null): self
-    {
-        $this->metaBag['hiddenIf'] = $condOrField instanceof Cond
-            ? $condOrField
-            : Cond::fromShorthand($condOrField, $op, $value);
-
-        return $this;
-    }
-
-    public function disabledIf(Cond|string $condOrField, string $op = '', mixed $value = null): self
-    {
-        $this->metaBag['disabledIf'] = $condOrField instanceof Cond
-            ? $condOrField
-            : Cond::fromShorthand($condOrField, $op, $value);
-
-        return $this;
     }
 
     /**

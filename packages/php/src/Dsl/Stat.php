@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
  * Stat metric card — a scalar KPI tile with optional delta, icon, color, and sparkline.
@@ -11,6 +12,8 @@ use JsonSerializable;
  */
 final class Stat implements JsonSerializable
 {
+    use WithMeta;
+
     private mixed $value = null;
 
     private ?string $description = null;
@@ -104,7 +107,7 @@ final class Stat implements JsonSerializable
             $options['sparkline'] = $this->sparkline;
         }
 
-        return new Node('stat', $options);
+        return new Node('stat', $options, null, $this->metaBag);
     }
 
     /** @return array<string, mixed> */
