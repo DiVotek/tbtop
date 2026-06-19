@@ -3,6 +3,12 @@
 	"version": "0.2.2",
 	"description": "Tabletop admin render layer for Laravel + Inertia: server-described pages, block registry, field clients.",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/DiVotek/tbtop.git",
+		"directory": "packages/client"
+	},
+	"homepage": "https://github.com/DiVotek/tbtop#readme",
 	"type": "module",
 	"sideEffects": [
 		"**/*.css"
