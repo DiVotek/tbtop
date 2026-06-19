@@ -2,7 +2,7 @@
  * MediaGrid — thumbnail grid with search, pagination, drag-and-drop upload,
  * keep-previous-data overlay, and empty state.
  */
-import { FileIcon, Loader2Icon, UploadIcon } from "lucide-react";
+import { FileIcon, LayoutGridIcon, ListIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { type DragEvent, type ReactNode, useCallback, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
@@ -10,15 +10,22 @@ import { TablePagination } from "../structure/table/pagination";
 import type { TablePaginationOptions } from "../structure/types";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { FolderCard } from "./folderCard";
+import { MediaList } from "./mediaList";
+import { MediaThumb } from "./mediaThumb";
 import type { MediaItem } from "./types";
-import type { MediaQueryParams, MediaQueryState } from "./useMediaApi";
-import { formatBytes, isImageMime, uploadMediaItem, useMediaClient } from "./useMediaApi";
+import { UploadProgressList } from "./uploadProgressList";
+import type { MediaQueryParams, MediaQueryState, MediaSortColumn } from "./useMediaApi";
+import { formatBytes } from "./useMediaApi";
+import { useUploadQueue } from "./useUploadQueue";
+import { useViewMode } from "./useViewMode";
 
 interface MediaGridProps {
 	state: MediaQueryState;
 	params: MediaQueryParams;
 	onChangeParams: (patch: Partial<MediaQueryParams>) => void;
 	onSelect: (item: MediaItem) => void;
+	onSelectFolder: (id: string) => void;
 	onUploaded: (item: MediaItem) => void;
 	folderId: string | null;
 	onOpenImportUrl: () => void;
@@ -33,18 +40,18 @@ export function MediaGrid({
 	params,
 	onChangeParams,
 	onSelect,
+	onSelectFolder,
 	onUploaded,
 	folderId,
 	onOpenImportUrl,
 	selectedIds,
 }: MediaGridProps): ReactNode {
 	const t = useTranslation();
-	const client = useMediaClient();
+	const { view, setView } = useViewMode();
 	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [uploading, setUploading] = useState(false);
-	const [uploadError, setUploadError] = useState<string | null>(null);
 	const [dragOver, setDragOver] = useState(false);
+	const { tasks, uploading, uploadFiles } = useUploadQueue({ folderId, onUploaded });
 
 	// ─── Search debounce ──────────────────────────────────────────────────────
 
@@ -60,22 +67,15 @@ export function MediaGrid({
 		[onChangeParams],
 	);
 
-	// ─── Upload ───────────────────────────────────────────────────────────────
+	// ─── Sort ─────────────────────────────────────────────────────────────────
 
-	async function uploadFiles(files: FileList | File[]) {
-		setUploading(true);
-		setUploadError(null);
-		const arr = Array.from(files);
-		for (const file of arr) {
-			try {
-				const item = await uploadMediaItem(client, { file, folderId });
-				onUploaded(item);
-			} catch (err) {
-				setUploadError(err instanceof Error ? err.message : t("state.error"));
-			}
-		}
-		setUploading(false);
-	}
+	const handleSort = useCallback(
+		(column: MediaSortColumn) => {
+			const nextDir = params.sort === column && params.dir === "asc" ? "desc" : "asc";
+			onChangeParams({ sort: column, dir: nextDir, page: 1 });
+		},
+		[onChangeParams, params.sort, params.dir],
+	);
 
 	// ─── Drag and drop ────────────────────────────────────────────────────────
 
@@ -104,8 +104,11 @@ export function MediaGrid({
 
 	const isReloading = state.kind === "reloading";
 	const isLoading = state.kind === "loading";
-	const items = state.kind === "loaded" || state.kind === "reloading" ? state.data.data : [];
-	const total = state.kind === "loaded" || state.kind === "reloading" ? state.data.total : 0;
+	const hasData = state.kind === "loaded" || state.kind === "reloading";
+	const items = hasData ? state.data.data : [];
+	const folders = hasData ? (state.data.folders ?? []) : [];
+	const total = hasData ? state.data.total : 0;
+	const isEmpty = items.length === 0 && folders.length === 0;
 
 	const queryParams = {
 		page: params.page,
@@ -152,17 +155,37 @@ export function MediaGrid({
 				>
 					{t("media.toolbar.import_url")}
 				</Button>
+
+				{/* View toggle */}
+				<div className="ml-auto flex items-center gap-1">
+					<Button
+						type="button"
+						variant={view === "grid" ? "secondary" : "ghost"}
+						size="icon-sm"
+						aria-pressed={view === "grid"}
+						aria-label={t("media.view.grid")}
+						title={t("media.view.grid")}
+						onClick={() => setView("grid")}
+						data-testid="media-view-grid"
+					>
+						<LayoutGridIcon className="h-4 w-4" />
+					</Button>
+					<Button
+						type="button"
+						variant={view === "list" ? "secondary" : "ghost"}
+						size="icon-sm"
+						aria-pressed={view === "list"}
+						aria-label={t("media.view.list")}
+						title={t("media.view.list")}
+						onClick={() => setView("list")}
+						data-testid="media-view-list"
+					>
+						<ListIcon className="h-4 w-4" />
+					</Button>
+				</div>
 			</div>
 
-			{uploadError && (
-				<p
-					role="alert"
-					className="text-sm text-destructive"
-					data-testid="media-upload-error"
-				>
-					{uploadError}
-				</p>
-			)}
+			<UploadProgressList tasks={tasks} />
 
 			{/* Grid area with drag-and-drop */}
 			<div
@@ -184,7 +207,7 @@ export function MediaGrid({
 					</div>
 				)}
 
-				{!isLoading && items.length === 0 && (
+				{!isLoading && isEmpty && (
 					<div
 						className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground"
 						data-testid="media-empty"
@@ -194,8 +217,11 @@ export function MediaGrid({
 					</div>
 				)}
 
-				{!isLoading && items.length > 0 && (
+				{!isLoading && !isEmpty && view === "grid" && (
 					<div className="grid grid-cols-3 gap-3 p-1 sm:grid-cols-4 md:grid-cols-6">
+						{folders.map((folder) => (
+							<FolderCard key={folder.id} folder={folder} onSelect={onSelectFolder} />
+						))}
 						{items.map((item) => (
 							<MediaCard
 								key={item.id}
@@ -205,6 +231,19 @@ export function MediaGrid({
 							/>
 						))}
 					</div>
+				)}
+
+				{!isLoading && !isEmpty && view === "list" && (
+					<MediaList
+						folders={folders}
+						items={items}
+						onSelect={onSelect}
+						onSelectFolder={onSelectFolder}
+						sort={params.sort}
+						dir={params.dir}
+						onSort={handleSort}
+						selectedIds={selectedIds}
+					/>
 				)}
 
 				{/* Keep-previous overlay */}
@@ -245,8 +284,6 @@ interface MediaCardProps {
 }
 
 function MediaCard({ item, onSelect, selected = false }: MediaCardProps): ReactNode {
-	const thumb = isImageMime(item.mime) ? (item.sizes.profile ?? item.url) : null;
-
 	return (
 		<button
 			type="button"
@@ -259,19 +296,12 @@ function MediaCard({ item, onSelect, selected = false }: MediaCardProps): ReactN
 			aria-pressed={selected}
 		>
 			<div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-muted">
-				{thumb ? (
-					<img
-						src={thumb}
-						alt={item.alt ?? item.name}
-						className="h-full w-full object-cover"
-						data-testid={`media-thumb-${item.id}`}
-					/>
-				) : (
-					<FileIcon
-						className="h-8 w-8 text-muted-foreground"
-						data-testid={`media-icon-${item.id}`}
-					/>
-				)}
+				<MediaThumb
+					item={item}
+					size="md"
+					imgTestId={`media-thumb-${item.id}`}
+					iconTestId={`media-icon-${item.id}`}
+				/>
 			</div>
 			<p className="truncate text-xs font-medium leading-tight" title={item.name}>
 				{item.name}

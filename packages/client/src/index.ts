@@ -35,6 +35,8 @@ export { compileConstraints, type FieldConstraints } from "./inertia/constraints
 export { defineCustomAction } from "./inertia/customActions";
 export { executeEffects, readEffects, type ServerEffect } from "./inertia/effects";
 export { type MaterializeInput, materialize } from "./inertia/materialize";
+export type { FilePreviewPredicate, FilePreviewRenderer } from "./media/filePreview";
+export { FilePreview, registerFilePreview } from "./media/filePreview";
 export type { MediaFolder, MediaItem } from "./media/types";
 export type {
 	BlockBehavior,

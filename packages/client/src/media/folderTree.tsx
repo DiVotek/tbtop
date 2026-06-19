@@ -2,7 +2,7 @@
  * FolderTree — left-panel folder navigation with create/rename/delete via context menu.
  * Folder mutations use proper dialogs instead of window.prompt / window.confirm.
  */
-import { FolderIcon, FolderOpenIcon, MoreHorizontalIcon } from "lucide-react";
+import { FolderIcon, FolderOpenIcon, FolderPlusIcon, MoreHorizontalIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
@@ -142,11 +142,29 @@ export function FolderTree({
 
 	return (
 		<div className="flex flex-col gap-1 p-2" data-testid="folder-tree">
+			{/* Header: always-visible New folder action (creates a root folder) */}
+			<div className="flex items-center justify-between px-1 pb-1">
+				<span className="text-xs font-medium text-muted-foreground">
+					{t("media.folder.heading")}
+				</span>
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="h-6 gap-1 px-1.5 text-xs"
+					onClick={() => setDialog({ kind: "create", parentId: null })}
+					data-testid="folder-new"
+				>
+					<FolderPlusIcon className="h-3.5 w-3.5" />
+					{t("media.folder.new")}
+				</Button>
+			</div>
+
 			{/* Root (All files) */}
 			<div
 				{...rowButtonProps(() => onSelect(null))}
 				className={cn(
-					"flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+					"group flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
 					selectedId === null && "bg-muted font-medium",
 				)}
 				data-testid="folder-all"
@@ -236,7 +254,7 @@ function FolderItem({
 			<div
 				{...rowButtonProps(() => onSelect(node.id))}
 				className={cn(
-					"flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+					"group flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
 					isSelected && "bg-muted font-medium",
 				)}
 				style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}

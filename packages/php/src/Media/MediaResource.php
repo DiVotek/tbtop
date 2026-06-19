@@ -16,7 +16,7 @@ use Tbtop\Admin\Uploads\UploadUrl;
 final class MediaResource
 {
     /**
-     * @return array{id: int, name: string, folderId: int|null, mime: string, size: int, url: string, sizes: array<string, string>, alt: string|null, createdAt: string}
+     * @return array{id: int, name: string, folderId: int|null, mime: string, size: int, url: string, sizes: array<string, string>, alt: string|null, description: string|null, tags: array<int, string>, createdAt: string}
      */
     public static function toItem(Media $media): array
     {
@@ -36,6 +36,8 @@ final class MediaResource
             'url' => UploadUrl::make($disk, (string) $media->path),
             'sizes' => $sizes,
             'alt' => $media->alt !== null ? (string) $media->alt : null,
+            'description' => $media->description !== null ? (string) $media->description : null,
+            'tags' => is_array($media->tags) ? $media->tags : [],
             'createdAt' => $media->created_at?->toIso8601String() ?? '',
         ];
     }

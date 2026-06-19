@@ -46,11 +46,36 @@ export type MediaQueryState =
 	| { kind: "reloading"; data: MediaListResponse }
 	| { kind: "error"; message: string };
 
+export type MediaSortColumn = "name" | "size" | "created_at";
+export type MediaSortDir = "asc" | "desc";
+
 export interface MediaQueryParams {
 	folder: string | null;
 	search: string;
 	page: number;
 	perPage: number;
+	sort?: MediaSortColumn;
+	dir?: MediaSortDir;
+}
+
+// ─── Query building ───────────────────────────────────────────────────────────
+
+/** Serialize media query params into a sparse request query object. */
+function buildMediaQuery(p: MediaQueryParams): Record<string, string> {
+	const query: Record<string, string | number> = { page: p.page, perPage: p.perPage };
+	if (p.folder !== null) {
+		query.folder = p.folder;
+	}
+	if (p.search) {
+		query.search = p.search;
+	}
+	if (p.sort) {
+		query.sort = p.sort;
+	}
+	if (p.dir) {
+		query.dir = p.dir;
+	}
+	return query as Record<string, string>;
 }
 
 // ─── useMediaItems ────────────────────────────────────────────────────────────
@@ -76,19 +101,9 @@ export function useMediaItems(params: MediaQueryParams): {
 			}
 			return { kind: "loading" };
 		});
-		const p = paramsRef.current;
-		const query: Record<string, string | number> = {
-			page: p.page,
-			perPage: p.perPage,
-		};
-		if (p.folder !== null) {
-			query.folder = p.folder;
-		}
-		if (p.search) {
-			query.search = p.search;
-		}
+		const query = buildMediaQuery(paramsRef.current);
 
-		client.get("/media", query as Record<string, string>).then(
+		client.get("/media", query).then(
 			(raw) => {
 				if (!cancelled) {
 					setState({ kind: "loaded", data: raw as MediaListResponse });
@@ -104,7 +119,16 @@ export function useMediaItems(params: MediaQueryParams): {
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [client, tick, params.folder, params.search, params.page, params.perPage]);
+	}, [
+		client,
+		tick,
+		params.folder,
+		params.search,
+		params.page,
+		params.perPage,
+		params.sort,
+		params.dir,
+	]);
 
 	return { state, refetch };
 }

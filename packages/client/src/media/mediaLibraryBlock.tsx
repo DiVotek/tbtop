@@ -95,6 +95,7 @@ export function MediaLibraryBlock({
 						params={queryParams}
 						onChangeParams={handleChangeParams}
 						onSelect={setDetailItem}
+						onSelectFolder={handleFolderSelect}
 						onUploaded={handleUploaded}
 						folderId={selectedFolder}
 						onOpenImportUrl={() => setImportUrlOpen(true)}

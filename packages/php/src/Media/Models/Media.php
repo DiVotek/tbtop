@@ -16,6 +16,8 @@ use Illuminate\Support\Carbon;
  * @property int $size
  * @property array<string, string>|null $sizes
  * @property string|null $alt
+ * @property string|null $description
+ * @property array<int, string>|null $tags
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -31,6 +33,7 @@ class Media extends Model
         return [
             'size' => 'integer',
             'sizes' => 'array',
+            'tags' => 'array',
         ];
     }
 

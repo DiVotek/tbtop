@@ -72,6 +72,59 @@ describe("FolderTree: row markup", () => {
 	});
 });
 
+// ─── New folder header button ───────────────────────────────────────────────
+
+describe("FolderTree: New folder button", () => {
+	// Regression: folder creation was only reachable via a kebab menu whose
+	// trigger was opacity-0 with no `group` on the row, so it never appeared on
+	// hover — creating a folder was effectively impossible. An always-visible
+	// header button now creates a root folder without hovering.
+	test("clicking New folder opens the create dialog and POSTs a root folder", async () => {
+		const user = userEvent.setup({ delay: null });
+		const posts: unknown[] = [];
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "POST" && req.url.includes("/media/folders")) {
+				const body = await req.json();
+				posts.push(body);
+				return new Response(
+					JSON.stringify({
+						id: "f99",
+						name: (body as Record<string, string>).name,
+						parentId: null,
+					}),
+					{ status: 201, headers: { "Content-Type": "application/json" } },
+				);
+			}
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<FolderTree
+					folders={[]}
+					selectedId={null}
+					onSelect={() => {}}
+					onMutated={() => {}}
+				/>
+			</Wrap>,
+		);
+
+		await act(async () => {
+			await user.click(getByTestId("folder-new"));
+		});
+		await findByTestId("folder-name-dialog");
+		const input = getByTestId("folder-name-input");
+		await act(async () => {
+			await user.type(input, "Contracts");
+			await user.click(getByTestId("folder-name-confirm"));
+		});
+
+		await waitFor(() => expect(posts).toHaveLength(1));
+		expect(posts[0]).toEqual({ name: "Contracts" });
+	});
+});
+
 // ─── Create via dialog ────────────────────────────────────────────────────────
 
 describe("FolderTree: create folder dialog", () => {

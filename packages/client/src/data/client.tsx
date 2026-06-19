@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { errorFromBody } from "./envelope";
+import { defaultXhrFactory, uploadViaXhr, type XhrFactory } from "./uploadXhr";
 
 export type QueryValue = string | number | boolean | null | undefined;
 
@@ -7,6 +8,7 @@ export type QueryParams = Record<string, QueryValue>;
 
 export interface UploadOptions {
 	signal?: AbortSignal;
+	onProgress?: (loaded: number, total: number) => void;
 }
 
 // Thin untyped JSON client over the Laravel admin API. Errors decode to the
@@ -22,11 +24,14 @@ export interface AdminClient {
 export interface CreateAdminClientOptions {
 	baseUrl?: string;
 	fetch?: typeof fetch;
+	/** Factory for the upload transport; injectable for tests. */
+	xhr?: XhrFactory;
 }
 
 export function createAdminClient(options: CreateAdminClientOptions = {}): AdminClient {
 	const base = trimTrailingSlash(options.baseUrl ?? "");
 	const impl = options.fetch ?? defaultFetch;
+	const xhrFactory = options.xhr ?? defaultXhrFactory;
 	return {
 		get: (path, query) => request({ impl, base, method: "GET", path: withQuery(path, query) }),
 		post: (path, body) =>
@@ -35,12 +40,13 @@ export function createAdminClient(options: CreateAdminClientOptions = {}): Admin
 			request({ impl, base, method: "PATCH", path, payload: { json: body } }),
 		delete: (path) => request({ impl, base, method: "DELETE", path }),
 		upload: (path, formData, opts) =>
-			request({
-				impl,
-				base,
-				method: "POST",
-				path,
-				payload: { formData, signal: opts?.signal },
+			uploadViaXhr({
+				xhrFactory,
+				url: `${base}${path}`,
+				formData,
+				headers: buildHeaders({ formData }),
+				signal: opts?.signal,
+				onProgress: opts?.onProgress,
 			}),
 	};
 }
@@ -56,6 +62,8 @@ export interface ClientProviderProps {
 	apiBase?: string;
 	client?: AdminClient;
 	fetch?: typeof fetch;
+	/** Upload transport factory; injectable for tests. */
+	xhr?: XhrFactory;
 	children: ReactNode;
 }
 
@@ -67,11 +75,12 @@ export function ClientProvider({
 	apiBase = "",
 	client,
 	fetch: fetchImpl,
+	xhr,
 	children,
 }: ClientProviderProps) {
 	const resolved = useMemo<AdminClient>(
-		() => client ?? createAdminClient({ baseUrl, fetch: fetchImpl }),
-		[baseUrl, client, fetchImpl],
+		() => client ?? createAdminClient({ baseUrl, fetch: fetchImpl, xhr }),
+		[baseUrl, client, fetchImpl, xhr],
 	);
 	return (
 		<ClientContext.Provider value={resolved}>

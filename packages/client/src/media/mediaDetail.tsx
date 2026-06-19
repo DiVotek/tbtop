@@ -2,17 +2,20 @@
  * MediaDetail — side panel / responsive dialog for a selected MediaItem.
  * Shows preview, inline name/alt editing, folder move, replace, delete.
  */
-import { FileIcon, Trash2Icon, UploadIcon } from "lucide-react";
+import { Trash2Icon, UploadIcon } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
+import { OpenTagsForm } from "../fields/tagsOpen";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { ModalShell } from "../ui/modal-shell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
+import { FilePreview } from "./filePreview";
 import type { MediaFolder, MediaItem } from "./types";
 import {
 	deleteMediaItem,
 	formatBytes,
-	isImageMime,
 	patchMediaItem,
 	replaceMediaItem,
 	useMediaClient,
@@ -71,13 +74,13 @@ function DetailShell({
 
 	const [name, setName] = useState(item.name);
 	const [alt, setAlt] = useState(item.alt ?? "");
+	const [description, setDescription] = useState(item.description ?? "");
+	const [tags, setTags] = useState<string[]>(item.tags ?? []);
 	const [folderId, setFolderId] = useState<string>(item.folderId ?? "__root__");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const replaceRef = useRef<HTMLInputElement>(null);
-
-	const thumb = isImageMime(item.mime) ? (item.sizes.profile ?? item.url) : null;
 
 	async function handleSave() {
 		setBusy(true);
@@ -86,6 +89,8 @@ function DetailShell({
 			const updated = await patchMediaItem(client, item.id, {
 				name: name.trim() || item.name,
 				alt: alt || undefined,
+				description: description.trim() === "" ? null : description,
+				tags,
 				folderId: folderId === "__root__" ? null : folderId,
 			});
 			onUpdated(updated);
@@ -198,19 +203,7 @@ function DetailShell({
 		>
 			{/* Preview */}
 			<div className="flex items-center justify-center rounded-md border bg-muted/40 p-4">
-				{thumb ? (
-					<img
-						src={thumb}
-						alt={item.alt ?? item.name}
-						className="max-h-48 max-w-full rounded object-contain"
-						data-testid="detail-preview-img"
-					/>
-				) : (
-					<FileIcon
-						className="h-16 w-16 text-muted-foreground"
-						data-testid="detail-preview-icon"
-					/>
-				)}
+				<FilePreview item={item} />
 			</div>
 
 			{/* Metadata */}
@@ -228,9 +221,8 @@ function DetailShell({
 				<label className="text-sm font-medium" htmlFor="detail-name">
 					{t("media.detail.name")}
 				</label>
-				<input
+				<Input
 					id="detail-name"
-					className="h-9 w-full rounded-md border px-3 py-1 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
 					disabled={busy}
@@ -243,14 +235,42 @@ function DetailShell({
 				<label className="text-sm font-medium" htmlFor="detail-alt">
 					{t("media.detail.alt")}
 				</label>
-				<textarea
+				<Textarea
 					id="detail-alt"
-					className="w-full rounded-md border px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
 					rows={2}
 					value={alt}
 					onChange={(e) => setAlt(e.target.value)}
 					disabled={busy}
 					data-testid="detail-alt-input"
+				/>
+			</div>
+
+			{/* Description */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-sm font-medium" htmlFor="detail-description">
+					{t("media.detail.description")}
+				</label>
+				<Textarea
+					id="detail-description"
+					rows={3}
+					value={description}
+					onChange={(e) => setDescription(e.target.value)}
+					disabled={busy}
+					data-testid="detail-description-input"
+				/>
+			</div>
+
+			{/* Tags */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-sm font-medium" htmlFor="detail-tags">
+					{t("media.detail.tags")}
+				</label>
+				<OpenTagsForm
+					id="detail-tags"
+					name="tags"
+					value={tags}
+					onChange={(next) => setTags(next ?? [])}
+					disabled={busy}
 				/>
 			</div>
 
