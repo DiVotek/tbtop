@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Support\Facades\Route;
 use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\ActionDataController;
@@ -63,7 +64,7 @@ $registerPageRoutes = static function (array $pages): void {
             ->name($class::slug().'.upload');
         Route::get("{$path}/uploads/{tbtopField}/view", FieldUploadViewController::class)
             ->defaults('tbtopPage', $class)
-            ->middleware(\Illuminate\Routing\Middleware\ValidateSignature::class)
+            ->middleware(ValidateSignature::class)
             ->name($class::slug().'.uploadView');
         Route::post("{$path}/cells/{tbtopTable}/{tbtopColumn}", EditableColumnController::class)
             ->defaults('tbtopPage', $class)
