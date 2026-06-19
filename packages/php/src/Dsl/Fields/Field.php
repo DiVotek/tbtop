@@ -3,10 +3,11 @@
 namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
-use InvalidArgumentException;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\CollectsRules;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\OptionList;
 use Tbtop\Admin\Validation\ConstraintMap;
 
 /**
@@ -17,6 +18,7 @@ use Tbtop\Admin\Validation\ConstraintMap;
  */
 abstract class Field implements JsonSerializable
 {
+    use CollectsRules;
     use WithMeta;
 
     /** @var array<string, mixed> */
@@ -70,13 +72,7 @@ abstract class Field implements JsonSerializable
     /** @param  string|list<string>  $rules */
     public function rules(string|array $rules): static
     {
-        if (is_string($rules) && str_contains($rules, 'regex:')) {
-            throw new InvalidArgumentException(
-                "Field \"{$this->name}\": pass regex rules as an array - '|' inside the pattern would be split.",
-            );
-        }
-        $list = is_string($rules) ? explode('|', $rules) : $rules;
-        $this->ruleList = array_values(array_unique([...$this->ruleList, ...$list]));
+        $this->ruleList = $this->appendRules($this->ruleList, $rules);
 
         return $this;
     }
@@ -132,10 +128,7 @@ abstract class Field implements JsonSerializable
      */
     protected static function normalizeOptionValues(array $options): array
     {
-        return array_map(
-            fn (array $option) => ['value' => (string) $option['value']] + $option,
-            $options,
-        );
+        return OptionList::normalize($options);
     }
 
     /**
