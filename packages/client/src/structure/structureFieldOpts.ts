@@ -145,11 +145,17 @@ export interface SlugOpts {
 }
 
 export interface UploadOpts {
-	entity: string;
 	label?: string;
 	required?: boolean;
+	entity?: string; // legacy preset ref
+	profile?: string;
+	disk?: string;
+	directory?: string;
+	visibility?: "public" | "private";
 	accept?: string;
-	maxFileSize?: number;
+	maxSize?: number;
+	maxFileSize?: number; // legacy alias
+	image?: { convertTo?: "webp" | "jpeg" | "png"; quality?: number };
 }
 
 export interface RepeaterOpts<TBuilders = unknown> {

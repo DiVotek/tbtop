@@ -204,3 +204,35 @@ describe("materialize table", () => {
 		expect(result).toEqual({ data: [{ id: 1 }], total: 1 });
 	});
 });
+
+describe("materialize upload", () => {
+	it("injects an upload closure that posts the file to the page-scoped endpoint", async () => {
+		let captured = null as { path: string; formData: FormData } | null;
+		const client = {
+			upload: async (path: string, formData: FormData) => {
+				captured = { path, formData };
+				return { data: { id: "u1" } };
+			},
+		} as unknown as AdminClient;
+
+		const out = materialize(node("upload", { entity: "media" }, "cover"), BASE);
+		const upload = opts(out).upload as (
+			ctx: ClientActionContext,
+			file: File,
+			signal?: AbortSignal,
+		) => Promise<unknown>;
+		const file = new File(["x"], "pic.png", { type: "image/png" });
+		const result = await upload(fakeCtx({ client }), file);
+
+		expect(captured?.path).toBe("/admin/posts/uploads/cover");
+		expect(captured?.formData.get("file")).toBe(file);
+		expect(result).toEqual({ data: { id: "u1" } });
+	});
+
+	it("preserves passthrough options alongside the injected closure", () => {
+		const out = materialize(node("upload", { accept: "image/*", maxSize: 100 }, "cover"), BASE);
+		expect(opts(out).accept).toBe("image/*");
+		expect(opts(out).maxSize).toBe(100);
+		expect(typeof opts(out).upload).toBe("function");
+	});
+});
