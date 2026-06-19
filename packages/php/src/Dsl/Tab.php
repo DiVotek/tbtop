@@ -2,7 +2,7 @@
 
 namespace Tbtop\Admin\Dsl;
 
-use Closure;
+use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 
 /**
  * Predefined table tab — a named server-side query scope rendered as a tab
@@ -11,9 +11,9 @@ use Closure;
  */
 final class Tab
 {
-    private ?string $label = null;
+    use HasServerQuery;
 
-    private ?Closure $query = null;
+    private ?string $label = null;
 
     private bool $count = false;
 
@@ -31,25 +31,12 @@ final class Tab
         return $this;
     }
 
-    /** Scope applied to the table query when this tab is active. */
-    public function query(Closure $query): self
-    {
-        $this->query = $query;
-
-        return $this;
-    }
-
     /** Opt into a count badge for this tab (off by default). */
     public function count(bool $count = true): self
     {
         $this->count = $count;
 
         return $this;
-    }
-
-    public function queryClosure(): ?Closure
-    {
-        return $this->query;
     }
 
     public function hasCount(): bool

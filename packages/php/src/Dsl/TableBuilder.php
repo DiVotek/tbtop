@@ -2,9 +2,9 @@
 
 namespace Tbtop\Admin\Dsl;
 
-use Closure;
 use InvalidArgumentException;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Fields\Field;
 
 /**
@@ -14,6 +14,8 @@ use Tbtop\Admin\Dsl\Fields\Field;
  */
 final class TableBuilder implements JsonSerializable
 {
+    use HasServerQuery;
+
     /**
      * All column descriptors, including hidden ones (they need to participate
      * in projection decisions but not in wire serialization).
@@ -35,8 +37,6 @@ final class TableBuilder implements JsonSerializable
     private array $tabObjects = [];
 
     private ?string $filtersIn = null;
-
-    private ?Closure $query = null;
 
     private int $paginatePerPage = 25;
 
@@ -71,13 +71,6 @@ final class TableBuilder implements JsonSerializable
                 );
             }
         }
-
-        return $this;
-    }
-
-    public function query(Closure $query): self
-    {
-        $this->query = $query;
 
         return $this;
     }
@@ -231,11 +224,6 @@ final class TableBuilder implements JsonSerializable
         $this->opts[$key] = $value;
 
         return $this;
-    }
-
-    public function queryClosure(): ?Closure
-    {
-        return $this->query;
     }
 
     /**

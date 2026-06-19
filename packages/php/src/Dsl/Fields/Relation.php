@@ -2,24 +2,15 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
-use Closure;
+use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 
 final class Relation extends Field
 {
-    /** Server-only closure for building the Eloquent query — never serialized. */
-    private ?Closure $queryClosure = null;
+    use HasServerQuery;
 
     protected function kind(): string
     {
         return 'relation';
-    }
-
-    /** Provide an Eloquent query builder for the related records. */
-    public function query(callable $callback): static
-    {
-        $this->queryClosure = Closure::fromCallable($callback);
-
-        return $this;
     }
 
     public function searchable(bool $value = true): static
@@ -37,11 +28,5 @@ final class Relation extends Field
     public function getLabelKey(): string
     {
         return (string) ($this->opts['labelKey'] ?? 'name');
-    }
-
-    /** Returns the query closure for server-side use (never sent to the wire). */
-    public function queryClosure(): ?Closure
-    {
-        return $this->queryClosure;
     }
 }
