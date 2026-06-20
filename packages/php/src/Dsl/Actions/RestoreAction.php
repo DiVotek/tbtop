@@ -41,6 +41,6 @@ final class RestoreAction
             $name,
             fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->restore(),
             Effects::make()->notify('Restored selected')->refreshTable(),
-        )->label('Restore');
+        )->label('Restore')->color('gray');
     }
 }
