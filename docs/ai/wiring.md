@@ -69,6 +69,8 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
 | `POST` | `{page-path}/relation-search/{tbtopField}` | `{slug}.relationSearch` | `RelationSearchController` | JSON | search mode: `{options: [{value, label}]}` · resolve mode: `{option: {value, label}\|null}` |
+| `POST` | `{page-path}/cells/{tbtopTable}/{tbtopColumn}` | `{slug}.cell` | `EditableColumnController` | JSON | `{effects: Effect[]}` |
+| `POST` | `{page-path}/tables/{tbtopTable}/reorder` | `{slug}.tableReorder` | `TableReorderController` | JSON | `{effects: Effect[]}` (refreshTable) |
 
 **`RelationSearchController` modes** — distinguished by request body: send
 `{search: string}` for a search, or `{value: string}` to resolve a single
@@ -81,6 +83,17 @@ result to the modal body (a form prefills from it — returned keys must match
 field names). `query`/`queryNeeds` are part of the modal branch of
 `actionSpec` in the schema. The prebuilt `EditAction` (`Dsl\Actions`) wraps
 this whole shape.
+
+**Row reordering** — `TableBuilder::reorderable('sort_order')` emits
+`options.reorder: {column}` on the table node and makes that column the default
+sort (so a no-sort reload returns the persisted order). The client mounts a
+dnd-kit drag context only while reordering is *allowed*: no sort (or sort ==
+`{column}:asc`), no active filters/search, and the default tab — otherwise the
+handles hide and a disabled-grip hint is shown (Filament behaviour). On drop the
+client POSTs `{ids: [...]}`; `TableReorderController` validates every id is
+inside the table's query scope (rejects 422 otherwise — the reorder analogue of
+the editable-cell scope guard), then writes each id's index to `column` in one
+transaction. Hitting a non-reorderable table is a 422.
 
 **Form submit effects** — `FormSubmitController` flashes a `tbtop.effects`
 array via `Inertia::flash`. The effect set is closed; see

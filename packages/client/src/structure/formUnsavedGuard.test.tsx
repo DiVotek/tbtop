@@ -212,9 +212,10 @@ describe("Form unsaved guard — Inertia navigation", () => {
 		]);
 		const Wrap = wrap(() => new Response("{}"));
 		render(<Wrap>{renderNode(node)}</Wrap>);
-		await waitFor(() => {});
 
-		expect(routerOnCalled).toBe(true);
+		// The guard registers after the form's async query resolves; wait for the
+		// real condition, not a bare tick (empty waitFor flakes under CI timing).
+		await waitFor(() => expect(routerOnCalled).toBe(true));
 	});
 
 	test("guard does NOT block a POST visit (form submit) even when form is dirty", async () => {

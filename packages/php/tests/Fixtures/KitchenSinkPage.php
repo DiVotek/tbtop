@@ -161,6 +161,7 @@ class KitchenSinkPage extends Page
                 ])
                 ->searchable(['title'])
                 ->defaultSort('views', 'desc')
+                ->reorderable('sort_order')
                 ->tabs([
                     Tab::make('all'),
                     Tab::make('published')->label('Published')

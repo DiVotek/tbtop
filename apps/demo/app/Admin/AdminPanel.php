@@ -14,6 +14,7 @@ use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\RecordDetailPage;
 use App\Admin\Pages\RelationDemoPage;
+use App\Admin\Pages\ReorderablePostsPage;
 use App\Admin\Pages\SettingsPage;
 use App\Admin\Pages\SoftDeletesDemoPage;
 use App\Admin\Pages\TwoFactorChallengePage;
@@ -36,6 +37,7 @@ class AdminPanel extends Panel
             ->pages([
                 DashboardPage::class,
                 PostsIndexPage::class,
+                ReorderablePostsPage::class,
                 PostCreatePage::class,
                 PostEditPage::class,
                 MediaIndexPage::class,

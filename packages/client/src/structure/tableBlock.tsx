@@ -5,6 +5,7 @@ import { renderAsyncError } from "./renderAsyncError";
 import { BulkActionsBar } from "./table/bulkActionsBar";
 import { normalizeRows, TableGrid } from "./table/grid";
 import { TablePagination } from "./table/pagination";
+import { canReorder } from "./table/reorder";
 import { TableError } from "./table/tableError";
 import { TableTabBar, TableToolbar } from "./table/toolbar";
 import { countActiveFilters, useColumnVisibility } from "./table/useColumnVisibility";
@@ -61,6 +62,12 @@ export function TableBlock({ options }: TableRenderProps) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[rawSaveCell],
 	);
+	const rawReorderRows = options.reorderRows;
+	const reorderRows = useMemo(
+		() => (rawReorderRows ? (ids: string[]) => rawReorderRows(ctx, ids) : undefined),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[rawReorderRows],
+	);
 
 	if (state.kind === "loading") {
 		return <>{options.loading ?? <TableSkeleton />}</>;
@@ -92,6 +99,8 @@ export function TableBlock({ options }: TableRenderProps) {
 			tableName={tableName}
 			rowClick={options.rowClick}
 			saveCell={saveCell}
+			reorderColumn={options.reorder?.column}
+			reorderRows={reorderRows}
 		/>
 	);
 }
@@ -133,6 +142,15 @@ function TableBody(props: TableBodyProps) {
 	// Footer only when the server sends pagination config and a total.
 	const { total, pagination } = props;
 	const showPagination = pagination !== undefined && total !== undefined;
+
+	// Reorder is allowed only while rows are shown in their persisted order.
+	const reorderEnabled = canReorder({
+		sort: props.queryParams.sort,
+		hasActiveFilters,
+		tab: activeTab,
+		firstTabName: tabs[0]?.name,
+		reorderColumn: props.reorderColumn,
+	});
 
 	return (
 		<TableControllerProvider value={ctrl}>
@@ -184,6 +202,10 @@ function TableBody(props: TableBodyProps) {
 					onResetFilters={handleResetFilters}
 					rowClick={props.rowClick}
 					saveCell={props.saveCell}
+					reorderColumn={props.reorderColumn}
+					reorderEnabled={reorderEnabled}
+					reorderRows={props.reorderRows}
+					onRefresh={props.onRefresh}
 				/>
 
 				{showPagination && (
