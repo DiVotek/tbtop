@@ -87,6 +87,19 @@ class KitchenSinkPage extends Page
                         $s->text('heading')->required(),
                         $s->textarea('text'),
                     ]),
+                    $s->checkboxlist('tags')->options([
+                        ['value' => 'news', 'label' => 'News'],
+                        ['value' => 'guide', 'label' => 'Guide'],
+                    ])->rules('array'),
+                    $s->togglebuttons('visibility')->options([
+                        ['value' => 'public', 'label' => 'Public'],
+                        ['value' => 'private', 'label' => 'Private'],
+                    ])->rules('in:public,private'),
+                    $s->togglebuttons('channels')->options([
+                        ['value' => 'email', 'label' => 'Email'],
+                        ['value' => 'sms', 'label' => 'SMS'],
+                    ])->multiple()->rules('array'),
+                    $s->slider('score')->min(0)->max(10)->step(1)->rules('min:0|max:10'),
                     $s->actionsRow([
                         $s->action('save')->label('Save')->color('primary')
                             ->keybinding('mod+s')->submit(),

@@ -114,6 +114,27 @@ export interface RadioOpts {
 	options: ChoiceOption[];
 }
 
+export interface CheckboxListOpts {
+	label?: string;
+	required?: boolean;
+	options: ChoiceOption[];
+}
+
+export interface ToggleButtonsOpts {
+	label?: string;
+	required?: boolean;
+	options: ChoiceOption[];
+	multiple?: boolean;
+}
+
+export interface SliderOpts {
+	label?: string;
+	required?: boolean;
+	min?: number;
+	max?: number;
+	step?: number;
+}
+
 export interface TagsClosedOrOpenOpts {
 	label?: string;
 	required?: boolean;
