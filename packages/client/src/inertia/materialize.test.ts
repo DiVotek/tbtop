@@ -203,6 +203,27 @@ describe("materialize table", () => {
 		});
 		expect(result).toEqual({ data: [{ id: 1 }], total: 1 });
 	});
+
+	it("injects a reorderRows closure that posts the id order and unwraps effects", async () => {
+		let captured = null as { path: string; body: unknown } | null;
+		const client = {
+			post: async (path: string, body: unknown) => {
+				captured = { path, body };
+				return { effects: [{ kind: "refreshTable", table: "posts" }] };
+			},
+		} as unknown as AdminClient;
+
+		const out = materialize(node("table", { columns: [{ name: "title" }] }, "posts"), BASE);
+		const reorderRows = opts(out).reorderRows as (
+			ctx: ClientActionContext,
+			ids: string[],
+		) => Promise<unknown>;
+		const effects = await reorderRows(fakeCtx({ client }), ["3", "1", "2"]);
+
+		expect(captured?.path).toBe("/admin/posts/tables/posts/reorder");
+		expect(captured?.body).toEqual({ ids: ["3", "1", "2"] });
+		expect(effects).toEqual([{ kind: "refreshTable", table: "posts" }]);
+	});
 });
 
 describe("materialize upload", () => {

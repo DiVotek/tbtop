@@ -29,8 +29,12 @@ export interface TableBlockOptions extends AsyncBlock {
 	tabs?: TableTab[];
 	pagination?: TablePaginationOptions;
 	rowClick?: string;
+	/** Present when the table declares reorderable(); carries the sort column. */
+	reorder?: { column: string };
 	/** Materialized by materialize.ts — takes actionCtx + args; bound in TableBlock. */
 	saveCell?: (ctx: ClientActionContext, args: SaveCellArgs) => Promise<unknown>;
+	/** Materialized by materialize.ts — POSTs the new id order; bound in TableBlock. */
+	reorderRows?: (ctx: ClientActionContext, ids: string[]) => Promise<unknown>;
 }
 
 export interface TableBodyProps {
@@ -52,6 +56,10 @@ export interface TableBodyProps {
 	tableName: string;
 	rowClick?: string;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+	/** Reorder column when reorderable() is declared; undefined otherwise. */
+	reorderColumn?: string;
+	/** POSTs the new id order; bound in TableBlock. */
+	reorderRows?: (ids: string[]) => Promise<unknown>;
 }
 
 export function tableQueryStub(queryParams: ListQueryParams): TableController {

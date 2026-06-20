@@ -1,14 +1,20 @@
 /**
- * TableGrid — the <table>: sticky header (sort, select-all),
- * rows, empty state, and reload overlay.
+ * TableGrid — the <table>: sticky header (sort, select-all, reorder handle),
+ * rows, empty state, reload overlay, and the optional drag-reorder context.
  */
-import { useTranslation } from "../../i18n/i18n";
+import { DndContext } from "@dnd-kit/core";
+import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { ReactNode } from "react";
 import { ReloadOverlay } from "../../ui/spinner";
 import type { ActionConfig, TableColumn } from "../types";
 import { EmptyState } from "./emptyState";
+import { TableHead } from "./gridHead";
 import { isSelected, readId } from "./normalize";
-import { SortableHeader } from "./tableHeader";
+import { ReorderHint } from "./reorderHint";
+import { SortableRow } from "./sortableRow";
 import { TableRow } from "./tableRow";
+import { useRowReorder } from "./useRowReorder";
 
 // Re-export response/sort helpers from their home so existing importers
 // (tableBlock + tests) keep working through the grid module.
@@ -35,12 +41,28 @@ interface TableGridProps {
 	/** Name of a row action to trigger on row click. */
 	rowClick?: string;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+	/** Reorder column when the table declares reorderable(); undefined otherwise. */
+	reorderColumn?: string;
+	/** True only when reordering is currently allowed (no sort/filter/foreign tab). */
+	reorderEnabled?: boolean;
+	reorderRows?: (ids: string[]) => Promise<unknown>;
+	onRefresh?: () => void;
 }
 
 export function TableGrid(props: TableGridProps) {
-	const t = useTranslation();
-	const isEmpty = props.rows.length === 0;
-	const allIds = props.rows.map((r) => readId(r)).filter((id): id is string => !!id);
+	const reorderFeature = Boolean(props.reorderColumn);
+	const reorderActive = reorderFeature && Boolean(props.reorderEnabled);
+
+	const reorder = useRowReorder({
+		rows: props.rows,
+		enabled: reorderActive,
+		onRefresh: props.onRefresh,
+		reorderRows: props.reorderRows,
+	});
+
+	const rows = reorderFeature ? reorder.rows : props.rows;
+	const isEmpty = rows.length === 0;
+	const allIds = rows.map((r) => readId(r)).filter((id): id is string => !!id);
 	const allSelected = allIds.length > 0 && allIds.every((id) => props.selectedIds.includes(id));
 	const someSelected = !allSelected && allIds.some((id) => props.selectedIds.includes(id));
 
@@ -52,72 +74,100 @@ export function TableGrid(props: TableGridProps) {
 		}
 	}
 
-	const colSpan = props.columns.length + (props.hasBulk ? 1 : 0) + (props.hasRowActions ? 1 : 0);
+	const colSpan =
+		props.columns.length +
+		(props.hasBulk ? 1 : 0) +
+		(props.hasRowActions ? 1 : 0) +
+		(reorderActive ? 1 : 0);
 
-	return (
+	const body = isEmpty ? (
+		<tr>
+			<td colSpan={colSpan}>
+				<EmptyState
+					hasActiveFilters={props.hasActiveFilters}
+					onReset={props.onResetFilters}
+				/>
+			</td>
+		</tr>
+	) : (
+		rows.map((row) => renderRow(row, props, reorderActive))
+	);
+
+	const shell = (
 		<div className="relative overflow-x-auto rounded-md border">
 			{/* Reload overlay sits below the sticky header (z-20 > overlay z-10). */}
 			{props.isReloading && <ReloadOverlay testId="table-reloading-overlay" />}
+			{reorderFeature && !reorderActive && <ReorderHint />}
 
 			<table className="w-full text-sm">
-				<thead className="sticky top-0 z-20 border-b bg-muted text-left text-muted-foreground">
-					<tr>
-						{props.hasBulk && (
-							<th className="w-8 px-3 py-2">
-								<input
-									type="checkbox"
-									className="size-4 cursor-pointer accent-primary"
-									checked={allSelected}
-									ref={(el) => {
-										if (el) {
-											el.indeterminate = someSelected;
-										}
-									}}
-									onChange={(e) => handleSelectAll(e.target.checked)}
-									aria-label={t("table.select_all")}
-									data-testid="table-select-all"
-								/>
-							</th>
-						)}
-						{props.columns.map((col) => (
-							<SortableHeader
-								key={col.name}
-								col={col}
-								sort={props.sort}
-								onSort={props.onSort}
-							/>
-						))}
-						{props.hasRowActions && <th className="px-3 py-2" />}
-					</tr>
-				</thead>
-				<tbody>
-					{isEmpty ? (
-						<tr>
-							<td colSpan={colSpan}>
-								<EmptyState
-									hasActiveFilters={props.hasActiveFilters}
-									onReset={props.onResetFilters}
-								/>
-							</td>
-						</tr>
-					) : (
-						props.rows.map((row, ri) => (
-							<TableRow
-								key={readId(row) ?? `row-${ri}`}
-								row={row}
-								columns={props.columns}
-								rowActions={props.rowActions}
-								selected={isSelected(props.selectedIds, row)}
-								onToggle={props.onToggle}
-								hasBulk={props.hasBulk}
-								hasRowActions={props.hasRowActions}
-								rowClick={props.rowClick}
-								saveCell={props.saveCell}
-							/>
-						))
-					)}
-				</tbody>
+				<TableHead
+					columns={props.columns}
+					sort={props.sort}
+					onSort={props.onSort}
+					hasBulk={props.hasBulk}
+					hasRowActions={props.hasRowActions}
+					showReorderColumn={reorderActive}
+					allSelected={allSelected}
+					someSelected={someSelected}
+					onSelectAll={handleSelectAll}
+				/>
+				<tbody>{body}</tbody>
 			</table>
 		</div>
+	);
+
+	if (!reorderActive) {
+		return shell;
+	}
+
+	// DndContext wraps the table (not its <tbody>) so dnd-kit's hidden a11y
+	// node never becomes an invalid direct child of <table>.
+	return (
+		<DndContext
+			sensors={reorder.sensors}
+			onDragEnd={reorder.onDragEnd}
+			modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+		>
+			<SortableContext items={allIds} strategy={verticalListSortingStrategy}>
+				{shell}
+			</SortableContext>
+		</DndContext>
+	);
+}
+
+function renderRow(
+	row: Record<string, unknown>,
+	props: TableGridProps,
+	reorderActive: boolean,
+): ReactNode {
+	const key = readId(row) ?? JSON.stringify(row);
+	if (reorderActive) {
+		return (
+			<SortableRow
+				key={key}
+				row={row}
+				columns={props.columns}
+				rowActions={props.rowActions}
+				selected={isSelected(props.selectedIds, row)}
+				onToggle={props.onToggle}
+				hasBulk={props.hasBulk}
+				hasRowActions={props.hasRowActions}
+				saveCell={props.saveCell}
+			/>
+		);
+	}
+	return (
+		<TableRow
+			key={key}
+			row={row}
+			columns={props.columns}
+			rowActions={props.rowActions}
+			selected={isSelected(props.selectedIds, row)}
+			onToggle={props.onToggle}
+			hasBulk={props.hasBulk}
+			hasRowActions={props.hasRowActions}
+			rowClick={props.rowClick}
+			saveCell={props.saveCell}
+		/>
 	);
 }

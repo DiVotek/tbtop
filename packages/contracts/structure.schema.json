@@ -51,6 +51,14 @@
 									"columns": { "$ref": "#/$defs/columns" },
 									"pagination": { "$ref": "#/$defs/pagination" },
 									"rowClick": { "type": "string" },
+									"reorder": {
+										"type": "object",
+										"required": ["column"],
+										"properties": {
+											"column": { "type": "string" }
+										},
+										"additionalProperties": false
+									},
 									"tabs": {
 										"type": "array",
 										"items": { "$ref": "#/$defs/tableTab" }

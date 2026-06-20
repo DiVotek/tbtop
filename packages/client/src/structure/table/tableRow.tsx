@@ -2,6 +2,7 @@
  * TableRow + cell rendering. Row-click arming (pointerdown → click)
  * with DOM-containment guards so portal clicks never count.
  */
+import type { CSSProperties, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../../lib/cn";
 import { useClientActionContext } from "../actionContext";
@@ -26,6 +27,11 @@ interface TableRowProps {
 	hasRowActions: boolean;
 	rowClick?: string;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+	/** Drag-reorder bindings, supplied by SortableRow when reorder is on. */
+	dragRef?: (node: HTMLElement | null) => void;
+	dragStyle?: CSSProperties;
+	/** Leading cell (drag handle) rendered before the bulk/data cells. */
+	leadingCell?: ReactNode;
 }
 
 export function TableRow(props: TableRowProps) {
@@ -72,6 +78,8 @@ export function TableRow(props: TableRowProps) {
 
 	return (
 		<tr
+			ref={props.dragRef}
+			style={props.dragStyle}
 			className={cn(
 				"border-t transition-colors hover:bg-muted/50",
 				props.selected && "bg-primary/5",
@@ -84,6 +92,7 @@ export function TableRow(props: TableRowProps) {
 			tabIndex={isClickable ? 0 : undefined}
 		>
 			<RowProvider value={props.row}>
+				{props.leadingCell}
 				{props.hasBulk && (
 					<td className="px-3 py-2">
 						<input

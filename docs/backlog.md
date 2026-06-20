@@ -11,8 +11,9 @@
   tab, off by default).
 - **Reorderable rows (drag-and-drop)** — `TableBuilder::reorderable('sort_order')`;
   dnd-kit (new client dep), handle column, `POST .../tables/{t}/reorder` with ordered
-  ids. Reorder disabled while sort/filters active (Filament behavior). **Deferred** — no
-  architecture impact.
+  ids. Reorder disabled while sort/filters active (Filament behavior). **Shipped (M-94)** —
+  wire shape `reorder: {column}`, endpoint scopes ids to the table query. See
+  [./ai/wiring.md](./ai/wiring.md).
 - Sticky table header, filter chips, saved filters, per-column search.
 - CSV export / import (queued), soft-delete macro (trashed filter + restore/force).
 

@@ -211,6 +211,25 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Enable drag-and-drop row reordering, persisting order to $column.
+     * The reorder column becomes the default sort so the persisted order
+     * survives a reload — an explicit defaultSort() set earlier still wins.
+     */
+    public function reorderable(string $column = 'sort_order'): self
+    {
+        $this->opts['reorder'] = ['column' => $column];
+        $this->opts['defaultSort'] ??= ['field' => $column, 'dir' => 'asc'];
+
+        return $this;
+    }
+
+    /** Reorder column when reordering is enabled, else null. */
+    public function reorderColumn(): ?string
+    {
+        return $this->opts['reorder']['column'] ?? null;
+    }
+
     /** @param  list<ActionBuilder>  $actions */
     public function bulkActions(array $actions): self
     {

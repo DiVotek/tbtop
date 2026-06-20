@@ -174,6 +174,10 @@ function materializeTable(node: StructureNode, ctx: WalkCtx): StructureNode {
 						payload: { id: args.id, value: args.value },
 					})
 					.then((body) => (body as { effects?: unknown }).effects),
+			reorderRows: (actionCtx: ClientActionContext, ids: string[]) =>
+				actionCtx.client
+					.post(`${ctx.basePath}/tables/${name}/reorder`, { ids })
+					.then((body) => (body as { effects?: unknown }).effects),
 		},
 	};
 }

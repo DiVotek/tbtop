@@ -13,6 +13,7 @@ use App\Admin\Pages\PostCreatePage;
 use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\RelationDemoPage;
+use App\Admin\Pages\ReorderablePostsPage;
 use App\Admin\Pages\SettingsPage;
 use App\Admin\Pages\TwoFactorChallengePage;
 use App\Admin\Pages\TwoFactorSetupPage;
@@ -34,6 +35,7 @@ class AdminPanel extends Panel
             ->pages([
                 DashboardPage::class,
                 PostsIndexPage::class,
+                ReorderablePostsPage::class,
                 PostCreatePage::class,
                 PostEditPage::class,
                 MediaIndexPage::class,
