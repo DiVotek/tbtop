@@ -49,8 +49,9 @@ One row per field. "Field-specific methods" are those beyond the base class abov
 `$s->kind('name')` is the magic `__call` shorthand; `KindClass::make('name')` is the
 equivalent static factory. The only exception is `inFilter`, which is a concrete method
 on `S` (not magic dispatch). `FieldKindParityTest` guards this equivalence — it checks PHP
-factory ↔ PHP magic dispatch **and** that `S::BUILT_IN_KINDS` equals the registered
-`kindMap()` keys. Despite the "parity" name it does **not** compare PHP to the client; that
+factory ↔ PHP magic dispatch **and** that every `S::BUILT_IN_KINDS` entry is registered in
+`kindMap()` (a subset check — the live map may also hold consumer kinds from `S::register`).
+Despite the "parity" name it does **not** compare PHP to the client; that
 mapping is the [canonical inventory](#canonical-field-kind-inventory-php--client--schema) plus
 the `KitchenSinkPage`/`ContractTest` gate.
 
@@ -121,8 +122,9 @@ family of kinds.
 
 The PHP side keeps two parallel lists that must agree: `S::BUILT_IN_KINDS` (the public
 identifier list, used by test datasets) and the bootstrapped `S::kindMap()` (kind → builder
-class). `FieldKindParityTest` asserts they are the same set, so a kind added to one but not
-the other fails CI. Add a kind → append to **both** PHP lists, the inventory table below, the
+class). `FieldKindParityTest` asserts every `BUILT_IN_KINDS` entry is registered in `kindMap()`,
+so a built-in present in the list but missing from the map fails CI. Add a kind → append to
+**both** PHP lists (keep them in sync), the inventory table below, the
 client `registerBuiltins.ts`, and exercise it in `KitchenSinkPage` (the contract gate). Rows
 are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder existing ones.
 
