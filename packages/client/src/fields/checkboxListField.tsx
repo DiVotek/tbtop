@@ -2,29 +2,17 @@ import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
-import { Chips } from "./tagsShared";
+import { LabelChips } from "./tagsShared";
 
 interface CheckboxListBag {
 	options?: LabeledOption[];
 }
 
-const NOOP_REMOVE = () => {};
-
 export function CheckboxListCell({ value, options }: FieldCellProps<string[], CheckboxListBag>) {
 	if (!Array.isArray(value) || value.length === 0) {
 		return null;
 	}
-	return (
-		<div className="flex flex-wrap gap-1">
-			<Chips
-				name="checkboxlist-cell"
-				value={value}
-				onRemove={NOOP_REMOVE}
-				labelFor={(v) => optionLabel(v, options?.options)}
-				disabled
-			/>
-		</div>
-	);
+	return <LabelChips value={value} labelFor={(v) => optionLabel(v, options?.options)} />;
 }
 
 export function CheckboxListForm({

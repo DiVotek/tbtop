@@ -1,7 +1,7 @@
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
-import { Chips } from "./tagsShared";
+import { LabelChips } from "./tagsShared";
 
 interface ToggleButtonsBag {
 	options?: LabeledOption[];
@@ -9,8 +9,6 @@ interface ToggleButtonsBag {
 }
 
 type ToggleButtonsValue = string | string[];
-
-const NOOP_REMOVE = () => {};
 
 export function ToggleButtonsCell({
 	value,
@@ -26,17 +24,7 @@ export function ToggleButtonsCell({
 }
 
 function MultiCell({ value, options }: { value: string[]; options?: LabeledOption[] }) {
-	return (
-		<div className="flex flex-wrap gap-1">
-			<Chips
-				name="togglebuttons-cell"
-				value={value}
-				onRemove={NOOP_REMOVE}
-				labelFor={(v) => optionLabel(v, options)}
-				disabled
-			/>
-		</div>
-	);
+	return <LabelChips value={value} labelFor={(v) => optionLabel(v, options)} />;
 }
 
 export function ToggleButtonsForm(props: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
