@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\EditAction;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Node;
@@ -161,6 +162,18 @@ class KitchenSinkPage extends Page
                 $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted')),
                 $s->action('details')->label('Details')->modal('Details', null, 'More info')->size('lg'),
                 $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi']),
+                // Prebuilt edit-in-place: exercises the modal query/queryNeeds wire
+                // shape so the contract gate covers a modal+query action spec.
+                EditAction::make(
+                    $s,
+                    form: $s->form('editPost', [
+                        $s->text('title')->label('Title')->required()->rules('max:200'),
+                        $s->boolean('published')->label('Published'),
+                    ]),
+                    loadUsing: fn () => ['title' => 'Hello', 'published' => true],
+                    saveUsing: fn () => Effects::make(),
+                    title: 'Edit post',
+                ),
             ]),
             $s->collapsible(['label' => 'Advanced options'], [
                 $s->text('meta_title')->label('Meta title'),

@@ -436,7 +436,12 @@
 						"title": { "type": "string" },
 						"description": { "type": "string" },
 						"body": { "$ref": "#/$defs/node" },
-						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] }
+						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+						"query": { "type": "boolean" },
+						"queryNeeds": {
+							"type": "array",
+							"items": { "enum": ["form", "row", "selection"] }
+						}
 					},
 					"additionalProperties": false
 				},
