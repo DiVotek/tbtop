@@ -19,7 +19,7 @@ it('renders every display primitive on the record detail page', function () {
     $page->assertVisible('#app main')          // admin shell hydrated
         ->assertSee('Order #1042')             // displayText heading
         ->assertSee('paid')                    // displayValue badge value
-        ->assertSee('123.45 USD')              // displayValue money (pre-formatted)
+        ->assertSee('49.99 USD')               // displayValue money (4999 cents, pre-formatted)
         ->assertSee('2024-03-15')              // displayValue date (pre-formatted)
         ->assertSee('TT-1042')                 // displayKeyValue dd value
         ->assertSee('Handle with care')        // displayRichtext rendered text
