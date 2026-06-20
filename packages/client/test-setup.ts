@@ -1,12 +1,9 @@
-import { afterEach, mock } from "bun:test";
+import { afterEach } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { cleanup } from "@testing-library/react";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
-afterEach(() => {
-	cleanup();
-	mock.restore();
-});
+afterEach(() => cleanup());
 
 // ---------------------------------------------------------------------------
 // Network tripwire (defense-in-depth). Tests must stub their own transport

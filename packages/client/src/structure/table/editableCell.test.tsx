@@ -7,7 +7,6 @@
  * - missing row id prevents save (no crash)
  */
 import { beforeAll, describe, expect, mock, test } from "bun:test";
-import * as inertiaReact from "@inertiajs/react";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 
 // ---------------------------------------------------------------------------
@@ -35,10 +34,7 @@ mock.module("../actionContext", () => ({
 	}),
 }));
 
-// Spread the real module so Link survives — mock.module is process-global and
-// a bare replacement drops Link for every later file (M-95).
 mock.module("@inertiajs/react", () => ({
-	...inertiaReact,
 	router: { visit: mock(() => {}), reload: mock(() => {}), on: mock(() => () => {}) },
 }));
 
