@@ -51,6 +51,14 @@
 									"columns": { "$ref": "#/$defs/columns" },
 									"pagination": { "$ref": "#/$defs/pagination" },
 									"rowClick": { "type": "string" },
+									"reorder": {
+										"type": "object",
+										"required": ["column"],
+										"properties": {
+											"column": { "type": "string" }
+										},
+										"additionalProperties": false
+									},
 									"tabs": {
 										"type": "array",
 										"items": { "$ref": "#/$defs/tableTab" }
@@ -194,6 +202,47 @@
 										"maximum": 12
 									},
 									"wrap": { "type": "boolean" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "checkboxlist" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["options"],
+								"properties": {
+									"options": { "$ref": "#/$defs/choiceOptions" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "togglebuttons" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["options"],
+								"properties": {
+									"options": { "$ref": "#/$defs/choiceOptions" },
+									"multiple": { "type": "boolean" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "slider" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"min": { "type": "number" },
+									"max": { "type": "number" },
+									"step": { "type": "number" }
 								}
 							}
 						}
@@ -415,6 +464,17 @@
 				}
 			}
 		},
+		"choiceOptions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["value", "label"],
+				"properties": {
+					"value": { "type": "string" },
+					"label": { "type": "string" }
+				}
+			}
+		},
 		"constraints": {
 			"type": "object",
 			"properties": {
@@ -469,7 +529,12 @@
 						"title": { "type": "string" },
 						"description": { "type": "string" },
 						"body": { "$ref": "#/$defs/node" },
-						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] }
+						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+						"query": { "type": "boolean" },
+						"queryNeeds": {
+							"type": "array",
+							"items": { "enum": ["form", "row", "selection"] }
+						}
 					},
 					"additionalProperties": false
 				},

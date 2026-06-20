@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
+import { useChartColors } from "../lib/useChartColors";
 import { useDebounce } from "../lib/useDebounce";
 import type { RenderProps } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
@@ -37,7 +38,11 @@ export interface ChartBlockOptions<TPoint extends ChartPoint = ChartPoint> {
 	error?: ReactNode | ((err: Error) => ReactNode);
 }
 
-type ChartRenderer = (data: ChartPoint[], options: ChartBlockOptions) => ReactNode;
+type ChartRenderer = (
+	data: ChartPoint[],
+	options: ChartBlockOptions,
+	colors: string[],
+) => ReactNode;
 
 const DEBOUNCE_KINDS = new Set(["text", "textarea", "number", "password"]);
 
@@ -69,6 +74,7 @@ export function createChartBlock(
 	return function ChartBlock({ options }: RenderProps<ChartBlockOptions>) {
 		ensureBuiltinsRegistered();
 		const ctx = useClientActionContext();
+		const colors = useChartColors();
 		const paramNodes = extractParamNodes(options.params ?? []);
 		const hasParams = paramNodes.length > 0;
 
@@ -120,7 +126,7 @@ export function createChartBlock(
 						))}
 					</div>
 				)}
-				{renderFn(state.data, options)}
+				{renderFn(state.data, options, colors)}
 			</ChartCard>
 		);
 	};

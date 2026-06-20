@@ -2,7 +2,11 @@
 
 > Back to [./README.md](./README.md)
 
-Check here before building any field — 21 exist across the PHP DSL and client.
+Check here before building any field. The inventory is **22 PHP builders** (each a
+1:1 wire `kind` → client component) plus **3 client-only kinds** (`time`, `json`,
+`unknown`) that have no PHP builder by design — **25 client kinds total**. The
+canonical 1:1 mapping lives in [Canonical field-kind inventory](#canonical-field-kind-inventory-php--client--schema)
+below; treat it as the source of truth and add to it (never fork it) when a kind lands.
 
 **The three-part rule (from [CLAUDE.md](../../CLAUDE.md)):** adding a new field type
 requires ALL three pieces in the same change: a PHP builder class in
@@ -44,13 +48,19 @@ One row per field. "Field-specific methods" are those beyond the base class abov
 
 `$s->kind('name')` is the magic `__call` shorthand; `KindClass::make('name')` is the
 equivalent static factory. The only exception is `inFilter`, which is a concrete method
-on `S` (not magic dispatch).
+on `S` (not magic dispatch). `FieldKindParityTest` guards this equivalence — it checks PHP
+factory ↔ PHP magic dispatch **and** that every `S::BUILT_IN_KINDS` entry is registered in
+`kindMap()` (a subset check — the live map may also hold consumer kinds from `S::register`).
+Despite the "parity" name it does **not** compare PHP to the client; that
+mapping is the [canonical inventory](#canonical-field-kind-inventory-php--client--schema) plus
+the `KitchenSinkPage`/`ContractTest` gate.
 
 | Field | `S` factory | Wire `kind` | Field-specific methods | Needs server endpoint? |
 |---|---|---|---|---|
 | **Text** | `$s->text('x')` / `Text::make('x')` | `text` | none | No |
 | **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | none | No |
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
+| **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — number of code slots; `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | none (use `->set('min', ...)`, `->set('step', ...)` via base `set`) | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
@@ -77,6 +87,7 @@ on `S` (not magic dispatch).
 | `text` | `fields/textField.tsx` |
 | `textarea` | `fields/textareaField.tsx` |
 | `password` | `fields/passwordField.tsx` |
+| `otp` | `fields/otpField.tsx` |
 | `number` | `fields/numberField.tsx` |
 | `date` | `fields/dateField.tsx` |
 | `datetime` | `fields/dateField.tsx` (DateTimeForm/DateTimeCell) |
@@ -95,6 +106,102 @@ on `S` (not magic dispatch).
 | `relation` | `fields/relationField.tsx` |
 | `repeater` | `fields/repeaterField.tsx` |
 | `richtext` | `fields/richtext/` (lazy-loaded; Lexical editor) |
+
+---
+
+## Canonical field-kind inventory (PHP ↔ client ↔ schema)
+
+This is the **source-of-truth mapping**. Every built-in field is 1:1 across all three
+surfaces: one PHP builder → one wire `kind` → one client `defineFieldClient` call. There
+are **zero** one-PHP-to-many-client cases — `select` is a single clean kind that branches
+at runtime (static / searchable / async / creatable / multi) inside `SelectForm`, not a
+family of kinds.
+
+**Counts:** 22 PHP builders → 22 wire kinds → 22 client kinds, **plus** 3 client-only kinds
+(see below) = **25 client `defineFieldClient` registrations** total.
+
+The PHP side keeps two parallel lists that must agree: `S::BUILT_IN_KINDS` (the public
+identifier list, used by test datasets) and the bootstrapped `S::kindMap()` (kind → builder
+class). `FieldKindParityTest` asserts every `BUILT_IN_KINDS` entry is registered in `kindMap()`,
+so a built-in present in the list but missing from the map fails CI. Add a kind → append to
+**both** PHP lists (keep them in sync), the inventory table below, the
+client `registerBuiltins.ts`, and exercise it in `KitchenSinkPage` (the contract gate). Rows
+are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder existing ones.
+
+| # | PHP builder | `S` factory | Wire `kind` | Client kind | Client file |
+|---|---|---|---|---|---|
+| 1 | `Text` | `$s->text('x')` | `text` | `text` | `fields/textField.tsx` |
+| 2 | `Textarea` | `$s->textarea('x')` | `textarea` | `textarea` | `fields/textareaField.tsx` |
+| 3 | `Password` | `$s->password('x')` | `password` | `password` | `fields/passwordField.tsx` |
+| 4 | `Otp` | `$s->otp('x')` | `otp` | `otp` | `fields/otpField.tsx` |
+| 5 | `Number` | `$s->number('x')` | `number` | `number` | `fields/numberField.tsx` |
+| 6 | `Date` | `$s->date('x')` | `date` | `date` | `fields/dateField.tsx` (`DateForm`/`DateCell`) |
+| 7 | `Datetime` | `$s->datetime('x')` | `datetime` | `datetime` | `fields/dateField.tsx` (`DateTimeForm`/`DateTimeCell`) |
+| 8 | `Boolean` | `$s->boolean('x')` | `boolean` | `boolean` | `fields/booleanField.tsx` |
+| 9 | `Select` | `$s->select('x')` | `select` | `select` | `fields/selectField.tsx` (branches static/async/creatable/multi at runtime) |
+| 10 | `Radio` | `$s->radio('x')` | `radio` | `radio` | `fields/radioField.tsx` |
+| 11 | `Tags` | `$s->tags('x')` | `tags` | `tags` | `fields/tagsField.tsx` |
+| 12 | `InFilter` | `$s->inFilter('x')` | `in` | `in` | `fields/tagsField.tsx` (reused; `TagsForm`/`TagsCell`) |
+| 13 | `Checkbox` | `$s->checkbox('x')` | `checkbox` | `checkbox` | `fields/checkboxField.tsx` |
+| 14 | `Colorpicker` | `$s->colorpicker('x')` | `colorpicker` | `colorpicker` | `fields/colorpickerField.tsx` |
+| 15 | `Keyvalue` | `$s->keyvalue('x')` | `keyvalue` | `keyvalue` | `fields/keyvalueField.tsx` |
+| 16 | `Slug` | `$s->slug('x')` | `slug` | `slug` | `fields/slugField.tsx` |
+| 17 | `Upload` | `$s->upload('x')` | `upload` | `upload` | `fields/uploadField.tsx` |
+| 18 | `MediaPicker` | `$s->media('x')` | `media` | `media` | `media/mediaPickerField.tsx` (outside `fields/`) |
+| 19 | `Relation` | `$s->relation('x')` | `relation` | `relation` | `fields/relationField.tsx` |
+| 20 | `Repeater` | `$s->repeater('x')` | `repeater` | `repeater` | `fields/repeaterField.tsx` |
+| 21 | `Richtext` | `$s->richtext('x')` | `richtext` | `richtext` | `fields/richtext/` (lazy; Lexical) |
+| 22 | `Daterange` | `$s->daterange('x')` | `daterange` | `daterange` | `fields/daterangeField.tsx` |
+<!-- M-89 and later: append new built-in kinds below this line, in BUILT_IN_KINDS order. -->
+
+> `inFilter` is the one factory that is a concrete method on `S`, not magic `__call`
+> dispatch — but it still maps 1:1 to wire kind `in` and the client `in` registration.
+
+### Client-only kinds (intentional asymmetry)
+
+These three wire kinds are registered on the client (`registerBuiltins.ts`) with **no PHP
+builder** — deliberately. They are not drift to "fix" by adding a builder; a builder is a new
+field type and must go through the contract gate (schema + kitchen-sink + contract test) in
+its own change.
+
+| Wire `kind` | Client file | Why no PHP builder |
+|---|---|---|
+| `time` | `fields/dateField.tsx` (`TimeForm`, cell reuses `DateCell`) | The renderer exists ahead of a `Time` DSL builder. Until a builder lands, emit it from a consumer via `S::register('time', …)`. Adding the builder is a follow-up (contract-gated), not a doc fix. |
+| `json` | `fields/jsonField.tsx` | Escape-hatch renderer for raw JSON values. Intended to be bound per-app via `S::register('json', …)` against a consumer field class — no core builder by design. |
+| `unknown` | `fields/unknownField.tsx` | Render-time fallback for any `kind` the client does not recognize. It is the safety net, never something an author selects — so it has no builder and never will. |
+
+**Binding a client-only kind from a consumer app** (no core edit): register a PHP field class
+for the kind so the DSL can author it, while the matching client renderer already exists.
+
+```php
+// In the consumer app (e.g. a service-provider boot), NOT in the package.
+use Tbtop\Admin\Dsl\S;
+
+S::register('time', \App\Admin\Fields\TimeField::class); // TimeField extends Tbtop\Admin\Dsl\Fields\Field
+// Authors can then write $s->time('opens_at') and the client's `time` renderer handles it.
+```
+
+`S::register($kind, $fieldClass)` requires `$fieldClass` to extend
+`Tbtop\Admin\Dsl\Fields\Field`; it adds (or overrides) the entry in `kindMap()` for that
+request. App-specific *client* renderers use `defineFieldClient` — see
+[Custom fields](#custom-fields-app-specific).
+
+### No closed kind enum — by design
+
+There is **no enum of field kinds** in `structure.schema.json` or the client zod grammar:
+the schema types `kind` as an open `string` (`{ "type": "string", "minLength": 1 }`), and the
+zod mirror is equally open. This is intentional — `S::register` / `defineFieldClient` let a
+consumer add kinds without editing the package, which a closed enum would forbid. **Do not
+"tighten" the schema by enumerating kinds.** The wire contract is enforced instead by
+`KitchenSinkPage` emitting a representative tree that PHP validates against the schema and the
+client renders (`ContractTest`) — coverage, not enumeration.
+
+### Reactive / cascading selects — unsupported
+
+A `select` whose options depend on another field's value (cascading / `dependsOn`) is **not
+supported**. `Select.php` has no `dependsOn`, and the client async path keys only on the typed
+search string — there is no field-dependency channel on the wire. Do not assume it works;
+filing a builder for it is a separate, contract-gated change.
 
 ---
 

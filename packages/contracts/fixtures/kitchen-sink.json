@@ -501,6 +501,78 @@
                                         "name": "sections"
                                     },
                                     {
+                                        "kind": "checkboxlist",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "news",
+                                                    "label": "News"
+                                                },
+                                                {
+                                                    "value": "guide",
+                                                    "label": "Guide"
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "tags"
+                                    },
+                                    {
+                                        "kind": "togglebuttons",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "public",
+                                                    "label": "Public"
+                                                },
+                                                {
+                                                    "value": "private",
+                                                    "label": "Private"
+                                                }
+                                            ],
+                                            "constraints": {
+                                                "in": [
+                                                    "public",
+                                                    "private"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "visibility"
+                                    },
+                                    {
+                                        "kind": "togglebuttons",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "value": "sms",
+                                                    "label": "SMS"
+                                                }
+                                            ],
+                                            "multiple": true
+                                        },
+                                        "meta": {},
+                                        "name": "channels"
+                                    },
+                                    {
+                                        "kind": "slider",
+                                        "options": {
+                                            "min": 0,
+                                            "max": 10,
+                                            "step": 1,
+                                            "constraints": {
+                                                "min": 0,
+                                                "max": 10
+                                            }
+                                        },
+                                        "meta": {},
+                                        "name": "score"
+                                    },
+                                    {
                                         "kind": "row",
                                         "options": {
                                             "children": [
@@ -774,6 +846,89 @@
                             },
                             "meta": {},
                             "name": "copy"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Edit",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "Edit post",
+                                    "body": {
+                                        "kind": "form",
+                                        "options": {
+                                            "name": "editPost",
+                                            "children": [
+                                                {
+                                                    "kind": "text",
+                                                    "options": {
+                                                        "label": "Title",
+                                                        "required": true,
+                                                        "constraints": {
+                                                            "required": true,
+                                                            "max": 200
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "title"
+                                                },
+                                                {
+                                                    "kind": "boolean",
+                                                    "options": {
+                                                        "label": "Published"
+                                                    },
+                                                    "meta": {},
+                                                    "name": "published"
+                                                },
+                                                {
+                                                    "kind": "row",
+                                                    "options": {
+                                                        "children": [
+                                                            {
+                                                                "kind": "action",
+                                                                "options": {
+                                                                    "label": "Save",
+                                                                    "color": "primary",
+                                                                    "spec": {
+                                                                        "type": "server",
+                                                                        "needs": [
+                                                                            "row",
+                                                                            "form"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "editSave"
+                                                            },
+                                                            {
+                                                                "kind": "action",
+                                                                "options": {
+                                                                    "label": "Cancel",
+                                                                    "spec": {
+                                                                        "type": "server",
+                                                                        "needs": []
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "editCancel"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "meta": {}
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "editPost"
+                                    },
+                                    "query": true,
+                                    "queryNeeds": [
+                                        "row"
+                                    ]
+                                }
+                            },
+                            "meta": {},
+                            "name": "edit"
                         }
                     ]
                 },

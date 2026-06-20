@@ -1,5 +1,6 @@
 import { BooleanCell, BooleanForm } from "../fields/booleanField";
 import { CheckboxCell, CheckboxForm } from "../fields/checkboxField";
+import { CheckboxListCell, CheckboxListForm } from "../fields/checkboxListField";
 import { ColorpickerCell, ColorpickerForm } from "../fields/colorpickerField";
 import { DateCell, DateForm, DateTimeCell, DateTimeForm, TimeForm } from "../fields/dateField";
 import { DaterangeForm, type DaterangeValue } from "../fields/daterangeField";
@@ -14,10 +15,12 @@ import { RepeaterCell, RepeaterForm } from "../fields/repeaterField";
 import { RichtextCell, type RichtextValue } from "../fields/richtext/richtextCell";
 import { RichtextFormLazy } from "../fields/richtext/richtextFormLazy";
 import { SelectCell, SelectForm } from "../fields/selectField";
+import { SliderCell, SliderForm } from "../fields/sliderField";
 import { SlugCell, SlugForm } from "../fields/slugField";
 import { TagsCell, TagsForm } from "../fields/tagsField";
 import { TextareaCell, TextareaForm } from "../fields/textareaField";
 import { TextCell, TextForm } from "../fields/textField";
+import { ToggleButtonsCell, ToggleButtonsForm } from "../fields/toggleButtonsField";
 import { UnknownCell, UnknownForm } from "../fields/unknownField";
 import { UploadCell, UploadForm, type UploadValue } from "../fields/uploadField";
 import { MediaPickerCell, MediaPickerForm, type MediaPickerValue } from "../media/mediaPickerField";
@@ -53,6 +56,7 @@ function registerInputFields(): void {
 	});
 	defineFieldClient<"slug", string>("slug", { form: SlugForm, cell: SlugCell });
 	defineFieldClient<"otp", string>("otp", { form: OtpForm, cell: OtpCell });
+	defineFieldClient<"slider", number>("slider", { form: SliderForm, cell: SliderCell });
 }
 
 function registerChoiceFields(): void {
@@ -75,6 +79,14 @@ function registerChoiceFields(): void {
 	defineFieldClient<"relation", string>("relation", {
 		form: RelationForm,
 		cell: RelationCell,
+	});
+	defineFieldClient<"checkboxlist", string[]>("checkboxlist", {
+		form: CheckboxListForm,
+		cell: CheckboxListCell,
+	});
+	defineFieldClient<"togglebuttons", string | string[]>("togglebuttons", {
+		form: ToggleButtonsForm,
+		cell: ToggleButtonsCell,
 	});
 }
 

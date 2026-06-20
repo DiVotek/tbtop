@@ -177,6 +177,46 @@ Returned by `$s->table(string $name)`.
 | `rowActions` | `rowActions(array $actions): self` | Per-row action buttons; `ActionBuilder` instances |
 | `rowClick` | `rowClick(string $actionName): self` | Name of a row action to trigger when the row is clicked |
 | `bulkActions` | `bulkActions(array $actions): self` | Checkbox bulk-select actions; `ActionBuilder` instances |
+| `softDeletes` | `softDeletes(S $s, string $model, array $options = []): self` | Soft-delete convenience layer (see below) |
+
+#### `softDeletes()` — soft-delete convenience layer
+
+For a model using the `SoftDeletes` trait, `->softDeletes($s, Model::class)` composes
+existing primitives in one call:
+
+- **Tabs (prepended):** `active` (default — the global SoftDeletes scope hides trashed
+  rows), `trashed` (`onlyTrashed()`), `withTrashed` (`withTrashed()`). Labels: Active /
+  Trashed / All. `active` lands first so it is the default tab.
+- **Row actions (appended):** `RestoreAction` (gray) + `ForceDeleteAction` (danger, confirmed).
+- **Bulk actions (appended):** `restoreSelected` + `forceDeleteSelected`.
+
+Everything **merges** with config already set — call `->softDeletes()` **after** your own
+`tabs()`/`rowActions()`/`bulkActions()`, never before. Opt parts out with
+`['rowActions' => false, 'bulkActions' => false, 'tabs' => false]`.
+
+The restore/force handlers reach hidden rows explicitly via `Model::withTrashed()` — the
+tab query closures ride the existing `TableQuery::applyTab` seam (no table-query change).
+The first parameter is the `S` builder: the helpers register their actions in the
+request-scoped action registry the HTTP layer dispatches by name.
+
+```php
+// from apps/demo/app/Admin/Pages/SoftDeletesDemoPage.php
+$s->table('posts')
+    ->columns([Column::make('title')->label('Title')->translatable()])
+    ->query(fn () => Post::query())
+    ->rowActions([
+        $s->action('delete')->label('Delete')->color('danger')
+            ->confirm('Delete post?', 'It moves to the Trashed tab.')
+            ->handle(fn ($ctx) => Effects::make()->refreshTable('posts'), needs: ['row']),
+    ])
+    ->softDeletes($s, Post::class) // tabs + restore/forceDelete, merged after delete
+    ->toNode(),
+```
+
+`RestoreAction` / `ForceDeleteAction` (in `Tbtop\Admin\Dsl\Actions`) are also usable
+standalone: `RestoreAction::make($s, Model::class)`, `::bulk(...)`,
+`ForceDeleteAction::make(...)`, `::bulk(...)`. Each returns an `ActionBuilder`, so
+label/icon/color stay chainable.
 
 ### Column
 
@@ -243,8 +283,26 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `handle` | `handle(Closure $handler, array $needs = []): self` | **Spec.** Server action handler; `$needs` declares payload sources (`'form'`\|`'row'`\|`'selection'`) |
 | `modal` | `modal(string $title, Node\|FormBuilder\|null $body = null, ?string $description = null): self` | **Spec.** Opens a modal dialog |
 | `size` | `size(string $size): self` | Modal dialog size: `'sm'`\|`'md'`\|`'lg'`\|`'full'`; only valid after `modal()` |
+| `query` | `query(callable $fn, array $needs = ['row']): static` | Backend data source for a modal; emits `query: true` + `queryNeeds`. The closure runs on open and feeds the modal body (a form prefills from it). Only valid after `modal()` |
 | `confirm` | `confirm(string $title, ?string $description = null): self` | Adds a confirmation dialog before the action fires |
 | `custom` | `custom(string $handler, array $params = []): self` | **Spec.** Delegates to a named client-side handler |
+
+### Prebuilt CRUD action helpers (`Tbtop\Admin\Dsl\Actions`)
+
+Thin factories over `$s->action()` + `Effects` for the common record operations.
+Each takes `S $s` first (so it registers in the action registry) and **returns the
+configured `ActionBuilder`**, so you keep chaining (`->color()`, `->hiddenIf()`, …).
+No model is baked in — the consumer passes the closure. Filament-familiar.
+
+| Helper | Signature | Shape |
+|---|---|---|
+| `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', string $title = 'Edit record', ?string $saveName = null): ActionBuilder` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
+| `DeleteAction` | `make(S $s, Closure $using, string $name = 'delete', bool $bulk = false): ActionBuilder` | Danger + confirm server action; `$using` deletes. `bulk: true` switches to `needs: ['selection']` (empty selection → benign notify) |
+| `ReplicateAction` | `make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder` | Server action; `$using` clones. No auto-redirect — return a `redirect` effect from `$using` for edit-after-clone |
+
+`RecordAction` (same namespace) is the shared internal: `server()` / `bulk()` wire the
+server-action-with-default-tail the presets build on; a void/null closure falls back to
+the tail.
 
 ### Tab
 

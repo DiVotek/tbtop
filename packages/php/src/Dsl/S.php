@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use InvalidArgumentException;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Checkbox;
+use Tbtop\Admin\Dsl\Fields\CheckboxList;
 use Tbtop\Admin\Dsl\Fields\Colorpicker;
 use Tbtop\Admin\Dsl\Fields\Date;
 use Tbtop\Admin\Dsl\Fields\Daterange;
@@ -21,10 +22,12 @@ use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Repeater;
 use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Dsl\Fields\Slider;
 use Tbtop\Admin\Dsl\Fields\Slug;
 use Tbtop\Admin\Dsl\Fields\Tags;
 use Tbtop\Admin\Dsl\Fields\Text;
 use Tbtop\Admin\Dsl\Fields\Textarea;
+use Tbtop\Admin\Dsl\Fields\ToggleButtons;
 use Tbtop\Admin\Dsl\Fields\Upload;
 
 /**
@@ -51,6 +54,9 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  * @method Relation relation(string $name)
  * @method Repeater repeater(string $name)
  * @method Richtext richtext(string $name)
+ * @method CheckboxList checkboxlist(string $name)
+ * @method ToggleButtons togglebuttons(string $name)
+ * @method Slider slider(string $name)
  */
 final class S
 {
@@ -66,6 +72,7 @@ final class S
         'text', 'textarea', 'password', 'otp', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'in', 'checkbox', 'colorpicker', 'keyvalue',
         'slug', 'upload', 'media', 'relation', 'repeater', 'richtext', 'daterange',
+        'checkboxlist', 'togglebuttons', 'slider',
     ];
 
     /** @var array<string, FormBuilder> */
@@ -109,6 +116,18 @@ final class S
         }
 
         return $map[$kind]::make($name);
+    }
+
+    /**
+     * Snapshot of the bootstrapped kind→class map (built-ins plus any
+     * registered overrides). Read-only copy — parity tests assert its keys
+     * against BUILT_IN_KINDS so the two PHP lists cannot silently drift.
+     *
+     * @return array<string, class-string<Field>>
+     */
+    public static function builtInKindClasses(): array
+    {
+        return self::kindMap();
     }
 
     // -------------------------------------------------------------------------
@@ -542,6 +561,9 @@ final class S
                 'repeater' => Repeater::class,
                 'richtext' => Richtext::class,
                 'daterange' => Daterange::class,
+                'checkboxlist' => CheckboxList::class,
+                'togglebuttons' => ToggleButtons::class,
+                'slider' => Slider::class,
             ];
         }
 

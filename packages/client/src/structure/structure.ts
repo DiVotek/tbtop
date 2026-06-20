@@ -16,6 +16,7 @@ import {
 import { makeBuildAction, makeBuildActions } from "./builders.actions";
 import type { ChartBlockOptions, ChartPoint } from "./chartBlock";
 import type {
+	CheckboxListOpts,
 	ColorpickerOpts,
 	DateOpts,
 	DatetimeOpts,
@@ -27,10 +28,12 @@ import type {
 	RadioOpts,
 	RepeaterOpts,
 	SelectOpts,
+	SliderOpts,
 	SlugOpts,
 	TagsOpts,
 	TextareaOpts,
 	TextOpts,
+	ToggleButtonsOpts,
 	UploadOpts,
 } from "./structureFieldOpts";
 
@@ -38,6 +41,7 @@ export type {
 	AsyncChoiceMulti,
 	AsyncChoiceShared,
 	AsyncChoiceSingle,
+	CheckboxListOpts,
 	ChoiceOption,
 	ColorpickerOpts,
 	DateOpts,
@@ -53,12 +57,14 @@ export type {
 	SelectOpts,
 	SelectStaticMultiOpts,
 	SelectStaticSingleOpts,
+	SliderOpts,
 	SlugOpts,
 	TagsAsyncOpts,
 	TagsClosedOrOpenOpts,
 	TagsOpts,
 	TextareaOpts,
 	TextOpts,
+	ToggleButtonsOpts,
 	UploadOpts,
 } from "./structureFieldOpts";
 
@@ -113,6 +119,9 @@ const builtins: Record<string, Builder> = {
 	upload: makeField("upload") as Builder,
 	relation: makeField("relation") as Builder,
 	repeater: makeField("repeater") as Builder,
+	checkboxlist: makeField("checkboxlist") as Builder,
+	togglebuttons: makeField("togglebuttons") as Builder,
+	slider: makeField("slider") as Builder,
 	widget: buildWidget as Builder,
 };
 
@@ -154,6 +163,9 @@ export interface StructureBuilders<TForm = unknown> {
 	upload: (input: FieldInputFor<TForm, UploadOpts>) => StructureNode;
 	relation: (input: FieldInputFor<TForm, { to: string; label?: string }>) => StructureNode;
 	repeater: (input: FieldInputFor<TForm, RepeaterOpts<StructureBuilders>>) => StructureNode;
+	checkboxlist: (input: FieldInputFor<TForm, CheckboxListOpts>) => StructureNode;
+	togglebuttons: (input: FieldInputFor<TForm, ToggleButtonsOpts>) => StructureNode;
+	slider: (input: FieldInputFor<TForm, SliderOpts>) => StructureNode;
 	action: (config: ActionConfig<StructureBuilders>) => StructureNode;
 	actions: (configs: ActionConfig<StructureBuilders>[]) => StructureNode;
 	widget: <P>(opts: { component: ComponentType<P>; props?: P }) => StructureNode;

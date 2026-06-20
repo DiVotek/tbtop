@@ -1,4 +1,5 @@
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { useChartColors } from "../../lib/useChartColors";
 import { resolveColorClasses } from "../../structure/table/colorRegistry";
 import { resolveIcon } from "../../structure/table/iconRegistry";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
@@ -41,6 +42,7 @@ export function StatCard({ options }: StatCardProps) {
 	const { label, value, description, delta, icon, color, sparkline } = options;
 	const Icon = icon ? resolveIcon(icon) : undefined;
 	const colorClasses = color ? resolveColorClasses(color) : undefined;
+	const sparklineColor = useChartColors()[0];
 
 	return (
 		<Card data-testid="stat-card">
@@ -68,7 +70,7 @@ export function StatCard({ options }: StatCardProps) {
 				)}
 				{sparkline !== undefined && sparkline.length > 0 && (
 					<div className="mt-3" data-testid="stat-sparkline">
-						<Sparkline data={sparkline} />
+						<Sparkline data={sparkline} color={sparklineColor} />
 					</div>
 				)}
 			</CardContent>
