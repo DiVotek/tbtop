@@ -165,6 +165,46 @@ Returned by `$s->table(string $name)`.
 | `rowActions` | `rowActions(array $actions): self` | Per-row action buttons; `ActionBuilder` instances |
 | `rowClick` | `rowClick(string $actionName): self` | Name of a row action to trigger when the row is clicked |
 | `bulkActions` | `bulkActions(array $actions): self` | Checkbox bulk-select actions; `ActionBuilder` instances |
+| `softDeletes` | `softDeletes(S $s, string $model, array $options = []): self` | Soft-delete convenience layer (see below) |
+
+#### `softDeletes()` — soft-delete convenience layer
+
+For a model using the `SoftDeletes` trait, `->softDeletes($s, Model::class)` composes
+existing primitives in one call:
+
+- **Tabs (prepended):** `active` (default — the global SoftDeletes scope hides trashed
+  rows), `trashed` (`onlyTrashed()`), `withTrashed` (`withTrashed()`). Labels: Active /
+  Trashed / All. `active` lands first so it is the default tab.
+- **Row actions (appended):** `RestoreAction` (gray) + `ForceDeleteAction` (danger, confirmed).
+- **Bulk actions (appended):** `restoreSelected` + `forceDeleteSelected`.
+
+Everything **merges** with config already set — call `->softDeletes()` **after** your own
+`tabs()`/`rowActions()`/`bulkActions()`, never before. Opt parts out with
+`['rowActions' => false, 'bulkActions' => false, 'tabs' => false]`.
+
+The restore/force handlers reach hidden rows explicitly via `Model::withTrashed()` — the
+tab query closures ride the existing `TableQuery::applyTab` seam (no table-query change).
+The first parameter is the `S` builder: the helpers register their actions in the
+request-scoped action registry the HTTP layer dispatches by name.
+
+```php
+// from apps/demo/app/Admin/Pages/SoftDeletesDemoPage.php
+$s->table('posts')
+    ->columns([Column::make('title')->label('Title')->translatable()])
+    ->query(fn () => Post::query())
+    ->rowActions([
+        $s->action('delete')->label('Delete')->color('danger')
+            ->confirm('Delete post?', 'It moves to the Trashed tab.')
+            ->handle(fn ($ctx) => Effects::make()->refreshTable('posts'), needs: ['row']),
+    ])
+    ->softDeletes($s, Post::class) // tabs + restore/forceDelete, merged after delete
+    ->toNode(),
+```
+
+`RestoreAction` / `ForceDeleteAction` (in `Tbtop\Admin\Dsl\Actions`) are also usable
+standalone: `RestoreAction::make($s, Model::class)`, `::bulk(...)`,
+`ForceDeleteAction::make(...)`, `::bulk(...)`. Each returns an `ActionBuilder`, so
+label/icon/color stay chainable.
 
 ### Column
 

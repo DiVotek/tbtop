@@ -136,14 +136,16 @@ infolist primitive.
 
 ---
 
-## Recipe 3 — Soft-delete table (by hand, no macro)
+## Recipe 3 — Soft-delete table
 
 **What Filament calls it:** soft-delete support built into the Resource — trashed filter,
 restore action, force-delete action, automatic scoping.
 
-**What exists today:** no soft-delete macro. CLAUDE.md lists it as a known gap. However,
-the table's `->query()` closure and row/bulk actions are expressive enough to replicate the
-behavior manually.
+**What exists today:** the `->softDeletes($s, Model::class)` macro on `TableBuilder` ships
+this — active/trashed/all tabs plus restore/forceDelete row and bulk actions. See the
+"Soft-delete macro" section in [./authoring-pages.md](./authoring-pages.md). The hand-rolled
+version below is kept to show how it composes from `->query()` + row/bulk actions; reach for
+the macro in real code.
 
 The three pieces you wire yourself:
 
@@ -178,9 +180,9 @@ $s->table('posts')
 ```
 
 **The caveat:** this requires the model to use `SoftDeletes`. All primitives used here are
-confirmed in source (`->query()`, `->filters()`, `->rowActions()`, `->bulkActions()`). What
-does NOT exist is a built-in macro that wires all three automatically — hence the roadmap
-entry "no soft-delete macro." The above is the hand-rolled equivalent.
+confirmed in source (`->query()`, `->filters()`, `->rowActions()`, `->bulkActions()`). The
+`->softDeletes()` macro wires all three automatically; the above is the hand-rolled
+equivalent, kept for understanding how it composes.
 
 ---
 
@@ -205,7 +207,6 @@ primitives — the result will be incomplete or broken.
 |---|---|
 | **Relation managers with inline editing** | The N-table pattern (Recipe 1) handles add/delete via row actions. True inline editing (editing a relation row without a separate page) would require a modal form on a relation row action — the mechanism exists (`->modal()` on an action), but wiring a form's save back to the related record's endpoint requires per-page controller work that has no convention yet. Track via the roadmap. |
 | **Infolist field declarations** | A layout that maps `TextEntry::make('title')` → reads `$record->title` dynamically does not exist. Recipe 2 covers static display blocks only. The infolist primitive is listed as a real gap in CLAUDE.md. |
-| **Soft-delete macro** | Recipe 3 shows the hand-rolled approach. There is no `->withTrashed()` toggle or `->restore()` bulk action built into the framework — each must be written by hand. Treat Recipe 3 as the workaround until the macro lands. |
 | **CSV export / import** | No export action kind exists. Filament uses queued jobs for large exports. This needs a new effect kind or a direct download endpoint — neither is in the closed effect set today. Listed as backlog 🟡 in the roadmap. |
 | **Global search** | The table-level `->searchable()` and per-column `.searchable()` work within a single table. A cross-page global search (the Spotlight-style overlay in Filament) needs a layout-slot design — it is listed as a known gap in the roadmap. |
 | **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in the roadmap. |
