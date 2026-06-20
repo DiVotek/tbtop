@@ -12,6 +12,7 @@ use App\Admin\Pages\PlaygroundPage;
 use App\Admin\Pages\PostCreatePage;
 use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
+use App\Admin\Pages\RecordDetailPage;
 use App\Admin\Pages\RelationDemoPage;
 use App\Admin\Pages\ReorderablePostsPage;
 use App\Admin\Pages\SettingsPage;
@@ -46,6 +47,7 @@ class AdminPanel extends Panel
                 SettingsPage::class,
                 SoftDeletesDemoPage::class,
                 PlaygroundPage::class,
+                RecordDetailPage::class,
                 MediaLibraryPage::class,
                 LoginPreviewPage::class,
                 RelationDemoPage::class,

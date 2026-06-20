@@ -147,6 +147,26 @@ Add a field kind → register it in both spots or this test fails.
 > change. Never in separate PRs.** Two separate PRs means two truths (PHP says
 > one shape, client expects another) with no gate catching the gap.
 
+### Shared formatting: table cells and display values
+
+`Tbtop\Admin\Http\KindFormat::apply(string $kind, array $meta, mixed $value)` is the
+single source of date/datetime/number/money formatting. Both the table column projection
+(`ColumnProjection`) and the `displayValue` display block call it, so a value formats
+identically whether it lands in a table cell or a detail view.
+
+The **four display-value kinds** (M-96) — `displayValue`, `displayImage`,
+`displayRichtext`, `displayKeyValue` — each have an `allOf` if/then branch in
+`structure.schema.json` with `additionalProperties: false` on their options. The wire split
+mirrors the table:
+
+- `displayValue` with `money`/`date`/`datetime`/`number`: the formatted string is baked into
+  `options.value` server-side (no format meta on the wire — it would be dead weight).
+- `displayValue` with `badge`/`boolean`/`icon`: emits the raw value plus its
+  color/icon meta (`badge`/`boolean`/`iconMap`); the client renders it, reusing the table
+  cell helpers (`BadgeCell`/`BooleanIconCell`/`IconMapCell`) via a synthesized column slice.
+- `displayRichtext` ships the Lexical `state` map; the client mounts a read-only,
+  lazy-loaded `LexicalComposer` (shared `NODES`+`theme` with the editor) to render it.
+
 For the full picture of adding a new field kind to both sides, see
 [./fields.md](./fields.md).
 

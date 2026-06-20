@@ -74,8 +74,20 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `markdown` | `markdown(string $content): MarkdownBlock` | Converts markdown server-side; call `->allowHtml()` only for trusted content |
 | `displayDivider` | `displayDivider(): Node` | Horizontal rule |
 | `displayAlert` | `displayAlert(string $message): AlertBlock` | Alert box; chain `->title(string)` and `->color(Color\|string)` on the result |
+| `displayValue` | `displayValue(mixed $value): DisplayValueBlock` | Read-only single value; chain a kind-sugar (`->badge`/`->boolean`/`->icon`/`->money`/`->date`/`->datetime`/`->number`), mirroring table `Column` |
+| `displayImage` | `displayImage(string $src): DisplayImageBlock` | Full-size image (`->alt()`/`->caption()`) or a file-download link (`->asLink()`); author passes the URL |
+| `displayRichtext` | `displayRichtext(array $state): DisplayRichtextBlock` | Read-only render of a stored Lexical `SerializedEditorState` map |
+| `displayKeyValue` | `displayKeyValue(array $map): DisplayKeyValueBlock` | `<dl>` map render of key/value pairs |
 | `tabs` | `tabs(array $tabs, array $opts = []): Node` | Tab container; each tab is `['label' => '...', 'body' => ...]` |
 | `actionGroup` | `actionGroup(string $label, array $actions, ?string $as = null): Node` | Button group or dropdown; `$as` is `'buttons'`\|`'dropdown'` (default `'buttons'`) |
+
+> **The display-value family is the read-only detail story** (the old "infolist" gap).
+> The author holds the record and passes each value to a block directly — there is no
+> field-binding layer. `RecordDetailPage` in the demo is the worked example.
+> `displayValue` shares its date/datetime/number/money formatting with the table column
+> projection via `Tbtop\Admin\Http\KindFormat`: those four bake the formatted string into
+> `options.value` server-side; `badge`/`boolean`/`icon` emit the raw value + their
+> color/icon meta and the client renders them (the same split the table uses).
 
 ### Chrome blocks
 

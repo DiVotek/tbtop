@@ -247,6 +247,91 @@
 							}
 						}
 					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "displayValue" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["value"],
+								"additionalProperties": false,
+								"properties": {
+									"value": {},
+									"kind": {
+										"type": "string",
+										"enum": [
+											"badge",
+											"boolean",
+											"icon",
+											"money",
+											"date",
+											"datetime",
+											"number"
+										]
+									},
+									"badge": {
+										"type": "object",
+										"properties": { "colors": { "type": "object" } }
+									},
+									"boolean": {
+										"type": "object",
+										"properties": {
+											"trueIcon": { "type": "string" },
+											"falseIcon": { "type": "string" },
+											"trueColor": { "type": "string" },
+											"falseColor": { "type": "string" }
+										}
+									},
+									"iconMap": { "type": "object" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "displayImage" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["src"],
+								"additionalProperties": false,
+								"properties": {
+									"src": { "type": "string" },
+									"alt": { "type": "string" },
+									"caption": { "type": "string" },
+									"asLink": { "type": "boolean" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "displayRichtext" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["state"],
+								"additionalProperties": false,
+								"properties": {
+									"state": { "type": "object" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "displayKeyValue" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["entries"],
+								"additionalProperties": false,
+								"properties": {
+									"entries": { "type": "object" }
+								}
+							}
+						}
+					}
 				}
 			]
 		},
