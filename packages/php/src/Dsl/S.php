@@ -111,6 +111,18 @@ final class S
         return $map[$kind]::make($name);
     }
 
+    /**
+     * Snapshot of the bootstrapped kind→class map (built-ins plus any
+     * registered overrides). Read-only copy — parity tests assert its keys
+     * against BUILT_IN_KINDS so the two PHP lists cannot silently drift.
+     *
+     * @return array<string, class-string<Field>>
+     */
+    public static function builtInKindClasses(): array
+    {
+        return self::kindMap();
+    }
+
     // -------------------------------------------------------------------------
     // Magic dispatch
     // -------------------------------------------------------------------------
