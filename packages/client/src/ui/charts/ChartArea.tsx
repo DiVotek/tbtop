@@ -11,7 +11,7 @@ import {
 import type { ChartBlockOptions, ChartPoint } from "../../structure/chartBlock";
 import { seriesColor } from "./chartColors";
 
-export function renderAreaChart(data: ChartPoint[], options: ChartBlockOptions) {
+export function renderAreaChart(data: ChartPoint[], options: ChartBlockOptions, colors: string[]) {
 	const series = options.series ?? [];
 	return (
 		<ResponsiveContainer width="100%" height="100%">
@@ -22,7 +22,7 @@ export function renderAreaChart(data: ChartPoint[], options: ChartBlockOptions) 
 				<Tooltip />
 				<Legend />
 				{series.map((s, i) => {
-					const color = seriesColor(s.color, i);
+					const color = seriesColor(s.color, i, colors);
 					return (
 						<Area
 							key={s.dataKey}
