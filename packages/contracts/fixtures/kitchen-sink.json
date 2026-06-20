@@ -641,6 +641,89 @@
                             },
                             "meta": {},
                             "name": "copy"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Edit",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "Edit post",
+                                    "body": {
+                                        "kind": "form",
+                                        "options": {
+                                            "name": "editPost",
+                                            "children": [
+                                                {
+                                                    "kind": "text",
+                                                    "options": {
+                                                        "label": "Title",
+                                                        "required": true,
+                                                        "constraints": {
+                                                            "required": true,
+                                                            "max": 200
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "title"
+                                                },
+                                                {
+                                                    "kind": "boolean",
+                                                    "options": {
+                                                        "label": "Published"
+                                                    },
+                                                    "meta": {},
+                                                    "name": "published"
+                                                },
+                                                {
+                                                    "kind": "row",
+                                                    "options": {
+                                                        "children": [
+                                                            {
+                                                                "kind": "action",
+                                                                "options": {
+                                                                    "label": "Save",
+                                                                    "color": "primary",
+                                                                    "spec": {
+                                                                        "type": "server",
+                                                                        "needs": [
+                                                                            "row",
+                                                                            "form"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "editSave"
+                                                            },
+                                                            {
+                                                                "kind": "action",
+                                                                "options": {
+                                                                    "label": "Cancel",
+                                                                    "spec": {
+                                                                        "type": "server",
+                                                                        "needs": []
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "editCancel"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "meta": {}
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "editPost"
+                                    },
+                                    "query": true,
+                                    "queryNeeds": [
+                                        "row"
+                                    ]
+                                }
+                            },
+                            "meta": {},
+                            "name": "edit"
                         }
                     ]
                 },

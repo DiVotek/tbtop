@@ -231,8 +231,26 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `handle` | `handle(Closure $handler, array $needs = []): self` | **Spec.** Server action handler; `$needs` declares payload sources (`'form'`\|`'row'`\|`'selection'`) |
 | `modal` | `modal(string $title, Node\|FormBuilder\|null $body = null, ?string $description = null): self` | **Spec.** Opens a modal dialog |
 | `size` | `size(string $size): self` | Modal dialog size: `'sm'`\|`'md'`\|`'lg'`\|`'full'`; only valid after `modal()` |
+| `query` | `query(callable $fn, array $needs = ['row']): static` | Backend data source for a modal; emits `query: true` + `queryNeeds`. The closure runs on open and feeds the modal body (a form prefills from it). Only valid after `modal()` |
 | `confirm` | `confirm(string $title, ?string $description = null): self` | Adds a confirmation dialog before the action fires |
 | `custom` | `custom(string $handler, array $params = []): self` | **Spec.** Delegates to a named client-side handler |
+
+### Prebuilt CRUD action helpers (`Tbtop\Admin\Dsl\Actions`)
+
+Thin factories over `$s->action()` + `Effects` for the common record operations.
+Each takes `S $s` first (so it registers in the action registry) and **returns the
+configured `ActionBuilder`**, so you keep chaining (`->color()`, `->hiddenIf()`, …).
+No model is baked in — the consumer passes the closure. Filament-familiar.
+
+| Helper | Signature | Shape |
+|---|---|---|
+| `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', string $title = 'Edit record', ?string $saveName = null): ActionBuilder` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
+| `DeleteAction` | `make(S $s, Closure $using, string $name = 'delete', bool $bulk = false): ActionBuilder` | Danger + confirm server action; `$using` deletes. `bulk: true` switches to `needs: ['selection']` (empty selection → benign notify) |
+| `ReplicateAction` | `make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder` | Server action; `$using` clones. No auto-redirect — return a `redirect` effect from `$using` for edit-after-clone |
+
+`RecordAction` (same namespace) is the shared internal: `server()` / `bulk()` wire the
+server-action-with-default-tail the presets build on; a void/null closure falls back to
+the tail.
 
 ### Tab
 
