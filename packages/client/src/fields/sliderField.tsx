@@ -30,7 +30,7 @@ export function SliderForm({
 	const max = options?.max ?? DEFAULT_MAX;
 	const current = typeof value === "number" ? value : min;
 	return (
-		<div className="flex items-center gap-3" data-field={name}>
+		<div className="flex items-center gap-3" data-field={name} onBlur={onBlur}>
 			<Slider
 				id={id ?? name}
 				value={[current]}
@@ -39,7 +39,6 @@ export function SliderForm({
 				step={options?.step}
 				disabled={disabled}
 				onValueChange={([next]) => onChange(next ?? null)}
-				onValueCommit={onBlur}
 				aria-label={name}
 			/>
 			<output className="w-10 text-right text-sm tabular-nums">{current}</output>
