@@ -5,6 +5,7 @@ namespace App\Admin\Pages;
 use App\Models\Post;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
@@ -44,13 +45,13 @@ class SoftDeletesDemoPage extends Page
                 ->defaultSort('id', 'desc')
                 ->query(fn () => Post::query())
                 ->rowActions([
-                    $s->action('delete')->label('Delete')->color('danger')
-                        ->confirm('Delete post?', 'It moves to the Trashed tab.')
-                        ->handle(function (ActionCtx $ctx): Effects {
-                            Post::whereKey($ctx->row['id'] ?? null)->delete();
+                    // Prebuilt delete; the using closure returns the load-bearing
+                    // "moves to Trashed" copy + named refreshTable over the tail.
+                    DeleteAction::make($s, using: function (ActionCtx $ctx): Effects {
+                        Post::whereKey($ctx->row['id'] ?? null)->delete();
 
-                            return Effects::make()->notify('Post deleted')->refreshTable('posts');
-                        }, needs: ['row']),
+                        return Effects::make()->notify('Post deleted')->refreshTable('posts');
+                    })->confirm('Delete post?', 'It moves to the Trashed tab.'),
                 ])
                 ->softDeletes($s, Post::class)
                 ->toNode(),
