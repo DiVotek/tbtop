@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Node;
@@ -27,6 +28,30 @@ class KitchenSinkPage extends Page
             $s->displayText('Kitchen sink')->variant('heading'),
             $s->displayText('Every node kind the PHP DSL can emit.')->variant('muted'),
             $s->displayDivider(),
+            $s->section(['title' => 'Display primitives'], [
+                $s->displayValue('active')->badge(['active' => Color::Success]),
+                $s->displayValue(true)->boolean(trueColor: Color::Success),
+                $s->displayValue('shipped')->icon(['shipped' => ['icon' => 'truck', 'color' => 'success']]),
+                $s->displayValue(12345)->money('USD'),
+                $s->displayValue('2024-03-15 10:30:00')->date('Y-m-d'),
+                $s->displayValue(1234.5)->number(2),
+                $s->displayImage('/img/cover.png')->alt('Cover')->caption('Figure 1'),
+                $s->displayImage('/files/report.pdf')->asLink(),
+                $s->displayRichtext([
+                    'root' => [
+                        'children' => [
+                            [
+                                'children' => [
+                                    ['detail' => 0, 'format' => 0, 'mode' => 'normal', 'style' => '', 'text' => 'Hello', 'type' => 'text', 'version' => 1],
+                                ],
+                                'direction' => 'ltr', 'format' => '', 'indent' => 0, 'type' => 'paragraph', 'version' => 1,
+                            ],
+                        ],
+                        'direction' => 'ltr', 'format' => '', 'indent' => 0, 'type' => 'root', 'version' => 1,
+                    ],
+                ]),
+                $s->displayKeyValue(['SKU' => 'A-1', 'Weight' => '2kg']),
+            ]),
             $s->grid(['cols' => 2], [
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
                     ->hiddenIf('period', '=', 'all')->toNode(),

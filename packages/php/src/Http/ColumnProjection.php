@@ -2,7 +2,6 @@
 
 namespace Tbtop\Admin\Http;
 
-use Carbon\Carbon;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\I18n\LocaleService;
@@ -78,33 +77,7 @@ final class ColumnProjection
 
     private static function applyKindFormat(Column $col, mixed $value): mixed
     {
-        $kind = $col->getKind();
-        $meta = $col->getKindMeta();
-
-        if ($value === null || $value === '') {
-            return $value;
-        }
-
-        return match ($kind) {
-            'date' => self::formatDate($value, $meta['format'] ?? 'Y-m-d'),
-            'datetime' => self::formatDate($value, $meta['format'] ?? 'Y-m-d H:i:s'),
-            'number' => isset($meta['decimals'])
-                ? number_format((float) $value, $meta['decimals'])
-                : $value,
-            'money' => isset($meta['currency'])
-                ? number_format((float) $value / 100, 2).' '.$meta['currency']
-                : $value,
-            default => $value,
-        };
-    }
-
-    private static function formatDate(mixed $value, string $format): mixed
-    {
-        try {
-            return Carbon::parse((string) $value)->format($format);
-        } catch (\Throwable) {
-            return $value;
-        }
+        return KindFormat::apply($col->getKind() ?? '', $col->getKindMeta(), $value);
     }
 
     private static function pickLocale(mixed $raw): mixed

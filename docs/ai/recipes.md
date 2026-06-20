@@ -109,30 +109,40 @@ Available display primitives (all in `S.php`, confirmed):
 | `$s->markdown($content)` | `displayHtml` | Markdown converted server-side to HTML |
 | `$s->displayAlert($message)` | `displayAlert` | Callout / info box |
 | `$s->displayDivider()` | `displayDivider` | Visual separator |
+| `$s->displayValue($value)->badge([...])` | `displayValue` | One value rendered as badge / boolean-icon / icon / money / date / datetime / number (mirrors the table `Column` kind-model) |
+| `$s->displayImage($url)` | `displayImage` | Full-size image (`->alt()`/`->caption()`) or a file-download link (`->asLink()`) |
+| `$s->displayRichtext($state)` | `displayRichtext` | Read-only render of a stored Lexical `SerializedEditorState` |
+| `$s->displayKeyValue($map)` | `displayKeyValue` | `<dl>` map of key/value pairs |
 
-Example — a record summary page:
+Example — a record detail page (the demo's `RecordDetailPage` is the full version):
 
 ```php
 public function view(S $s): Node
 {
-    $post = Post::findOrFail($this->recordId());
+    $order = Order::findOrFail($this->recordId());
 
     return $s->stack([
-        $s->displayText("Post: {$post->title}")->variant('heading'),
-        $s->displayText('Published')->variant('subheading'),
-        $s->displayText($post->published ? 'Yes' : 'Draft')->variant('muted'),
-        $s->displayDivider(),
-        $s->markdown($post->body),
+        $s->displayText("Order #{$order->id}")->variant('heading'),
+        $s->section(['title' => 'Summary'], [
+            $s->displayValue($order->status)->badge(['paid' => Color::Success]),
+            $s->displayValue($order->shipped)->boolean(),
+            $s->displayValue($order->total_cents)->money('USD'),
+            $s->displayValue($order->placed_at)->date('Y-m-d'),
+        ]),
+        $s->displayImage($order->cover_url)->alt('Cover'),
+        $s->displayRichtext($order->notes),
+        $s->displayKeyValue(['SKU' => $order->sku, 'Weight' => $order->weight]),
     ]);
 }
 ```
 
-**What this is NOT:** a Filament-style Infolist that binds field definitions to model
-attributes (e.g. `TextEntry::make('title')->label('Title')`). That pattern — where the
-framework maps a list of field declarations to a record's values — does not exist yet.
-CLAUDE.md lists "infolist" as a known gap. If you need field-driven record display, you
-must interpolate values by hand into display blocks as shown above, or wait for the
-infolist primitive.
+**This replaces the old "infolist" gap.** The display-value family (`displayValue` +
+`displayImage`/`displayRichtext`/`displayKeyValue`, M-96) covers field-driven detail by a
+deliberate *author-renders-directly* model: you hold the record and pass each value to a
+block, rather than declaring `TextEntry::make('title')` bindings. There is intentionally no
+binding/resolution layer — the author owns the data access, the block owns the rendering.
+`displayValue` reuses the table column's date/number/money formatting (via `KindFormat`),
+so a value formats identically in a cell and a detail view.
 
 ---
 
@@ -204,7 +214,7 @@ primitives — the result will be incomplete or broken.
 | Feature | Why it does not compose |
 |---|---|
 | **Relation managers with inline editing** | The N-table pattern (Recipe 1) handles add/delete via row actions. True inline editing (editing a relation row without a separate page) would require a modal form on a relation row action — the mechanism exists (`->modal()` on an action), but wiring a form's save back to the related record's endpoint requires per-page controller work that has no convention yet. Track via the roadmap. |
-| **Infolist field declarations** | A layout that maps `TextEntry::make('title')` → reads `$record->title` dynamically does not exist. Recipe 2 covers static display blocks only. The infolist primitive is listed as a real gap in CLAUDE.md. |
+| **Infolist field *binding* declarations** | The *auto-binding* form (`TextEntry::make('title')` that resolves `$record->title` itself) does not exist and is not planned — by design. Read-only record detail is covered instead by the display-value family (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`, M-96): the author passes each value directly (Recipe 2). If you specifically want declarative field→attribute binding, that is the part that does not compose. |
 | **Soft-delete macro** | Recipe 3 shows the hand-rolled approach. There is no `->withTrashed()` toggle or `->restore()` bulk action built into the framework — each must be written by hand. Treat Recipe 3 as the workaround until the macro lands. |
 | **CSV export / import** | No export action kind exists. Filament uses queued jobs for large exports. This needs a new effect kind or a direct download endpoint — neither is in the closed effect set today. Listed as backlog 🟡 in the roadmap. |
 | **Global search** | The table-level `->searchable()` and per-column `.searchable()` work within a single table. A cross-page global search (the Spotlight-style overlay in Filament) needs a layout-slot design — it is listed as a known gap in the roadmap. |

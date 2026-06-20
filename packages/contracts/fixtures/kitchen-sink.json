@@ -24,6 +24,139 @@
                 "meta": {}
             },
             {
+                "kind": "section",
+                "options": {
+                    "title": "Display primitives",
+                    "children": [
+                        {
+                            "kind": "displayValue",
+                            "options": {
+                                "value": "active",
+                                "kind": "badge",
+                                "badge": {
+                                    "colors": {
+                                        "active": "success"
+                                    }
+                                }
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayValue",
+                            "options": {
+                                "value": true,
+                                "kind": "boolean",
+                                "boolean": {
+                                    "trueColor": "success"
+                                }
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayValue",
+                            "options": {
+                                "value": "shipped",
+                                "kind": "icon",
+                                "iconMap": {
+                                    "shipped": {
+                                        "icon": "truck",
+                                        "color": "success"
+                                    }
+                                }
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayValue",
+                            "options": {
+                                "value": "123.45 USD",
+                                "kind": "money"
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayValue",
+                            "options": {
+                                "value": "2024-03-15",
+                                "kind": "date"
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayValue",
+                            "options": {
+                                "value": "1,234.50",
+                                "kind": "number"
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayImage",
+                            "options": {
+                                "src": "/img/cover.png",
+                                "alt": "Cover",
+                                "caption": "Figure 1"
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayImage",
+                            "options": {
+                                "src": "/files/report.pdf",
+                                "asLink": true
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayRichtext",
+                            "options": {
+                                "state": {
+                                    "root": {
+                                        "children": [
+                                            {
+                                                "children": [
+                                                    {
+                                                        "detail": 0,
+                                                        "format": 0,
+                                                        "mode": "normal",
+                                                        "style": "",
+                                                        "text": "Hello",
+                                                        "type": "text",
+                                                        "version": 1
+                                                    }
+                                                ],
+                                                "direction": "ltr",
+                                                "format": "",
+                                                "indent": 0,
+                                                "type": "paragraph",
+                                                "version": 1
+                                            }
+                                        ],
+                                        "direction": "ltr",
+                                        "format": "",
+                                        "indent": 0,
+                                        "type": "root",
+                                        "version": 1
+                                    }
+                                }
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayKeyValue",
+                            "options": {
+                                "entries": {
+                                    "SKU": "A-1",
+                                    "Weight": "2kg"
+                                }
+                            },
+                            "meta": {}
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
                 "kind": "grid",
                 "options": {
                     "cols": 2,

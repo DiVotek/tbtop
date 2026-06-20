@@ -37,7 +37,11 @@ import { CollapsibleBlock } from "../structure/collapsibleBlock";
 import { DisplayAlertBlock } from "../structure/displayAlertBlock";
 import { DisplayDividerBlock } from "../structure/displayDividerBlock";
 import { DisplayHtmlBlock } from "../structure/displayHtmlBlock";
+import { DisplayImageBlock } from "../structure/displayImageBlock";
+import { DisplayKeyValueBlock } from "../structure/displayKeyValueBlock";
+import { DisplayRichtextBlock } from "../structure/displayRichtextBlock";
 import { DisplayTextBlock } from "../structure/displayTextBlock";
+import { DisplayValueBlock } from "../structure/displayValueBlock";
 import { FormBlock } from "../structure/formBlock";
 import { TableBlock } from "../structure/tableBlock";
 import {
@@ -99,6 +103,10 @@ function registerLayout(): void {
 	defineBlock("displayHtml", { behavior: "leaf", render: DisplayHtmlBlock });
 	defineBlock("displayDivider", { behavior: "leaf", render: DisplayDividerBlock });
 	defineBlock("displayAlert", { behavior: "leaf", render: DisplayAlertBlock });
+	defineBlock("displayValue", { behavior: "leaf", render: DisplayValueBlock });
+	defineBlock("displayImage", { behavior: "leaf", render: DisplayImageBlock });
+	defineBlock("displayRichtext", { behavior: "leaf", render: DisplayRichtextBlock });
+	defineBlock("displayKeyValue", { behavior: "leaf", render: DisplayKeyValueBlock });
 }
 
 function registerDataBlocks(): void {

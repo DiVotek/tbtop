@@ -304,6 +304,45 @@ final class S
         return AlertBlock::make($message);
     }
 
+    /**
+     * Read-only display of one value, formatted like a table column. The author
+     * passes the value directly; chain a kind-sugar method (->badge / ->boolean
+     * / ->icon / ->money / ->date / ->datetime / ->number) on the result.
+     */
+    public function displayValue(mixed $value): DisplayValueBlock
+    {
+        return DisplayValueBlock::make($value);
+    }
+
+    /**
+     * Read-only full-size image (or file-download link via ->asLink()). The
+     * author passes a URL they already hold; chain ->alt() / ->caption().
+     */
+    public function displayImage(string $src): DisplayImageBlock
+    {
+        return DisplayImageBlock::make($src);
+    }
+
+    /**
+     * Read-only render of a stored Lexical SerializedEditorState map.
+     *
+     * @param  array<string, mixed>  $state
+     */
+    public function displayRichtext(array $state): DisplayRichtextBlock
+    {
+        return DisplayRichtextBlock::make($state);
+    }
+
+    /**
+     * Read-only <dl> map render of key/value pairs.
+     *
+     * @param  array<string, mixed>  $map
+     */
+    public function displayKeyValue(array $map): DisplayKeyValueBlock
+    {
+        return DisplayKeyValueBlock::make($map);
+    }
+
     /** @param  list<array{label: string, body: mixed}>  $tabs @param  array<string, mixed>  $opts */
     public function tabs(array $tabs, array $opts = []): Node
     {

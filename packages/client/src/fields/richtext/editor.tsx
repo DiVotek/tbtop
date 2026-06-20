@@ -1,6 +1,3 @@
-import { CodeHighlightNode, CodeNode } from "@lexical/code";
-import { AutoLinkNode, LinkNode } from "@lexical/link";
-import { ListItemNode, ListNode } from "@lexical/list";
 import { TRANSFORMERS } from "@lexical/markdown";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -11,10 +8,10 @@ import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import type { EditorState, SerializedEditorState } from "lexical";
 import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
+import { RICHTEXT_NODES, RICHTEXT_THEME } from "./richtextConfig";
 import { SlashMenuPlugin } from "./slashMenuPlugin";
 import { Toolbar } from "./toolbar";
 
@@ -25,20 +22,11 @@ interface RichtextEditorProps {
 	onChange: (state: SerializedEditorState) => void;
 }
 
-const NODES = [
-	HeadingNode,
-	QuoteNode,
-	ListNode,
-	ListItemNode,
-	CodeNode,
-	CodeHighlightNode,
-	LinkNode,
-	AutoLinkNode,
-];
-
 const DEBOUNCE_MS = 300;
 
-function resolveInitialEditorState(
+// Resolve a stored Lexical state (or legacy plain string) into the JSON string
+// LexicalComposer's `editorState` expects. Shared by the read-only view.
+export function resolveInitialEditorState(
 	value: SerializedEditorState | string | null,
 ): string | undefined {
 	if (!value) {
@@ -105,23 +93,8 @@ export function RichtextEditor({
 		() => ({
 			namespace: "TabletopRichtextEditor",
 			editable: !disabled,
-			nodes: NODES,
-			theme: {
-				root: "tabletop-editor",
-				paragraph: "",
-				heading: { h1: "", h2: "", h3: "" },
-				list: { ul: "", ol: "", listitem: "" },
-				quote: "",
-				code: "",
-				link: "",
-				text: {
-					bold: "font-bold",
-					italic: "italic",
-					underline: "underline",
-					strikethrough: "line-through",
-					code: "",
-				},
-			},
+			nodes: RICHTEXT_NODES,
+			theme: RICHTEXT_THEME,
 			editorState: resolveInitialEditorState(mountState.current),
 			onError: (error: Error) => {
 				console.error("Lexical error:", error);
