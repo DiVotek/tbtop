@@ -2,26 +2,27 @@
  * Layout dispatch tests: verifies that the persistent layout wrapper mounts
  * the correct shell based on the `layout` page prop.
  *
- * Uses mock.module for @inertiajs/react so usePage() returns controlled props.
- * This file is isolated — bun module mocks are process-global, so they are
- * declared here and never imported alongside files that need a different mock.
+ * Mocks ONLY usePage + router from @inertiajs/react; the real Link passes
+ * through. Bun mock.module is process-global, so a stub Link that dropped
+ * props (data-testid, asChild) would leak into every later test file and
+ * break actions that rely on asChild forwarding (M-95).
  */
 import { describe, expect, mock, test } from "bun:test";
+import * as inertiaReact from "@inertiajs/react";
 import { render } from "@testing-library/react";
 
 // ---------------------------------------------------------------------------
-// Minimal @inertiajs/react mock — only usePage is needed for layout dispatch.
+// Minimal @inertiajs/react mock — usePage + router only. Link stays REAL so
+// no prop-dropping stub leaks across the process (mock.module is global).
 // ---------------------------------------------------------------------------
 
 type PageProps = Record<string, unknown>;
 let currentProps: PageProps = {};
 
 mock.module("@inertiajs/react", () => ({
+	...inertiaReact,
 	usePage: () => ({ props: currentProps, url: "/admin/test", flash: {} }),
 	router: { post: mock(() => {}), on: mock(() => () => {}) },
-	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
-		<a href={href}>{children}</a>
-	),
 }));
 
 // Import after mock.module so the mock is in effect.

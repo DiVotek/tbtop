@@ -11,13 +11,16 @@
  *  - router is mocked via module augmentation to capture registered listeners.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import * as inertiaReact from "@inertiajs/react";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 
 // ---------------------------------------------------------------------------
-// Minimal router mock — captures listeners registered via router.on('before')
+// Minimal router mock — captures listeners registered via router.on('before').
+// Link stays REAL: a prop-dropping stub Link would leak across the whole run
+// (mock.module is process-global) and break asChild testid forwarding (M-95).
 // ---------------------------------------------------------------------------
 
 type BeforeListener = (event: { detail: { visit: { method?: string } } }) => boolean | void;
@@ -26,9 +29,7 @@ const registeredBeforeListeners: BeforeListener[] = [];
 let routerOnCalled = false;
 
 mock.module("@inertiajs/react", () => ({
-	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
-		<a href={href}>{children}</a>
-	),
+	...inertiaReact,
 	router: {
 		visit: mock(() => {}),
 		on: mock((event: string, listener: BeforeListener) => {
