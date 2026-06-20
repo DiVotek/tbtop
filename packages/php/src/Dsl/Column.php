@@ -248,19 +248,7 @@ final class Column implements JsonSerializable
         Color|string|null $falseColor = null,
     ): static {
         $this->kind = 'boolean';
-        $meta = [];
-        if ($trueIcon !== null) {
-            $meta['trueIcon'] = $trueIcon;
-        }
-        if ($falseIcon !== null) {
-            $meta['falseIcon'] = $falseIcon;
-        }
-        if ($trueColor !== null) {
-            $meta['trueColor'] = $trueColor instanceof Color ? $trueColor->value : $trueColor;
-        }
-        if ($falseColor !== null) {
-            $meta['falseColor'] = $falseColor instanceof Color ? $falseColor->value : $falseColor;
-        }
+        $meta = KindMetaBuilder::booleanMeta($trueIcon, $falseIcon, $trueColor, $falseColor);
         if ($meta !== []) {
             $this->kindMeta['boolean'] = $meta;
         }
@@ -274,11 +262,7 @@ final class Column implements JsonSerializable
     public function badge(array $colors): static
     {
         $this->kind = 'badge';
-        $mapped = [];
-        foreach ($colors as $value => $color) {
-            $mapped[$value] = $color instanceof Color ? $color->value : $color;
-        }
-        $this->kindMeta['badge'] = ['colors' => $mapped];
+        $this->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors);
 
         return $this;
     }
