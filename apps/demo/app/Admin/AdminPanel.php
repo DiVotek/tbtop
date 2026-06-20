@@ -14,6 +14,7 @@ use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\RelationDemoPage;
 use App\Admin\Pages\SettingsPage;
+use App\Admin\Pages\SoftDeletesDemoPage;
 use App\Admin\Pages\TwoFactorChallengePage;
 use App\Admin\Pages\TwoFactorSetupPage;
 use App\Admin\Pages\UploadDemoPage;
@@ -41,6 +42,7 @@ class AdminPanel extends Panel
                 MediaEditPage::class,
                 UploadDemoPage::class,
                 SettingsPage::class,
+                SoftDeletesDemoPage::class,
                 PlaygroundPage::class,
                 MediaLibraryPage::class,
                 LoginPreviewPage::class,
