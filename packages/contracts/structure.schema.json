@@ -198,6 +198,47 @@
 							}
 						}
 					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "checkboxlist" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["options"],
+								"properties": {
+									"options": { "$ref": "#/$defs/choiceOptions" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "togglebuttons" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["options"],
+								"properties": {
+									"options": { "$ref": "#/$defs/choiceOptions" },
+									"multiple": { "type": "boolean" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "slider" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"min": { "type": "number" },
+									"max": { "type": "number" },
+									"step": { "type": "number" }
+								}
+							}
+						}
+					}
 				}
 			]
 		},
@@ -327,6 +368,17 @@
 				"options": {
 					"type": "array",
 					"items": { "type": "integer", "minimum": 1 }
+				}
+			}
+		},
+		"choiceOptions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["value", "label"],
+				"properties": {
+					"value": { "type": "string" },
+					"label": { "type": "string" }
 				}
 			}
 		},
