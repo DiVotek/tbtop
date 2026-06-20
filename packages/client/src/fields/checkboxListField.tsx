@@ -1,7 +1,7 @@
 import { Checkbox } from "../ui/checkbox";
-import { Label } from "../ui/label";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
+import { OptionRow } from "./optionList";
 import { LabelChips } from "./tagsShared";
 
 interface CheckboxListBag {
@@ -26,27 +26,29 @@ export function CheckboxListForm({
 }: FieldFormProps<string[], CheckboxListBag>) {
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
-	const groupId = id ?? name;
+	const groupId = fieldId({ id, name });
 	function toggle(v: string): void {
 		const next = current.includes(v) ? current.filter((x) => x !== v) : [...current, v];
 		onChange(next.length === 0 ? null : next);
 	}
 	return (
 		<div className="grid gap-3" data-testid={`checkboxlist-${name}`} onBlur={onBlur}>
-			{choices.map((opt) => {
-				const itemId = `${groupId}-${opt.value}`;
-				return (
-					<div key={opt.value} className="flex items-center gap-2">
+			{choices.map((opt) => (
+				<OptionRow
+					key={opt.value}
+					groupId={groupId}
+					value={opt.value}
+					label={opt.label}
+					control={(itemId) => (
 						<Checkbox
 							id={itemId}
 							checked={current.includes(opt.value)}
 							disabled={disabled}
 							onCheckedChange={() => toggle(opt.value)}
 						/>
-						<Label htmlFor={itemId}>{opt.label}</Label>
-					</div>
-				);
-			})}
+					)}
+				/>
+			))}
 		</div>
 	);
 }
