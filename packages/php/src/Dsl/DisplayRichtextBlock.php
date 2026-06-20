@@ -3,7 +3,6 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
-use stdClass;
 
 /**
  * Read-only render of a stored Lexical SerializedEditorState.
@@ -27,10 +26,6 @@ final class DisplayRichtextBlock implements JsonSerializable
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
-        return [
-            'kind' => 'displayRichtext',
-            'options' => ['state' => $this->state],
-            'meta' => new stdClass,
-        ];
+        return (new Node('displayRichtext', ['state' => $this->state]))->jsonSerialize();
     }
 }

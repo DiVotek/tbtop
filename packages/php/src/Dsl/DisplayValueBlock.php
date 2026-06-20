@@ -3,18 +3,12 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
-use stdClass;
 use Tbtop\Admin\Http\KindFormat;
 
 /**
- * Read-only display of a single value, formatted like a table column.
- *
- * The author passes the value directly (not a binding). Kind-sugar mirrors
- * Column's kind-model: badge / boolean / icon / money / date / datetime /
- * number. For money/date/datetime/number the formatted string is baked into
- * options.value server-side (via the shared KindFormat); for badge/boolean/
- * icon the raw value + format meta are emitted and the client renders them
- * (mirrors how the table defers those to the client).
+ * Read-only display of a single value, formatted like a table column. Date/
+ * money/number bake the formatted string into options.value; badge/boolean/
+ * icon emit raw value + meta for the client (mirrors the table's column kinds).
  *
  * @method static self make(mixed $value)
  */
@@ -86,19 +80,7 @@ final class DisplayValueBlock implements JsonSerializable
     ): self {
         $clone = clone $this;
         $clone->kind = 'boolean';
-        $meta = [];
-        if ($trueIcon !== null) {
-            $meta['trueIcon'] = $trueIcon;
-        }
-        if ($falseIcon !== null) {
-            $meta['falseIcon'] = $falseIcon;
-        }
-        if ($trueColor !== null) {
-            $meta['trueColor'] = $trueColor instanceof Color ? $trueColor->value : $trueColor;
-        }
-        if ($falseColor !== null) {
-            $meta['falseColor'] = $falseColor instanceof Color ? $falseColor->value : $falseColor;
-        }
+        $meta = KindMetaBuilder::booleanMeta($trueIcon, $falseIcon, $trueColor, $falseColor);
         if ($meta !== []) {
             $clone->kindMeta['boolean'] = $meta;
         }
@@ -113,11 +95,7 @@ final class DisplayValueBlock implements JsonSerializable
     {
         $clone = clone $this;
         $clone->kind = 'badge';
-        $mapped = [];
-        foreach ($colors as $value => $color) {
-            $mapped[$value] = $color instanceof Color ? $color->value : $color;
-        }
-        $clone->kindMeta['badge'] = ['colors' => $mapped];
+        $clone->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors);
 
         return $clone;
     }
@@ -157,7 +135,7 @@ final class DisplayValueBlock implements JsonSerializable
             }
         }
 
-        return ['kind' => 'displayValue', 'options' => $options, 'meta' => new stdClass];
+        return (new Node('displayValue', $options))->jsonSerialize();
     }
 
     /**

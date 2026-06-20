@@ -3,7 +3,6 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
-use stdClass;
 
 /**
  * Read-only full-size image or file-download link.
@@ -68,6 +67,6 @@ final class DisplayImageBlock implements JsonSerializable
             $options['asLink'] = true;
         }
 
-        return ['kind' => 'displayImage', 'options' => $options, 'meta' => new stdClass];
+        return (new Node('displayImage', $options))->jsonSerialize();
     }
 }

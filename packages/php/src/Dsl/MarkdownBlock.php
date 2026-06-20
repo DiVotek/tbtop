@@ -4,7 +4,6 @@ namespace Tbtop\Admin\Dsl;
 
 use Illuminate\Support\Str;
 use JsonSerializable;
-use stdClass;
 
 /**
  * Markdown display block.
@@ -49,10 +48,6 @@ final class MarkdownBlock implements JsonSerializable
             'allow_unsafe_links' => false,
         ]);
 
-        return [
-            'kind' => 'displayHtml',
-            'options' => ['html' => $html],
-            'meta' => new stdClass,
-        ];
+        return (new Node('displayHtml', ['html' => $html]))->jsonSerialize();
     }
 }

@@ -3,7 +3,6 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
-use stdClass;
 
 /**
  * Static display text block.
@@ -33,10 +32,8 @@ final class TextBlock implements JsonSerializable
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
-        return [
-            'kind' => 'displayText',
-            'options' => ['content' => $this->content, 'variant' => $this->variantValue],
-            'meta' => new stdClass,
-        ];
+        $options = ['content' => $this->content, 'variant' => $this->variantValue];
+
+        return (new Node('displayText', $options))->jsonSerialize();
     }
 }
