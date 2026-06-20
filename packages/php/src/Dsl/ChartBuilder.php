@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Fields\Field;
 
 /**
@@ -13,6 +14,8 @@ use Tbtop\Admin\Dsl\Fields\Field;
  */
 final class ChartBuilder implements JsonSerializable
 {
+    use WithMeta;
+
     private ?Closure $query = null;
 
     /** @var list<Field> */
@@ -61,7 +64,8 @@ final class ChartBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
-        [$options, $meta] = Meta::split($this->opts);
+        [$options, $optMeta] = Meta::split($this->opts);
+        $meta = [...$optMeta, ...$this->metaBag];
         if ($this->paramFields !== []) {
             $options['params'] = array_map(fn (Field $f) => $f->toNode(), $this->paramFields);
         }

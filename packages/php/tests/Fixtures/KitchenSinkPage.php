@@ -28,8 +28,13 @@ class KitchenSinkPage extends Page
             $s->displayText('Every node kind the PHP DSL can emit.')->variant('muted'),
             $s->displayDivider(),
             $s->grid(['cols' => 2], [
+                $s->stat('Revenue')->value(42)->delta('+8%', 'up')
+                    ->hiddenIf('period', '=', 'all')->toNode(),
                 $s->chart('byMonth', 'line', ['xKey' => 'month'])->query(fn () => [])->toNode(),
-                $s->chart('byStatus', 'donut', ['nameKey' => 'status'])->query(fn () => [])->toNode(),
+                $s->chart('byStatus', 'donut', ['nameKey' => 'status'])
+                    ->query(fn () => [])
+                    ->hiddenIf('view', '!=', 'status')
+                    ->toNode(),
                 $s->chart('byInterval', 'bar', ['xKey' => 'period'])
                     ->query(fn () => [])
                     ->params([

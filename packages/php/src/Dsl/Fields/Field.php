@@ -5,7 +5,7 @@ namespace Tbtop\Admin\Dsl\Fields;
 use Closure;
 use InvalidArgumentException;
 use JsonSerializable;
-use Tbtop\Admin\Dsl\Cond;
+use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Validation\ConstraintMap;
 
@@ -17,11 +17,10 @@ use Tbtop\Admin\Validation\ConstraintMap;
  */
 abstract class Field implements JsonSerializable
 {
-    /** @var array<string, mixed> */
-    protected array $opts = [];
+    use WithMeta;
 
     /** @var array<string, mixed> */
-    private array $metaBag = [];
+    protected array $opts = [];
 
     /** @var list<string> */
     private array $ruleList = [];
@@ -139,13 +138,6 @@ abstract class Field implements JsonSerializable
         );
     }
 
-    public function meta(string $key, mixed $value): static
-    {
-        $this->metaBag[$key] = $value;
-
-        return $this;
-    }
-
     /**
      * Attach a server-side filter closure: fn($query, $value) => $query.
      * Takes priority over kind-default mapping. NEVER serialized to the wire.
@@ -160,24 +152,6 @@ abstract class Field implements JsonSerializable
     public function filterClosure(): ?Closure
     {
         return $this->filterClosure;
-    }
-
-    public function hiddenIf(Cond|string $condOrField, string $op = '', mixed $value = null): static
-    {
-        $this->metaBag['hiddenIf'] = $condOrField instanceof Cond
-            ? $condOrField
-            : Cond::fromShorthand($condOrField, $op, $value);
-
-        return $this;
-    }
-
-    public function disabledIf(Cond|string $condOrField, string $op = '', mixed $value = null): static
-    {
-        $this->metaBag['disabledIf'] = $condOrField instanceof Cond
-            ? $condOrField
-            : Cond::fromShorthand($condOrField, $op, $value);
-
-        return $this;
     }
 
     /** @return list<string> */

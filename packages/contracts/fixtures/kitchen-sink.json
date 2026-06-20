@@ -29,6 +29,24 @@
                     "cols": 2,
                     "children": [
                         {
+                            "kind": "stat",
+                            "options": {
+                                "label": "Revenue",
+                                "value": 42,
+                                "delta": {
+                                    "text": "+8%",
+                                    "direction": "up"
+                                }
+                            },
+                            "meta": {
+                                "hiddenIf": {
+                                    "op": "eq",
+                                    "field": "period",
+                                    "value": "all"
+                                }
+                            }
+                        },
+                        {
                             "kind": "chart:line",
                             "options": {
                                 "xKey": "month",
@@ -45,7 +63,13 @@
                                 "source": "byStatus",
                                 "type": "donut"
                             },
-                            "meta": {},
+                            "meta": {
+                                "hiddenIf": {
+                                    "op": "neq",
+                                    "field": "view",
+                                    "value": "status"
+                                }
+                            },
                             "name": "byStatus"
                         },
                         {
