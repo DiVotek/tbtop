@@ -4,7 +4,13 @@ import { seriesColor } from "./chartColors";
 
 const DONUT_INNER_RADIUS = 60;
 
-function renderPie(data: ChartPoint[], options: ChartBlockOptions, innerRadius: number) {
+interface PieConfig {
+	innerRadius: number;
+	colors: string[];
+}
+
+function renderPie(data: ChartPoint[], options: ChartBlockOptions, config: PieConfig) {
+	const { innerRadius, colors } = config;
 	const valueKey = options.series?.[0]?.dataKey ?? "";
 	return (
 		<ResponsiveContainer width="100%" height="100%">
@@ -21,7 +27,7 @@ function renderPie(data: ChartPoint[], options: ChartBlockOptions, innerRadius: 
 					{data.map((point, i) => (
 						<Cell
 							key={String(point[options.nameKey ?? ""] ?? i)}
-							fill={seriesColor(undefined, i)}
+							fill={seriesColor(undefined, i, colors)}
 						/>
 					))}
 				</Pie>
@@ -30,10 +36,10 @@ function renderPie(data: ChartPoint[], options: ChartBlockOptions, innerRadius: 
 	);
 }
 
-export function renderPieChart(data: ChartPoint[], options: ChartBlockOptions) {
-	return renderPie(data, options, 0);
+export function renderPieChart(data: ChartPoint[], options: ChartBlockOptions, colors: string[]) {
+	return renderPie(data, options, { innerRadius: 0, colors });
 }
 
-export function renderDonutChart(data: ChartPoint[], options: ChartBlockOptions) {
-	return renderPie(data, options, DONUT_INNER_RADIUS);
+export function renderDonutChart(data: ChartPoint[], options: ChartBlockOptions, colors: string[]) {
+	return renderPie(data, options, { innerRadius: DONUT_INNER_RADIUS, colors });
 }
