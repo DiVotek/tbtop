@@ -1,5 +1,6 @@
 import { HexAlphaColorPicker, HexColorPicker } from "react-colorful";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
 
 interface ColorpickerOptionsBag {
 	palette?: string[];
@@ -12,18 +13,17 @@ function hasAlpha(value: string | null | undefined): boolean {
 }
 
 export function ColorpickerCell({ value }: FieldCellProps<string>) {
-	if (value === null || value === undefined || value === "") {
-		return null;
-	}
-	return (
-		<span className="inline-flex items-center gap-2">
-			<span
-				aria-hidden
-				className="inline-block h-4 w-4 rounded border border-border"
-				style={{ backgroundColor: value }}
-			/>
-			<span className="font-mono text-xs">{value}</span>
-		</span>
+	return nullableCell(value, (v) =>
+		v === "" ? null : (
+			<span className="inline-flex items-center gap-2">
+				<span
+					aria-hidden
+					className="inline-block h-4 w-4 rounded border border-border"
+					style={{ backgroundColor: v }}
+				/>
+				<span className="font-mono text-xs">{v}</span>
+			</span>
+		),
 	);
 }
 
@@ -34,7 +34,7 @@ export function ColorpickerForm({
 	disabled,
 	options,
 }: FieldFormProps<string, ColorpickerOptionsBag>) {
-	const current = typeof value === "string" ? value : "";
+	const current = asString(value);
 	const Picker = hasAlpha(current) ? HexAlphaColorPicker : HexColorPicker;
 	const palette = options?.palette ?? [];
 	return (

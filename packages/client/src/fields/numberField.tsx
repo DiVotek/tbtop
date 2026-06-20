@@ -1,17 +1,15 @@
 import { Input } from "../ui/input";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export function NumberCell({ value }: FieldCellProps<number>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	return <span>{String(value)}</span>;
+	return nullableCell(value, (v) => <span>{String(v)}</span>);
 }
 
 export function NumberForm({ id, name, value, onChange, disabled }: FieldFormProps<number>) {
 	return (
 		<Input
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			type="number"
 			defaultValue={typeof value === "number" ? String(value) : ""}

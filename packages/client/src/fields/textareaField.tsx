@@ -1,5 +1,6 @@
 import { Textarea } from "../ui/textarea";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell, TruncatedTextCell } from "./cellHelpers";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 interface TextareaOptionsBag {
 	placeholder?: string;
@@ -8,11 +9,7 @@ interface TextareaOptionsBag {
 }
 
 export function TextareaCell({ value }: FieldCellProps<string>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	const str = String(value);
-	return <span title={str}>{str.length > 80 ? `${str.slice(0, 80)}…` : str}</span>;
+	return nullableCell(value, (v) => <TruncatedTextCell value={String(v)} />);
 }
 
 export function TextareaForm({
@@ -27,12 +24,12 @@ export function TextareaForm({
 	const className = options?.autoresize ? undefined : "field-sizing-fixed";
 	return (
 		<Textarea
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			rows={options?.rows}
 			placeholder={options?.placeholder}
 			className={className}
-			value={typeof value === "string" ? value : ""}
+			value={asString(value)}
 			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
 			onBlur={onBlur}
 			disabled={disabled}

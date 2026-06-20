@@ -2,7 +2,8 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Input } from "../ui/input";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 const MASK = "••••••••";
 
@@ -12,10 +13,7 @@ interface PasswordOptionsBag {
 }
 
 export function PasswordCell({ value }: FieldCellProps<string>) {
-	if (value === null || value === undefined || value === "") {
-		return null;
-	}
-	return <span>{MASK}</span>;
+	return nullableCell(value, (v) => (v === "" ? null : <span>{MASK}</span>));
 }
 
 export function PasswordForm({
@@ -29,7 +27,7 @@ export function PasswordForm({
 }: FieldFormProps<string, PasswordOptionsBag>) {
 	const t = useTranslation();
 	const [visible, setVisible] = useState(false);
-	const inputId = id ?? name;
+	const inputId = fieldId({ id, name });
 	const label = visible ? t("field.password.hide") : t("field.password.show");
 	const Icon = visible ? EyeOffIcon : EyeIcon;
 	return (
@@ -40,7 +38,7 @@ export function PasswordForm({
 				type={visible ? "text" : "password"}
 				autoComplete={options?.autoComplete ?? "current-password"}
 				placeholder={options?.placeholder}
-				value={typeof value === "string" ? value : ""}
+				value={asString(value)}
 				onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
 				onBlur={onBlur}
 				disabled={disabled}

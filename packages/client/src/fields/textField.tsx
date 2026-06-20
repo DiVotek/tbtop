@@ -1,20 +1,17 @@
 import { Input } from "../ui/input";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell, TruncatedTextCell } from "./cellHelpers";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export function TextCell({ value }: FieldCellProps<string>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	const str = String(value);
-	return <span title={str}>{str.length > 80 ? `${str.slice(0, 80)}…` : str}</span>;
+	return nullableCell(value, (v) => <TruncatedTextCell value={String(v)} />);
 }
 
 export function TextForm({ id, name, value, onChange, onBlur, disabled }: FieldFormProps<string>) {
 	return (
 		<Input
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
-			value={typeof value === "string" ? value : ""}
+			value={asString(value)}
 			onChange={(e) => onChange(e.target.value)}
 			onBlur={onBlur}
 			disabled={disabled}
