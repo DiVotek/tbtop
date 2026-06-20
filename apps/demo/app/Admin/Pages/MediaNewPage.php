@@ -4,6 +4,7 @@ namespace App\Admin\Pages;
 
 use App\Models\Media;
 use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Dsl\Actions\FormActions;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -27,11 +28,7 @@ class MediaNewPage extends Page
                 $s->upload('file')->label('Image')->required()
                     ->set('entity', 'media')
                     ->set('accept', 'image/*'),
-                $s->actionsRow([
-                    $s->action('save')->label('Save')->color('primary')
-                        ->keybinding('mod+s')->submit(),
-                    $s->action('cancel')->label('Cancel')->visit('/admin/media'),
-                ]),
+                FormActions::saveCancel($s, '/admin/media'),
             ])
                 ->record(['file' => null])
                 ->onSubmit(function (ActionCtx $ctx): string {

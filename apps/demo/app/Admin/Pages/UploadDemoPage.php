@@ -3,6 +3,7 @@
 namespace App\Admin\Pages;
 
 use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Dsl\Actions\FormActions;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -48,8 +49,7 @@ class UploadDemoPage extends Page
                     ->accept('image/*')->maxSize(5 * 1024 * 1024)
                     ->convertTo('webp')->quality(80),
                 $s->actionsRow([
-                    $s->action('save')->label('Save')->color('primary')
-                        ->keybinding('mod+s')->submit(),
+                    FormActions::save($s),
                 ]),
             ])
                 // Seed saved values (stored as paths) so the preview renders on
