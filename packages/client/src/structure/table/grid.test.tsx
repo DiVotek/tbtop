@@ -29,24 +29,24 @@ interface Overrides {
 function renderGrid(over: Overrides = {}) {
 	return render(
 		<Wrap>
-		<TableGrid
-			rows={over.rows ?? ROWS}
-			columns={COLUMNS}
-			rowActions={[]}
-			selectedIds={[]}
-			onToggle={() => {}}
-			onSelectAll={() => {}}
-			onClearSelection={() => {}}
-			hasBulk={false}
-			hasRowActions={false}
-			onSort={() => {}}
-			hasActiveFilters={false}
-			onResetFilters={() => {}}
-			reorderColumn={over.reorderColumn}
-			reorderEnabled={over.reorderEnabled}
-			reorderRows={() => Promise.resolve({})}
-			onRefresh={() => {}}
-		/>
+			<TableGrid
+				rows={over.rows ?? ROWS}
+				columns={COLUMNS}
+				rowActions={[]}
+				selectedIds={[]}
+				onToggle={() => {}}
+				onSelectAll={() => {}}
+				onClearSelection={() => {}}
+				hasBulk={false}
+				hasRowActions={false}
+				onSort={() => {}}
+				hasActiveFilters={false}
+				onResetFilters={() => {}}
+				reorderColumn={over.reorderColumn}
+				reorderEnabled={over.reorderEnabled}
+				reorderRows={() => Promise.resolve({})}
+				onRefresh={() => {}}
+			/>
 		</Wrap>,
 	);
 }
