@@ -1,6 +1,14 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { render } from "@testing-library/react";
 import type { SerializedEditorState } from "lexical";
+
+// Stub the only consumer of the real Lexical view. happy-dom throws on the
+// composer's HISTORY_MERGE_TAG init, and React.lazy resolves synchronously
+// once another test has loaded the chunk — making the mount order-dependent.
+mock.module("../fields/richtext/richtextViewLazy", () => ({
+	RichtextViewLazy: () => <div data-testid="richtext-view-lazy" />,
+}));
+
 import { DisplayAlertBlock } from "./displayAlertBlock";
 import { DisplayDividerBlock } from "./displayDividerBlock";
 import { DisplayHtmlBlock } from "./displayHtmlBlock";
@@ -403,9 +411,8 @@ describe("DisplayRichtextBlock", () => {
 		// library's, not ours to reconstruct here.
 	} as unknown as SerializedEditorState;
 
-	// happy-dom cannot mount the full Lexical composer (it throws on
-	// HISTORY_MERGE_TAG init), so we assert only that a non-empty state mounts
-	// the lazy Suspense boundary — the real render check is the browser smoke.
+	// Real composer render is covered by the browser smoke; here the view is
+	// stubbed, so we assert only that a non-empty state mounts the lazy boundary.
 	test("mounts the lazy boundary for a non-empty state", () => {
 		const { container } = render(
 			<DisplayRichtextBlock
