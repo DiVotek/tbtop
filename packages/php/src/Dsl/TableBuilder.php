@@ -4,6 +4,8 @@ namespace Tbtop\Admin\Dsl;
 
 use InvalidArgumentException;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Actions\ForceDeleteAction;
+use Tbtop\Admin\Dsl\Actions\RestoreAction;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Fields\Field;
 
@@ -238,6 +240,37 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Soft-delete convenience layer over existing primitives: prepends
+     * active/trashed/all tabs and appends restore/forceDelete row + bulk
+     * actions. Each part opts out via $options. Everything MERGES with config
+     * already set, so call this AFTER your own tabs()/rowActions()/bulkActions().
+     *
+     * The active tab lands first so it is the default; the global SoftDeletes
+     * scope hides trashed rows until the consumer switches tabs.
+     *
+     * @param  class-string  $model  A model using the SoftDeletes trait.
+     * @param  array{rowActions?: bool, bulkActions?: bool, tabs?: bool}  $options
+     */
+    public function softDeletes(S $s, string $model, array $options = []): self
+    {
+        $opts = [...['rowActions' => true, 'bulkActions' => true, 'tabs' => true], ...$options];
+
+        if ($opts['tabs']) {
+            $this->tabs([...self::trashedTabs(), ...$this->tabObjects]);
+        }
+        if ($opts['rowActions']) {
+            $existing = $this->opts['rowActions'] ?? [];
+            $this->opts['rowActions'] = [...$existing, RestoreAction::make($s, $model), ForceDeleteAction::make($s, $model)];
+        }
+        if ($opts['bulkActions']) {
+            $existing = $this->opts['bulkActions'] ?? [];
+            $this->opts['bulkActions'] = [...$existing, RestoreAction::bulk($s, $model), ForceDeleteAction::bulk($s, $model)];
+        }
+
+        return $this;
+    }
+
     public function set(string $key, mixed $value): self
     {
         $this->opts[$key] = $value;
@@ -393,5 +426,20 @@ final class TableBuilder implements JsonSerializable
         }
 
         return $col;
+    }
+
+    /**
+     * The three soft-delete tabs, active first. Active carries an identity
+     * closure: the global SoftDeletes scope already hides trashed rows.
+     *
+     * @return list<Tab>
+     */
+    private static function trashedTabs(): array
+    {
+        return [
+            Tab::make('active')->label('Active')->query(fn ($q) => $q),
+            Tab::make('trashed')->label('Trashed')->query(fn ($q) => $q->onlyTrashed()),
+            Tab::make('withTrashed')->label('All')->query(fn ($q) => $q->withTrashed()),
+        ];
     }
 }

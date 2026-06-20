@@ -11,7 +11,7 @@ import {
 import type { ChartBlockOptions, ChartPoint } from "../../structure/chartBlock";
 import { seriesColor } from "./chartColors";
 
-export function renderBarChart(data: ChartPoint[], options: ChartBlockOptions) {
+export function renderBarChart(data: ChartPoint[], options: ChartBlockOptions, colors: string[]) {
 	const series = options.series ?? [];
 	return (
 		<ResponsiveContainer width="100%" height="100%">
@@ -26,7 +26,7 @@ export function renderBarChart(data: ChartPoint[], options: ChartBlockOptions) {
 						key={s.dataKey}
 						dataKey={s.dataKey}
 						name={s.label ?? s.dataKey}
-						fill={seriesColor(s.color, i)}
+						fill={seriesColor(s.color, i, colors)}
 					/>
 				))}
 			</BarChart>

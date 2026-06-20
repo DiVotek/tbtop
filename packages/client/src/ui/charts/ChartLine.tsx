@@ -11,7 +11,7 @@ import {
 import type { ChartBlockOptions, ChartPoint } from "../../structure/chartBlock";
 import { seriesColor } from "./chartColors";
 
-export function renderLineChart(data: ChartPoint[], options: ChartBlockOptions) {
+export function renderLineChart(data: ChartPoint[], options: ChartBlockOptions, colors: string[]) {
 	const series = options.series ?? [];
 	return (
 		<ResponsiveContainer width="100%" height="100%">
@@ -27,7 +27,7 @@ export function renderLineChart(data: ChartPoint[], options: ChartBlockOptions) 
 						type="monotone"
 						dataKey={s.dataKey}
 						name={s.label ?? s.dataKey}
-						stroke={seriesColor(s.color, i)}
+						stroke={seriesColor(s.color, i, colors)}
 					/>
 				))}
 			</LineChart>

@@ -6,6 +6,9 @@ use App\Models\Post;
 use App\Models\User;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\DeleteAction;
+use Tbtop\Admin\Dsl\Actions\EditAction;
+use Tbtop\Admin\Dsl\Actions\ReplicateAction;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
@@ -119,53 +122,62 @@ class PostsIndexPage extends Page
                             ->redirect("/admin/posts/{$ctx->row['id']}/edit"),
                         needs: ['row'],
                     ),
-                    // Modal edit-in-place: visible only when the post is published
-                    // (hiddenIf), prefilled per row via the backend query closure,
-                    // and submitted by a server action that gets row + form.
-                    $s->action('editPublication')->label('Publication')
-                        ->hiddenIf('published', '=', false)
-                        ->modal('Edit publication', $s->form('postPublication', [
+                    // Prebuilt edit-in-place modal, named editPublication: opens a
+                    // form prefilled per row (loadUsing keys match field names),
+                    // saved by the helper's inner Save action. Hidden on drafts.
+                    EditAction::make(
+                        $s,
+                        name: 'editPublication',
+                        title: 'Edit publication',
+                        saveName: 'savePublication',
+                        form: $s->form('postPublication', [
                             $s->boolean('published')->label('Published')->rules('boolean'),
                             $s->date('published_at')->label('Published at')
                                 ->rules('nullable|date')
                                 ->hiddenIf('published', '=', false),
-                            $s->actionsRow([
-                                $s->action('savePublication')->label('Save')->color('primary')
-                                    ->handle(function (ActionCtx $ctx): Effects {
-                                        Post::whereKey($ctx->row['id'] ?? null)->update([
-                                            'published' => (bool) ($ctx->form['published'] ?? false),
-                                            'published_at' => $ctx->form['published_at'] ?? null,
-                                        ]);
-
-                                        return Effects::make()
-                                            ->notify('Publication updated')
-                                            ->closeModal()
-                                            ->refreshTable('posts');
-                                    }, needs: ['row', 'form']),
-                            ]),
-                        ]))
-                        ->query(fn (ActionCtx $ctx): array => Post::query()
+                        ]),
+                        loadUsing: fn (ActionCtx $ctx): array => Post::query()
                             ->whereKey($ctx->row['id'] ?? null)
                             ->firstOrFail()
-                            ->only(['published', 'published_at']), needs: ['row']),
-                    $s->action('delete')->label('Delete')->color('danger')
-                        ->confirm('Delete post?', 'This cannot be undone.')
-                        ->handle(function (ActionCtx $ctx): Effects {
-                            Post::whereKey($ctx->row['id'] ?? null)->delete();
-
-                            return Effects::make()->notify('Post deleted')->refreshTable('posts');
-                        }, needs: ['row']),
-                ])
-                ->bulkActions([
-                    $s->action('delete-selected')->label('Delete selected')->color('danger')
-                        ->confirm('Delete selected posts?', 'This cannot be undone.')
-                        ->handle(function (ActionCtx $ctx): Effects {
-                            $count = Post::whereKey($ctx->selection)->delete();
+                            ->only(['published', 'published_at']),
+                        saveUsing: function (ActionCtx $ctx): Effects {
+                            Post::whereKey($ctx->row['id'] ?? null)->update([
+                                'published' => (bool) ($ctx->form['published'] ?? false),
+                                'published_at' => $ctx->form['published_at'] ?? null,
+                            ]);
 
                             return Effects::make()
-                                ->notify("Deleted {$count} post(s)")
+                                ->notify('Publication updated')
+                                ->closeModal()
                                 ->refreshTable('posts');
-                        }, needs: ['selection']),
+                        },
+                    )->label('Publication')->hiddenIf('published', '=', false),
+                    // Prebuilt clone: returns a redirect to edit the new copy.
+                    ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
+                        $clone = Post::query()->whereKey($ctx->row['id'] ?? null)
+                            ->firstOrFail()->replicate();
+                        $clone->slug = $clone->slug.'-copy-'.uniqid();
+                        $clone->save();
+
+                        return Effects::make()
+                            ->notify('Post replicated')
+                            ->redirect("/admin/posts/{$clone->id}/edit");
+                    }),
+                    // Prebuilt delete: danger + confirm baked in by the helper.
+                    DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
+                        Post::whereKey($ctx->row['id'] ?? null)->delete();
+                    }),
+                ])
+                ->bulkActions([
+                    // The helper guards an empty selection; the closure returns its
+                    // own count-aware notify, overriding the default tail.
+                    DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): Effects {
+                        $count = Post::whereKey($ctx->selection)->delete();
+
+                        return Effects::make()
+                            ->notify("Deleted {$count} post(s)")
+                            ->refreshTable('posts');
+                    }),
                 ])
                 ->toNode(),
             $s->table('users')

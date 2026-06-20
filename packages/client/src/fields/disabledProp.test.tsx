@@ -8,6 +8,7 @@ import { render } from "@testing-library/react";
 import { clientWrapper } from "../testFixtures";
 import { BooleanForm } from "./booleanField";
 import { CheckboxForm } from "./checkboxField";
+import { CheckboxListForm } from "./checkboxListField";
 import { ColorpickerForm } from "./colorpickerField";
 import { DateForm, DateTimeForm, TimeForm } from "./dateField";
 import { KeyvalueForm } from "./keyvalueField";
@@ -16,10 +17,12 @@ import { PasswordForm } from "./passwordField";
 import { RadioForm } from "./radioField";
 import { RepeaterForm } from "./repeaterField";
 import { SelectForm } from "./selectField";
+import { SliderForm } from "./sliderField";
 import { SlugForm } from "./slugField";
 import { TagsForm } from "./tagsField";
 import { TextareaForm } from "./textareaField";
 import { TextForm } from "./textField";
+import { ToggleButtonsForm } from "./toggleButtonsField";
 import { UploadForm } from "./uploadField";
 
 const ClientWrap = clientWrapper(() => new Response("{}"));
@@ -79,6 +82,20 @@ describe("disabled threading: input-like fields", () => {
 		);
 		const input = container.querySelector("input") as HTMLInputElement;
 		expect(input.disabled).toBe(true);
+	});
+
+	test("SliderForm: slider root carries data-disabled when disabled=true", () => {
+		const { container } = render(
+			<SliderForm
+				name="score"
+				value={4}
+				onChange={noop}
+				disabled
+				options={{ min: 0, max: 10, step: 1 }}
+			/>,
+		);
+		const root = container.querySelector('[data-slot="slider"]') as HTMLElement;
+		expect(root.hasAttribute("data-disabled")).toBe(true);
 	});
 });
 
@@ -149,6 +166,46 @@ describe("disabled threading: choice fields", () => {
 		) as HTMLButtonElement[];
 		expect(swatches.length).toBeGreaterThan(0);
 		expect(swatches.every((b) => b.disabled)).toBe(true);
+	});
+
+	test("CheckboxListForm: all checkboxes are disabled when disabled=true", () => {
+		const { container } = render(
+			<CheckboxListForm
+				name="tags"
+				value={null}
+				onChange={noop}
+				disabled
+				options={{
+					options: [
+						{ value: "a", label: "A" },
+						{ value: "b", label: "B" },
+					],
+				}}
+			/>,
+		);
+		const buttons = Array.from(container.querySelectorAll("button")) as HTMLButtonElement[];
+		expect(buttons.length).toBeGreaterThan(0);
+		expect(buttons.every((b) => b.disabled)).toBe(true);
+	});
+
+	test("ToggleButtonsForm: all toggle items are disabled when disabled=true", () => {
+		const { container } = render(
+			<ToggleButtonsForm
+				name="visibility"
+				value={null}
+				onChange={noop}
+				disabled
+				options={{
+					options: [
+						{ value: "a", label: "A" },
+						{ value: "b", label: "B" },
+					],
+				}}
+			/>,
+		);
+		const buttons = Array.from(container.querySelectorAll("button")) as HTMLButtonElement[];
+		expect(buttons.length).toBeGreaterThan(0);
+		expect(buttons.every((b) => b.disabled)).toBe(true);
 	});
 });
 

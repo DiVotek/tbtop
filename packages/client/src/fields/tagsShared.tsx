@@ -44,3 +44,25 @@ export function Chips({ name, value, onRemove, labelFor, disabled }: ChipsInput)
 		</>
 	);
 }
+
+/** Read-only chip list for table cells — labels only, no remove button. */
+export function LabelChips({
+	value,
+	labelFor,
+}: {
+	value: string[];
+	labelFor: (v: string) => string;
+}) {
+	return (
+		<div className="flex flex-wrap gap-1">
+			{value.map((v) => (
+				<span
+					key={v}
+					className="rounded border border-input bg-muted px-1.5 py-0.5 text-xs"
+				>
+					{labelFor(v)}
+				</span>
+			))}
+		</div>
+	);
+}

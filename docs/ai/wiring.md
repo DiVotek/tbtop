@@ -64,6 +64,7 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{page-path}` | `{slug}` | `PageController@show` | Inertia | Inertia page `admin/page` with props: `{slug, title, layout, structure, data, breadcrumbs?}` |
 | `POST` | `{page-path}/forms/{tbtopForm}` | `{slug}.form` | `FormSubmitController` | Inertia | `redirect()->back()` + `Inertia::flash('tbtop.effects', […])` |
 | `POST` | `{page-path}/actions/{tbtopAction}` | `{slug}.action` | `ActionController` | JSON | `{effects: Effect[]}` |
+| `POST` | `{page-path}/actions/{tbtopAction}/data` | `{slug}.actionData` | `ActionDataController` | JSON | `{data: <query result>}` |
 | `GET` | `{page-path}/tables/{tbtopTable}` | `{slug}.table` | `TableController` | JSON | `{data: {rows, pagination, …, tabCounts?}}` |
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
@@ -74,6 +75,14 @@ Route file: `packages/php/routes/admin.php`
 **`RelationSearchController` modes** — distinguished by request body: send
 `{search: string}` for a search, or `{value: string}` to resolve a single
 known value to its label.
+
+**Modal data query (`actionData`)** — a modal action that calls `->query(fn,
+needs)` emits `query: true` + `queryNeeds: [...]` on its modal `spec`. The
+client fetches the `.../actions/{name}/data` endpoint on open and feeds the
+result to the modal body (a form prefills from it — returned keys must match
+field names). `query`/`queryNeeds` are part of the modal branch of
+`actionSpec` in the schema. The prebuilt `EditAction` (`Dsl\Actions`) wraps
+this whole shape.
 
 **Row reordering** — `TableBuilder::reorderable('sort_order')` emits
 `options.reorder: {column}` on the table node and makes that column the default
