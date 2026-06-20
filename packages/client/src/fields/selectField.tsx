@@ -292,7 +292,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 			disabled={props.disabled}
 		>
 			<SelectTrigger
-				id={props.id ?? props.name}
+				id={fieldId({ id: props.id, name: props.name })}
 				onBlur={props.onBlur}
 				data-testid={`select-${props.name}`}
 				className="w-full"

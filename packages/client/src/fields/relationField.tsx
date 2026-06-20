@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import type { AsyncSingleOptionsBag } from "./asyncOptions";
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
+import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export interface RelationOptionsBag extends AsyncSingleOptionsBag {
@@ -14,16 +15,15 @@ export interface RelationOptionsBag extends AsyncSingleOptionsBag {
 }
 
 export function RelationCell({ value }: FieldCellProps<string | string[]>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	if (typeof value === "string") {
-		return <span>{value}</span>;
-	}
-	if (Array.isArray(value)) {
-		return <span>{value.length} items</span>;
-	}
-	return <code className="text-xs">{JSON.stringify(value)}</code>;
+	return nullableCell(value, (v) => {
+		if (typeof v === "string") {
+			return <span>{v}</span>;
+		}
+		if (Array.isArray(v)) {
+			return <span>{v.length} items</span>;
+		}
+		return <code className="text-xs">{JSON.stringify(v)}</code>;
+	});
 }
 
 export function RelationForm({

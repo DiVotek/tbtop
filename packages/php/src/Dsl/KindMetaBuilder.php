@@ -57,7 +57,7 @@ final class KindMetaBuilder
     }
 
     /** Coerce a Color enum to its wire string; pass a plain string through. */
-    public static function coerceColor(Color|string $color): string
+    private static function coerceColor(Color|string $color): string
     {
         return $color instanceof Color ? $color->value : $color;
     }

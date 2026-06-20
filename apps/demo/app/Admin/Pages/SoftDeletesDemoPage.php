@@ -45,8 +45,7 @@ class SoftDeletesDemoPage extends Page
                 ->defaultSort('id', 'desc')
                 ->query(fn () => Post::query())
                 ->rowActions([
-                    // Prebuilt delete; the using closure returns the load-bearing
-                    // "moves to Trashed" copy + named refreshTable over the tail.
+                    // Closure-returned Effects override DeleteAction's default tail.
                     DeleteAction::make($s, using: function (ActionCtx $ctx): Effects {
                         Post::whereKey($ctx->row['id'] ?? null)->delete();
 
