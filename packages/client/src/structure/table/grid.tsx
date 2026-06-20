@@ -60,7 +60,9 @@ export function TableGrid(props: TableGridProps) {
 		reorderRows: props.reorderRows,
 	});
 
-	const rows = reorderFeature ? reorder.rows : props.rows;
+	// Only use the reorder hook's state-managed rows when reorder is actually
+	// active; otherwise render props.rows directly to avoid a props-to-state lag.
+	const rows = reorderActive ? reorder.rows : props.rows;
 	const isEmpty = rows.length === 0;
 	const allIds = rows.map((r) => readId(r)).filter((id): id is string => !!id);
 	const allSelected = allIds.length > 0 && allIds.every((id) => props.selectedIds.includes(id));

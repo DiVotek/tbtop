@@ -14,6 +14,8 @@ import { TableRow } from "./tableRow";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
 
+// rowClick is intentionally absent: a reorderable table does not support
+// row-click (drag and click conflict), so it is never forwarded to TableRow.
 interface SortableRowProps {
 	row: Record<string, unknown>;
 	columns: TableColumn[];
