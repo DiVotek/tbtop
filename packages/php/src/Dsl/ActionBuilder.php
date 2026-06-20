@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use LogicException;
+use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -13,6 +14,7 @@ use Tbtop\Admin\Dsl\Concerns\WithMeta;
  */
 final class ActionBuilder implements JsonSerializable
 {
+    use HasServerQuery;
     use WithMeta;
 
     /** @var array<string, mixed> */
@@ -22,8 +24,6 @@ final class ActionBuilder implements JsonSerializable
     private ?array $spec = null;
 
     private ?Closure $handler = null;
-
-    private ?Closure $queryClosure = null;
 
     /** @var list<string> */
     private array $queryNeeds = [];
@@ -119,15 +119,16 @@ final class ActionBuilder implements JsonSerializable
     }
 
     /**
-     * Backend data source for a modal action. The closure runs server-side when
+     * Backend data source for a modal action. Overrides the trait to also track
+     * the payload sources the closure needs. The closure runs server-side when
      * the modal opens, receives the row/selection context, and returns arbitrary
      * data fed to the modal body (e.g. a record to prefill a form).
      *
      * @param  list<string>  $needs  Payload sources: row | selection | form.
      */
-    public function query(Closure $fn, array $needs = ['row']): self
+    public function query(callable $fn, array $needs = ['row']): static
     {
-        $this->queryClosure = $fn;
+        $this->queryClosure = Closure::fromCallable($fn);
         $this->queryNeeds = $needs;
 
         return $this;
@@ -136,11 +137,6 @@ final class ActionBuilder implements JsonSerializable
     public function handler(): ?Closure
     {
         return $this->handler;
-    }
-
-    public function queryClosure(): ?Closure
-    {
-        return $this->queryClosure;
     }
 
     public function toNode(): Node

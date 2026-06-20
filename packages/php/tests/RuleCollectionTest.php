@@ -1,5 +1,6 @@
 <?php
 
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\S;
 
 it('collects laravel rules from fields nested in layout', function () {
@@ -31,4 +32,25 @@ it('prefixes repeater sub-field rules with parent.*.', function () {
         'sections.*.heading' => ['required'],
         'sections.*.body' => ['nullable'],
     ]);
+});
+
+// A regex: pattern passed as a string would be split on its own '|'. The shared
+// CollectsRules guard rejects it on both Field and Column; pass it as an array.
+
+it('rejects a regex: rule passed as a string on a field', function () {
+    $s = new S;
+
+    expect(fn () => $s->slug('slug')->rules('regex:/^[a-z]+$/'))
+        ->toThrow(InvalidArgumentException::class, 'pass regex rules as an array');
+});
+
+it('rejects a regex: rule passed as a string on an editable column', function () {
+    expect(fn () => Column::make('slug')->textInput()->rules('regex:/^[a-z]+$/'))
+        ->toThrow(InvalidArgumentException::class, 'pass regex rules as an array');
+});
+
+it('accepts a regex: rule passed as an array element on a column', function () {
+    $col = Column::make('slug')->textInput()->rules(['regex:/^[a-z]+$/']);
+
+    expect($col->editRuleEntries())->toBe(['regex:/^[a-z]+$/']);
 });

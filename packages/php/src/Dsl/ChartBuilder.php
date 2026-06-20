@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Fields\Field;
 
@@ -14,9 +15,8 @@ use Tbtop\Admin\Dsl\Fields\Field;
  */
 final class ChartBuilder implements JsonSerializable
 {
+    use HasServerQuery;
     use WithMeta;
-
-    private ?Closure $query = null;
 
     /** @var list<Field> */
     private array $paramFields = [];
@@ -28,9 +28,10 @@ final class ChartBuilder implements JsonSerializable
         private array $opts = [],
     ) {}
 
-    public function query(Closure $query): self
+    /** Overrides the trait: also flags the page data endpoint as this chart's source. */
+    public function query(callable $fn): static
     {
-        $this->query = $query;
+        $this->queryClosure = Closure::fromCallable($fn);
         $this->opts['source'] = $this->name;
 
         return $this;
@@ -55,11 +56,6 @@ final class ChartBuilder implements JsonSerializable
         $this->opts[$key] = $value;
 
         return $this;
-    }
-
-    public function queryClosure(): ?Closure
-    {
-        return $this->query;
     }
 
     public function toNode(): Node

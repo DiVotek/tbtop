@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\CollectsRules;
 use Tbtop\Admin\Validation\ConstraintMap;
 
 /**
@@ -18,6 +19,8 @@ use Tbtop\Admin\Validation\ConstraintMap;
  */
 final class Column implements JsonSerializable
 {
+    use CollectsRules;
+
     private ?string $label = null;
 
     private ?string $kind = null;
@@ -330,10 +333,7 @@ final class Column implements JsonSerializable
      */
     public function options(array $options): static
     {
-        $this->editOptions = array_map(
-            fn (array $option) => ['value' => (string) $option['value']] + $option,
-            $options,
-        );
+        $this->editOptions = OptionList::normalize($options);
 
         return $this;
     }
@@ -346,10 +346,7 @@ final class Column implements JsonSerializable
      */
     public function rules(string|array $rules): static
     {
-        $list = is_string($rules) ? explode('|', $rules) : (array) $rules;
-        $this->editRules = array_values(
-            array_unique(array_merge($this->editRules, $list))
-        );
+        $this->editRules = $this->appendRules($this->editRules, $rules);
 
         return $this;
     }
