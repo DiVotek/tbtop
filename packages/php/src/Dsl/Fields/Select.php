@@ -3,9 +3,14 @@
 namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
+use Tbtop\Admin\Dsl\Concerns\HasMultiple;
+use Tbtop\Admin\Dsl\Concerns\HasOptions;
 
 final class Select extends Field
 {
+    use HasMultiple;
+    use HasOptions;
+
     /** Server-only closure for creating a new option on the fly. */
     private ?Closure $creatableUsing = null;
 
@@ -15,23 +20,6 @@ final class Select extends Field
     protected function kind(): string
     {
         return 'select';
-    }
-
-    /** @param  list<array{value: mixed, label: string}>  $options */
-    public function options(array $options): static
-    {
-        return $this->set('options', self::normalizeOptionValues($options));
-    }
-
-    /** Allow selecting more than one value. */
-    public function multiple(bool $value = true): static
-    {
-        return $this->set('multiple', $value);
-    }
-
-    public function isMultiple(): bool
-    {
-        return ($this->opts['multiple'] ?? false) === true;
     }
 
     public function searchable(bool $value = true): static

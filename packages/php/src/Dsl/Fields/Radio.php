@@ -2,16 +2,14 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Tbtop\Admin\Dsl\Concerns\HasOptions;
+
 final class Radio extends Field
 {
+    use HasOptions;
+
     protected function kind(): string
     {
         return 'radio';
-    }
-
-    /** @param  list<array{value: mixed, label: string}>  $options */
-    public function options(array $options): static
-    {
-        return $this->set('options', self::normalizeOptionValues($options));
     }
 }
