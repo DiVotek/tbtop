@@ -51,18 +51,15 @@ final class ColumnProjection
             $raw = data_get($row, $name);
             $value = $raw;
 
-            // 1. translatable
             if ($col->isTranslatable()) {
                 $value = self::pickLocale($value);
             }
 
-            // 2. formatUsing closure
             $fmt = $col->getFormatUsing();
             if ($fmt !== null) {
                 $value = $fmt($value);
             }
 
-            // 3. declarative kind formatting (only when no formatUsing override)
             if ($fmt === null) {
                 $value = self::applyKindFormat($col, $value);
             }

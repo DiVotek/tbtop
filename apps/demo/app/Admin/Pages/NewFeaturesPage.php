@@ -32,7 +32,6 @@ class NewFeaturesPage extends Page
                 ->variant('subheading'),
 
             $s->form('newFields', [
-                // CheckboxList — array value from a fixed option set.
                 $s->checkboxlist('channels')
                     ->label('Notification channels (CheckboxList)')
                     ->options([
@@ -43,7 +42,6 @@ class NewFeaturesPage extends Page
                     ->required()
                     ->rules('array'),
 
-                // ToggleButtons (single) — scalar value, segmented buttons.
                 $s->togglebuttons('plan')
                     ->label('Plan (ToggleButtons, single)')
                     ->options([
@@ -53,7 +51,6 @@ class NewFeaturesPage extends Page
                     ])
                     ->required(),
 
-                // ToggleButtons (multiple) — array value.
                 $s->togglebuttons('tags')
                     ->label('Tags (ToggleButtons, multiple)')
                     ->multiple()
@@ -63,7 +60,6 @@ class NewFeaturesPage extends Page
                         ['value' => 'hot', 'label' => 'Hot'],
                     ]),
 
-                // Slider — numeric value with min/max/step.
                 $s->slider('volume')
                     ->label('Volume (Slider)')
                     ->min(0)
