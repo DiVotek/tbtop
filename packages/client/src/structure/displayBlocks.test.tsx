@@ -1,9 +1,22 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { render } from "@testing-library/react";
+import type { SerializedEditorState } from "lexical";
+
+// Stub the only consumer of the real Lexical view. happy-dom throws on the
+// composer's HISTORY_MERGE_TAG init, and React.lazy resolves synchronously
+// once another test has loaded the chunk — making the mount order-dependent.
+mock.module("../fields/richtext/richtextViewLazy", () => ({
+	RichtextViewLazy: () => <div data-testid="richtext-view-lazy" />,
+}));
+
 import { DisplayAlertBlock } from "./displayAlertBlock";
 import { DisplayDividerBlock } from "./displayDividerBlock";
 import { DisplayHtmlBlock } from "./displayHtmlBlock";
+import { DisplayImageBlock } from "./displayImageBlock";
+import { DisplayKeyValueBlock } from "./displayKeyValueBlock";
+import { DisplayRichtextBlock } from "./displayRichtextBlock";
 import { DisplayTextBlock } from "./displayTextBlock";
+import { DisplayValueBlock } from "./displayValueBlock";
 
 const NOOP_CTX = { surface: "form" as const, form: undefined };
 const NOOP_RENDER = () => null;
@@ -236,5 +249,192 @@ describe("DisplayAlertBlock", () => {
 		);
 		// info variant has blue classes
 		expect(getByTestId("display-alert-block").className).toContain("blue");
+	});
+});
+
+// ---------------------------------------------------------------------------
+// DisplayValueBlock
+// ---------------------------------------------------------------------------
+
+describe("DisplayValueBlock", () => {
+	test("badge kind renders a Badge with the value and a color class", () => {
+		const { container } = render(
+			<DisplayValueBlock
+				options={{
+					value: "active",
+					kind: "badge",
+					badge: { colors: { active: "success" } },
+				}}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		const badge = container.querySelector('[data-slot="badge"]') ?? container.firstElementChild;
+		expect(badge?.textContent).toBe("active");
+		// success maps to the bg-success color class via the color registry.
+		expect(badge?.className).toContain("bg-success");
+	});
+
+	test("boolean kind renders an icon (svg), not text", () => {
+		const { container } = render(
+			<DisplayValueBlock
+				options={{ value: true, kind: "boolean" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector("svg")).not.toBeNull();
+	});
+
+	test("money kind renders the pre-formatted value verbatim", () => {
+		const { container } = render(
+			<DisplayValueBlock
+				options={{ value: "123.45 USD", kind: "money" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector("span")?.textContent).toBe("123.45 USD");
+	});
+
+	test("date kind renders the pre-formatted value verbatim", () => {
+		const { container } = render(
+			<DisplayValueBlock
+				options={{ value: "2024-03-15", kind: "date" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector("span")?.textContent).toBe("2024-03-15");
+	});
+});
+
+// ---------------------------------------------------------------------------
+// DisplayImageBlock
+// ---------------------------------------------------------------------------
+
+describe("DisplayImageBlock", () => {
+	test("renders a full-size img with src and alt", () => {
+		const { container } = render(
+			<DisplayImageBlock
+				options={{ src: "/img/a.png", alt: "An image" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		const img = container.querySelector("img");
+		expect(img?.getAttribute("src")).toBe("/img/a.png");
+		expect(img?.getAttribute("alt")).toBe("An image");
+		expect(img?.className).toContain("max-w-full");
+	});
+
+	test("file mode renders a download anchor, no img", () => {
+		const { container } = render(
+			<DisplayImageBlock
+				options={{ src: "/files/report.pdf", asLink: true, caption: "Report" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		const anchor = container.querySelector("a");
+		expect(anchor?.getAttribute("href")).toBe("/files/report.pdf");
+		expect(anchor?.hasAttribute("download")).toBe(true);
+		expect(anchor?.textContent).toBe("Report");
+		expect(container.querySelector("img")).toBeNull();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// DisplayKeyValueBlock
+// ---------------------------------------------------------------------------
+
+describe("DisplayKeyValueBlock", () => {
+	test("renders a <dl> with a dt/dd per entry", () => {
+		const { container } = render(
+			<DisplayKeyValueBlock
+				options={{ entries: { SKU: "A-1", Weight: "2kg" } }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector("dl")).not.toBeNull();
+		const dts = [...container.querySelectorAll("dt")].map((el) => el.textContent);
+		const dds = [...container.querySelectorAll("dd")].map((el) => el.textContent);
+		expect(dts).toEqual(["SKU", "Weight"]);
+		expect(dds).toEqual(["A-1", "2kg"]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// DisplayRichtextBlock — assert lightly; happy-dom can't fully render Lexical.
+// The real check is the browser smoke test.
+// ---------------------------------------------------------------------------
+
+describe("DisplayRichtextBlock", () => {
+	const STATE = {
+		root: {
+			children: [
+				{
+					children: [
+						{
+							detail: 0,
+							format: 0,
+							mode: "normal",
+							style: "",
+							text: "Hello",
+							type: "text",
+							version: 1,
+						},
+					],
+					direction: "ltr",
+					format: "",
+					indent: 0,
+					type: "paragraph",
+					version: 1,
+				},
+			],
+			direction: "ltr",
+			format: "",
+			indent: 0,
+			type: "root",
+			version: 1,
+		},
+		// Boundary cast (tsc requires the unknown hop): a deliberately minimal
+		// Lexical state fixture — the full SerializedLexicalNode shape is the
+		// library's, not ours to reconstruct here.
+	} as unknown as SerializedEditorState;
+
+	// Real composer render is covered by the browser smoke; here the view is
+	// stubbed, so we assert only that a non-empty state mounts the lazy boundary.
+	test("mounts the lazy boundary for a non-empty state", () => {
+		const { container } = render(
+			<DisplayRichtextBlock
+				options={{ state: STATE }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		// Suspense fallback renders synchronously before the lazy chunk loads.
+		expect(container.innerHTML).not.toBe("");
+	});
+
+	test("renders nothing when state is missing", () => {
+		const { container } = render(
+			<DisplayRichtextBlock
+				options={{ state: null }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.innerHTML).toBe("");
 	});
 });
