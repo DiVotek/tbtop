@@ -1,5 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
 import { LabelChips } from "./tagsShared";
 
@@ -55,10 +55,10 @@ function SingleForm({
 	disabled,
 	options,
 }: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
-	const current = typeof value === "string" ? value : "";
+	const current = asString(value);
 	return (
 		<ToggleGroup
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			type="single"
 			value={current}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
@@ -83,7 +83,7 @@ function MultiForm({
 	const current = Array.isArray(value) ? value : [];
 	return (
 		<ToggleGroup
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			type="multiple"
 			value={current}
 			onValueChange={(next) => onChange(next.length === 0 ? null : next)}

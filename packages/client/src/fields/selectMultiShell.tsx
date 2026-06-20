@@ -1,5 +1,6 @@
 import { Combobox } from "@base-ui/react/combobox";
 import { useState } from "react";
+import { fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import type { SelectCreateConfig } from "./selectShared";
 
@@ -100,7 +101,7 @@ export function MultiComboboxShell({
 						</Combobox.Chip>
 					))}
 					<Combobox.Input
-						id={id ?? name}
+						id={fieldId({ id, name })}
 						value={query}
 						onChange={(e) => handleQueryChange(e.target.value)}
 						className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"

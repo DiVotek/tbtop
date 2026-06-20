@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import type { AsyncSingleOptionsBag } from "./asyncOptions";
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export interface RelationOptionsBag extends AsyncSingleOptionsBag {
 	searchable?: boolean;
@@ -99,7 +99,7 @@ function RelationSelectInner({
 			disabled={disabled}
 		>
 			<SelectTrigger
-				id={id ?? name}
+				id={fieldId({ id, name })}
 				onBlur={onBlur}
 				data-testid={`relation-${name}`}
 				className="w-full"

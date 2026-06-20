@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
-import type { FieldFormProps } from "./fieldProps";
+import { type FieldFormProps, fieldId } from "./fieldProps";
 import { Chips, type TagsOptionsBag } from "./tagsShared";
 
 export function OpenTagsForm({
@@ -49,7 +49,7 @@ export function OpenTagsForm({
 				disabled={disabled}
 			/>
 			<input
-				id={id ?? name}
+				id={fieldId({ id, name })}
 				value={input}
 				disabled={disabled}
 				onChange={(e) => setInput(e.target.value)}

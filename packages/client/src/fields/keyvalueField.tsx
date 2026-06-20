@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { findDuplicateKeys, type Row, rowsFromValue } from "./keyvalueRows";
 
 function bagFromRows(rows: Row[]): Record<string, string> {
@@ -39,7 +39,7 @@ export function KeyvalueForm({
 
 	const t = useTranslation();
 	const duplicates = findDuplicateKeys(rows);
-	const fieldId = id ?? name;
+	const inputId = fieldId({ id, name });
 
 	function updateRows(next: Row[]): void {
 		setRows(next);
@@ -70,7 +70,7 @@ export function KeyvalueForm({
 				<div key={row.id} className="flex flex-col gap-0.5">
 					<div className="flex items-center gap-2">
 						<Input
-							id={index === 0 ? fieldId : undefined}
+							id={index === 0 ? inputId : undefined}
 							type="text"
 							aria-label={t("field.keyvalue.key")}
 							value={row.key}

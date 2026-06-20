@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { useNearestFormController } from "../structure/formContext";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
 import { slugify } from "./slugify";
 
 interface SlugOptionsBag {
@@ -40,7 +40,7 @@ export function SlugForm({
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 
-	const currentSlug = typeof value === "string" ? value : "";
+	const currentSlug = asString(value);
 	const sourceValue = ctrl ? sourceAt(ctrl.data, fromField) : "";
 
 	const emitDerived = useCallback((source: string) => {
