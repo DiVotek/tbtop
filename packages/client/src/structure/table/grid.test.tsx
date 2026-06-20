@@ -4,22 +4,15 @@
  * - reorder disabled: no drag handles, disabled hint shown
  * - colSpan accounts for the handle column only when reorder is active
  */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
-
-mock.module("../actionContext", () => ({
-	useClientActionContext: () => ({
-		client: null,
-		user: null,
-		params: {},
-		navigate: mock(() => {}),
-		notify: mock(() => {}),
-		t: (k: string) => k,
-	}),
-}));
-
+import { wrapForStructure } from "../testFixtures";
 import type { TableColumn } from "../types";
 import { TableGrid } from "./grid";
+
+// Real provider chain (not a global module mock) so rows resolve the action
+// context without leaking a stub into other files — mock.module is process-wide.
+const Wrap = wrapForStructure(() => new Response("{}"));
 
 const COLUMNS: TableColumn[] = [{ name: "title", label: "Title" }];
 const ROWS = [
@@ -35,6 +28,7 @@ interface Overrides {
 
 function renderGrid(over: Overrides = {}) {
 	return render(
+		<Wrap>
 		<TableGrid
 			rows={over.rows ?? ROWS}
 			columns={COLUMNS}
@@ -52,7 +46,8 @@ function renderGrid(over: Overrides = {}) {
 			reorderEnabled={over.reorderEnabled}
 			reorderRows={() => Promise.resolve({})}
 			onRefresh={() => {}}
-		/>,
+		/>
+		</Wrap>,
 	);
 }
 
