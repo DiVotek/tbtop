@@ -1,5 +1,6 @@
 <?php
 
+use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\S;
 
 /**
@@ -20,16 +21,21 @@ it('FieldKindParity: every built-in kind class make() matches s->kind() output',
 })->with(S::BUILT_IN_KINDS);
 
 /**
- * Scenario 2 — Completeness: the public BUILT_IN_KINDS list and the bootstrapped
- * kind→class map are the same set. Guards against either PHP list drifting from
- * the other (e.g. a kind added to one spot but not the registered map).
+ * Scenario 2 — Completeness: every kind in the public BUILT_IN_KINDS list is
+ * present in the bootstrapped kind→class map (and resolves to a Field class).
+ * Guards against a built-in drifting out of the registered map (or vice-versa).
+ *
+ * Asserts a SUBSET, not set-equality: the live kindMap may also carry
+ * consumer kinds added via S::register() (e.g. the demo's `rating`, or
+ * FieldRegistryTest), which are intentionally NOT in BUILT_IN_KINDS. Requiring
+ * exact equality would make this test order-dependent on whichever suite
+ * registered a custom kind first.
  */
-it('FieldKindParity: BUILT_IN_KINDS exactly equals the bootstrapped kindMap keys', function () {
-    $declared = S::BUILT_IN_KINDS;
-    $registered = array_keys(S::builtInKindClasses());
+it('FieldKindParity: every BUILT_IN_KINDS entry is registered in the kindMap', function () {
+    $registered = S::builtInKindClasses();
 
-    sort($declared);
-    sort($registered);
-
-    expect($registered)->toBe($declared);
+    foreach (S::BUILT_IN_KINDS as $kind) {
+        expect($registered)->toHaveKey($kind);
+        expect(is_subclass_of($registered[$kind], Field::class))->toBeTrue();
+    }
 });
