@@ -208,6 +208,273 @@ delta, sparkline, icon, color; line/bar/area/pie/donut chart types with runtime 
 
 ---
 
+## Recipe 5 — Full CRUD resource family (create → index → edit → soft-delete)
+
+**What you want:** the four pages that make up a typical resource — a create form, an
+index table, an edit form, and trashed-row management. The demo's `Post` resource is the
+complete worked version; every snippet below is copied from it.
+
+### 1. Create page — a form whose `onSubmit` returns a redirect string
+
+`onSubmit` may return **a string** (an Inertia redirect URL) instead of `Effects`. The
+demo uses this to land on the new record's edit page after create.
+
+```php
+// apps/demo/app/Admin/Pages/PostCreatePage.php:26-55
+public function view(S $s): Node
+{
+    return $s->stack([
+        $s->form('post', [
+            ...$this->postFormSections($s, 'unique:posts,slug'),
+            $s->actionsRow([
+                $s->action('save')->label('Create')->color('primary')
+                    ->keybinding('mod+s')->submit(),
+                $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
+            ]),
+        ])
+            ->record([
+                'title' => null, 'slug' => '', 'published' => false,
+                'author_id' => null, 'sections' => [],
+            ])
+            ->onSubmit(function (ActionCtx $ctx): string {
+                $post = Post::create($ctx->form);
+
+                return "/admin/posts/{$post->id}/edit";
+            }),
+    ]);
+}
+```
+
+The form fields live in a shared trait (`PostFormFields`) so create and edit reuse one
+definition — the only difference is the slug's `unique` rule, passed in as an argument.
+
+### 2. Index page — table with tabs, filters, sort, pagination, row + bulk actions
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:45-180 (abridged)
+$s->table('posts')
+    ->rowClick('edit')
+    ->columns([
+        Column::make('title')->label('Title')->kind('text')
+            ->translatable()->sortable()->searchable(),
+        Column::make('published')->label('Published')->badge([
+            '1' => Color::Success, '0' => Color::Gray,
+        ])->toggleable(),
+        Column::make('views')->label('Views')->number()->sortable()->align('right'),
+    ])
+    ->filters([
+        InFilter::make('published')->label('Status')->options([
+            ['value' => '1', 'label' => 'Published'],
+            ['value' => '0', 'label' => 'Draft'],
+        ]),
+        Daterange::make('published_at')->label('Published date'),
+    ])
+    ->filtersIn('modal')
+    ->tabs([
+        Tab::make('all')->label('All'),
+        Tab::make('published')->label('Published')
+            ->query(fn ($q) => $q->where('published', true)),
+        Tab::make('draft')->label('Draft')
+            ->query(fn ($q) => $q->where('published', false))->count(),
+    ])
+    ->defaultSort('created_at', 'desc')
+    ->paginate(25, [10, 25, 50, 100])
+    ->query(fn () => Post::query())
+    ->rowActions([
+        // Per-row edit needs the row id, so it is a redirect effect, not visit().
+        $s->action('edit')->label('Edit')->handle(
+            fn (ActionCtx $ctx): Effects => Effects::make()
+                ->redirect("/admin/posts/{$ctx->row['id']}/edit"),
+            needs: ['row'],
+        ),
+        DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
+            Post::whereKey($ctx->row['id'] ?? null)->delete();
+        }),
+    ])
+    ->bulkActions([
+        DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): Effects {
+            $count = Post::whereKey($ctx->selection)->delete();
+
+            return Effects::make()->notify("Deleted {$count} post(s)")->refreshTable('posts');
+        }),
+    ])
+    ->toNode()
+```
+
+`rowClick('edit')` makes a whole-row click fire the `edit` row action — note a per-row
+URL cannot use `visit()` (a static string), so `edit` is a server `handle()` returning a
+`redirect` effect built from `$ctx->row['id']`. `DeleteAction` is a prebuilt preset
+(see [authoring-pages.md](./authoring-pages.md) presets section).
+
+### 3. Edit page — route param, save, delete-with-redirect
+
+The edit page reads the route param, prefills the form via `->record()`, and its delete
+action returns a `redirect` effect to bounce back to the index.
+
+```php
+// apps/demo/app/Admin/Pages/PostEditPage.php:27-66 (abridged)
+public function view(S $s): Node
+{
+    $post = Post::findOrFail(request()->route('post'));
+
+    return $s->stack([
+        $s->form('post', [
+            ...$this->postFormSections($s, "unique:posts,slug,{$post->id}"),
+            $s->actionsRow([
+                $s->action('save')->label('Save')->color('primary')
+                    ->keybinding('mod+s')->submit(),
+                $s->action('delete')->label('Delete')->color('danger')
+                    ->confirm('Delete post?', 'This cannot be undone.')
+                    ->handle(function (ActionCtx $ctx): Effects {
+                        Post::whereKey($ctx->request->route('post'))->delete();
+
+                        return Effects::make()->notify('Post deleted')->redirect('/admin/posts');
+                    }),
+                $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
+            ]),
+        ])
+            ->record($post->toArray())
+            ->onSubmit(function (ActionCtx $ctx): Effects {
+                Post::findOrFail($ctx->params['post'] ?? null)->update($ctx->form);
+
+                return Effects::make()->notify('Saved');
+            }),
+    ]);
+}
+```
+
+The route param is available two ways inside a handler: `$ctx->request->route('post')`
+and `$ctx->params['post']`. Both are server-derived and trusted; the demo uses each.
+
+### 4. Soft-delete tab — the `->softDeletes()` macro
+
+Drop trashed-row management onto any table whose model uses the `SoftDeletes` trait. Call
+`->softDeletes($s, Model::class)` **after** your own `rowActions()`/`tabs()` so it merges:
+
+```php
+// apps/demo/app/Admin/Pages/SoftDeletesDemoPage.php:38-56
+$s->table('posts')
+    ->columns([
+        Column::make('title')->label('Title')->kind('text')->translatable()->searchable(),
+        Column::make('published')->label('Published')->boolean(),
+    ])
+    ->searchable(['title'])
+    ->defaultSort('id', 'desc')
+    ->query(fn () => Post::query())
+    ->rowActions([
+        $s->action('delete')->label('Delete')->color('danger')
+            ->confirm('Delete post?', 'It moves to the Trashed tab.')
+            ->handle(function (ActionCtx $ctx): Effects {
+                Post::whereKey($ctx->row['id'] ?? null)->delete();
+
+                return Effects::make()->notify('Post deleted')->refreshTable('posts');
+            }, needs: ['row']),
+    ])
+    ->softDeletes($s, Post::class) // tabs + restore/forceDelete, merged after delete
+    ->toNode()
+```
+
+The macro prepends Active / Trashed / All tabs and appends restore + force-delete (row and
+bulk) actions. Full behavior in the `softDeletes()` section of
+[authoring-pages.md](./authoring-pages.md).
+
+---
+
+## Recipe 6 — Modal action with a query (load / save round-trip)
+
+**What you want:** an edit-in-place modal that **preloads** the row's current values into a
+form, then **saves** them back — without navigating to a separate page. The `EditAction`
+preset wires the modal, the preload query, and the inner Save/Cancel buttons for you.
+
+The two closures you supply are the round-trip:
+
+- **`loadUsing`** runs when the modal opens. Its returned array keys **must match the form
+  field names** — that is how the form prefills.
+- **`saveUsing`** runs on Save. Return `Effects` to control the toast/refresh, or return
+  `void` to accept the preset's default tail (notify + closeModal + refreshTable).
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:126-152
+EditAction::make(
+    $s,
+    name: 'editPublication',
+    title: 'Edit publication',
+    saveName: 'savePublication',
+    form: $s->form('postPublication', [
+        $s->boolean('published')->label('Published')->rules('boolean'),
+        $s->date('published_at')->label('Published at')
+            ->rules('nullable|date')
+            ->hiddenIf('published', '=', false),
+    ]),
+    loadUsing: fn (ActionCtx $ctx): array => Post::query()
+        ->whereKey($ctx->row['id'] ?? null)
+        ->firstOrFail()
+        ->only(['published', 'published_at']),
+    saveUsing: function (ActionCtx $ctx): Effects {
+        Post::whereKey($ctx->row['id'] ?? null)->update([
+            'published' => (bool) ($ctx->form['published'] ?? false),
+            'published_at' => $ctx->form['published_at'] ?? null,
+        ]);
+
+        return Effects::make()
+            ->notify('Publication updated')
+            ->closeModal()
+            ->refreshTable('posts');
+    },
+)->label('Publication')->hiddenIf('published', '=', false)
+```
+
+Notes copied from the working page:
+
+- The `form` argument holds **fields only** — `EditAction` appends the inner Save+Cancel
+  `actionsRow` itself. Do not add your own.
+- `loadUsing` returns `->only(['published', 'published_at'])`; those keys line up exactly
+  with the two field names. A missing key just leaves that field at its default.
+- The return value of `EditAction::make()` is still a chainable `ActionBuilder` — the demo
+  chains `->label('Publication')->hiddenIf(...)` to relabel and hide it on drafts.
+- For error handling, throw inside `saveUsing` (a `ValidationException` surfaces as field
+  errors; any other throw becomes a server error toast). The preset does not swallow it.
+
+---
+
+## Recipe 7 — Inline-editable column (toggle + onSave)
+
+**What you want:** edit a cell value directly in the table — flip a boolean, change a
+select — without opening a form. Mark the column editable (`toggle()` for a boolean,
+`textInput()` for text, `selectColumn()` for a select) and give it an `onSave` closure.
+
+The `onSave` closure is special: it receives the **resolved model** and the **new value**,
+not an `ActionCtx`. It runs the persistence and returns `Effects`.
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:57-69
+Column::make('published')
+    ->label('Published')
+    ->toggle()
+    ->onSave(function (Post $post, bool $value): Effects {
+        $post->update([
+            'published' => $value,
+            'published_at' => $value ? now() : null,
+        ]);
+
+        return Effects::make()
+            ->notify($value ? 'Post published' : 'Post unpublished')
+            ->refreshTable('posts');
+    }),
+```
+
+Notes:
+
+- `toggle()` sets `kind = 'boolean'` and marks the column inline-editable in one call. For
+  text use `textInput()`, for a static select use `selectColumn()->options([...])`.
+- `onSave` is **required** on an editable column — omit it and the cell has nowhere to
+  persist. The closure's first parameter is type-hinted to your model; the framework
+  resolves the row to a model instance before calling it.
+- Add `->rules('...')` on the column to validate the new value server-side before `onSave`
+  runs — same Laravel rules as a form field.
+
+---
+
 ## Not yet expressible
 
 These Filament features do not compose today. Do NOT attempt to fake them with existing
