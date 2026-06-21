@@ -2,9 +2,9 @@
 
 > Back to [./README.md](./README.md)
 
-Check here before building any field. The inventory is **22 PHP builders** (each a
+Check here before building any field. The inventory is **25 PHP builders** (each a
 1:1 wire `kind` → client component) plus **3 client-only kinds** (`time`, `json`,
-`unknown`) that have no PHP builder by design — **25 client kinds total**. The
+`unknown`) that have no PHP builder by design — **28 client kinds total**. The
 canonical 1:1 mapping lives in [Canonical field-kind inventory](#canonical-field-kind-inventory-php--client--schema)
 below; treat it as the source of truth and add to it (never fork it) when a kind lands.
 
@@ -166,8 +166,8 @@ are **zero** one-PHP-to-many-client cases — `select` is a single clean kind th
 at runtime (static / searchable / async / creatable / multi) inside `SelectForm`, not a
 family of kinds.
 
-**Counts:** 22 PHP builders → 22 wire kinds → 22 client kinds, **plus** 3 client-only kinds
-(see below) = **25 client `defineFieldClient` registrations** total.
+**Counts:** 25 PHP builders → 25 wire kinds → 25 client kinds, **plus** 3 client-only kinds
+(see below) = **28 client `defineFieldClient` registrations** total.
 
 The PHP side keeps two parallel lists that must agree: `S::BUILT_IN_KINDS` (the public
 identifier list, used by test datasets) and the bootstrapped `S::kindMap()` (kind → builder
@@ -201,7 +201,10 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 | 20 | `Repeater` | `$s->repeater('x')` | `repeater` | `repeater` | `fields/repeaterField.tsx` |
 | 21 | `Richtext` | `$s->richtext('x')` | `richtext` | `richtext` | `fields/richtext/` (lazy; Lexical) |
 | 22 | `Daterange` | `$s->daterange('x')` | `daterange` | `daterange` | `fields/daterangeField.tsx` |
-<!-- M-89 and later: append new built-in kinds below this line, in BUILT_IN_KINDS order. -->
+| 23 | `CheckboxList` | `$s->checkboxlist('x')` | `checkboxlist` | `checkboxlist` | `fields/checkboxListField.tsx` |
+| 24 | `ToggleButtons` | `$s->togglebuttons('x')` | `togglebuttons` | `togglebuttons` | `fields/toggleButtonsField.tsx` |
+| 25 | `Slider` | `$s->slider('x')` | `slider` | `slider` | `fields/sliderField.tsx` |
+<!-- M-90 and later: append new built-in kinds below this line, in BUILT_IN_KINDS order. -->
 
 > `inFilter` is the one factory that is a concrete method on `S`, not magic `__call`
 > dispatch — but it still maps 1:1 to wire kind `in` and the client `in` registration.

@@ -24,8 +24,10 @@ line **before** you write it, against these three zones:
 
 Walk the tree top-down; stop at the first match:
 
-1. **Is it validation, a DB write, a job, a notification, an auth method?** → Plain Laravel.
-   Never the client, never invented in the DSL. PHP is the security boundary.
+1. **Is it a DB write, a job, a notification, an auth method?** → Plain Laravel. Never the
+   client. PHP is the security boundary. (Validation *rules* are declared on DSL fields via
+   `->rules()` / the fluent helpers and serialized server-side; the *enforcement* is Laravel —
+   the client mirror is on-blur UX only, never trusted.)
 2. **Is it a brand-new *field type* (a kind the inventory doesn't list)?** → All three at
    once: a PHP builder + a React component + a schema entry, same change. Two of three is a
    broken wire. See [./fields.md](./fields.md) and [./wiring.md](./wiring.md).
