@@ -28,6 +28,7 @@ it('smokes admin page', function (string $path) {
 })->with([
     '/admin/dashboard',
     '/admin/playground',
+    '/admin/validation-rules',
     '/admin/posts',
     '/admin/posts/new',
     '/admin/relation-demo',
