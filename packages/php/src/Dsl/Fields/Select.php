@@ -3,11 +3,13 @@
 namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
+use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasMultiple;
 use Tbtop\Admin\Dsl\Concerns\HasOptions;
 
 final class Select extends Field
 {
+    use HasDatabaseRules;
     use HasMultiple;
     use HasOptions;
 

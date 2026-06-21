@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl\Fields;
 use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\CollectsRules;
+use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\OptionList;
@@ -19,6 +20,7 @@ use Tbtop\Admin\Validation\ConstraintMap;
 abstract class Field implements JsonSerializable
 {
     use CollectsRules;
+    use HasGenericRules;
     use WithMeta;
 
     /** @var array<string, mixed> */
@@ -73,6 +75,19 @@ abstract class Field implements JsonSerializable
     public function rules(string|array $rules): static
     {
         $this->ruleList = $this->appendRules($this->ruleList, $rules);
+
+        return $this;
+    }
+
+    /**
+     * Overwrite the collected rule list. For helpers that rewrite an
+     * existing rule in place (e.g. database ignore()), not for appending.
+     *
+     * @param  list<string>  $rules
+     */
+    protected function replaceRules(array $rules): static
+    {
+        $this->ruleList = $rules;
 
         return $this;
     }

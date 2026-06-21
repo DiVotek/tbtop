@@ -2,10 +2,12 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 
 final class Relation extends Field
 {
+    use HasDatabaseRules;
     use HasServerQuery;
 
     protected function kind(): string

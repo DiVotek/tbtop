@@ -2,9 +2,9 @@
 
 > Back to [./README.md](./README.md)
 
-Check here before building any field. The inventory is **22 PHP builders** (each a
+Check here before building any field. The inventory is **25 PHP builders** (each a
 1:1 wire `kind` → client component) plus **3 client-only kinds** (`time`, `json`,
-`unknown`) that have no PHP builder by design — **25 client kinds total**. The
+`unknown`) that have no PHP builder by design — **28 client kinds total**. The
 canonical 1:1 mapping lives in [Canonical field-kind inventory](#canonical-field-kind-inventory-php--client--schema)
 below; treat it as the source of truth and add to it (never fork it) when a kind lands.
 
@@ -42,6 +42,55 @@ Every field class extends `Field.php`. These methods are available on every fiel
 
 ---
 
+## Fluent validation helpers
+
+Filament-style fluent methods that wrap `rules()`. Each appends the same Laravel rule
+a raw `->rules('...')` call would — they are **ergonomics, not new machinery**. Composed
+per field via traits in `Dsl/Concerns/`, so a field only exposes the helpers that fit it
+(a boolean has no `->minLength()`). `min`/`max` also surface as client wire constraints
+(on-blur UX); the rest are server-only.
+
+**Generic (`HasGenericRules`) — every field:**
+
+| Method | Rule | Method | Rule |
+|---|---|---|---|
+| `nullable()` | `nullable` | `confirmed()` | `confirmed` |
+| `same($field)` | `same:field` | `different($field)` | `different:field` |
+| `requiredWith(...$f)` | `required_with:…` | `requiredWithout(...$f)` | `required_without:…` |
+| `in($values)` | `in:…` | `notIn($values)` | `not_in:…` |
+
+**String (`HasStringRules`) — text, textarea, password, slug:**
+
+| Method | Rule | Method | Rule |
+|---|---|---|---|
+| `minLength($n)` | `min:n` | `maxLength($n)` | `max:n` |
+| `length($n)` | `size:n` | `regex($pat)` | `regex:…` (auto array-wrapped) |
+| `alpha()` | `alpha` | `alphaNum()` | `alpha_num` |
+| `alphaDash()` | `alpha_dash` | `startsWith(...$v)` / `endsWith(...$v)` | `starts_with:` / `ends_with:` |
+
+**Numeric (`HasNumericRules`) — number, slider:**
+
+| Method | Rule | Note |
+|---|---|---|
+| `minValue($n)` / `maxValue($n)` | `numeric\|min:n` / `numeric\|max:n` | named `*Value` to avoid Slider's structural `min()`/`max()` |
+| `between($a,$b)` | `numeric\|between:a,b` | paired with `numeric` so it reads as value range, not string length |
+| `multipleOf($n)` / `integer()` / `numeric()` | `multiple_of:` / `integer` / `numeric` | |
+
+**Database (`HasDatabaseRules`) — text, select, relation** (server-only):
+
+```php
+$s->text('email')->unique('users')                 // unique:users,email (column defaults to field name)
+$s->text('email')->unique('users')->ignore($id)    // unique:users,email,{id},id  — skip the editing row
+$s->relation('author_id')->exists('users', 'id')   // exists:users,id
+```
+
+> `ignore()` rewrites the last `unique` rule; call it **after** `unique()` or it throws.
+> The ignore value is explicit (no auto edit-context) — pass the record's PK yourself.
+
+See `apps/demo/app/Admin/Pages/ValidationRulesPage.php` for an end-to-end example.
+
+---
+
 ## Field inventory
 
 One row per field. "Field-specific methods" are those beyond the base class above.
@@ -60,7 +109,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Text** | `$s->text('x')` / `Text::make('x')` | `text` | none | No |
 | **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | none | No |
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
-| **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — number of code slots; `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
+| **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | none (use `->set('min', ...)`, `->set('step', ...)` via base `set`) | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
@@ -117,8 +166,8 @@ are **zero** one-PHP-to-many-client cases — `select` is a single clean kind th
 at runtime (static / searchable / async / creatable / multi) inside `SelectForm`, not a
 family of kinds.
 
-**Counts:** 22 PHP builders → 22 wire kinds → 22 client kinds, **plus** 3 client-only kinds
-(see below) = **25 client `defineFieldClient` registrations** total.
+**Counts:** 25 PHP builders → 25 wire kinds → 25 client kinds, **plus** 3 client-only kinds
+(see below) = **28 client `defineFieldClient` registrations** total.
 
 The PHP side keeps two parallel lists that must agree: `S::BUILT_IN_KINDS` (the public
 identifier list, used by test datasets) and the bootstrapped `S::kindMap()` (kind → builder
@@ -152,7 +201,10 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 | 20 | `Repeater` | `$s->repeater('x')` | `repeater` | `repeater` | `fields/repeaterField.tsx` |
 | 21 | `Richtext` | `$s->richtext('x')` | `richtext` | `richtext` | `fields/richtext/` (lazy; Lexical) |
 | 22 | `Daterange` | `$s->daterange('x')` | `daterange` | `daterange` | `fields/daterangeField.tsx` |
-<!-- M-89 and later: append new built-in kinds below this line, in BUILT_IN_KINDS order. -->
+| 23 | `CheckboxList` | `$s->checkboxlist('x')` | `checkboxlist` | `checkboxlist` | `fields/checkboxListField.tsx` |
+| 24 | `ToggleButtons` | `$s->togglebuttons('x')` | `togglebuttons` | `togglebuttons` | `fields/toggleButtonsField.tsx` |
+| 25 | `Slider` | `$s->slider('x')` | `slider` | `slider` | `fields/sliderField.tsx` |
+<!-- M-90 and later: append new built-in kinds below this line, in BUILT_IN_KINDS order. -->
 
 > `inFilter` is the one factory that is a concrete method on `S`, not magic `__call`
 > dispatch — but it still maps 1:1 to wire kind `in` and the client `in` registration.
@@ -272,7 +324,7 @@ Three controls added in M-89. All three are exercised end-to-end in
 |---|---|---|---|---|
 | **CheckboxList** | `$s->checkboxlist('x')` | `checkboxlist` | **array** of selected values | `options(list<{value, label}>)` |
 | **ToggleButtons** | `$s->togglebuttons('x')` | `togglebuttons` | **scalar** by default, **array** with `->multiple()` | `options(...)`, `multiple(bool $value = true)` |
-| **Slider** | `$s->slider('x')` | `slider` | **number** | `min(int\|float)`, `max(int\|float)`, `step(int\|float)` |
+| **Slider** | `$s->slider('x')` | `slider` | **number** | `min(int\|float)`, `max(int\|float)`, `step(int\|float)` — **structural track bounds**, not validation. For a value-range rule use `minValue()`/`maxValue()` (see [Fluent validation helpers](#fluent-validation-helpers)) |
 
 **CheckboxList** — always multi-value; the form value is an array of the checked option
 values:
