@@ -10,6 +10,60 @@ patterns (relation managers, soft-delete) live in [./recipes.md](./recipes.md).
 
 ---
 
+## Where does code go — decision tree for agents
+
+This is a **two-language stack**: PHP authors the page, React renders it, Laravel runs the
+backend. The single most expensive mistake is putting logic on the wrong side. Place every
+line **before** you write it, against these three zones:
+
+| Zone | Owns | You touch it for |
+|---|---|---|
+| **PHP DSL** (`Admin/Pages/`) | Page *composition* — which fields, tables, actions, layout | A new page, form, table, action, filter, column |
+| **React client** (`packages/client/src/`) | *Rendering & interactivity* — how the JSON draws on screen | A new field *kind*'s component, a custom block renderer |
+| **Plain Laravel** (the consumer app) | The *backend* — security, persistence, jobs, auth, DB | Validation, queues, notifications, migrations, money casts, auth methods |
+
+Walk the tree top-down; stop at the first match:
+
+1. **Is it validation, a DB write, a job, a notification, an auth method?** → Plain Laravel.
+   Never the client, never invented in the DSL. PHP is the security boundary.
+2. **Is it a brand-new *field type* (a kind the inventory doesn't list)?** → All three at
+   once: a PHP builder + a React component + a schema entry, same change. Two of three is a
+   broken wire. See [./fields.md](./fields.md) and [./wiring.md](./wiring.md).
+3. **Is it how something *looks or behaves* on screen** (a new renderer, a `custom` action
+   handler)? → The React client (or `->custom()` on an action for app-specific JS).
+4. **Otherwise — a page, form, table, action built from existing parts?** → PHP DSL. This is
+   the common case; the demo's `Admin/Pages/` is your corpus.
+
+If the table can't place it, **ask** — a misplaced responsibility is the costliest error on
+this stack.
+
+### Worked mis-placements (do NOT do these)
+
+**Mis-placement 1 — validation in client zod.** *"I'll enforce `max:200` on the title in
+the React component's zod schema."* **Wrong.** The client zod is **on-blur UX only and never
+trusted** — a request can skip the client entirely. Validation is *always* a Laravel rule on
+the PHP field: `$s->text('title')->required()->rules('max:200')`
+(`Concerns/PostFormFields.php:22`). The zod mirror is generated *from* the PHP rules, not the
+other way around.
+
+**Mis-placement 2 — inventing a new effect to navigate.** *"I need the form to redirect
+after save, so I'll add a `goTo` effect to `Effects`."* **Wrong.** The effect set is
+**closed** (`notify/redirect/refreshTable/resetForm/closeModal`). Redirect already exists —
+return `Effects::make()->redirect($url)`, or return a string from `onSubmit`. Adding an
+effect kind edits the package for something the contract already covers.
+
+**Mis-placement 3 — a soft-delete macro hand-rolled in the DSL.** *"I'll write the trashed
+filter, restore action, and scoping inline on every index page."* **Wrong by default.** The
+backend behavior (the `SoftDeletes` trait, the scoping) is plain Laravel on the *model*; the
+table affordance is a one-call macro: `->softDeletes($s, Post::class)`
+(`SoftDeletesDemoPage.php:55`). Re-deriving it per page is reinventing what the framework
+ships.
+
+This decision tree expands the placement table in the repo's `CLAUDE.md`; when in doubt,
+that table is the contributor-facing source.
+
+---
+
 ## The Page class
 
 Every admin page extends `Tbtop\Admin\Pages\Page`. Two methods are abstract; the rest
@@ -287,22 +341,115 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `confirm` | `confirm(string $title, ?string $description = null): self` | Adds a confirmation dialog before the action fires |
 | `custom` | `custom(string $handler, array $params = []): self` | **Spec.** Delegates to a named client-side handler |
 
-### Prebuilt CRUD action helpers (`Tbtop\Admin\Dsl\Actions`)
+### Prebuilt action presets (`Tbtop\Admin\Dsl\Actions`) — and why to reach for them
 
-Thin factories over `$s->action()` + `Effects` for the common record operations.
-Each takes `S $s` first (so it registers in the action registry) and **returns the
-configured `ActionBuilder`**, so you keep chaining (`->color()`, `->hiddenIf()`, …).
-No model is baked in — the consumer passes the closure. Filament-familiar.
+Thin factories over `$s->action()` + `Effects` for the common record operations. They save
+you the danger-color + confirm + needs-wiring boilerplate and return a **chainable**
+`ActionBuilder`, so you keep the full fluent API. Reach for these before hand-rolling a
+delete/edit/clone — they bake in the right defaults and stay overridable.
 
-| Helper | Signature | Shape |
+**The registry mandate (read this first).** Every preset takes `S $s` as its first argument
+for one non-negotiable reason: it builds the action via `$s->action()`, which both *creates*
+and *registers* the builder in the request-scoped action registry that the HTTP layer
+dispatches by name. **A bare `ActionBuilder` (one constructed without going through `$s`)
+404s at dispatch** — the server cannot find its handler. So never `new ActionBuilder(...)`
+for a server action; always go through `$s->action()` or a preset that does.
+
+| Preset | Signature | Shape |
 |---|---|---|
 | `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', string $title = 'Edit record', ?string $saveName = null): ActionBuilder` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
 | `DeleteAction` | `make(S $s, Closure $using, string $name = 'delete', bool $bulk = false): ActionBuilder` | Danger + confirm server action; `$using` deletes. `bulk: true` switches to `needs: ['selection']` (empty selection → benign notify) |
 | `ReplicateAction` | `make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder` | Server action; `$using` clones. No auto-redirect — return a `redirect` effect from `$using` for edit-after-clone |
+| `RestoreAction` / `ForceDeleteAction` | `make(S $s, string $model): ActionBuilder`, `::bulk(...)` | Soft-delete row/bulk actions; usually applied for you by `->softDeletes()` |
+| `FormActions` | `save(S $s, string $label = 'Save'): ActionBuilder` · `saveCancel(S $s, string $cancelUrl, string $saveLabel = 'Save', array $extra = []): Node` | Form-footer button presets — a single submit, or a Save+Cancel row |
 
-`RecordAction` (same namespace) is the shared internal: `server()` / `bulk()` wire the
-server-action-with-default-tail the presets build on; a void/null closure falls back to
-the tail.
+`DeleteAction` in a row and a bulk action, straight from the demo:
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:165-178
+DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
+    Post::whereKey($ctx->row['id'] ?? null)->delete();
+}),
+// bulk — empty selection is a benign notify; the closure overrides the tail:
+DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): Effects {
+    $count = Post::whereKey($ctx->selection)->delete();
+
+    return Effects::make()->notify("Deleted {$count} post(s)")->refreshTable('posts');
+}),
+```
+
+`ReplicateAction` returns a `redirect` from its own closure to edit the clone:
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:154-163
+ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
+    $clone = Post::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->replicate();
+    $clone->slug = $clone->slug.'-copy-'.uniqid();
+    $clone->save();
+
+    return Effects::make()->notify('Post replicated')->redirect("/admin/posts/{$clone->id}/edit");
+}),
+```
+
+#### `FormActions` — form-footer button presets
+
+`FormActions` removes the boilerplate `actionsRow([... submit() ..., ... visit() ...])` at
+the bottom of a form. Two entry points:
+
+- **`FormActions::save($s, $label = 'Save'): ActionBuilder`** — a single primary submit
+  button (with the `mod+s` keybinding). Returns a chainable `ActionBuilder`, so wrap it in
+  your own `actionsRow` or chain more on it.
+- **`FormActions::saveCancel($s, $cancelUrl, $saveLabel = 'Save', $extra = []): Node`** — a
+  complete footer `Node`: a primary Save submit plus a Cancel button that `visit()`s
+  `$cancelUrl`. `$extra` is a list of additional `ActionBuilder`s appended to the row. Drop
+  the returned `Node` straight into the form's children.
+
+```php
+// equivalent to the create form's footer, using the preset
+$s->form('post', [
+    ...$this->postFormSections($s, 'unique:posts,slug'),
+    FormActions::saveCancel($s, '/admin/posts', saveLabel: 'Create'),
+])
+```
+
+The hand-rolled version this replaces is `PostCreatePage.php:31-35` (a `save` submit + a
+`cancel` visit inside an `actionsRow`). Because `FormActions::save` routes through `$s`, the
+submit action is registered like any other — the registry mandate above holds.
+
+`RecordAction` (same namespace) is the shared internal the server presets build on:
+`server()` / `bulk()` wire the server-action-with-default-tail, and a void/null closure
+falls back to that tail. You rarely call it directly.
+
+#### Worked example — `EditAction` modal with load/save
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:126-152
+EditAction::make(
+    $s,
+    name: 'editPublication',
+    title: 'Edit publication',
+    saveName: 'savePublication',
+    form: $s->form('postPublication', [
+        $s->boolean('published')->label('Published')->rules('boolean'),
+        $s->date('published_at')->label('Published at')
+            ->rules('nullable|date')->hiddenIf('published', '=', false),
+    ]),
+    loadUsing: fn (ActionCtx $ctx): array => Post::query()
+        ->whereKey($ctx->row['id'] ?? null)->firstOrFail()
+        ->only(['published', 'published_at']),
+    saveUsing: function (ActionCtx $ctx): Effects {
+        Post::whereKey($ctx->row['id'] ?? null)->update([
+            'published' => (bool) ($ctx->form['published'] ?? false),
+            'published_at' => $ctx->form['published_at'] ?? null,
+        ]);
+
+        return Effects::make()->notify('Publication updated')->closeModal()->refreshTable('posts');
+    },
+)->label('Publication')->hiddenIf('published', '=', false)
+```
+
+See the full round-trip walkthrough in
+[recipes.md](./recipes.md) (Recipe 6).
 
 ### Tab
 
@@ -387,6 +534,107 @@ a named client-side handler, or let the server do a full Inertia redirect.
 | `refreshTable` | `refreshTable(?string $table = null): self` | Re-fetches the named table; `null` refreshes the first/only table on the page |
 | `resetForm` | `resetForm(?string $form = null): self` | Resets the named form to its `record` state; `null` resets the first/only form |
 | `closeModal` | `closeModal(): self` | Closes the currently open modal dialog |
+
+---
+
+## Effects vs server redirect vs string href — which to return
+
+A submit/action handler can move the user three different ways. Pick by **where the
+navigation decision is made**:
+
+| You want… | Return | When |
+|---|---|---|
+| Stay on the page, show a toast / refresh a table | `Effects::make()->notify(...)` (no redirect) | The common case — save in place |
+| Navigate after a server decision | `Effects::make()->redirect($url)` | You computed the URL from data only the server has (the new record's id) |
+| Navigate to a fixed, known URL on a **button** (no server work) | `->visit($url)` on the action (a spec, not a handler) | A Cancel/Back button — pure client navigation, no round-trip |
+| Redirect straight out of `onSubmit` | **return a string** (the URL) | A create form that lands on the new edit page |
+
+The two redirect forms are not interchangeable:
+
+**`onSubmit` returning a string** — an Inertia redirect, used by the create form to jump to
+the freshly-created record:
+
+```php
+// apps/demo/app/Admin/Pages/PostCreatePage.php:49-53
+->onSubmit(function (ActionCtx $ctx): string {
+    $post = Post::create($ctx->form);
+
+    return "/admin/posts/{$post->id}/edit";   // string return = redirect
+})
+```
+
+`MediaNewPage` returns a string the same way (`return '/admin/media';`,
+`apps/demo/app/Admin/Pages/MediaNewPage.php:51`).
+
+**A handler returning a `redirect` effect** — used by the edit page's delete action, which
+notifies *and* navigates:
+
+```php
+// apps/demo/app/Admin/Pages/PostEditPage.php:52-56
+->handle(function (ActionCtx $ctx): Effects {
+    Post::whereKey($ctx->request->route('post'))->delete();
+
+    return Effects::make()->notify('Post deleted')->redirect('/admin/posts');
+})
+```
+
+Rule of thumb: a **string return** is a bare redirect (no toast). An **`Effects` redirect**
+lets you chain a `notify` (or `refreshTable`) alongside the navigation. A **`visit()` spec**
+is for buttons that never touch the server. Do not invent a new effect to navigate — the
+three forms above cover every case (the effect set is closed).
+
+---
+
+## Conditional visibility — `Cond` builder vs string shorthand
+
+Fields and columns can show/hide/enable/disable based on other field values, evaluated
+**client-side** in real time. There are two ways to express the condition, and they produce
+the same wire shape:
+
+**String shorthand** — `->hiddenIf('field', 'op', value)` / `->disabledIf('field', 'op', value)`.
+Use for a single comparison. The operators are `=` `!=` `>` `>=` `<` `<=`:
+
+```php
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:34-35
+$s->date('published_at')->label('Published at')->rules('nullable|date')
+    ->hiddenIf('published', '=', false),   // hide the date until "published" is on
+```
+
+```php
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:74-75 (inside a repeater)
+$s->text('url')->label('URL')
+    ->hiddenIf('type', '!=', 'link'),      // only show URL when type === 'link'
+```
+
+The same shorthand drives a row action's visibility — the demo hides the publication modal
+on rows that are already drafts:
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:152
+->label('Publication')->hiddenIf('published', '=', false)
+```
+
+**`Cond` builder** — `Cond::all(...)` / `Cond::any(...)` / `Cond::not(...)` wrapping leaf
+conditions (`Cond::truthy('f')`, `Cond::eq('f', v)`, `Cond::neq`, `Cond::in`, `Cond::gt`, …).
+Use when you need a combinator (AND / OR / NOT) or a leaf the shorthand has no symbol for
+(`truthy`, `empty`, `notEmpty`, `in`, `notIn`):
+
+```php
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:36-39
+Rating::make('rating')->label('Rating')->max(5)
+    ->set('min', 0)->set('step', 0.1)
+    ->rules('nullable|numeric|min:0|max:5')
+    ->disabledIf(Cond::not(Cond::truthy('published'))),  // enabled only when published
+```
+
+`->disabledIf('published', '=', false)` would be *almost* the same, but `Cond::truthy`
+treats `0`/`''`/`null` uniformly as falsy — the shorthand `=` compares to one literal. Reach
+for `Cond` when "is this field set/on at all" matters more than one exact value, or when the
+condition is a boolean combination of several fields.
+
+`hiddenIf`/`disabledIf` both accept **either** a `Cond` instance **or** the
+`(field, op, value)` string triple as their first argument — the signature is
+`hiddenIf(Cond|string $condOrField, string $op = '', mixed $value = null)`.
 
 ---
 

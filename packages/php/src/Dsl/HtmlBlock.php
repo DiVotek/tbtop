@@ -3,7 +3,6 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
-use stdClass;
 
 /**
  * Raw HTML display block.
@@ -24,10 +23,6 @@ final class HtmlBlock implements JsonSerializable
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
-        return [
-            'kind' => 'displayHtml',
-            'options' => ['html' => $this->rawHtml],
-            'meta' => new stdClass,
-        ];
+        return (new Node('displayHtml', ['html' => $this->rawHtml]))->jsonSerialize();
     }
 }

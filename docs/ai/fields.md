@@ -263,6 +263,191 @@ See [./wiring.md](./wiring.md) for the endpoint shape.
 
 ---
 
+## M-89 fields — CheckboxList, ToggleButtons, Slider
+
+Three controls added in M-89. All three are exercised end-to-end in
+`apps/demo/app/Admin/Pages/NewFeaturesPage.php` — every snippet below is copied from it.
+
+| Field | `S` factory | Wire `kind` | Value shape | Field-specific methods |
+|---|---|---|---|---|
+| **CheckboxList** | `$s->checkboxlist('x')` | `checkboxlist` | **array** of selected values | `options(list<{value, label}>)` |
+| **ToggleButtons** | `$s->togglebuttons('x')` | `togglebuttons` | **scalar** by default, **array** with `->multiple()` | `options(...)`, `multiple(bool $value = true)` |
+| **Slider** | `$s->slider('x')` | `slider` | **number** | `min(int\|float)`, `max(int\|float)`, `step(int\|float)` |
+
+**CheckboxList** — always multi-value; the form value is an array of the checked option
+values:
+
+```php
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php:35-43
+$s->checkboxlist('channels')
+    ->label('Notification channels (CheckboxList)')
+    ->options([
+        ['value' => 'email', 'label' => 'Email'],
+        ['value' => 'sms', 'label' => 'SMS'],
+        ['value' => 'push', 'label' => 'Push'],
+    ])
+    ->required()
+    ->rules('array'),
+```
+
+**ToggleButtons** — a segmented control. **Scalar by default** (one value); call
+`->multiple()` to switch it to an array value:
+
+```php
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php:45-61
+$s->togglebuttons('plan')                 // single → scalar value, e.g. 'pro'
+    ->label('Plan (ToggleButtons, single)')
+    ->options([
+        ['value' => 'free', 'label' => 'Free'],
+        ['value' => 'pro', 'label' => 'Pro'],
+        ['value' => 'team', 'label' => 'Team'],
+    ])
+    ->required(),
+
+$s->togglebuttons('tags')                 // multiple → array value, e.g. ['new']
+    ->label('Tags (ToggleButtons, multiple)')
+    ->multiple()
+    ->options([
+        ['value' => 'new', 'label' => 'New'],
+        ['value' => 'sale', 'label' => 'Sale'],
+        ['value' => 'hot', 'label' => 'Hot'],
+    ]),
+```
+
+**Slider** — a numeric slider; `min`/`max`/`step` are first-class methods (not `->set(...)`)
+because they are structural — they drive the track range and snapping:
+
+```php
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php:63-68
+$s->slider('volume')
+    ->label('Volume (Slider)')
+    ->min(0)
+    ->max(100)
+    ->step(5)
+    ->rules('min:0|max:100'),
+```
+
+`options()` on these fields takes the same `{value, label}` list every option-driven field
+uses — the values are string-normalized on the wire, so seed defaults as strings (e.g.
+`->record(['plan' => 'pro', 'channels' => ['email']])`,
+`NewFeaturesPage.php:74-79`). Validation is PHP as always — `rules('array')` for the
+multi-value ones, numeric range rules for the slider.
+
+---
+
+## Select progression — static → searchable → async → creatable
+
+`select` is **one wire kind** that branches at runtime by which methods you call. Pick the
+rung you need; each adds capability over the one above.
+
+**1. Static** — a fixed option list, no server round-trip. Pass `options(array)` (or
+`->set('options', [...])`):
+
+```php
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:69-73 (inside a repeater)
+$s->select('type')->label('Type')
+    ->set('options', [
+        ['value' => 'text', 'label' => 'Text'],
+        ['value' => 'link', 'label' => 'Link'],
+    ]),
+```
+
+**2. Searchable** — same static options, but rendered as a filterable combobox. Add
+`->searchable()`:
+
+```php
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:43-46
+$s->select('author_id')->label('Author')
+    ->searchable()
+    ->set('options', $this->authorOptions())
+    ->rules('nullable|exists:users,id')
+```
+
+**3. Async** — options fetched from the server on open/search instead of static props. Pass
+`->query(callable)` instead of `options(array)`; this needs the async-select endpoint (see
+[./wiring.md](./wiring.md)). For a pure type-ahead over a model, the dedicated `relation`
+field is usually the cleaner choice:
+
+```php
+// apps/demo/app/Admin/Pages/RelationDemoPage.php:39-43
+$s->relation('author_id')->label('Author')
+    ->query(fn () => User::query()->orderBy('name'))
+    ->labelKey('name')
+    ->searchable()
+    ->rules('nullable|exists:users,id'),
+```
+
+**4. Creatable** — let the user add a new option inline. Call `->creatable($fields, $using)`:
+a mini-form (`$fields`) renders in the dropdown, and submitting it runs `$using` server-side
+to mint the new `{value, label}`. Needs the select-create endpoint:
+
+```php
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:43-60
+$s->select('author_id')->label('Author')
+    ->searchable()
+    ->set('options', $this->authorOptions())
+    ->rules('nullable|exists:users,id')
+    ->creatable(
+        fields: [
+            $s->text('name')->label('Name')->required(),
+        ],
+        using: function (array $validated): array {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['name'].'@placeholder.local',
+                'password' => '',
+            ]);
+
+            return ['value' => (string) $user->id, 'label' => $user->name ?? $user->email];
+        },
+    ),
+```
+
+`->multiple()` (the `HasMultiple` trait) is orthogonal to these rungs — add it to any of them
+to allow more than one selection (rendered as chips).
+
+---
+
+## Upload field cookbook
+
+The upload field's storage and image-processing config lives **inline on the field**, not in
+a config profile. `apps/demo/app/Admin/Pages/UploadDemoPage.php` exercises the full surface.
+
+| Method | Signature | Default | Purpose |
+|---|---|---|---|
+| `accept` | `accept(string)` | — | MIME types / extensions, e.g. `'image/*'`, `'.pdf'` |
+| `disk` | `disk(string)` | `'public'` | Laravel filesystem disk |
+| `directory` | `directory(string)` | `'uploads'` | Subdirectory the file is stored under |
+| `visibility` | `visibility(string)` | `'public'` | `'public'` or `'private'` |
+| `maxSize` | `maxSize(int $bytes)` | 5 MiB | Max upload size in **bytes** |
+| `convertTo` | `convertTo(string)` | — | Re-encode the image: `'webp'` \| `'jpeg'` \| `'png'` |
+| `quality` | `quality(int)` | — | Encoder quality `1-100` for the converted image |
+
+A public-disk upload that re-encodes to webp, and a private-disk one served only through the
+app:
+
+```php
+// apps/demo/app/Admin/Pages/UploadDemoPage.php:40-49
+// Public disk: stored under public:docs, publicly linkable.
+$s->upload('doc')->label('Public document')->required()
+    ->disk('public')->directory('docs')->visibility('public')
+    ->accept('image/*')->maxSize(5 * 1024 * 1024)
+    ->convertTo('webp')->quality(80),
+// Private disk: stored on `local` (storage/app/private), served only through the app.
+$s->upload('secret')->label('Private document')
+    ->disk('local')->directory('private-docs')->visibility('private')
+    ->accept('image/*')->maxSize(5 * 1024 * 1024)
+    ->convertTo('webp')->quality(80),
+```
+
+The upload happens over a **plain JSON endpoint** (not Inertia) before the form submits; the
+field's form value is the upload row the endpoint returned. `MediaNewPage.php` shows reading
+that row back on submit — `$ctx->form['file']` is an array with `filename`/`url`/`mimeType`
+keys (`apps/demo/app/Admin/Pages/MediaNewPage.php:40-49`). See [./wiring.md](./wiring.md) for
+the endpoint shape.
+
+---
+
 ## Custom fields (app-specific)
 
 Do not edit `packages/php/src/Dsl/Fields/` or `packages/client/src/fields/` to add an

@@ -1,5 +1,6 @@
 import { Slider } from "../ui/slider";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 interface SliderBag {
 	min?: number;
@@ -11,10 +12,7 @@ const DEFAULT_MIN = 0;
 const DEFAULT_MAX = 100;
 
 export function SliderCell({ value }: FieldCellProps<number, SliderBag>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	return <span>{String(value)}</span>;
+	return nullableCell(value, (v) => <span>{String(v)}</span>);
 }
 
 export function SliderForm({
@@ -32,7 +30,7 @@ export function SliderForm({
 	return (
 		<div className="flex items-center gap-3" data-field={name} onBlur={onBlur}>
 			<Slider
-				id={id ?? name}
+				id={fieldId({ id, name })}
 				value={[current]}
 				min={min}
 				max={max}

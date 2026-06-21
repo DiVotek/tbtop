@@ -1,6 +1,7 @@
-import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { OptionRow } from "./optionList";
 
 interface RadioOption {
 	value: string;
@@ -12,11 +13,10 @@ interface RadioOptionsBag {
 }
 
 export function RadioCell({ value, options }: FieldCellProps<string, RadioOptionsBag>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	const match = options?.options?.find((o) => o.value === value);
-	return <span>{match?.label ?? value}</span>;
+	return nullableCell(value, (v) => {
+		const match = options?.options?.find((o) => o.value === v);
+		return <span>{match?.label ?? v}</span>;
+	});
 }
 
 export function RadioForm({
@@ -29,25 +29,25 @@ export function RadioForm({
 	options,
 }: FieldFormProps<string, RadioOptionsBag>) {
 	const choices = options?.options ?? [];
-	const groupId = id ?? name;
+	const groupId = fieldId({ id, name });
 	return (
 		<RadioGroup
 			id={groupId}
-			value={typeof value === "string" ? value : ""}
+			value={asString(value)}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
 			disabled={disabled}
 			data-testid={`radio-${name}`}
 		>
-			{choices.map((opt) => {
-				const itemId = `${groupId}-${opt.value}`;
-				return (
-					<div key={opt.value} className="flex items-center gap-2">
-						<RadioGroupItem id={itemId} value={opt.value} />
-						<Label htmlFor={itemId}>{opt.label}</Label>
-					</div>
-				);
-			})}
+			{choices.map((opt) => (
+				<OptionRow
+					key={opt.value}
+					groupId={groupId}
+					value={opt.value}
+					label={opt.label}
+					control={(itemId) => <RadioGroupItem id={itemId} value={opt.value} />}
+				/>
+			))}
 		</RadioGroup>
 	);
 }

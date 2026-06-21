@@ -6,7 +6,7 @@ import { renderAsyncError } from "../structure/renderAsyncError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
 import {
@@ -124,12 +124,12 @@ function StaticSingleSelect({
 	const choices = options?.options ?? [];
 	return (
 		<Select
-			value={typeof value === "string" ? value : ""}
+			value={asString(value)}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			disabled={disabled}
 		>
 			<SelectTrigger
-				id={id ?? name}
+				id={fieldId({ id, name })}
 				onBlur={onBlur}
 				data-testid={`select-${name}`}
 				className="w-full"
@@ -204,7 +204,7 @@ function SearchableStaticSelect({
 
 	return (
 		<div
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			className="relative"
 			data-testid={`select-${name}`}
 			onKeyDown={handleKeyDown}
@@ -292,7 +292,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 			disabled={props.disabled}
 		>
 			<SelectTrigger
-				id={props.id ?? props.name}
+				id={fieldId({ id: props.id, name: props.name })}
 				onBlur={props.onBlur}
 				data-testid={`select-${props.name}`}
 				className="w-full"

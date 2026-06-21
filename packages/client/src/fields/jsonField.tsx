@@ -1,17 +1,15 @@
 import { Textarea } from "../ui/textarea";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export function JsonCell({ value }: FieldCellProps<unknown>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	return <code className="text-xs">{JSON.stringify(value)}</code>;
+	return nullableCell(value, (v) => <code className="text-xs">{JSON.stringify(v)}</code>);
 }
 
 export function JsonForm({ id, name, value, onChange }: FieldFormProps<unknown>) {
 	return (
 		<Textarea
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			defaultValue={
 				value === null || value === undefined ? "" : JSON.stringify(value, null, 2)

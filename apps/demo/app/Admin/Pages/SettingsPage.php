@@ -5,6 +5,7 @@ namespace App\Admin\Pages;
 use App\Models\Setting;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\FormActions;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
@@ -52,8 +53,7 @@ class SettingsPage extends Page
                     $s->date('launch_date')->label('Launch date')->rules('nullable|date'),
                 ]),
                 $s->actionsRow([
-                    $s->action('save')->label('Save')->color('primary')
-                        ->keybinding('mod+s')->submit(),
+                    FormActions::save($s),
                 ]),
             ])
                 ->record($settings->toArray())

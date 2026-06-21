@@ -31,8 +31,7 @@ use Tbtop\Admin\Dsl\Fields\ToggleButtons;
 use Tbtop\Admin\Dsl\Fields\Upload;
 
 /**
- * Structure DSL entry — mirrors the client `s.*` builders and collects
- * the request-scoped registries (forms, actions) the HTTP layer resolves.
+ * Structure DSL entry — mirrors the client `s.*` builders; collects request-scoped form/action registries.
  *
  * @method Text text(string $name)
  * @method Textarea textarea(string $name)

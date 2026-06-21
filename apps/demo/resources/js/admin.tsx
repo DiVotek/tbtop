@@ -1,7 +1,7 @@
 import "../css/app.css";
 
 import { createInertiaApp } from "@inertiajs/react";
-import { Input, registerBlock } from "@tbtop/inertia-admin";
+import { defineFieldClient, Input, registerBlock } from "@tbtop/inertia-admin";
 import { createRoot } from "react-dom/client";
 import { route as routeFn } from "ziggy-js";
 import { TwoFactorSetupBlock } from "./admin/TwoFactorSetupBlock";
@@ -10,28 +10,39 @@ declare global {
 	const route: typeof routeFn;
 }
 
+interface RatingBag {
+	max?: number;
+	min?: number;
+	step?: number;
+}
+
+function RatingCell({ value }: { value: number | null }) {
+	return <span>{value ?? "–"}</span>;
+}
+
+function RatingForm({
+	value,
+	onChange,
+	options,
+}: {
+	value: number | null;
+	onChange: (next: number | null) => void;
+	options?: RatingBag;
+}) {
+	return (
+		<Input
+			type="number"
+			min={options?.min ?? 1}
+			max={options?.max ?? 5}
+			step={options?.step ?? 1}
+			defaultValue={value ?? ""}
+			onChange={(e) => onChange(Number(e.target.value))}
+		/>
+	);
+}
+
 // Register the custom rating field for admin pages.
-registerBlock<"rating", { max?: number; min?: number; step?: number }>({
-	kind: "rating",
-	behavior: "field",
-	render: function RatingRender({ options, ctx }) {
-		const max = options.max ?? 5;
-		if (ctx.surface === "cell") {
-			const val = ctx.binding?.value as number | null;
-			return <span>{val ?? "–"}</span>;
-		}
-		return (
-			<Input
-				type="number"
-				min={options.min ?? 1}
-				max={max}
-				step={options.step ?? 1}
-				defaultValue={(ctx.binding?.value as number | undefined) ?? ""}
-				onChange={(e) => ctx.binding?.onChange(Number(e.target.value))}
-			/>
-		);
-	},
-});
+defineFieldClient<"rating", number>("rating", { form: RatingForm, cell: RatingCell });
 
 // Register the custom two-factor setup block (owns its own JSON fetches).
 registerBlock<"twoFactorSetup", { setupUrl: string; confirmUrl: string }>({

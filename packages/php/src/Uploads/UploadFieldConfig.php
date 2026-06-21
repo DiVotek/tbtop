@@ -6,9 +6,8 @@ use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Dsl\Fields\Upload;
 
 /**
- * Resolved upload settings for one Upload field. Merges an optional config
- * preset (the base) with the field's inline DSL options (inline wins), then
- * exposes typed, defaulted accessors the storer and controller rely on.
+ * Resolved upload settings for one Upload field: config preset merged
+ * under the field's inline DSL options (inline wins on key collision).
  */
 final class UploadFieldConfig
 {

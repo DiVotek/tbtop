@@ -1,26 +1,25 @@
 import { Input } from "../ui/input";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export function DateCell({ value }: FieldCellProps<string>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	const date = new Date(String(value));
-	if (Number.isNaN(date.getTime())) {
-		return <span>{String(value)}</span>;
-	}
-	return <time dateTime={date.toISOString()}>{date.toLocaleDateString()}</time>;
+	return nullableCell(value, (v) => {
+		const date = new Date(String(v));
+		if (Number.isNaN(date.getTime())) {
+			return <span>{String(v)}</span>;
+		}
+		return <time dateTime={date.toISOString()}>{date.toLocaleDateString()}</time>;
+	});
 }
 
 export function DateTimeCell({ value }: FieldCellProps<string>) {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	const date = new Date(String(value));
-	if (Number.isNaN(date.getTime())) {
-		return <span>{String(value)}</span>;
-	}
-	return <time dateTime={date.toISOString()}>{date.toLocaleString()}</time>;
+	return nullableCell(value, (v) => {
+		const date = new Date(String(v));
+		if (Number.isNaN(date.getTime())) {
+			return <span>{String(v)}</span>;
+		}
+		return <time dateTime={date.toISOString()}>{date.toLocaleString()}</time>;
+	});
 }
 
 // Display normalizes via defaultValue only — writing the normalized value
@@ -29,7 +28,7 @@ export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps
 	const isoDate = toIsoDate(value);
 	return (
 		<Input
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			type="date"
 			defaultValue={isoDate}
@@ -43,7 +42,7 @@ export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormP
 	const local = toLocalDateTime(value);
 	return (
 		<Input
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			type="datetime-local"
 			defaultValue={local}
@@ -57,7 +56,7 @@ export function TimeForm({ id, name, value, onChange, disabled }: FieldFormProps
 	const time = toTimeString(value);
 	return (
 		<Input
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			type="time"
 			defaultValue={time}

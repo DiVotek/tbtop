@@ -8,6 +8,7 @@ use App\Admin\Pages\LoginPreviewPage;
 use App\Admin\Pages\MediaEditPage;
 use App\Admin\Pages\MediaIndexPage;
 use App\Admin\Pages\MediaNewPage;
+use App\Admin\Pages\NewFeaturesPage;
 use App\Admin\Pages\PlaygroundPage;
 use App\Admin\Pages\PostCreatePage;
 use App\Admin\Pages\PostEditPage;
@@ -47,6 +48,7 @@ class AdminPanel extends Panel
                 SettingsPage::class,
                 SoftDeletesDemoPage::class,
                 PlaygroundPage::class,
+                NewFeaturesPage::class,
                 RecordDetailPage::class,
                 MediaLibraryPage::class,
                 LoginPreviewPage::class,

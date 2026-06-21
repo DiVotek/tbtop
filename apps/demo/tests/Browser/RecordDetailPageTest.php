@@ -23,6 +23,6 @@ it('renders every display primitive on the record detail page', function () {
         ->assertSee('2024-03-15')              // displayValue date (pre-formatted)
         ->assertSee('TT-1042')                 // displayKeyValue dd value
         ->assertSee('Handle with care')        // displayRichtext rendered text
-        ->assertVisible('main img')            // displayImage full-size image
+        ->assertVisible('#app main img')       // displayImage full-size image
         ->assertNoSmoke();                     // no console logs + no JS errors
 });

@@ -69,7 +69,7 @@ class RecordDetailPage extends Page
             'fulfillment' => 'shipped',
             'total_cents' => 4999,
             'placed_at' => '2024-03-15 10:30:00',
-            'cover_url' => 'https://placehold.co/600x400/png',
+            'cover_url' => '/logo.svg',
             'notes' => $this->notesState(),
             'attributes' => ['SKU' => 'TT-1042', 'Weight' => '1.2 kg', 'Color' => 'Walnut'],
         ];

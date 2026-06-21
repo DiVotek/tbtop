@@ -27,11 +27,9 @@ final class DisplayKeyValueBlock implements JsonSerializable
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
-        return [
-            'kind' => 'displayKeyValue',
-            'options' => ['entries' => $this->mapForWire()],
-            'meta' => new stdClass,
-        ];
+        $options = ['entries' => $this->mapForWire()];
+
+        return (new Node('displayKeyValue', $options))->jsonSerialize();
     }
 
     /**

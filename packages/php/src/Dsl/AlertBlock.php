@@ -3,7 +3,6 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
-use stdClass;
 
 /**
  * Alert display block.
@@ -47,10 +46,6 @@ final class AlertBlock implements JsonSerializable
             $options['title'] = $this->titleValue;
         }
 
-        return [
-            'kind' => 'displayAlert',
-            'options' => $options,
-            'meta' => new stdClass,
-        ];
+        return (new Node('displayAlert', $options))->jsonSerialize();
     }
 }

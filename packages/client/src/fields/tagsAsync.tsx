@@ -5,7 +5,7 @@ import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { useMultiResolvedLabels } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
-import type { FieldFormProps } from "./fieldProps";
+import { type FieldFormProps, fieldId } from "./fieldProps";
 import { Chips, type TagsOptionsBag } from "./tagsShared";
 
 export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
@@ -50,7 +50,7 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 				/>
 			</div>
 			<input
-				id={props.id ?? props.name}
+				id={fieldId({ id: props.id, name: props.name })}
 				value={search}
 				disabled={props.disabled}
 				onChange={(e) => setSearch(e.target.value)}

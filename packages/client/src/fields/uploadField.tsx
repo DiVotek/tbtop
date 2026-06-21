@@ -8,7 +8,7 @@ import { useClientActionContext } from "../structure/actionContext";
 import { useNearestRow } from "../structure/rowContext";
 import type { ClientActionContext } from "../structure/types";
 import { Button } from "../ui/button";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export interface UploadValue {
 	filename: string;
@@ -81,7 +81,7 @@ export function UploadForm({
 	}
 	return (
 		<UploadPicker
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			accept={opts.accept}
 			busy={busy}

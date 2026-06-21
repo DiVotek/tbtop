@@ -1,7 +1,8 @@
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useTranslation } from "../i18n/i18n";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/inputOtp";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { nullableCell } from "./cellHelpers";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 const DEFAULT_LENGTH = 6;
 
@@ -10,12 +11,9 @@ interface OtpOptionsBag {
 	pattern?: string;
 }
 
+// One dot per entered character, so any configured length masks correctly.
 export function OtpCell({ value }: FieldCellProps<string>) {
-	if (value === null || value === undefined || value === "") {
-		return null;
-	}
-	// One dot per entered character, so any configured length masks correctly.
-	return <span>{"•".repeat(value.length)}</span>;
+	return nullableCell(value, (v) => (v === "" ? null : <span>{"•".repeat(v.length)}</span>));
 }
 
 export function OtpForm({
@@ -32,12 +30,12 @@ export function OtpForm({
 	const pattern = options?.pattern ?? REGEXP_ONLY_DIGITS;
 	return (
 		<InputOTP
-			id={id ?? name}
+			id={fieldId({ id, name })}
 			name={name}
 			maxLength={length}
 			pattern={pattern}
 			inputMode="numeric"
-			value={typeof value === "string" ? value : ""}
+			value={asString(value)}
 			onChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
 			disabled={disabled}
