@@ -21,6 +21,7 @@ use App\Admin\Pages\SoftDeletesDemoPage;
 use App\Admin\Pages\TwoFactorChallengePage;
 use App\Admin\Pages\TwoFactorSetupPage;
 use App\Admin\Pages\UploadDemoPage;
+use App\Admin\Pages\ValidationRulesPage;
 use App\Http\Middleware\RequireFullAuth;
 use Tbtop\Admin\Pages\MediaLibraryPage;
 use Tbtop\Admin\Panels\Panel;
@@ -49,6 +50,7 @@ class AdminPanel extends Panel
                 SoftDeletesDemoPage::class,
                 PlaygroundPage::class,
                 NewFeaturesPage::class,
+                ValidationRulesPage::class,
                 RecordDetailPage::class,
                 MediaLibraryPage::class,
                 LoginPreviewPage::class,

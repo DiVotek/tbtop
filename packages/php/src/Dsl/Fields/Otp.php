@@ -9,10 +9,15 @@ final class Otp extends Field
         return 'otp';
     }
 
-    /** Number of code slots (default 6 on the client). */
+    /**
+     * Number of code slots. Drives the rendered slot count AND a
+     * server "digits:N" rule, so the backend enforces the shape the UI shows.
+     */
     public function length(int $digits = 6): static
     {
-        return $this->set('length', $digits);
+        $this->set('length', $digits);
+
+        return $this->rules('digits:'.$digits);
     }
 
     /** Client-side accepted-character regex; defaults to digits-only. */
