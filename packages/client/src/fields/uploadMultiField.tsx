@@ -87,6 +87,7 @@ export function UploadMultiForm({
 
 				if (exceedsMaxSize(opts, file)) {
 					patchTask(setTasks, task.id, { status: "error" });
+					setError(t("field.upload.tooLarge", "File exceeds the maximum size"));
 					continue;
 				}
 
