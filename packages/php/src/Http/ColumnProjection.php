@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Http;
 
+use Illuminate\Database\Eloquent\Model;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\I18n\LocaleService;
@@ -42,34 +43,79 @@ final class ColumnProjection
     }
 
     /**
+     * Eloquent models project to a plain array (so toArray() casts/accessors
+     * — incl. Spatie locale re-expansion — never re-run after us); other rows
+     * (stdClass from query builder) mutate in place. Mixed return is fine:
+     * response()->json serializes both the same.
+     *
      * @param  list<Column>  $columns
      */
     private static function projectRow(mixed $row, array $columns): mixed
     {
+        if ($row instanceof Model) {
+            return self::projectModelToArray($row, $columns);
+        }
+
+        return self::projectInPlace($row, $columns);
+    }
+
+    /**
+     * Build output from the model's array form and overwrite each declared
+     * column; the model is never mutated. Translatable columns read the raw
+     * locale map (bypassing the flattening accessor), the rest reuse toArray.
+     *
+     * @param  list<Column>  $columns
+     * @return array<string, mixed>
+     */
+    private static function projectModelToArray(Model $row, array $columns): array
+    {
+        $out = $row->toArray();
+        foreach ($columns as $col) {
+            $name = $col->name;
+            $source = $col->isTranslatable()
+                ? self::rawAttribute($row, $name)
+                : ($out[$name] ?? null);
+            $out[$name] = self::computeValue($col, $source);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  list<Column>  $columns
+     */
+    private static function projectInPlace(mixed $row, array $columns): mixed
+    {
         foreach ($columns as $col) {
             $name = $col->name;
             $raw = data_get($row, $name);
-            $value = $raw;
-
-            if ($col->isTranslatable()) {
-                $value = self::pickLocale($value);
-            }
-
-            $fmt = $col->getFormatUsing();
-            if ($fmt !== null) {
-                $value = $fmt($value);
-            }
-
-            if ($fmt === null) {
-                $value = self::applyKindFormat($col, $value);
-            }
-
+            $value = self::computeValue($col, $raw);
             if ($value !== $raw) {
                 data_set($row, $name, $value);
             }
         }
 
         return $row;
+    }
+
+    /** translatable → formatUsing → declarative kind format. */
+    private static function computeValue(Column $col, mixed $value): mixed
+    {
+        if ($col->isTranslatable()) {
+            $value = self::pickLocale($value);
+        }
+        $fmt = $col->getFormatUsing();
+        if ($fmt !== null) {
+            return $fmt($value);
+        }
+
+        return self::applyKindFormat($col, $value);
+    }
+
+    /** Pre-accessor, pre-cast value: the stored JSON map for Spatie + array-cast. */
+    private static function rawAttribute(Model $row, string $name): mixed
+    {
+        return $row->getRawOriginal($name);
     }
 
     private static function applyKindFormat(Column $col, mixed $value): mixed
