@@ -7,9 +7,17 @@ trait HasIcon
     /** @var array{name: string, position: string}|null */
     protected ?array $iconDef = null;
 
+    private const ICON_POSITIONS = ['left', 'right'];
+
     /** @param  'left'|'right'  $position */
     public function icon(string $name, string $position = 'left'): static
     {
+        if (! in_array($position, self::ICON_POSITIONS, true)) {
+            throw new \InvalidArgumentException(
+                "Invalid icon position \"{$position}\". Allowed: ".implode(', ', self::ICON_POSITIONS).'.'
+            );
+        }
+
         $this->iconDef = ['name' => $name, 'position' => $position];
 
         return $this;

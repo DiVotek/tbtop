@@ -48,11 +48,7 @@ final class Tab
         return $this->count;
     }
 
-    /**
-     * Wire shape for table node options. Label falls back to the name.
-     *
-     * @return array{name: string, label: string, count: bool}
-     */
+    /** Wire shape for table node options. Label falls back to the name. */
     public function toWire(): array
     {
         return [

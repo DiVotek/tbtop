@@ -83,7 +83,9 @@ export function ModalActionBlock({
 		<>
 			{opts.tooltip ? (
 				<Tooltip>
-					<TooltipTrigger asChild>{trigger}</TooltipTrigger>
+					<TooltipTrigger asChild>
+						{disabled ? <span className="inline-flex">{trigger}</span> : trigger}
+					</TooltipTrigger>
 					<TooltipContent>{opts.tooltip}</TooltipContent>
 				</Tooltip>
 			) : (

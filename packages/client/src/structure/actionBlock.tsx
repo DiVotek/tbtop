@@ -41,13 +41,23 @@ function ActionLabel({ opts }: { opts: ActionOptionsBag }) {
 	);
 }
 
-function MaybeTooltip({ tooltip, children }: { tooltip?: string; children: ReactNode }) {
+function MaybeTooltip({
+	tooltip,
+	disabled,
+	children,
+}: {
+	tooltip?: string;
+	disabled?: boolean;
+	children: ReactNode;
+}) {
 	if (!tooltip) {
 		return <>{children}</>;
 	}
 	return (
 		<Tooltip>
-			<TooltipTrigger asChild>{children}</TooltipTrigger>
+			<TooltipTrigger asChild>
+				{disabled ? <span className="inline-flex">{children}</span> : children}
+			</TooltipTrigger>
 			<TooltipContent>{tooltip}</TooltipContent>
 		</Tooltip>
 	);
@@ -94,7 +104,7 @@ function PlainActionBlock({
 		}
 		if (disabled) {
 			return (
-				<MaybeTooltip tooltip={opts.tooltip}>
+				<MaybeTooltip tooltip={opts.tooltip} disabled>
 					<Button
 						type="button"
 						ref={buttonRef}
@@ -136,7 +146,7 @@ function PlainActionBlock({
 	};
 
 	return (
-		<MaybeTooltip tooltip={opts.tooltip}>
+		<MaybeTooltip tooltip={opts.tooltip} disabled={pending || disabled}>
 			<Button
 				type="button"
 				ref={buttonRef}
