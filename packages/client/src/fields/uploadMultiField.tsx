@@ -96,7 +96,7 @@ export function UploadMultiForm({
 					const row: UploadRow = await runUpload({ opts, ctx, client, file, t });
 					patchTask(setTasks, task.id, { status: "done", pct: 100 });
 					const latest = toArray(valueRef.current);
-					const next = [...latest, { filename: row.filename, url: row.url }];
+					const next = [...latest, { ...row }];
 					valueRef.current = next;
 					onChange(next);
 				} catch (err) {
