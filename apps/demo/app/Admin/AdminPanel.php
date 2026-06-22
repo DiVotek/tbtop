@@ -2,6 +2,7 @@
 
 namespace App\Admin;
 
+use App\Admin\Pages\BrandsIndexPage;
 use App\Admin\Pages\DashboardPage;
 use App\Admin\Pages\LoginPage;
 use App\Admin\Pages\LoginPreviewPage;
@@ -39,6 +40,7 @@ class AdminPanel extends Panel
             ->pages([
                 DashboardPage::class,
                 PostsIndexPage::class,
+                BrandsIndexPage::class,
                 ReorderablePostsPage::class,
                 PostCreatePage::class,
                 PostEditPage::class,

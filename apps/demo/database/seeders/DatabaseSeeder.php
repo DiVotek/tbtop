@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Brand;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\User;
@@ -21,7 +22,21 @@ class DatabaseSeeder extends Seeder
             Post::updateOrCreate(['slug' => $post['slug']], $post);
         }
 
+        foreach ($this->brands() as $brand) {
+            Brand::updateOrCreate(['slug' => $brand['slug']], $brand);
+        }
+
         Setting::firstOrCreate([]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function brands(): array
+    {
+        return [
+            ['name' => ['en' => 'Brand', 'uk' => 'Марка'], 'slug' => 'brand', 'website' => 'https://example.com'],
+            ['name' => ['en' => 'Acme', 'uk' => 'Акме'], 'slug' => 'acme', 'website' => null],
+            ['name' => ['uk' => 'Тільки укр'], 'slug' => 'uk-only', 'website' => null],
+        ];
     }
 
     /** @return list<array<string, mixed>> */
