@@ -2,25 +2,47 @@
 
 use Tbtop\Admin\Dsl\S;
 
-it('RuleWalker: multiple upload yields nullable array with max from maxFiles', function () {
+it('RuleWalker: multiple upload auto-injects max from maxFiles', function () {
     $s = new S;
     $form = $s->form('post', [
         $s->upload('gallery')->multiple()->maxFiles(5),
     ]);
 
     expect($form->collectRules())->toBe([
-        'gallery' => ['nullable', 'array', 'max:5'],
+        'gallery' => ['array', 'max:5'],
     ]);
 });
 
-it('RuleWalker: multiple upload without maxFiles yields nullable array only', function () {
+it('RuleWalker: multiple upload without maxFiles yields array only', function () {
     $s = new S;
     $form = $s->form('post', [
         $s->upload('photos')->multiple(),
     ]);
 
     expect($form->collectRules())->toBe([
-        'photos' => ['nullable', 'array'],
+        'photos' => ['array'],
+    ]);
+});
+
+it('RuleWalker: required multiple upload puts required on field key', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->upload('docs')->multiple()->maxFiles(3)->required(),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'docs' => ['array', 'required', 'max:3'],
+    ]);
+});
+
+it('RuleWalker: explicit max rule on multiple upload takes precedence over maxFiles', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->upload('files')->multiple()->maxFiles(10)->rules('max:3'),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'files' => ['array', 'max:3'],
     ]);
 });
 

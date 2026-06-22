@@ -106,23 +106,50 @@ final class RuleWalker
     }
 
     /**
-     * Multiple-upload: field key gets `array` + `max:{maxFiles}`;
-     * element-level rules are not generated (uploads are validated per-request
-     * by the upload controller, not as form data).
+     * Multiple-upload: same split as multiple-select — field-level rules
+     * (required, array, max, min, …) stay on the field key; everything else
+     * goes to the element key. Auto-injects `max:{maxFiles}` from the DSL
+     * option when present and not already declared.
      *
      * @return array<string, list<string>>
      */
     private static function fromMultipleUploadField(Upload $field, string $prefix): array
     {
+        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
         $key = $prefix.$field->name;
-        $fieldRules = ['nullable', 'array'];
+        $allEntries = $field->ruleEntries();
 
-        $maxFiles = $field->toNode()->options['maxFiles'] ?? null;
-        if (is_int($maxFiles)) {
-            $fieldRules[] = "max:{$maxFiles}";
+        $fieldRules = ['array'];
+        $elementRules = [];
+        $hasMax = false;
+
+        foreach ($allEntries as $entry) {
+            $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
+            if (in_array($name, $fieldLevel, true)) {
+                if ($entry !== 'array') {
+                    $fieldRules[] = $entry;
+                }
+                if ($name === 'max') {
+                    $hasMax = true;
+                }
+            } else {
+                $elementRules[] = $entry;
+            }
         }
 
-        return [$key => $fieldRules];
+        if (! $hasMax) {
+            $maxFiles = $field->toNode()->options['maxFiles'] ?? null;
+            if (is_int($maxFiles)) {
+                $fieldRules[] = "max:{$maxFiles}";
+            }
+        }
+
+        $rules = [$key => $fieldRules];
+        if ($elementRules !== []) {
+            $rules[$key.'.*'] = $elementRules;
+        }
+
+        return $rules;
     }
 
     /**
