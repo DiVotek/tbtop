@@ -90,4 +90,4 @@ it('Tab: without icon/tooltip omits both keys', function (): void {
 
 it('Icon: invalid position throws', function (): void {
     Tab::make('x')->icon('check', 'center');
-})->throws(\InvalidArgumentException::class, 'Invalid icon position "center"');
+})->throws(InvalidArgumentException::class, 'Invalid icon position "center"');
