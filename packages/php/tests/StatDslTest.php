@@ -58,10 +58,22 @@ it('Stat: delta flat direction serializes correctly', function (): void {
     expect($json['options']['delta']['direction'])->toBe('flat');
 });
 
-it('Stat: icon emits lucide name string', function (): void {
+it('Stat: icon emits structured shape', function (): void {
     $json = encodeStat(Stat::make('Sales')->value(9)->icon('trending-up'));
 
-    expect($json['options']['icon'])->toBe('trending-up');
+    expect($json['options']['icon'])->toBe(['name' => 'trending-up', 'position' => 'left']);
+});
+
+it('Stat: icon with explicit right position', function (): void {
+    $json = encodeStat(Stat::make('Sales')->value(9)->icon('trending-up', 'right'));
+
+    expect($json['options']['icon'])->toBe(['name' => 'trending-up', 'position' => 'right']);
+});
+
+it('Stat: tooltip serializes in options', function (): void {
+    $json = encodeStat(Stat::make('Sales')->value(9)->tooltip('Total this month'));
+
+    expect($json['options']['tooltip'])->toBe('Total this month');
 });
 
 it('Stat: Color enum serializes to lowercase value', function (): void {
@@ -115,9 +127,9 @@ it('Stat: full chain produces expected descriptor shape', function (): void {
             'value' => '$12,400',
             'description' => 'vs last month',
             'delta' => ['text' => '+8%', 'direction' => 'up'],
-            'icon' => 'dollar-sign',
             'color' => 'success',
             'sparkline' => [100, 120, 115, 140, 160],
+            'icon' => ['name' => 'dollar-sign', 'position' => 'left'],
         ])
         ->and($json)->toHaveKey('meta');
 });

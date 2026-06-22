@@ -72,6 +72,8 @@ export interface TableTab {
 	name: string;
 	label: string;
 	count: boolean;
+	icon?: { name: string; position: string };
+	tooltip?: string;
 }
 
 export interface TableController {

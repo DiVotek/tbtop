@@ -5,7 +5,9 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use LogicException;
+use Tbtop\Admin\Dsl\Concerns\HasIcon;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\Concerns\HasTooltip;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -14,7 +16,9 @@ use Tbtop\Admin\Dsl\Concerns\WithMeta;
  */
 final class ActionBuilder implements JsonSerializable
 {
+    use HasIcon;
     use HasServerQuery;
+    use HasTooltip;
     use WithMeta;
 
     /** @var array<string, mixed> */
@@ -161,7 +165,7 @@ final class ActionBuilder implements JsonSerializable
             $spec = [...$spec, 'query' => true, 'queryNeeds' => $this->queryNeeds];
         }
 
-        return new Node('action', [...$this->opts, 'spec' => $spec], $this->name, $this->metaBag);
+        return new Node('action', [...$this->opts, ...$this->iconOption(), ...$this->tooltipOption(), 'spec' => $spec], $this->name, $this->metaBag);
     }
 
     /** @return array<string, mixed> */

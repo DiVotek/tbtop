@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { renderNode } from "../render/structureRenderer";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
+import { NodeIcon } from "../ui/node-icon";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import {
 	type ActionModalOpts,
 	type ActionOptionsBag,
@@ -44,18 +46,48 @@ export function ModalActionBlock({
 	const close = useCallback(() => setOpen(false), []);
 	const body = resolveBody(modal.body);
 
+	const text = opts.label ?? opts.name;
+	const iconEl = opts.icon ? <NodeIcon icon={opts.icon} className="size-4 shrink-0" /> : null;
+	let label: React.ReactNode = text;
+	if (iconEl && opts.icon?.position === "right") {
+		label = (
+			<>
+				{text}
+				{iconEl}
+			</>
+		);
+	} else if (iconEl) {
+		label = (
+			<>
+				{iconEl}
+				{text}
+			</>
+		);
+	}
+
+	const trigger = (
+		<Button
+			type="button"
+			ref={buttonRef}
+			variant={variant}
+			disabled={disabled}
+			onClick={() => setOpen(true)}
+			data-testid={`action-${actionKey(opts)}`}
+		>
+			{label}
+		</Button>
+	);
+
 	return (
 		<>
-			<Button
-				type="button"
-				ref={buttonRef}
-				variant={variant}
-				disabled={disabled}
-				onClick={() => setOpen(true)}
-				data-testid={`action-${actionKey(opts)}`}
-			>
-				{opts.label ?? opts.name}
-			</Button>
+			{opts.tooltip ? (
+				<Tooltip>
+					<TooltipTrigger asChild>{trigger}</TooltipTrigger>
+					<TooltipContent>{opts.tooltip}</TooltipContent>
+				</Tooltip>
+			) : (
+				trigger
+			)}
 			<ModalShell
 				open={open}
 				onOpenChange={setOpen}

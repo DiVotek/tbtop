@@ -28,7 +28,11 @@
 						"properties": {
 							"options": {
 								"required": ["spec"],
-								"properties": { "spec": { "$ref": "#/$defs/actionSpec" } }
+								"properties": {
+									"spec": { "$ref": "#/$defs/actionSpec" },
+									"icon": { "$ref": "#/$defs/icon" },
+									"tooltip": { "type": "string" }
+								}
 							}
 						}
 					}
@@ -389,14 +393,7 @@
 					"toggleable": { "type": "boolean" },
 					"hiddenByDefault": { "type": "boolean" },
 					"align": { "type": "string", "enum": ["left", "center", "right"] },
-					"icon": {
-						"type": "object",
-						"required": ["name", "position"],
-						"properties": {
-							"name": { "type": "string" },
-							"position": { "type": "string", "enum": ["left", "right"] }
-						}
-					},
+					"icon": { "$ref": "#/$defs/icon" },
 					"width": { "type": "string" },
 					"wrap": { "type": "boolean" },
 					"tooltip": { "type": "string" },
@@ -443,13 +440,24 @@
 				}
 			}
 		},
+		"icon": {
+			"type": "object",
+			"required": ["name", "position"],
+			"properties": {
+				"name": { "type": "string" },
+				"position": { "type": "string", "enum": ["left", "right"] }
+			},
+			"additionalProperties": false
+		},
 		"tableTab": {
 			"type": "object",
 			"required": ["name", "label", "count"],
 			"properties": {
 				"name": { "type": "string", "minLength": 1 },
 				"label": { "type": "string" },
-				"count": { "type": "boolean" }
+				"count": { "type": "boolean" },
+				"icon": { "$ref": "#/$defs/icon" },
+				"tooltip": { "type": "string" }
 			},
 			"additionalProperties": false
 		},

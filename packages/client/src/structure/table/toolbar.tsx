@@ -3,7 +3,9 @@ import { useCallback } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { useDebounce } from "../../lib/useDebounce";
 import { Input } from "../../ui/input";
+import { NodeIcon } from "../../ui/node-icon";
 import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { ListQueryParams, StructureNode, TableColumn, TableTab } from "../types";
 import { ColumnVisibilityDropdown } from "./columnVisibility";
 import { InlineFilters, ModalFilters } from "./filters";
@@ -129,23 +131,44 @@ export function TableTabBar({ tabs, activeTab, tabCounts, onSelect }: TableTabBa
 	return (
 		<Tabs value={activeTab} onValueChange={onSelect} className="max-w-full overflow-x-auto">
 			<TabsList data-testid="table-tabs">
-				{tabs.map((tab) => (
-					<TabsTrigger
-						key={tab.name}
-						value={tab.name}
-						data-testid={`table-tab-${tab.name}`}
-					>
-						{tab.label}
-						{tab.count && tabCounts?.[tab.name] !== undefined && (
-							<span
-								className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
-								data-testid={`table-tab-count-${tab.name}`}
-							>
-								{tabCounts[tab.name]}
-							</span>
-						)}
-					</TabsTrigger>
-				))}
+				{tabs.map((tab) => {
+					const icon = <NodeIcon icon={tab.icon} className="size-3.5 shrink-0" />;
+					const content = (
+						<>
+							{tab.icon?.position !== "right" && icon}
+							{tab.label}
+							{tab.icon?.position === "right" && icon}
+							{tab.count && tabCounts?.[tab.name] !== undefined && (
+								<span
+									className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
+									data-testid={`table-tab-count-${tab.name}`}
+								>
+									{tabCounts[tab.name]}
+								</span>
+							)}
+						</>
+					);
+
+					const trigger = (
+						<TabsTrigger
+							key={tab.name}
+							value={tab.name}
+							data-testid={`table-tab-${tab.name}`}
+						>
+							{content}
+						</TabsTrigger>
+					);
+
+					if (tab.tooltip) {
+						return (
+							<Tooltip key={tab.name}>
+								<TooltipTrigger asChild>{trigger}</TooltipTrigger>
+								<TooltipContent>{tab.tooltip}</TooltipContent>
+							</Tooltip>
+						);
+					}
+					return trigger;
+				})}
 			</TabsList>
 		</Tabs>
 	);

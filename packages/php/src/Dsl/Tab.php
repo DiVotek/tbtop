@@ -2,7 +2,9 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Tbtop\Admin\Dsl\Concerns\HasIcon;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\Concerns\HasTooltip;
 
 /**
  * Predefined table tab — a named server-side query scope rendered as a tab
@@ -11,7 +13,9 @@ use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
  */
 final class Tab
 {
+    use HasIcon;
     use HasServerQuery;
+    use HasTooltip;
 
     private ?string $label = null;
 
@@ -55,6 +59,8 @@ final class Tab
             'name' => $this->name,
             'label' => $this->label ?? $this->name,
             'count' => $this->count,
+            ...$this->iconOption(),
+            ...$this->tooltipOption(),
         ];
     }
 }

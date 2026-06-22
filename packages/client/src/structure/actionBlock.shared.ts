@@ -24,6 +24,8 @@ export interface ActionOptionsBag {
 	url?: Extract<ActionConfig, { url: unknown }>["url"];
 	modal?: ActionModalOpts;
 	keybinding?: ActionConfig["keybinding"];
+	icon?: { name: string; position: string };
+	tooltip?: string;
 }
 
 export interface ActionRenderProps {
