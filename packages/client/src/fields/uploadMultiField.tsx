@@ -1,7 +1,7 @@
 import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useClient } from "../data/client";
 import type { UploadRow } from "../data/upload";
 import { useTranslation } from "../i18n/i18n";
@@ -45,6 +45,9 @@ export function UploadMultiForm({
 	const items = toArray(value);
 	const canAddMore = !opts.maxFiles || items.length < opts.maxFiles;
 
+	const valueRef = useRef(value);
+	valueRef.current = value;
+
 	const [tasks, setTasks] = useState<UploadTask[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const uploading = tasks.some(
@@ -58,7 +61,9 @@ export function UploadMultiForm({
 			}
 			setError(null);
 
-			const remaining = opts.maxFiles ? opts.maxFiles - toArray(value).length : files.length;
+			const remaining = opts.maxFiles
+				? opts.maxFiles - toArray(valueRef.current).length
+				: files.length;
 			const batch = Array.from(files).slice(0, Math.max(0, remaining));
 			if (batch.length === 0) {
 				return;
@@ -73,7 +78,6 @@ export function UploadMultiForm({
 			}));
 			setTasks((prev) => [...prev, ...newTasks]);
 
-			let current = toArray(value);
 			for (let i = 0; i < batch.length; i++) {
 				const file = batch[i];
 				const task = newTasks[i];
@@ -90,15 +94,17 @@ export function UploadMultiForm({
 				try {
 					const row: UploadRow = await runUpload({ opts, ctx, client, file, t });
 					patchTask(setTasks, task.id, { status: "done", pct: 100 });
-					current = [...current, { filename: row.filename, url: row.url }];
-					onChange(current);
+					const latest = toArray(valueRef.current);
+					const next = [...latest, { filename: row.filename, url: row.url }];
+					valueRef.current = next;
+					onChange(next);
 				} catch (err) {
 					patchTask(setTasks, task.id, { status: "error" });
 					setError(err instanceof Error ? err.message : String(err));
 				}
 			}
 		},
-		[opts, value, ctx, client, t, onChange],
+		[opts, ctx, client, t, onChange],
 	);
 
 	const handleRemove = (index: number) => {
