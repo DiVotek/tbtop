@@ -63,13 +63,16 @@ final class FieldUploadController
         }
 
         $viewRoute = Str::replaceLast('.upload', '.uploadView', (string) $request->route()->getName());
-        $envelope['url'] = UploadFieldUrl::for($config, $field, $config->directory.'/'.$envelope['id'], $viewRoute);
+        // tbtopField/path are supplied explicitly by SignedUploadUrl — drop the route-only keys.
+        $pageParams = ResolvedPage::routeParams($request);
+        unset($pageParams['tbtopField'], $pageParams['path']);
+        $envelope['url'] = UploadFieldUrl::for($config, $field, $config->directory.'/'.$envelope['id'], $viewRoute, $pageParams);
 
         if (isset($envelope['sizes']) && is_array($envelope['sizes'])) {
             $envelope['sizes'] = array_map(
                 static fn (array $v): array => [
                     ...$v,
-                    'url' => UploadFieldUrl::for($config, $field, $config->directory.'/'.$v['filename'], $viewRoute),
+                    'url' => UploadFieldUrl::for($config, $field, $config->directory.'/'.$v['filename'], $viewRoute, $pageParams),
                 ],
                 $envelope['sizes'],
             );

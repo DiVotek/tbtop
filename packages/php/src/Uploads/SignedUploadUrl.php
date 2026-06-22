@@ -14,12 +14,16 @@ final class SignedUploadUrl
     /** Time-to-live, in minutes, for a signed preview url. */
     public const TTL_MINUTES = 5;
 
-    public static function make(string $routeName, string $fieldName, string $path): string
+    /**
+     * @param  array<string, string>  $pageParams  page-level route params (e.g. {car}) the view route inherits
+     */
+    public static function make(string $routeName, string $fieldName, string $path, array $pageParams = []): string
     {
         return URL::temporarySignedRoute(
             $routeName,
             now()->addMinutes(self::TTL_MINUTES),
-            ['tbtopField' => $fieldName, 'path' => $path],
+            // tbtopField/path spread last so they always win over a stale page param.
+            [...$pageParams, 'tbtopField' => $fieldName, 'path' => $path],
         );
     }
 }

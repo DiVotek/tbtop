@@ -19,9 +19,10 @@ final class PageController
 
         $resolved = ResolvedPage::fromRequest($request);
         $pageRoute = $request->route()->getName();
+        $pageParams = ResolvedPage::routeParams($request);
         $data = [];
         foreach ($resolved->s->collectedForms() as $name => $form) {
-            $data[$name] = UploadFieldUrl::applyToRecord($form->recordData(), $form->uploadFields(), $pageRoute);
+            $data[$name] = UploadFieldUrl::applyToRecord($form->recordData(), $form->uploadFields(), $pageRoute, $pageParams);
         }
 
         $layout = $resolved->page->layout();

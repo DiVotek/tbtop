@@ -12,6 +12,7 @@ use App\Admin\Pages\MediaNewPage;
 use App\Admin\Pages\NewFeaturesPage;
 use App\Admin\Pages\PlaygroundPage;
 use App\Admin\Pages\PostCreatePage;
+use App\Admin\Pages\PostDocumentsPage;
 use App\Admin\Pages\PostEditPage;
 use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\RecordDetailPage;
@@ -44,6 +45,7 @@ class AdminPanel extends Panel
                 ReorderablePostsPage::class,
                 PostCreatePage::class,
                 PostEditPage::class,
+                PostDocumentsPage::class,
                 MediaIndexPage::class,
                 MediaNewPage::class,
                 MediaEditPage::class,

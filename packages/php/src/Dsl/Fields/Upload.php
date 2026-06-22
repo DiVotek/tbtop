@@ -36,8 +36,13 @@ final class Upload extends Field
         return $this->saveClosure;
     }
 
-    /** Accepted MIME types / extensions, e.g. 'image/*' or '.pdf'. */
-    public function accept(string $accept): static
+    /**
+     * Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list
+     * ['application/pdf', 'image/*'] to allow several.
+     *
+     * @param  string|list<string>  $accept
+     */
+    public function accept(string|array $accept): static
     {
         return $this->set('accept', $accept);
     }

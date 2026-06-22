@@ -122,7 +122,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Colorpicker** | `$s->colorpicker('x')` / `Colorpicker::make('x')` | `colorpicker` | none | No |
 | **Key-value** | `$s->keyvalue('x')` / `Keyvalue::make('x')` | `keyvalue` | none; value shape: `Record<string, string>` | No |
 | **Slug** | `$s->slug('x')` / `Slug::make('x')` | `slug` | `fromField(string $fieldName)` — source field that drives auto-generation | No |
-| **Upload** | `$s->upload('x')` / `Upload::make('x')` | `upload` | `accept(string $accept)` — MIME types/extensions e.g. `'image/*'`; `disk(string $disk)` — Laravel filesystem disk (default `'public'`) | Upload endpoint (JSON, not Inertia) — see [./wiring.md](./wiring.md) |
+| **Upload** | `$s->upload('x')` / `Upload::make('x')` | `upload` | `accept(string\|list<string> $accept)` — MIME types/extensions e.g. `'image/*'` or `['application/pdf', 'image/*']`; `disk(string $disk)` — Laravel filesystem disk (default `'public'`) | Upload endpoint (JSON, not Inertia) — see [./wiring.md](./wiring.md) |
 | **Media picker** | `$s->media('x')` / `MediaPicker::make('x')` | `media` | `multiple(bool)` — allow selecting more than one; `accept(list<string> $mimes)` — filter visible/uploadable types | Media-library endpoint — see [./wiring.md](./wiring.md) |
 | **Relation** | `$s->relation('x')` / `Relation::make('x')` | `relation` | `query(callable)` — Eloquent query builder for related records; `labelKey(string $column)` — display column (default `'name'`); `searchable(bool)` | Yes — relation-search endpoint. See [./wiring.md](./wiring.md) |
 | **Repeater** | `$s->repeater('x')` / `Repeater::make('x')` | `repeater` | `fields(list<Field> $fields)` — child field list; `maxItems(int $max)` — item cap | No |
@@ -467,7 +467,7 @@ a config profile. `apps/demo/app/Admin/Pages/UploadDemoPage.php` exercises the f
 
 | Method | Signature | Default | Purpose |
 |---|---|---|---|
-| `accept` | `accept(string)` | — | MIME types / extensions, e.g. `'image/*'`, `'.pdf'` |
+| `accept` | `accept(string\|list<string>)` | — | MIME types / extensions, e.g. `'image/*'`, `'.pdf'`, or a list `['application/pdf', 'image/*']` to allow several |
 | `disk` | `disk(string)` | `'public'` | Laravel filesystem disk |
 | `directory` | `directory(string)` | `'uploads'` | Subdirectory the file is stored under |
 | `visibility` | `visibility(string)` | `'public'` | `'public'` or `'private'` |

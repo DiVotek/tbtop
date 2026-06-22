@@ -13,15 +13,20 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  */
 final class UploadFieldUrl
 {
-    /** Choose the url for a single stored path. */
+    /**
+     * Choose the url for a single stored path.
+     *
+     * @param  array<string, string>  $pageParams  page route params the view route inherits
+     */
     public static function for(
         UploadFieldConfig $config,
         string $field,
         string $path,
         ?string $viewRouteName,
+        array $pageParams = [],
     ): string {
         if ($config->visibility === 'private' && $viewRouteName !== null && Route::has($viewRouteName)) {
-            return SignedUploadUrl::make($viewRouteName, $field, $path);
+            return SignedUploadUrl::make($viewRouteName, $field, $path, $pageParams);
         }
 
         return UploadUrl::make($config->disk, $path);
@@ -33,9 +38,10 @@ final class UploadFieldUrl
      *
      * @param  array<string, mixed>  $record
      * @param  list<Upload>  $fields
+     * @param  array<string, string>  $pageParams  page route params the view route inherits
      * @return array<string, mixed>
      */
-    public static function applyToRecord(array $record, array $fields, ?string $pageRouteName): array
+    public static function applyToRecord(array $record, array $fields, ?string $pageRouteName, array $pageParams = []): array
     {
         $viewRoute = $pageRouteName === null ? null : $pageRouteName.'.uploadView';
         foreach ($fields as $field) {
@@ -44,7 +50,7 @@ final class UploadFieldUrl
                 continue;
             }
             $config = UploadFieldConfig::resolve($field);
-            $value['url'] = self::for($config, $field->name, $value['path'], $viewRoute);
+            $value['url'] = self::for($config, $field->name, $value['path'], $viewRoute, $pageParams);
             $record[$field->name] = $value;
         }
 
