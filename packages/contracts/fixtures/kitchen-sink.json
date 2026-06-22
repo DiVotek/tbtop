@@ -463,6 +463,21 @@
                                         "name": "attachment"
                                     },
                                     {
+                                        "kind": "upload",
+                                        "options": {
+                                            "label": "Gallery",
+                                            "disk": "public",
+                                            "directory": "gallery",
+                                            "accept": "image/*",
+                                            "maxSize": 5242880,
+                                            "multiple": true,
+                                            "maxFiles": 5,
+                                            "reorderable": true
+                                        },
+                                        "meta": {},
+                                        "name": "gallery"
+                                    },
+                                    {
                                         "kind": "relation",
                                         "options": {
                                             "labelKey": "name",

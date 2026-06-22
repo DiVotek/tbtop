@@ -48,6 +48,11 @@ class UploadDemoPage extends Page
                     ->disk('local')->directory('private-docs')->visibility('private')
                     ->accept('image/*')->maxSize(5 * 1024 * 1024)
                     ->convertTo('webp')->quality(80),
+                // Multi-upload: public disk, reorderable, max 8 files.
+                $s->upload('gallery')->label('Gallery (multi, reorderable)')
+                    ->disk('public')->directory('gallery')->visibility('public')
+                    ->accept('image/*')->maxSize(5 * 1024 * 1024)
+                    ->multiple()->maxFiles(8)->reorderable(),
                 $s->actionsRow([
                     FormActions::save($s),
                 ]),
@@ -58,6 +63,7 @@ class UploadDemoPage extends Page
                 ->record([
                     'doc' => ['path' => 'docs/sample.webp', 'filename' => 'public-sample.webp'],
                     'secret' => ['path' => 'private-docs/sample.webp', 'filename' => 'confidential-sample.webp'],
+                    'gallery' => [],
                 ])
                 ->onSubmit(function (ActionCtx $ctx): string {
                     // Demo: no DB write — just confirm the uploads round-tripped.

@@ -4,10 +4,12 @@ namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
 use Illuminate\Http\UploadedFile;
+use Tbtop\Admin\Dsl\Concerns\HasMultiple;
 use Tbtop\Admin\Uploads\UploadFieldConfig;
 
 final class Upload extends Field
 {
+    use HasMultiple;
     /** Server-side override for how an uploaded file is stored/persisted. */
     private ?Closure $saveClosure = null;
 
@@ -87,6 +89,18 @@ final class Upload extends Field
     public function quality(int $q): static
     {
         return $this->setImage('quality', $q);
+    }
+
+    /** Maximum number of files when multiple is enabled. */
+    public function maxFiles(int $max): static
+    {
+        return $this->set('maxFiles', $max);
+    }
+
+    /** Allow drag-to-reorder when multiple is enabled. */
+    public function reorderable(bool $value = true): static
+    {
+        return $this->set('reorderable', $value);
     }
 
     /** Writes one key under the nested `image` options bag. */
