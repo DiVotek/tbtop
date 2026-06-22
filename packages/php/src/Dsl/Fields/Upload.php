@@ -10,6 +10,7 @@ use Tbtop\Admin\Uploads\UploadFieldConfig;
 final class Upload extends Field
 {
     use HasMultiple;
+
     /** Server-side override for how an uploaded file is stored/persisted. */
     private ?Closure $saveClosure = null;
 
