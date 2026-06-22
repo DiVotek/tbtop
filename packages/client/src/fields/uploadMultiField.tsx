@@ -16,7 +16,7 @@ import {
 	UploadPicker,
 	type UploadValue,
 } from "./uploadField";
-import { UploadSortableItem } from "./uploadSortableItem";
+import { UploadSortableItem, UploadStaticItem } from "./uploadSortableItem";
 
 function toArray(value: UploadValue | UploadValue[] | null): UploadValue[] {
 	if (!value) {
@@ -26,7 +26,7 @@ function toArray(value: UploadValue | UploadValue[] | null): UploadValue[] {
 }
 
 function itemId(item: UploadValue, index: number): string {
-	return item.url || `pending-${index}`;
+	return `${index}-${item.url || item.filename}`;
 }
 
 export function UploadMultiForm({
@@ -130,19 +130,15 @@ export function UploadMultiForm({
 	const sortableIds = items.map((item, i) => itemId(item, i));
 	const reorderable = opts.reorderable === true;
 
-	const list = (
-		<div className="flex flex-col gap-2">
-			{items.map((item, i) => (
-				<UploadSortableItem
-					key={itemId(item, i)}
-					item={item}
-					itemId={itemId(item, i)}
-					onRemove={() => handleRemove(i)}
-					reorderable={reorderable}
-				/>
-			))}
-		</div>
-	);
+	const itemList = items.map((item, i) => {
+		const iid = itemId(item, i);
+		const remove = () => handleRemove(i);
+		return reorderable ? (
+			<UploadSortableItem key={iid} item={item} itemId={iid} onRemove={remove} />
+		) : (
+			<UploadStaticItem key={iid} item={item} itemId={iid} onRemove={remove} />
+		);
+	});
 
 	return (
 		<div className="space-y-3">
@@ -153,11 +149,13 @@ export function UploadMultiForm({
 					modifiers={[restrictToVerticalAxis, restrictToParentElement]}
 				>
 					<SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-						{list}
+						<div className="flex flex-col gap-2">{itemList}</div>
 					</SortableContext>
 				</DndContext>
 			) : null}
-			{items.length > 0 && !reorderable ? list : null}
+			{items.length > 0 && !reorderable ? (
+				<div className="flex flex-col gap-2">{itemList}</div>
+			) : null}
 
 			<UploadProgressList tasks={tasks.filter((task) => task.status !== "done")} />
 

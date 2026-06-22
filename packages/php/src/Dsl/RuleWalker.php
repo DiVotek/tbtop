@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Dsl\Fields\Upload;
 
 final class RuleWalker
 {
@@ -52,6 +53,9 @@ final class RuleWalker
         if ($field instanceof Select && $field->isMultiple()) {
             return self::fromMultipleSelectField($field, $prefix);
         }
+        if ($field instanceof Upload && $field->isMultiple()) {
+            return self::fromMultipleUploadField($field, $prefix);
+        }
 
         $key = $prefix.$field->name;
         // Rule-less fields get a permissive baseline so validate()
@@ -99,6 +103,26 @@ final class RuleWalker
         }
 
         return $rules;
+    }
+
+    /**
+     * Multiple-upload: field key gets `array` + `max:{maxFiles}`;
+     * element-level rules are not generated (uploads are validated per-request
+     * by the upload controller, not as form data).
+     *
+     * @return array<string, list<string>>
+     */
+    private static function fromMultipleUploadField(Upload $field, string $prefix): array
+    {
+        $key = $prefix.$field->name;
+        $fieldRules = ['nullable', 'array'];
+
+        $maxFiles = $field->toNode()->options['maxFiles'] ?? null;
+        if (is_int($maxFiles)) {
+            $fieldRules[] = "max:{$maxFiles}";
+        }
+
+        return [$key => $fieldRules];
     }
 
     /**
