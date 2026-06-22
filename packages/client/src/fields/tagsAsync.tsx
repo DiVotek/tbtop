@@ -15,7 +15,7 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 	const [search, setSearch] = useState("");
 	const current = Array.isArray(props.value) ? props.value : [];
 	const resolved = useMultiResolvedLabels({ ctx, fieldName: props.name, value: current, opts });
-	const searchState = useAsyncSearch(ctx, opts.query, search);
+	const searchState = useAsyncSearch({ ctx, query: opts.query, search });
 	if (resolved.kind === "loading") {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}

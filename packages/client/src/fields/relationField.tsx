@@ -81,7 +81,7 @@ function RelationSelectInner({
 }: RelationSelectInnerProps) {
 	const t = useTranslation();
 	const ctx = useClientActionContext();
-	const search = useAsyncSearch(ctx, options.query, "");
+	const search = useAsyncSearch({ ctx, query: options.query, search: "" });
 
 	if (search.kind === "loading") {
 		return <FormSkeleton />;

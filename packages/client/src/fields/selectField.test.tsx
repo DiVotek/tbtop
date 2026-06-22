@@ -114,8 +114,8 @@ describe("Select field — int record values match string wire options", () => {
 				options={{ options: INT_CHOICES, searchable: true }}
 			/>,
 		);
-		const input = container.querySelector('[data-testid="select-search-author_id"]');
-		expect(input?.getAttribute("placeholder")).toBe("Alice");
+		const label = container.querySelector('[data-testid="select-label-author_id"]');
+		expect(label?.textContent).toBe("Alice");
 	});
 
 	test("static multi select renders a chip for the coerced int value", () => {
