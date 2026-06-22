@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { renderNode } from "../render/structureRenderer";
 import { Button } from "../ui/button";
@@ -48,7 +49,7 @@ export function ModalActionBlock({
 
 	const text = opts.label ?? opts.name;
 	const iconEl = opts.icon ? <NodeIcon icon={opts.icon} className="size-4 shrink-0" /> : null;
-	let label: React.ReactNode = text;
+	let label: ReactNode = text;
 	if (iconEl && opts.icon?.position === "right") {
 		label = (
 			<>
