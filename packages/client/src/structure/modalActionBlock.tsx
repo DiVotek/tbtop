@@ -1,15 +1,14 @@
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { renderNode } from "../render/structureRenderer";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
-import { NodeIcon } from "../ui/node-icon";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import {
+	ActionLabel,
 	type ActionModalOpts,
 	type ActionOptionsBag,
 	actionKey,
 	COLOR_TO_VARIANT,
+	MaybeTooltip,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { FormError, FormSkeleton } from "./defaults";
@@ -47,50 +46,20 @@ export function ModalActionBlock({
 	const close = useCallback(() => setOpen(false), []);
 	const body = resolveBody(modal.body);
 
-	const text = opts.label ?? opts.name;
-	const iconEl = opts.icon ? <NodeIcon icon={opts.icon} className="size-4 shrink-0" /> : null;
-	let label: ReactNode = text;
-	if (iconEl && opts.icon?.position === "right") {
-		label = (
-			<>
-				{text}
-				{iconEl}
-			</>
-		);
-	} else if (iconEl) {
-		label = (
-			<>
-				{iconEl}
-				{text}
-			</>
-		);
-	}
-
-	const trigger = (
-		<Button
-			type="button"
-			ref={buttonRef}
-			variant={variant}
-			disabled={disabled}
-			onClick={() => setOpen(true)}
-			data-testid={`action-${actionKey(opts)}`}
-		>
-			{label}
-		</Button>
-	);
-
 	return (
 		<>
-			{opts.tooltip ? (
-				<Tooltip>
-					<TooltipTrigger asChild>
-						{disabled ? <span className="inline-flex">{trigger}</span> : trigger}
-					</TooltipTrigger>
-					<TooltipContent>{opts.tooltip}</TooltipContent>
-				</Tooltip>
-			) : (
-				trigger
-			)}
+			<MaybeTooltip tooltip={opts.tooltip} disabled={disabled}>
+				<Button
+					type="button"
+					ref={buttonRef}
+					variant={variant}
+					disabled={disabled}
+					onClick={() => setOpen(true)}
+					data-testid={`action-${actionKey(opts)}`}
+				>
+					<ActionLabel opts={opts} />
+				</Button>
+			</MaybeTooltip>
 			<ModalShell
 				open={open}
 				onOpenChange={setOpen}

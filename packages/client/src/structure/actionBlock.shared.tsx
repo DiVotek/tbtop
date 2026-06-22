@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
 import type { ModalSize } from "../ui/modal-shell";
+import { NodeIcon } from "../ui/node-icon";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import type {
 	ActionColor,
 	ActionConfig,
@@ -45,4 +48,48 @@ export const COLOR_TO_VARIANT: Record<ActionColor, "default" | "destructive" | "
 
 export function actionKey(opts: ActionOptionsBag): string {
 	return opts.name ?? opts.label ?? "unnamed";
+}
+
+export function ActionLabel({ opts }: { opts: ActionOptionsBag }) {
+	const text = opts.label ?? opts.name;
+	if (!opts.icon) {
+		return <>{text}</>;
+	}
+	const icon = <NodeIcon icon={opts.icon} className="size-4 shrink-0" />;
+	if (opts.icon.position === "right") {
+		return (
+			<>
+				{text}
+				{icon}
+			</>
+		);
+	}
+	return (
+		<>
+			{icon}
+			{text}
+		</>
+	);
+}
+
+export function MaybeTooltip({
+	tooltip,
+	disabled,
+	children,
+}: {
+	tooltip?: string;
+	disabled?: boolean;
+	children: ReactNode;
+}) {
+	if (!tooltip) {
+		return <>{children}</>;
+	}
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				{disabled ? <span className="inline-flex">{children}</span> : children}
+			</TooltipTrigger>
+			<TooltipContent>{tooltip}</TooltipContent>
+		</Tooltip>
+	);
 }

@@ -1,14 +1,13 @@
 import { Link } from "@inertiajs/react";
-import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
-import { NodeIcon } from "../ui/node-icon";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import {
+	ActionLabel,
 	type ActionOptionsBag,
 	type ActionRenderProps,
 	actionKey,
 	COLOR_TO_VARIANT,
+	MaybeTooltip,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { useNearestFormController } from "./formContext";
@@ -18,50 +17,6 @@ import { useNearestRow } from "./rowContext";
 import type { ClientActionContext } from "./types";
 
 type ActionOptions = ActionOptionsBag;
-
-function ActionLabel({ opts }: { opts: ActionOptionsBag }) {
-	const text = opts.label ?? opts.name;
-	if (!opts.icon) {
-		return <>{text}</>;
-	}
-	const icon = <NodeIcon icon={opts.icon} className="size-4 shrink-0" />;
-	if (opts.icon.position === "right") {
-		return (
-			<>
-				{text}
-				{icon}
-			</>
-		);
-	}
-	return (
-		<>
-			{icon}
-			{text}
-		</>
-	);
-}
-
-function MaybeTooltip({
-	tooltip,
-	disabled,
-	children,
-}: {
-	tooltip?: string;
-	disabled?: boolean;
-	children: ReactNode;
-}) {
-	if (!tooltip) {
-		return <>{children}</>;
-	}
-	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				{disabled ? <span className="inline-flex">{children}</span> : children}
-			</TooltipTrigger>
-			<TooltipContent>{tooltip}</TooltipContent>
-		</Tooltip>
-	);
-}
 
 export function ActionBlock(props: ActionRenderProps) {
 	const opts = props.options;

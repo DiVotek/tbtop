@@ -106,6 +106,7 @@ it('Stat: omitted optional keys are absent from wire', function (): void {
     expect($json['options'])->not->toHaveKey('description')
         ->and($json['options'])->not->toHaveKey('delta')
         ->and($json['options'])->not->toHaveKey('icon')
+        ->and($json['options'])->not->toHaveKey('tooltip')
         ->and($json['options'])->not->toHaveKey('color')
         ->and($json['options'])->not->toHaveKey('sparkline');
 });
