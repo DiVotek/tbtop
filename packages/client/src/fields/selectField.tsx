@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
@@ -54,6 +54,7 @@ export function SelectForm(rawProps: FieldFormProps<SelectValueType, SelectOptio
 
 interface WithCreateProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
 	resolvedLabels?: Record<string, string>;
+	onCreated?: () => void;
 	children: React.ReactNode;
 }
 
@@ -62,6 +63,7 @@ function WithCreateAffordance({
 	onChange,
 	options,
 	resolvedLabels,
+	onCreated,
 	children,
 }: WithCreateProps) {
 	const [open, setOpen] = useState(false);
@@ -75,6 +77,7 @@ function WithCreateAffordance({
 			resolvedLabels[value] = label;
 		}
 		onChange(value);
+		onCreated?.();
 		setOpen(false);
 	}
 
@@ -104,11 +107,16 @@ function WithCreateAffordance({
 // ─── Static single select ─────────────────────────────────────────────────────
 
 function StaticSingleSelectWithCreate(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+	const resolvedLabels = useRef<Record<string, string>>({}).current;
 	return (
-		<WithCreateAffordance {...props}>
-			<StaticSingleSelect {...props} />
+		<WithCreateAffordance {...props} resolvedLabels={resolvedLabels}>
+			<StaticSingleSelect {...props} resolvedLabels={resolvedLabels} />
 		</WithCreateAffordance>
 	);
+}
+
+interface StaticSelectProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
+	resolvedLabels?: Record<string, string>;
 }
 
 function StaticSingleSelect({
@@ -119,12 +127,17 @@ function StaticSingleSelect({
 	onBlur,
 	disabled,
 	options,
-}: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+	resolvedLabels,
+}: StaticSelectProps) {
 	const t = useTranslation();
 	const choices = options?.options ?? [];
+	const current = asString(value);
+	const createdLabel = current ? resolvedLabels?.[current] : undefined;
+	// A created option isn't in `choices`; emit it so Radix can match + label it.
+	const isUnlisted = createdLabel !== undefined && !choices.some((o) => o.value === current);
 	return (
 		<Select
-			value={asString(value)}
+			value={current}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			disabled={disabled}
 		>
@@ -137,6 +150,11 @@ function StaticSingleSelect({
 				<SelectValue placeholder={t("field.select.placeholder")} />
 			</SelectTrigger>
 			<SelectContent>
+				{isUnlisted && (
+					<SelectItem key={current} value={current}>
+						{createdLabel}
+					</SelectItem>
+				)}
 				{choices.map((opt) => (
 					<SelectItem key={opt.value} value={opt.value}>
 						{opt.label}
@@ -152,9 +170,10 @@ function StaticSingleSelect({
 function SearchableStaticSelectWithCreate(
 	props: FieldFormProps<SelectValueType, SelectOptionsBag>,
 ) {
+	const resolvedLabels = useRef<Record<string, string>>({}).current;
 	return (
-		<WithCreateAffordance {...props}>
-			<SearchableStaticSelect {...props} />
+		<WithCreateAffordance {...props} resolvedLabels={resolvedLabels}>
+			<SearchableStaticSelect {...props} resolvedLabels={resolvedLabels} />
 		</WithCreateAffordance>
 	);
 }
@@ -167,7 +186,8 @@ function SearchableStaticSelect({
 	onBlur,
 	disabled,
 	options,
-}: FieldFormProps<SelectValueType, SelectOptionsBag>) {
+	resolvedLabels,
+}: StaticSelectProps) {
 	const t = useTranslation();
 	const choices = options?.options ?? [];
 	const [search, setSearch] = useState("");
@@ -176,7 +196,11 @@ function SearchableStaticSelect({
 		? choices.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
 		: choices;
 	const currentLabel =
-		typeof value === "string" ? (choices.find((o) => o.value === value)?.label ?? value) : "";
+		typeof value === "string"
+			? (resolvedLabels?.[value] ?? choices.find((o) => o.value === value)?.label ?? value)
+			: "";
+	// Show the selected label as normal-colored text, not gray placeholder text.
+	const showLabel = currentLabel !== "" && search === "";
 
 	function handleOpen(): void {
 		if (!disabled) {
@@ -212,7 +236,7 @@ function SearchableStaticSelect({
 			<input
 				type="text"
 				data-testid={`select-search-${name}`}
-				placeholder={currentLabel || t("field.select.placeholder")}
+				placeholder={t("field.select.placeholder")}
 				value={search}
 				onClick={handleOpen}
 				onFocus={handleOpen}
@@ -227,6 +251,16 @@ function SearchableStaticSelect({
 				disabled={disabled}
 				className="w-full rounded border border-input bg-background px-3 py-2 text-sm"
 			/>
+			{showLabel && (
+				// Selected label as normal text — sits over the empty input, not gray placeholder.
+				<span
+					data-testid={`select-label-${name}`}
+					onClick={handleOpen}
+					className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-sm text-foreground"
+				>
+					{currentLabel}
+				</span>
+			)}
 			{open && (
 				<div className="absolute z-10 mt-1 w-full rounded border border-input bg-background shadow-md">
 					{filtered.map((opt) => (
@@ -255,20 +289,26 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
 	const resolved = useSingleResolvedLabel({ ctx, fieldName: props.name, value, opts });
+	const [refetchKey, setRefetchKey] = useState(0);
 
 	if (resolved.kind === "loading") {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
 
 	return (
-		<WithCreateAffordance {...props} resolvedLabels={resolved.labels}>
-			<AsyncSingleSelectInner {...props} resolved={resolved} />
+		<WithCreateAffordance
+			{...props}
+			resolvedLabels={resolved.labels}
+			onCreated={() => setRefetchKey((k) => k + 1)}
+		>
+			<AsyncSingleSelectInner {...props} resolved={resolved} refetchKey={refetchKey} />
 		</WithCreateAffordance>
 	);
 }
 
 interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
 	resolved: { kind: "ready"; labels: Record<string, string> };
+	refetchKey: number;
 }
 
 function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
@@ -276,7 +316,12 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
 	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
-	const search = useAsyncSearch(ctx, opts.query, "");
+	const search = useAsyncSearch({
+		ctx,
+		query: opts.query,
+		search: "",
+		refetchKey: props.refetchKey,
+	});
 
 	if (search.kind === "loading") {
 		return <>{opts.loading ?? <FormSkeleton />}</>;

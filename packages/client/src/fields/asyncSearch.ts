@@ -8,11 +8,20 @@ type SearchState =
 
 type QueryFn = (ctx: ClientActionContext, search: string) => Promise<unknown[]>;
 
-export function useAsyncSearch(
-	ctx: ClientActionContext,
-	query: QueryFn | undefined,
-	search: string,
-): SearchState {
+export interface AsyncSearchArgs {
+	ctx: ClientActionContext;
+	query: QueryFn | undefined;
+	search: string;
+	/** Bump to force a refetch with the same search (e.g. after create). */
+	refetchKey?: number;
+}
+
+export function useAsyncSearch({
+	ctx,
+	query,
+	search,
+	refetchKey = 0,
+}: AsyncSearchArgs): SearchState {
 	const ctxRef = useRef(ctx);
 	ctxRef.current = ctx;
 	const queryRef = useRef(query);
@@ -21,7 +30,7 @@ export function useAsyncSearch(
 	const [state, setState] = useState<SearchState>(() =>
 		hasQuery ? { kind: "loading" } : { kind: "ready", rows: [] },
 	);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: hasQuery triggers refetch
+	// biome-ignore lint/correctness/useExhaustiveDependencies: hasQuery/refetchKey trigger refetch
 	useEffect(() => {
 		const fn = queryRef.current;
 		if (!fn) {
@@ -46,6 +55,6 @@ export function useAsyncSearch(
 		return () => {
 			cancelled = true;
 		};
-	}, [hasQuery, search]);
+	}, [hasQuery, search, refetchKey]);
 	return state;
 }

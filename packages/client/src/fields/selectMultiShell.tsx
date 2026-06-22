@@ -23,6 +23,8 @@ export interface MultiShellProps {
 	getLabel: (v: string) => string;
 	/** Async only — mutable map stashed for label-on-create. */
 	resolvedLabels?: Record<string, string>;
+	/** Async only — fired after a successful create so the list can refetch. */
+	onCreated?: () => void;
 	onQueryChange?: (q: string) => void;
 	children: (query: string) => MultiShellRenderResult;
 }
@@ -38,6 +40,7 @@ export function MultiComboboxShell({
 	create,
 	getLabel,
 	resolvedLabels,
+	onCreated,
 	onQueryChange,
 	children,
 }: MultiShellProps) {
@@ -66,6 +69,7 @@ export function MultiComboboxShell({
 		if (!value.includes(newValue)) {
 			onChange([...value, newValue]);
 		}
+		onCreated?.();
 		setCreateOpen(false);
 		setQuery("");
 		onQueryChange?.("");

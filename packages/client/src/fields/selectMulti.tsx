@@ -27,9 +27,11 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
 	const create = options?.create as SelectCreateConfig | undefined;
+	// Created options aren't in `choices`; stash their labels so chips show names, not ids.
+	const resolvedLabels = useRef<Record<string, string>>({}).current;
 
 	function staticGetLabel(v: string): string {
-		return choices.find((o) => o.value === v)?.label ?? v;
+		return resolvedLabels[v] ?? choices.find((o) => o.value === v)?.label ?? v;
 	}
 
 	return (
@@ -42,6 +44,7 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 			disabled={disabled}
 			create={create}
 			getLabel={staticGetLabel}
+			resolvedLabels={resolvedLabels}
 		>
 			{(query) => {
 				const filtered = choices.filter((o) => matchesQuery(o.label, query));
@@ -64,7 +67,8 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 	const current = Array.isArray(props.value) ? props.value : [];
 	const resolved = useMultiResolvedLabels({ ctx, fieldName: props.name, value: current, opts });
 	const [query, setQuery] = useState("");
-	const search = useAsyncSearch(ctx, opts.query, query);
+	const [refetchKey, setRefetchKey] = useState(0);
+	const search = useAsyncSearch({ ctx, query: opts.query, search: query, refetchKey });
 	// Track whether the shell has rendered at least once with ready search results.
 	// After initial render, query-driven refetches keep the shell mounted.
 	const hasRenderedRef = useRef(false);
@@ -113,6 +117,7 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 			create={create}
 			getLabel={(v) => resolvedLabels[v] ?? v}
 			resolvedLabels={resolvedLabels}
+			onCreated={() => setRefetchKey((k) => k + 1)}
 			onQueryChange={setQuery}
 		>
 			{() => ({
