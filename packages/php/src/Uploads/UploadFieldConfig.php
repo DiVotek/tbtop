@@ -79,14 +79,15 @@ final class UploadFieldConfig
     }
 
     /**
-     * A string accept ('image/*') normalizes to a single-element list.
+     * A string accept normalizes to a list, splitting on commas
+     * ('application/pdf,image/*' → two patterns). Arrays pass through.
      *
      * @return list<string>
      */
     private static function normalizeAccept(mixed $accept): array
     {
         if (is_string($accept)) {
-            return $accept === '' ? [] : [$accept];
+            return array_values(array_filter(array_map('trim', explode(',', $accept))));
         }
 
         return is_array($accept) ? array_values(array_map('strval', $accept)) : [];

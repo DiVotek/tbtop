@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Uploads\UploadFieldConfig;
 
@@ -19,6 +21,31 @@ it('UploadFieldConfig: normalizes a string accept to a list', function (): void 
     $config = UploadFieldConfig::resolve(Upload::make('avatar')->accept('image/*'));
 
     expect($config->accept)->toBe(['image/*']);
+});
+
+it('UploadFieldConfig: accepts a list of mime patterns', function (): void {
+    $config = UploadFieldConfig::resolve(Upload::make('doc')->accept(['application/pdf', 'image/*']));
+
+    expect($config->accept)->toBe(['application/pdf', 'image/*']);
+});
+
+it('UploadFieldConfig: splits a comma string into trimmed patterns', function (): void {
+    $config = UploadFieldConfig::resolve(Upload::make('doc')->accept('application/pdf, image/*'));
+
+    expect($config->accept)->toBe(['application/pdf', 'image/*']);
+});
+
+it('UploadFieldConfig: assertMime allows every pattern in the list, rejects the rest', function (): void {
+    $config = UploadFieldConfig::resolve(Upload::make('doc')->accept(['application/pdf', 'image/*']));
+
+    $png = UploadedFile::fake()->create('a.png', 1, 'image/png');
+    $pdf = UploadedFile::fake()->create('b.pdf', 1, 'application/pdf');
+    $xlsx = UploadedFile::fake()->create('c.xlsx', 1, 'application/vnd.ms-excel');
+
+    $config->assertMime($png);
+    $config->assertMime($pdf);
+    expect(fn () => $config->assertMime($xlsx))
+        ->toThrow(HttpException::class);
 });
 
 it('UploadFieldConfig: exposes the nested image conversion options', function (): void {
