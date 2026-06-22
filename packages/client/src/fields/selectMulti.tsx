@@ -27,9 +27,11 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
 	const create = options?.create as SelectCreateConfig | undefined;
+	// Created options aren't in `choices`; stash their labels so chips show names, not ids.
+	const resolvedLabels = useRef<Record<string, string>>({}).current;
 
 	function staticGetLabel(v: string): string {
-		return choices.find((o) => o.value === v)?.label ?? v;
+		return resolvedLabels[v] ?? choices.find((o) => o.value === v)?.label ?? v;
 	}
 
 	return (
@@ -42,6 +44,7 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 			disabled={disabled}
 			create={create}
 			getLabel={staticGetLabel}
+			resolvedLabels={resolvedLabels}
 		>
 			{(query) => {
 				const filtered = choices.filter((o) => matchesQuery(o.label, query));

@@ -29,7 +29,19 @@ it('opens, selects, and creates in the roles combobox', function () {
 
     // Opening create shows the dialog ABOVE the popup (z-50 stacking).
     $page->click('@select-create-roles')
-        ->assertVisible('@select-create-dialog')
+        ->assertVisible('@select-create-dialog');
+
+    // Completing create adds a chip showing the label ("Auditor"), not the
+    // lowercased value ("auditor") — static multi must resolve created labels.
+    // Exact, case-sensitive text check: getByText is case-insensitive and would
+    // let "auditor" pass, so read the chip's own label span via script.
+    $page->type('label', 'Auditor')
+        ->click('@select-create-submit')
+        ->assertVisible('@chip-auditor')
+        ->assertScript(
+            "document.querySelector('[data-testid=\"chip-auditor\"] span')?.textContent?.trim()",
+            'Auditor',
+        )
         ->assertNoJavaScriptErrors();
 });
 
