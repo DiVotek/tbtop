@@ -1,16 +1,6 @@
-/**
- * M-82: pressing Enter in a DSL form field must submit the form, taking the
- * exact same path the submit button's click takes (router.post to the form
- * endpoint), with pre-flight validation preserved.
- *
- * These drive the REAL submit path: author wire JSON → materialize() (which
- * turns a `spec:{type:"submit"}` action into the submit handler + the isSubmit
- * flag) → renderNode() → fire a native form submit / keydown. The assertion
- * target is router.post — the call the submitHandler makes.
- *
- * router is mocked here (not in formBlock.test.tsx) because mock.module is
- * process-global; isolating it keeps the handler-based formBlock tests clean.
- */
+// M-82: Enter in a DSL form must submit via the real path (materialize →
+// render → router.post). router is mocked in its own file because mock.module
+// is process-global and would leak into formBlock.test.tsx's handler tests.
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, fireEvent, render } from "@testing-library/react";

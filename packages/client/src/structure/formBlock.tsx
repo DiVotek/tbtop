@@ -109,17 +109,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 					ref={formRef}
 					className="flex flex-col gap-4"
 					data-testid="form-block"
-					onSubmit={(e: FormEvent<HTMLFormElement>) => {
-						e.preventDefault();
-						// A button-originated submit already ran the handler via its
-						// own click; only synthesize a click for keyboard/Enter submits.
-						if (submitter(e)) {
-							return;
-						}
-						formRef.current
-							?.querySelector<HTMLButtonElement>('button[type="submit"]')
-							?.click();
-					}}
+					onSubmit={(e) => handleFormSubmit(e, formRef)}
 				>
 					<ScrollToErrorEffect
 						errorScrollTick={ctrl.errorScrollTick}
@@ -161,6 +151,19 @@ function ScrollToErrorEffect({ errorScrollTick, fieldErrors, formRef }: ScrollTo
 	}, [errorScrollTick, fieldErrors, formRef, setActiveLocale]);
 
 	return null;
+}
+
+function handleFormSubmit(
+	e: FormEvent<HTMLFormElement>,
+	formRef: RefObject<HTMLFormElement | null>,
+): void {
+	e.preventDefault();
+	// A button-originated submit already ran the handler via its own
+	// click; only synthesize a click for keyboard/Enter submits.
+	if (submitter(e)) {
+		return;
+	}
+	formRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
 }
 
 /** The control that triggered the submit (a clicked button), or null for Enter. */
