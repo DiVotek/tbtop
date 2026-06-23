@@ -1,3 +1,5 @@
+import { safeUuid } from "../lib/safeUuid";
+
 export interface Row {
 	id: string;
 	key: string;
@@ -9,7 +11,7 @@ export function rowsFromValue(value: Record<string, string> | null | undefined):
 		return [];
 	}
 	return Object.entries(value).map(([k, v]) => ({
-		id: crypto.randomUUID(),
+		id: safeUuid(),
 		key: k,
 		value: v,
 	}));

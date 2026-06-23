@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { safeUuid } from "../lib/safeUuid";
 import type { StructureNode } from "../structure/structure";
 import { Button } from "../ui/button";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
@@ -76,7 +77,7 @@ export function RepeaterForm({
 				variant="outline"
 				size="sm"
 				disabled={disabled || (maxItems !== undefined && items.length >= maxItems)}
-				onClick={() => emit(addItem(items, subFields), (k) => [...k, crypto.randomUUID()])}
+				onClick={() => emit(addItem(items, subFields), (k) => [...k, safeUuid()])}
 				className="self-start"
 			>
 				{t("field.repeater.add_item")}
@@ -90,7 +91,7 @@ function useStableItemKeys(items: Item[]): { current: string[] } {
 	if (ref.current.length !== items.length) {
 		const next = ref.current.slice(0, items.length);
 		while (next.length < items.length) {
-			next.push(crypto.randomUUID());
+			next.push(safeUuid());
 		}
 		ref.current = next;
 	}
