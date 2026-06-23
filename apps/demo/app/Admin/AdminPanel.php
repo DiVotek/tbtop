@@ -25,6 +25,7 @@ use App\Admin\Pages\TwoFactorSetupPage;
 use App\Admin\Pages\UploadDemoPage;
 use App\Admin\Pages\ValidationRulesPage;
 use App\Http\Middleware\RequireFullAuth;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\MediaLibraryPage;
 use Tbtop\Admin\Panels\Panel;
 use Tbtop\Admin\Panels\PanelConfig;
@@ -62,6 +63,11 @@ class AdminPanel extends Panel
                 TwoFactorSetupPage::class,
                 LoginPage::class,
                 TwoFactorChallengePage::class,
+            ])
+            ->navigationGroups([
+                NavGroup::make('Overview')->icon('home'),
+                NavGroup::make('Content')->icon('file-text')->collapsible(),
+                NavGroup::make('System')->icon('settings')->collapsible()->collapsed(),
             ])
             ->locales(['en', 'uk'])
             ->defaultLocale('en')

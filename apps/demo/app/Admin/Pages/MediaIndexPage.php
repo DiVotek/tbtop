@@ -19,7 +19,7 @@ class MediaIndexPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'Content', 'label' => 'Media', 'order' => 2];
+        return ['group' => 'Content', 'label' => 'Media', 'order' => 2, 'icon' => 'image'];
     }
 
     public function title(): string
