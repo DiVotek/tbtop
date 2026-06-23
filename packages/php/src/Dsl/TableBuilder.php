@@ -194,7 +194,7 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<ActionBuilder>  $actions */
+    /** @param  list<ActionBuilder|Node>  $actions — plain actions render inline; wrap in S::dropdown()/actionGroup() to collapse into a menu. */
     public function rowActions(array $actions): self
     {
         $this->opts['rowActions'] = $actions;

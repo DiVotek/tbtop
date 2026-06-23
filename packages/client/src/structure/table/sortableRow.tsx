@@ -8,8 +8,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "../../i18n/i18n";
-import type { ActionConfig, TableColumn } from "../types";
+import type { TableColumn } from "../types";
 import { readId } from "./normalize";
+import type { RowActionEntry } from "./rowActions";
 import { TableRow } from "./tableRow";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -19,7 +20,7 @@ type SaveCellArgs = { column: string; id: string; value: unknown };
 interface SortableRowProps {
 	row: Record<string, unknown>;
 	columns: TableColumn[];
-	rowActions: ActionConfig[];
+	rowActions: RowActionEntry[];
 	selected: boolean;
 	onToggle: (id: string) => void;
 	hasBulk: boolean;

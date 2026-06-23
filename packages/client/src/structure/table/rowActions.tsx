@@ -1,88 +1,64 @@
 /**
- * RowActionsCell — trailing-cell actions; first ROW_ACTION_INLINE_MAX
- * inline, the rest in an overflow menu. Each stays an ActionBlock.
+ * RowActionsCell — trailing-cell actions. Every action renders inline; there is
+ * no implicit collapse at any count. To hide actions behind a dropdown, wrap
+ * them in an explicit group (S::dropdown / actionGroup) — that entry renders as
+ * a row-aware menu, even for a single action.
  */
-import { MoreHorizontal } from "lucide-react";
 import { useAuthUser } from "../../app/authUser";
-import { useTranslation } from "../../i18n/i18n";
-import { Button } from "../../ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "../../ui/dropdown-menu";
+import { renderNode } from "../../render/structureRenderer";
 import { ActionBlock } from "../actionBlock";
 import { isNodeDisabled, isNodeHidden } from "../meta";
 import { useNearestRow } from "../rowContext";
-import type { ActionConfig, ConditionContext } from "../types";
+import type { ActionConfig, ConditionContext, NodeMeta, StructureNode } from "../types";
 
-const ROW_ACTION_INLINE_MAX = 2;
-
-/** An action that survived hiddenIf, plus its pre-evaluated disabledIf result. */
-interface VisibleAction {
-	cfg: ActionConfig;
-	disabled: boolean;
+export interface ActionGroupConfig {
+	kind: "actionGroup";
+	label?: string;
+	as?: string;
+	children?: StructureNode[];
+	meta?: NodeMeta;
 }
 
-export function RowActionsCell({ actions }: { actions: ActionConfig[] }) {
+/** A materialized row action: a plain action or an explicit dropdown group. */
+export type RowActionEntry = ActionConfig | ActionGroupConfig;
+
+export function RowActionsCell({ actions }: { actions: RowActionEntry[] }) {
 	const row = useNearestRow();
 	const user = useAuthUser();
 	const condCtx: ConditionContext = { record: row ?? undefined, data: row ?? {}, user };
-	const visible: VisibleAction[] = actions
-		.filter((cfg) => !isNodeHidden(cfg.meta, condCtx))
-		.map((cfg) => ({ cfg, disabled: isNodeDisabled(cfg.meta, condCtx) }));
-
-	if (visible.length <= ROW_ACTION_INLINE_MAX) {
-		return (
-			<div className="flex items-center justify-end gap-1">
-				{visible.map(({ cfg, disabled }) => (
-					<ActionBlock
-						key={cfg.name}
-						options={cfg}
-						meta={cfg.meta ?? {}}
-						disabled={disabled}
-					/>
-				))}
-			</div>
-		);
+	const visible = actions.filter((entry) => !isNodeHidden(entry.meta, condCtx));
+	if (visible.length === 0) {
+		return null;
 	}
-	return <RowActionsMenu actions={visible} />;
-}
-
-function RowActionsMenu({ actions }: { actions: VisibleAction[] }) {
-	const t = useTranslation();
 	return (
-		<div className="flex justify-end">
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label={t("table.actions.label")}
-						data-testid="row-actions-trigger"
-					>
-						<MoreHorizontal className="size-4" aria-hidden />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
-					{actions.map(({ cfg, disabled }) => (
-						<DropdownMenuItem
-							key={cfg.name}
-							asChild
-							onSelect={(e) => e.preventDefault()}
-						>
-							<div className="w-full">
-								<ActionBlock
-									options={cfg}
-									meta={cfg.meta ?? {}}
-									disabled={disabled}
-								/>
-							</div>
-						</DropdownMenuItem>
-					))}
-				</DropdownMenuContent>
-			</DropdownMenu>
+		<div className="flex items-center justify-end gap-1">
+			{visible.map((entry, i) =>
+				isActionGroupEntry(entry) ? (
+					// biome-ignore lint/suspicious/noArrayIndexKey: groups carry no stable id
+					<RowActionGroup key={i} entry={entry} />
+				) : (
+					<ActionBlock
+						key={entry.name}
+						options={entry}
+						meta={entry.meta ?? {}}
+						disabled={isNodeDisabled(entry.meta, condCtx)}
+					/>
+				),
+			)}
 		</div>
 	);
+}
+
+/** A materialized actionGroup entry (S::dropdown / actionGroup) vs a plain action. */
+export function isActionGroupEntry(entry: RowActionEntry): entry is ActionGroupConfig {
+	return (entry as ActionGroupConfig).kind === "actionGroup";
+}
+
+function RowActionGroup({ entry }: { entry: ActionGroupConfig }) {
+	const node: StructureNode = {
+		kind: "actionGroup",
+		options: { label: entry.label ?? "", children: entry.children ?? [], as: "dropdown" },
+		meta: {},
+	};
+	return <>{renderNode(node)}</>;
 }

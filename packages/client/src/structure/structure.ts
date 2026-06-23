@@ -97,6 +97,8 @@ const builtins: Record<string, Builder> = {
 	collapsible: buildCollapsible as Builder,
 	aside: layoutChildrenFirst("aside") as Builder,
 	actionGroup: buildActionGroup as Builder,
+	dropdown: ((label: string, actions: StructureNode[]) =>
+		buildActionGroup(label, actions, "dropdown")) as Builder,
 	tabs: buildTabs as Builder,
 	tab: buildTab as Builder,
 	table: buildTable as Builder,
@@ -183,6 +185,7 @@ export interface StructureBuilders<TForm = unknown> {
 		actions: StructureNode[],
 		as?: "buttons" | "dropdown",
 	) => StructureNode;
+	dropdown: (label: string, actions: StructureNode[]) => StructureNode;
 }
 
 export type StructureBuilder = StructureBuilders;

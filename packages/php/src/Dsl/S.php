@@ -263,6 +263,17 @@ final class S
     }
 
     /**
+     * Explicit dropdown grouping — its actions render inside a menu (never inline),
+     * even for a single action. Sugar over actionGroup(..., 'dropdown').
+     *
+     * @param  list<ActionBuilder>  $actions
+     */
+    public function dropdown(string $label, array $actions): Node
+    {
+        return $this->actionGroup($label, $actions, 'dropdown');
+    }
+
+    /**
      * Cascade ->translatable() onto every Field in $children (recursive).
      * A field that explicitly called ->translatable(false) is skipped.
      *

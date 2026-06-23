@@ -9,7 +9,7 @@ import { useClientActionContext } from "../actionContext";
 import { RowProvider } from "../rowContext";
 import type { ActionConfig, TableColumn } from "../types";
 import { readId } from "./normalize";
-import { RowActionsCell } from "./rowActions";
+import { isActionGroupEntry, type RowActionEntry, RowActionsCell } from "./rowActions";
 import { RowDataCell } from "./tableCell";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -20,7 +20,7 @@ const INTERACTIVE_SELECTOR = "a, button, input, label, [role='checkbox'], [role=
 interface TableRowProps {
 	row: Record<string, unknown>;
 	columns: TableColumn[];
-	rowActions: ActionConfig[];
+	rowActions: RowActionEntry[];
 	selected: boolean;
 	onToggle: (id: string) => void;
 	hasBulk: boolean;
@@ -42,7 +42,9 @@ export function TableRow(props: TableRowProps) {
 	const armedRef = useRef(false);
 
 	const rowClickAction = props.rowClick
-		? props.rowActions.find((a) => a.name === props.rowClick)
+		? props.rowActions.find(
+				(a): a is ActionConfig => !isActionGroupEntry(a) && a.name === props.rowClick,
+			)
 		: undefined;
 
 	function handleRowPointerDown(e: React.PointerEvent<HTMLTableRowElement>) {

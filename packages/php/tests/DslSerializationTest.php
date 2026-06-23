@@ -133,3 +133,12 @@ it('serializes trigger variants (size, outlined, as) into action options', funct
 it('rejects an invalid trigger button size', function () {
     (new ActionBuilder('go'))->size('xl');
 })->throws(InvalidArgumentException::class);
+
+it('serializes a dropdown as an actionGroup rendered as a menu', function () {
+    $s = new S;
+    $node = encode($s->dropdown('More', [$s->action('edit')->label('Edit')->visit('/x')]));
+
+    expect($node['kind'])->toBe('actionGroup')
+        ->and($node['options']['as'])->toBe('dropdown')
+        ->and($node['options']['label'])->toBe('More');
+});

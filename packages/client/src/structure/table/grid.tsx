@@ -7,11 +7,12 @@ import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifi
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
 import { ReloadOverlay } from "../../ui/spinner";
-import type { ActionConfig, TableColumn } from "../types";
+import type { TableColumn } from "../types";
 import { EmptyState } from "./emptyState";
 import { TableHead } from "./gridHead";
 import { isSelected, readId } from "./normalize";
 import { ReorderHint } from "./reorderHint";
+import type { RowActionEntry } from "./rowActions";
 import { SortableRow } from "./sortableRow";
 import { TableRow } from "./tableRow";
 import { useRowReorder } from "./useRowReorder";
@@ -25,7 +26,7 @@ type SaveCellArgs = { column: string; id: string; value: unknown };
 interface TableGridProps {
 	rows: Record<string, unknown>[];
 	columns: TableColumn[];
-	rowActions: ActionConfig[];
+	rowActions: RowActionEntry[];
 	selectedIds: string[];
 	onToggle: (id: string) => void;
 	onSelectAll: (ids: string[]) => void;

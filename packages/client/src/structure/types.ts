@@ -175,7 +175,7 @@ export interface PaginatedResponse<TRow = unknown> {
 export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncBlock {
 	query: (ctx: ClientActionContext) => Promise<TRow[] | PaginatedResponse<TRow>>;
 	columns: TableColumn<TRow>[];
-	rowActions?: ActionConfig<TBuilder>[];
+	rowActions?: (ActionConfig<TBuilder> | StructureNode)[];
 	bulkActions?: ActionConfig<TBuilder>[];
 	searchable?: string[];
 	filters?: StructureNode[];

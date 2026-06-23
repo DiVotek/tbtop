@@ -6,12 +6,12 @@ import { compileCondition } from "../../inertia/conditionCompiler";
 import { RowProvider } from "../rowContext";
 import { wrapForStructure } from "../testFixtures";
 import type { ActionConfig, AuthUser } from "../types";
-import { RowActionsCell } from "./rowActions";
+import { type RowActionEntry, RowActionsCell } from "./rowActions";
 
 const Wrap = wrapForStructure(() => new Response("{}"));
 
 function renderCell(
-	actions: ActionConfig[],
+	actions: RowActionEntry[],
 	row: Record<string, unknown>,
 	user: AuthUser | null = null,
 ) {
@@ -91,5 +91,43 @@ describe("RowActionsCell — disabledIf disables the button", () => {
 		});
 		const { getByTestId } = renderCell([action], { locked: false });
 		expect(getByTestId("action-delete").hasAttribute("disabled")).toBe(false);
+	});
+});
+
+describe("RowActionsCell — explicit dropdown, no auto-collapse", () => {
+	test("renders every action inline regardless of count (no implicit dropdown)", () => {
+		const { getByTestId, queryByTestId } = renderCell(
+			[visitAction("a"), visitAction("b"), visitAction("c")],
+			{ id: "1" },
+		);
+		expect(getByTestId("action-a")).not.toBeNull();
+		expect(getByTestId("action-b")).not.toBeNull();
+		expect(getByTestId("action-c")).not.toBeNull();
+		expect(queryByTestId("row-actions-trigger")).toBeNull();
+		expect(queryByTestId("action-group-trigger")).toBeNull();
+	});
+
+	test("an explicit dropdown group renders a menu trigger with children collapsed", () => {
+		const group: RowActionEntry = {
+			kind: "actionGroup",
+			label: "More",
+			children: [
+				{
+					kind: "action",
+					name: "edit",
+					options: { name: "edit", label: "Edit", handler: async () => {} },
+					meta: {},
+				},
+				{
+					kind: "action",
+					name: "del",
+					options: { name: "del", label: "Delete", handler: async () => {} },
+					meta: {},
+				},
+			],
+		};
+		const { getByTestId, queryByTestId } = renderCell([group], { id: "1" });
+		expect(getByTestId("action-group-trigger")).not.toBeNull();
+		expect(queryByTestId("action-edit")).toBeNull();
 	});
 });
