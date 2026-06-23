@@ -69,6 +69,21 @@ class UploadDemoPage extends Page
                     // Demo: no DB write — just confirm the uploads round-tripped.
                     return '/admin/upload-demo';
                 }),
+            $s->displayText('Multi media picker')->variant('heading'),
+            $s->displayText('Browse the media library and pick several images at once.')->variant('muted'),
+            $s->form('gallery', [
+                $s->media('gallery_media_ids')->label('Gallery images')
+                    ->multiple()
+                    ->accept(['image/*'])
+                    ->rules('nullable|array'),
+                $s->actionsRow([
+                    FormActions::save($s),
+                ]),
+            ])
+                ->onSubmit(function (ActionCtx $ctx): string {
+                    // Demo: no DB write — just confirm the selection round-tripped.
+                    return '/admin/upload-demo';
+                }),
         ]);
     }
 }

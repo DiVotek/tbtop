@@ -333,6 +333,30 @@ describe("DisplayImageBlock", () => {
 		expect(img?.className).toContain("max-w-full");
 	});
 
+	test("default shape (no shape) applies rounded-none (square)", () => {
+		const { container } = render(
+			<DisplayImageBlock
+				options={{ src: "/img/a.png" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector("img")?.className).toContain("rounded-none");
+	});
+
+	test("shape=circular applies rounded-full", () => {
+		const { container } = render(
+			<DisplayImageBlock
+				options={{ src: "/img/a.png", shape: "circular" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector("img")?.className).toContain("rounded-full");
+	});
+
 	test("file mode renders a download anchor, no img", () => {
 		const { container } = render(
 			<DisplayImageBlock

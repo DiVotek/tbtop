@@ -90,6 +90,87 @@ describe("TableCell: icon kind", () => {
 	});
 });
 
+describe("TableCell: image kind", () => {
+	// The empty/null negatives must prove the IMAGE cell ran and chose to render
+	// nothing — not that the string fallback happened to emit no <img>. The
+	// image cell tags itself with data-testid="image-cell"; assert that wrapper
+	// is present AND holds no <img>. This only goes green once ImageCell exists.
+	test("empty-string value: image cell present but renders no img", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const cell = container.querySelector('[data-testid="image-cell"]');
+		expect(cell).toBeTruthy();
+		expect(cell?.querySelector("img")).toBeNull();
+	});
+
+	test("null value: image cell present but renders no img", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: null }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const cell = container.querySelector('[data-testid="image-cell"]');
+		expect(cell).toBeTruthy();
+		expect(cell?.querySelector("img")).toBeNull();
+	});
+
+	test("URL value renders an img with that src", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "/img/a.png" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img).toBeTruthy();
+		expect(img?.getAttribute("src")).toBe("/img/a.png");
+	});
+
+	test("default shape (no shape) applies rounded-none", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "/img/a.png" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.className).toContain("rounded-none");
+	});
+
+	test("shape=circular applies rounded-full", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "/img/a.png" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image", shape: "circular" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.className).toContain("rounded-full");
+	});
+
+	test("alt set applies the alt attribute", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "/img/a.png" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image", alt: "Avatar" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("alt")).toBe("Avatar");
+	});
+});
+
 describe("TableCell: column display properties", () => {
 	test("column with align=center applies text-center class to th and td", async () => {
 		const node = s.table({

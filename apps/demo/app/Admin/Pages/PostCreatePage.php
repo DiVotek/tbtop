@@ -40,6 +40,7 @@ class PostCreatePage extends Page
                     'published_at' => null,
                     'rating' => null,
                     'cover_media_id' => null,
+                    'cover_url' => null,
                     'author_id' => null,
                     'sections' => [],
                 ])

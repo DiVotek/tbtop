@@ -278,6 +278,38 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Render the column value as a thumbnail image; sets kind = 'image'. */
+    public function image(): static
+    {
+        $this->kind = 'image';
+
+        return $this;
+    }
+
+    /** Square thumbnail shape (sharp corners). Last shape call wins. */
+    public function square(): static
+    {
+        $this->kindMeta['shape'] = 'square';
+
+        return $this;
+    }
+
+    /** Circular thumbnail shape. Last shape call wins. */
+    public function circular(): static
+    {
+        $this->kindMeta['shape'] = 'circular';
+
+        return $this;
+    }
+
+    /** Alt text for the image thumbnail. */
+    public function alt(string $alt): static
+    {
+        $this->kindMeta['alt'] = $alt;
+
+        return $this;
+    }
+
     // -------------------------------------------------------------------------
     // Editable-column fluent API
     // -------------------------------------------------------------------------

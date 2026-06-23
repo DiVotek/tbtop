@@ -51,6 +51,9 @@ class PostFactory extends Factory
                 ? round($this->faker->randomFloat(1, 1.0, 5.0), 1)
                 : null,
             'metadata' => [],
+            'cover_url' => $this->faker->boolean(60)
+                ? 'https://picsum.photos/seed/'.$topic.'/80'
+                : null,
             'author_id' => null,
             'sections' => $this->faker->boolean(20)
                 ? [['heading' => ucfirst($this->faker->words(3, true)), 'body' => $this->faker->paragraph()]]

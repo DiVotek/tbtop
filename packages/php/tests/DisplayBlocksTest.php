@@ -284,6 +284,30 @@ it('DisplayImageBlock is accessible via S::displayImage', function () {
         ->and($json['options']['src'])->toBe('/img/b.png');
 });
 
+it('DisplayImageBlock omits shape by default', function () {
+    $json = encodeDisplay(DisplayImageBlock::make('/img/a.png'));
+
+    expect(array_key_exists('shape', $json['options']))->toBeFalse();
+});
+
+it('DisplayImageBlock square() serializes options.shape=square', function () {
+    $json = encodeDisplay(DisplayImageBlock::make('/img/a.png')->square());
+
+    expect($json['options']['shape'])->toBe('square');
+});
+
+it('DisplayImageBlock circular() serializes options.shape=circular', function () {
+    $json = encodeDisplay(DisplayImageBlock::make('/img/a.png')->circular());
+
+    expect($json['options']['shape'])->toBe('circular');
+});
+
+it('DisplayImageBlock square()->circular() is last-wins (circular)', function () {
+    $json = encodeDisplay(DisplayImageBlock::make('/img/a.png')->square()->circular());
+
+    expect($json['options']['shape'])->toBe('circular');
+});
+
 // ---------------------------------------------------------------------------
 // DisplayRichtextBlock
 // ---------------------------------------------------------------------------

@@ -45,6 +45,7 @@ class PostsIndexPage extends Page
             $s->table('posts')
                 ->rowClick('edit')
                 ->columns([
+                    Column::make('cover_url')->image()->square()->label('Cover')->alt('Cover'),
                     Column::make('title')
                         ->label('Title')
                         ->kind('text')
