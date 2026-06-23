@@ -9,6 +9,7 @@ import { useNearestRow } from "../structure/rowContext";
 import type { ClientActionContext } from "../structure/types";
 import { Button } from "../ui/button";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { UploadMultiForm } from "./uploadMultiField";
 
 export interface UploadValue {
 	filename: string;
@@ -17,12 +18,15 @@ export interface UploadValue {
 
 type UploadFn = (ctx: ClientActionContext, file: File, signal?: AbortSignal) => Promise<unknown>;
 
-interface UploadOptionsBag {
+export interface UploadOptionsBag {
 	entity?: string;
 	accept?: string;
 	maxSize?: number;
 	maxFileSize?: number;
 	upload?: UploadFn;
+	multiple?: boolean;
+	maxFiles?: number;
+	reorderable?: boolean;
 }
 
 interface UploadRowShape {
@@ -32,7 +36,14 @@ interface UploadRowShape {
 	sizes?: Array<{ url: string; width: number }>;
 }
 
-export function UploadForm({
+export function UploadForm(props: FieldFormProps<UploadValue | UploadValue[], UploadOptionsBag>) {
+	if (props.options?.multiple) {
+		return <UploadMultiForm {...props} />;
+	}
+	return <UploadSingleForm {...(props as FieldFormProps<UploadValue, UploadOptionsBag>)} />;
+}
+
+function UploadSingleForm({
 	id,
 	name,
 	value,
@@ -58,8 +69,6 @@ export function UploadForm({
 		setBusy(true);
 		setError(null);
 		try {
-			// Full UploadRow flows through: server-side submit handlers persist
-			// mimeType/filesize/dimensions/sizes, not just the link.
 			const row = await runUpload({ opts, ctx, client, file, t });
 			onChange({ ...row });
 		} catch (err) {
@@ -92,7 +101,7 @@ export function UploadForm({
 	);
 }
 
-interface RunUploadInput {
+export interface RunUploadInput {
 	opts: UploadOptionsBag;
 	ctx: ClientActionContext;
 	client: AdminClient;
@@ -100,8 +109,13 @@ interface RunUploadInput {
 	t: Translate;
 }
 
-// Page-scoped endpoint closure first; entity preset is the legacy fallback.
-async function runUpload({ opts, ctx, client, file, t }: RunUploadInput): Promise<UploadRow> {
+export async function runUpload({
+	opts,
+	ctx,
+	client,
+	file,
+	t,
+}: RunUploadInput): Promise<UploadRow> {
 	if (opts.upload) {
 		const raw = await opts.upload(ctx, file);
 		return unwrapData(raw) as UploadRow;
@@ -119,7 +133,7 @@ async function runUpload({ opts, ctx, client, file, t }: RunUploadInput): Promis
 	throw new Error("upload field is missing endpoint");
 }
 
-function exceedsMaxSize(opts: UploadOptionsBag, file: File): boolean {
+export function exceedsMaxSize(opts: UploadOptionsBag, file: File): boolean {
 	const limit = opts.maxSize ?? opts.maxFileSize;
 	if (limit === undefined) {
 		return false;
@@ -132,7 +146,7 @@ interface PreviewProps {
 	onRemove: () => void;
 }
 
-function UploadPreview({ value, onRemove }: PreviewProps) {
+export function UploadPreview({ value, onRemove }: PreviewProps) {
 	const isImg = looksLikeImage(value.url, value.filename);
 	return (
 		<div className="flex items-center gap-3 rounded-md border p-2">
@@ -153,17 +167,27 @@ function UploadPreview({ value, onRemove }: PreviewProps) {
 	);
 }
 
-interface PickerProps {
+export interface PickerProps {
 	id: string;
 	name: string;
 	accept?: string;
+	multiple?: boolean;
 	busy: boolean;
 	disabled?: boolean;
 	error: string | null;
 	onFiles: (files: FileList | null) => void;
 }
 
-function UploadPicker({ id, name, accept, busy, disabled, error, onFiles }: PickerProps) {
+export function UploadPicker({
+	id,
+	name,
+	accept,
+	multiple,
+	busy,
+	disabled,
+	error,
+	onFiles,
+}: PickerProps) {
 	const t = useTranslation();
 	return (
 		<div className="space-y-2">
@@ -178,6 +202,7 @@ function UploadPicker({ id, name, accept, busy, disabled, error, onFiles }: Pick
 					name={name}
 					type="file"
 					accept={accept}
+					multiple={multiple}
 					className="sr-only"
 					disabled={busy || disabled}
 					onChange={(e) => onFiles(e.target.files)}
@@ -192,7 +217,6 @@ function UploadPicker({ id, name, accept, busy, disabled, error, onFiles }: Pick
 	);
 }
 
-// Smallest variant by width — thumbnail source, falls back to the full url.
 function thumbnailUrl(sizes: UploadRowShape["sizes"], fallback: string): string {
 	const variants = sizes ?? [];
 	if (variants.length === 0) {
@@ -201,8 +225,30 @@ function thumbnailUrl(sizes: UploadRowShape["sizes"], fallback: string): string 
 	return variants.reduce((a, b) => (b.width < a.width ? b : a)).url ?? fallback;
 }
 
-export function UploadCell({ value }: FieldCellProps<UploadValue>) {
+export function UploadCell({ value }: FieldCellProps<UploadValue | UploadValue[]>) {
 	const row = useNearestRow() as UploadRowShape | null;
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return null;
+		}
+		const first = value[0];
+		if (!first) {
+			return null;
+		}
+		const isImg = looksLikeImage(first.url, first.filename);
+		return (
+			<span className="flex items-center gap-1.5">
+				{isImg ? (
+					<img
+						src={first.url}
+						alt={first.filename}
+						className="h-8 w-8 rounded object-cover"
+					/>
+				) : null}
+				<span className="text-muted-foreground">{value.length}</span>
+			</span>
+		);
+	}
 	const mime = row?.mimeType;
 	const url = row?.url ?? value?.url;
 	const filename = row?.filename ?? value?.filename;
@@ -221,7 +267,7 @@ export function UploadCell({ value }: FieldCellProps<UploadValue>) {
 	return <span>{filename}</span>;
 }
 
-function looksLikeImage(url: string, filename: string): boolean {
+export function looksLikeImage(url: string, filename: string): boolean {
 	const target = (url + filename).toLowerCase();
 	return /\.(png|jpe?g|gif|webp|avif|heic|svg)(\?|$)/.test(target);
 }

@@ -32,7 +32,7 @@ describe("UploadForm", () => {
 			seen.push(req.url);
 			return uploadResponse({ filename: "hello.png", url: "/uploads/hello.png" });
 		});
-		const captured: (UploadValue | null)[] = [];
+		const captured: (UploadValue | UploadValue[] | null)[] = [];
 		const { container } = render(
 			<Wrap>
 				<UploadForm
@@ -63,7 +63,7 @@ describe("UploadForm", () => {
 				{ status: 413 },
 			),
 		);
-		const captured: (UploadValue | null)[] = [];
+		const captured: (UploadValue | UploadValue[] | null)[] = [];
 		const { container, getByRole } = render(
 			<Wrap>
 				<UploadForm
@@ -83,7 +83,7 @@ describe("UploadForm", () => {
 
 	test("Upload with a value renders preview and clears to null on remove", async () => {
 		const Wrap = clientWrapper(() => uploadResponse());
-		const captured: (UploadValue | null)[] = [];
+		const captured: (UploadValue | UploadValue[] | null)[] = [];
 		const { getByRole, getByText } = render(
 			<Wrap>
 				<UploadForm
@@ -111,7 +111,7 @@ describe("UploadForm", () => {
 			height: 10,
 			sizes: [],
 		};
-		const captured: (UploadValue | null)[] = [];
+		const captured: (UploadValue | UploadValue[] | null)[] = [];
 		const Wrap = clientWrapper(() => uploadResponse());
 		const { container } = render(
 			<Wrap>

@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Dsl\Fields\Upload;
 
 final class RuleWalker
 {
@@ -52,6 +53,9 @@ final class RuleWalker
         if ($field instanceof Select && $field->isMultiple()) {
             return self::fromMultipleSelectField($field, $prefix);
         }
+        if ($field instanceof Upload && $field->isMultiple()) {
+            return self::fromMultipleUploadField($field, $prefix);
+        }
 
         $key = $prefix.$field->name;
         // Rule-less fields get a permissive baseline so validate()
@@ -90,6 +94,53 @@ final class RuleWalker
                 }
             } else {
                 $elementRules[] = $entry;
+            }
+        }
+
+        $rules = [$key => $fieldRules];
+        if ($elementRules !== []) {
+            $rules[$key.'.*'] = $elementRules;
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Multiple-upload: same split as multiple-select — field-level rules
+     * (required, array, max, min, …) stay on the field key; everything else
+     * goes to the element key. Auto-injects `max:{maxFiles}` from the DSL
+     * option when present and not already declared.
+     *
+     * @return array<string, list<string>>
+     */
+    private static function fromMultipleUploadField(Upload $field, string $prefix): array
+    {
+        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
+        $key = $prefix.$field->name;
+        $allEntries = $field->ruleEntries();
+
+        $fieldRules = ['array'];
+        $elementRules = [];
+        $hasMax = false;
+
+        foreach ($allEntries as $entry) {
+            $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
+            if (in_array($name, $fieldLevel, true)) {
+                if ($entry !== 'array') {
+                    $fieldRules[] = $entry;
+                }
+                if ($name === 'max') {
+                    $hasMax = true;
+                }
+            } else {
+                $elementRules[] = $entry;
+            }
+        }
+
+        if (! $hasMax) {
+            $maxFiles = $field->toNode()->options['maxFiles'] ?? null;
+            if (is_int($maxFiles)) {
+                $fieldRules[] = "max:{$maxFiles}";
             }
         }
 

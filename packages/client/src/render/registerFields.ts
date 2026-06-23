@@ -96,7 +96,10 @@ function registerStructuredFields(): void {
 		form: KeyvalueForm,
 		cell: KeyvalueCell,
 	});
-	defineFieldClient<"upload", UploadValue>("upload", { form: UploadForm, cell: UploadCell });
+	defineFieldClient<"upload", UploadValue | UploadValue[]>("upload", {
+		form: UploadForm,
+		cell: UploadCell,
+	});
 	defineFieldClient<"media", MediaPickerValue>("media", {
 		form: MediaPickerForm,
 		cell: MediaPickerCell,

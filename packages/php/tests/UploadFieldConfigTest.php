@@ -56,6 +56,31 @@ it('UploadFieldConfig: exposes the nested image conversion options', function ()
     expect($config->image)->toBe(['convertTo' => 'webp', 'quality' => 70]);
 });
 
+it('Upload: multiple() serializes as options.multiple = true', function (): void {
+    $node = Upload::make('gallery')->multiple()->toNode();
+
+    expect($node->options['multiple'])->toBeTrue();
+});
+
+it('Upload: maxFiles() serializes as options.maxFiles', function (): void {
+    $node = Upload::make('gallery')->multiple()->maxFiles(5)->toNode();
+
+    expect($node->options['maxFiles'])->toBe(5);
+});
+
+it('Upload: reorderable() serializes as options.reorderable = true', function (): void {
+    $node = Upload::make('gallery')->multiple()->reorderable()->toNode();
+
+    expect($node->options['reorderable'])->toBeTrue();
+});
+
+it('Upload: isMultiple() reads back the flag', function (): void {
+    $field = Upload::make('gallery')->multiple();
+
+    expect($field->isMultiple())->toBeTrue();
+    expect(Upload::make('single')->isMultiple())->toBeFalse();
+});
+
 it('UploadFieldConfig: inline options override the preset base', function (): void {
     config()->set('tbtop-admin.uploads', [
         'foo' => [

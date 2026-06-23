@@ -105,6 +105,10 @@ class KitchenSinkPage extends Page
                         ->disk('public')->directory('docs')->visibility('public')
                         ->accept('image/*')->maxSize(5 * 1024 * 1024)
                         ->convertTo('webp')->quality(80),
+                    $s->upload('gallery')->label('Gallery')
+                        ->disk('public')->directory('gallery')
+                        ->accept('image/*')->maxSize(5 * 1024 * 1024)
+                        ->multiple()->maxFiles(5)->reorderable(),
                     $s->relation('category_id')
                         ->labelKey('name')
                         ->searchable()
