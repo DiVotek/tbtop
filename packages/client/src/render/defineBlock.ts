@@ -7,6 +7,7 @@ export function defineBlock<TKind extends string, TOptions>(
 		behavior: "leaf" | "container" | "field";
 		render: ComponentType<RenderProps<TOptions>>;
 		defaultOptions?: Partial<TOptions>;
+		serialize?: (value: unknown, options: TOptions) => unknown;
 	},
 ): BlockDescriptor<TKind, TOptions> {
 	return registerBlock<TKind, TOptions>({
@@ -14,5 +15,6 @@ export function defineBlock<TKind extends string, TOptions>(
 		behavior: descriptor.behavior,
 		render: descriptor.render,
 		defaultOptions: descriptor.defaultOptions,
+		serialize: descriptor.serialize,
 	});
 }

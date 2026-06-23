@@ -22,10 +22,10 @@ final class Upload extends Field
     /**
      * Override how an uploaded file is stored. The closure receives the
      * UploadedFile and the resolved UploadFieldConfig and must return the wire
-     * envelope (id, filename, mimeType, filesize, url, width, height, sizes).
-     * Default stores to the configured disk. Never serialized to the client.
+     * shape `{path, url}`. Default stores to the configured disk. Never
+     * serialized to the client.
      *
-     * @param  Closure(UploadedFile, UploadFieldConfig): array<string, mixed>  $fn
+     * @param  Closure(UploadedFile, UploadFieldConfig): array{path: string, url: string}  $fn
      */
     public function saveUsing(Closure $fn): static
     {
@@ -72,12 +72,6 @@ final class Upload extends Field
     public function maxSize(int $bytes): static
     {
         return $this->set('maxSize', $bytes);
-    }
-
-    /** Base config preset name from config('tbtop-admin.uploads'). */
-    public function profile(string $name): static
-    {
-        return $this->set('profile', $name);
     }
 
     /** Convert the stored image to this format ('webp'|'jpeg'|'png'). */

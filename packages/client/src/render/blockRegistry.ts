@@ -35,6 +35,7 @@ export interface BlockDescriptor<TKind extends string = string, TOptions = unkno
 	behavior: BlockBehavior;
 	render: ComponentType<RenderProps<TOptions>>;
 	defaultOptions?: Partial<TOptions>;
+	serialize?: (value: unknown, options: TOptions) => unknown;
 }
 
 // The heterogeneous store. `render` is contravariant in TOptions, so no

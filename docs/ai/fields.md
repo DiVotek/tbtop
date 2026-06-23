@@ -492,11 +492,13 @@ $s->upload('secret')->label('Private document')
     ->convertTo('webp')->quality(80),
 ```
 
-The upload happens over a **plain JSON endpoint** (not Inertia) before the form submits; the
-field's form value is the upload row the endpoint returned. `MediaNewPage.php` shows reading
-that row back on submit — `$ctx->form['file']` is an array with `filename`/`url`/`mimeType`
-keys (`apps/demo/app/Admin/Pages/MediaNewPage.php:40-49`). See [./wiring.md](./wiring.md) for
-the endpoint shape.
+The upload happens over a **page-scoped JSON endpoint** (not Inertia) before the form
+submits. The endpoint returns the minimal preview shape `{path, url}`; the field's form
+value — what reaches `$ctx->form['file']` on submit — is the **stored path string**
+(`uploads/photo.webp`), or an array of strings when `multiple()` is used. Metadata such as
+`filename`, `mimeType`, `width`, `height`, and `sizes` is no longer carried through the
+value; read it from disk in the submit handler if you need it (`MediaNewPage.php` shows
+this). See [./wiring.md](./wiring.md) for the endpoint shape.
 
 ---
 

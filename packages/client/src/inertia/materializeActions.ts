@@ -4,6 +4,7 @@ import { unwrapData } from "../data/envelope";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects } from "./effects";
+import { serializeFormData } from "./serializeFormData";
 
 type Bag = Record<string, unknown>;
 type Handler = (ctx: ClientActionContext) => Promise<void>;
@@ -11,6 +12,7 @@ type Handler = (ctx: ClientActionContext) => Promise<void>;
 interface ActionMaterializeCtx {
 	basePath: string;
 	formName?: string;
+	formNode?: StructureNode;
 	materializeNode: (node: StructureNode) => StructureNode;
 }
 
@@ -76,20 +78,32 @@ function fillRowTemplate(template: string, ctx: ClientActionContext): string {
 
 function buildHandler(node: StructureNode, spec: ActionSpec, ctx: ActionMaterializeCtx): Handler {
 	if (spec.type === "submit") {
-		return submitHandler(ctx.basePath, spec.form ?? ctx.formName ?? "");
+		return submitHandler(ctx.basePath, spec.form ?? ctx.formName ?? "", ctx.formNode);
 	}
 	if (spec.type === "custom") {
 		return async (actionCtx) => {
 			await getCustomAction(spec.handler ?? "")?.(actionCtx, spec.params ?? {});
 		};
 	}
-	return serverHandler(ctx.basePath, node.name ?? "", spec.needs ?? []);
+	return serverHandler({
+		basePath: ctx.basePath,
+		name: node.name ?? "",
+		needs: spec.needs ?? [],
+		formNode: ctx.formNode,
+	});
 }
 
-function submitHandler(basePath: string, formName: string): Handler {
+function submitHandler(
+	basePath: string,
+	formName: string,
+	formNode: StructureNode | undefined,
+): Handler {
 	return (ctx) =>
 		new Promise<void>((resolve, reject) => {
-			const data = (ctx.form?.data ?? {}) as Record<string, FormDataConvertible>;
+			const data = serializeFormData(ctx.form?.data ?? {}, formNode) as Record<
+				string,
+				FormDataConvertible
+			>;
 			router.post(`${basePath}/forms/${formName}`, data, {
 				preserveScroll: true,
 				preserveState: true,
@@ -116,10 +130,10 @@ function liftNestedErrors(errors: Record<string, string>): Record<string, string
 }
 
 /** Shape the row/selection/form payload an action endpoint expects. */
-function actionPayload(ctx: ClientActionContext, needs: string[]): Bag {
+function actionPayload(ctx: ClientActionContext, needs: string[], formNode?: StructureNode): Bag {
 	const payload: Bag = {};
 	if (needs.includes("form")) {
-		payload.form = ctx.form?.data ?? {};
+		payload.form = serializeFormData(ctx.form?.data ?? {}, formNode);
 	}
 	if (needs.includes("row")) {
 		payload.row = ctx.row ?? {};
@@ -131,9 +145,16 @@ function actionPayload(ctx: ClientActionContext, needs: string[]): Bag {
 	return payload;
 }
 
-function serverHandler(basePath: string, name: string, needs: string[]): Handler {
+interface ServerHandlerInput {
+	basePath: string;
+	name: string;
+	needs: string[];
+	formNode?: StructureNode;
+}
+
+function serverHandler({ basePath, name, needs, formNode }: ServerHandlerInput): Handler {
 	return async (ctx) => {
-		const payload = actionPayload(ctx, needs);
+		const payload = actionPayload(ctx, needs, formNode);
 		const body = (await ctx.client.post(`${basePath}/actions/${name}`, { payload })) as {
 			effects?: unknown;
 		};

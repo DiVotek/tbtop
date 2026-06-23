@@ -8,11 +8,11 @@ use Throwable;
 
 /**
  * Persists one upload for a resolved field: store, optional format conversion,
- * visibility, dimensions and resized variants, returning the wire envelope.
+ * visibility, returning the wire shape `{path, url}`.
  */
 final class UploadStorer
 {
-    /** @return array<string, mixed> */
+    /** @return array{path: string, url: string} */
     public static function store(UploadedFile $file, UploadFieldConfig $config): array
     {
         $path = $file->store($config->directory, $config->disk);
@@ -22,21 +22,12 @@ final class UploadStorer
 
         $format = $config->image['convertTo'] ?? null;
         $quality = $config->image['quality'] ?? null;
-        [$path, $mimeType] = self::convert($file, $path, $config, $format, $quality);
+        [$path] = self::convert($file, $path, $config, $format, $quality);
         self::applyVisibility($config->disk, $path, $config->visibility);
 
-        [$width, $height] = ImageSizes::dimensions($file);
-        $sizes = ImageSizes::generate($file, $path, $config->disk, $config->sizes, $format, $quality);
-
         return [
-            'id' => basename($path),
-            'filename' => $file->getClientOriginalName(),
-            'mimeType' => $mimeType,
-            'filesize' => Storage::disk($config->disk)->size($path),
+            'path' => $path,
             'url' => UploadUrl::make($config->disk, $path),
-            'width' => $width,
-            'height' => $height,
-            'sizes' => $sizes,
         ];
     }
 

@@ -13,8 +13,7 @@ it('UploadFieldConfig: applies defaults when nothing is set', function (): void 
         ->and($config->visibility)->toBe('public')
         ->and($config->maxSize)->toBe(5 * 1024 * 1024)
         ->and($config->accept)->toBe([])
-        ->and($config->image)->toBeNull()
-        ->and($config->sizes)->toBe([]);
+        ->and($config->image)->toBeNull();
 });
 
 it('UploadFieldConfig: normalizes a string accept to a list', function (): void {
@@ -79,21 +78,4 @@ it('Upload: isMultiple() reads back the flag', function (): void {
 
     expect($field->isMultiple())->toBeTrue();
     expect(Upload::make('single')->isMultiple())->toBeFalse();
-});
-
-it('UploadFieldConfig: inline options override the preset base', function (): void {
-    config()->set('tbtop-admin.uploads', [
-        'foo' => [
-            'disk' => 'public',
-            'directory' => 'presets',
-            'sizes' => ['thumb' => [64, 64]],
-        ],
-    ]);
-
-    $field = Upload::make('avatar')->profile('foo')->disk('s3');
-    $config = UploadFieldConfig::resolve($field);
-
-    expect($config->disk)->toBe('s3')          // inline wins
-        ->and($config->directory)->toBe('presets') // from preset
-        ->and($config->sizes)->toBe(['thumb' => [64, 64]]);
 });

@@ -26,24 +26,15 @@ class MediaNewPage extends Page
         return $s->stack([
             $s->form('upload', [
                 $s->upload('file')->label('Image')->required()
-                    ->set('entity', 'media')
-                    ->set('accept', 'image/*'),
+                    ->disk('public')->directory('uploads')->accept('image/*'),
                 FormActions::saveCancel($s, '/admin/media'),
             ])
                 ->record(['file' => null])
                 ->onSubmit(function (ActionCtx $ctx): string {
-                    // The upload field's form value is the UploadRow the
-                    // upload endpoint returned (camelCase keys).
-                    $file = is_array($ctx->form['file'] ?? null) ? $ctx->form['file'] : [];
-                    Media::create([
-                        'filename' => $file['filename'] ?? '',
-                        'url' => $file['url'] ?? '',
-                        'mime_type' => $file['mimeType'] ?? '',
-                        'filesize' => (int) ($file['filesize'] ?? 0),
-                        'width' => $file['width'] ?? null,
-                        'height' => $file['height'] ?? null,
-                        'sizes' => $file['sizes'] ?? [],
-                    ]);
+                    $path = is_string($ctx->form['file'] ?? null) ? $ctx->form['file'] : null;
+                    if ($path !== null) {
+                        Media::create(Media::metadataFromPath($path));
+                    }
 
                     return '/admin/media';
                 }),

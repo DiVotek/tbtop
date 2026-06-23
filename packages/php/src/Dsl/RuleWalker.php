@@ -47,14 +47,17 @@ final class RuleWalker
     /** @param  Field  $field @return array<string, list<string>> */
     private static function fromField(Field $field, string $prefix): array
     {
+        if ($field instanceof Upload && $field->isTranslatableField()) {
+            return self::fromTranslatableUploadField($field, $prefix);
+        }
         if ($field->isTranslatableField()) {
             return self::fromTranslatableField($field, $prefix);
         }
         if ($field instanceof Select && $field->isMultiple()) {
             return self::fromMultipleSelectField($field, $prefix);
         }
-        if ($field instanceof Upload && $field->isMultiple()) {
-            return self::fromMultipleUploadField($field, $prefix);
+        if ($field instanceof Upload) {
+            return self::fromUploadField($field, $prefix);
         }
 
         $key = $prefix.$field->name;
@@ -106,24 +109,63 @@ final class RuleWalker
     }
 
     /**
-     * Multiple-upload: same split as multiple-select — field-level rules
-     * (required, array, max, min, …) stay on the field key; everything else
-     * goes to the element key. Auto-injects `max:{maxFiles}` from the DSL
-     * option when present and not already declared.
+     * Upload values are path strings. Single upload defaults to
+     * `nullable|string`; multiple splits field-level rules (`array`, `max`,
+     * `required`, …) from element-level rules (`string` + anything else).
+     * Auto-injects `max:{maxFiles}` for multiple uploads when not declared.
      *
      * @return array<string, list<string>>
      */
-    private static function fromMultipleUploadField(Upload $field, string $prefix): array
+    private static function fromUploadField(Upload $field, string $prefix): array
+    {
+        $key = $prefix.$field->name;
+        $entries = $field->ruleEntries();
+
+        if (! $field->isMultiple()) {
+            return [$key => self::singleUploadRules($entries)];
+        }
+
+        return self::multipleUploadRules($field, $key, $entries);
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private static function fromTranslatableUploadField(Upload $field, string $prefix): array
+    {
+        $key = $prefix.$field->name;
+        $locales = self::contentLocales();
+        $default = self::defaultContentLocale($locales);
+        $fieldRules = $field->ruleEntries();
+        $overrides = $field->localeRuleEntries();
+        $rules = [$key => ['nullable', 'array']];
+
+        foreach ($locales as $locale) {
+            $dotKey = "{$key}.{$locale}";
+            $entries = $overrides[$locale] ?? ($locale === $default ? $fieldRules : ['nullable']);
+            if (! $field->isMultiple()) {
+                $rules[$dotKey] = self::singleUploadRules($entries);
+
+                continue;
+            }
+            $rules += self::multipleUploadRules($field, $dotKey, $entries);
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @param  list<string>  $entries
+     * @return array<string, list<string>>
+     */
+    private static function multipleUploadRules(Upload $field, string $key, array $entries): array
     {
         $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
-        $key = $prefix.$field->name;
-        $allEntries = $field->ruleEntries();
-
         $fieldRules = ['array'];
-        $elementRules = [];
+        $elementRules = ['string'];
         $hasMax = false;
 
-        foreach ($allEntries as $entry) {
+        foreach ($entries as $entry) {
             $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
             if (in_array($name, $fieldLevel, true)) {
                 if ($entry !== 'array') {
@@ -144,12 +186,26 @@ final class RuleWalker
             }
         }
 
-        $rules = [$key => $fieldRules];
-        if ($elementRules !== []) {
-            $rules[$key.'.*'] = $elementRules;
+        return [
+            $key => $fieldRules,
+            $key.'.*' => $elementRules,
+        ];
+    }
+
+    /**
+     * @param  list<string>  $entries
+     * @return list<string>
+     */
+    private static function singleUploadRules(array $entries): array
+    {
+        if ($entries === []) {
+            return ['nullable', 'string'];
+        }
+        if (in_array('string', $entries, true)) {
+            return $entries;
         }
 
-        return $rules;
+        return [...$entries, 'string'];
     }
 
     /**

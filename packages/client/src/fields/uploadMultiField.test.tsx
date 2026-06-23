@@ -4,42 +4,28 @@ import userEvent from "@testing-library/user-event";
 import { clientWrapper } from "../testFixtures";
 import { UploadForm, type UploadValue } from "./uploadField";
 
-const SAMPLE: UploadValue = { filename: "a.png", url: "/uploads/a.png" };
-const SAMPLE2: UploadValue = { filename: "b.png", url: "/uploads/b.png" };
+const SAMPLE: UploadValue = { path: "uploads/a.png", url: "/uploads/a.png" };
+const SAMPLE2: UploadValue = { path: "uploads/b.png", url: "/uploads/b.png" };
 
-function uploadResponse(filename = "new.png", url = "/uploads/new.png") {
-	return Response.json(
-		{
-			data: {
-				id: "u1",
-				filename,
-				url,
-				mimeType: "image/png",
-				filesize: 1,
-				width: 10,
-				height: 10,
-				sizes: [],
-			},
-		},
-		{ status: 201 },
-	);
+function uploadResponse(path = "uploads/new.png", url = "/uploads/new.png") {
+	return { data: { path, url } };
 }
 
 describe("UploadForm multi", () => {
-	test("uploads each file and emits an array via onChange", async () => {
-		let callIndex = 0;
-		const Wrap = clientWrapper(() => {
-			callIndex++;
-			return uploadResponse(`file${callIndex}.png`, `/uploads/file${callIndex}.png`);
-		});
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+	test("uploads each file and emits preview data via onChange", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
 					value={null}
 					onChange={(v) => captured.push(v)}
-					options={{ multiple: true, entity: "media" }}
+					options={{
+						multiple: true,
+						upload: async (_ctx, file) =>
+							uploadResponse(`uploads/${file.name}`, `/uploads/${file.name}`),
+					}}
 				/>
 			</Wrap>,
 		);
@@ -51,17 +37,21 @@ describe("UploadForm multi", () => {
 		const last = captured.at(-1);
 		expect(Array.isArray(last)).toBe(true);
 		expect((last as UploadValue[]).length).toBe(2);
+		expect(last).toEqual([
+			{ path: "uploads/file1.png", url: "/uploads/file1.png" },
+			{ path: "uploads/file2.png", url: "/uploads/file2.png" },
+		]);
 	});
 
 	test("maxFiles hides dropzone when limit is reached", () => {
-		const Wrap = clientWrapper(() => uploadResponse());
+		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
 					value={[SAMPLE]}
 					onChange={() => {}}
-					options={{ multiple: true, maxFiles: 1, entity: "media" }}
+					options={{ multiple: true, maxFiles: 1, upload: async () => uploadResponse() }}
 				/>
 			</Wrap>,
 		);
@@ -70,14 +60,14 @@ describe("UploadForm multi", () => {
 	});
 
 	test("shows dropzone when under maxFiles", () => {
-		const Wrap = clientWrapper(() => uploadResponse());
+		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
 					value={[SAMPLE]}
 					onChange={() => {}}
-					options={{ multiple: true, maxFiles: 3, entity: "media" }}
+					options={{ multiple: true, maxFiles: 3, upload: async () => uploadResponse() }}
 				/>
 			</Wrap>,
 		);
@@ -85,16 +75,16 @@ describe("UploadForm multi", () => {
 		expect(input).not.toBeNull();
 	});
 
-	test("remove emits the array without the removed item", async () => {
-		const Wrap = clientWrapper(() => uploadResponse());
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+	test("remove emits preview data without the removed item", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
 		const { getAllByRole } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
 					value={[SAMPLE, SAMPLE2]}
 					onChange={(v) => captured.push(v)}
-					options={{ multiple: true, entity: "media" }}
+					options={{ multiple: true, upload: async () => uploadResponse() }}
 				/>
 			</Wrap>,
 		);
@@ -102,18 +92,22 @@ describe("UploadForm multi", () => {
 		await userEvent.click(removeButtons[0]!);
 		const last = captured.at(-1) as UploadValue[];
 		expect(last).toHaveLength(1);
-		expect(last[0]!.filename).toBe("b.png");
+		expect(last[0]).toEqual(SAMPLE2);
 	});
 
 	test("reorderable renders drag handles", () => {
-		const Wrap = clientWrapper(() => uploadResponse());
+		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
 					value={[SAMPLE, SAMPLE2]}
 					onChange={() => {}}
-					options={{ multiple: true, reorderable: true, entity: "media" }}
+					options={{
+						multiple: true,
+						reorderable: true,
+						upload: async () => uploadResponse(),
+					}}
 				/>
 			</Wrap>,
 		);
@@ -122,14 +116,14 @@ describe("UploadForm multi", () => {
 	});
 
 	test("non-reorderable does not render drag handles", () => {
-		const Wrap = clientWrapper(() => uploadResponse());
+		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
 					value={[SAMPLE, SAMPLE2]}
 					onChange={() => {}}
-					options={{ multiple: true, entity: "media" }}
+					options={{ multiple: true, upload: async () => uploadResponse() }}
 				/>
 			</Wrap>,
 		);
@@ -138,14 +132,14 @@ describe("UploadForm multi", () => {
 	});
 
 	test("multiple attribute is set on the file input", () => {
-		const Wrap = clientWrapper(() => uploadResponse());
+		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
 					value={null}
 					onChange={() => {}}
-					options={{ multiple: true, entity: "media" }}
+					options={{ multiple: true, upload: async () => uploadResponse() }}
 				/>
 			</Wrap>,
 		);
@@ -165,5 +159,11 @@ describe("UploadCell multi", () => {
 		const { UploadCell } = require("./uploadField");
 		const { container } = render(<UploadCell value={[]} />);
 		expect(container.textContent).toBe("");
+	});
+
+	test("array of string paths renders count", () => {
+		const { UploadCell } = require("./uploadField");
+		const { container } = render(<UploadCell value={["uploads/a.png", "uploads/b.png"]} />);
+		expect(container.textContent).toContain("2");
 	});
 });
