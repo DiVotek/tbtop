@@ -101,7 +101,7 @@ export function UploadMultiForm({
 					const row: UploadRow = await runUpload({ opts, ctx, client, file });
 					patchTask(setTasks, task.id, { status: "done", pct: 100 });
 					const latest = toArray(valueRef.current);
-					const next = [...latest.map((item) => item.path), row.path];
+					const next = [...latest, row];
 					valueRef.current = next;
 					onChange(next);
 				} catch (err) {
@@ -114,7 +114,7 @@ export function UploadMultiForm({
 	);
 
 	const handleRemove = (index: number) => {
-		const next = items.filter((_, i) => i !== index).map((item) => item.path);
+		const next = items.filter((_, i) => i !== index);
 		onChange(next.length > 0 ? next : null);
 	};
 
@@ -128,7 +128,7 @@ export function UploadMultiForm({
 		if (oldIndex === -1 || newIndex === -1) {
 			return;
 		}
-		onChange(arrayMove(items, oldIndex, newIndex).map((item) => item.path));
+		onChange(arrayMove(items, oldIndex, newIndex));
 	};
 
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));

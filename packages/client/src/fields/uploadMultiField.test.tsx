@@ -12,7 +12,7 @@ function uploadResponse(path = "uploads/new.png", url = "/uploads/new.png") {
 }
 
 describe("UploadForm multi", () => {
-	test("uploads each file and emits an array of paths via onChange", async () => {
+	test("uploads each file and emits preview data via onChange", async () => {
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
 		const { container } = render(
@@ -36,8 +36,11 @@ describe("UploadForm multi", () => {
 		await waitFor(() => expect(captured.length).toBe(2));
 		const last = captured.at(-1);
 		expect(Array.isArray(last)).toBe(true);
-		expect((last as string[]).length).toBe(2);
-		expect(last).toEqual(["uploads/file1.png", "uploads/file2.png"]);
+		expect((last as UploadValue[]).length).toBe(2);
+		expect(last).toEqual([
+			{ path: "uploads/file1.png", url: "/uploads/file1.png" },
+			{ path: "uploads/file2.png", url: "/uploads/file2.png" },
+		]);
 	});
 
 	test("maxFiles hides dropzone when limit is reached", () => {
@@ -72,7 +75,7 @@ describe("UploadForm multi", () => {
 		expect(input).not.toBeNull();
 	});
 
-	test("remove emits the array of paths without the removed item", async () => {
+	test("remove emits preview data without the removed item", async () => {
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
 		const { getAllByRole } = render(
@@ -87,9 +90,9 @@ describe("UploadForm multi", () => {
 		);
 		const removeButtons = getAllByRole("button", { name: /remove/i });
 		await userEvent.click(removeButtons[0]!);
-		const last = captured.at(-1) as string[];
+		const last = captured.at(-1) as UploadValue[];
 		expect(last).toHaveLength(1);
-		expect(last[0]).toBe("uploads/b.png");
+		expect(last[0]).toEqual(SAMPLE2);
 	});
 
 	test("reorderable renders drag handles", () => {

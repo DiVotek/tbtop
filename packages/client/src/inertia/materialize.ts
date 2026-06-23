@@ -20,6 +20,7 @@ export interface MaterializeInput {
 
 interface WalkCtx extends MaterializeInput {
 	formName?: string;
+	formNode?: StructureNode;
 }
 
 /**
@@ -94,6 +95,7 @@ function actionOptions(node: StructureNode, ctx: WalkCtx): Bag {
 	return materializeActionOptions(node, {
 		basePath: ctx.basePath,
 		formName: ctx.formName,
+		formNode: ctx.formNode,
 		materializeNode: (child) => walk(child, ctx),
 	});
 }
@@ -132,7 +134,7 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 
 function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const name = node.name ?? "";
-	const formCtx: WalkCtx = { ...ctx, formName: name };
+	const formCtx: WalkCtx = { ...ctx, formName: name, formNode: node };
 	const options = walkChildren(node.options as Bag, formCtx);
 	const record = ctx.data[name] ?? {};
 	const constraints = collectConstraints(node, {});

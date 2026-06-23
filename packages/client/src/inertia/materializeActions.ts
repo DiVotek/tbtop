@@ -4,6 +4,7 @@ import { unwrapData } from "../data/envelope";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects } from "./effects";
+import { serializeFormData } from "./serializeFormData";
 
 type Bag = Record<string, unknown>;
 type Handler = (ctx: ClientActionContext) => Promise<void>;
@@ -11,6 +12,7 @@ type Handler = (ctx: ClientActionContext) => Promise<void>;
 interface ActionMaterializeCtx {
 	basePath: string;
 	formName?: string;
+	formNode?: StructureNode;
 	materializeNode: (node: StructureNode) => StructureNode;
 }
 
@@ -76,7 +78,7 @@ function fillRowTemplate(template: string, ctx: ClientActionContext): string {
 
 function buildHandler(node: StructureNode, spec: ActionSpec, ctx: ActionMaterializeCtx): Handler {
 	if (spec.type === "submit") {
-		return submitHandler(ctx.basePath, spec.form ?? ctx.formName ?? "");
+		return submitHandler(ctx.basePath, spec.form ?? ctx.formName ?? "", ctx.formNode);
 	}
 	if (spec.type === "custom") {
 		return async (actionCtx) => {
@@ -86,10 +88,17 @@ function buildHandler(node: StructureNode, spec: ActionSpec, ctx: ActionMaterial
 	return serverHandler(ctx.basePath, node.name ?? "", spec.needs ?? []);
 }
 
-function submitHandler(basePath: string, formName: string): Handler {
+function submitHandler(
+	basePath: string,
+	formName: string,
+	formNode: StructureNode | undefined,
+): Handler {
 	return (ctx) =>
 		new Promise<void>((resolve, reject) => {
-			const data = (ctx.form?.data ?? {}) as Record<string, FormDataConvertible>;
+			const data = serializeFormData(ctx.form?.data ?? {}, formNode) as Record<
+				string,
+				FormDataConvertible
+			>;
 			router.post(`${basePath}/forms/${formName}`, data, {
 				preserveScroll: true,
 				preserveState: true,

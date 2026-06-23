@@ -23,7 +23,7 @@ import { TextCell, TextForm } from "../fields/textField";
 import { ToggleButtonsCell, ToggleButtonsForm } from "../fields/toggleButtonsField";
 import { UnknownCell, UnknownForm } from "../fields/unknownField";
 import { UploadCell } from "../fields/uploadCell";
-import { UploadForm, type UploadValue } from "../fields/uploadField";
+import { serializeUploadValue, UploadForm, type UploadValue } from "../fields/uploadField";
 import { MediaPickerCell, MediaPickerForm, type MediaPickerValue } from "../media/mediaPickerField";
 import { defineFieldClient } from "./defineFieldClient";
 
@@ -100,6 +100,7 @@ function registerStructuredFields(): void {
 	defineFieldClient<"upload", UploadValue | UploadValue[] | string | string[]>("upload", {
 		form: UploadForm,
 		cell: UploadCell,
+		serialize: serializeUploadValue,
 	});
 	defineFieldClient<"media", MediaPickerValue>("media", {
 		form: MediaPickerForm,

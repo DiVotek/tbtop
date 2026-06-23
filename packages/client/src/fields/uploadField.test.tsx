@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { RowProvider } from "../structure/rowContext";
 import { clientWrapper } from "../testFixtures";
 import { basename, UploadCell, UploadForm, type UploadValue } from "./uploadField";
@@ -12,7 +13,7 @@ function uploadResponse(path = "uploads/pic.png", url = "/uploads/pic.png") {
 }
 
 describe("UploadForm", () => {
-	test("Upload posts the picked file to the configured endpoint and emits the path", async () => {
+	test("Upload posts the picked file to the configured endpoint and emits preview data", async () => {
 		const seen: string[] = [];
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
@@ -36,7 +37,36 @@ describe("UploadForm", () => {
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
 		expect(seen[0]).toBe("hello.png");
-		expect(captured.at(-1)).toBe("uploads/hello.png");
+		expect(captured.at(-1)).toEqual({ path: "uploads/hello.png", url: "/uploads/hello.png" });
+	});
+
+	test("Upload keeps the returned url for immediate preview", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		function Harness() {
+			const [value, setValue] = useState<UploadValue | string | null>(null);
+			return (
+				<UploadForm
+					name="file"
+					value={value}
+					onChange={(next) => setValue(next as UploadValue | string | null)}
+					options={{
+						upload: async () => uploadResponse("uploads/hello.png", "/signed/hello"),
+					}}
+				/>
+			);
+		}
+		const { container, findByRole } = render(
+			<Wrap>
+				<Harness />
+			</Wrap>,
+		);
+		const file = new File(["x"], "hello.png", { type: "image/png" });
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+
+		await userEvent.upload(input, file);
+
+		const img = await findByRole("img");
+		expect(img.getAttribute("src")).toBe("/signed/hello");
 	});
 
 	test("Upload surfaces a server error message and does not call onChange", async () => {
@@ -81,7 +111,7 @@ describe("UploadForm", () => {
 		expect(captured.at(-1)).toBeNull();
 	});
 
-	test("Upload uses the injected upload closure and emits the path", async () => {
+	test("Upload uses the injected upload closure and emits preview data", async () => {
 		const seen: File[] = [];
 		const row = { path: "uploads/doc.png", url: "/uploads/doc.png" };
 		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
@@ -106,7 +136,7 @@ describe("UploadForm", () => {
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
 		expect(seen[0]).toBe(file);
-		expect(captured.at(-1)).toBe("uploads/doc.png");
+		expect(captured.at(-1)).toEqual(row);
 	});
 
 	test("Upload accept attribute forwards to the file input", () => {

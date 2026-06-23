@@ -58,6 +58,34 @@ export function basename(path: string): string {
 	return path.split("/").pop()?.split("\\").pop() ?? path;
 }
 
+export function serializeUploadValue(value: unknown): unknown {
+	if (value === null || value === undefined || typeof value === "string") {
+		return value ?? null;
+	}
+	if (Array.isArray(value)) {
+		return value.map(serializeUploadItem);
+	}
+	return serializeUploadItem(value);
+}
+
+function serializeUploadItem(value: unknown): unknown {
+	if (typeof value === "string") {
+		return value;
+	}
+	if (isUploadValue(value)) {
+		return value.path;
+	}
+	return value;
+}
+
+function isUploadValue(value: unknown): value is UploadValue {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		typeof (value as { path?: unknown }).path === "string"
+	);
+}
+
 export function useUploadDependencies() {
 	return {
 		t: useTranslation(),

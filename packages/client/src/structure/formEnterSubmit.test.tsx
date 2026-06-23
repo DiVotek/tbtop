@@ -94,6 +94,104 @@ describe("Form Enter-to-submit", () => {
 		expect(postCalls[0]?.data).toEqual({ title: "Hello" });
 	});
 
+	test("submit serializes upload preview objects to stored path strings", async () => {
+		const raw = node(
+			"form",
+			{
+				name: "post",
+				children: [
+					node("section", { children: [node("upload", { label: "Cover" }, "cover")] }),
+					node("action", { label: "Save", spec: { type: "submit" } }, "save"),
+				],
+			},
+			"post",
+		);
+		const formNode = materialize(raw, {
+			basePath: "/admin/posts",
+			data: { post: { cover: { path: "uploads/a.png", url: "/storage/uploads/a.png" } } },
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(formNode)}</Wrap>);
+		const form = await findByTestId("form-block");
+
+		await act(async () => {
+			fireEvent.submit(form);
+		});
+
+		expect(postCalls[0]?.data).toEqual({ cover: "uploads/a.png" });
+	});
+
+	test("submit serializes upload preview objects inside repeater rows", async () => {
+		const raw = node(
+			"form",
+			{
+				name: "post",
+				children: [
+					node(
+						"repeater",
+						{ fields: [node("upload", { label: "Attachment" }, "file")] },
+						"sections",
+					),
+					node("action", { label: "Save", spec: { type: "submit" } }, "save"),
+				],
+			},
+			"post",
+		);
+		const formNode = materialize(raw, {
+			basePath: "/admin/posts",
+			data: {
+				post: {
+					sections: [{ file: { path: "uploads/a.png", url: "/storage/uploads/a.png" } }],
+				},
+			},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(formNode)}</Wrap>);
+		const form = await findByTestId("form-block");
+
+		await act(async () => {
+			fireEvent.submit(form);
+		});
+
+		expect(postCalls[0]?.data).toEqual({ sections: [{ file: "uploads/a.png" }] });
+	});
+
+	test("submit serializes translatable upload preview objects per locale", async () => {
+		const raw = node(
+			"form",
+			{
+				name: "post",
+				children: [
+					node("upload", { label: "Cover", translatable: true }, "cover"),
+					node("action", { label: "Save", spec: { type: "submit" } }, "save"),
+				],
+			},
+			"post",
+		);
+		const formNode = materialize(raw, {
+			basePath: "/admin/posts",
+			data: {
+				post: {
+					cover: {
+						en: { path: "uploads/en.png", url: "/storage/uploads/en.png" },
+						uk: { path: "uploads/uk.png", url: "/storage/uploads/uk.png" },
+					},
+				},
+			},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(formNode)}</Wrap>);
+		const form = await findByTestId("form-block");
+
+		await act(async () => {
+			fireEvent.submit(form);
+		});
+
+		expect(postCalls[0]?.data).toEqual({
+			cover: { en: "uploads/en.png", uk: "uploads/uk.png" },
+		});
+	});
+
 	test("submit keybinding and Enter both reach submit, independent of other bindings", async () => {
 		const formNode = buildForm([
 			node(

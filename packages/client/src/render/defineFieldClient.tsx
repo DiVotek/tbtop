@@ -7,6 +7,7 @@ export interface FieldClientDescriptor<P = unknown> {
 	form: ComponentType<FieldFormProps<P>>;
 	cell: ComponentType<FieldCellProps<P>>;
 	defaultOptions?: P;
+	serialize?: (value: unknown, options: P) => unknown;
 }
 
 const NOOP_CHANGE = () => {};
@@ -20,6 +21,7 @@ export function defineFieldClient<T extends string, P>(
 		behavior: "field",
 		render: FieldRender,
 		defaultOptions: descriptor.defaultOptions as Partial<P> | undefined,
+		serialize: descriptor.serialize,
 	});
 }
 

@@ -15,7 +15,13 @@ import {
 
 export { UploadCell } from "./uploadCell";
 export type { RunUploadInput, UploadOptionsBag, UploadValue } from "./uploadUtils";
-export { basename, exceedsMaxSize, looksLikeImage, runUpload } from "./uploadUtils";
+export {
+	basename,
+	exceedsMaxSize,
+	looksLikeImage,
+	runUpload,
+	serializeUploadValue,
+} from "./uploadUtils";
 
 export function UploadForm(
 	props: FieldFormProps<UploadValue | UploadValue[] | string | string[], UploadOptionsBag>,
@@ -65,7 +71,7 @@ function UploadSingleForm({
 		setError(null);
 		try {
 			const row = await runUpload({ opts, ctx, client, file });
-			onChange(row.path);
+			onChange(row);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {

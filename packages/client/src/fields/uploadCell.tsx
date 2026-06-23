@@ -35,7 +35,7 @@ export function UploadCell({
 			return null;
 		}
 		const filename = basename(first.path);
-		const isImg = looksLikeImage(first.url, first.path);
+		const isImg = first.url !== "" && looksLikeImage(first.url, first.path);
 		return (
 			<span className="flex items-center gap-1.5">
 				{isImg ? (
