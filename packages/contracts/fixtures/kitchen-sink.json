@@ -492,6 +492,7 @@
                                             "accept": "image/*",
                                             "maxSize": 5242880,
                                             "multiple": true,
+                                            "minFiles": 2,
                                             "maxFiles": 5,
                                             "reorderable": true
                                         },

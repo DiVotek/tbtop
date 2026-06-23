@@ -14,7 +14,16 @@ import { UploadMultiForm } from "./uploadMultiField";
 export interface UploadValue {
 	filename: string;
 	url: string;
+	path?: string;
 }
+
+// Render feeds the inflated object(s); submit emits the bare path string(s) —
+// the locked Filament asymmetry. The form value type spans both directions.
+export type SingleFormValue = UploadValue | string;
+export type MultiFormValue = UploadValue | UploadValue[] | string[];
+
+type SingleFormProps = FieldFormProps<SingleFormValue, UploadOptionsBag>;
+type MultiFormProps = FieldFormProps<MultiFormValue, UploadOptionsBag>;
 
 type UploadFn = (ctx: ClientActionContext, file: File, signal?: AbortSignal) => Promise<unknown>;
 
@@ -38,9 +47,9 @@ interface UploadRowShape {
 
 export function UploadForm(props: FieldFormProps<UploadValue | UploadValue[], UploadOptionsBag>) {
 	if (props.options?.multiple) {
-		return <UploadMultiForm {...props} />;
+		return <UploadMultiForm {...(props as MultiFormProps)} />;
 	}
-	return <UploadSingleForm {...(props as FieldFormProps<UploadValue, UploadOptionsBag>)} />;
+	return <UploadSingleForm {...(props as SingleFormProps)} />;
 }
 
 function UploadSingleForm({
@@ -50,7 +59,7 @@ function UploadSingleForm({
 	onChange,
 	disabled,
 	options,
-}: FieldFormProps<UploadValue, UploadOptionsBag>) {
+}: FieldFormProps<UploadValue | string, UploadOptionsBag>) {
 	const t = useTranslation();
 	const ctx = useClientActionContext();
 	const client = useClient();
@@ -70,7 +79,8 @@ function UploadSingleForm({
 		setError(null);
 		try {
 			const row = await runUpload({ opts, ctx, client, file, t });
-			onChange({ ...row });
+			// Filament string-path contract: emit the bare path, not the envelope.
+			onChange(row.path);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
@@ -142,7 +152,7 @@ export function exceedsMaxSize(opts: UploadOptionsBag, file: File): boolean {
 }
 
 interface PreviewProps {
-	value: UploadValue;
+	value: UploadValue | string;
 	onRemove: () => void;
 }
 

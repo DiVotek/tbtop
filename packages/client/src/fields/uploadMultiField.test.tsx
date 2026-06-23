@@ -4,14 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { clientWrapper } from "../testFixtures";
 import { UploadForm, type UploadValue } from "./uploadField";
 
-const SAMPLE: UploadValue = { filename: "a.png", url: "/uploads/a.png" };
-const SAMPLE2: UploadValue = { filename: "b.png", url: "/uploads/b.png" };
+const SAMPLE: UploadValue = { filename: "a.png", url: "/uploads/a.png", path: "uploads/a.png" };
+const SAMPLE2: UploadValue = { filename: "b.png", url: "/uploads/b.png", path: "uploads/b.png" };
 
-function uploadResponse(filename = "new.png", url = "/uploads/new.png") {
+function uploadResponse(filename = "new.png", url = "/uploads/new.png", path = "uploads/new.png") {
 	return Response.json(
 		{
 			data: {
 				id: "u1",
+				path,
 				filename,
 				url,
 				mimeType: "image/png",
@@ -26,13 +27,17 @@ function uploadResponse(filename = "new.png", url = "/uploads/new.png") {
 }
 
 describe("UploadForm multi", () => {
-	test("uploads each file and emits an array via onChange", async () => {
+	test("uploads each file and emits an array of path strings via onChange", async () => {
 		let callIndex = 0;
 		const Wrap = clientWrapper(() => {
 			callIndex++;
-			return uploadResponse(`file${callIndex}.png`, `/uploads/file${callIndex}.png`);
+			return uploadResponse(
+				`file${callIndex}.png`,
+				`/uploads/file${callIndex}.png`,
+				`uploads/file${callIndex}.webp`,
+			);
 		});
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+		const captured: (UploadValue | UploadValue[] | string[] | null)[] = [];
 		const { container } = render(
 			<Wrap>
 				<UploadForm
@@ -48,9 +53,8 @@ describe("UploadForm multi", () => {
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		await userEvent.upload(input, [file1, file2]);
 		await waitFor(() => expect(captured.length).toBe(2));
-		const last = captured.at(-1);
-		expect(Array.isArray(last)).toBe(true);
-		expect((last as UploadValue[]).length).toBe(2);
+		// Filament string-path contract: multiple emits an array of bare paths.
+		expect(captured.at(-1)).toEqual(["uploads/file1.webp", "uploads/file2.webp"]);
 	});
 
 	test("maxFiles hides dropzone when limit is reached", () => {
@@ -85,10 +89,10 @@ describe("UploadForm multi", () => {
 		expect(input).not.toBeNull();
 	});
 
-	test("remove emits the array without the removed item", async () => {
+	test("remove emits the path array while the preview still shows the object filename", async () => {
 		const Wrap = clientWrapper(() => uploadResponse());
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
-		const { getAllByRole } = render(
+		const captured: (UploadValue | UploadValue[] | string[] | null)[] = [];
+		const { getAllByRole, getByText } = render(
 			<Wrap>
 				<UploadForm
 					name="files"
@@ -98,11 +102,12 @@ describe("UploadForm multi", () => {
 				/>
 			</Wrap>,
 		);
+		// Display keeps the inflated object: the filename label is still visible.
+		expect(getByText("b.png")).toBeTruthy();
 		const removeButtons = getAllByRole("button", { name: /remove/i });
 		await userEvent.click(removeButtons[0]!);
-		const last = captured.at(-1) as UploadValue[];
-		expect(last).toHaveLength(1);
-		expect(last[0]!.filename).toBe("b.png");
+		// Emit is the path string, not the object — the locked asymmetry.
+		expect(captured.at(-1)).toEqual(["uploads/b.png"]);
 	});
 
 	test("reorderable renders drag handles", () => {

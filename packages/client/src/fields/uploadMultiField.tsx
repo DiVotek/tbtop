@@ -11,6 +11,7 @@ import { useClientActionContext } from "../structure/actionContext";
 import type { FieldFormProps } from "./fieldProps";
 import {
 	exceedsMaxSize,
+	type MultiFormValue,
 	runUpload,
 	type UploadOptionsBag,
 	UploadPicker,
@@ -18,11 +19,20 @@ import {
 } from "./uploadField";
 import { UploadSortableItem, UploadStaticItem } from "./uploadSortableItem";
 
-function toArray(value: UploadValue | UploadValue[] | null): UploadValue[] {
+function toItem(value: UploadValue | string): UploadValue {
+	return typeof value === "string" ? { url: value, filename: value, path: value } : value;
+}
+
+function toArray(value: MultiFormValue | null): UploadValue[] {
 	if (!value) {
 		return [];
 	}
-	return Array.isArray(value) ? value : [value];
+	return (Array.isArray(value) ? value : [value]).map(toItem);
+}
+
+/** Emit value is the bare path of each item; a string item is already its path. */
+function toPaths(items: UploadValue[]): string[] {
+	return items.map((item) => item.path ?? item.url);
 }
 
 function itemId(item: UploadValue, index: number): string {
@@ -36,7 +46,7 @@ export function UploadMultiForm({
 	onChange,
 	disabled,
 	options,
-}: FieldFormProps<UploadValue | UploadValue[], UploadOptionsBag>) {
+}: FieldFormProps<MultiFormValue, UploadOptionsBag>) {
 	const t = useTranslation();
 	const ctx = useClientActionContext();
 	const client = useClient();
@@ -45,8 +55,10 @@ export function UploadMultiForm({
 	const items = toArray(value);
 	const canAddMore = !opts.maxFiles || items.length < opts.maxFiles;
 
-	const valueRef = useRef(value);
-	valueRef.current = value;
+	// Display holds the inflated objects; the ref accumulates them across an
+	// async batch. Each onChange emits the derived path array, not the objects.
+	const valueRef = useRef<UploadValue[]>(items);
+	valueRef.current = items;
 
 	const [tasks, setTasks] = useState<UploadTask[]>([]);
 	const [error, setError] = useState<string | null>(null);
@@ -62,7 +74,7 @@ export function UploadMultiForm({
 			setError(null);
 
 			const remaining = opts.maxFiles
-				? opts.maxFiles - toArray(valueRef.current).length
+				? opts.maxFiles - valueRef.current.length
 				: files.length;
 			const batch = Array.from(files).slice(0, Math.max(0, remaining));
 			if (batch.length === 0) {
@@ -95,10 +107,9 @@ export function UploadMultiForm({
 				try {
 					const row: UploadRow = await runUpload({ opts, ctx, client, file, t });
 					patchTask(setTasks, task.id, { status: "done", pct: 100 });
-					const latest = toArray(valueRef.current);
-					const next = [...latest, { ...row }];
+					const next = [...valueRef.current, { ...row }];
 					valueRef.current = next;
-					onChange(next);
+					onChange(toPaths(next));
 				} catch (err) {
 					patchTask(setTasks, task.id, { status: "error" });
 					setError(err instanceof Error ? err.message : String(err));
@@ -110,7 +121,7 @@ export function UploadMultiForm({
 
 	const handleRemove = (index: number) => {
 		const next = items.filter((_, i) => i !== index);
-		onChange(next.length > 0 ? next : null);
+		onChange(next.length > 0 ? toPaths(next) : null);
 	};
 
 	const handleDragEnd = (event: DragEndEvent) => {
@@ -123,7 +134,7 @@ export function UploadMultiForm({
 		if (oldIndex === -1 || newIndex === -1) {
 			return;
 		}
-		onChange(arrayMove(items, oldIndex, newIndex));
+		onChange(toPaths(arrayMove(items, oldIndex, newIndex)));
 	};
 
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));

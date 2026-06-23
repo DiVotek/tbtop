@@ -92,10 +92,22 @@ final class Upload extends Field
         return $this->setImage('quality', $q);
     }
 
+    /** Shorthand: restrict accepted types to images. */
+    public function image(): static
+    {
+        return $this->accept('image/*');
+    }
+
     /** Maximum number of files when multiple is enabled. */
     public function maxFiles(int $max): static
     {
         return $this->set('maxFiles', $max);
+    }
+
+    /** Minimum number of files when multiple is enabled. */
+    public function minFiles(int $min): static
+    {
+        return $this->set('minFiles', $min);
     }
 
     /** Allow drag-to-reorder when multiple is enabled. */

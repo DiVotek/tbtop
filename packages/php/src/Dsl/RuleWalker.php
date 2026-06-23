@@ -108,8 +108,8 @@ final class RuleWalker
     /**
      * Multiple-upload: same split as multiple-select — field-level rules
      * (required, array, max, min, …) stay on the field key; everything else
-     * goes to the element key. Auto-injects `max:{maxFiles}` from the DSL
-     * option when present and not already declared.
+     * goes to the element key. Auto-injects `min:{minFiles}` and `max:{maxFiles}`
+     * from the DSL options when present and not already declared.
      *
      * @return array<string, list<string>>
      */
@@ -122,6 +122,7 @@ final class RuleWalker
         $fieldRules = ['array'];
         $elementRules = [];
         $hasMax = false;
+        $hasMin = false;
 
         foreach ($allEntries as $entry) {
             $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
@@ -132,13 +133,23 @@ final class RuleWalker
                 if ($name === 'max') {
                     $hasMax = true;
                 }
+                if ($name === 'min') {
+                    $hasMin = true;
+                }
             } else {
                 $elementRules[] = $entry;
             }
         }
 
+        $options = $field->toNode()->options;
+        if (! $hasMin) {
+            $minFiles = $options['minFiles'] ?? null;
+            if (is_int($minFiles)) {
+                $fieldRules[] = "min:{$minFiles}";
+            }
+        }
         if (! $hasMax) {
-            $maxFiles = $field->toNode()->options['maxFiles'] ?? null;
+            $maxFiles = $options['maxFiles'] ?? null;
             if (is_int($maxFiles)) {
                 $fieldRules[] = "max:{$maxFiles}";
             }

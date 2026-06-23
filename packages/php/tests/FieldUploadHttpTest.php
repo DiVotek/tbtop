@@ -27,6 +27,42 @@ it('FieldUpload: stores using disk and directory from the node', function (): vo
     Storage::disk('public')->assertExists('avatars/'.$data['id']);
 });
 
+it('FieldUpload: the response carries the full storage path the field emits on submit', function (): void {
+    $file = UploadedFile::fake()->image('a.png', 600, 400);
+
+    $data = $this->postJson('/admin/upload-field-page/uploads/avatar', ['file' => $file])
+        ->assertOk()->json('data');
+
+    // path is the full relative storage path (directory + basename), not the
+    // basename alone — the field emits this string as the form value.
+    expect($data['path'])->toBe('avatars/'.$data['id']);
+    Storage::disk('public')->assertExists($data['path']);
+});
+
+it('FieldUpload: the path points at the converted webp file, not the dropped original', function (): void {
+    $file = UploadedFile::fake()->image('c.png', 300, 200);
+
+    $data = $this->postJson('/admin/upload-field-page/uploads/cover', ['file' => $file])
+        ->assertOk()->json('data');
+
+    // The converted path is the post-swap path; the original .png is gone.
+    expect($data['path'])->toBe('covers/'.$data['id'])
+        ->and($data['path'])->toEndWith('.webp');
+    Storage::disk('public')->assertExists($data['path']);
+    Storage::disk('public')->assertMissing('covers/'.basename(str_replace('.webp', '.png', $data['id'])));
+})->skip(! function_exists('imagewebp'), 'GD webp encoder unavailable');
+
+it('FieldUpload: a private upload reports the relative path while the url stays signed', function (): void {
+    $data = $this->postJson('/admin/upload-field-page/uploads/secret', [
+        'file' => UploadedFile::fake()->image('a.png'),
+    ])->assertOk()->json('data');
+
+    // path is the plain disk path; signing keys off visibility, not the value shape.
+    expect($data['path'])->toBe('private-docs/'.$data['id'])
+        ->and($data['url'])->toContain('signature=')->not->toContain('/storage');
+    Storage::disk('local')->assertExists($data['path']);
+});
+
 it('FieldUpload: client cannot override disk or directory from the body', function (): void {
     $file = UploadedFile::fake()->image('a.png');
 

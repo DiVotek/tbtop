@@ -2,6 +2,7 @@
 
 namespace App\Admin\Pages;
 
+use App\Admin\Pages\Concerns\MediaFormFields;
 use App\Models\Media;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Dsl\Actions\FormActions;
@@ -11,6 +12,8 @@ use Tbtop\Admin\Pages\Page;
 
 class MediaNewPage extends Page
 {
+    use MediaFormFields;
+
     public static function path(): string
     {
         return 'media/new';
@@ -32,18 +35,10 @@ class MediaNewPage extends Page
             ])
                 ->record(['file' => null])
                 ->onSubmit(function (ActionCtx $ctx): string {
-                    // The upload field's form value is the UploadRow the
-                    // upload endpoint returned (camelCase keys).
-                    $file = is_array($ctx->form['file'] ?? null) ? $ctx->form['file'] : [];
-                    Media::create([
-                        'filename' => $file['filename'] ?? '',
-                        'url' => $file['url'] ?? '',
-                        'mime_type' => $file['mimeType'] ?? '',
-                        'filesize' => (int) ($file['filesize'] ?? 0),
-                        'width' => $file['width'] ?? null,
-                        'height' => $file['height'] ?? null,
-                        'sizes' => $file['sizes'] ?? [],
-                    ]);
+                    // The upload field emits a bare storage path string; derive
+                    // the media columns from the file on the media disk.
+                    $path = is_string($ctx->form['file'] ?? null) ? $ctx->form['file'] : '';
+                    Media::create(self::columnsFromPath($path));
 
                     return '/admin/media';
                 }),

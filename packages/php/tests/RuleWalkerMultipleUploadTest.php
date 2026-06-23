@@ -46,6 +46,28 @@ it('RuleWalker: explicit max rule on multiple upload takes precedence over maxFi
     ]);
 });
 
+it('RuleWalker: multiple upload auto-injects min from minFiles', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->upload('gallery')->multiple()->minFiles(2)->maxFiles(5),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'gallery' => ['array', 'min:2', 'max:5'],
+    ]);
+});
+
+it('RuleWalker: explicit min rule on multiple upload takes precedence over minFiles', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->upload('files')->multiple()->minFiles(2)->rules('min:1'),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'files' => ['array', 'min:1'],
+    ]);
+});
+
 it('RuleWalker: non-multiple upload is unaffected by multiple upload logic', function () {
     $s = new S;
     $form = $s->form('post', [

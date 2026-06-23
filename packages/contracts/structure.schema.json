@@ -131,6 +131,7 @@
 									"maxSize": { "type": "integer", "minimum": 0 },
 									"multiple": { "type": "boolean" },
 									"maxFiles": { "type": "integer", "minimum": 1 },
+									"minFiles": { "type": "integer", "minimum": 1 },
 									"reorderable": { "type": "boolean" },
 									"disk": { "type": "string" },
 									"directory": { "type": "string" },

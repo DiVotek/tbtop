@@ -7,11 +7,12 @@ import { looksLikeImage, UploadCell, UploadForm, type UploadValue } from "./uplo
 
 const SAMPLE: UploadValue = { filename: "pic.png", url: "/uploads/pic.png" };
 
-function uploadResponse(row: Partial<UploadValue> & { mimeType?: string } = {}) {
+function uploadResponse(row: Partial<UploadValue> & { mimeType?: string; path?: string } = {}) {
 	return Response.json(
 		{
 			data: {
 				id: "u1",
+				path: row.path ?? "uploads/pic.png",
 				filename: row.filename ?? "pic.png",
 				url: row.url ?? "/uploads/pic.png",
 				mimeType: row.mimeType ?? "image/png",
@@ -26,13 +27,13 @@ function uploadResponse(row: Partial<UploadValue> & { mimeType?: string } = {}) 
 }
 
 describe("UploadForm", () => {
-	test("Upload posts the picked file to the configured entity and emits the new value", async () => {
+	test("Upload posts the picked file to the configured entity and emits the path string", async () => {
 		const seen: string[] = [];
 		const Wrap = clientWrapper((req) => {
 			seen.push(req.url);
-			return uploadResponse({ filename: "hello.png", url: "/uploads/hello.png" });
+			return uploadResponse({ path: "uploads/hello.webp", filename: "hello.png" });
 		});
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+		const captured: (UploadValue | UploadValue[] | string | null)[] = [];
 		const { container } = render(
 			<Wrap>
 				<UploadForm
@@ -48,12 +49,9 @@ describe("UploadForm", () => {
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
 		expect(seen[0]).toBe("http://test/admin/uploads/media");
-		// Full UploadRow flows through so submit handlers can persist metadata.
-		expect(captured.at(-1)).toMatchObject({
-			filename: "hello.png",
-			url: "/uploads/hello.png",
-			mimeType: "image/png",
-		});
+		// Filament string-path contract: the field emits the bare storage path,
+		// not the envelope. The server rebuilds url/filename on the next render.
+		expect(captured.at(-1)).toBe("uploads/hello.webp");
 	});
 
 	test("Upload surfaces a server error message and does not call onChange", async () => {
@@ -99,10 +97,11 @@ describe("UploadForm", () => {
 		expect(captured.at(-1)).toBeNull();
 	});
 
-	test("Upload uses the injected upload closure and emits the unwrapped row", async () => {
+	test("Upload uses the injected upload closure and emits the path string", async () => {
 		const seen: File[] = [];
 		const row = {
 			id: "u9",
+			path: "uploads/doc.png",
 			filename: "doc.png",
 			url: "/uploads/doc.png",
 			mimeType: "image/png",
@@ -111,7 +110,7 @@ describe("UploadForm", () => {
 			height: 10,
 			sizes: [],
 		};
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+		const captured: (UploadValue | UploadValue[] | string | null)[] = [];
 		const Wrap = clientWrapper(() => uploadResponse());
 		const { container } = render(
 			<Wrap>
@@ -133,11 +132,7 @@ describe("UploadForm", () => {
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
 		expect(seen[0]).toBe(file);
-		expect(captured.at(-1)).toMatchObject({
-			filename: "doc.png",
-			url: "/uploads/doc.png",
-			mimeType: "image/png",
-		});
+		expect(captured.at(-1)).toBe("uploads/doc.png");
 	});
 
 	test("Upload accept attribute forwards to the file input", () => {

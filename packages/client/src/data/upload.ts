@@ -11,6 +11,7 @@ export interface UploadFileInput {
 
 export interface UploadRow {
 	id: string;
+	path: string;
 	filename: string;
 	mimeType: string;
 	filesize: number;

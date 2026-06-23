@@ -2,6 +2,7 @@
 
 namespace App\Admin\Pages;
 
+use App\Admin\Pages\Concerns\MediaFormFields;
 use App\Models\Media;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
@@ -12,6 +13,8 @@ use Tbtop\Admin\Pages\Page;
 
 class MediaEditPage extends Page
 {
+    use MediaFormFields;
+
     public static function path(): string
     {
         return 'media/{media}/edit';
@@ -40,7 +43,7 @@ class MediaEditPage extends Page
             ])
                 ->record([
                     ...$media->toArray(),
-                    'file' => ['filename' => $media->filename, 'url' => $media->url],
+                    'file' => self::pathFromUrl($media->url),
                 ])
                 ->onSubmit(function (ActionCtx $ctx): Effects {
                     $media = Media::findOrFail($ctx->params['media'] ?? null);
@@ -55,25 +58,25 @@ class MediaEditPage extends Page
     }
 
     /**
-     * A fresh upload carries a new url; the record-prefilled value
-     * keeps the current one, so same url means "image untouched".
+     * A fresh upload carries a new path; the prefilled value is the path derived
+     * from the stored url, so an equal path means "image untouched".
      *
      * @return array<string, mixed>
      */
     private static function fileColumns(mixed $file, Media $media): array
     {
-        if (! is_array($file) || ($file['url'] ?? null) === $media->url) {
+        if (! is_string($file) || $file === self::pathFromUrl($media->url)) {
             return [];
         }
 
-        return [
-            'filename' => $file['filename'] ?? '',
-            'url' => $file['url'] ?? '',
-            'mime_type' => $file['mimeType'] ?? '',
-            'filesize' => (int) ($file['filesize'] ?? 0),
-            'width' => $file['width'] ?? null,
-            'height' => $file['height'] ?? null,
-            'sizes' => $file['sizes'] ?? [],
-        ];
+        return self::columnsFromPath($file);
+    }
+
+    /** Strip a leading /storage/ to recover the disk path; full urls pass through. */
+    private static function pathFromUrl(string $url): string
+    {
+        return str_starts_with($url, '/storage/')
+            ? substr($url, strlen('/storage/'))
+            : $url;
     }
 }

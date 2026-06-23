@@ -106,12 +106,12 @@ class KitchenSinkPage extends Page
                     $s->richtext('content')->set('placeholder', 'Start typing…'),
                     $s->upload('attachment')->label('Attachment')
                         ->disk('public')->directory('docs')->visibility('public')
-                        ->accept('image/*')->maxSize(5 * 1024 * 1024)
+                        ->image()->maxSize(5 * 1024 * 1024)
                         ->convertTo('webp')->quality(80),
                     $s->upload('gallery')->label('Gallery')
                         ->disk('public')->directory('gallery')
                         ->accept('image/*')->maxSize(5 * 1024 * 1024)
-                        ->multiple()->maxFiles(5)->reorderable(),
+                        ->multiple()->minFiles(2)->maxFiles(5)->reorderable(),
                     $s->relation('category_id')
                         ->labelKey('name')
                         ->searchable()

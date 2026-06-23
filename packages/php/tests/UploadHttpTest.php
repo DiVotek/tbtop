@@ -32,6 +32,17 @@ it('stores an image, reports dimensions and generates the thumb variant', functi
     Storage::disk('public')->assertExists('uploads/'.$data['id']);
 });
 
+it('returns the full storage path alongside the basename id', function () {
+    $file = UploadedFile::fake()->image('photo.png', 600, 400);
+
+    $data = $this->postJson('/admin/uploads/media', ['file' => $file])->json('data');
+
+    // path is the full relative path; id stays the basename for back-compat.
+    expect($data['path'])->toBe('uploads/'.$data['id'])
+        ->and($data['id'])->toBe(basename($data['path']));
+    Storage::disk('public')->assertExists($data['path']);
+});
+
 it('returns same-origin urls path-relative so stored links survive host changes', function () {
     config()->set('app.url', 'http://localhost');
     // Real public disk bakes APP_URL into urls; mirror that in the fake.

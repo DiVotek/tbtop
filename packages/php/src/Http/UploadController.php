@@ -31,6 +31,7 @@ final class UploadController
 
         return response()->json(['data' => [
             'id' => basename($path),
+            'path' => $path,
             'filename' => $file->getClientOriginalName(),
             'mimeType' => (string) $file->getMimeType(),
             'filesize' => $file->getSize(),

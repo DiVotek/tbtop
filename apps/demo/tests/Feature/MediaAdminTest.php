@@ -38,22 +38,27 @@ class MediaAdminTest extends TestCase
         $this->assertSame('image/png', $response->json('data.data.0.mimeType'));
     }
 
-    public function test_upload_form_submit_creates_a_media_row_from_the_upload_endpoint_payload(): void
+    public function test_upload_form_submit_creates_a_media_row_from_the_stored_path(): void
     {
+        // The upload field now emits a bare storage path string; the page
+        // derives the media columns from the file on disk, not from the value.
         $upload = $this->postJson('/admin/uploads/media', [
             'file' => UploadedFile::fake()->image('photo.png', 600, 400),
         ])->assertOk()->json('data');
 
-        $this->postJson('/admin/media/new/forms/upload', ['file' => $upload])
+        $this->postJson('/admin/media/new/forms/upload', ['file' => $upload['path']])
             ->assertRedirect('/admin/media');
 
         $media = Media::sole();
-        $this->assertSame('photo.png', $media->filename);
+        // The path carries a hashed storage name, not the original client name —
+        // the page derives the filename from the path's basename.
+        $this->assertSame(basename($upload['path']), $media->filename);
         $this->assertSame('image/png', $media->mime_type);
         $this->assertSame(600, $media->width);
         $this->assertSame(400, $media->height);
         $this->assertGreaterThan(0, $media->filesize);
-        $this->assertSame('thumb', $media->sizes[0]['name']);
+        // Resized variants are not recoverable from a bare path; sizes drops to [].
+        $this->assertSame([], $media->sizes);
         Storage::disk('public')->assertExists('uploads/'.basename($media->url));
     }
 
@@ -68,9 +73,11 @@ class MediaAdminTest extends TestCase
     {
         $media = $this->makeMedia();
 
+        // Image untouched: the field's value is the path derived from the stored
+        // url (/storage/uploads/photo.png -> uploads/photo.png), resubmitted as-is.
         $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
             'alt' => 'A mountain',
-            'file' => ['filename' => $media->filename, 'url' => $media->url],
+            'file' => $this->pathFromUrl($media->url),
         ])->assertRedirect();
 
         $this->assertSame('A mountain', $media->refresh()->alt);
@@ -85,23 +92,26 @@ class MediaAdminTest extends TestCase
 
         $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
             'alt' => 'New picture',
-            'file' => $upload,
+            'file' => $upload['path'],
         ])->assertRedirect();
 
         $media->refresh();
-        $this->assertSame('replacement.png', $media->filename);
-        $this->assertSame($upload['url'], $media->url);
+        // Filename is the path basename (hashed name), derived on submit.
+        $this->assertSame(basename($upload['path']), $media->filename);
         $this->assertSame(300, $media->width);
+        $this->assertSame(200, $media->height);
         $this->assertSame('New picture', $media->alt);
+        Storage::disk('public')->assertExists($upload['path']);
     }
 
     public function test_edit_form_submit_keeps_file_columns_when_image_is_untouched(): void
     {
         $media = $this->makeMedia();
 
+        // Same path back in = image untouched: dimension columns must survive.
         $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
             'alt' => 'Only alt changed',
-            'file' => ['filename' => $media->filename, 'url' => $media->url],
+            'file' => $this->pathFromUrl($media->url),
         ])->assertRedirect();
 
         $media->refresh();
@@ -134,5 +144,13 @@ class MediaAdminTest extends TestCase
             'sizes' => [],
             ...$overrides,
         ]);
+    }
+
+    /** Mirror the page's url-derived path: strip the /storage/ prefix. */
+    private function pathFromUrl(string $url): string
+    {
+        return str_starts_with($url, '/storage/')
+            ? substr($url, strlen('/storage/'))
+            : $url;
     }
 }

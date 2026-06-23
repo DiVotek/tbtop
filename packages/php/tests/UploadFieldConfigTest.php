@@ -68,6 +68,27 @@ it('Upload: maxFiles() serializes as options.maxFiles', function (): void {
     expect($node->options['maxFiles'])->toBe(5);
 });
 
+it('Upload: minFiles() serializes as options.minFiles', function (): void {
+    $node = Upload::make('gallery')->multiple()->minFiles(2)->toNode();
+
+    expect($node->options['minFiles'])->toBe(2);
+});
+
+it('Upload: image() sets accept to image/*', function (): void {
+    $node = Upload::make('cover')->image()->toNode();
+
+    expect($node->options['accept'])->toBe('image/*');
+});
+
+it('Upload: image() leaves the image conversion bag untouched', function (): void {
+    // The `image` option key is the {convertTo, quality} conversion bag.
+    // image() must not overload it into a boolean and break conversion.
+    $node = Upload::make('cover')->convertTo('webp')->quality(70)->image()->toNode();
+
+    expect($node->options['image'])->toBe(['convertTo' => 'webp', 'quality' => 70])
+        ->and($node->options['accept'])->toBe('image/*');
+});
+
 it('Upload: reorderable() serializes as options.reorderable = true', function (): void {
     $node = Upload::make('gallery')->multiple()->reorderable()->toNode();
 

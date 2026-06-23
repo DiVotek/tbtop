@@ -30,6 +30,7 @@ final class UploadStorer
 
         return [
             'id' => basename($path),
+            'path' => $path,
             'filename' => $file->getClientOriginalName(),
             'mimeType' => $mimeType,
             'filesize' => Storage::disk($config->disk)->size($path),
