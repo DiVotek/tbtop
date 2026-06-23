@@ -34,7 +34,9 @@ final class UploadFieldUrl
 
     /**
      * Rewrite each upload field's stored `path` into a `url` on the record.
-     * Values without a `path` (legacy url-shaped, or null) pass through.
+     * Single string values normalize into a `{path, url, filename}` envelope;
+     * multiple fields normalize string elements the same way. Null and other
+     * shapes pass through.
      *
      * @param  array<string, mixed>  $record
      * @param  list<Upload>  $fields
@@ -46,14 +48,62 @@ final class UploadFieldUrl
         $viewRoute = $pageRouteName === null ? null : $pageRouteName.'.uploadView';
         foreach ($fields as $field) {
             $value = $record[$field->name] ?? null;
-            if (! is_array($value) || ! isset($value['path']) || ! is_string($value['path'])) {
-                continue;
-            }
             $config = UploadFieldConfig::resolve($field);
-            $value['url'] = self::for($config, $field->name, $value['path'], $viewRoute, $pageParams);
-            $record[$field->name] = $value;
+            if (is_array($value) && isset($value['path']) && is_string($value['path'])) {
+                $value['url'] = self::for($config, $field->name, $value['path'], $viewRoute, $pageParams);
+                $record[$field->name] = $value;
+            } elseif (! $field->isMultiple() && is_string($value)) {
+                $record[$field->name] = self::normalizeStringValue($value, $config, $field->name, $viewRoute, $pageParams);
+            } elseif ($field->isMultiple() && is_array($value)) {
+                $record[$field->name] = self::normalizeElements($value, $config, $field->name, $viewRoute, $pageParams);
+            }
         }
 
         return $record;
+    }
+
+    /**
+     * Normalize one string upload value into the `{path, url, filename}` envelope.
+     * Absolute urls / leading-slash paths are used as-is; relative disk paths go
+     * through disk resolution.
+     *
+     * @param  array<string, string>  $pageParams
+     * @return array{path: string, url: string, filename: string}
+     */
+    private static function normalizeStringValue(
+        string $value,
+        UploadFieldConfig $config,
+        string $field,
+        ?string $viewRoute,
+        array $pageParams
+    ): array {
+        $isAbsolute = str_starts_with($value, 'http://')
+            || str_starts_with($value, 'https://')
+            || str_starts_with($value, '/');
+        $url = $isAbsolute ? $value : self::for($config, $field, $value, $viewRoute, $pageParams);
+
+        return ['path' => $value, 'url' => $url, 'filename' => basename($value)];
+    }
+
+    /**
+     * Map a multiple field's elements: normalize strings, pass other shapes through.
+     *
+     * @param  list<mixed>  $values
+     * @param  array<string, string>  $pageParams
+     * @return list<mixed>
+     */
+    private static function normalizeElements(
+        array $values,
+        UploadFieldConfig $config,
+        string $field,
+        ?string $viewRoute,
+        array $pageParams
+    ): array {
+        return array_map(
+            fn (mixed $element): mixed => is_string($element)
+                ? self::normalizeStringValue($element, $config, $field, $viewRoute, $pageParams)
+                : $element,
+            $values,
+        );
     }
 }

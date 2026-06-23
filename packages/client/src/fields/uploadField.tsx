@@ -146,10 +146,11 @@ interface PreviewProps {
 	onRemove: () => void;
 }
 
-export function UploadPreview({ value, onRemove }: PreviewProps) {
+export function UploadPreview({ value: raw, onRemove }: PreviewProps) {
+	const value = asUploadValue(raw);
 	const isImg = looksLikeImage(value.url, value.filename);
 	return (
-		<div className="flex items-center gap-3 rounded-md border p-2">
+		<div data-testid="upload-preview" className="flex items-center gap-3 rounded-md border p-2">
 			{isImg ? (
 				<img
 					src={value.url}
@@ -267,7 +268,11 @@ export function UploadCell({ value }: FieldCellProps<UploadValue | UploadValue[]
 	return <span>{filename}</span>;
 }
 
-export function looksLikeImage(url: string, filename: string): boolean {
-	const target = (url + filename).toLowerCase();
+export function looksLikeImage(url: unknown, filename: unknown): boolean {
+	const target = (String(url ?? "") + String(filename ?? "")).toLowerCase();
 	return /\.(png|jpe?g|gif|webp|avif|heic|svg)(\?|$)/.test(target);
+}
+
+function asUploadValue(value: UploadValue | string): UploadValue {
+	return typeof value === "string" ? { url: value, filename: value } : value;
 }

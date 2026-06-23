@@ -25,10 +25,15 @@ class UploadRenderPage extends Page
                 $s->upload('secret')->disk('local')->directory('private-docs')->visibility('private'),
                 $s->upload('doc')->disk('public')->directory('docs')->visibility('public'),
                 $s->upload('blank')->disk('local')->directory('private-docs')->visibility('private'),
+                // Saved as a bare path string (not the envelope) — must normalize.
+                $s->upload('secretStr')->disk('local')->directory('private-docs')->visibility('private'),
+                $s->upload('coverUrl')->disk('public')->directory('covers')->visibility('public'),
             ])->record([
                 'secret' => ['path' => 'private-docs/sample.webp', 'filename' => 'confidential.webp'],
                 'doc' => ['path' => 'docs/sample.webp', 'filename' => 'public.webp'],
                 'blank' => null,
+                'secretStr' => 'private-docs/sample.webp',
+                'coverUrl' => 'https://picsum.photos/seed/hello/80',
             ])->onSubmit(fn () => null),
         ]);
     }

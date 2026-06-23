@@ -19,7 +19,7 @@ beforeEach(function () {
 
 it('renders the inline-config upload dropzone', function () {
     visit('/admin/upload-demo')
-        ->assertVisible('#app main')   // React-rendered admin shell content
-        ->assertVisible('doc')         // the upload field's file input (id="doc")
-        ->assertNoSmoke();             // no console logs + no JavaScript errors
+        ->assertVisible('#app main')                        // React-rendered admin shell content
+        ->assertCount('[data-testid="upload-preview"]', 2)  // seeded `doc` + `secret` render previews
+        ->assertNoSmoke();                                  // no console logs + no JavaScript errors
 });

@@ -3,7 +3,7 @@ import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RowProvider } from "../structure/rowContext";
 import { clientWrapper } from "../testFixtures";
-import { UploadCell, UploadForm, type UploadValue } from "./uploadField";
+import { looksLikeImage, UploadCell, UploadForm, type UploadValue } from "./uploadField";
 
 const SAMPLE: UploadValue = { filename: "pic.png", url: "/uploads/pic.png" };
 
@@ -212,5 +212,59 @@ describe("UploadCell", () => {
 	test("UploadCell with no value and no row renders nothing", () => {
 		const { container } = render(<UploadCell value={null} />);
 		expect(container.textContent).toBe("");
+	});
+});
+
+describe("looksLikeImage", () => {
+	// Regression: a saved value of an unexpected shape (a raw string path, or
+	// undefined fields on a half-built value) once crashed the edit form with
+	// "(url + filename).toLowerCase is not a function". The guard must never throw.
+	test("looksLikeImage with empty strings returns false and does not throw", () => {
+		expect(looksLikeImage("", "")).toBe(false);
+	});
+
+	test("looksLikeImage with an image-extension string returns true", () => {
+		expect(looksLikeImage("photo.png", "")).toBe(true);
+		expect(looksLikeImage("", "shot.JPEG")).toBe(true);
+		expect(looksLikeImage("covers/x.webp?v=2", "")).toBe(true);
+	});
+
+	test.each([
+		["undefined", undefined, undefined],
+		["null", null, null],
+		["number", 123, 456],
+		["object", {}, { a: 1 }],
+		["mixed string + non-string", "a.pdf", undefined],
+	])("looksLikeImage with %s args returns false without throwing", (_label, url, filename) => {
+		expect(() =>
+			looksLikeImage(url as unknown as string, filename as unknown as string),
+		).not.toThrow();
+		expect(looksLikeImage(url as unknown as string, filename as unknown as string)).toBe(false);
+	});
+});
+
+describe("UploadForm tolerates a raw string value", () => {
+	// Backstop for the saved-string crash: backend normalization is the primary
+	// fix, but the client must not blow up if a bare string reaches the field.
+	test("UploadSingleForm with a string value renders without throwing", () => {
+		const Wrap = clientWrapper(() => Response.json({ data: {} }, { status: 200 }));
+		expect(() =>
+			render(
+				<Wrap>
+					<UploadForm
+						name="cover"
+						value={"covers/photo.webp" as unknown as UploadValue}
+						onChange={() => {}}
+						options={{ entity: "media" }}
+					/>
+				</Wrap>,
+			),
+		).not.toThrow();
+	});
+
+	test("UploadCell with a string value renders without throwing", () => {
+		expect(() =>
+			render(<UploadCell value={"covers/photo.webp" as unknown as UploadValue} />),
+		).not.toThrow();
 	});
 });

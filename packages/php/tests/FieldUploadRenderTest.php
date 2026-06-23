@@ -61,6 +61,25 @@ it('Render: a null upload value stays null', function (): void {
     expect(renderRecord($this)['blank'])->toBeNull();
 });
 
+it('Render: a saved private STRING path becomes a signed view url', function (): void {
+    $value = renderRecord($this)['secretStr'];
+
+    expect($value['path'])->toBe('private-docs/sample.webp');
+    expect($value['filename'])->toBe('sample.webp');
+    expect($value['url'])
+        ->toContain('/upload-render-page/uploads/secretStr/view')
+        ->toContain('signature=')
+        ->toContain('expires=');
+});
+
+it('Render: a saved STRING that is already a full url passes through unchanged', function (): void {
+    $value = renderRecord($this)['coverUrl'];
+
+    expect($value['url'])->toBe('https://picsum.photos/seed/hello/80');
+    expect($value['url'])->not->toContain('/storage/https');
+    expect($value['filename'])->toBe('80');
+});
+
 it('Render: the page gate runs before url resolution', function (): void {
     Gate::define('view-gated-uploads', fn (?object $user) => false);
 

@@ -5,6 +5,7 @@ namespace App\Admin\Pages\Concerns;
 use App\Admin\Fields\Rating;
 use App\Models\User;
 use Tbtop\Admin\Dsl\Cond;
+use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
@@ -14,7 +15,7 @@ use Tbtop\Admin\Dsl\S;
  */
 trait PostFormFields
 {
-    /** @return list<Node|\Tbtop\Admin\Dsl\Fields\Field> */
+    /** @return list<Node|Field> */
     protected function postFormSections(S $s, string $slugUniqueRule): array
     {
         return [
@@ -40,9 +41,9 @@ trait PostFormFields
                 $s->media('cover_media_id')->label('Cover image')
                     ->accept(['image/*'])
                     ->rules('nullable|integer'),
-                // cover_url is shown as an image column on the posts table; the
-                // upload field for it is parked until the upload-value round-trip
-                // is fixed (a saved string crashes the field on edit).
+                $s->upload('cover_url')->label('Cover URL')
+                    ->disk('public')->directory('covers')->visibility('public')
+                    ->accept('image/*')->rules('nullable|string'),
                 $s->select('author_id')->label('Author')
                     ->searchable()
                     ->set('options', $this->authorOptions())
@@ -85,7 +86,7 @@ trait PostFormFields
     private function authorOptions(): array
     {
         return User::query()->orderBy('name')->get()
-            ->map(fn(User $user): array => [
+            ->map(fn (User $user): array => [
                 'value' => (string) $user->id,
                 'label' => $user->name ?? $user->email,
             ])
