@@ -48,7 +48,7 @@ final class UploadFieldUrl
         foreach ($fields as $field) {
             $value = $record[$field->name] ?? null;
             $config = UploadFieldConfig::resolve($field);
-            $record[$field->name] = self::normalizeValue($value, $config, $field->name, $viewRoute, $pageParams);
+            $record[$field->name] = self::normalizeValue($value, $field, $config, $viewRoute, $pageParams);
         }
 
         return $record;
@@ -57,7 +57,24 @@ final class UploadFieldUrl
     /**
      * @param  array<string, string>  $pageParams
      */
-    private static function normalizeValue(mixed $value, UploadFieldConfig $config, string $fieldName, ?string $viewRoute, array $pageParams): mixed
+    private static function normalizeValue(mixed $value, Upload $field, UploadFieldConfig $config, ?string $viewRoute, array $pageParams): mixed
+    {
+        if ($field->isTranslatableField() && is_array($value) && ! self::isEnvelope($value)) {
+            $out = [];
+            foreach ($value as $locale => $localeValue) {
+                $out[(string) $locale] = self::normalizeUploadValue($localeValue, $field->isMultiple(), $config, $field->name, $viewRoute, $pageParams);
+            }
+
+            return $out;
+        }
+
+        return self::normalizeUploadValue($value, $field->isMultiple(), $config, $field->name, $viewRoute, $pageParams);
+    }
+
+    /**
+     * @param  array<string, string>  $pageParams
+     */
+    private static function normalizeUploadValue(mixed $value, bool $multiple, UploadFieldConfig $config, string $fieldName, ?string $viewRoute, array $pageParams): mixed
     {
         if ($value === null) {
             return null;
@@ -67,18 +84,41 @@ final class UploadFieldUrl
             return self::envelope($value, $config, $fieldName, $viewRoute, $pageParams);
         }
 
-        if (is_array($value)) {
+        if (is_array($value) && self::isEnvelope($value)) {
+            return self::envelope($value['path'], $config, $fieldName, $viewRoute, $pageParams);
+        }
+
+        if ($multiple && is_array($value)) {
             return array_values(array_filter(array_map(
-                static fn (mixed $item): ?array => is_string($item)
-                    ? self::envelope($item, $config, $fieldName, $viewRoute, $pageParams)
-                    : (is_array($item) && isset($item['path']) && is_string($item['path'])
-                        ? $item
-                        : null),
+                static fn (mixed $item): ?array => self::normalizeUploadItem($item, $config, $fieldName, $viewRoute, $pageParams),
                 $value,
             )));
         }
 
         return $value;
+    }
+
+    /**
+     * @param  array<string, string>  $pageParams
+     * @return array{path: string, url: string}|null
+     */
+    private static function normalizeUploadItem(mixed $item, UploadFieldConfig $config, string $fieldName, ?string $viewRoute, array $pageParams): ?array
+    {
+        if (is_string($item)) {
+            return self::envelope($item, $config, $fieldName, $viewRoute, $pageParams);
+        }
+
+        if (is_array($item) && self::isEnvelope($item)) {
+            return self::envelope($item['path'], $config, $fieldName, $viewRoute, $pageParams);
+        }
+
+        return null;
+    }
+
+    /** @param  array<mixed>  $value */
+    private static function isEnvelope(array $value): bool
+    {
+        return isset($value['path']) && is_string($value['path']);
     }
 
     /**

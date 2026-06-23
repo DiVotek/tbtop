@@ -25,10 +25,16 @@ class UploadRenderPage extends Page
                 $s->upload('secret')->disk('local')->directory('private-docs')->visibility('private'),
                 $s->upload('doc')->disk('public')->directory('docs')->visibility('public'),
                 $s->upload('blank')->disk('local')->directory('private-docs')->visibility('private'),
+                $s->upload('legacy')->disk('public')->directory('docs')->visibility('public'),
+                $s->upload('avatar')->disk('public')->directory('avatars')->visibility('public')->translatable(),
+                $s->upload('gallery')->disk('public')->directory('gallery')->visibility('public')->multiple()->translatable(),
             ])->record([
                 'secret' => 'private-docs/sample.webp',
                 'doc' => 'docs/sample.webp',
                 'blank' => null,
+                'legacy' => ['path' => 'docs/legacy.webp', 'url' => '/old-url'],
+                'avatar' => ['en' => 'avatars/en.webp', 'uk' => 'avatars/uk.webp'],
+                'gallery' => ['en' => ['gallery/en.webp'], 'uk' => []],
             ])->onSubmit(fn () => null),
         ]);
     }

@@ -39,6 +39,39 @@ it('Render: a saved public value becomes a /storage url with no signature', func
         ->not->toContain('signature=');
 });
 
+it('Render: a legacy single upload envelope is refreshed as one preview object', function (): void {
+    $record = renderRecord($this);
+
+    expect($record['legacy']['path'])->toBe('docs/legacy.webp');
+    expect($record['legacy']['url'])
+        ->toStartWith('/storage')
+        ->not->toBe('/old-url');
+});
+
+it('Render: a translatable single upload preserves locale keys', function (): void {
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $record = renderRecord($this);
+
+    expect(array_keys($record['avatar']))->toBe(['en', 'uk']);
+    expect($record['avatar']['en']['path'])->toBe('avatars/en.webp');
+    expect($record['avatar']['uk']['path'])->toBe('avatars/uk.webp');
+    expect($record['avatar']['en']['url'])->toStartWith('/storage');
+});
+
+it('Render: a translatable multiple upload preserves locale lists', function (): void {
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $record = renderRecord($this);
+
+    expect(array_keys($record['gallery']))->toBe(['en', 'uk']);
+    expect($record['gallery']['en'][0]['path'])->toBe('gallery/en.webp');
+    expect($record['gallery']['en'][0]['url'])->toStartWith('/storage');
+    expect($record['gallery']['uk'])->toBe([]);
+});
+
 it('Render: the signed url streams the file end to end', function (): void {
     Storage::disk('local')->put('private-docs/sample.webp', 'webp-bytes');
 

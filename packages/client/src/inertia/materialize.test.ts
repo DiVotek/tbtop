@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { AdminClient } from "../data/client";
+import { registerFields } from "../render/registerFields";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import { materialize } from "./materialize";
 
@@ -70,6 +71,54 @@ describe("materialize actions", () => {
 			payload: { row: { id: 7 }, selection: ["1", "2"], params: {} },
 		});
 		expect(notifications).toEqual(["done"]);
+	});
+
+	it("serializes upload preview objects for server actions that need form data", async () => {
+		registerFields();
+		const calls: { path: string; body: unknown }[] = [];
+		const client = {
+			post: async (path: string, body: unknown) => {
+				calls.push({ path, body });
+				return { effects: [] };
+			},
+		} as unknown as AdminClient;
+		const form = materialize(
+			node(
+				"form",
+				{
+					name: "post",
+					children: [
+						node("upload", { label: "Cover" }, "cover"),
+						node("action", { spec: { type: "server", needs: ["form"] } }, "save"),
+					],
+				},
+				"post",
+			),
+			BASE,
+		);
+		const children = opts(form).children as StructureNode[];
+		const save = children.find((child) => child.name === "save") as StructureNode;
+		const handler = opts(save).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await handler(
+			fakeCtx({
+				client,
+				form: {
+					initial: {},
+					data: { cover: { path: "uploads/a.png", url: "/storage/uploads/a.png" } },
+					isDirty: true,
+					isValid: true,
+					changedFields: ["cover"],
+					set: () => {},
+					reset: () => {},
+				},
+			}),
+		);
+
+		expect(calls[0]?.path).toBe("/admin/posts/actions/save");
+		expect(calls[0]?.body).toEqual({
+			payload: { form: { cover: "uploads/a.png" }, params: {} },
+		});
 	});
 
 	it("wraps a confirmed server action into a modal with a confirm button", () => {
