@@ -55,6 +55,7 @@ class KitchenSinkPage extends Page
             ]),
             $s->grid(['cols' => 2], [
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
+                    ->icon('dollar-sign')->tooltip('Monthly revenue')
                     ->hiddenIf('period', '=', 'all')->toNode(),
                 $s->chart('byMonth', 'line', ['xKey' => 'month'])->query(fn () => [])->toNode(),
                 $s->chart('byStatus', 'donut', ['nameKey' => 'status'])
@@ -169,14 +170,15 @@ class KitchenSinkPage extends Page
                 ->tabs([
                     Tab::make('all'),
                     Tab::make('published')->label('Published')
+                        ->icon('check')->tooltip('Published posts')
                         ->query(fn ($q) => $q->where('published', true))
                         ->count(),
                 ])
                 ->rowActions([
-                    $s->action('edit')->label('Edit')
+                    $s->action('edit')->label('Edit')->icon('pencil')->tooltip('Edit this record')
                         ->hiddenIf('published', '=', true)
                         ->handle(fn () => Effects::make(), needs: ['row']),
-                    $s->action('delete')->label('Delete')->color('danger')
+                    $s->action('delete')->label('Delete')->color('danger')->icon('trash')
                         ->disabledIf('locked', 'truthy')
                         ->confirm('Delete?', 'No undo.')
                         ->handle(fn () => Effects::make(), needs: ['row']),

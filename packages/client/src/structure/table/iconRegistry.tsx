@@ -41,9 +41,12 @@ const builtins: Record<string, LucideIcon> = {
 
 const custom: Record<string, LucideIcon> = {};
 
-export function registerTableIcon(name: string, Icon: LucideIcon): void {
+export function registerIcon(name: string, Icon: LucideIcon): void {
 	custom[name] = Icon;
 }
+
+/** @deprecated Use {@link registerIcon} instead. */
+export const registerTableIcon = registerIcon;
 
 export function resolveIcon(name: string | undefined): LucideIcon | undefined {
 	if (!name) {

@@ -3,6 +3,7 @@ import { useChartColors } from "../../lib/useChartColors";
 import { resolveColorClasses } from "../../structure/table/colorRegistry";
 import { resolveIcon } from "../../structure/table/iconRegistry";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 import { Sparkline } from "./Sparkline";
 
 type DeltaDirection = "up" | "down" | "flat";
@@ -17,7 +18,8 @@ export interface StatDescriptor {
 	value: unknown;
 	description?: string;
 	delta?: DeltaInfo;
-	icon?: string;
+	icon?: { name: string; position: string };
+	tooltip?: string;
 	color?: string;
 	sparkline?: number[];
 }
@@ -39,12 +41,12 @@ interface StatCardProps {
 }
 
 export function StatCard({ options }: StatCardProps) {
-	const { label, value, description, delta, icon, color, sparkline } = options;
-	const Icon = icon ? resolveIcon(icon) : undefined;
+	const { label, value, description, delta, icon, tooltip, color, sparkline } = options;
+	const Icon = icon ? resolveIcon(icon.name) : undefined;
 	const colorClasses = color ? resolveColorClasses(color) : undefined;
 	const sparklineColor = useChartColors()[0];
 
-	return (
+	const card = (
 		<Card data-testid="stat-card">
 			<CardHeader>
 				<div className="flex items-center justify-between">
@@ -76,6 +78,17 @@ export function StatCard({ options }: StatCardProps) {
 			</CardContent>
 		</Card>
 	);
+
+	if (tooltip) {
+		return (
+			<Tooltip>
+				<TooltipTrigger asChild>{card}</TooltipTrigger>
+				<TooltipContent>{tooltip}</TooltipContent>
+			</Tooltip>
+		);
+	}
+
+	return card;
 }
 
 function DeltaBadge({ delta }: { delta: DeltaInfo }) {

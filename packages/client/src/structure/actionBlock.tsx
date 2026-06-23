@@ -2,10 +2,12 @@ import { Link } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import {
+	ActionLabel,
 	type ActionOptionsBag,
 	type ActionRenderProps,
 	actionKey,
 	COLOR_TO_VARIANT,
+	MaybeTooltip,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { useNearestFormController } from "./formContext";
@@ -55,29 +57,34 @@ function PlainActionBlock({
 		if (interpolated === null) {
 			return null;
 		}
-		// A disabled visit action renders a dead button, not an active Link.
 		if (disabled) {
 			return (
-				<Button
-					type="button"
-					ref={buttonRef}
-					variant={variant}
-					disabled
-					data-testid={`action-${actionKey(opts)}`}
-				>
-					{opts.label ?? opts.name}
-				</Button>
+				<MaybeTooltip tooltip={opts.tooltip} disabled>
+					<Button
+						type="button"
+						ref={buttonRef}
+						variant={variant}
+						disabled
+						data-testid={`action-${actionKey(opts)}`}
+					>
+						<ActionLabel opts={opts} />
+					</Button>
+				</MaybeTooltip>
 			);
 		}
 		return (
-			<Button
-				asChild
-				ref={buttonRef}
-				variant={variant}
-				data-testid={`action-${actionKey(opts)}`}
-			>
-				<Link href={interpolated}>{opts.label ?? opts.name}</Link>
-			</Button>
+			<MaybeTooltip tooltip={opts.tooltip}>
+				<Button
+					asChild
+					ref={buttonRef}
+					variant={variant}
+					data-testid={`action-${actionKey(opts)}`}
+				>
+					<Link href={interpolated}>
+						<ActionLabel opts={opts} />
+					</Link>
+				</Button>
+			</MaybeTooltip>
 		);
 	}
 
@@ -94,16 +101,18 @@ function PlainActionBlock({
 	};
 
 	return (
-		<Button
-			type="button"
-			ref={buttonRef}
-			variant={variant}
-			disabled={pending || disabled}
-			onClick={onClick}
-			data-testid={`action-${actionKey(opts)}`}
-		>
-			{opts.label ?? opts.name}
-		</Button>
+		<MaybeTooltip tooltip={opts.tooltip} disabled={pending || disabled}>
+			<Button
+				type="button"
+				ref={buttonRef}
+				variant={variant}
+				disabled={pending || disabled}
+				onClick={onClick}
+				data-testid={`action-${actionKey(opts)}`}
+			>
+				<ActionLabel opts={opts} />
+			</Button>
+		</MaybeTooltip>
 	);
 }
 

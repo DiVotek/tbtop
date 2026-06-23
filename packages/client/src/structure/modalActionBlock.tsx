@@ -3,10 +3,12 @@ import { renderNode } from "../render/structureRenderer";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
 import {
+	ActionLabel,
 	type ActionModalOpts,
 	type ActionOptionsBag,
 	actionKey,
 	COLOR_TO_VARIANT,
+	MaybeTooltip,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { FormError, FormSkeleton } from "./defaults";
@@ -46,16 +48,18 @@ export function ModalActionBlock({
 
 	return (
 		<>
-			<Button
-				type="button"
-				ref={buttonRef}
-				variant={variant}
-				disabled={disabled}
-				onClick={() => setOpen(true)}
-				data-testid={`action-${actionKey(opts)}`}
-			>
-				{opts.label ?? opts.name}
-			</Button>
+			<MaybeTooltip tooltip={opts.tooltip} disabled={disabled}>
+				<Button
+					type="button"
+					ref={buttonRef}
+					variant={variant}
+					disabled={disabled}
+					onClick={() => setOpen(true)}
+					data-testid={`action-${actionKey(opts)}`}
+				>
+					<ActionLabel opts={opts} />
+				</Button>
+			</MaybeTooltip>
 			<ModalShell
 				open={open}
 				onOpenChange={setOpen}

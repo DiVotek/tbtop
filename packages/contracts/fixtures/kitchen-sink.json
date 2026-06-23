@@ -169,7 +169,12 @@
                                 "delta": {
                                     "text": "+8%",
                                     "direction": "up"
-                                }
+                                },
+                                "icon": {
+                                    "name": "dollar-sign",
+                                    "position": "left"
+                                },
+                                "tooltip": "Monthly revenue"
                             },
                             "meta": {
                                 "hiddenIf": {
@@ -666,6 +671,11 @@
                             "kind": "action",
                             "options": {
                                 "label": "Edit",
+                                "icon": {
+                                    "name": "pencil",
+                                    "position": "left"
+                                },
+                                "tooltip": "Edit this record",
                                 "spec": {
                                     "type": "server",
                                     "needs": [
@@ -690,6 +700,10 @@
                                 "confirm": {
                                     "title": "Delete?",
                                     "description": "No undo."
+                                },
+                                "icon": {
+                                    "name": "trash",
+                                    "position": "left"
                                 },
                                 "spec": {
                                     "type": "server",
@@ -738,7 +752,12 @@
                         {
                             "name": "published",
                             "label": "Published",
-                            "count": true
+                            "count": true,
+                            "icon": {
+                                "name": "check",
+                                "position": "left"
+                            },
+                            "tooltip": "Published posts"
                         }
                     ],
                     "pagination": {

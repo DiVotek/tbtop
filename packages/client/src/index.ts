@@ -72,7 +72,7 @@ export type {
 } from "./structure/structure";
 export { makeField, registerStructureBuilder, s } from "./structure/structure";
 export { registerTableColor } from "./structure/table/colorRegistry";
-export { registerTableIcon } from "./structure/table/iconRegistry";
+export { registerIcon, registerTableIcon } from "./structure/table/iconRegistry";
 export type {
 	ActionColor,
 	ActionConfig,

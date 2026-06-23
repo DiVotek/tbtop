@@ -4,6 +4,8 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasIcon;
+use Tbtop\Admin\Dsl\Concerns\HasTooltip;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -12,6 +14,8 @@ use Tbtop\Admin\Dsl\Concerns\WithMeta;
  */
 final class Stat implements JsonSerializable
 {
+    use HasIcon;
+    use HasTooltip;
     use WithMeta;
 
     private mixed $value = null;
@@ -20,8 +24,6 @@ final class Stat implements JsonSerializable
 
     /** @var array{text: string, direction: string}|null */
     private ?array $delta = null;
-
-    private ?string $icon = null;
 
     private Color|string|null $color = null;
 
@@ -61,13 +63,6 @@ final class Stat implements JsonSerializable
         return $this;
     }
 
-    public function icon(string $lucideName): self
-    {
-        $this->icon = $lucideName;
-
-        return $this;
-    }
-
     public function color(Color|string $color): self
     {
         $this->color = $color;
@@ -95,9 +90,6 @@ final class Stat implements JsonSerializable
         if ($this->delta !== null) {
             $options['delta'] = $this->delta;
         }
-        if ($this->icon !== null) {
-            $options['icon'] = $this->icon;
-        }
         if ($this->color !== null) {
             $options['color'] = $this->color instanceof Color
                 ? $this->color->value
@@ -107,7 +99,7 @@ final class Stat implements JsonSerializable
             $options['sparkline'] = $this->sparkline;
         }
 
-        return new Node('stat', $options, null, $this->metaBag);
+        return new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->metaBag);
     }
 
     /** @return array<string, mixed> */
