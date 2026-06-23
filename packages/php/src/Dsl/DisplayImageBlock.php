@@ -21,6 +21,8 @@ final class DisplayImageBlock implements JsonSerializable
 
     private bool $asLinkValue = false;
 
+    private ?string $shapeValue = null;
+
     private function __construct(private readonly string $src) {}
 
     public static function make(string $src): self
@@ -53,6 +55,24 @@ final class DisplayImageBlock implements JsonSerializable
         return $clone;
     }
 
+    /** Square image shape (sharp corners). Last shape call wins. */
+    public function square(): self
+    {
+        $clone = clone $this;
+        $clone->shapeValue = 'square';
+
+        return $clone;
+    }
+
+    /** Circular image shape. Last shape call wins. */
+    public function circular(): self
+    {
+        $clone = clone $this;
+        $clone->shapeValue = 'circular';
+
+        return $clone;
+    }
+
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
@@ -65,6 +85,9 @@ final class DisplayImageBlock implements JsonSerializable
         }
         if ($this->asLinkValue) {
             $options['asLink'] = true;
+        }
+        if ($this->shapeValue !== null) {
+            $options['shape'] = $this->shapeValue;
         }
 
         return (new Node('displayImage', $options))->jsonSerialize();

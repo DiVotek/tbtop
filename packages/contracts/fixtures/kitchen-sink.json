@@ -102,6 +102,22 @@
                         {
                             "kind": "displayImage",
                             "options": {
+                                "src": "/img/avatar.png",
+                                "shape": "circular"
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayImage",
+                            "options": {
+                                "src": "/img/thumb.png",
+                                "shape": "square"
+                            },
+                            "meta": {}
+                        },
+                        {
+                            "kind": "displayImage",
+                            "options": {
                                 "src": "/files/report.pdf",
                                 "asLink": true
                             },
@@ -780,6 +796,12 @@
                             "name": "views",
                             "label": "Views",
                             "kind": "text"
+                        },
+                        {
+                            "name": "cover",
+                            "kind": "image",
+                            "shape": "circular",
+                            "alt": "Avatar"
                         },
                         {
                             "name": "published",

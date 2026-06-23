@@ -306,7 +306,8 @@
 									"src": { "type": "string" },
 									"alt": { "type": "string" },
 									"caption": { "type": "string" },
-									"asLink": { "type": "boolean" }
+									"asLink": { "type": "boolean" },
+									"shape": { "type": "string", "enum": ["square", "circular"] }
 								}
 							}
 						}
@@ -420,6 +421,8 @@
 						}
 					},
 					"iconMap": { "type": "object" },
+					"shape": { "type": "string", "enum": ["square", "circular"] },
+					"alt": { "type": "string" },
 					"editable": {
 						"type": "object",
 						"required": ["as"],

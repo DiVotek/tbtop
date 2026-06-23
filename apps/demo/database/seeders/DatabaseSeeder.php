@@ -54,6 +54,7 @@ class DatabaseSeeder extends Seeder
                 'views' => 320,
                 'rating' => 4.5,
                 'author_id' => $authorId,
+                'cover_url' => 'https://picsum.photos/seed/hello-tabletop/80',
                 'sections' => [['heading' => 'Welcome', 'body' => 'Welcome to the demo.']],
                 'created_at' => $now->copy()->subMonths(5),
             ],
@@ -66,6 +67,7 @@ class DatabaseSeeder extends Seeder
                 'views' => 210,
                 'rating' => 4.0,
                 'author_id' => $authorId,
+                'cover_url' => 'https://picsum.photos/seed/designing-the-admin-dsl/80',
                 'created_at' => $now->copy()->subMonths(4),
             ],
             [
@@ -94,6 +96,7 @@ class DatabaseSeeder extends Seeder
                 'views' => 540,
                 'rating' => 4.8,
                 'author_id' => $authorId,
+                'cover_url' => 'https://picsum.photos/seed/table-actions/80',
                 'sections' => [
                     ['heading' => 'Row actions', 'body' => 'Edit and delete.'],
                     ['heading' => 'Bulk actions', 'body' => 'Selection-driven.'],

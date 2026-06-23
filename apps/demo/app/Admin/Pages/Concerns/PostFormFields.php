@@ -40,6 +40,9 @@ trait PostFormFields
                 $s->media('cover_media_id')->label('Cover image')
                     ->accept(['image/*'])
                     ->rules('nullable|integer'),
+                // cover_url is shown as an image column on the posts table; the
+                // upload field for it is parked until the upload-value round-trip
+                // is fixed (a saved string crashes the field on edit).
                 $s->select('author_id')->label('Author')
                     ->searchable()
                     ->set('options', $this->authorOptions())

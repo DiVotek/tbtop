@@ -37,6 +37,8 @@ class KitchenSinkPage extends Page
                 $s->displayValue('2024-03-15 10:30:00')->date('Y-m-d'),
                 $s->displayValue(1234.5)->number(2),
                 $s->displayImage('/img/cover.png')->alt('Cover')->caption('Figure 1'),
+                $s->displayImage('/img/avatar.png')->circular(),
+                $s->displayImage('/img/thumb.png')->square(),
                 $s->displayImage('/files/report.pdf')->asLink(),
                 $s->displayRichtext([
                     'root' => [
@@ -145,6 +147,7 @@ class KitchenSinkPage extends Page
                 ->columns([
                     'title' => 'Title',
                     'views' => 'Views',
+                    Column::make('cover')->image()->circular()->alt('Avatar'),
                     Column::make('published')
                         ->label('Published')
                         ->toggle()

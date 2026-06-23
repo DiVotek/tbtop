@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { Badge } from "../../ui/badge";
+import { imageShapeClass } from "../imageShape";
 import type { TableColumn } from "../types";
 import { resolveColorClasses } from "./colorRegistry";
 import { resolveIcon } from "./iconRegistry";
@@ -69,4 +70,27 @@ export function IconMapCell({ value, col }: IconCellProps): ReactNode {
 		return <span className={classes.text}>{str}</span>;
 	}
 	return <Icon className={cn("size-4", classes.text)} aria-hidden aria-label={str} />;
+}
+
+// ─── Image cell ───────────────────────────────────────────────────────────────
+
+interface ImageCellProps {
+	value: unknown;
+	col: TableColumn;
+}
+
+export function ImageCell({ value, col }: ImageCellProps): ReactNode {
+	const url = typeof value === "string" ? value : "";
+	if (!url) {
+		return <span data-testid="image-cell" />;
+	}
+	return (
+		<span data-testid="image-cell">
+			<img
+				src={url}
+				alt={col.alt ?? ""}
+				className={cn("h-10 w-10 object-cover", imageShapeClass(col.shape))}
+			/>
+		</span>
+	);
 }

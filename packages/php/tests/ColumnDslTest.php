@@ -150,6 +150,49 @@ it('Column: iconMap() sets kind=icon with map', function (): void {
 });
 
 // ---------------------------------------------------------------------------
+// Image column kind + shape variants
+// ---------------------------------------------------------------------------
+
+it('Column: image() sets kind=image and omits shape by default', function (): void {
+    $json = encodeColumn(Column::make('cover')->image());
+
+    expect($json['kind'])->toBe('image')
+        ->and(array_key_exists('shape', $json))->toBeFalse();
+});
+
+it('Column: image()->square() emits shape=square', function (): void {
+    $json = encodeColumn(Column::make('cover')->image()->square());
+
+    expect($json['kind'])->toBe('image')
+        ->and($json['shape'])->toBe('square');
+});
+
+it('Column: image()->circular() emits shape=circular', function (): void {
+    $json = encodeColumn(Column::make('cover')->image()->circular());
+
+    expect($json['kind'])->toBe('image')
+        ->and($json['shape'])->toBe('circular');
+});
+
+it('Column: square()->circular() is last-wins (circular)', function (): void {
+    $json = encodeColumn(Column::make('cover')->image()->square()->circular());
+
+    expect($json['shape'])->toBe('circular');
+});
+
+it('Column: image() alt is omitted by default', function (): void {
+    $json = encodeColumn(Column::make('cover')->image());
+
+    expect(array_key_exists('alt', $json))->toBeFalse();
+});
+
+it('Column: image()->alt() emits the alt string', function (): void {
+    $json = encodeColumn(Column::make('cover')->image()->alt('Avatar'));
+
+    expect($json['alt'])->toBe('Avatar');
+});
+
+// ---------------------------------------------------------------------------
 // Color enum
 // ---------------------------------------------------------------------------
 
