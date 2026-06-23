@@ -29,6 +29,8 @@ export interface ActionOptionsBag {
 	keybinding?: ActionConfig["keybinding"];
 	icon?: { name: string; position: string };
 	tooltip?: string;
+	/** Submit-type actions render as <button type="submit"> so Enter submits the form. */
+	isSubmit?: boolean;
 }
 
 export interface ActionRenderProps {

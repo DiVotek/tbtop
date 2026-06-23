@@ -103,7 +103,7 @@ function PlainActionBlock({
 	return (
 		<MaybeTooltip tooltip={opts.tooltip} disabled={pending || disabled}>
 			<Button
-				type="button"
+				type={opts.isSubmit ? "submit" : "button"}
 				ref={buttonRef}
 				variant={variant}
 				disabled={pending || disabled}

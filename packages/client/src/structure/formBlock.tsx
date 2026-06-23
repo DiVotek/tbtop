@@ -1,5 +1,5 @@
 import { InfoIcon } from "lucide-react";
-import type { ReactNode, RefObject } from "react";
+import type { FormEvent, ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 import type { FieldFormProps } from "../fields/fieldProps";
 import { TranslatableWrapper } from "../fields/translatableWrapper";
@@ -105,7 +105,22 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 						fieldErrors={ctrl.fieldErrors}
 					/>
 				)}
-				<form ref={formRef} className="flex flex-col gap-4" data-testid="form-block">
+				<form
+					ref={formRef}
+					className="flex flex-col gap-4"
+					data-testid="form-block"
+					onSubmit={(e: FormEvent<HTMLFormElement>) => {
+						e.preventDefault();
+						// A button-originated submit already ran the handler via its
+						// own click; only synthesize a click for keyboard/Enter submits.
+						if (submitter(e)) {
+							return;
+						}
+						formRef.current
+							?.querySelector<HTMLButtonElement>('button[type="submit"]')
+							?.click();
+					}}
+				>
 					<ScrollToErrorEffect
 						errorScrollTick={ctrl.errorScrollTick}
 						fieldErrors={ctrl.fieldErrors}
@@ -145,6 +160,15 @@ function ScrollToErrorEffect({ errorScrollTick, fieldErrors, formRef }: ScrollTo
 		scrollToFirstError(fieldErrors, formRef.current, setActiveLocale);
 	}, [errorScrollTick, fieldErrors, formRef, setActiveLocale]);
 
+	return null;
+}
+
+/** The control that triggered the submit (a clicked button), or null for Enter. */
+function submitter(e: FormEvent<HTMLFormElement>): HTMLElement | null {
+	const native = e.nativeEvent;
+	if (native instanceof SubmitEvent) {
+		return native.submitter;
+	}
 	return null;
 }
 

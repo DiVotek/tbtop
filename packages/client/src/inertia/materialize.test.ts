@@ -122,6 +122,27 @@ describe("materialize form", () => {
 		expect(() => schema.parse({ title: "toolong" })).toThrow();
 		expect(schema.parse({ title: "ok" })).toEqual({ title: "ok" });
 	});
+
+	it("flags the submit action's bag so the button can render type=submit", () => {
+		const mixed = node(
+			"form",
+			{
+				name: "post",
+				children: [
+					node("text", {}, "title"),
+					node("action", { spec: { type: "visit", href: "/admin" } }, "back"),
+					node("action", { spec: { type: "submit" } }, "save"),
+				],
+			},
+			"post",
+		);
+		const out = materialize(mixed, { ...BASE, data: {} });
+		const children = opts(out).children as StructureNode[];
+		const back = children.find((c) => c.name === "back") as StructureNode;
+		const save = children.find((c) => c.name === "save") as StructureNode;
+		expect(opts(save).isSubmit).toBe(true);
+		expect(opts(back).isSubmit).toBeUndefined();
+	});
 });
 
 describe("materialize chart", () => {

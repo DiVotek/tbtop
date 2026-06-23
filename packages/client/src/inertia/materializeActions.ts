@@ -62,6 +62,9 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 	if (confirm) {
 		return { ...base, modal: confirmModal(base, confirm, handler) };
 	}
+	if (spec.type === "submit") {
+		return { ...base, handler, isSubmit: true };
+	}
 	return { ...base, handler };
 }
 
