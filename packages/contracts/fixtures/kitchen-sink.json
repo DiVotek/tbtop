@@ -510,6 +510,8 @@
                                     {
                                         "kind": "repeater",
                                         "options": {
+                                            "minItems": 1,
+                                            "defaultItems": 2,
                                             "fields": [
                                                 {
                                                     "kind": "text",

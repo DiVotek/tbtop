@@ -116,7 +116,7 @@ class KitchenSinkPage extends Page
                         ->labelKey('name')
                         ->searchable()
                         ->query(fn () => null),
-                    $s->repeater('sections')->rules('array|max:10')->set('fields', [
+                    $s->repeater('sections')->rules('array|max:10')->minItems(1)->defaultItems(2)->set('fields', [
                         $s->text('heading')->required(),
                         $s->textarea('text'),
                     ]),

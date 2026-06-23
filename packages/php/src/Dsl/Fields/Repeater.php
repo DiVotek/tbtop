@@ -19,4 +19,14 @@ final class Repeater extends Field
     {
         return $this->set('maxItems', $max);
     }
+
+    public function minItems(int $min): static
+    {
+        return $this->set('minItems', $min);
+    }
+
+    public function defaultItems(int $count): static
+    {
+        return $this->set('defaultItems', $count);
+    }
 }

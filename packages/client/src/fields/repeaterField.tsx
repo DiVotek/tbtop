@@ -13,6 +13,7 @@ interface RepeaterOptions {
 	fields?: StructureNode[];
 	minItems?: number;
 	maxItems?: number;
+	defaultItems?: number;
 }
 
 export function RepeaterCell({ value }: FieldCellProps<Item[]>) {
@@ -38,7 +39,10 @@ export function RepeaterForm({
 	const subFields = options?.fields ?? [];
 	const minItems = options?.minItems ?? 0;
 	const maxItems = options?.maxItems;
-	const items: Item[] = value ?? [];
+	const defaultItems = options?.defaultItems ?? 0;
+	const seeded: Item[] =
+		defaultItems > 0 && !disabled ? Array.from({ length: defaultItems }, () => ({})) : [];
+	const items: Item[] = value !== undefined && value !== null ? value : seeded;
 	const keys = useStableItemKeys(items);
 
 	function emit(next: Item[], keyMutation: (k: string[]) => string[]): void {
