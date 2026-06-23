@@ -5,9 +5,11 @@ import {
 	ActionLabel,
 	type ActionOptionsBag,
 	type ActionRenderProps,
+	actionButtonSize,
 	actionKey,
-	COLOR_TO_VARIANT,
+	actionVariant,
 	MaybeTooltip,
+	outlinedTintClass,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { useNearestFormController } from "./formContext";
@@ -37,7 +39,9 @@ function PlainActionBlock({
 	const formHandle = useNearestFormController();
 	const row = useNearestRow();
 	const [pending, setPending] = useState(false);
-	const variant = opts.color ? COLOR_TO_VARIANT[opts.color] : "outline";
+	const variant = actionVariant(opts);
+	const buttonSize = actionButtonSize(opts);
+	const tint = outlinedTintClass(opts);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 
 	useEffect(() => {
@@ -64,6 +68,8 @@ function PlainActionBlock({
 						type="button"
 						ref={buttonRef}
 						variant={variant}
+						size={buttonSize}
+						className={tint}
 						disabled
 						data-testid={`action-${actionKey(opts)}`}
 					>
@@ -78,11 +84,19 @@ function PlainActionBlock({
 					asChild
 					ref={buttonRef}
 					variant={variant}
+					size={buttonSize}
+					className={tint}
 					data-testid={`action-${actionKey(opts)}`}
 				>
-					<Link href={interpolated}>
-						<ActionLabel opts={opts} />
-					</Link>
+					{isExternalUrl(interpolated) ? (
+						<a href={interpolated}>
+							<ActionLabel opts={opts} />
+						</a>
+					) : (
+						<Link href={interpolated}>
+							<ActionLabel opts={opts} />
+						</Link>
+					)}
 				</Button>
 			</MaybeTooltip>
 		);
@@ -106,6 +120,8 @@ function PlainActionBlock({
 				type={opts.isSubmit ? "submit" : "button"}
 				ref={buttonRef}
 				variant={variant}
+				size={buttonSize}
+				className={tint}
 				disabled={pending || disabled}
 				onClick={onClick}
 				data-testid={`action-${actionKey(opts)}`}
@@ -278,5 +294,25 @@ function warnMissingKey(actionName: string, href: string, key: string): void {
 		console.warn(
 			`[tbtop] action "${actionName}": visit template "${href}" — key "${key}" not found in row — action hidden.`,
 		);
+	}
+}
+
+/**
+ * External = off-origin or a non-http(s) scheme (mailto:/tel:). Inertia's
+ * client navigation only works for same-origin admin routes, so external
+ * links fall back to a normal browser navigation (<a>).
+ */
+export function isExternalUrl(href: string): boolean {
+	if (typeof window === "undefined") {
+		return false;
+	}
+	try {
+		const url = new URL(href, window.location.href);
+		if (url.protocol !== "http:" && url.protocol !== "https:") {
+			return true;
+		}
+		return url.origin !== window.location.origin;
+	} catch {
+		return false;
 	}
 }

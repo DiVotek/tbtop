@@ -31,7 +31,10 @@
 								"properties": {
 									"spec": { "$ref": "#/$defs/actionSpec" },
 									"icon": { "$ref": "#/$defs/icon" },
-									"tooltip": { "type": "string" }
+									"tooltip": { "type": "string" },
+									"size": { "type": "string", "enum": ["sm", "md", "lg"] },
+									"outlined": { "type": "boolean" },
+									"as": { "type": "string", "enum": ["link", "button"] }
 								}
 							}
 						}

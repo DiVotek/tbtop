@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, fireEvent, render } from "@testing-library/react";
 import { toast } from "sonner";
 import { renderNode } from "../render/structureRenderer";
+import { isExternalUrl } from "./actionBlock";
 import { type StructureNode, s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 
@@ -189,5 +190,55 @@ describe("Action with modal", () => {
 		// ModalShell with size="lg" applies sm:max-w-2xl on the dialog content
 		const dialog = baseElement.querySelector('[role="dialog"]');
 		expect(dialog?.className ?? "").toContain("sm:max-w-2xl");
+	});
+});
+
+describe("Action trigger variants", () => {
+	test("gray color maps to the secondary button variant", () => {
+		const node = s.action({
+			name: "restore",
+			label: "Restore",
+			color: "gray",
+			handler: async () => {},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(getByTestId("action-restore").getAttribute("data-variant")).toBe("secondary");
+	});
+
+	test("size sets the button data-size", () => {
+		const node = s.action({ name: "go", label: "Go", size: "sm", handler: async () => {} });
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(getByTestId("action-go").getAttribute("data-size")).toBe("sm");
+	});
+
+	test("outlined danger uses the outline variant with a destructive tint", () => {
+		const node = s.action({
+			name: "del",
+			label: "Delete",
+			color: "danger",
+			outlined: true,
+			handler: async () => {},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const btn = getByTestId("action-del");
+		expect(btn.getAttribute("data-variant")).toBe("outline");
+		expect(btn.className).toContain("border-destructive");
+	});
+
+	test("as:link renders the link button variant", () => {
+		const node = s.action({ name: "more", label: "More", as: "link", handler: async () => {} });
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(getByTestId("action-more").getAttribute("data-variant")).toBe("link");
+	});
+
+	test("isExternalUrl flags off-origin and non-http links, not relative routes", () => {
+		expect(isExternalUrl("https://example.com/x")).toBe(true);
+		expect(isExternalUrl("mailto:a@b.com")).toBe(true);
+		expect(isExternalUrl("/admin/posts")).toBe(false);
+		expect(isExternalUrl(`${window.location.origin}/admin/x`)).toBe(false);
 	});
 });

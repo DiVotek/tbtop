@@ -195,9 +195,9 @@ class KitchenSinkPage extends Page
                 ->query(fn () => null)
                 ->toNode(),
             $s->actionsRow([
-                $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted')),
-                $s->action('details')->label('Details')->modal('Details', null, 'More info')->size('lg'),
-                $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi']),
+                $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted'))->size('sm')->outlined(),
+                $s->action('details')->label('Details')->modal('Details', null, 'More info')->modalWidth('lg'),
+                $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi'])->link(),
                 // Prebuilt edit-in-place: exercises the modal query/queryNeeds wire
                 // shape so the contract gate covers a modal+query action spec.
                 EditAction::make(

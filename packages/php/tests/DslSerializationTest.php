@@ -92,9 +92,9 @@ it('serializes server actions without leaking the closure', function () {
     ]);
 });
 
-it('serializes modal action with size', function () {
+it('serializes modal action with modalWidth', function () {
     $s = new S;
-    $action = $s->action('open')->label('Open')->modal('Title')->size('lg');
+    $action = $s->action('open')->label('Open')->modal('Title')->modalWidth('lg');
 
     expect(encode($action)['options']['spec'])->toBe([
         'type' => 'modal',
@@ -113,9 +113,23 @@ it('omits size from modal spec when not set', function () {
 });
 
 it('rejects invalid modal size value', function () {
-    (new ActionBuilder('open'))->modal('Title')->size('xl');
+    (new ActionBuilder('open'))->modal('Title')->modalWidth('xl');
 })->throws(InvalidArgumentException::class);
 
-it('rejects size() on non-modal action', function () {
-    (new ActionBuilder('go'))->visit('/x')->size('sm')->toNode();
+it('rejects modalWidth() on non-modal action', function () {
+    (new ActionBuilder('go'))->visit('/x')->modalWidth('sm')->toNode();
 })->throws(LogicException::class);
+
+it('serializes trigger variants (size, outlined, as) into action options', function () {
+    $s = new S;
+    $action = $s->action('go')->label('Go')->visit('/x')->size('sm')->outlined()->link();
+
+    $opts = encode($action)['options'];
+    expect($opts['size'])->toBe('sm')
+        ->and($opts['outlined'])->toBeTrue()
+        ->and($opts['as'])->toBe('link');
+});
+
+it('rejects an invalid trigger button size', function () {
+    (new ActionBuilder('go'))->size('xl');
+})->throws(InvalidArgumentException::class);

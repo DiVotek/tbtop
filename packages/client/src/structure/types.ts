@@ -13,7 +13,7 @@ export type AuthUser = {
 
 export type NodeId = string;
 
-export type ActionColor = "default" | "primary" | "danger" | "success" | "warning";
+export type ActionColor = "default" | "primary" | "danger" | "success" | "warning" | "gray";
 
 export interface ConditionContext {
 	record: Record<string, unknown> | undefined;
@@ -127,6 +127,9 @@ interface ActionConfigBase {
 	name: string;
 	label?: string;
 	color?: ActionColor;
+	size?: "sm" | "md" | "lg";
+	outlined?: boolean;
+	as?: "link" | "button";
 	keybinding?: string;
 	/** Compiled hidden/disabled ConditionFns; evaluated per row (or user) at render. */
 	meta?: NodeMeta;

@@ -879,6 +879,8 @@
                             "kind": "action",
                             "options": {
                                 "label": "About",
+                                "size": "sm",
+                                "outlined": true,
                                 "spec": {
                                     "type": "modal",
                                     "title": "About",
@@ -913,6 +915,7 @@
                             "kind": "action",
                             "options": {
                                 "label": "Copy",
+                                "as": "link",
                                 "spec": {
                                     "type": "custom",
                                     "handler": "clipboard",

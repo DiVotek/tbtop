@@ -134,7 +134,11 @@ export interface StructureBuilders<TForm = unknown> {
 	grid: (opts: NodeMeta & { cols: number }, children: StructureNode[]) => StructureNode;
 	section: (opts: NodeMeta & { title?: string }, children: StructureNode[]) => StructureNode;
 	tabs: (tabs: TabItem[], opts?: NodeMeta) => StructureNode;
-	tab: (label: string, body: StructureNode) => TabItem;
+	tab: (
+		label: string,
+		body: StructureNode,
+		opts?: { icon?: string | { name: string; position?: string }; badge?: string | number },
+	) => TabItem;
 	form: <TJson = TForm>(
 		opts: NodeMeta & FormOptions,
 		children: StructureNode[] | ((s: StructureBuilders<TJson>) => StructureNode[]),
