@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { safeUuid } from "../lib/safeUuid";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
@@ -49,7 +50,7 @@ export function KeyvalueForm({
 	}
 
 	function addRow(): void {
-		updateRows([...rows, { id: crypto.randomUUID(), key: "", value: "" }]);
+		updateRows([...rows, { id: safeUuid(), key: "", value: "" }]);
 	}
 
 	function removeRow(rowId: string): void {
