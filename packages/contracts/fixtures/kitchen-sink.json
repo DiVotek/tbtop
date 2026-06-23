@@ -663,6 +663,22 @@
                                     "variant": "subheading"
                                 },
                                 "meta": {}
+                            },
+                            "icon": {
+                                "name": "star",
+                                "position": "left"
+                            },
+                            "badge": "3"
+                        },
+                        {
+                            "label": "More",
+                            "body": {
+                                "kind": "displayText",
+                                "options": {
+                                    "content": "Second tab",
+                                    "variant": "muted"
+                                },
+                                "meta": {}
                             }
                         }
                     ]

@@ -141,7 +141,8 @@ class KitchenSinkPage extends Page
                 ])->record(['title' => 'Hello'])->onSubmit(fn () => Effects::make()),
             ]),
             $s->tabs([
-                ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading')],
+                ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3'],
+                ['label' => 'More', 'body' => $s->displayText('Second tab')->variant('muted')],
             ]),
             $s->table('posts')
                 ->columns([

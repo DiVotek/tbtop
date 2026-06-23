@@ -361,7 +361,9 @@
 								"required": ["label", "body"],
 								"properties": {
 									"label": { "type": "string" },
-									"body": { "$ref": "#/$defs/node" }
+									"body": { "$ref": "#/$defs/node" },
+									"icon": { "$ref": "#/$defs/icon" },
+									"badge": { "type": "string" }
 								}
 							},
 							{ "$ref": "#/$defs/tableTab" }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { AdminClient } from "../data/client";
 import type { FieldConstraints } from "../inertia/constraints";
+import type { IconDef } from "../ui/node-icon";
 import type { AsyncBlock } from "./asyncBlock";
 
 // Inlined from the old auth/AuthProvider — session auth lives on the Laravel
@@ -45,6 +46,8 @@ export interface StructureNode<TKind extends string = string, TOptions = unknown
 export interface TabItem {
 	label: string;
 	body: StructureNode;
+	icon?: IconDef;
+	badge?: string;
 }
 
 export interface FormController {

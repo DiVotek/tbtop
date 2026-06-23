@@ -361,12 +361,35 @@ final class S
         return DisplayKeyValueBlock::make($map);
     }
 
-    /** @param  list<array{label: string, body: mixed}>  $tabs @param  array<string, mixed>  $opts */
+    /** @param  list<array{label: string, body: mixed, icon?: string|array{name: string, position?: string}, badge?: string|int}>  $tabs @param  array<string, mixed>  $opts */
     public function tabs(array $tabs, array $opts = []): Node
     {
         [$options, $meta] = Meta::split($opts);
+        $items = array_map(self::normalizeTab(...), $tabs);
 
-        return new Node('tabs', [...$options, 'tabs' => $tabs], null, $meta);
+        return new Node('tabs', [...$options, 'tabs' => $items], null, $meta);
+    }
+
+    /**
+     * Normalize a form-tab entry to the wire shape (string icon → {name, position}).
+     *
+     * @param  array<string, mixed>  $tab
+     * @return array<string, mixed>
+     */
+    private static function normalizeTab(array $tab): array
+    {
+        $out = ['label' => $tab['label'], 'body' => $tab['body']];
+        if (isset($tab['icon'])) {
+            $icon = $tab['icon'];
+            $out['icon'] = is_array($icon)
+                ? ['name' => $icon['name'], 'position' => $icon['position'] ?? 'left']
+                : ['name' => (string) $icon, 'position' => 'left'];
+        }
+        if (isset($tab['badge'])) {
+            $out['badge'] = (string) $tab['badge'];
+        }
+
+        return $out;
     }
 
     // -------------------------------------------------------------------------

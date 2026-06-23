@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
-import { s } from "../structure/structure";
+import { fireEvent, render } from "@testing-library/react";
+import { type StructureNode, s } from "../structure/structure";
 import { clearBlockRegistry } from "./blockRegistry";
 import { ensureBuiltinsRegistered } from "./registerBuiltins";
 import { renderNode } from "./structureRenderer";
@@ -140,4 +140,30 @@ test("FlexBlock with all options renders all mapped classes", () => {
 	expect(el.className).toContain("items-center");
 	expect(el.className).toContain("gap-4");
 	expect(el.className).toContain("flex-wrap");
+});
+
+// ---------------------------------------------------------------------------
+// TabsBlock — interactive switching + icon/badge
+// ---------------------------------------------------------------------------
+
+test("TabsBlock switches the visible panel when a trigger is clicked", () => {
+	const body = (content: string): StructureNode => ({
+		kind: "displayText",
+		options: { content },
+		meta: {},
+	});
+	const node = s.tabs([
+		s.tab("General", body("First panel"), { icon: "star", badge: "2" }),
+		s.tab("Advanced", body("Second panel")),
+	]);
+	const { getByTestId, getByText, queryByText } = render(renderNode(node));
+
+	expect(getByText("First panel")).toBeTruthy();
+	expect(queryByText("Second panel")).toBeNull();
+	expect(getByTestId("tab-badge-General").textContent).toBe("2");
+
+	fireEvent.mouseDown(getByTestId("tab-Advanced"));
+
+	expect(getByText("Second panel")).toBeTruthy();
+	expect(queryByText("First panel")).toBeNull();
 });

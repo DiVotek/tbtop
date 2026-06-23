@@ -1,5 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import type { StructureNode } from "../structure/structure";
+import { type IconDef, NodeIcon } from "../ui/node-icon";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
 
 type JustifyValue = "start" | "center" | "end" | "between" | "around" | "evenly";
@@ -22,7 +24,7 @@ interface SectionOptions {
 }
 
 interface TabsOptions {
-	tabs: { label: string; body: StructureNode }[];
+	tabs: { label: string; body: StructureNode; icon?: IconDef; badge?: string }[];
 }
 
 interface WidgetOptions {
@@ -125,16 +127,39 @@ export function SectionBlock({ options, children, renderChild }: RenderProps<Sec
 }
 
 export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
+	if (options.tabs.length === 0) {
+		return null;
+	}
 	return (
-		<div className="flex flex-col gap-3" data-testid="tabs">
+		<Tabs defaultValue="0" data-testid="tabs">
+			<TabsList>
+				{options.tabs.map((tab, i) => {
+					const icon = <NodeIcon icon={tab.icon} className="size-4 shrink-0" />;
+					return (
+						// biome-ignore lint/suspicious/noArrayIndexKey: tab positions are stable
+						<TabsTrigger key={i} value={String(i)} data-testid={`tab-${tab.label}`}>
+							{tab.icon?.position !== "right" && icon}
+							{tab.label}
+							{tab.icon?.position === "right" && icon}
+							{tab.badge !== undefined && (
+								<span
+									className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
+									data-testid={`tab-badge-${tab.label}`}
+								>
+									{tab.badge}
+								</span>
+							)}
+						</TabsTrigger>
+					);
+				})}
+			</TabsList>
 			{options.tabs.map((tab, i) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: tab positions are stable
-				<div key={i} data-testid={`tab-${tab.label}`}>
-					<h3 className="text-sm font-medium">{tab.label}</h3>
+				<TabsContent key={i} value={String(i)} data-testid={`tab-panel-${tab.label}`}>
 					{renderChild(tab.body)}
-				</div>
+				</TabsContent>
 			))}
-		</div>
+		</Tabs>
 	);
 }
 
