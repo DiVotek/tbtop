@@ -99,4 +99,27 @@ describe("AdminLayout chrome trees", () => {
 		expect(getByText("EasyCar")).toBeTruthy();
 		expect(queryByText("Tabletop")).toBeNull();
 	});
+
+	test("the sidebar layout (default) renders a left aside", () => {
+		const { container } = renderShell(defaultChrome());
+
+		expect(container.querySelector("aside")).toBeTruthy();
+	});
+
+	test("topbar navigation renders nav, user menu, and mobile drawer in a bar (no aside)", () => {
+		const { container, getByTestId } = renderShell(defaultChrome(), { navigation: "topbar" });
+
+		// Same chrome blocks, rearranged: no left sidebar column.
+		expect(container.querySelector("aside")).toBeNull();
+		expect(getByTestId("admin-sidebar")).toBeTruthy();
+		expect(getByTestId("profile-trigger")).toBeTruthy();
+		// Mobile parity: the burger drawer trigger is still present.
+		expect(getByTestId("sidebar-trigger")).toBeTruthy();
+	});
+
+	test("topbar navigation lays the nav out horizontally on wide screens", () => {
+		const { getByTestId } = renderShell(defaultChrome(), { navigation: "topbar" });
+
+		expect(getByTestId("admin-sidebar").className).toContain("lg:flex-row");
+	});
 });

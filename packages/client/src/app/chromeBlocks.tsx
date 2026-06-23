@@ -9,11 +9,22 @@ import { ProfileDropdown } from "./ProfileDropdown";
 // legacy shell defaults render through the same components.
 
 export function NavMenuBlock() {
-	const { nav, currentUrl } = useChromeData();
+	const { nav, currentUrl, orientation } = useChromeData();
+	// Horizontal (topbar) goes inline only at lg+ — the mobile drawer reuses
+	// this same node and must keep the stacked sidebar layout.
+	const navClass =
+		orientation === "horizontal"
+			? "flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2"
+			: "flex flex-col gap-4";
 	return (
-		<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
+		<nav className={navClass} data-testid="admin-sidebar">
 			{nav.map((group) => (
-				<NavGroupSection key={group.group} group={group} currentUrl={currentUrl} />
+				<NavGroupSection
+					key={group.group}
+					group={group}
+					currentUrl={currentUrl}
+					orientation={orientation}
+				/>
 			))}
 		</nav>
 	);
@@ -60,14 +71,22 @@ export function SpacerBlock() {
 interface NavGroupSectionProps {
 	group: NavGroup;
 	currentUrl: ChromeData["currentUrl"];
+	orientation: ChromeData["orientation"];
 }
 
-function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
+function NavGroupSection({ group, currentUrl, orientation }: NavGroupSectionProps) {
+	const horizontal = orientation === "horizontal";
+	// Group labels read well stacked; inline on a topbar they only clutter, so
+	// hide them at lg+ while keeping them in the mobile drawer.
+	const sectionClass = horizontal
+		? "flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-1"
+		: "flex flex-col gap-1";
+	const labelClass = horizontal
+		? "px-2 text-xs font-medium uppercase text-muted-foreground lg:hidden"
+		: "px-2 text-xs font-medium uppercase text-muted-foreground";
 	return (
-		<div className="flex flex-col gap-1">
-			<div className="px-2 text-xs font-medium uppercase text-muted-foreground">
-				{group.group}
-			</div>
+		<div className={sectionClass}>
+			<div className={labelClass}>{group.group}</div>
 			{group.items.map((item) => (
 				<Link
 					key={item.href}

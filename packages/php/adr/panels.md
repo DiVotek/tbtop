@@ -47,6 +47,14 @@ domain: panels
   `spacer` — thin DSL wrappers over the existing React chrome components. New kinds enter
   schema + kitchen-sink fixture + contract tests in the same change (contract gate).
   Client React `slots` remain the last-resort escape hatch.
+- **Navigation layout is a panel flag, not a chrome shape.** `PanelConfig::navigation('sidebar'
+  |'topbar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop; the client
+  rearranges the *same* chrome trees rather than serializing a different one — so a custom
+  Chrome class works under either layout. `sidebar` keeps the persistent left column; `topbar`
+  renders one horizontal bar (logo + nav inline + header items) that collapses to the same
+  burger drawer as the sidebar on mobile. Orientation is a client-only `ChromeData` concern
+  (the `navMenu` block goes `lg:flex-row` when horizontal) — no new wire kind, no schema/contract
+  change. Both layouts reuse `SidebarDrawer` for mobile.
 
 ## Why
 

@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Panels;
 
+use InvalidArgumentException;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -9,6 +10,9 @@ use Tbtop\Admin\Pages\Page;
  */
 final class PanelConfig
 {
+    /** Shell navigation layouts the client can render. */
+    public const NAVIGATIONS = ['sidebar', 'topbar'];
+
     private string $id = '';
 
     private string $prefix = '';
@@ -31,6 +35,8 @@ final class PanelConfig
     private bool $breadcrumbs = true;
 
     private ?string $brand = null;
+
+    private string $navigation = 'sidebar';
 
     private string $rootView = 'app';
 
@@ -108,6 +114,25 @@ final class PanelConfig
     public function brand(string $brand): static
     {
         $this->brand = $brand;
+
+        return $this;
+    }
+
+    /**
+     * Shell navigation layout: 'sidebar' (default) or 'topbar'. The client
+     * renders the same chrome blocks; only their arrangement changes. Both
+     * layouts collapse to a burger drawer on mobile.
+     *
+     * @param  'sidebar'|'topbar'  $navigation
+     */
+    public function navigation(string $navigation): static
+    {
+        if (! in_array($navigation, self::NAVIGATIONS, true)) {
+            throw new InvalidArgumentException(
+                "Unknown navigation \"{$navigation}\". Expected one of: ".implode(', ', self::NAVIGATIONS).'.',
+            );
+        }
+        $this->navigation = $navigation;
 
         return $this;
     }
@@ -191,6 +216,13 @@ final class PanelConfig
     public function getBrand(): ?string
     {
         return $this->brand;
+    }
+
+    /** @return 'sidebar'|'topbar' */
+    public function getNavigation(): string
+    {
+        /** @var 'sidebar'|'topbar' */
+        return $this->navigation;
     }
 
     public function getRootView(): string

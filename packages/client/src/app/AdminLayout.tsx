@@ -19,8 +19,16 @@ export interface ChromeTrees {
 	footer?: StructureNode | null;
 }
 
+/** Shell navigation layout, mirrors PanelConfig::navigation() on the server. */
+export type NavigationLayout = "sidebar" | "topbar";
+
 interface SharedProps {
-	tbtop?: { nav?: NavGroup[]; chrome?: ChromeTrees; brand?: string | null };
+	tbtop?: {
+		nav?: NavGroup[];
+		chrome?: ChromeTrees;
+		brand?: string | null;
+		navigation?: NavigationLayout;
+	};
 	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
 }
@@ -50,12 +58,21 @@ interface AdminLayoutShellProps {
 	slots?: AdminLayoutSlots;
 	chrome?: ChromeTrees | null;
 	brand?: string | null;
+	navigation?: NavigationLayout;
+}
+
+interface ShellFrameProps {
+	sidebar: ReactNode;
+	header: ReactNode;
+	footer: ReactNode;
+	children: ReactNode;
 }
 
 /**
  * Pure shell — testable without Inertia context. Receives nav/user/url
  * as props. Each area resolves React `slots` first (escape hatch), then
- * the server-authored chrome tree, then the built-in default.
+ * the server-authored chrome tree, then the built-in default. The
+ * `navigation` layout only changes how those areas are arranged.
  */
 export function AdminLayoutShell({
 	nav,
@@ -65,13 +82,16 @@ export function AdminLayoutShell({
 	slots,
 	chrome,
 	brand,
+	navigation = "sidebar",
 }: AdminLayoutShellProps) {
+	const topbar = navigation === "topbar";
 	const slotProps: AdminLayoutSlotProps = { nav, user };
 	const chromeData: ChromeData = {
 		nav,
 		user,
 		currentUrl,
 		brand: brand ?? null,
+		orientation: topbar ? "horizontal" : "vertical",
 		logoSlot: slots?.logo?.(slotProps),
 	};
 
@@ -83,22 +103,53 @@ export function AdminLayoutShell({
 		: renderArea(chrome?.header, <DefaultHeader />);
 	const footer = slots?.footer ? slots.footer(slotProps) : renderArea(chrome?.footer, null);
 
+	const frameProps: ShellFrameProps = { sidebar, header, footer, children };
+
 	return (
 		<ChromeDataContext.Provider value={chromeData}>
-			<div className="flex min-h-screen bg-background text-foreground">
-				<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
-					{sidebar}
-				</aside>
-				<div className="flex min-w-0 flex-1 flex-col">
-					<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
-						<SidebarDrawer sidebar={sidebar} />
-						{header}
-					</header>
-					<main className="min-w-0 flex-1">{children}</main>
-					{footer && <footer>{footer}</footer>}
-				</div>
-			</div>
+			{topbar ? <TopbarFrame {...frameProps} /> : <SidebarFrame {...frameProps} />}
 		</ChromeDataContext.Provider>
+	);
+}
+
+/** Default layout: persistent left sidebar, header strip, mobile drawer. */
+function SidebarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
+	return (
+		<div className="flex min-h-screen bg-background text-foreground">
+			<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
+				{sidebar}
+			</aside>
+			<div className="flex min-w-0 flex-1 flex-col">
+				<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
+					<SidebarDrawer sidebar={sidebar} />
+					{header}
+				</header>
+				<main className="min-w-0 flex-1">{children}</main>
+				{footer && <footer>{footer}</footer>}
+			</div>
+		</div>
+	);
+}
+
+/**
+ * Topbar layout: one horizontal bar holds the nav inline on wide screens
+ * (the `[&>*]:contents` lets the sidebar tree's wrapper collapse so its
+ * logo + nav become bar items). On mobile the same nav drops into the
+ * burger drawer, identical to the sidebar layout.
+ */
+function TopbarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
+	return (
+		<div className="flex min-h-screen flex-col bg-background text-foreground">
+			<header className="flex items-center gap-4 border-b px-4 py-3 lg:px-6">
+				<SidebarDrawer sidebar={sidebar} />
+				<div className="hidden min-w-0 flex-1 items-center gap-6 lg:flex [&>*]:contents">
+					{sidebar}
+				</div>
+				<div className="ml-auto flex items-center gap-3">{header}</div>
+			</header>
+			<main className="min-w-0 flex-1">{children}</main>
+			{footer && <footer>{footer}</footer>}
+		</div>
 	);
 }
 
@@ -120,6 +171,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 			slots={slots}
 			chrome={props.tbtop?.chrome}
 			brand={props.tbtop?.brand}
+			navigation={props.tbtop?.navigation ?? "sidebar"}
 		>
 			{children}
 		</AdminLayoutShell>
