@@ -162,6 +162,7 @@ function materializeTable(node: StructureNode, ctx: WalkCtx): StructureNode {
 			name,
 			rowActions: actionBags(opts.rowActions, ctx),
 			bulkActions: actionBags(opts.bulkActions, ctx),
+			headerActions: actionBags(opts.headerActions, ctx),
 			...(compiledFilters !== undefined ? { filters: compiledFilters } : {}),
 			query: (actionCtx: ClientActionContext) =>
 				actionCtx.client

@@ -169,6 +169,13 @@ class KitchenSinkPage extends Page
                         ->onSave(fn ($record, $value) => null),
                 ])
                 ->searchable(['title'])
+                ->searchPlaceholder('Search posts…')
+                ->emptyState('No posts yet', 'Create your first post to get started.', 'file-text')
+                ->headerActions([
+                    $s->action('createPost')->label('New post')->icon('pencil')->visit('/admin/posts/create'),
+                ])
+                ->recordUrl(fn () => '/admin/posts/1')
+                ->openRecordUrlInNewTab()
                 ->defaultSort('views', 'desc')
                 ->reorderable('sort_order')
                 ->tabs([

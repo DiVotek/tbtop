@@ -6,6 +6,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
+import type { TableEmptyState } from "../tableBlock.types";
 import { wrapForStructure } from "../testFixtures";
 import type { TableColumn } from "../types";
 import { TableGrid } from "./grid";
@@ -24,6 +25,8 @@ interface Overrides {
 	reorderColumn?: string;
 	reorderEnabled?: boolean;
 	rows?: Record<string, unknown>[];
+	emptyState?: TableEmptyState;
+	recordUrl?: boolean;
 }
 
 function renderGrid(over: Overrides = {}) {
@@ -46,6 +49,8 @@ function renderGrid(over: Overrides = {}) {
 				reorderEnabled={over.reorderEnabled}
 				reorderRows={() => Promise.resolve({})}
 				onRefresh={() => {}}
+				emptyState={over.emptyState}
+				recordUrl={over.recordUrl}
 			/>
 		</Wrap>,
 	);
@@ -89,5 +94,34 @@ describe("TableGrid reorder rendering", () => {
 		});
 		const blockedCell = blocked.container.querySelector("td[colspan]");
 		expect(blockedCell?.getAttribute("colspan")).toBe("1");
+	});
+});
+
+describe("TableGrid record URL + empty-state config", () => {
+	test("empty state uses the configured heading and icon", () => {
+		const { getByTestId } = renderGrid({
+			rows: [],
+			emptyState: { heading: "No widgets yet", icon: "star" },
+		});
+		const empty = getByTestId("table-empty");
+		expect(empty.textContent).toContain("No widgets yet");
+		expect(empty.querySelector("svg.lucide-star")).not.toBeNull();
+	});
+
+	test("rows become clickable when recordUrl is set and the row carries a url", () => {
+		const { getByTestId } = renderGrid({
+			rows: [{ id: "1", title: "a", _recordUrl: "/admin/posts/1" }],
+			recordUrl: true,
+		});
+		const row = getByTestId("table-row-1");
+		expect(row.className).toContain("cursor-pointer");
+		expect(row.getAttribute("tabindex")).toBe("0");
+	});
+
+	test("rows stay non-clickable without recordUrl even if a url is present", () => {
+		const { getByTestId } = renderGrid({
+			rows: [{ id: "1", title: "a", _recordUrl: "/admin/posts/1" }],
+		});
+		expect(getByTestId("table-row-1").className).not.toContain("cursor-pointer");
 	});
 });

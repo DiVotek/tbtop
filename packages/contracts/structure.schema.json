@@ -69,7 +69,19 @@
 									"tabs": {
 										"type": "array",
 										"items": { "$ref": "#/$defs/tableTab" }
-									}
+									},
+									"searchPlaceholder": { "type": "string" },
+									"emptyState": {
+										"type": "object",
+										"properties": {
+											"heading": { "type": "string" },
+											"description": { "type": "string" },
+											"icon": { "type": "string" }
+										}
+									},
+									"headerActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+									"recordUrl": { "type": "boolean" },
+									"recordUrlNewTab": { "type": "boolean" }
 								}
 							}
 						}

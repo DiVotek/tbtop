@@ -693,6 +693,32 @@
                     "searchable": [
                         "title"
                     ],
+                    "searchPlaceholder": "Search posts\u2026",
+                    "emptyState": {
+                        "heading": "No posts yet",
+                        "description": "Create your first post to get started.",
+                        "icon": "file-text"
+                    },
+                    "headerActions": [
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "New post",
+                                "icon": {
+                                    "name": "pencil",
+                                    "position": "left"
+                                },
+                                "spec": {
+                                    "type": "visit",
+                                    "href": "/admin/posts/create"
+                                }
+                            },
+                            "meta": {},
+                            "name": "createPost"
+                        }
+                    ],
+                    "recordUrl": true,
+                    "recordUrlNewTab": true,
                     "defaultSort": {
                         "field": "views",
                         "dir": "desc"

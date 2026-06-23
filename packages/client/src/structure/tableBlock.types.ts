@@ -16,6 +16,12 @@ import type {
 
 export type SaveCellArgs = { column: string; id: string; value: unknown };
 
+export interface TableEmptyState {
+	heading?: string;
+	description?: string;
+	icon?: string;
+}
+
 export interface TableBlockOptions extends AsyncBlock {
 	/** Server-assigned table name — used to namespace URL query state. */
 	name?: string;
@@ -29,6 +35,11 @@ export interface TableBlockOptions extends AsyncBlock {
 	tabs?: TableTab[];
 	pagination?: TablePaginationOptions;
 	rowClick?: string;
+	searchPlaceholder?: string;
+	emptyState?: TableEmptyState;
+	headerActions?: ActionConfig[];
+	recordUrl?: boolean;
+	recordUrlNewTab?: boolean;
 	/** Present when the table declares reorderable(); carries the sort column. */
 	reorder?: { column: string };
 	/** Materialized by materialize.ts — takes actionCtx + args; bound in TableBlock. */
@@ -55,6 +66,11 @@ export interface TableBodyProps {
 	pagination?: TablePaginationOptions;
 	tableName: string;
 	rowClick?: string;
+	searchPlaceholder?: string;
+	emptyState?: TableEmptyState;
+	headerActions?: ActionConfig[];
+	recordUrl?: boolean;
+	recordUrlNewTab?: boolean;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 	/** Reorder column when reorderable() is declared; undefined otherwise. */
 	reorderColumn?: string;

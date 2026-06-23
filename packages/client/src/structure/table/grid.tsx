@@ -7,6 +7,7 @@ import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifi
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
 import { ReloadOverlay } from "../../ui/spinner";
+import type { TableEmptyState } from "../tableBlock.types";
 import type { TableColumn } from "../types";
 import { EmptyState } from "./emptyState";
 import { TableHead } from "./gridHead";
@@ -48,6 +49,9 @@ interface TableGridProps {
 	reorderEnabled?: boolean;
 	reorderRows?: (ids: string[]) => Promise<unknown>;
 	onRefresh?: () => void;
+	emptyState?: TableEmptyState;
+	recordUrl?: boolean;
+	recordUrlNewTab?: boolean;
 }
 
 export function TableGrid(props: TableGridProps) {
@@ -89,6 +93,7 @@ export function TableGrid(props: TableGridProps) {
 				<EmptyState
 					hasActiveFilters={props.hasActiveFilters}
 					onReset={props.onResetFilters}
+					config={props.emptyState}
 				/>
 			</td>
 		</tr>
@@ -165,6 +170,8 @@ function renderRow(
 			row={row}
 			columns={props.columns}
 			rowActions={props.rowActions}
+			recordUrl={props.recordUrl}
+			recordUrlNewTab={props.recordUrlNewTab}
 			selected={isSelected(props.selectedIds, row)}
 			onToggle={props.onToggle}
 			hasBulk={props.hasBulk}
