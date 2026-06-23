@@ -1,8 +1,9 @@
 <?php
 
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Tests\TestCase;
 
-uses(Tbtop\Admin\Tests\TestCase::class);
+uses(TestCase::class);
 
 it('RuleWalker: multiple upload auto-injects max from maxFiles', function () {
     $s = new S;
