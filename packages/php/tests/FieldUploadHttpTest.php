@@ -20,11 +20,10 @@ it('FieldUpload: stores using disk and directory from the node', function (): vo
 
     $response->assertOk();
     $data = $response->json('data');
-    expect($data)->toHaveKeys(['id', 'filename', 'mimeType', 'filesize', 'url', 'width', 'height', 'sizes'])
-        ->and($data['filename'])->toBe('a.png')
-        ->and($data['width'])->toBe(600)
-        ->and($data['height'])->toBe(400);
-    Storage::disk('public')->assertExists('avatars/'.$data['id']);
+    expect($data)->toHaveKeys(['path', 'url'])
+        ->and($data['path'])->toStartWith('avatars/')
+        ->and($data['url'])->toContain('avatars/');
+    Storage::disk('public')->assertExists($data['path']);
 });
 
 it('FieldUpload: client cannot override disk or directory from the body', function (): void {
@@ -37,9 +36,8 @@ it('FieldUpload: client cannot override disk or directory from the body', functi
     ])->assertOk()->json('data');
 
     // Server read the node, ignored the body: still public disk, avatars/ dir.
-    Storage::disk('public')->assertExists('avatars/'.$data['id']);
-    Storage::disk('public')->assertMissing('evil/'.$data['id']);
-    expect($data['url'])->toContain('avatars/');
+    Storage::disk('public')->assertExists($data['path']);
+    expect($data['path'])->toStartWith('avatars/');
 });
 
 it('FieldUpload: converts to webp and drops the original', function (): void {
@@ -48,11 +46,10 @@ it('FieldUpload: converts to webp and drops the original', function (): void {
     $data = $this->postJson('/admin/upload-field-page/uploads/cover', ['file' => $file])
         ->assertOk()->json('data');
 
-    expect($data['mimeType'])->toBe('image/webp')
-        ->and($data['id'])->toEndWith('.webp')
+    expect($data['path'])->toEndWith('.webp')
         ->and($data['url'])->toEndWith('.webp');
-    Storage::disk('public')->assertExists('covers/'.$data['id']);
-    Storage::disk('public')->assertMissing('covers/'.basename(str_replace('.webp', '.png', $data['id'])));
+    Storage::disk('public')->assertExists($data['path']);
+    Storage::disk('public')->assertMissing(str_replace('.webp', '.png', $data['path']));
 })->skip(! function_exists('imagewebp'), 'GD webp encoder unavailable');
 
 it('FieldUpload: rejects a mime outside the accept allowlist', function (): void {
@@ -96,7 +93,7 @@ it('FieldUpload: a private upload returns a signed view-route url, not /storage'
         ->toContain('/upload-field-page/uploads/secret/view')
         ->toContain('signature=')
         ->not->toContain('/storage');
-    Storage::disk('local')->assertExists('private-docs/'.$data['id']);
+    Storage::disk('local')->assertExists($data['path']);
 });
 
 it('FieldUpload: the signed view url streams the private file with a nosniff header', function (): void {
@@ -109,28 +106,12 @@ it('FieldUpload: the signed view url streams the private file with a nosniff hea
         ->assertHeader('X-Content-Type-Options', 'nosniff');
 });
 
-it('FieldUpload: each private variant url is signed too', function (): void {
-    if (! function_exists('imagecreatefromstring')) {
-        $this->markTestSkipped('GD unavailable');
-    }
-    config()->set('tbtop-admin.uploads.thumbed', ['sizes' => ['thumb' => [64, 64]]]);
-
-    $data = $this->postJson('/admin/upload-field-page/uploads/sized', [
-        'file' => UploadedFile::fake()->image('a.png', 200, 200),
-    ])->assertOk()->json('data');
-
-    expect($data['sizes'])->not->toBeEmpty();
-    expect($data['sizes'][0]['url'])
-        ->toContain('/uploads/sized/view')
-        ->toContain('signature=');
-});
-
 it('FieldUpload: a custom save closure overrides storage and is still signed', function (): void {
     $data = $this->postJson('/admin/upload-field-page/uploads/custom', [
         'file' => UploadedFile::fake()->image('a.png'),
     ])->assertOk()->json('data');
 
-    expect($data['filename'])->toBe('overridden.bin')
+    expect($data['path'])->toEndWith('custom.bin')
         ->and($data['url'])->toContain('/uploads/custom/view')->toContain('signature=');
 });
 

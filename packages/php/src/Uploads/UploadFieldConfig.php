@@ -6,8 +6,7 @@ use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Dsl\Fields\Upload;
 
 /**
- * Resolved upload settings for one Upload field: config preset merged
- * under the field's inline DSL options (inline wins on key collision).
+ * Resolved upload settings for one Upload field: inline DSL options only.
  */
 final class UploadFieldConfig
 {
@@ -16,7 +15,6 @@ final class UploadFieldConfig
     /**
      * @param  list<string>  $accept
      * @param  array{convertTo: string, quality?: int}|null  $image
-     * @param  array<string, array{0: int, 1: int}>  $sizes
      */
     public function __construct(
         public readonly string $disk,
@@ -25,23 +23,19 @@ final class UploadFieldConfig
         public readonly int $maxSize,
         public readonly array $accept,
         public readonly ?array $image,
-        public readonly array $sizes,
     ) {}
 
     public static function resolve(Upload $field): self
     {
         $options = $field->toNode()->options;
-        // Inline options (left) win over the preset base (right) on key collision.
-        $merged = $options + self::preset($options);
 
         return new self(
-            disk: (string) ($merged['disk'] ?? 'public'),
-            directory: (string) ($merged['directory'] ?? 'uploads'),
-            visibility: (string) ($merged['visibility'] ?? 'public'),
-            maxSize: (int) ($merged['maxSize'] ?? self::DEFAULT_MAX_SIZE),
-            accept: self::normalizeAccept($merged['accept'] ?? []),
-            image: self::normalizeImage($merged['image'] ?? null),
-            sizes: self::normalizeSizes($merged['sizes'] ?? []),
+            disk: (string) ($options['disk'] ?? 'public'),
+            directory: (string) ($options['directory'] ?? 'uploads'),
+            visibility: (string) ($options['visibility'] ?? 'public'),
+            maxSize: (int) ($options['maxSize'] ?? self::DEFAULT_MAX_SIZE),
+            accept: self::normalizeAccept($options['accept'] ?? []),
+            image: self::normalizeImage($options['image'] ?? null),
         );
     }
 
@@ -58,24 +52,6 @@ final class UploadFieldConfig
             }
         }
         abort(422, "File type {$mime} is not allowed.");
-    }
-
-    /**
-     * Base preset from config, keyed by the field's `entity` or `profile` option.
-     *
-     * @param  array<string, mixed>  $options
-     * @return array<string, mixed>
-     */
-    private static function preset(array $options): array
-    {
-        $key = $options['entity'] ?? $options['profile'] ?? null;
-        if (! is_string($key)) {
-            return [];
-        }
-        $presets = config('tbtop-admin.uploads', []);
-        $preset = is_array($presets) ? ($presets[$key] ?? null) : null;
-
-        return is_array($preset) ? $preset : [];
     }
 
     /**
@@ -109,13 +85,5 @@ final class UploadFieldConfig
         }
 
         return $out;
-    }
-
-    /**
-     * @return array<string, array{0: int, 1: int}>
-     */
-    private static function normalizeSizes(mixed $sizes): array
-    {
-        return is_array($sizes) ? $sizes : [];
     }
 }

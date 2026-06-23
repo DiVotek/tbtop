@@ -53,8 +53,8 @@ final class RuleWalker
         if ($field instanceof Select && $field->isMultiple()) {
             return self::fromMultipleSelectField($field, $prefix);
         }
-        if ($field instanceof Upload && $field->isMultiple()) {
-            return self::fromMultipleUploadField($field, $prefix);
+        if ($field instanceof Upload) {
+            return self::fromUploadField($field, $prefix);
         }
 
         $key = $prefix.$field->name;
@@ -106,24 +106,28 @@ final class RuleWalker
     }
 
     /**
-     * Multiple-upload: same split as multiple-select — field-level rules
-     * (required, array, max, min, …) stay on the field key; everything else
-     * goes to the element key. Auto-injects `max:{maxFiles}` from the DSL
-     * option when present and not already declared.
+     * Upload values are path strings. Single upload defaults to
+     * `nullable|string`; multiple splits field-level rules (`array`, `max`,
+     * `required`, …) from element-level rules (`string` + anything else).
+     * Auto-injects `max:{maxFiles}` for multiple uploads when not declared.
      *
      * @return array<string, list<string>>
      */
-    private static function fromMultipleUploadField(Upload $field, string $prefix): array
+    private static function fromUploadField(Upload $field, string $prefix): array
     {
-        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
         $key = $prefix.$field->name;
-        $allEntries = $field->ruleEntries();
+        $entries = $field->ruleEntries();
 
+        if (! $field->isMultiple()) {
+            return [$key => $entries === [] ? ['nullable', 'string'] : $entries];
+        }
+
+        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
         $fieldRules = ['array'];
-        $elementRules = [];
+        $elementRules = ['string'];
         $hasMax = false;
 
-        foreach ($allEntries as $entry) {
+        foreach ($entries as $entry) {
             $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
             if (in_array($name, $fieldLevel, true)) {
                 if ($entry !== 'array') {
@@ -144,12 +148,10 @@ final class RuleWalker
             }
         }
 
-        $rules = [$key => $fieldRules];
-        if ($elementRules !== []) {
-            $rules[$key.'.*'] = $elementRules;
-        }
-
-        return $rules;
+        return [
+            $key => $fieldRules,
+            $key.'.*' => $elementRules,
+        ];
     }
 
     /**

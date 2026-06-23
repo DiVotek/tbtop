@@ -2,31 +2,37 @@ import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } f
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { useClient } from "../data/client";
 import type { UploadRow } from "../data/upload";
 import { useTranslation } from "../i18n/i18n";
 import type { UploadTask, UploadTaskStatus } from "../media/types";
 import { UploadProgressList } from "../media/uploadProgressList";
-import { useClientActionContext } from "../structure/actionContext";
 import type { FieldFormProps } from "./fieldProps";
+import { UploadPicker } from "./uploadField";
+import { UploadSortableItem, UploadStaticItem } from "./uploadSortableItem";
 import {
 	exceedsMaxSize,
 	runUpload,
 	type UploadOptionsBag,
-	UploadPicker,
 	type UploadValue,
-} from "./uploadField";
-import { UploadSortableItem, UploadStaticItem } from "./uploadSortableItem";
+	useUploadDependencies,
+} from "./uploadUtils";
 
-function toArray(value: UploadValue | UploadValue[] | null): UploadValue[] {
+function normalizeItem(item: UploadValue | string): UploadValue {
+	return typeof item === "string" ? { path: item, url: "" } : item;
+}
+
+function toArray(value: UploadValue | UploadValue[] | string | string[] | null): UploadValue[] {
 	if (!value) {
 		return [];
 	}
-	return Array.isArray(value) ? value : [value];
+	if (Array.isArray(value)) {
+		return value.map(normalizeItem);
+	}
+	return [normalizeItem(value)];
 }
 
 function itemId(item: UploadValue, index: number): string {
-	return `${index}-${item.url || item.filename}`;
+	return `${index}-${item.path || item.url}`;
 }
 
 export function UploadMultiForm({
@@ -36,10 +42,9 @@ export function UploadMultiForm({
 	onChange,
 	disabled,
 	options,
-}: FieldFormProps<UploadValue | UploadValue[], UploadOptionsBag>) {
+}: FieldFormProps<UploadValue | UploadValue[] | string | string[], UploadOptionsBag>) {
 	const t = useTranslation();
-	const ctx = useClientActionContext();
-	const client = useClient();
+	const { ctx, client } = useUploadDependencies();
 	const opts = useMemo(() => options ?? {}, [options]);
 
 	const items = toArray(value);
@@ -93,10 +98,10 @@ export function UploadMultiForm({
 
 				patchTask(setTasks, task.id, { status: "uploading", pct: 0 });
 				try {
-					const row: UploadRow = await runUpload({ opts, ctx, client, file, t });
+					const row: UploadRow = await runUpload({ opts, ctx, client, file });
 					patchTask(setTasks, task.id, { status: "done", pct: 100 });
 					const latest = toArray(valueRef.current);
-					const next = [...latest, { ...row }];
+					const next = [...latest.map((item) => item.path), row.path];
 					valueRef.current = next;
 					onChange(next);
 				} catch (err) {
@@ -109,7 +114,7 @@ export function UploadMultiForm({
 	);
 
 	const handleRemove = (index: number) => {
-		const next = items.filter((_, i) => i !== index);
+		const next = items.filter((_, i) => i !== index).map((item) => item.path);
 		onChange(next.length > 0 ? next : null);
 	};
 
@@ -123,7 +128,7 @@ export function UploadMultiForm({
 		if (oldIndex === -1 || newIndex === -1) {
 			return;
 		}
-		onChange(arrayMove(items, oldIndex, newIndex));
+		onChange(arrayMove(items, oldIndex, newIndex).map((item) => item.path));
 	};
 
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));

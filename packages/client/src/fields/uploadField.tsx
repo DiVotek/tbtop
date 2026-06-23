@@ -1,46 +1,41 @@
 import { UploadIcon, XIcon } from "lucide-react";
 import { useState } from "react";
-import { type AdminClient, useClient } from "../data/client";
-import { unwrapData } from "../data/envelope";
-import { type UploadRow, uploadFile } from "../data/upload";
-import { type Translate, useTranslation } from "../i18n/i18n";
-import { useClientActionContext } from "../structure/actionContext";
-import { useNearestRow } from "../structure/rowContext";
-import type { ClientActionContext } from "../structure/types";
-import { Button } from "../ui/button";
-import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { useTranslation } from "../i18n/i18n";
+import { type FieldFormProps, fieldId } from "./fieldProps";
 import { UploadMultiForm } from "./uploadMultiField";
+import {
+	basename,
+	exceedsMaxSize,
+	looksLikeImage,
+	runUpload,
+	type UploadOptionsBag,
+	type UploadValue,
+	useUploadDependencies,
+} from "./uploadUtils";
 
-export interface UploadValue {
-	filename: string;
-	url: string;
-}
+export { UploadCell } from "./uploadCell";
+export type { RunUploadInput, UploadOptionsBag, UploadValue } from "./uploadUtils";
+export { basename, exceedsMaxSize, looksLikeImage, runUpload } from "./uploadUtils";
 
-type UploadFn = (ctx: ClientActionContext, file: File, signal?: AbortSignal) => Promise<unknown>;
-
-export interface UploadOptionsBag {
-	entity?: string;
-	accept?: string;
-	maxSize?: number;
-	maxFileSize?: number;
-	upload?: UploadFn;
-	multiple?: boolean;
-	maxFiles?: number;
-	reorderable?: boolean;
-}
-
-interface UploadRowShape {
-	mimeType?: string;
-	url?: string;
-	filename?: string;
-	sizes?: Array<{ url: string; width: number }>;
-}
-
-export function UploadForm(props: FieldFormProps<UploadValue | UploadValue[], UploadOptionsBag>) {
+export function UploadForm(
+	props: FieldFormProps<UploadValue | UploadValue[] | string | string[], UploadOptionsBag>,
+) {
 	if (props.options?.multiple) {
 		return <UploadMultiForm {...props} />;
 	}
-	return <UploadSingleForm {...(props as FieldFormProps<UploadValue, UploadOptionsBag>)} />;
+	return (
+		<UploadSingleForm {...(props as FieldFormProps<UploadValue | string, UploadOptionsBag>)} />
+	);
+}
+
+function normalizeUploadValue(value: UploadValue | string | null): UploadValue | null {
+	if (!value) {
+		return null;
+	}
+	if (typeof value === "string") {
+		return { path: value, url: "" };
+	}
+	return value;
 }
 
 function UploadSingleForm({
@@ -50,13 +45,13 @@ function UploadSingleForm({
 	onChange,
 	disabled,
 	options,
-}: FieldFormProps<UploadValue, UploadOptionsBag>) {
-	const t = useTranslation();
-	const ctx = useClientActionContext();
-	const client = useClient();
+}: FieldFormProps<UploadValue | string, UploadOptionsBag>) {
+	const { t, ctx, client } = useUploadDependencies();
 	const opts = options ?? {};
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const preview = normalizeUploadValue(value);
+
 	const onFiles = async (files: FileList | null) => {
 		const file = files?.[0];
 		if (!file) {
@@ -69,18 +64,19 @@ function UploadSingleForm({
 		setBusy(true);
 		setError(null);
 		try {
-			const row = await runUpload({ opts, ctx, client, file, t });
-			onChange({ ...row });
+			const row = await runUpload({ opts, ctx, client, file });
+			onChange(row.path);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
 			setBusy(false);
 		}
 	};
-	if (value) {
+
+	if (preview) {
 		return (
 			<UploadPreview
-				value={value}
+				value={preview}
 				onRemove={() => {
 					setError(null);
 					onChange(null);
@@ -101,73 +97,35 @@ function UploadSingleForm({
 	);
 }
 
-export interface RunUploadInput {
-	opts: UploadOptionsBag;
-	ctx: ClientActionContext;
-	client: AdminClient;
-	file: File;
-	t: Translate;
-}
-
-export async function runUpload({
-	opts,
-	ctx,
-	client,
-	file,
-	t,
-}: RunUploadInput): Promise<UploadRow> {
-	if (opts.upload) {
-		const raw = await opts.upload(ctx, file);
-		return unwrapData(raw) as UploadRow;
-	}
-	if (opts.entity) {
-		const res = await uploadFile({ client, entityName: opts.entity, file });
-		if (res.error) {
-			throw new Error(res.error.message);
-		}
-		if (!res.data) {
-			throw new Error(t("field.upload.noData"));
-		}
-		return res.data;
-	}
-	throw new Error("upload field is missing endpoint");
-}
-
-export function exceedsMaxSize(opts: UploadOptionsBag, file: File): boolean {
-	const limit = opts.maxSize ?? opts.maxFileSize;
-	if (limit === undefined) {
-		return false;
-	}
-	return file.size > limit;
-}
-
 interface PreviewProps {
 	value: UploadValue;
 	onRemove: () => void;
 }
 
-export function UploadPreview({ value, onRemove }: PreviewProps) {
-	const isImg = looksLikeImage(value.url, value.filename);
+function UploadPreview({ value, onRemove }: PreviewProps) {
+	const filename = basename(value.path);
+	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
 	return (
 		<div className="flex items-center gap-3 rounded-md border p-2">
 			{isImg ? (
-				<img
-					src={value.url}
-					alt={value.filename}
-					className="h-12 w-12 rounded object-cover"
-				/>
+				<img src={value.url} alt={filename} className="h-12 w-12 rounded object-cover" />
 			) : (
 				<div className="h-12 w-12 rounded bg-muted" />
 			)}
-			<span className="flex-1 truncate text-sm">{value.filename}</span>
-			<Button type="button" variant="ghost" size="sm" aria-label="Remove" onClick={onRemove}>
+			<span className="flex-1 truncate text-sm">{filename}</span>
+			<button
+				type="button"
+				className="rounded p-1 hover:bg-muted"
+				aria-label="Remove"
+				onClick={onRemove}
+			>
 				<XIcon className="h-4 w-4" />
-			</Button>
+			</button>
 		</div>
 	);
 }
 
-export interface PickerProps {
+interface PickerProps {
 	id: string;
 	name: string;
 	accept?: string;
@@ -215,59 +173,4 @@ export function UploadPicker({
 			) : null}
 		</div>
 	);
-}
-
-function thumbnailUrl(sizes: UploadRowShape["sizes"], fallback: string): string {
-	const variants = sizes ?? [];
-	if (variants.length === 0) {
-		return fallback;
-	}
-	return variants.reduce((a, b) => (b.width < a.width ? b : a)).url ?? fallback;
-}
-
-export function UploadCell({ value }: FieldCellProps<UploadValue | UploadValue[]>) {
-	const row = useNearestRow() as UploadRowShape | null;
-	if (Array.isArray(value)) {
-		if (value.length === 0) {
-			return null;
-		}
-		const first = value[0];
-		if (!first) {
-			return null;
-		}
-		const isImg = looksLikeImage(first.url, first.filename);
-		return (
-			<span className="flex items-center gap-1.5">
-				{isImg ? (
-					<img
-						src={first.url}
-						alt={first.filename}
-						className="h-8 w-8 rounded object-cover"
-					/>
-				) : null}
-				<span className="text-muted-foreground">{value.length}</span>
-			</span>
-		);
-	}
-	const mime = row?.mimeType;
-	const url = row?.url ?? value?.url;
-	const filename = row?.filename ?? value?.filename;
-	if (!url && !filename) {
-		return null;
-	}
-	if (mime?.startsWith("image/") && url) {
-		return (
-			<img
-				src={thumbnailUrl(row?.sizes, url)}
-				alt={filename ?? ""}
-				className="h-8 w-8 rounded object-cover"
-			/>
-		);
-	}
-	return <span>{filename}</span>;
-}
-
-export function looksLikeImage(url: string, filename: string): boolean {
-	const target = (url + filename).toLowerCase();
-	return /\.(png|jpe?g|gif|webp|avif|heic|svg)(\?|$)/.test(target);
 }

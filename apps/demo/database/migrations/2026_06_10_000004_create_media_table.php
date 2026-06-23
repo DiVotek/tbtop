@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('media', function (Blueprint $table) {
             $table->id();
+            $table->string('path');
             $table->string('filename');
             $table->string('url');
             $table->string('mime_type', 100);

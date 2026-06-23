@@ -76,7 +76,6 @@ it('MiddlewareOverride: public page still shares panel/chrome props', function (
 
 it('MiddlewareOverride: chrome cluster stays guarded', function (): void {
     $this->postJson('/admin/api/media/upload', [])->assertUnauthorized();
-    $this->postJson('/admin/uploads/default', [])->assertUnauthorized();
     $this->postJson('/admin/locale', [])->assertUnauthorized();
 });
 

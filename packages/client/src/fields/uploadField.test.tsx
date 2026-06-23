@@ -3,43 +3,31 @@ import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RowProvider } from "../structure/rowContext";
 import { clientWrapper } from "../testFixtures";
-import { UploadCell, UploadForm, type UploadValue } from "./uploadField";
+import { basename, UploadCell, UploadForm, type UploadValue } from "./uploadField";
 
-const SAMPLE: UploadValue = { filename: "pic.png", url: "/uploads/pic.png" };
+const SAMPLE: UploadValue = { path: "uploads/pic.png", url: "/uploads/pic.png" };
 
-function uploadResponse(row: Partial<UploadValue> & { mimeType?: string } = {}) {
-	return Response.json(
-		{
-			data: {
-				id: "u1",
-				filename: row.filename ?? "pic.png",
-				url: row.url ?? "/uploads/pic.png",
-				mimeType: row.mimeType ?? "image/png",
-				filesize: 1,
-				width: 10,
-				height: 10,
-				sizes: [],
-			},
-		},
-		{ status: 201 },
-	);
+function uploadResponse(path = "uploads/pic.png", url = "/uploads/pic.png") {
+	return { data: { path, url } };
 }
 
 describe("UploadForm", () => {
-	test("Upload posts the picked file to the configured entity and emits the new value", async () => {
+	test("Upload posts the picked file to the configured endpoint and emits the path", async () => {
 		const seen: string[] = [];
-		const Wrap = clientWrapper((req) => {
-			seen.push(req.url);
-			return uploadResponse({ filename: "hello.png", url: "/uploads/hello.png" });
-		});
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="file"
 					value={null}
 					onChange={(v) => captured.push(v)}
-					options={{ entity: "media" }}
+					options={{
+						upload: async (_ctx, file) => {
+							seen.push(file.name);
+							return uploadResponse("uploads/hello.png", "/uploads/hello.png");
+						},
+					}}
 				/>
 			</Wrap>,
 		);
@@ -47,30 +35,24 @@ describe("UploadForm", () => {
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
-		expect(seen[0]).toBe("http://test/admin/uploads/media");
-		// Full UploadRow flows through so submit handlers can persist metadata.
-		expect(captured.at(-1)).toMatchObject({
-			filename: "hello.png",
-			url: "/uploads/hello.png",
-			mimeType: "image/png",
-		});
+		expect(seen[0]).toBe("hello.png");
+		expect(captured.at(-1)).toBe("uploads/hello.png");
 	});
 
 	test("Upload surfaces a server error message and does not call onChange", async () => {
-		const Wrap = clientWrapper(() =>
-			Response.json(
-				{ error: { code: "bad_request", message: "File too large" } },
-				{ status: 413 },
-			),
-		);
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
 		const { container, getByRole } = render(
 			<Wrap>
 				<UploadForm
 					name="file"
 					value={null}
 					onChange={(v) => captured.push(v)}
-					options={{ entity: "media" }}
+					options={{
+						upload: async () => {
+							throw new Error("File too large");
+						},
+					}}
 				/>
 			</Wrap>,
 		);
@@ -82,15 +64,15 @@ describe("UploadForm", () => {
 	});
 
 	test("Upload with a value renders preview and clears to null on remove", async () => {
-		const Wrap = clientWrapper(() => uploadResponse());
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
 		const { getByRole, getByText } = render(
 			<Wrap>
 				<UploadForm
 					name="file"
 					value={SAMPLE}
 					onChange={(v) => captured.push(v)}
-					options={{ entity: "media" }}
+					options={{ upload: async () => uploadResponse() }}
 				/>
 			</Wrap>,
 		);
@@ -99,20 +81,11 @@ describe("UploadForm", () => {
 		expect(captured.at(-1)).toBeNull();
 	});
 
-	test("Upload uses the injected upload closure and emits the unwrapped row", async () => {
+	test("Upload uses the injected upload closure and emits the path", async () => {
 		const seen: File[] = [];
-		const row = {
-			id: "u9",
-			filename: "doc.png",
-			url: "/uploads/doc.png",
-			mimeType: "image/png",
-			filesize: 1,
-			width: 10,
-			height: 10,
-			sizes: [],
-		};
-		const captured: (UploadValue | UploadValue[] | null)[] = [];
-		const Wrap = clientWrapper(() => uploadResponse());
+		const row = { path: "uploads/doc.png", url: "/uploads/doc.png" };
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
+		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(
 			<Wrap>
 				<UploadForm
@@ -133,33 +106,44 @@ describe("UploadForm", () => {
 		await userEvent.upload(input, file);
 		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
 		expect(seen[0]).toBe(file);
-		expect(captured.at(-1)).toMatchObject({
-			filename: "doc.png",
-			url: "/uploads/doc.png",
-			mimeType: "image/png",
-		});
+		expect(captured.at(-1)).toBe("uploads/doc.png");
 	});
 
 	test("Upload accept attribute forwards to the file input", () => {
-		const Wrap = clientWrapper(() => uploadResponse());
+		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(
 			<Wrap>
 				<UploadForm
 					name="file"
 					value={null}
 					onChange={() => {}}
-					options={{ entity: "media", accept: "image/*" }}
+					options={{ accept: "image/*", upload: async () => uploadResponse() }}
 				/>
 			</Wrap>,
 		);
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		expect(input.getAttribute("accept")).toBe("image/*");
 	});
+
+	test("Upload tolerates a plain string value without crashing", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const { getByText } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value="uploads/legacy.png"
+					onChange={() => {}}
+					options={{ upload: async () => uploadResponse() }}
+				/>
+			</Wrap>,
+		);
+		expect(getByText("legacy.png")).toBeTruthy();
+	});
 });
 
 describe("UploadCell", () => {
 	test("UploadCell with an image row renders an img with the row url", () => {
-		const row = { mimeType: "image/png", url: "/u/a.png", filename: "a.png" };
+		const row = { path: "uploads/a.png", url: "/u/a.png" };
 		const { container } = render(
 			<RowProvider value={row}>
 				<UploadCell value={SAMPLE} />
@@ -167,40 +151,10 @@ describe("UploadCell", () => {
 		);
 		const img = container.querySelector("img");
 		expect(img?.getAttribute("src")).toBe("/u/a.png");
-	});
-
-	test("UploadCell with an image row and empty sizes falls back to row.url", () => {
-		const row = { mimeType: "image/png", url: "/u/a.png", filename: "a.png", sizes: [] };
-		const { container } = render(
-			<RowProvider value={row}>
-				<UploadCell value={SAMPLE} />
-			</RowProvider>,
-		);
-		const img = container.querySelector("img");
-		expect(img?.getAttribute("src")).toBe("/u/a.png");
-	});
-
-	test("UploadCell with an image row picks the smallest variant when sizes are present", () => {
-		const row = {
-			mimeType: "image/png",
-			url: "/u/a.png",
-			filename: "a.png",
-			sizes: [
-				{ url: "/u/a-thumb.png", width: 64 },
-				{ url: "/u/a-med.png", width: 256 },
-			],
-		};
-		const { container } = render(
-			<RowProvider value={row}>
-				<UploadCell value={SAMPLE} />
-			</RowProvider>,
-		);
-		const img = container.querySelector("img");
-		expect(img?.getAttribute("src")).toBe("/u/a-thumb.png");
 	});
 
 	test("UploadCell with a non-image row renders the filename", () => {
-		const row = { mimeType: "application/pdf", url: "/u/a.pdf", filename: "a.pdf" };
+		const row = { path: "uploads/a.pdf", url: "/u/a.pdf" };
 		const { container } = render(
 			<RowProvider value={row}>
 				<UploadCell value={null} />
@@ -212,5 +166,17 @@ describe("UploadCell", () => {
 	test("UploadCell with no value and no row renders nothing", () => {
 		const { container } = render(<UploadCell value={null} />);
 		expect(container.textContent).toBe("");
+	});
+
+	test("UploadCell with a string path renders the basename", () => {
+		const { container } = render(<UploadCell value="uploads/report.pdf" />);
+		expect(container.textContent).toContain("report.pdf");
+	});
+});
+
+describe("basename", () => {
+	test("returns the last path segment", () => {
+		expect(basename("uploads/pic.png")).toBe("pic.png");
+		expect(basename("pic.png")).toBe("pic.png");
 	});
 });

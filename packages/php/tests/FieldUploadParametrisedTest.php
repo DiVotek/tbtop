@@ -20,6 +20,7 @@ it('Parametrised render: a private value signs without the missing-param throw',
         ->assertOk()
         ->json('props.data.main');
 
+    expect($record['secret']['path'])->toBe('private-docs/sample.webp');
     expect($record['secret']['url'])
         ->toContain('/records/42/edit/uploads/secret/view')
         ->toContain('signature=')

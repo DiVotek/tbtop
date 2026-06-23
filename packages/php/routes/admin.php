@@ -23,7 +23,6 @@ use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Http\TableController;
 use Tbtop\Admin\Http\TableReorderController;
-use Tbtop\Admin\Http\UploadController;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\PanelRegistry;
 
@@ -83,7 +82,6 @@ $registerPageRoutes = static function (array $pages): void {
  */
 $registerChromeRoutes = static function (): void {
     Route::post('locale', LocaleController::class)->name('locale');
-    Route::post('uploads/{tbtopProfile}', UploadController::class)->name('upload');
 
     // Media manager endpoints (under api/ to avoid collision with page routes)
     Route::prefix('api/media')->name('media.')->group(function (): void {

@@ -39,7 +39,6 @@ Route file: `packages/php/routes/admin.php`
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
-| `POST` | `{prefix}/uploads/{tbtopProfile}` | `tbtop.{panel}.upload` | `UploadController` | JSON | `{data: {id, filename, mimeType, filesize, url, width, height, sizes}}` |
 
 ### Media manager routes (prefix: `{prefix}/api/media`, name: `tbtop.{panel}.media.*`)
 
@@ -69,6 +68,8 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
 | `POST` | `{page-path}/relation-search/{tbtopField}` | `{slug}.relationSearch` | `RelationSearchController` | JSON | search mode: `{options: [{value, label}]}` · resolve mode: `{option: {value, label}\|null}` |
+| `POST` | `{page-path}/uploads/{tbtopField}` | `{slug}.upload` | `FieldUploadController` | JSON | `{data: {path, url}}` |
+| `GET` | `{page-path}/uploads/{tbtopField}/view` | `{slug}.uploadView` | `FieldUploadViewController` | signed URL | streams private file |
 | `POST` | `{page-path}/cells/{tbtopTable}/{tbtopColumn}` | `{slug}.cell` | `EditableColumnController` | JSON | `{effects: Effect[]}` |
 | `POST` | `{page-path}/tables/{tbtopTable}/reorder` | `{slug}.tableReorder` | `TableReorderController` | JSON | `{effects: Effect[]}` (refreshTable) |
 

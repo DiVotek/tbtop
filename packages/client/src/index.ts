@@ -19,8 +19,7 @@ export { ClientProvider, useClient } from "./data/client";
 export { collection, item, single } from "./data/entityRoutes";
 export type { Envelope, TabletopError } from "./data/envelope";
 export { isTabletopError } from "./data/envelope";
-export type { UploadFileInput, UploadRow } from "./data/upload";
-export { uploadFile } from "./data/upload";
+export type { UploadRow } from "./data/upload";
 export type {
 	I18nState,
 	LocaleLoader,

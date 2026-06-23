@@ -253,11 +253,11 @@ describe("materialize upload", () => {
 		const client = {
 			upload: async (path: string, formData: FormData) => {
 				captured = { path, formData };
-				return { data: { id: "u1" } };
+				return { data: { path: "u1", url: "/u/u1" } };
 			},
 		} as unknown as AdminClient;
 
-		const out = materialize(node("upload", { entity: "media" }, "cover"), BASE);
+		const out = materialize(node("upload", { accept: "image/*" }, "cover"), BASE);
 		const upload = opts(out).upload as (
 			ctx: ClientActionContext,
 			file: File,
@@ -268,7 +268,7 @@ describe("materialize upload", () => {
 
 		expect(captured?.path).toBe("/admin/posts/uploads/cover");
 		expect(captured?.formData.get("file")).toBe(file);
-		expect(result).toEqual({ data: { id: "u1" } });
+		expect(result).toEqual({ data: { path: "u1", url: "/u/u1" } });
 	});
 
 	it("preserves passthrough options alongside the injected closure", () => {

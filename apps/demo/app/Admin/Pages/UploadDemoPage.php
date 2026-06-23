@@ -61,8 +61,8 @@ class UploadDemoPage extends Page
                 // page-enter: the private one via a fresh signed view url, the
                 // public one via /storage. Remove a preview to reveal the picker.
                 ->record([
-                    'doc' => ['path' => 'docs/sample.webp', 'filename' => 'public-sample.webp'],
-                    'secret' => ['path' => 'private-docs/sample.webp', 'filename' => 'confidential-sample.webp'],
+                    'doc' => 'docs/sample.webp',
+                    'secret' => 'private-docs/sample.webp',
                     'gallery' => [],
                 ])
                 ->onSubmit(function (ActionCtx $ctx): string {

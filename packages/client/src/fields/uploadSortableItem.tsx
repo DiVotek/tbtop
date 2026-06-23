@@ -4,7 +4,7 @@ import { GripVertical, XIcon } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
-import { looksLikeImage, type UploadValue } from "./uploadField";
+import { basename, looksLikeImage, type UploadValue } from "./uploadUtils";
 
 interface ItemContentProps {
 	item: UploadValue;
@@ -17,20 +17,17 @@ interface ItemProps extends ItemContentProps {
 
 function ItemContent({ item, onRemove }: ItemContentProps) {
 	const t = useTranslation();
-	const isImg = looksLikeImage(item.url, item.filename);
+	const filename = basename(item.path);
+	const isImg = item.url !== "" && looksLikeImage(item.url, item.path);
 
 	return (
 		<>
 			{isImg ? (
-				<img
-					src={item.url}
-					alt={item.filename}
-					className="h-10 w-10 rounded object-cover"
-				/>
+				<img src={item.url} alt={filename} className="h-10 w-10 rounded object-cover" />
 			) : (
 				<div className="h-10 w-10 rounded bg-muted" />
 			)}
-			<span className="flex-1 truncate text-sm">{item.filename}</span>
+			<span className="flex-1 truncate text-sm">{filename}</span>
 			<Button
 				type="button"
 				variant="ghost"

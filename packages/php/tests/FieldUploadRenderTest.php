@@ -23,16 +23,17 @@ function renderRecord(object $test): array
 it('Render: a saved private value becomes a signed view url', function (): void {
     $record = renderRecord($this);
 
+    expect($record['secret']['path'])->toBe('private-docs/sample.webp');
     expect($record['secret']['url'])
         ->toContain('/upload-render-page/uploads/secret/view')
         ->toContain('signature=')
         ->toContain('expires=');
-    expect($record['secret']['filename'])->toBe('confidential.webp');
 });
 
 it('Render: a saved public value becomes a /storage url with no signature', function (): void {
     $record = renderRecord($this);
 
+    expect($record['doc']['path'])->toBe('docs/sample.webp');
     expect($record['doc']['url'])
         ->toStartWith('/storage')
         ->not->toContain('signature=');

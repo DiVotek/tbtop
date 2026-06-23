@@ -17,7 +17,7 @@ use Tbtop\Admin\Uploads\UploadStorer;
  * Page-scoped upload: disk, directory, accept, conversion all come from the
  * Upload field's DSL config on the resolved page — the client cannot override
  * them. Inherits the page gate via AuthorizesPage. A private field's response
- * urls are signed so the just-uploaded file previews immediately.
+ * url is signed so the just-uploaded file previews immediately.
  */
 final class FieldUploadController
 {
@@ -50,11 +50,11 @@ final class FieldUploadController
     }
 
     /**
-     * Private files can't be linked publicly; rewrite the envelope's url and
-     * each variant url to a short-lived signed view-route url. Public: pass through.
+     * Private files can't be linked publicly; rewrite the url to a short-lived
+     * signed view-route url. Public: pass through.
      *
-     * @param  array<string, mixed>  $envelope
-     * @return array<string, mixed>
+     * @param  array{path: string, url: string}  $envelope
+     * @return array{path: string, url: string}
      */
     private function signed(array $envelope, UploadFieldConfig $config, Request $request, string $field): array
     {
@@ -66,17 +66,7 @@ final class FieldUploadController
         // tbtopField/path are supplied explicitly by SignedUploadUrl — drop the route-only keys.
         $pageParams = ResolvedPage::routeParams($request);
         unset($pageParams['tbtopField'], $pageParams['path']);
-        $envelope['url'] = UploadFieldUrl::for($config, $field, $config->directory.'/'.$envelope['id'], $viewRoute, $pageParams);
-
-        if (isset($envelope['sizes']) && is_array($envelope['sizes'])) {
-            $envelope['sizes'] = array_map(
-                static fn (array $v): array => [
-                    ...$v,
-                    'url' => UploadFieldUrl::for($config, $field, $config->directory.'/'.$v['filename'], $viewRoute, $pageParams),
-                ],
-                $envelope['sizes'],
-            );
-        }
+        $envelope['url'] = UploadFieldUrl::for($config, $field, $envelope['path'], $viewRoute, $pageParams);
 
         return $envelope;
     }

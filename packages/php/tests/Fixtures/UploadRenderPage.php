@@ -26,8 +26,8 @@ class UploadRenderPage extends Page
                 $s->upload('doc')->disk('public')->directory('docs')->visibility('public'),
                 $s->upload('blank')->disk('local')->directory('private-docs')->visibility('private'),
             ])->record([
-                'secret' => ['path' => 'private-docs/sample.webp', 'filename' => 'confidential.webp'],
-                'doc' => ['path' => 'docs/sample.webp', 'filename' => 'public.webp'],
+                'secret' => 'private-docs/sample.webp',
+                'doc' => 'docs/sample.webp',
                 'blank' => null,
             ])->onSubmit(fn () => null),
         ]);

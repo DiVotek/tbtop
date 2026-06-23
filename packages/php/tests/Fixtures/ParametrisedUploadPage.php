@@ -26,7 +26,7 @@ class ParametrisedUploadPage extends Page
             $s->form('main', [
                 $s->upload('secret')->disk('local')->directory('private-docs')->visibility('private'),
             ])->record([
-                'secret' => ['path' => 'private-docs/sample.webp', 'filename' => 'confidential.webp'],
+                'secret' => 'private-docs/sample.webp',
             ])->onSubmit(fn () => null),
         ]);
     }
