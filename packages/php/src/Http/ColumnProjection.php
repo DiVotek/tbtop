@@ -29,14 +29,15 @@ final class ColumnProjection
             $table->allColumns(),
             fn (Column $c) => $c->isVisible(),
         );
-
-        if ($columns === []) {
-            return iterator_to_array($rows, false);
-        }
+        $recordUrl = $table->recordUrlResolver();
 
         $out = [];
         foreach ($rows as $row) {
-            $out[] = self::projectRow($row, $columns);
+            $projected = $columns === [] ? $row : self::projectRow($row, $columns);
+            if ($recordUrl !== null) {
+                data_set($projected, '_recordUrl', $recordUrl($row));
+            }
+            $out[] = $projected;
         }
 
         return $out;

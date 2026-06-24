@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActionBlock } from "./actionBlock";
 import { useClientActionContext } from "./actionContext";
 import { TableSkeleton } from "./defaults";
 import { renderAsyncError } from "./renderAsyncError";
@@ -98,6 +99,11 @@ export function TableBlock({ options }: TableRenderProps) {
 			pagination={options.pagination}
 			tableName={tableName}
 			rowClick={options.rowClick}
+			searchPlaceholder={options.searchPlaceholder}
+			emptyState={options.emptyState}
+			headerActions={options.headerActions}
+			recordUrl={options.recordUrl}
+			recordUrlNewTab={options.recordUrlNewTab}
 			saveCell={saveCell}
 			reorderColumn={options.reorder?.column}
 			reorderRows={reorderRows}
@@ -155,6 +161,17 @@ function TableBody(props: TableBodyProps) {
 	return (
 		<TableControllerProvider value={ctrl}>
 			<div className="flex flex-col gap-2" data-testid="table-block">
+				{(props.headerActions ?? []).length > 0 && (
+					<div className="flex justify-end gap-2" data-testid="table-header-actions">
+						{(props.headerActions ?? []).map((action) => (
+							<ActionBlock
+								key={action.name}
+								options={action}
+								meta={action.meta ?? {}}
+							/>
+						))}
+					</div>
+				)}
 				{tabs.length > 0 && (
 					<TableTabBar
 						tabs={tabs}
@@ -176,6 +193,7 @@ function TableBody(props: TableBodyProps) {
 					visibleColumns={visibleColumns}
 					onToggleColumn={toggleColumn}
 					onChangeParams={props.onChangeParams}
+					searchPlaceholder={props.searchPlaceholder}
 				/>
 
 				{hasBulk && (
@@ -201,6 +219,9 @@ function TableBody(props: TableBodyProps) {
 					hasActiveFilters={hasActiveFilters}
 					onResetFilters={handleResetFilters}
 					rowClick={props.rowClick}
+					recordUrl={props.recordUrl}
+					recordUrlNewTab={props.recordUrlNewTab}
+					emptyState={props.emptyState}
 					saveCell={props.saveCell}
 					reorderColumn={props.reorderColumn}
 					reorderEnabled={reorderEnabled}

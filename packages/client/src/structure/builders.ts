@@ -1,3 +1,4 @@
+import type { IconDef } from "../ui/node-icon";
 import type { ChartBlockOptions } from "./chartBlock";
 import type { FormOptions, NodeMeta, StructureNode, TabItem, TableOptions } from "./types";
 
@@ -45,8 +46,22 @@ export function buildTabs(items: TabItem[], opts?: Bag): StructureNode {
 	return { kind: "tabs", options: { ...split.options, tabs: items }, meta: split.meta };
 }
 
-export function buildTab(label: string, body: StructureNode): TabItem {
-	return { label, body };
+export function buildTab(
+	label: string,
+	body: StructureNode,
+	opts?: { icon?: string | IconDef; badge?: string | number },
+): TabItem {
+	const tab: TabItem = { label, body };
+	if (opts?.icon !== undefined) {
+		tab.icon =
+			typeof opts.icon === "string"
+				? { name: opts.icon, position: "left" }
+				: { position: "left", ...opts.icon };
+	}
+	if (opts?.badge !== undefined) {
+		tab.badge = String(opts.badge);
+	}
+	return tab;
 }
 
 type ChildrenInput = StructureNode[] | ((s: unknown) => StructureNode[]);

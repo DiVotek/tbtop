@@ -1,6 +1,8 @@
 /**
- * RowActionsCell — trailing-cell actions; first ROW_ACTION_INLINE_MAX
- * inline, the rest in an overflow menu. Each stays an ActionBlock.
+ * RowActionsCell — trailing-cell actions. Every action renders inline; there is
+ * no implicit collapse at any count. To hide actions behind a dropdown, wrap
+ * them in an explicit group (S::dropdown / actionGroup) — that entry renders as
+ * a row-aware menu, even for a single action.
  */
 import { MoreHorizontal } from "lucide-react";
 import { useAuthUser } from "../../app/authUser";
@@ -13,76 +15,107 @@ import {
 	DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import { ActionBlock } from "../actionBlock";
+import { type ActionOptionsBag, actionKey } from "../actionBlock.shared";
 import { isNodeDisabled, isNodeHidden } from "../meta";
 import { useNearestRow } from "../rowContext";
-import type { ActionConfig, ConditionContext } from "../types";
+import type { ActionConfig, ConditionContext, NodeMeta, StructureNode } from "../types";
 
-const ROW_ACTION_INLINE_MAX = 2;
-
-/** An action that survived hiddenIf, plus its pre-evaluated disabledIf result. */
-interface VisibleAction {
-	cfg: ActionConfig;
-	disabled: boolean;
+export interface ActionGroupConfig {
+	kind: "actionGroup";
+	label?: string;
+	as?: string;
+	children?: StructureNode[];
+	meta?: NodeMeta;
 }
 
-export function RowActionsCell({ actions }: { actions: ActionConfig[] }) {
+/** A materialized row action: a plain action or an explicit dropdown group. */
+export type RowActionEntry = ActionConfig | ActionGroupConfig;
+
+export function RowActionsCell({ actions }: { actions: RowActionEntry[] }) {
 	const row = useNearestRow();
 	const user = useAuthUser();
 	const condCtx: ConditionContext = { record: row ?? undefined, data: row ?? {}, user };
-	const visible: VisibleAction[] = actions
-		.filter((cfg) => !isNodeHidden(cfg.meta, condCtx))
-		.map((cfg) => ({ cfg, disabled: isNodeDisabled(cfg.meta, condCtx) }));
-
-	if (visible.length <= ROW_ACTION_INLINE_MAX) {
-		return (
-			<div className="flex items-center justify-end gap-1">
-				{visible.map(({ cfg, disabled }) => (
-					<ActionBlock
-						key={cfg.name}
-						options={cfg}
-						meta={cfg.meta ?? {}}
-						disabled={disabled}
-					/>
-				))}
-			</div>
-		);
+	const visible = actions.filter((entry) => !isNodeHidden(entry.meta, condCtx));
+	if (visible.length === 0) {
+		return null;
 	}
-	return <RowActionsMenu actions={visible} />;
+	return (
+		<div className="flex items-center justify-end gap-1">
+			{visible.map((entry, i) =>
+				isActionGroupEntry(entry) ? (
+					// biome-ignore lint/suspicious/noArrayIndexKey: groups carry no stable id
+					<RowActionGroup key={i} entry={entry} condCtx={condCtx} />
+				) : (
+					<ActionBlock
+						key={entry.name}
+						options={entry}
+						meta={entry.meta ?? {}}
+						disabled={isNodeDisabled(entry.meta, condCtx)}
+					/>
+				),
+			)}
+		</div>
+	);
 }
 
-function RowActionsMenu({ actions }: { actions: VisibleAction[] }) {
+/** A materialized actionGroup entry (S::dropdown / actionGroup) vs a plain action. */
+export function isActionGroupEntry(entry: RowActionEntry): entry is ActionGroupConfig {
+	return (entry as ActionGroupConfig).kind === "actionGroup";
+}
+
+/**
+ * An explicit dropdown group inside a row. Each child's hiddenIf/disabledIf is
+ * pre-evaluated against the row context here: the generic render path is
+ * row-blind (renderNode evaluates with an empty condition context and never
+ * checks disabledIf), so a row-dependent condition on a grouped action would
+ * otherwise be silently ignored.
+ */
+function RowActionGroup({
+	entry,
+	condCtx,
+}: {
+	entry: ActionGroupConfig;
+	condCtx: ConditionContext;
+}) {
 	const t = useTranslation();
+	const visible = (entry.children ?? [])
+		.filter((child) => !isNodeHidden(child.meta, condCtx))
+		.map((child) => ({ child, disabled: isNodeDisabled(child.meta, condCtx) }));
+	if (visible.length === 0) {
+		return null;
+	}
 	return (
-		<div className="flex justify-end">
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label={t("table.actions.label")}
-						data-testid="row-actions-trigger"
-					>
-						<MoreHorizontal className="size-4" aria-hidden />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
-					{actions.map(({ cfg, disabled }) => (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					aria-label={entry.label || t("table.actions.label")}
+					data-testid="action-group-trigger"
+				>
+					<MoreHorizontal className="size-4" aria-hidden />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" data-testid="action-group-menu">
+				{visible.map(({ child, disabled }) => {
+					const opts = child.options as ActionOptionsBag;
+					return (
 						<DropdownMenuItem
-							key={cfg.name}
+							key={actionKey(opts)}
 							asChild
 							onSelect={(e) => e.preventDefault()}
 						>
 							<div className="w-full">
 								<ActionBlock
-									options={cfg}
-									meta={cfg.meta ?? {}}
+									options={opts}
+									meta={child.meta ?? {}}
 									disabled={disabled}
 								/>
 							</div>
 						</DropdownMenuItem>
-					))}
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</div>
+					);
+				})}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

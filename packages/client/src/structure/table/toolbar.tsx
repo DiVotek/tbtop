@@ -22,6 +22,7 @@ interface TableToolbarProps {
 	visibleColumns: Set<string>;
 	onToggleColumn: (name: string) => void;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
+	searchPlaceholder?: string;
 }
 
 export function TableToolbar(props: TableToolbarProps) {
@@ -86,7 +87,7 @@ export function TableToolbar(props: TableToolbarProps) {
 			{hasSearch && (
 				<Input
 					type="search"
-					placeholder={t("table.search.placeholder")}
+					placeholder={props.searchPlaceholder ?? t("table.search.placeholder")}
 					className="w-full sm:max-w-xs"
 					data-testid="table-search-input"
 					onChange={(e) => handleSearchChange(e.target.value)}

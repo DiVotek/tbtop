@@ -510,6 +510,8 @@
                                     {
                                         "kind": "repeater",
                                         "options": {
+                                            "minItems": 1,
+                                            "defaultItems": 2,
                                             "fields": [
                                                 {
                                                     "kind": "text",
@@ -663,6 +665,22 @@
                                     "variant": "subheading"
                                 },
                                 "meta": {}
+                            },
+                            "icon": {
+                                "name": "star",
+                                "position": "left"
+                            },
+                            "badge": "3"
+                        },
+                        {
+                            "label": "More",
+                            "body": {
+                                "kind": "displayText",
+                                "options": {
+                                    "content": "Second tab",
+                                    "variant": "muted"
+                                },
+                                "meta": {}
                             }
                         }
                     ]
@@ -675,6 +693,32 @@
                     "searchable": [
                         "title"
                     ],
+                    "searchPlaceholder": "Search posts\u2026",
+                    "emptyState": {
+                        "heading": "No posts yet",
+                        "description": "Create your first post to get started.",
+                        "icon": "file-text"
+                    },
+                    "headerActions": [
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "New post",
+                                "icon": {
+                                    "name": "pencil",
+                                    "position": "left"
+                                },
+                                "spec": {
+                                    "type": "visit",
+                                    "href": "/admin/posts/create"
+                                }
+                            },
+                            "meta": {},
+                            "name": "createPost"
+                        }
+                    ],
+                    "recordUrl": true,
+                    "recordUrlNewTab": true,
                     "defaultSort": {
                         "field": "views",
                         "dir": "desc"
@@ -861,6 +905,8 @@
                             "kind": "action",
                             "options": {
                                 "label": "About",
+                                "size": "sm",
+                                "outlined": true,
                                 "spec": {
                                     "type": "modal",
                                     "title": "About",
@@ -895,6 +941,7 @@
                             "kind": "action",
                             "options": {
                                 "label": "Copy",
+                                "as": "link",
                                 "spec": {
                                     "type": "custom",
                                     "handler": "clipboard",

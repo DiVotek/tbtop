@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { AdminClient } from "../data/client";
 import type { FieldConstraints } from "../inertia/constraints";
+import type { IconDef } from "../ui/node-icon";
 import type { AsyncBlock } from "./asyncBlock";
 
 // Inlined from the old auth/AuthProvider — session auth lives on the Laravel
@@ -12,7 +13,7 @@ export type AuthUser = {
 
 export type NodeId = string;
 
-export type ActionColor = "default" | "primary" | "danger" | "success" | "warning";
+export type ActionColor = "default" | "primary" | "danger" | "success" | "warning" | "gray";
 
 export interface ConditionContext {
 	record: Record<string, unknown> | undefined;
@@ -45,6 +46,8 @@ export interface StructureNode<TKind extends string = string, TOptions = unknown
 export interface TabItem {
 	label: string;
 	body: StructureNode;
+	icon?: IconDef;
+	badge?: string;
 }
 
 export interface FormController {
@@ -124,6 +127,9 @@ interface ActionConfigBase {
 	name: string;
 	label?: string;
 	color?: ActionColor;
+	size?: "sm" | "md" | "lg";
+	outlined?: boolean;
+	as?: "link" | "button";
 	keybinding?: string;
 	/** Compiled hidden/disabled ConditionFns; evaluated per row (or user) at render. */
 	meta?: NodeMeta;
@@ -169,7 +175,7 @@ export interface PaginatedResponse<TRow = unknown> {
 export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncBlock {
 	query: (ctx: ClientActionContext) => Promise<TRow[] | PaginatedResponse<TRow>>;
 	columns: TableColumn<TRow>[];
-	rowActions?: ActionConfig<TBuilder>[];
+	rowActions?: (ActionConfig<TBuilder> | StructureNode)[];
 	bulkActions?: ActionConfig<TBuilder>[];
 	searchable?: string[];
 	filters?: StructureNode[];

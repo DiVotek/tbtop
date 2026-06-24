@@ -18,6 +18,7 @@ interface HarnessProps {
 		fields: { kind: string; name: string; options: Record<string, unknown>; meta: object }[];
 		minItems?: number;
 		maxItems?: number;
+		defaultItems?: number;
 	};
 	onEmit?: (v: Item[] | null) => void;
 }
@@ -83,6 +84,20 @@ describe("RepeaterForm", () => {
 		);
 		const remove = getAllByRole("button", { name: "Remove item" })[0] as HTMLButtonElement;
 		expect(remove.disabled).toBe(true);
+	});
+
+	test("defaultItems seeds empty rows when the value is absent", () => {
+		const { container } = render(
+			<Harness initial={null} options={{ fields: [titleField], defaultItems: 2 }} />,
+		);
+		expect(container.querySelectorAll("[data-repeater-item]")).toHaveLength(2);
+	});
+
+	test("defaultItems does not override an explicit empty value", () => {
+		const { container } = render(
+			<Harness initial={[]} options={{ fields: [titleField], defaultItems: 2 }} />,
+		);
+		expect(container.querySelectorAll("[data-repeater-item]")).toHaveLength(0);
 	});
 
 	test("Remove drops the targeted item", async () => {

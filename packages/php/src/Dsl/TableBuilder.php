@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Closure;
 use InvalidArgumentException;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Actions\ForceDeleteAction;
@@ -39,6 +40,8 @@ final class TableBuilder implements JsonSerializable
     private array $tabObjects = [];
 
     private ?string $filtersIn = null;
+
+    private ?Closure $recordUrlResolver = null;
 
     private int $paginatePerPage = 25;
 
@@ -194,7 +197,7 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<ActionBuilder>  $actions */
+    /** @param  list<ActionBuilder|Node>  $actions — plain actions render inline; wrap in S::dropdown()/actionGroup() to collapse into a menu. */
     public function rowActions(array $actions): self
     {
         $this->opts['rowActions'] = $actions;
@@ -211,6 +214,62 @@ final class TableBuilder implements JsonSerializable
         $this->opts['rowClick'] = $actionName;
 
         return $this;
+    }
+
+    /** Placeholder text for the search input (defaults to a generic i18n string). */
+    public function searchPlaceholder(string $text): self
+    {
+        $this->opts['searchPlaceholder'] = $text;
+
+        return $this;
+    }
+
+    /** Customize the empty-table message. $icon is a registered client icon name. */
+    public function emptyState(string $heading, ?string $description = null, ?string $icon = null): self
+    {
+        $this->opts['emptyState'] = array_filter(
+            ['heading' => $heading, 'description' => $description, 'icon' => $icon],
+            fn ($v) => $v !== null,
+        );
+
+        return $this;
+    }
+
+    /**
+     * Actions rendered above the table (e.g. a Create button).
+     *
+     * @param  list<ActionBuilder|Node>  $actions
+     */
+    public function headerActions(array $actions): self
+    {
+        $this->opts['headerActions'] = $actions;
+
+        return $this;
+    }
+
+    /**
+     * Make each row a link. The resolver runs server-side per row and returns a
+     * URL; the client navigates there on row click. The closure never serializes.
+     */
+    public function recordUrl(Closure $resolver): self
+    {
+        $this->recordUrlResolver = $resolver;
+        $this->opts['recordUrl'] = true;
+
+        return $this;
+    }
+
+    /** Open the record URL in a new browser tab. */
+    public function openRecordUrlInNewTab(bool $newTab = true): self
+    {
+        $this->opts['recordUrlNewTab'] = $newTab;
+
+        return $this;
+    }
+
+    public function recordUrlResolver(): ?Closure
+    {
+        return $this->recordUrlResolver;
     }
 
     /**

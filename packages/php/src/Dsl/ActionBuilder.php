@@ -37,6 +37,8 @@ final class ActionBuilder implements JsonSerializable
 
     private const MODAL_SIZES = ['sm', 'md', 'lg', 'full'];
 
+    private const BUTTON_SIZES = ['sm', 'md', 'lg'];
+
     public function __construct(public readonly string $name) {}
 
     public function label(string $label): self
@@ -99,19 +101,59 @@ final class ActionBuilder implements JsonSerializable
     }
 
     /**
-     * Set the modal dialog size. Only valid on modal actions.
+     * Set the modal dialog width. Only valid on modal actions.
      *
-     * @param  'sm'|'md'|'lg'|'full'  $size
+     * @param  'sm'|'md'|'lg'|'full'  $width
+     */
+    public function modalWidth(string $width): self
+    {
+        if (! in_array($width, self::MODAL_SIZES, true)) {
+            throw new \InvalidArgumentException(
+                "Invalid modal width \"{$width}\". Allowed: ".implode(', ', self::MODAL_SIZES).'.'
+            );
+        }
+        $this->modalSize = $width;
+
+        return $this;
+    }
+
+    /**
+     * Set the trigger button size.
+     *
+     * @param  'sm'|'md'|'lg'  $size
      */
     public function size(string $size): self
     {
-        if (! in_array($size, self::MODAL_SIZES, true)) {
+        if (! in_array($size, self::BUTTON_SIZES, true)) {
             throw new \InvalidArgumentException(
-                "Invalid modal size \"{$size}\". Allowed: ".implode(', ', self::MODAL_SIZES).'.'
+                "Invalid button size \"{$size}\". Allowed: ".implode(', ', self::BUTTON_SIZES).'.'
             );
         }
+        $this->opts['size'] = $size;
 
-        $this->modalSize = $size;
+        return $this;
+    }
+
+    /** Render the trigger as an outlined button. */
+    public function outlined(bool $outlined = true): self
+    {
+        $this->opts['outlined'] = $outlined;
+
+        return $this;
+    }
+
+    /** Render the trigger styled as a link. */
+    public function link(): self
+    {
+        $this->opts['as'] = 'link';
+
+        return $this;
+    }
+
+    /** Render the trigger styled as a button (the default). */
+    public function button(): self
+    {
+        $this->opts['as'] = 'button';
 
         return $this;
     }
@@ -151,7 +193,7 @@ final class ActionBuilder implements JsonSerializable
 
         if ($this->modalSize !== null) {
             if (($this->spec['type'] ?? '') !== 'modal') {
-                throw new LogicException("size() is only valid on modal actions (action \"{$this->name}\").");
+                throw new LogicException("modalWidth() is only valid on modal actions (action \"{$this->name}\").");
             }
             $spec = [...$this->spec, 'size' => $this->modalSize];
         } else {

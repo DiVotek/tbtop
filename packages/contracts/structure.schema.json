@@ -31,7 +31,10 @@
 								"properties": {
 									"spec": { "$ref": "#/$defs/actionSpec" },
 									"icon": { "$ref": "#/$defs/icon" },
-									"tooltip": { "type": "string" }
+									"tooltip": { "type": "string" },
+									"size": { "type": "string", "enum": ["sm", "md", "lg"] },
+									"outlined": { "type": "boolean" },
+									"as": { "type": "string", "enum": ["link", "button"] }
 								}
 							}
 						}
@@ -66,7 +69,19 @@
 									"tabs": {
 										"type": "array",
 										"items": { "$ref": "#/$defs/tableTab" }
-									}
+									},
+									"searchPlaceholder": { "type": "string" },
+									"emptyState": {
+										"type": "object",
+										"properties": {
+											"heading": { "type": "string" },
+											"description": { "type": "string" },
+											"icon": { "type": "string" }
+										}
+									},
+									"headerActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+									"recordUrl": { "type": "boolean" },
+									"recordUrlNewTab": { "type": "boolean" }
 								}
 							}
 						}
@@ -361,7 +376,9 @@
 								"required": ["label", "body"],
 								"properties": {
 									"label": { "type": "string" },
-									"body": { "$ref": "#/$defs/node" }
+									"body": { "$ref": "#/$defs/node" },
+									"icon": { "$ref": "#/$defs/icon" },
+									"badge": { "type": "string" }
 								}
 							},
 							{ "$ref": "#/$defs/tableTab" }

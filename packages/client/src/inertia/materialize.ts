@@ -162,6 +162,7 @@ function materializeTable(node: StructureNode, ctx: WalkCtx): StructureNode {
 			name,
 			rowActions: actionBags(opts.rowActions, ctx),
 			bulkActions: actionBags(opts.bulkActions, ctx),
+			headerActions: actionBags(opts.headerActions, ctx),
 			...(compiledFilters !== undefined ? { filters: compiledFilters } : {}),
 			query: (actionCtx: ClientActionContext) =>
 				actionCtx.client
@@ -192,7 +193,10 @@ function actionBags(raw: unknown, ctx: WalkCtx): Bag[] {
 	// ConditionFns) rides onto the config; actionOptions alone drops it.
 	return (raw as StructureNode[]).map((n) => {
 		const m = walk(n, ctx);
-		return { ...(m.options as Bag), meta: m.meta };
+		if (m.kind === "action") {
+			return { ...(m.options as Bag), meta: m.meta };
+		}
+		return { kind: m.kind, ...(m.options as Bag), meta: m.meta };
 	});
 }
 

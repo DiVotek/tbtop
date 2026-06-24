@@ -1,17 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { AuthUserProvider } from "../../app/authUser";
 import { compileCondition } from "../../inertia/conditionCompiler";
 import { RowProvider } from "../rowContext";
 import { wrapForStructure } from "../testFixtures";
-import type { ActionConfig, AuthUser } from "../types";
-import { RowActionsCell } from "./rowActions";
+import type { ActionConfig, AuthUser, NodeMeta, StructureNode } from "../types";
+import { type RowActionEntry, RowActionsCell } from "./rowActions";
 
 const Wrap = wrapForStructure(() => new Response("{}"));
 
 function renderCell(
-	actions: ActionConfig[],
+	actions: RowActionEntry[],
 	row: Record<string, unknown>,
 	user: AuthUser | null = null,
 ) {
@@ -91,5 +91,91 @@ describe("RowActionsCell — disabledIf disables the button", () => {
 		});
 		const { getByTestId } = renderCell([action], { locked: false });
 		expect(getByTestId("action-delete").hasAttribute("disabled")).toBe(false);
+	});
+});
+
+describe("RowActionsCell — explicit dropdown, no auto-collapse", () => {
+	test("renders every action inline regardless of count (no implicit dropdown)", () => {
+		const { getByTestId, queryByTestId } = renderCell(
+			[visitAction("a"), visitAction("b"), visitAction("c")],
+			{ id: "1" },
+		);
+		expect(getByTestId("action-a")).not.toBeNull();
+		expect(getByTestId("action-b")).not.toBeNull();
+		expect(getByTestId("action-c")).not.toBeNull();
+		expect(queryByTestId("row-actions-trigger")).toBeNull();
+		expect(queryByTestId("action-group-trigger")).toBeNull();
+	});
+
+	test("an explicit dropdown group renders a menu trigger with children collapsed", () => {
+		const group: RowActionEntry = {
+			kind: "actionGroup",
+			label: "More",
+			children: [
+				{
+					kind: "action",
+					name: "edit",
+					options: { name: "edit", label: "Edit", handler: async () => {} },
+					meta: {},
+				},
+				{
+					kind: "action",
+					name: "del",
+					options: { name: "del", label: "Delete", handler: async () => {} },
+					meta: {},
+				},
+			],
+		};
+		const { getByTestId, queryByTestId } = renderCell([group], { id: "1" });
+		expect(getByTestId("action-group-trigger")).not.toBeNull();
+		expect(queryByTestId("action-edit")).toBeNull();
+	});
+});
+
+describe("RowActionsCell — dropdown group evaluates row conditions", () => {
+	const actionNode = (name: string, meta: NodeMeta): StructureNode => ({
+		kind: "action",
+		options: { name, label: name, handler: async () => {} },
+		meta,
+	});
+
+	// Radix DropdownMenu opens on pointerdown; fire both to simulate a real click.
+	async function openGroupMenu(trigger: HTMLElement) {
+		await act(async () => {
+			fireEvent.pointerDown(trigger, { bubbles: true, cancelable: true, isPrimary: true });
+			fireEvent.click(trigger);
+		});
+	}
+
+	test("hides a grouped child whose hiddenIf matches the row", async () => {
+		const group: RowActionEntry = {
+			kind: "actionGroup",
+			label: "More",
+			children: [
+				actionNode("keep", {}),
+				actionNode("approve", {
+					hidden: compileCondition({ op: "eq", field: "status", value: "done" }),
+				}),
+			],
+		};
+		const { getByTestId, queryByTestId } = renderCell([group], { status: "done" });
+		await openGroupMenu(getByTestId("action-group-trigger"));
+		expect(queryByTestId("action-keep")).not.toBeNull();
+		expect(queryByTestId("action-approve")).toBeNull();
+	});
+
+	test("disables a grouped child whose disabledIf matches the row", async () => {
+		const group: RowActionEntry = {
+			kind: "actionGroup",
+			label: "More",
+			children: [
+				actionNode("del", {
+					disabled: compileCondition({ op: "truthy", field: "locked" }),
+				}),
+			],
+		};
+		const { getByTestId, findByTestId } = renderCell([group], { locked: true });
+		await openGroupMenu(getByTestId("action-group-trigger"));
+		expect((await findByTestId("action-del")).hasAttribute("disabled")).toBe(true);
 	});
 });

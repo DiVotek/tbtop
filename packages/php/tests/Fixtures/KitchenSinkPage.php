@@ -116,7 +116,7 @@ class KitchenSinkPage extends Page
                         ->labelKey('name')
                         ->searchable()
                         ->query(fn () => null),
-                    $s->repeater('sections')->rules('array|max:10')->set('fields', [
+                    $s->repeater('sections')->rules('array|max:10')->minItems(1)->defaultItems(2)->set('fields', [
                         $s->text('heading')->required(),
                         $s->textarea('text'),
                     ]),
@@ -141,7 +141,8 @@ class KitchenSinkPage extends Page
                 ])->record(['title' => 'Hello'])->onSubmit(fn () => Effects::make()),
             ]),
             $s->tabs([
-                ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading')],
+                ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3'],
+                ['label' => 'More', 'body' => $s->displayText('Second tab')->variant('muted')],
             ]),
             $s->table('posts')
                 ->columns([
@@ -168,6 +169,13 @@ class KitchenSinkPage extends Page
                         ->onSave(fn ($record, $value) => null),
                 ])
                 ->searchable(['title'])
+                ->searchPlaceholder('Search posts…')
+                ->emptyState('No posts yet', 'Create your first post to get started.', 'file-text')
+                ->headerActions([
+                    $s->action('createPost')->label('New post')->icon('pencil')->visit('/admin/posts/create'),
+                ])
+                ->recordUrl(fn () => '/admin/posts/1')
+                ->openRecordUrlInNewTab()
                 ->defaultSort('views', 'desc')
                 ->reorderable('sort_order')
                 ->tabs([
@@ -194,9 +202,9 @@ class KitchenSinkPage extends Page
                 ->query(fn () => null)
                 ->toNode(),
             $s->actionsRow([
-                $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted')),
-                $s->action('details')->label('Details')->modal('Details', null, 'More info')->size('lg'),
-                $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi']),
+                $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted'))->size('sm')->outlined(),
+                $s->action('details')->label('Details')->modal('Details', null, 'More info')->modalWidth('lg'),
+                $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi'])->link(),
                 // Prebuilt edit-in-place: exercises the modal query/queryNeeds wire
                 // shape so the contract gate covers a modal+query action spec.
                 EditAction::make(

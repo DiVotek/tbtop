@@ -161,3 +161,23 @@ it('TableQuery: per-column searchable() participates in search union', function 
 
     expect(array_column($rows, 'title'))->toBe(['Post A']);
 });
+
+it('ColumnProjection: recordUrl attaches a per-row _recordUrl', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')])
+        ->recordUrl(fn ($record) => '/admin/cposts/'.(string) data_get($record, 'id'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->_recordUrl)->toBe('/admin/cposts/'.$result[0]->id)
+        ->and($result[1]->_recordUrl)->toBe('/admin/cposts/'.$result[1]->id);
+});
+
+it('ColumnProjection: no _recordUrl when recordUrl() is not set', function (): void {
+    $table = (new TableBuilder('cposts'))->columns([Column::make('title')]);
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_recordUrl'))->toBeFalse();
+});

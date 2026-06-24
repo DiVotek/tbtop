@@ -2,14 +2,16 @@
  * TableRow + cell rendering. Row-click arming (pointerdown → click)
  * with DOM-containment guards so portal clicks never count.
  */
+import { router } from "@inertiajs/react";
 import type { CSSProperties, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../../lib/cn";
+import { isExternalUrl } from "../actionBlock";
 import { useClientActionContext } from "../actionContext";
 import { RowProvider } from "../rowContext";
 import type { ActionConfig, TableColumn } from "../types";
 import { readId } from "./normalize";
-import { RowActionsCell } from "./rowActions";
+import { isActionGroupEntry, type RowActionEntry, RowActionsCell } from "./rowActions";
 import { RowDataCell } from "./tableCell";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -20,12 +22,14 @@ const INTERACTIVE_SELECTOR = "a, button, input, label, [role='checkbox'], [role=
 interface TableRowProps {
 	row: Record<string, unknown>;
 	columns: TableColumn[];
-	rowActions: ActionConfig[];
+	rowActions: RowActionEntry[];
 	selected: boolean;
 	onToggle: (id: string) => void;
 	hasBulk: boolean;
 	hasRowActions: boolean;
 	rowClick?: string;
+	recordUrl?: boolean;
+	recordUrlNewTab?: boolean;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 	/** Drag-reorder bindings, supplied by SortableRow when reorder is on. */
 	dragRef?: (node: HTMLElement | null) => void;
@@ -42,8 +46,14 @@ export function TableRow(props: TableRowProps) {
 	const armedRef = useRef(false);
 
 	const rowClickAction = props.rowClick
-		? props.rowActions.find((a) => a.name === props.rowClick)
+		? props.rowActions.find(
+				(a): a is ActionConfig => !isActionGroupEntry(a) && a.name === props.rowClick,
+			)
 		: undefined;
+	const recordHref =
+		props.recordUrl && typeof props.row._recordUrl === "string"
+			? props.row._recordUrl
+			: undefined;
 
 	function handleRowPointerDown(e: React.PointerEvent<HTMLTableRowElement>) {
 		if (!isDomInsideRow(e)) {
@@ -55,13 +65,17 @@ export function TableRow(props: TableRowProps) {
 	function handleRowClick(e: React.MouseEvent<HTMLTableRowElement>) {
 		const armed = armedRef.current;
 		armedRef.current = false;
-		if (!props.rowClick || !armed || !isDomInsideRow(e)) {
+		if ((!props.rowClick && !recordHref) || !armed || !isDomInsideRow(e)) {
 			return;
 		}
 		// Ignore clicks whose target left the DOM (portal overlay unmounted before
 		// the browser dispatched the click) or that land on interactive elements.
 		const target = e.target as Element;
 		if (!target.isConnected || target.closest(INTERACTIVE_SELECTOR)) {
+			return;
+		}
+		if (recordHref) {
+			navigateToRecord(recordHref, props.recordUrlNewTab ?? false);
 			return;
 		}
 		runRowClick(props, rowClickAction, ctx);
@@ -74,7 +88,7 @@ export function TableRow(props: TableRowProps) {
 		}
 	}
 
-	const isClickable = Boolean(props.rowClick);
+	const isClickable = Boolean(props.rowClick) || Boolean(recordHref);
 
 	return (
 		<tr
@@ -144,4 +158,16 @@ function runRowClick(
 	if ("handler" in rowClickAction && rowClickAction.handler) {
 		void Promise.resolve(rowClickAction.handler({ ...ctx, row: props.row })).catch(() => {});
 	}
+}
+
+function navigateToRecord(href: string, newTab: boolean): void {
+	if (newTab) {
+		window.open(href, "_blank", "noopener");
+		return;
+	}
+	if (isExternalUrl(href)) {
+		window.location.assign(href);
+		return;
+	}
+	router.visit(href);
 }

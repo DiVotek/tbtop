@@ -6,9 +6,11 @@ import {
 	ActionLabel,
 	type ActionModalOpts,
 	type ActionOptionsBag,
+	actionButtonSize,
 	actionKey,
-	COLOR_TO_VARIANT,
+	actionVariant,
 	MaybeTooltip,
+	outlinedTintClass,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { FormError, FormSkeleton } from "./defaults";
@@ -26,7 +28,9 @@ export function ModalActionBlock({
 	options: ActionOptionsBag;
 	disabled?: boolean;
 }) {
-	const variant = opts.color ? COLOR_TO_VARIANT[opts.color] : "outline";
+	const variant = actionVariant(opts);
+	const buttonSize = actionButtonSize(opts);
+	const tint = outlinedTintClass(opts);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [open, setOpen] = useState(false);
 	const parent = useNearestModal();
@@ -53,6 +57,8 @@ export function ModalActionBlock({
 					type="button"
 					ref={buttonRef}
 					variant={variant}
+					size={buttonSize}
+					className={tint}
 					disabled={disabled}
 					onClick={() => setOpen(true)}
 					data-testid={`action-${actionKey(opts)}`}
