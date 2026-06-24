@@ -10,7 +10,7 @@ import {
 	type ChromeUser,
 	type NavGroup,
 } from "./chromeContext";
-import { SidebarDrawer } from "./SidebarDrawer";
+import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
 
 /** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
 export interface ChromeTrees {
@@ -61,13 +61,6 @@ interface AdminLayoutShellProps {
 	navigation?: NavigationLayout;
 }
 
-interface ShellFrameProps {
-	sidebar: ReactNode;
-	header: ReactNode;
-	footer: ReactNode;
-	children: ReactNode;
-}
-
 /**
  * Pure shell — testable without Inertia context. Receives nav/user/url
  * as props. Each area resolves React `slots` first (escape hatch), then
@@ -91,7 +84,7 @@ export function AdminLayoutShell({
 		user,
 		currentUrl,
 		brand: brand ?? null,
-		orientation: topbar ? "horizontal" : "vertical",
+		orientation: "vertical",
 		logoSlot: slots?.logo?.(slotProps),
 	};
 
@@ -109,47 +102,6 @@ export function AdminLayoutShell({
 		<ChromeDataContext.Provider value={chromeData}>
 			{topbar ? <TopbarFrame {...frameProps} /> : <SidebarFrame {...frameProps} />}
 		</ChromeDataContext.Provider>
-	);
-}
-
-/** Default layout: persistent left sidebar, header strip, mobile drawer. */
-function SidebarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
-	return (
-		<div className="flex min-h-screen bg-background text-foreground">
-			<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
-				{sidebar}
-			</aside>
-			<div className="flex min-w-0 flex-1 flex-col">
-				<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
-					<SidebarDrawer sidebar={sidebar} />
-					{header}
-				</header>
-				<main className="min-w-0 flex-1">{children}</main>
-				{footer && <footer>{footer}</footer>}
-			</div>
-		</div>
-	);
-}
-
-/**
- * Topbar layout: one horizontal bar holds the nav inline on wide screens
- * (the `[&>*]:contents` lets the sidebar tree's wrapper collapse so its
- * logo + nav become bar items). On mobile the same nav drops into the
- * burger drawer, identical to the sidebar layout.
- */
-function TopbarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
-	return (
-		<div className="flex min-h-screen flex-col bg-background text-foreground">
-			<header className="flex items-center gap-4 border-b px-4 py-3 lg:px-6">
-				<SidebarDrawer sidebar={sidebar} />
-				<div className="hidden min-w-0 flex-1 items-center gap-6 lg:flex [&>*]:contents">
-					{sidebar}
-				</div>
-				<div className="ml-auto flex items-center gap-3">{header}</div>
-			</header>
-			<main className="min-w-0 flex-1">{children}</main>
-			{footer && <footer>{footer}</footer>}
-		</div>
 	);
 }
 

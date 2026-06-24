@@ -1,5 +1,6 @@
 import { useLocale, useTranslation } from "../i18n/i18n";
 import { useChromeData } from "./chromeContext";
+import { NavGroupDropdown } from "./navGroupDropdown";
 import { NavGroupSection } from "./navGroupSection";
 import { ProfileDropdown } from "./ProfileDropdown";
 
@@ -10,21 +11,21 @@ import { ProfileDropdown } from "./ProfileDropdown";
 
 export function NavMenuBlock() {
 	const { nav, currentUrl, orientation } = useChromeData();
-	// Horizontal (topbar) goes inline only at lg+ — the mobile drawer reuses
-	// this same node and must keep the stacked sidebar layout.
-	const navClass =
-		orientation === "horizontal"
-			? "flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2"
-			: "flex flex-col gap-4";
+	// Topbar: each group is an inline dropdown. The mobile drawer reuses this
+	// block under a "vertical" override, so it still renders the stacked tree.
+	if (orientation === "horizontal") {
+		return (
+			<nav className="flex flex-row items-center gap-1" data-testid="admin-sidebar">
+				{nav.map((group) => (
+					<NavGroupDropdown key={group.group} group={group} currentUrl={currentUrl} />
+				))}
+			</nav>
+		);
+	}
 	return (
-		<nav className={navClass} data-testid="admin-sidebar">
+		<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
 			{nav.map((group) => (
-				<NavGroupSection
-					key={group.group}
-					group={group}
-					currentUrl={currentUrl}
-					orientation={orientation}
-				/>
+				<NavGroupSection key={group.group} group={group} currentUrl={currentUrl} />
 			))}
 		</nav>
 	);

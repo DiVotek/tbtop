@@ -69,6 +69,7 @@ class AdminPanel extends Panel
                 NavGroup::make('Content')->icon('file-text')->collapsible(),
                 NavGroup::make('System')->icon('settings')->collapsible()->collapsed(),
             ])
+            ->navigation('topbar')
             ->locales(['en', 'uk'])
             ->defaultLocale('en')
             ->chrome(DemoChrome::class)

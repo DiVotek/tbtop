@@ -51,10 +51,12 @@ domain: panels
   |'topbar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop; the client
   rearranges the *same* chrome trees rather than serializing a different one — so a custom
   Chrome class works under either layout. `sidebar` keeps the persistent left column; `topbar`
-  renders one horizontal bar (logo + nav inline + header items) that collapses to the same
-  burger drawer as the sidebar on mobile. Orientation is a client-only `ChromeData` concern
-  (the `navMenu` block goes `lg:flex-row` when horizontal) — no new wire kind, no schema/contract
-  change. Both layouts reuse `SidebarDrawer` for mobile.
+  renders one horizontal bar (logo + nav group dropdowns + header items) that collapses to the
+  same burger drawer as the sidebar on mobile. Orientation is a client-only `ChromeData` concern:
+  in `horizontal` the `navMenu` renders each group as a dropdown (reusing the sidebar item
+  renderer, so item icons/badges carry over), while the mobile drawer keeps `vertical` so the
+  same tree stacks as collapsible groups — no new wire kind, no schema/contract change. Both
+  layouts reuse `SidebarDrawer` for mobile.
 
 ## Why
 

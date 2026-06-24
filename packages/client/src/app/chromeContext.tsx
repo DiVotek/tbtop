@@ -55,3 +55,23 @@ export const ChromeDataContext = createContext<ChromeData>(EMPTY_CHROME_DATA);
 export function useChromeData(): ChromeData {
 	return useContext(ChromeDataContext);
 }
+
+/**
+ * Re-provides chrome data with a different nav orientation for a subtree.
+ * The topbar bar wraps its nav as "horizontal"; the mobile drawer keeps
+ * the page-level "vertical", so the same sidebar tree renders both ways.
+ */
+export function OrientationProvider({
+	orientation,
+	children,
+}: {
+	orientation: ChromeData["orientation"];
+	children: ReactNode;
+}) {
+	const data = useChromeData();
+	return (
+		<ChromeDataContext.Provider value={{ ...data, orientation }}>
+			{children}
+		</ChromeDataContext.Provider>
+	);
+}

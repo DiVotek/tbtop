@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { ClientProvider } from "../data/client";
 import type { StructureNode } from "../structure/types";
 import { AdminLayoutShell, type ChromeTrees } from "./AdminLayout";
@@ -117,9 +117,22 @@ describe("AdminLayout chrome trees", () => {
 		expect(getByTestId("sidebar-trigger")).toBeTruthy();
 	});
 
-	test("topbar navigation lays the nav out horizontally on wide screens", () => {
-		const { getByTestId } = renderShell(defaultChrome(), { navigation: "topbar" });
+	test("topbar renders each nav group as a dropdown trigger (items hidden until opened)", () => {
+		const { getByTestId, queryByText } = renderShell(defaultChrome(), { navigation: "topbar" });
 
-		expect(getByTestId("admin-sidebar").className).toContain("lg:flex-row");
+		expect(getByTestId("nav-group-trigger-Content")).toBeTruthy();
+		expect(queryByText("Posts")).toBeNull();
+	});
+
+	test("topbar nav dropdown reveals the group's item links when opened", async () => {
+		const { getByTestId, findByText } = renderShell(defaultChrome(), { navigation: "topbar" });
+
+		await act(async () => {
+			const trigger = getByTestId("nav-group-trigger-Content");
+			fireEvent.pointerDown(trigger, { bubbles: true, cancelable: true, isPrimary: true });
+			fireEvent.click(trigger);
+		});
+
+		expect(await findByText("Posts")).toBeTruthy();
 	});
 });
