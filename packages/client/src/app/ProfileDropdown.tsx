@@ -2,26 +2,31 @@ import { router } from "@inertiajs/react";
 import { MonitorIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslation } from "../i18n/i18n";
+import { useChromeData } from "./chromeContext";
 
 type Theme = "light" | "dark" | "system";
 
 const THEME_COOKIE = "tbtop_theme";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
-function readThemeCookie(): Theme {
+function readThemeCookie(fallback: Theme): Theme {
 	const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`));
 	const value = match?.[1];
 	if (value === "light" || value === "dark" || value === "system") {
 		return value;
 	}
-	return "system";
+	return fallback;
 }
 
 function writeThemeCookie(theme: Theme): void {
 	document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
-function applyTheme(theme: Theme): void {
+function applyTheme(theme: Theme, enabled: boolean): void {
+	if (!enabled) {
+		document.documentElement.classList.remove("dark");
+		return;
+	}
 	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 	const isDark = theme === "dark" || (theme === "system" && prefersDark);
 	document.documentElement.classList.toggle("dark", isDark);
@@ -48,19 +53,23 @@ const THEMES: Theme[] = ["light", "dark", "system"];
 export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdownProps) {
 	const t = useTranslation();
 	const { locale, setLocale, available: availableLocales } = useLocale();
+	const { darkMode = true, defaultTheme = "system" } = useChromeData();
 	const [open, setOpen] = useState(false);
-	const [theme, setThemeState] = useState<Theme>(() => readThemeCookie());
+	const [theme, setThemeState] = useState<Theme>(() => readThemeCookie(defaultTheme));
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const setTheme = useCallback((next: Theme) => {
-		setThemeState(next);
-		writeThemeCookie(next);
-		applyTheme(next);
-	}, []);
+	const setTheme = useCallback(
+		(next: Theme) => {
+			setThemeState(next);
+			writeThemeCookie(next);
+			applyTheme(next, darkMode);
+		},
+		[darkMode],
+	);
 
 	useEffect(() => {
-		applyTheme(theme);
-	}, [theme]);
+		applyTheme(theme, darkMode);
+	}, [theme, darkMode]);
 
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -107,24 +116,26 @@ export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdow
 						<div className="px-3 py-1 text-sm font-medium">{displayName}</div>
 					</div>
 
-					<div className="border-b pb-1 mb-1">
-						<div className="px-3 py-1.5 text-xs text-muted-foreground">
-							{t("nav.title")}
+					{darkMode && (
+						<div className="border-b pb-1 mb-1">
+							<div className="px-3 py-1.5 text-xs text-muted-foreground">
+								{t("nav.title")}
+							</div>
+							{THEMES.map((th) => (
+								<button
+									key={th}
+									type="button"
+									className="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent data-[active=true]:font-medium"
+									data-active={theme === th}
+									data-testid={`theme-option-${th}`}
+									onClick={() => setTheme(th)}
+								>
+									{THEME_ICONS[th]}
+									<span className="capitalize">{th}</span>
+								</button>
+							))}
 						</div>
-						{THEMES.map((th) => (
-							<button
-								key={th}
-								type="button"
-								className="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent data-[active=true]:font-medium"
-								data-active={theme === th}
-								data-testid={`theme-option-${th}`}
-								onClick={() => setTheme(th)}
-							>
-								{THEME_ICONS[th]}
-								<span className="capitalize">{th}</span>
-							</button>
-						))}
-					</div>
+					)}
 
 					{availableLocales.length >= 2 && (
 						<div className="border-b pb-1 mb-1">

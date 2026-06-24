@@ -475,6 +475,66 @@ Notes:
 
 ---
 
+## Recipe 8 — Theming and appearance
+
+**What Filament calls it:** `->colors()`, `->font()`, `->brandLogo()`, `->maxContentWidth()`
+on the panel.
+
+**How it works here:** tbtop renders on **shadcn theme tokens** (the `--background` /
+`--primary` / `--radius` … CSS variables). So you theme the whole admin — colors, radius,
+shadows, fonts — the shadcn way: **edit those tokens in your app CSS**, not through a PHP
+color API. There is deliberately no `->colors()` method — a runtime-injected `<style>` would
+only add a flash of the default theme; the CSS file is the single source of truth.
+
+### Theme by pasting a shadcn preset
+
+Your admin entry loads one CSS file that holds the token values — in the demo that is
+`apps/demo/resources/css/app.css` (its `:root { … }` and `.dark { … }` blocks). To re-theme,
+build a palette at [ui.shadcn.com/create](https://ui.shadcn.com/create), copy its `:root`
+and `.dark` blocks, and replace the token values in that file:
+
+```css
+:root {
+  --radius: 0.75rem;
+  --primary: hsl(221 83% 53%);
+  --primary-foreground: hsl(0 0% 98%);
+  /* …rest of the preset… */
+}
+.dark {
+  --primary: hsl(217 91% 60%);
+  /* …rest of the preset… */
+}
+```
+
+Paste only the `:root` / `.dark` value blocks — drop the generator's `@import` and
+`@theme inline` lines (those are build-time and already present). tbtop writes its own dark
+tokens under `.dark` (not `html.dark`), so a pasted `.dark` block overrides cleanly in both
+modes. The demo applies a sample blue-accent preset this way.
+
+### Appearance knobs (the parts CSS can't express)
+
+Three knobs live on `PanelConfig` because they drive client behavior or layout, not tokens:
+
+```php
+// apps/demo/app/Admin/AdminPanel.php
+return $panel
+    ->maxContentWidth('7xl')        // center page content (Tailwind max-w token)
+    ->darkMode(true)                // false hides the theme toggle; shell stays light
+    ->defaultThemeMode('system');   // initial theme when the visitor has no saved choice
+```
+
+- `maxContentWidth($token)` — `sm`…`7xl`, `full`, or `prose`; omit for full-bleed.
+- `darkMode(false)` — removes the light/dark/system toggle and forces light (colors still
+  come from your CSS).
+- `defaultThemeMode($mode)` — `light` | `dark` | `system`, applied when there is no
+  `tbtop_theme` cookie yet. To also kill the first-paint flash, mirror it in your root
+  Blade's inline theme script (the host owns that `<head>`).
+
+All three serialize sparsely into the `tbtop.appearance` shared prop — an unconfigured panel
+ships nothing.
+
+---
+
 ## Not yet expressible
 
 These Filament features do not compose today. Do NOT attempt to fake them with existing
@@ -488,5 +548,4 @@ primitives — the result will be incomplete or broken.
 | **Global search** | The table-level `->searchable()` and per-column `.searchable()` work within a single table. A cross-page global search (the Spotlight-style overlay in Filament) needs a layout-slot design — it is listed as a known gap in the roadmap. |
 | **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in the roadmap. |
 | **Saved filters / filter presets** | No persistence layer for user-saved filter states. Listed as backlog 🟡. |
-| **Database notifications center** | The effect set has `notify` (toast only). A persistent notification inbox does not exist. |
 | **Auth-page layout (Login, Register pages as DSL classes)** | The `center` layout exists and works. But there are no `LoginPage` / `RegisterPage` DSL classes in the package — auth currently lives in demo Breeze controllers. This needs a design session (see roadmap §1.1). |

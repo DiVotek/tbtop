@@ -110,4 +110,10 @@ final class CurrentPanel
     {
         return $this->config->getNavigationGroups();
     }
+
+    /** @return array<string, mixed> */
+    public function appearance(): array
+    {
+        return $this->config->appearance();
+    }
 }

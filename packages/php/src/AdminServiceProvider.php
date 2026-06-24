@@ -52,6 +52,7 @@ class AdminServiceProvider extends PackageServiceProvider
                 'chrome' => ChromeSerializer::forPanel($panel),
                 'brand' => $panel->brand(),
                 'navigation' => $panel->navigation(),
+                'appearance' => $panel->appearance() ?: null,
                 'prefix' => $prefix,
                 'apiBase' => $prefix.'/api',
                 'locale' => $locale,

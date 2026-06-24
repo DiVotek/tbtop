@@ -13,3 +13,34 @@ it('accepts the topbar navigation layout', function () {
 it('rejects an unknown navigation layout', function () {
     (new PanelConfig)->navigation('floating');
 })->throws(InvalidArgumentException::class, 'Unknown navigation');
+
+it('omits appearance when nothing is configured', function () {
+    expect((new PanelConfig)->appearance())->toBe([]);
+});
+
+it('serializes only the appearance keys changed from their defaults', function () {
+    $appearance = (new PanelConfig)
+        ->darkMode(false)
+        ->defaultThemeMode('dark')
+        ->maxContentWidth('7xl')
+        ->appearance();
+
+    expect($appearance)->toBe([
+        'darkMode' => false,
+        'defaultTheme' => 'dark',
+        'maxWidth' => '7xl',
+    ]);
+});
+
+it('omits darkMode and defaultTheme while they hold their defaults', function () {
+    expect((new PanelConfig)->maxContentWidth('lg')->appearance())
+        ->toBe(['maxWidth' => 'lg']);
+});
+
+it('rejects an unknown max content width', function () {
+    (new PanelConfig)->maxContentWidth('8xl');
+})->throws(InvalidArgumentException::class, 'Unknown max content width');
+
+it('rejects an unknown default theme mode', function () {
+    (new PanelConfig)->defaultThemeMode('sepia');
+})->throws(InvalidArgumentException::class, 'Unknown theme mode');

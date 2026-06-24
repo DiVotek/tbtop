@@ -5,12 +5,15 @@ namespace Tbtop\Admin\Panels;
 use InvalidArgumentException;
 use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\Concerns\ConfiguresAppearance;
 
 /**
  * Fluent per-panel configuration, produced by Panel::configure().
  */
 final class PanelConfig
 {
+    use ConfiguresAppearance;
+
     /** Shell navigation layouts the client can render. */
     public const NAVIGATIONS = ['sidebar', 'topbar'];
 

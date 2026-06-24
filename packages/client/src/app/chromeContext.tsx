@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext } from "react";
 import type { IconDef } from "../ui/node-icon";
+import type { ThemeMode } from "./appearance";
 
 export interface NavItem {
 	label: string;
@@ -42,6 +43,10 @@ export interface ChromeData {
 	logoSlot?: ReactNode;
 	/** Poll interval (ms) for the notifications bell; null disables polling. */
 	notificationsPollInterval?: number | null;
+	/** Dark-mode policy from tbtop.appearance; undefined = enabled. */
+	darkMode?: boolean;
+	/** Initial theme when the visitor has no saved preference. */
+	defaultTheme?: ThemeMode;
 }
 
 const EMPTY_CHROME_DATA: ChromeData = {
