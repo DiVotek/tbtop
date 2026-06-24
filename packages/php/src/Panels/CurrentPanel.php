@@ -88,6 +88,12 @@ final class CurrentPanel
         return $this->config->getNavigation();
     }
 
+    /** Seconds between header-bell notification polls, or null to disable. */
+    public function notificationsPolling(): ?int
+    {
+        return $this->config->getNotificationsPolling();
+    }
+
     public function rootView(): string
     {
         return $this->config->getRootView();

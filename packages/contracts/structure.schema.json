@@ -177,7 +177,7 @@
 					"if": {
 						"properties": {
 							"kind": {
-								"enum": ["navMenu", "userMenu", "logo", "localeSwitcher", "spacer"]
+								"enum": ["navMenu", "userMenu", "logo", "localeSwitcher", "spacer", "notifications"]
 							}
 						}
 					},

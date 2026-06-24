@@ -40,6 +40,8 @@ export interface ChromeData {
 	orientation: "vertical" | "horizontal";
 	/** React `slots.logo` escape hatch, threaded into the logo block. */
 	logoSlot?: ReactNode;
+	/** Poll interval (ms) for the notifications bell; null disables polling. */
+	notificationsPollInterval?: number | null;
 }
 
 const EMPTY_CHROME_DATA: ChromeData = {

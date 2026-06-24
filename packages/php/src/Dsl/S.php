@@ -440,6 +440,12 @@ final class S
         return new Node('spacer');
     }
 
+    /** Header notifications bell: unread badge + polled dropdown list. */
+    public function notifications(): Node
+    {
+        return new Node('notifications');
+    }
+
     // -------------------------------------------------------------------------
     // Data builders
     // -------------------------------------------------------------------------

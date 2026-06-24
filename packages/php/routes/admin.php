@@ -16,6 +16,7 @@ use Tbtop\Admin\Http\Media\MediaFolderController;
 use Tbtop\Admin\Http\Media\MediaImportController;
 use Tbtop\Admin\Http\Media\MediaReplaceController;
 use Tbtop\Admin\Http\Media\MediaUploadController;
+use Tbtop\Admin\Http\NotificationsController;
 use Tbtop\Admin\Http\PageController;
 use Tbtop\Admin\Http\RelationSearchController;
 use Tbtop\Admin\Http\SelectCreateController;
@@ -100,6 +101,14 @@ $registerChromeRoutes = static function (): void {
             Route::patch('/{id}', [MediaFolderController::class, 'update'])->name('update')->whereNumber('id');
             Route::delete('/{id}', [MediaFolderController::class, 'destroy'])->name('destroy')->whereNumber('id');
         });
+    });
+
+    // Notifications center (header bell): list + unread count, mark read, delete.
+    Route::prefix('api/notifications')->name('notifications.')->group(function (): void {
+        Route::get('/', [NotificationsController::class, 'index'])->name('index');
+        Route::delete('/', [NotificationsController::class, 'destroyAll'])->name('clear');
+        Route::post('/{notification}/read', [NotificationsController::class, 'markRead'])->name('read');
+        Route::delete('/{notification}', [NotificationsController::class, 'destroy'])->name('destroy');
     });
 };
 

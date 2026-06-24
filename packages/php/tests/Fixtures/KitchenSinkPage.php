@@ -235,6 +235,7 @@ class KitchenSinkPage extends Page
                 $s->navMenu(),
                 $s->spacer(),
                 $s->localeSwitcher(),
+                $s->notifications(),
                 $s->userMenu(),
             ]),
         ]);

@@ -15,6 +15,7 @@ class DemoChrome extends Chrome
     protected function headerItems(S $s): array
     {
         return [
+            $s->notifications(),
             ...parent::headerItems($s),
             $s->action('view-site')->label('View site')->visit('/'),
         ];

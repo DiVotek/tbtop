@@ -39,6 +39,8 @@ final class PanelConfig
 
     private string $navigation = 'sidebar';
 
+    private ?int $notificationsPolling = 30;
+
     private string $rootView = 'app';
 
     /** Untyped on purpose: validated against Chrome at serialization time. @var class-string|null */
@@ -141,6 +143,19 @@ final class PanelConfig
         return $this;
     }
 
+    /**
+     * Seconds between header-bell polls for new notifications. null disables
+     * auto-polling (the bell still fetches when opened). Mirrors Filament's
+     * databaseNotificationsPolling(); only active when the chrome renders a
+     * notifications bell.
+     */
+    public function notificationsPolling(?int $seconds): static
+    {
+        $this->notificationsPolling = $seconds;
+
+        return $this;
+    }
+
     /** Blade root view rendered on first visit (per-panel Vite entry escape hatch). */
     public function rootView(string $view): static
     {
@@ -235,6 +250,11 @@ final class PanelConfig
     {
         /** @var 'sidebar'|'topbar' */
         return $this->navigation;
+    }
+
+    public function getNotificationsPolling(): ?int
+    {
+        return $this->notificationsPolling;
     }
 
     public function getRootView(): string

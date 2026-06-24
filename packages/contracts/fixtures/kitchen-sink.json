@@ -1159,6 +1159,11 @@
                             "meta": {}
                         },
                         {
+                            "kind": "notifications",
+                            "options": {},
+                            "meta": {}
+                        },
+                        {
                             "kind": "userMenu",
                             "options": {},
                             "meta": {}
