@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Panels;
 
 use Illuminate\Container\Container;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -96,5 +97,11 @@ final class CurrentPanel
     public function chrome(): ?string
     {
         return $this->config->getChrome();
+    }
+
+    /** @return list<NavGroup> */
+    public function navigationGroups(): array
+    {
+        return $this->config->getNavigationGroups();
     }
 }

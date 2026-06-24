@@ -1,13 +1,20 @@
 import { createContext, type ReactNode, useContext } from "react";
+import type { IconDef } from "../ui/node-icon";
 
 export interface NavItem {
 	label: string;
 	href: string;
+	icon?: IconDef;
+	badge?: string;
+	badgeColor?: string;
 }
 
 export interface NavGroup {
 	group: string;
 	items: NavItem[];
+	icon?: IconDef;
+	collapsible?: boolean;
+	collapsed?: boolean;
 }
 
 export interface ChromeUser {

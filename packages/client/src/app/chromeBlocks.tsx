@@ -1,6 +1,6 @@
-import { Link } from "@inertiajs/react";
 import { useLocale, useTranslation } from "../i18n/i18n";
-import { type ChromeData, type NavGroup, useChromeData } from "./chromeContext";
+import { useChromeData } from "./chromeContext";
+import { NavGroupSection } from "./navGroupSection";
 import { ProfileDropdown } from "./ProfileDropdown";
 
 // The predefined chrome block kinds (navMenu / userMenu / logo /
@@ -66,38 +66,4 @@ export function LocaleSwitcherBlock() {
 
 export function SpacerBlock() {
 	return <div className="flex-1" data-testid="chrome-spacer" />;
-}
-
-interface NavGroupSectionProps {
-	group: NavGroup;
-	currentUrl: ChromeData["currentUrl"];
-	orientation: ChromeData["orientation"];
-}
-
-function NavGroupSection({ group, currentUrl, orientation }: NavGroupSectionProps) {
-	const horizontal = orientation === "horizontal";
-	// Group labels read well stacked; inline on a topbar they only clutter, so
-	// hide them at lg+ while keeping them in the mobile drawer.
-	const sectionClass = horizontal
-		? "flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-1"
-		: "flex flex-col gap-1";
-	const labelClass = horizontal
-		? "px-2 text-xs font-medium uppercase text-muted-foreground lg:hidden"
-		: "px-2 text-xs font-medium uppercase text-muted-foreground";
-	return (
-		<div className={sectionClass}>
-			<div className={labelClass}>{group.group}</div>
-			{group.items.map((item) => (
-				<Link
-					key={item.href}
-					href={item.href}
-					className={`rounded-md px-2 py-1.5 text-sm hover:bg-accent ${
-						currentUrl.startsWith(item.href) ? "bg-accent font-medium" : ""
-					}`}
-				>
-					{item.label}
-				</Link>
-			))}
-		</div>
-	);
 }

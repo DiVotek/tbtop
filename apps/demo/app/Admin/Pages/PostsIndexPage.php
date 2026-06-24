@@ -28,7 +28,7 @@ class PostsIndexPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'Content', 'label' => 'Posts', 'order' => 1];
+        return ['group' => 'Content', 'label' => 'Posts', 'order' => 1, 'icon' => 'file-text', 'badge' => (string) Post::count()];
     }
 
     public function title(): string

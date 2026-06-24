@@ -20,7 +20,7 @@ class SettingsPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'System', 'label' => 'Site settings', 'order' => 1];
+        return ['group' => 'System', 'label' => 'Site settings', 'order' => 1, 'icon' => 'settings'];
     }
 
     public function title(): string

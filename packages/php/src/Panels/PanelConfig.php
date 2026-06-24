@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Panels;
 
 use InvalidArgumentException;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -42,6 +43,9 @@ final class PanelConfig
 
     /** Untyped on purpose: validated against Chrome at serialization time. @var class-string|null */
     private ?string $chrome = null;
+
+    /** @var list<NavGroup> */
+    private array $navigationGroups = [];
 
     public function id(string $id): static
     {
@@ -153,6 +157,14 @@ final class PanelConfig
         return $this;
     }
 
+    /** Per-group nav metadata (icon, collapsible), matched to a page's nav group by label. @param  list<NavGroup>  $groups */
+    public function navigationGroups(array $groups): static
+    {
+        $this->navigationGroups = $groups;
+
+        return $this;
+    }
+
     public function getId(): string
     {
         return $this->id;
@@ -234,5 +246,11 @@ final class PanelConfig
     public function getChrome(): ?string
     {
         return $this->chrome;
+    }
+
+    /** @return list<NavGroup> */
+    public function getNavigationGroups(): array
+    {
+        return $this->navigationGroups;
     }
 }

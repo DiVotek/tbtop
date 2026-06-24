@@ -18,7 +18,7 @@ class DashboardPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'Overview', 'label' => 'Dashboard', 'order' => 0];
+        return ['group' => 'Overview', 'label' => 'Dashboard', 'order' => 0, 'icon' => 'home'];
     }
 
     public static function can(): ?string
