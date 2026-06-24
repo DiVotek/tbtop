@@ -63,7 +63,10 @@ final class ColumnProjection
     /**
      * Build output from the model's array form and overwrite each declared
      * column; the model is never mutated. Translatable columns read the raw
-     * locale map (bypassing the flattening accessor), the rest reuse toArray.
+     * locale map (bypassing the flattening accessor); the rest read from the
+     * toArray result via data_get, so dotted relation columns (location.name)
+     * resolve the nested value, matching the query-builder path. The resolved
+     * value is written back under the flat dotted key the client reads.
      *
      * @param  list<Column>  $columns
      * @return array<string, mixed>
@@ -75,7 +78,7 @@ final class ColumnProjection
             $name = $col->name;
             $source = $col->isTranslatable()
                 ? self::rawAttribute($row, $name)
-                : ($out[$name] ?? null);
+                : data_get($out, $name);
             $out[$name] = self::computeValue($col, $source);
         }
 
