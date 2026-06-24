@@ -10,7 +10,7 @@ import {
 	type ChromeUser,
 	type NavGroup,
 } from "./chromeContext";
-import { SidebarDrawer } from "./SidebarDrawer";
+import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
 
 /** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
 export interface ChromeTrees {
@@ -19,8 +19,16 @@ export interface ChromeTrees {
 	footer?: StructureNode | null;
 }
 
+/** Shell navigation layout, mirrors PanelConfig::navigation() on the server. */
+export type NavigationLayout = "sidebar" | "topbar";
+
 interface SharedProps {
-	tbtop?: { nav?: NavGroup[]; chrome?: ChromeTrees; brand?: string | null };
+	tbtop?: {
+		nav?: NavGroup[];
+		chrome?: ChromeTrees;
+		brand?: string | null;
+		navigation?: NavigationLayout;
+	};
 	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
 }
@@ -50,12 +58,14 @@ interface AdminLayoutShellProps {
 	slots?: AdminLayoutSlots;
 	chrome?: ChromeTrees | null;
 	brand?: string | null;
+	navigation?: NavigationLayout;
 }
 
 /**
  * Pure shell — testable without Inertia context. Receives nav/user/url
  * as props. Each area resolves React `slots` first (escape hatch), then
- * the server-authored chrome tree, then the built-in default.
+ * the server-authored chrome tree, then the built-in default. The
+ * `navigation` layout only changes how those areas are arranged.
  */
 export function AdminLayoutShell({
 	nav,
@@ -65,13 +75,16 @@ export function AdminLayoutShell({
 	slots,
 	chrome,
 	brand,
+	navigation = "sidebar",
 }: AdminLayoutShellProps) {
+	const topbar = navigation === "topbar";
 	const slotProps: AdminLayoutSlotProps = { nav, user };
 	const chromeData: ChromeData = {
 		nav,
 		user,
 		currentUrl,
 		brand: brand ?? null,
+		orientation: "vertical",
 		logoSlot: slots?.logo?.(slotProps),
 	};
 
@@ -83,21 +96,11 @@ export function AdminLayoutShell({
 		: renderArea(chrome?.header, <DefaultHeader />);
 	const footer = slots?.footer ? slots.footer(slotProps) : renderArea(chrome?.footer, null);
 
+	const frameProps: ShellFrameProps = { sidebar, header, footer, children };
+
 	return (
 		<ChromeDataContext.Provider value={chromeData}>
-			<div className="flex min-h-screen bg-background text-foreground">
-				<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
-					{sidebar}
-				</aside>
-				<div className="flex min-w-0 flex-1 flex-col">
-					<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
-						<SidebarDrawer sidebar={sidebar} />
-						{header}
-					</header>
-					<main className="min-w-0 flex-1">{children}</main>
-					{footer && <footer>{footer}</footer>}
-				</div>
-			</div>
+			{topbar ? <TopbarFrame {...frameProps} /> : <SidebarFrame {...frameProps} />}
 		</ChromeDataContext.Provider>
 	);
 }
@@ -120,6 +123,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 			slots={slots}
 			chrome={props.tbtop?.chrome}
 			brand={props.tbtop?.brand}
+			navigation={props.tbtop?.navigation ?? "sidebar"}
 		>
 			{children}
 		</AdminLayoutShell>

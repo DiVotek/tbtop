@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { ClientProvider } from "../data/client";
 import type { StructureNode } from "../structure/types";
 import { AdminLayoutShell, type ChromeTrees } from "./AdminLayout";
@@ -98,5 +98,41 @@ describe("AdminLayout chrome trees", () => {
 
 		expect(getByText("EasyCar")).toBeTruthy();
 		expect(queryByText("Tabletop")).toBeNull();
+	});
+
+	test("the sidebar layout (default) renders a left aside", () => {
+		const { container } = renderShell(defaultChrome());
+
+		expect(container.querySelector("aside")).toBeTruthy();
+	});
+
+	test("topbar navigation renders nav, user menu, and mobile drawer in a bar (no aside)", () => {
+		const { container, getByTestId } = renderShell(defaultChrome(), { navigation: "topbar" });
+
+		// Same chrome blocks, rearranged: no left sidebar column.
+		expect(container.querySelector("aside")).toBeNull();
+		expect(getByTestId("admin-sidebar")).toBeTruthy();
+		expect(getByTestId("profile-trigger")).toBeTruthy();
+		// Mobile parity: the burger drawer trigger is still present.
+		expect(getByTestId("sidebar-trigger")).toBeTruthy();
+	});
+
+	test("topbar renders each nav group as a dropdown trigger (items hidden until opened)", () => {
+		const { getByTestId, queryByText } = renderShell(defaultChrome(), { navigation: "topbar" });
+
+		expect(getByTestId("nav-group-trigger-Content")).toBeTruthy();
+		expect(queryByText("Posts")).toBeNull();
+	});
+
+	test("topbar nav dropdown reveals the group's item links when opened", async () => {
+		const { getByTestId, findByText } = renderShell(defaultChrome(), { navigation: "topbar" });
+
+		await act(async () => {
+			const trigger = getByTestId("nav-group-trigger-Content");
+			fireEvent.pointerDown(trigger, { bubbles: true, cancelable: true, isPrimary: true });
+			fireEvent.click(trigger);
+		});
+
+		expect(await findByText("Posts")).toBeTruthy();
 	});
 });

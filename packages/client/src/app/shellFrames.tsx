@@ -1,0 +1,53 @@
+import type { ReactNode } from "react";
+import { OrientationProvider } from "./chromeContext";
+import { SidebarDrawer } from "./SidebarDrawer";
+
+export interface ShellFrameProps {
+	sidebar: ReactNode;
+	header: ReactNode;
+	footer: ReactNode;
+	children: ReactNode;
+}
+
+/** Default layout: persistent left sidebar, header strip, mobile drawer. */
+export function SidebarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
+	return (
+		<div className="flex min-h-screen bg-background text-foreground">
+			<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
+				{sidebar}
+			</aside>
+			<div className="flex min-w-0 flex-1 flex-col">
+				<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
+					<SidebarDrawer sidebar={sidebar} />
+					{header}
+				</header>
+				<main className="min-w-0 flex-1">{children}</main>
+				{footer && <footer>{footer}</footer>}
+			</div>
+		</div>
+	);
+}
+
+/**
+ * Topbar layout: one horizontal bar holds the nav inline on wide screens.
+ * The bar wraps the sidebar tree in a "horizontal" orientation so its nav
+ * groups render as dropdowns; `[&>*]:contents` dissolves the tree's own
+ * wrapper so its logo + nav flow as bar items. On mobile the same tree
+ * drops into the burger drawer under the page-level "vertical" orientation
+ * — stacked, identical to the sidebar layout.
+ */
+export function TopbarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
+	return (
+		<div className="flex min-h-screen flex-col bg-background text-foreground">
+			<header className="flex items-center gap-4 border-b px-4 py-3 lg:px-6">
+				<SidebarDrawer sidebar={sidebar} />
+				<div className="hidden min-w-0 flex-1 items-center gap-6 lg:flex [&>*]:contents">
+					<OrientationProvider orientation="horizontal">{sidebar}</OrientationProvider>
+				</div>
+				<div className="ml-auto flex items-center gap-3">{header}</div>
+			</header>
+			<main className="min-w-0 flex-1">{children}</main>
+			{footer && <footer>{footer}</footer>}
+		</div>
+	);
+}

@@ -68,7 +68,7 @@ interface NavItemLinkProps {
 	currentUrl: string;
 }
 
-function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
+export function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
 	const active = currentUrl.startsWith(item.href);
 	const icon = item.icon ? <NodeIcon icon={item.icon} className="size-4 shrink-0" /> : null;
 	return (

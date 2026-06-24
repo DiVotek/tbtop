@@ -50,6 +50,7 @@ class AdminServiceProvider extends PackageServiceProvider
                 'nav' => NavBuilder::build($panel),
                 'chrome' => ChromeSerializer::forPanel($panel),
                 'brand' => $panel->brand(),
+                'navigation' => $panel->navigation(),
                 'prefix' => $prefix,
                 'apiBase' => $prefix.'/api',
                 'locale' => $locale,

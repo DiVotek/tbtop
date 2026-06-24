@@ -21,6 +21,7 @@ class OpsPanel extends Panel
             ->pages([NavPage::class, OpsOnlyPage::class])
             ->locales(['fr', 'en'])
             ->defaultLocale('fr')
+            ->navigation('topbar')
             ->chrome(HeaderActionChrome::class);
     }
 }

@@ -32,6 +32,12 @@ export interface ChromeData {
 	user: ChromeUser | null;
 	currentUrl: string;
 	brand: string | null;
+	/**
+	 * How the nav menu lays itself out. "vertical" is the sidebar default;
+	 * "horizontal" is the topbar layout, where the nav goes inline on wide
+	 * screens and still stacks inside the mobile drawer.
+	 */
+	orientation: "vertical" | "horizontal";
 	/** React `slots.logo` escape hatch, threaded into the logo block. */
 	logoSlot?: ReactNode;
 }
@@ -41,10 +47,31 @@ const EMPTY_CHROME_DATA: ChromeData = {
 	user: null,
 	currentUrl: "",
 	brand: null,
+	orientation: "vertical",
 };
 
 export const ChromeDataContext = createContext<ChromeData>(EMPTY_CHROME_DATA);
 
 export function useChromeData(): ChromeData {
 	return useContext(ChromeDataContext);
+}
+
+/**
+ * Re-provides chrome data with a different nav orientation for a subtree.
+ * The topbar bar wraps its nav as "horizontal"; the mobile drawer keeps
+ * the page-level "vertical", so the same sidebar tree renders both ways.
+ */
+export function OrientationProvider({
+	orientation,
+	children,
+}: {
+	orientation: ChromeData["orientation"];
+	children: ReactNode;
+}) {
+	const data = useChromeData();
+	return (
+		<ChromeDataContext.Provider value={{ ...data, orientation }}>
+			{children}
+		</ChromeDataContext.Provider>
+	);
 }

@@ -93,9 +93,12 @@ it('shares the panel id and the panel UI locales per request', function () {
         ->and($adminProps['locale'])->toBe('en')
         ->and($adminProps['prefix'])->toBe('/admin')
         ->and($adminProps['apiBase'])->toBe('/admin/api')
+        // AdminPanel sets no navigation → sidebar default; OpsPanel opts into topbar.
+        ->and($adminProps['navigation'])->toBe('sidebar')
         ->and($opsProps['panel'])->toBe('ops')
         ->and($opsProps['locales'])->toBe(['fr', 'en'])
         ->and($opsProps['locale'])->toBe('fr')
         ->and($opsProps['prefix'])->toBe('/ops')
-        ->and($opsProps['apiBase'])->toBe('/ops/api');
+        ->and($opsProps['apiBase'])->toBe('/ops/api')
+        ->and($opsProps['navigation'])->toBe('topbar');
 });

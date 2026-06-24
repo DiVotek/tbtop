@@ -1,5 +1,6 @@
 import { useLocale, useTranslation } from "../i18n/i18n";
 import { useChromeData } from "./chromeContext";
+import { NavGroupDropdown } from "./navGroupDropdown";
 import { NavGroupSection } from "./navGroupSection";
 import { ProfileDropdown } from "./ProfileDropdown";
 
@@ -9,7 +10,18 @@ import { ProfileDropdown } from "./ProfileDropdown";
 // legacy shell defaults render through the same components.
 
 export function NavMenuBlock() {
-	const { nav, currentUrl } = useChromeData();
+	const { nav, currentUrl, orientation } = useChromeData();
+	// Topbar: each group is an inline dropdown. The mobile drawer reuses this
+	// block under a "vertical" override, so it still renders the stacked tree.
+	if (orientation === "horizontal") {
+		return (
+			<nav className="flex flex-row items-center gap-1" data-testid="admin-sidebar">
+				{nav.map((group) => (
+					<NavGroupDropdown key={group.group} group={group} currentUrl={currentUrl} />
+				))}
+			</nav>
+		);
+	}
 	return (
 		<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
 			{nav.map((group) => (
