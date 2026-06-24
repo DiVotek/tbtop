@@ -30,7 +30,7 @@ class LoginPreviewPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'System', 'label' => 'Center layout preview', 'order' => 99];
+        return ['group' => 'System', 'label' => 'Center layout preview', 'order' => 99, 'icon' => 'eye'];
     }
 
     public function title(): string

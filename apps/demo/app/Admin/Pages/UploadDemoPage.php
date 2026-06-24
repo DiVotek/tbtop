@@ -24,7 +24,7 @@ class UploadDemoPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'System', 'label' => 'Upload field demo', 'order' => 97];
+        return ['group' => 'System', 'label' => 'Upload field demo', 'order' => 97, 'icon' => 'archive'];
     }
 
     public function title(): string

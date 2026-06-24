@@ -1,7 +1,8 @@
 import "../css/app.css";
 
 import { createInertiaApp } from "@inertiajs/react";
-import { defineFieldClient, Input, registerBlock } from "@tbtop/inertia-admin";
+import { defineFieldClient, Input, registerBlock, registerIcon } from "@tbtop/inertia-admin";
+import { Home, Image, List, Settings } from "lucide-react";
 import { createRoot } from "react-dom/client";
 import { route as routeFn } from "ziggy-js";
 import { TwoFactorSetupBlock } from "./admin/TwoFactorSetupBlock";
@@ -50,6 +51,12 @@ registerBlock<"twoFactorSetup", { setupUrl: string; confirmUrl: string }>({
 	behavior: "leaf",
 	render: TwoFactorSetupBlock,
 });
+
+// Register extra sidebar nav icons (adds to the built-in icon set).
+registerIcon("home", Home);
+registerIcon("settings", Settings);
+registerIcon("image", Image);
+registerIcon("list", List);
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 

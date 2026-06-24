@@ -1,6 +1,6 @@
-import { Link } from "@inertiajs/react";
 import { useLocale, useTranslation } from "../i18n/i18n";
-import { type ChromeData, type NavGroup, useChromeData } from "./chromeContext";
+import { useChromeData } from "./chromeContext";
+import { NavGroupSection } from "./navGroupSection";
 import { ProfileDropdown } from "./ProfileDropdown";
 
 // The predefined chrome block kinds (navMenu / userMenu / logo /
@@ -55,30 +55,4 @@ export function LocaleSwitcherBlock() {
 
 export function SpacerBlock() {
 	return <div className="flex-1" data-testid="chrome-spacer" />;
-}
-
-interface NavGroupSectionProps {
-	group: NavGroup;
-	currentUrl: ChromeData["currentUrl"];
-}
-
-function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
-	return (
-		<div className="flex flex-col gap-1">
-			<div className="px-2 text-xs font-medium uppercase text-muted-foreground">
-				{group.group}
-			</div>
-			{group.items.map((item) => (
-				<Link
-					key={item.href}
-					href={item.href}
-					className={`rounded-md px-2 py-1.5 text-sm hover:bg-accent ${
-						currentUrl.startsWith(item.href) ? "bg-accent font-medium" : ""
-					}`}
-				>
-					{item.label}
-				</Link>
-			))}
-		</div>
-	);
 }

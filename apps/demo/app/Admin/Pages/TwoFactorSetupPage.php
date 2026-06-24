@@ -33,7 +33,7 @@ class TwoFactorSetupPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'System', 'label' => 'Two-factor setup', 'order' => 50];
+        return ['group' => 'System', 'label' => 'Two-factor setup', 'order' => 50, 'icon' => 'lock'];
     }
 
     public function title(): string
