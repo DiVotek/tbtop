@@ -44,6 +44,7 @@ class AdminServiceProvider extends PackageServiceProvider
 
             $locale = LocaleService::currentLocale();
             $prefix = $panel->pathPrefix();
+            $pollSeconds = $panel->notificationsPolling();
 
             return [
                 'panel' => $panel->id(),
@@ -58,6 +59,9 @@ class AdminServiceProvider extends PackageServiceProvider
                 'messages' => LocaleService::messagesFor($locale),
                 'contentLocales' => LocaleService::contentLocales(),
                 'defaultContentLocale' => LocaleService::defaultContentLocale(),
+                'notifications' => [
+                    'pollInterval' => $pollSeconds !== null ? $pollSeconds * 1000 : null,
+                ],
             ];
         });
     }

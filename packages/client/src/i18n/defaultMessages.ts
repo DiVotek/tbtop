@@ -157,4 +157,13 @@ export const defaultMessages: Messages = {
 	"media.upload.status_uploading": "Uploading",
 	"media.upload.status_done": "Done",
 	"media.upload.status_error": "Failed",
+	"notifications.title": "Notifications",
+	"notifications.clear_all": "Clear all",
+	"notifications.delete": "Delete",
+	"notifications.empty": "You're all caught up",
+	"notifications.empty_hint": "New notifications show up here.",
+	"notifications.error": "Couldn't load notifications",
+	"notifications.action_failed": "Couldn't update notifications",
+	"notifications.aria": "Notifications",
+	"notifications.aria_unread": "Notifications, {count} unread",
 };

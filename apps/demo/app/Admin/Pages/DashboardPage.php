@@ -3,10 +3,13 @@
 namespace App\Admin\Pages;
 
 use Illuminate\Support\Facades\DB;
+use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Stat;
+use Tbtop\Admin\Notifications\Notification;
+use Tbtop\Admin\Notifications\NotificationAction;
 use Tbtop\Admin\Pages\Page;
 
 class DashboardPage extends Page
@@ -35,16 +38,41 @@ class DashboardPage extends Page
     {
         return $s->stack([
             $this->statsRow($s),
+            $this->notifyDemo($s),
             $this->chartsGrid($s),
             $this->displayShowcase($s),
+        ]);
+    }
+
+    private function notifyDemo(S $s): Node
+    {
+        return $s->stack([
+            $s->displayText('Notifications')->variant('heading'),
+            $s->displayText('Send yourself a database notification, then watch the header bell pick it up on its next poll.')->variant('muted'),
+            $s->action('send-test-notification')
+                ->label('Send test notification')
+                ->icon('star')
+                ->handle(function () {
+                    $user = auth()->user();
+                    if ($user !== null) {
+                        Notification::make()
+                            ->title('Welcome to the admin')
+                            ->body('This is a database notification, delivered through the header bell.')
+                            ->success()
+                            ->actions([NotificationAction::make('Open dashboard')->url('/admin/dashboard')])
+                            ->sendToDatabase($user);
+                    }
+
+                    return Effects::make()->notify('Test notification sent');
+                }),
         ]);
     }
 
     private function statsRow(S $s): Node
     {
         $totalPosts = fn () => DB::table('posts')->count();
-        $published  = fn () => DB::table('posts')->where('published', true)->count();
-        $draft      = fn () => DB::table('posts')->where('published', false)->count();
+        $published = fn () => DB::table('posts')->where('published', true)->count();
+        $draft = fn () => DB::table('posts')->where('published', false)->count();
         $recentTrend = fn () => DB::table('posts')
             ->selectRaw('count(*) as n')
             ->whereRaw("created_at >= date('now', '-6 months')")
@@ -120,13 +148,13 @@ class DashboardPage extends Page
                 ->query(function (mixed $request, array $params) {
                     $interval = $params['interval'] ?? 'month';
                     $format = match ($interval) {
-                        'day'  => '%Y-%m-%d',
+                        'day' => '%Y-%m-%d',
                         'week' => '%Y-W%W',
                         default => '%Y-%m',
                     };
 
                     return DB::table('posts')
-                        ->selectRaw("strftime(?, created_at) as period, count(*) as count", [$format])
+                        ->selectRaw('strftime(?, created_at) as period, count(*) as count', [$format])
                         ->groupBy('period')
                         ->orderBy('period')
                         ->get();
@@ -137,7 +165,7 @@ class DashboardPage extends Page
                 'nameKey' => 'status',
                 'series' => [['dataKey' => 'total', 'label' => 'Posts']],
             ])
-                ->query(fn() => DB::table('posts')
+                ->query(fn () => DB::table('posts')
                     ->selectRaw("case when published = 1 then 'Published' else 'Draft' end as status, count(*) as total")
                     ->groupBy('published')
                     ->orderBy('total')

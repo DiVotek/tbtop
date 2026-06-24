@@ -28,6 +28,7 @@ interface SharedProps {
 		chrome?: ChromeTrees;
 		brand?: string | null;
 		navigation?: NavigationLayout;
+		notifications?: { pollInterval?: number | null };
 	};
 	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
@@ -59,6 +60,7 @@ interface AdminLayoutShellProps {
 	chrome?: ChromeTrees | null;
 	brand?: string | null;
 	navigation?: NavigationLayout;
+	notificationsPollInterval?: number | null;
 }
 
 /**
@@ -76,6 +78,7 @@ export function AdminLayoutShell({
 	chrome,
 	brand,
 	navigation = "sidebar",
+	notificationsPollInterval,
 }: AdminLayoutShellProps) {
 	const topbar = navigation === "topbar";
 	const slotProps: AdminLayoutSlotProps = { nav, user };
@@ -86,6 +89,7 @@ export function AdminLayoutShell({
 		brand: brand ?? null,
 		orientation: "vertical",
 		logoSlot: slots?.logo?.(slotProps),
+		notificationsPollInterval,
 	};
 
 	const sidebar = slots?.sidebar
@@ -124,6 +128,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 			chrome={props.tbtop?.chrome}
 			brand={props.tbtop?.brand}
 			navigation={props.tbtop?.navigation ?? "sidebar"}
+			notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
 		>
 			{children}
 		</AdminLayoutShell>

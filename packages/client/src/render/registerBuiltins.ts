@@ -5,6 +5,7 @@ import {
 	SpacerBlock,
 	UserMenuBlock,
 } from "../app/chromeBlocks";
+import { NotificationsBell } from "../app/NotificationsBell";
 import { MediaLibraryBlock } from "../media/mediaLibraryBlock";
 import { ActionBlock } from "../structure/actionBlock";
 import { ActionGroupBlock } from "../structure/actionGroupBlock";
@@ -63,6 +64,7 @@ function registerChrome(): void {
 	defineBlock("logo", { behavior: "leaf", render: LogoBlock });
 	defineBlock("localeSwitcher", { behavior: "leaf", render: LocaleSwitcherBlock });
 	defineBlock("spacer", { behavior: "leaf", render: SpacerBlock });
+	defineBlock("notifications", { behavior: "leaf", render: NotificationsBell });
 }
 
 function registerLayout(): void {
