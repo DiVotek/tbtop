@@ -7,10 +7,21 @@ export interface ShellFrameProps {
 	header: ReactNode;
 	footer: ReactNode;
 	children: ReactNode;
+	/** Tailwind max-w class centering page content; full-bleed when absent. */
+	maxWidth?: string;
+}
+
+/** Page content area, optionally centered to a max-width (PanelConfig::maxContentWidth). */
+function ShellMain({ children, maxWidth }: { children: ReactNode; maxWidth?: string }) {
+	return (
+		<main className="min-w-0 flex-1">
+			{maxWidth ? <div className={`mx-auto w-full ${maxWidth}`}>{children}</div> : children}
+		</main>
+	);
 }
 
 /** Default layout: persistent left sidebar, header strip, mobile drawer. */
-export function SidebarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
+export function SidebarFrame({ sidebar, header, footer, children, maxWidth }: ShellFrameProps) {
 	return (
 		<div className="flex min-h-screen bg-background text-foreground">
 			<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
@@ -21,7 +32,7 @@ export function SidebarFrame({ sidebar, header, footer, children }: ShellFramePr
 					<SidebarDrawer sidebar={sidebar} />
 					{header}
 				</header>
-				<main className="min-w-0 flex-1">{children}</main>
+				<ShellMain maxWidth={maxWidth}>{children}</ShellMain>
 				{footer && <footer>{footer}</footer>}
 			</div>
 		</div>
@@ -36,7 +47,7 @@ export function SidebarFrame({ sidebar, header, footer, children }: ShellFramePr
  * drops into the burger drawer under the page-level "vertical" orientation
  * — stacked, identical to the sidebar layout.
  */
-export function TopbarFrame({ sidebar, header, footer, children }: ShellFrameProps) {
+export function TopbarFrame({ sidebar, header, footer, children, maxWidth }: ShellFrameProps) {
 	return (
 		<div className="flex min-h-screen flex-col bg-background text-foreground">
 			<header className="flex items-center gap-4 border-b px-4 py-3 lg:px-6">
@@ -46,7 +57,7 @@ export function TopbarFrame({ sidebar, header, footer, children }: ShellFramePro
 				</div>
 				<div className="ml-auto flex items-center gap-3">{header}</div>
 			</header>
-			<main className="min-w-0 flex-1">{children}</main>
+			<ShellMain maxWidth={maxWidth}>{children}</ShellMain>
 			{footer && <footer>{footer}</footer>}
 		</div>
 	);

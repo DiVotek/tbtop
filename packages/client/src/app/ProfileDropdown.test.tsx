@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { I18nProvider } from "../i18n/i18n";
+import { type ChromeData, ChromeDataContext } from "./chromeContext";
 import { ProfileDropdown } from "./ProfileDropdown";
 
 const originalRouter = inertiaReact.router;
@@ -183,5 +184,43 @@ describe("ProfileDropdown", () => {
 		await findByTestId("profile-menu");
 		// The heading must NOT contain the raw key "nav.language"
 		expect(container.textContent).not.toContain("nav.language");
+	});
+	function renderInChrome(
+		chrome: Partial<ChromeData>,
+		user: { name?: string; email?: string } | null = { name: "Alice" },
+	) {
+		const value: ChromeData = {
+			nav: [],
+			user: null,
+			currentUrl: "",
+			brand: null,
+			orientation: "vertical",
+			...chrome,
+		};
+		return render(
+			<ChromeDataContext.Provider value={value}>
+				<ProfileDropdown user={user} />
+			</ChromeDataContext.Provider>,
+		);
+	}
+
+	test("ProfileDropdown: hides the theme toggle when darkMode is disabled", async () => {
+		const { getByTestId, queryByTestId, findByTestId } = renderInChrome({ darkMode: false });
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		await findByTestId("profile-menu");
+		expect(queryByTestId("theme-option-dark")).toBeNull();
+	});
+
+	test("ProfileDropdown: darkMode disabled forces the light theme", () => {
+		window.document.documentElement.classList.add("dark");
+		renderInChrome({ darkMode: false });
+		expect(window.document.documentElement.classList.contains("dark")).toBe(false);
+	});
+
+	test("ProfileDropdown: defaultTheme dark applies when no cookie is set", () => {
+		renderInChrome({ defaultTheme: "dark" });
+		expect(window.document.documentElement.classList.contains("dark")).toBe(true);
 	});
 });

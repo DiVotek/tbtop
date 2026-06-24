@@ -3,6 +3,7 @@ import { type ReactNode, useMemo } from "react";
 import { materialize } from "../inertia/materialize";
 import { renderNode } from "../render/structureRenderer";
 import type { StructureNode } from "../structure/types";
+import { type Appearance, MAX_WIDTH_CLASS } from "./appearance";
 import { LogoBlock, NavMenuBlock, UserMenuBlock } from "./chromeBlocks";
 import {
 	type ChromeData,
@@ -29,6 +30,7 @@ interface SharedProps {
 		brand?: string | null;
 		navigation?: NavigationLayout;
 		notifications?: { pollInterval?: number | null };
+		appearance?: Appearance | null;
 	};
 	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
@@ -61,6 +63,7 @@ interface AdminLayoutShellProps {
 	brand?: string | null;
 	navigation?: NavigationLayout;
 	notificationsPollInterval?: number | null;
+	appearance?: Appearance | null;
 }
 
 /**
@@ -79,8 +82,10 @@ export function AdminLayoutShell({
 	brand,
 	navigation = "sidebar",
 	notificationsPollInterval,
+	appearance,
 }: AdminLayoutShellProps) {
 	const topbar = navigation === "topbar";
+	const maxWidth = appearance?.maxWidth ? MAX_WIDTH_CLASS[appearance.maxWidth] : undefined;
 	const slotProps: AdminLayoutSlotProps = { nav, user };
 	const chromeData: ChromeData = {
 		nav,
@@ -90,6 +95,8 @@ export function AdminLayoutShell({
 		orientation: "vertical",
 		logoSlot: slots?.logo?.(slotProps),
 		notificationsPollInterval,
+		darkMode: appearance?.darkMode,
+		defaultTheme: appearance?.defaultTheme,
 	};
 
 	const sidebar = slots?.sidebar
@@ -100,7 +107,7 @@ export function AdminLayoutShell({
 		: renderArea(chrome?.header, <DefaultHeader />);
 	const footer = slots?.footer ? slots.footer(slotProps) : renderArea(chrome?.footer, null);
 
-	const frameProps: ShellFrameProps = { sidebar, header, footer, children };
+	const frameProps: ShellFrameProps = { sidebar, header, footer, children, maxWidth };
 
 	return (
 		<ChromeDataContext.Provider value={chromeData}>
@@ -129,6 +136,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 			brand={props.tbtop?.brand}
 			navigation={props.tbtop?.navigation ?? "sidebar"}
 			notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
+			appearance={props.tbtop?.appearance}
 		>
 			{children}
 		</AdminLayoutShell>

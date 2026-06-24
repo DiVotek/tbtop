@@ -135,4 +135,26 @@ describe("AdminLayout slots", () => {
 		);
 		expect(getByText("Hello world")).toBeTruthy();
 	});
+	test("AdminLayout: maxContentWidth centers page content in a max-w wrapper", () => {
+		const { getByText } = render(
+			<AdminLayoutShell
+				nav={[]}
+				user={DEFAULT_USER}
+				currentUrl="/"
+				appearance={{ maxWidth: "7xl" }}
+			>
+				<div>Page body</div>
+			</AdminLayoutShell>,
+		);
+		expect(getByText("Page body").closest(".max-w-7xl")).toBeTruthy();
+	});
+
+	test("AdminLayout: no max-width wrapper when maxContentWidth is unset", () => {
+		const { getByText } = render(
+			<AdminLayoutShell nav={[]} user={DEFAULT_USER} currentUrl="/">
+				<div>Page body</div>
+			</AdminLayoutShell>,
+		);
+		expect(getByText("Page body").closest('[class*="max-w-"]')).toBeNull();
+	});
 });
