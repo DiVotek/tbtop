@@ -6,6 +6,7 @@ use App\Models\Post;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
+use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
@@ -25,7 +26,7 @@ class SoftDeletesDemoPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'Content', 'label' => 'Soft deletes', 'order' => 5];
+        return ['group' => 'Content', 'label' => 'Soft deletes', 'order' => 5, 'icon' => 'trash', 'badge' => 'New', 'badgeColor' => Color::Danger];
     }
 
     public function title(): string

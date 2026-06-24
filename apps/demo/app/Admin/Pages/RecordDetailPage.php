@@ -23,7 +23,7 @@ class RecordDetailPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'Content', 'label' => 'Record detail', 'order' => 9];
+        return ['group' => 'Content', 'label' => 'Record detail', 'order' => 9, 'icon' => 'file-text'];
     }
 
     public function title(): string

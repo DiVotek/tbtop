@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Panels;
 
 use Illuminate\Container\Container;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -81,6 +82,12 @@ final class CurrentPanel
         return $this->config->getBrand();
     }
 
+    /** @return 'sidebar'|'topbar' */
+    public function navigation(): string
+    {
+        return $this->config->getNavigation();
+    }
+
     public function rootView(): string
     {
         return $this->config->getRootView();
@@ -90,5 +97,11 @@ final class CurrentPanel
     public function chrome(): ?string
     {
         return $this->config->getChrome();
+    }
+
+    /** @return list<NavGroup> */
+    public function navigationGroups(): array
+    {
+        return $this->config->getNavigationGroups();
     }
 }

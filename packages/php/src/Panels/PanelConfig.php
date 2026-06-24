@@ -2,6 +2,8 @@
 
 namespace Tbtop\Admin\Panels;
 
+use InvalidArgumentException;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -9,6 +11,9 @@ use Tbtop\Admin\Pages\Page;
  */
 final class PanelConfig
 {
+    /** Shell navigation layouts the client can render. */
+    public const NAVIGATIONS = ['sidebar', 'topbar'];
+
     private string $id = '';
 
     private string $prefix = '';
@@ -32,10 +37,15 @@ final class PanelConfig
 
     private ?string $brand = null;
 
+    private string $navigation = 'sidebar';
+
     private string $rootView = 'app';
 
     /** Untyped on purpose: validated against Chrome at serialization time. @var class-string|null */
     private ?string $chrome = null;
+
+    /** @var list<NavGroup> */
+    private array $navigationGroups = [];
 
     public function id(string $id): static
     {
@@ -112,6 +122,25 @@ final class PanelConfig
         return $this;
     }
 
+    /**
+     * Shell navigation layout: 'sidebar' (default) or 'topbar'. The client
+     * renders the same chrome blocks; only their arrangement changes. Both
+     * layouts collapse to a burger drawer on mobile.
+     *
+     * @param  'sidebar'|'topbar'  $navigation
+     */
+    public function navigation(string $navigation): static
+    {
+        if (! in_array($navigation, self::NAVIGATIONS, true)) {
+            throw new InvalidArgumentException(
+                "Unknown navigation \"{$navigation}\". Expected one of: ".implode(', ', self::NAVIGATIONS).'.',
+            );
+        }
+        $this->navigation = $navigation;
+
+        return $this;
+    }
+
     /** Blade root view rendered on first visit (per-panel Vite entry escape hatch). */
     public function rootView(string $view): static
     {
@@ -124,6 +153,14 @@ final class PanelConfig
     public function chrome(string $chrome): static
     {
         $this->chrome = $chrome;
+
+        return $this;
+    }
+
+    /** Per-group nav metadata (icon, collapsible), matched to a page's nav group by label. @param  list<NavGroup>  $groups */
+    public function navigationGroups(array $groups): static
+    {
+        $this->navigationGroups = $groups;
 
         return $this;
     }
@@ -193,6 +230,13 @@ final class PanelConfig
         return $this->brand;
     }
 
+    /** @return 'sidebar'|'topbar' */
+    public function getNavigation(): string
+    {
+        /** @var 'sidebar'|'topbar' */
+        return $this->navigation;
+    }
+
     public function getRootView(): string
     {
         return $this->rootView;
@@ -202,5 +246,11 @@ final class PanelConfig
     public function getChrome(): ?string
     {
         return $this->chrome;
+    }
+
+    /** @return list<NavGroup> */
+    public function getNavigationGroups(): array
+    {
+        return $this->navigationGroups;
     }
 }

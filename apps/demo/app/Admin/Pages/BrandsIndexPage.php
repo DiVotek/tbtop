@@ -22,7 +22,7 @@ class BrandsIndexPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'Content', 'label' => 'Brands', 'order' => 2];
+        return ['group' => 'Content', 'label' => 'Brands', 'order' => 2, 'icon' => 'star'];
     }
 
     public function title(): string

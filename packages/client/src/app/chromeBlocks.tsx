@@ -1,6 +1,7 @@
-import { Link } from "@inertiajs/react";
 import { useLocale, useTranslation } from "../i18n/i18n";
-import { type ChromeData, type NavGroup, useChromeData } from "./chromeContext";
+import { useChromeData } from "./chromeContext";
+import { NavGroupDropdown } from "./navGroupDropdown";
+import { NavGroupSection } from "./navGroupSection";
 import { ProfileDropdown } from "./ProfileDropdown";
 
 // The predefined chrome block kinds (navMenu / userMenu / logo /
@@ -9,7 +10,18 @@ import { ProfileDropdown } from "./ProfileDropdown";
 // legacy shell defaults render through the same components.
 
 export function NavMenuBlock() {
-	const { nav, currentUrl } = useChromeData();
+	const { nav, currentUrl, orientation } = useChromeData();
+	// Topbar: each group is an inline dropdown. The mobile drawer reuses this
+	// block under a "vertical" override, so it still renders the stacked tree.
+	if (orientation === "horizontal") {
+		return (
+			<nav className="flex flex-row items-center gap-1" data-testid="admin-sidebar">
+				{nav.map((group) => (
+					<NavGroupDropdown key={group.group} group={group} currentUrl={currentUrl} />
+				))}
+			</nav>
+		);
+	}
 	return (
 		<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
 			{nav.map((group) => (
@@ -55,30 +67,4 @@ export function LocaleSwitcherBlock() {
 
 export function SpacerBlock() {
 	return <div className="flex-1" data-testid="chrome-spacer" />;
-}
-
-interface NavGroupSectionProps {
-	group: NavGroup;
-	currentUrl: ChromeData["currentUrl"];
-}
-
-function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
-	return (
-		<div className="flex flex-col gap-1">
-			<div className="px-2 text-xs font-medium uppercase text-muted-foreground">
-				{group.group}
-			</div>
-			{group.items.map((item) => (
-				<Link
-					key={item.href}
-					href={item.href}
-					className={`rounded-md px-2 py-1.5 text-sm hover:bg-accent ${
-						currentUrl.startsWith(item.href) ? "bg-accent font-medium" : ""
-					}`}
-				>
-					{item.label}
-				</Link>
-			))}
-		</div>
-	);
 }
