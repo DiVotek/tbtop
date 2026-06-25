@@ -438,7 +438,7 @@
 						}
 					},
 					"iconMap": { "type": "object" },
-					"shape": { "type": "string", "enum": ["square", "circular"] },
+					"shape": { "type": "string", "enum": ["square", "circular", "rounded"] },
 					"alt": { "type": "string" },
 					"editable": {
 						"type": "object",

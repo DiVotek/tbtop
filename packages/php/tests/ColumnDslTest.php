@@ -193,6 +193,43 @@ it('Column: image()->alt() emits the alt string', function (): void {
 });
 
 // ---------------------------------------------------------------------------
+// Color column kind + shape variants
+// ---------------------------------------------------------------------------
+
+it('Column: color() sets kind=color and omits shape by default', function (): void {
+    $json = encodeColumn(Column::make('brand')->color());
+
+    expect($json['kind'])->toBe('color')
+        ->and(array_key_exists('shape', $json))->toBeFalse();
+});
+
+it('Column: color()->square() emits shape=square', function (): void {
+    $json = encodeColumn(Column::make('brand')->color()->square());
+
+    expect($json['kind'])->toBe('color')
+        ->and($json['shape'])->toBe('square');
+});
+
+it('Column: color()->rounded() emits shape=rounded', function (): void {
+    $json = encodeColumn(Column::make('brand')->color()->rounded());
+
+    expect($json['kind'])->toBe('color')
+        ->and($json['shape'])->toBe('rounded');
+});
+
+it('Column: color()->circular() emits shape=circular', function (): void {
+    $json = encodeColumn(Column::make('brand')->color()->circular());
+
+    expect($json['shape'])->toBe('circular');
+});
+
+it('Column: color() last shape call wins (rounded then square)', function (): void {
+    $json = encodeColumn(Column::make('brand')->color()->rounded()->square());
+
+    expect($json['shape'])->toBe('square');
+});
+
+// ---------------------------------------------------------------------------
 // Color enum
 // ---------------------------------------------------------------------------
 

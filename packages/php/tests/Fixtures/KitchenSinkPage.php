@@ -149,6 +149,7 @@ class KitchenSinkPage extends Page
                     'title' => 'Title',
                     'views' => 'Views',
                     Column::make('cover')->image()->circular()->alt('Avatar'),
+                    Column::make('brand_color')->color()->rounded()->label('Color'),
                     Column::make('published')
                         ->label('Published')
                         ->toggle()
