@@ -286,7 +286,15 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** Square thumbnail shape (sharp corners). Last shape call wins. */
+    /** Render the column value as a color swatch; sets kind = 'color'. */
+    public function color(): static
+    {
+        $this->kind = 'color';
+
+        return $this;
+    }
+
+    /** Square shape (sharp corners). Last shape call wins. */
     public function square(): static
     {
         $this->kindMeta['shape'] = 'square';
@@ -294,10 +302,18 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** Circular thumbnail shape. Last shape call wins. */
+    /** Circular shape. Last shape call wins. */
     public function circular(): static
     {
         $this->kindMeta['shape'] = 'circular';
+
+        return $this;
+    }
+
+    /** Rounded-corner shape. Last shape call wins. */
+    public function rounded(): static
+    {
+        $this->kindMeta['shape'] = 'rounded';
 
         return $this;
     }

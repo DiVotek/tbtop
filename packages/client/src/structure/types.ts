@@ -235,7 +235,7 @@ export interface TableColumn<TRow = unknown> {
 	badge?: TableColumnBadgeOptions;
 	boolean?: TableColumnBooleanOptions;
 	iconMap?: Record<string, TableColumnIconMapEntry>;
-	shape?: "square" | "circular";
+	shape?: "square" | "circular" | "rounded";
 	alt?: string;
 	editable?: {
 		as: "boolean" | "text" | "select";

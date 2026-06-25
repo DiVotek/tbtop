@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { Badge } from "../../ui/badge";
+import { colorShapeClass } from "../colorShape";
 import { imageShapeClass } from "../imageShape";
 import type { TableColumn } from "../types";
 import { resolveColorClasses } from "./colorRegistry";
@@ -92,5 +93,29 @@ export function ImageCell({ value, col }: ImageCellProps): ReactNode {
 				className={cn("h-10 w-10 object-cover", imageShapeClass(col.shape))}
 			/>
 		</span>
+	);
+}
+
+// ─── Color cell ─────────────────────────────────────────────────────────────────
+
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+interface ColorCellProps {
+	value: unknown;
+	col: TableColumn;
+}
+
+export function ColorCell({ value, col }: ColorCellProps): ReactNode {
+	const hex = typeof value === "string" ? value.trim() : "";
+	if (!HEX_COLOR_RE.test(hex)) {
+		return <span className="text-muted-foreground">—</span>;
+	}
+	return (
+		<span
+			data-testid="color-cell"
+			title={hex}
+			className={cn("inline-block size-6 border border-border", colorShapeClass(col.shape))}
+			style={{ backgroundColor: hex }}
+		/>
 	);
 }

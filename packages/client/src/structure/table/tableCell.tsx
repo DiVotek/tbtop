@@ -7,7 +7,7 @@ import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import type { TableColumn } from "../types";
-import { BadgeCell, BooleanIconCell, IconMapCell, ImageCell } from "./cellHelpers";
+import { BadgeCell, BooleanIconCell, ColorCell, IconMapCell, ImageCell } from "./cellHelpers";
 import { EditableCell } from "./editableCell";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -72,6 +72,9 @@ function renderCell(
 	}
 	if (col.kind === "image") {
 		return <ImageCell value={row[col.name]} col={col} />;
+	}
+	if (col.kind === "color") {
+		return <ColorCell value={row[col.name]} col={col} />;
 	}
 	const descriptor = col.kind ? getBlockDescriptor(col.kind) : undefined;
 	if (descriptor?.behavior === "field") {

@@ -171,6 +171,79 @@ describe("TableCell: image kind", () => {
 	});
 });
 
+describe("TableCell: color kind", () => {
+	test("valid hex renders a swatch with a background-color style", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", color: "#2563eb" }],
+			columns: [{ name: "color", label: "Color", kind: "color" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const cell = container.querySelector('[data-testid="color-cell"]');
+		expect(cell).toBeTruthy();
+		expect(cell?.getAttribute("style")).toContain("background-color");
+	});
+
+	test("invalid value renders the placeholder, not a swatch", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", color: "not-a-color" }],
+			columns: [{ name: "color", label: "Color", kind: "color" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector('[data-testid="color-cell"]')).toBeNull();
+	});
+
+	test("null value renders the placeholder, not a swatch", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", color: null }],
+			columns: [{ name: "color", label: "Color", kind: "color" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector('[data-testid="color-cell"]')).toBeNull();
+	});
+
+	test("default shape applies rounded-md", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", color: "#fff" }],
+			columns: [{ name: "color", label: "Color", kind: "color" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const cell = container.querySelector('[data-testid="color-cell"]');
+		expect(cell?.className).toContain("rounded-md");
+	});
+
+	test("shape=square applies rounded-none", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", color: "#ffffff" }],
+			columns: [{ name: "color", label: "Color", kind: "color", shape: "square" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const cell = container.querySelector('[data-testid="color-cell"]');
+		expect(cell?.className).toContain("rounded-none");
+	});
+
+	test("shape=circular applies rounded-full", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", color: "#ffffff" }],
+			columns: [{ name: "color", label: "Color", kind: "color", shape: "circular" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const cell = container.querySelector('[data-testid="color-cell"]');
+		expect(cell?.className).toContain("rounded-full");
+	});
+});
+
 describe("TableCell: column display properties", () => {
 	test("column with align=center applies text-center class to th and td", async () => {
 		const node = s.table({

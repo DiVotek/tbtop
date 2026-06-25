@@ -848,6 +848,12 @@
                             "alt": "Avatar"
                         },
                         {
+                            "name": "brand_color",
+                            "label": "Color",
+                            "kind": "color",
+                            "shape": "rounded"
+                        },
+                        {
                             "name": "published",
                             "label": "Published",
                             "kind": "boolean",

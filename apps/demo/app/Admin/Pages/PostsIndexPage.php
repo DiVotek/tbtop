@@ -46,6 +46,7 @@ class PostsIndexPage extends Page
                 ->rowClick('edit')
                 ->columns([
                     Column::make('cover_url')->image()->square()->label('Cover')->alt('Cover'),
+                    Column::make('color')->color()->rounded()->label('Color'),
                     Column::make('title')
                         ->label('Title')
                         ->kind('text')
