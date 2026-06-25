@@ -3,6 +3,7 @@
 use Opis\JsonSchema\Errors\ErrorFormatter;
 use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Tests\Fixtures\KitchenSinkPage;
@@ -60,4 +61,21 @@ it('effects serialization conforms to the effects schema', function () {
         ->closeModal();
 
     validateAgainstSchema(json_decode(json_encode($effects)), '#/$defs/effects');
+});
+
+it('copyable and mask options conform to the wire grammar schema', function () {
+    $s = new S;
+
+    $form = $s->form('contact', [
+        $s->text('phone')->mask('(999) 999-9999')->copyable('Phone copied!', 1500),
+    ]);
+    validateAgainstSchema(json_decode(json_encode($form)));
+
+    $display = $s->displayValue('TT-1042')->copyable();
+    validateAgainstSchema(json_decode(json_encode($display)));
+
+    validateAgainstSchema(
+        json_decode(json_encode([Column::make('slug')->copyable('Slug copied!')])),
+        '#/$defs/columns'
+    );
 });

@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl\Fields;
 use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\CollectsRules;
+use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Node;
@@ -20,6 +21,7 @@ use Tbtop\Admin\Validation\ConstraintMap;
 abstract class Field implements JsonSerializable
 {
     use CollectsRules;
+    use HasCopyable;
     use HasGenericRules;
     use WithMeta;
 
@@ -183,7 +185,7 @@ abstract class Field implements JsonSerializable
 
     public function toNode(): Node
     {
-        $options = $this->opts;
+        $options = [...$this->opts, ...$this->copyableOption()];
         $constraints = ConstraintMap::toConstraints($this->ruleList);
         if ($constraints !== []) {
             $options['constraints'] = $constraints;

@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Http\KindFormat;
 
 /**
@@ -14,6 +15,8 @@ use Tbtop\Admin\Http\KindFormat;
  */
 final class DisplayValueBlock implements JsonSerializable
 {
+    use HasCopyable;
+
     private ?string $kind = null;
 
     /** @var array<string, mixed> */
@@ -133,6 +136,9 @@ final class DisplayValueBlock implements JsonSerializable
             if (isset($this->kindMeta[$key])) {
                 $options[$key] = $this->kindMeta[$key];
             }
+        }
+        foreach ($this->copyableOption() as $key => $value) {
+            $options[$key] = $value;
         }
 
         return (new Node('displayValue', $options))->jsonSerialize();

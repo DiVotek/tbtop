@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
+import { CopyButton } from "../../ui/copyButton";
 import type { TableColumn } from "../types";
 import { BadgeCell, BooleanIconCell, ColorCell, IconMapCell, ImageCell } from "./cellHelpers";
 import { EditableCell } from "./editableCell";
@@ -90,5 +91,14 @@ function renderCell(
 			renderChild: () => null,
 		});
 	}
-	return String(row[col.name] ?? "");
+	const text = String(row[col.name] ?? "");
+	if (col.copyable) {
+		return (
+			<span className="inline-flex items-center gap-1">
+				{text}
+				<CopyButton value={text} copyable={col.copyable} />
+			</span>
+		);
+	}
+	return text;
 }

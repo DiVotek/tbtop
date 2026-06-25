@@ -55,7 +55,8 @@ class PostsIndexPage extends Page
                         ->searchable(),
                     Column::make('slug')
                         ->label('Slug')
-                        ->kind('text'),
+                        ->kind('text')
+                        ->copyable(copyMessage: 'Slug copied!'),
                     Column::make('published')
                         ->label('Published')
                         ->toggle()

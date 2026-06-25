@@ -14,4 +14,9 @@ final class Text extends Field
     {
         return 'text';
     }
+
+    public function mask(string $pattern): static
+    {
+        return $this->set('mask', $pattern);
+    }
 }

@@ -1,5 +1,7 @@
 import type { RenderProps } from "../render/blockRegistry";
 import { defineBlock } from "../render/defineBlock";
+import { CopyButton } from "../ui/copyButton";
+import type { CopyableConfig } from "./copyable";
 import { BadgeCell, BooleanIconCell, IconMapCell } from "./table/cellHelpers";
 import type {
 	TableColumn,
@@ -14,6 +16,7 @@ interface DisplayValueOptions {
 	badge?: TableColumnBadgeOptions;
 	boolean?: TableColumnBooleanOptions;
 	iconMap?: Record<string, TableColumnIconMapEntry>;
+	copyable?: CopyableConfig;
 }
 
 // Synthesize the slice of TableColumn the cell helpers read. They are pure
@@ -40,7 +43,16 @@ export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>)
 		return <IconMapCell value={options.value} col={col} />;
 	}
 	// date / datetime / number / money are pre-formatted server-side.
-	return <span>{options.value == null ? "" : String(options.value)}</span>;
+	const text = options.value == null ? "" : String(options.value);
+	if (options.copyable) {
+		return (
+			<span className="inline-flex items-center gap-1">
+				{text}
+				<CopyButton value={text} copyable={options.copyable} />
+			</span>
+		);
+	}
+	return <span>{text}</span>;
 }
 
 export const displayValueBlockDescriptor = defineBlock<"displayValue", DisplayValueOptions>(
