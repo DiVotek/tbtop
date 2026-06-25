@@ -47,6 +47,7 @@ class RecordDetailPage extends Page
                 ]),
                 $s->displayValue($record['total_cents'])->money('USD'),
                 $s->displayValue($record['placed_at'])->date('Y-m-d'),
+                $s->displayValue($record['tracking'])->copyable(copyMessage: 'Tracking number copied!'),
             ]),
             $s->section(['title' => 'Cover'], [
                 $s->displayImage($record['cover_url'])->alt('Product cover')->caption('Primary product image'),
@@ -69,6 +70,7 @@ class RecordDetailPage extends Page
             'fulfillment' => 'shipped',
             'total_cents' => 4999,
             'placed_at' => '2024-03-15 10:30:00',
+            'tracking' => 'TT-1042-9KX7',
             'cover_url' => '/logo.svg',
             'notes' => $this->notesState(),
             'attributes' => ['SKU' => 'TT-1042', 'Weight' => '1.2 kg', 'Color' => 'Walnut'],

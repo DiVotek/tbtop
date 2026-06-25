@@ -290,3 +290,24 @@ describe("TableCell: column display properties", () => {
 		expect(headers).toContain("Title");
 	});
 });
+
+describe("TableCell: copyable", () => {
+	test("renders a copy button alongside a badge cell", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", status: "draft" }],
+			columns: [
+				{
+					name: "status",
+					label: "Status",
+					kind: "badge",
+					badge: { colors: { draft: "gray" } },
+					copyable: { message: "Copied", duration: 1000 },
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText, findByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("draft");
+		expect(await findByRole("button", { name: "Copy" })).toBeTruthy();
+	});
+});

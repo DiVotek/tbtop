@@ -3,6 +3,7 @@ import type { AdminClient } from "../data/client";
 import type { FieldConstraints } from "../inertia/constraints";
 import type { IconDef } from "../ui/node-icon";
 import type { AsyncBlock } from "./asyncBlock";
+import type { CopyableConfig } from "./copyable";
 
 // Inlined from the old auth/AuthProvider — session auth lives on the Laravel
 // side now; the Inertia layout will hydrate this from shared page props.
@@ -231,6 +232,7 @@ export interface TableColumn<TRow = unknown> {
 	width?: string;
 	wrap?: boolean;
 	tooltip?: string;
+	copyable?: CopyableConfig;
 	translatable?: boolean;
 	badge?: TableColumnBadgeOptions;
 	boolean?: TableColumnBooleanOptions;

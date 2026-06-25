@@ -304,7 +304,14 @@
 											"falseColor": { "type": "string" }
 										}
 									},
-									"iconMap": { "type": "object" }
+									"iconMap": { "type": "object" },
+									"copyable": {
+										"type": "object",
+										"properties": {
+											"message": { "type": "string" },
+											"duration": { "type": "integer" }
+										}
+									}
 								}
 							}
 						}
@@ -389,6 +396,14 @@
 				"label": { "type": "string" },
 				"helperText": { "type": "string" },
 				"tooltip": { "type": "string" },
+				"copyable": {
+					"type": "object",
+					"properties": {
+						"message": { "type": "string" },
+						"duration": { "type": "integer" }
+					}
+				},
+				"mask": { "type": "string" },
 				"collapsed": { "type": "boolean" },
 				"create": {
 					"type": "object",
@@ -418,6 +433,13 @@
 					"width": { "type": "string" },
 					"wrap": { "type": "boolean" },
 					"tooltip": { "type": "string" },
+					"copyable": {
+						"type": "object",
+						"properties": {
+							"message": { "type": "string" },
+							"duration": { "type": "integer" }
+						}
+					},
 					"translatable": { "type": "boolean" },
 					"format": { "type": "string" },
 					"decimals": { "type": "integer" },

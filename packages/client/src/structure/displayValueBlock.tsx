@@ -1,5 +1,8 @@
+import type { ReactNode } from "react";
 import type { RenderProps } from "../render/blockRegistry";
 import { defineBlock } from "../render/defineBlock";
+import { CopyButton } from "../ui/copyButton";
+import type { CopyableConfig } from "./copyable";
 import { BadgeCell, BooleanIconCell, IconMapCell } from "./table/cellHelpers";
 import type {
 	TableColumn,
@@ -14,6 +17,7 @@ interface DisplayValueOptions {
 	badge?: TableColumnBadgeOptions;
 	boolean?: TableColumnBooleanOptions;
 	iconMap?: Record<string, TableColumnIconMapEntry>;
+	copyable?: CopyableConfig;
 }
 
 // Synthesize the slice of TableColumn the cell helpers read. They are pure
@@ -28,8 +32,7 @@ function toColumn(options: DisplayValueOptions): TableColumn {
 	};
 }
 
-export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>) {
-	const col = toColumn(options);
+function renderValue(options: DisplayValueOptions, col: TableColumn): ReactNode {
 	if (options.kind === "badge") {
 		return <BadgeCell value={options.value} col={col} />;
 	}
@@ -41,6 +44,22 @@ export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>)
 	}
 	// date / datetime / number / money are pre-formatted server-side.
 	return <span>{options.value == null ? "" : String(options.value)}</span>;
+}
+
+export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>) {
+	const content = renderValue(options, toColumn(options));
+	if (!options.copyable) {
+		return content;
+	}
+	return (
+		<span className="inline-flex items-center gap-1">
+			{content}
+			<CopyButton
+				value={options.value == null ? "" : String(options.value)}
+				copyable={options.copyable}
+			/>
+		</span>
+	);
 }
 
 export const displayValueBlockDescriptor = defineBlock<"displayValue", DisplayValueOptions>(

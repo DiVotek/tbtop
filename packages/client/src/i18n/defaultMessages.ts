@@ -43,6 +43,8 @@ export const defaultMessages: Messages = {
 	"field.otp.label": "One-time code",
 	"field.password.hide": "Hide password",
 	"field.password.show": "Show password",
+	"field.copyable.copy": "Copy",
+	"field.copyable.copied": "Copied",
 	"field.upload.noData": "Upload returned no data",
 	"field.upload.uploading": "Uploading…",
 	"field.upload.prompt": "Click or drop a file",

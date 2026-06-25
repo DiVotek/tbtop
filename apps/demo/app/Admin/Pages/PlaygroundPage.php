@@ -43,6 +43,26 @@ class PlaygroundPage extends Page
                 ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
                     ->notify("Saved {$ctx->form['name']}")),
             $s->displayDivider(),
+            $s->displayText('Copyable & input masks')->variant('subheading'),
+            $s->form('contact', [
+                $s->text('phone')->label('Phone')
+                    ->mask('(999) 999-9999')
+                    ->required()->rules('size:14')
+                    ->helperText('Masked as you type; must be a full number.'),
+                $s->text('card')->label('Card number')
+                    ->mask('9999 9999 9999 9999')
+                    ->helperText('Digits group into blocks of four.'),
+                $s->text('api_token')->label('API token')
+                    ->copyable(copyMessage: 'Token copied!', copyMessageDuration: 1500)
+                    ->helperText('Use the copy icon to grab the token.'),
+                $s->actionsRow([
+                    $s->action('save_contact')->label('Save')->color('primary')->submit(),
+                ]),
+            ])
+                ->record(['api_token' => 'sk_live_5f3a9c2e8b7d41', 'phone' => '', 'card' => ''])
+                ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
+                    ->notify("Phone saved: {$ctx->form['phone']}")),
+            $s->displayDivider(),
             $s->displayText('Server action')->variant('subheading'),
             $s->actionsRow([
                 $s->action('ping')->label('Ping server')->handle(

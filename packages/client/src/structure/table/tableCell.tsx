@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
+import { CopyButton } from "../../ui/copyButton";
 import type { TableColumn } from "../types";
 import { BadgeCell, BooleanIconCell, ColorCell, IconMapCell, ImageCell } from "./cellHelpers";
 import { EditableCell } from "./editableCell";
@@ -33,13 +34,21 @@ export function RowDataCell({
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
+	const content = renderCell(col, row, saveCell);
 	return (
 		<td
 			className={cn("px-3 py-2", alignClass, wrapClass)}
 			style={col.width ? { width: col.width } : undefined}
 			title={col.tooltip}
 		>
-			{renderCell(col, row, saveCell)}
+			{col.copyable ? (
+				<span className="inline-flex items-center gap-1">
+					{content}
+					<CopyButton value={String(row[col.name] ?? "")} copyable={col.copyable} />
+				</span>
+			) : (
+				content
+			)}
 		</td>
 	);
 }

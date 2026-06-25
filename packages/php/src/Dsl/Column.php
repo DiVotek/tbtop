@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\CollectsRules;
+use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Validation\ConstraintMap;
 
 /**
@@ -20,6 +21,7 @@ use Tbtop\Admin\Validation\ConstraintMap;
 final class Column implements JsonSerializable
 {
     use CollectsRules;
+    use HasCopyable;
 
     private ?string $label = null;
 
@@ -505,6 +507,9 @@ final class Column implements JsonSerializable
         }
         if ($this->translatable === true) {
             $out['translatable'] = true;
+        }
+        foreach ($this->copyableOption() as $key => $value) {
+            $out[$key] = $value;
         }
 
         // Kind-specific metadata: format, decimals, currency, badge, boolean, iconMap
