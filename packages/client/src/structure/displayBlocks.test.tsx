@@ -311,6 +311,24 @@ describe("DisplayValueBlock", () => {
 		);
 		expect(container.querySelector("span")?.textContent).toBe("2024-03-15");
 	});
+
+	test("copyable badge renders both the badge and a copy button", () => {
+		const { container, getByRole } = render(
+			<DisplayValueBlock
+				options={{
+					value: "active",
+					kind: "badge",
+					badge: { colors: { active: "success" } },
+					copyable: { message: "Copied", duration: 1000 },
+				}}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector('[data-slot="badge"]')?.textContent).toBe("active");
+		expect(getByRole("button", { name: "Copy" })).not.toBeNull();
+	});
 });
 
 // ---------------------------------------------------------------------------

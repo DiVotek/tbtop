@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { RenderProps } from "../render/blockRegistry";
 import { defineBlock } from "../render/defineBlock";
 import { CopyButton } from "../ui/copyButton";
@@ -31,8 +32,7 @@ function toColumn(options: DisplayValueOptions): TableColumn {
 	};
 }
 
-export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>) {
-	const col = toColumn(options);
+function renderValue(options: DisplayValueOptions, col: TableColumn): ReactNode {
 	if (options.kind === "badge") {
 		return <BadgeCell value={options.value} col={col} />;
 	}
@@ -43,16 +43,23 @@ export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>)
 		return <IconMapCell value={options.value} col={col} />;
 	}
 	// date / datetime / number / money are pre-formatted server-side.
-	const text = options.value == null ? "" : String(options.value);
-	if (options.copyable) {
-		return (
-			<span className="inline-flex items-center gap-1">
-				{text}
-				<CopyButton value={text} copyable={options.copyable} />
-			</span>
-		);
+	return <span>{options.value == null ? "" : String(options.value)}</span>;
+}
+
+export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>) {
+	const content = renderValue(options, toColumn(options));
+	if (!options.copyable) {
+		return content;
 	}
-	return <span>{text}</span>;
+	return (
+		<span className="inline-flex items-center gap-1">
+			{content}
+			<CopyButton
+				value={options.value == null ? "" : String(options.value)}
+				copyable={options.copyable}
+			/>
+		</span>
+	);
 }
 
 export const displayValueBlockDescriptor = defineBlock<"displayValue", DisplayValueOptions>(

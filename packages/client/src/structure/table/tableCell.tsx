@@ -34,13 +34,21 @@ export function RowDataCell({
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
+	const content = renderCell(col, row, saveCell);
 	return (
 		<td
 			className={cn("px-3 py-2", alignClass, wrapClass)}
 			style={col.width ? { width: col.width } : undefined}
 			title={col.tooltip}
 		>
-			{renderCell(col, row, saveCell)}
+			{col.copyable ? (
+				<span className="inline-flex items-center gap-1">
+					{content}
+					<CopyButton value={String(row[col.name] ?? "")} copyable={col.copyable} />
+				</span>
+			) : (
+				content
+			)}
 		</td>
 	);
 }
@@ -91,14 +99,5 @@ function renderCell(
 			renderChild: () => null,
 		});
 	}
-	const text = String(row[col.name] ?? "");
-	if (col.copyable) {
-		return (
-			<span className="inline-flex items-center gap-1">
-				{text}
-				<CopyButton value={text} copyable={col.copyable} />
-			</span>
-		);
-	}
-	return text;
+	return String(row[col.name] ?? "");
 }
