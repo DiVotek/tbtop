@@ -8,22 +8,40 @@ import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { coerceSelectValue } from "./selectShared";
 
 export interface RelationOptionsBag extends AsyncSingleOptionsBag {
 	searchable?: boolean;
 	labelKey?: string;
 }
 
-export function RelationCell({ value }: FieldCellProps<string | string[]>) {
+export function RelationCell({ value }: FieldCellProps<unknown>) {
 	return nullableCell(value, (v) => {
-		if (typeof v === "string") {
-			return <span>{v}</span>;
-		}
 		if (Array.isArray(v)) {
 			return <span>{v.length} items</span>;
 		}
-		return <code className="text-xs">{JSON.stringify(v)}</code>;
+		if (typeof v === "object" && v !== null) {
+			return <span>{relationObjectLabel(v)}</span>;
+		}
+		return <span>{String(v)}</span>;
 	});
+}
+
+/** Pull a display label from an eager-loaded related record, else its id, else raw JSON. */
+function relationObjectLabel(obj: object): string {
+	if ("name" in obj && typeof obj.name === "string") {
+		return obj.name;
+	}
+	if ("label" in obj && typeof obj.label === "string") {
+		return obj.label;
+	}
+	if ("title" in obj && typeof obj.title === "string") {
+		return obj.title;
+	}
+	if ("id" in obj && (typeof obj.id === "string" || typeof obj.id === "number")) {
+		return String(obj.id);
+	}
+	return JSON.stringify(obj);
 }
 
 export function RelationForm({
@@ -37,7 +55,8 @@ export function RelationForm({
 }: FieldFormProps<string, RelationOptionsBag>) {
 	const ctx = useClientActionContext();
 	const opts = options ?? {};
-	const current = typeof value === "string" ? value : null;
+	const coerced = coerceSelectValue(value);
+	const current = typeof coerced === "string" ? coerced : null;
 	const resolved = useSingleResolvedLabel({ ctx, fieldName: name, value: current, opts });
 
 	if (resolved.kind === "loading") {

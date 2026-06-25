@@ -3,7 +3,7 @@ import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
-import { RelationForm } from "./relationField";
+import { RelationCell, RelationForm } from "./relationField";
 
 ensureBuiltinsRegistered();
 
@@ -106,5 +106,60 @@ describe("RelationForm", () => {
 		});
 
 		resolveOnLoad({ value: "1", label: "Alice Smith" });
+	});
+
+	test("resolves the label for an int FK value (records carry int FKs)", async () => {
+		const opts = makeOpts();
+		// Records arrive with an int FK (author_id: 1) though the prop type says string.
+		const intValue = 1 as unknown as Parameters<typeof RelationForm>[0]["value"];
+		const { container } = render(
+			<Wrap>
+				<RelationForm
+					name="author_id"
+					value={intValue}
+					onChange={() => {}}
+					options={opts}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => {
+			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
+				"Alice Smith",
+			);
+		});
+		expect(opts.onLoad).toHaveBeenCalledWith(expect.anything(), "1");
+	});
+});
+
+describe("RelationCell", () => {
+	test("renders an int FK as plain text, not a JSON code block", () => {
+		const { container } = render(<RelationCell value={5} />);
+		expect(container.textContent).toBe("5");
+		expect(container.querySelector("code")).toBeNull();
+	});
+
+	test("renders a string FK as text", () => {
+		const { container } = render(<RelationCell value="42" />);
+		expect(container.textContent).toBe("42");
+	});
+
+	test("resolves the name from an eager-loaded related record", () => {
+		const { container } = render(<RelationCell value={{ id: 5, name: "Carol" }} />);
+		expect(container.textContent).toBe("Carol");
+	});
+
+	test("falls back to title when the record has no name", () => {
+		const { container } = render(<RelationCell value={{ id: 7, title: "Spec" }} />);
+		expect(container.textContent).toBe("Spec");
+	});
+
+	test("summarizes a to-many array as a count", () => {
+		const { container } = render(<RelationCell value={[1, 2, 3]} />);
+		expect(container.textContent).toBe("3 items");
+	});
+
+	test("renders nothing for a null value", () => {
+		const { container } = render(<RelationCell value={null} />);
+		expect(container.textContent).toBe("");
 	});
 });
