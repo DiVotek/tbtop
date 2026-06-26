@@ -199,6 +199,40 @@ describe("Select field — async mode", () => {
 		expect(onLoad).toHaveBeenCalledWith(expect.anything(), "42");
 	});
 
+	test("Select async resolves the label for an int value", async () => {
+		const onLoad = mock(
+			async (_c: unknown, value: string): Promise<UserRow> => ({
+				id: value,
+				name: "Carol",
+			}),
+		);
+		const query = mock(async (): Promise<UserRow[]> => []);
+		const Wrap = wrap(NO_RESP);
+		// Records arrive with an int FK (author_id: 42) though the prop type says string.
+		const intValue = 42 as unknown as Parameters<typeof SelectForm>[0]["value"];
+		const { container } = render(
+			<Wrap>
+				<SelectForm
+					name="authorId"
+					value={intValue}
+					onChange={() => {}}
+					options={{
+						query,
+						onLoad,
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+					}}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => {
+			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
+				"Carol",
+			);
+		});
+		expect(onLoad).toHaveBeenCalledWith(expect.anything(), "42");
+	});
+
 	test("Select async multi chip × button removes a value not in current search rows", async () => {
 		const user = userEvent.setup();
 		const captured: (string | string[] | null)[] = [];
