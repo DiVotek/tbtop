@@ -24,6 +24,7 @@ class User extends Authenticatable implements PasskeyUser
         'email',
         'password',
         'role',
+        'city_id',
     ];
 
     /**

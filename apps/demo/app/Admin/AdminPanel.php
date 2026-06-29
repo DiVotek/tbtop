@@ -4,6 +4,7 @@ namespace App\Admin;
 
 use App\Admin\Pages\BrandsIndexPage;
 use App\Admin\Pages\DashboardPage;
+use App\Admin\Pages\DependentFieldsDemoPage;
 use App\Admin\Pages\LoginPage;
 use App\Admin\Pages\LoginPreviewPage;
 use App\Admin\Pages\MediaEditPage;
@@ -60,6 +61,7 @@ class AdminPanel extends Panel
                 MediaLibraryPage::class,
                 LoginPreviewPage::class,
                 RelationDemoPage::class,
+                DependentFieldsDemoPage::class,
                 TwoFactorSetupPage::class,
                 LoginPage::class,
                 TwoFactorChallengePage::class,

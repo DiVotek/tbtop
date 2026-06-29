@@ -22,12 +22,20 @@ export function materializeRelation(node: StructureNode, basePath: string): Stru
 		...node,
 		options: {
 			...opts,
-			query: (actionCtx: ClientActionContext, search: string) =>
+			query: (
+				actionCtx: ClientActionContext,
+				search: string,
+				deps?: Record<string, string>,
+			) =>
 				actionCtx.client
-					.post(endpoint, { search })
+					.post(endpoint, { search, deps })
 					.then((r) => (r as { options: RelationRow[] }).options),
-			onLoad: (actionCtx: ClientActionContext, value: string) =>
-				actionCtx.client.post(endpoint, { value }).then((r) => {
+			onLoad: (
+				actionCtx: ClientActionContext,
+				value: string,
+				deps?: Record<string, string>,
+			) =>
+				actionCtx.client.post(endpoint, { value, deps }).then((r) => {
 					const opt = (r as { option: RelationRow | null }).option;
 					if (opt === null) {
 						throw new Error("not found");

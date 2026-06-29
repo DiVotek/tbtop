@@ -405,6 +405,9 @@
 				},
 				"mask": { "type": "string" },
 				"collapsed": { "type": "boolean" },
+				"dependsOn": { "type": "array", "items": { "type": "string" } },
+				"keepValue": { "type": "boolean" },
+				"whenParentEmpty": { "type": "string", "enum": ["disabled", "empty"] },
 				"create": {
 					"type": "object",
 					"required": ["fields"],

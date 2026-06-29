@@ -12,8 +12,8 @@ export interface AsyncSearchArgs {
 	ctx: ClientActionContext;
 	query: QueryFn | undefined;
 	search: string;
-	/** Bump to force a refetch with the same search (e.g. after create). */
-	refetchKey?: number;
+	/** Bump to force a refetch with the same search (e.g. after create, or deps change). */
+	refetchKey?: number | string;
 }
 
 export function useAsyncSearch({
@@ -34,6 +34,7 @@ export function useAsyncSearch({
 	useEffect(() => {
 		const fn = queryRef.current;
 		if (!fn) {
+			setState({ kind: "ready", rows: [] });
 			return;
 		}
 		let cancelled = false;

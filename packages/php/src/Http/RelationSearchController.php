@@ -3,9 +3,12 @@
 namespace Tbtop\Admin\Http;
 
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tbtop\Admin\Dsl\Fields\Relation;
 
 /**
  * POST {page-path}/relation-search/{tbtopField}
@@ -34,28 +37,27 @@ final class RelationSearchController
             );
         }
 
-        $labelKey = $field->getLabelKey();
-        $closure = $field->queryClosure();
-
-        // findRelationField only returns fields whose queryClosure() is non-null.
-        assert($closure instanceof Closure);
+        $deps = self::readDeps($request, $field->dependsOnFields());
 
         if ($request->has('value')) {
-            return $this->resolveByValue($request, $closure, $labelKey);
+            return $this->resolveByValue($request, $field, $deps);
         }
 
-        return $this->search($request, $closure, $labelKey);
+        return $this->search($request, $field, $deps);
     }
 
-    private function resolveByValue(Request $request, Closure $closure, string $labelKey): JsonResponse
+    /** @param  array<string, string>  $deps */
+    private function resolveByValue(Request $request, Relation $field, array $deps): JsonResponse
     {
         $value = (string) $request->input('value', '');
-        $builder = $closure();
+        $builder = $this->buildQuery($field, $deps);
         $model = $builder->find($value);
 
         if ($model === null) {
             return response()->json(['option' => null]);
         }
+
+        $labelKey = $field->getLabelKey();
 
         return response()->json([
             'option' => [
@@ -65,10 +67,12 @@ final class RelationSearchController
         ]);
     }
 
-    private function search(Request $request, Closure $closure, string $labelKey): JsonResponse
+    /** @param  array<string, string>  $deps */
+    private function search(Request $request, Relation $field, array $deps): JsonResponse
     {
         $search = (string) $request->input('search', '');
-        $builder = $closure();
+        $builder = $this->buildQuery($field, $deps);
+        $labelKey = $field->getLabelKey();
 
         if ($search !== '') {
             $builder = $builder->where($labelKey, 'like', '%'.$search.'%');
@@ -82,5 +86,45 @@ final class RelationSearchController
         ])->values()->all();
 
         return response()->json(['options' => $options]);
+    }
+
+    /**
+     * @param  array<string, string>  $deps
+     * @return Builder<Model>
+     */
+    private function buildQuery(Relation $field, array $deps): Builder
+    {
+        $closure = $field->queryClosure();
+
+        // findRelationField guarantees a query closure.
+        assert($closure instanceof Closure);
+
+        $builder = $closure($deps);
+        assert($builder instanceof Builder);
+
+        return $builder;
+    }
+
+    /**
+     * @param  list<string>  $allowedFields
+     * @return array<string, string>
+     */
+    private static function readDeps(Request $request, array $allowedFields): array
+    {
+        $deps = $request->input('deps', []);
+        if (! is_array($deps) || $allowedFields === []) {
+            return [];
+        }
+
+        $allowed = array_flip($allowedFields);
+        $out = [];
+        foreach ($deps as $key => $value) {
+            if (! is_string($key) || ! array_key_exists($key, $allowed) || ! is_scalar($value)) {
+                continue;
+            }
+            $out[$key] = (string) $value;
+        }
+
+        return $out;
     }
 }

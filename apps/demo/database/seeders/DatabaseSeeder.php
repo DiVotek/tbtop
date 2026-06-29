@@ -3,11 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\Brand;
+use App\Models\City;
+use App\Models\Country;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -26,7 +29,44 @@ class DatabaseSeeder extends Seeder
             Brand::updateOrCreate(['slug' => $brand['slug']], $brand);
         }
 
+        $this->seedLocations();
+
         Setting::firstOrCreate([]);
+    }
+
+    private function seedLocations(): void
+    {
+        foreach ($this->locations() as $countryName => $cities) {
+            $country = Country::updateOrCreate(['name' => $countryName]);
+            foreach ($cities as $cityName => $people) {
+                $city = City::updateOrCreate(['country_id' => $country->id, 'name' => $cityName]);
+                foreach ($people as $person) {
+                    User::updateOrCreate(
+                        ['email' => Str::slug($person).'@demo.test'],
+                        ['name' => $person, 'password' => 'password', 'role' => 'user', 'city_id' => $city->id],
+                    );
+                }
+            }
+        }
+    }
+
+    /** @return array<string, array<string, list<string>>> */
+    private function locations(): array
+    {
+        return [
+            'Ukraine' => [
+                'Kyiv' => ['Olena Koval', 'Dmytro Savchenko'],
+                'Lviv' => ['Sofia Melnyk', 'Andrii Boyko'],
+            ],
+            'Poland' => [
+                'Warsaw' => ['Jan Kowalski', 'Anna Wojcik'],
+                'Krakow' => ['Piotr Lewandowski'],
+            ],
+            'Germany' => [
+                'Berlin' => ['Lukas Becker', 'Mia Schmidt'],
+                'Munich' => ['Leon Fischer'],
+            ],
+        ];
     }
 
     /** @return list<array<string, mixed>> */

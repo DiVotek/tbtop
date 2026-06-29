@@ -63,3 +63,51 @@ it('Relation search: unknown field name returns 404', function (): void {
         ['search' => ''],
     )->assertNotFound();
 });
+
+it('Relation search: dependent query receives the parent value via deps', function (): void {
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/dependent_id',
+        ['search' => '', 'deps' => ['author_id' => '2']],
+    );
+
+    $response->assertOk();
+    $options = $response->json('options');
+    expect($options)->toHaveCount(1);
+    expect($options[0])->toMatchArray(['value' => '2', 'label' => 'Bob Jones']);
+});
+
+it('Relation search: dependent query with no deps yields an empty list', function (): void {
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/dependent_id',
+        ['search' => ''],
+    );
+
+    $response->assertOk();
+    expect($response->json('options'))->toBe([]);
+});
+
+it('Relation search: dependent query ignores undeclared deps', function (): void {
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/dependent_id',
+        ['search' => '', 'deps' => ['author_id' => '2', 'spoof_id' => '1']],
+    );
+
+    $response->assertOk();
+    $options = $response->json('options');
+    expect($options)->toHaveCount(1);
+    expect($options[0])->toMatchArray(['value' => '2', 'label' => 'Bob Jones']);
+});
+
+it('Relation search: dependent resolve-by-value honors the parent scope', function (): void {
+    $hit = $this->postJson(
+        '/admin/relation-search-page/relation-search/dependent_id',
+        ['value' => '2', 'deps' => ['author_id' => '2']],
+    );
+    $hit->assertOk()->assertExactJson(['option' => ['value' => '2', 'label' => 'Bob Jones']]);
+
+    $miss = $this->postJson(
+        '/admin/relation-search-page/relation-search/dependent_id',
+        ['value' => '1', 'deps' => ['author_id' => '2']],
+    );
+    $miss->assertOk()->assertExactJson(['option' => null]);
+});
