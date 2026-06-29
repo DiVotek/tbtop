@@ -7,10 +7,15 @@ import type { AsyncSingleOptionsBag } from "./asyncOptions";
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { nullableCell } from "./cellHelpers";
+import {
+	type DependencyConfig,
+	type DependencyState,
+	useFieldDependencies,
+} from "./fieldDependencies";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { coerceSelectValue } from "./selectShared";
 
-export interface RelationOptionsBag extends AsyncSingleOptionsBag {
+export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyConfig {
 	searchable?: boolean;
 	labelKey?: string;
 }
@@ -57,7 +62,16 @@ export function RelationForm({
 	const opts = options ?? {};
 	const coerced = coerceSelectValue(value);
 	const current = typeof coerced === "string" ? coerced : null;
-	const resolved = useSingleResolvedLabel({ ctx, fieldName: name, value: current, opts });
+	const dep = useFieldDependencies({ config: opts, value: current, onChange });
+	const isResolveGated = dep.hasDeps && !dep.ready;
+	const boundOpts = dep.hasDeps ? bindDeps(opts, dep.deps) : opts;
+	const resolved = useSingleResolvedLabel({
+		ctx,
+		fieldName: name,
+		value: isResolveGated ? null : current,
+		opts: boundOpts,
+		refetchKey: dep.depsKey,
+	});
 
 	if (resolved.kind === "loading") {
 		return <FormSkeleton />;
@@ -70,11 +84,21 @@ export function RelationForm({
 			value={current}
 			onChange={onChange}
 			onBlur={onBlur}
-			disabled={disabled}
-			options={opts}
+			disabled={disabled || dep.disabledByParent}
+			options={boundOpts}
 			resolved={resolved}
+			dep={dep}
 		/>
 	);
+}
+
+function bindDeps(opts: RelationOptionsBag, deps: Record<string, string>): RelationOptionsBag {
+	const { query, onLoad } = opts;
+	return {
+		...opts,
+		query: query ? (ctx, search) => query(ctx, search, deps) : undefined,
+		onLoad: onLoad ? (ctx, value) => onLoad(ctx, value, deps) : undefined,
+	};
 }
 
 interface RelationSelectInnerProps {
@@ -86,6 +110,7 @@ interface RelationSelectInnerProps {
 	disabled?: boolean;
 	options: RelationOptionsBag;
 	resolved: { kind: "ready"; labels: Record<string, string> };
+	dep: DependencyState;
 }
 
 function RelationSelectInner({
@@ -97,11 +122,17 @@ function RelationSelectInner({
 	disabled,
 	options,
 	resolved,
+	dep,
 }: RelationSelectInnerProps) {
 	const t = useTranslation();
 	const ctx = useClientActionContext();
-	const search = useAsyncSearch({ ctx, query: options.query, search: "" });
-
+	const gated = dep.hasDeps && !dep.ready;
+	const search = useAsyncSearch({
+		ctx,
+		query: gated ? undefined : options.query,
+		search: "",
+		refetchKey: dep.depsKey,
+	});
 	if (search.kind === "loading") {
 		return <FormSkeleton />;
 	}
@@ -109,6 +140,7 @@ function RelationSelectInner({
 		return <>{renderAsyncError(undefined, search.message, <FormSkeleton />)}</>;
 	}
 
+	const rows: unknown[] = gated ? [] : search.rows;
 	const display = value === null ? undefined : (resolved.labels[value] ?? value);
 
 	return (
@@ -126,7 +158,7 @@ function RelationSelectInner({
 				<SelectValue placeholder={t("field.select.placeholder")}>{display}</SelectValue>
 			</SelectTrigger>
 			<SelectContent>
-				{search.rows.map((row) => {
+				{rows.map((row) => {
 					const v = String(options.optionValue?.(row) ?? "");
 					const lbl = String(options.optionLabel?.(row) ?? v);
 					return (

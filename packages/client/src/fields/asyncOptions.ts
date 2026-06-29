@@ -2,8 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClientActionContext } from "../structure/types";
 
 export interface AsyncSingleOptionsBag {
-	query?: (ctx: ClientActionContext, search: string) => Promise<unknown[]>;
-	onLoad?: (ctx: ClientActionContext, value: string) => Promise<unknown>;
+	query?: (
+		ctx: ClientActionContext,
+		search: string,
+		deps?: Record<string, string>,
+	) => Promise<unknown[]>;
+	onLoad?: (
+		ctx: ClientActionContext,
+		value: string,
+		deps?: Record<string, string>,
+	) => Promise<unknown>;
 	optionLabel?: (row: unknown) => string;
 	optionValue?: (row: unknown) => string;
 }
@@ -24,6 +32,7 @@ export interface SingleResolveArgs {
 	fieldName: string;
 	value: string | null;
 	opts: AsyncSingleOptionsBag;
+	refetchKey?: number | string;
 }
 
 export function useSingleResolvedLabel({
@@ -31,6 +40,7 @@ export function useSingleResolvedLabel({
 	fieldName,
 	value,
 	opts,
+	refetchKey = 0,
 }: SingleResolveArgs): ResolvedState {
 	const warnedRef = useRef(false);
 	const ctxRef = useRef(ctx);
@@ -73,7 +83,7 @@ export function useSingleResolvedLabel({
 		return () => {
 			cancelled = true;
 		};
-	}, [id, fieldName]);
+	}, [id, fieldName, refetchKey]);
 	return state;
 }
 

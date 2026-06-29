@@ -24,6 +24,11 @@ class RelationSearchPage extends Page
                     ->labelKey('name')
                     ->searchable()
                     ->query(fn () => AuthorModel::query()),
+                $s->relation('dependent_id')
+                    ->labelKey('name')
+                    ->dependsOn('author_id')
+                    ->query(fn (array $deps) => AuthorModel::query()
+                        ->where('id', $deps['spoof_id'] ?? $deps['author_id'] ?? 0)),
             ])->onSubmit(fn () => null),
         ]);
     }
