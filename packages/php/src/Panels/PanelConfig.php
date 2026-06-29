@@ -2,7 +2,9 @@
 
 namespace Tbtop\Admin\Panels;
 
+use Closure;
 use InvalidArgumentException;
+use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
 use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\Concerns\ConfiguresAppearance;
@@ -43,6 +45,8 @@ final class PanelConfig
     private string $navigation = 'sidebar';
 
     private ?int $notificationsPolling = 30;
+
+    private ?CommandPaletteConfig $commandPalette = null;
 
     private string $rootView = 'app';
 
@@ -159,6 +163,20 @@ final class PanelConfig
         return $this;
     }
 
+    /** Enable (default), disable with false, or configure the ⌘K command palette via a closure. */
+    public function commandPalette(bool|Closure $config = true): static
+    {
+        $palette = $this->getCommandPalette();
+        if ($config instanceof Closure) {
+            $palette->enable();
+            $config($palette);
+        } else {
+            $palette->enable($config);
+        }
+
+        return $this;
+    }
+
     /** Blade root view rendered on first visit (per-panel Vite entry escape hatch). */
     public function rootView(string $view): static
     {
@@ -258,6 +276,11 @@ final class PanelConfig
     public function getNotificationsPolling(): ?int
     {
         return $this->notificationsPolling;
+    }
+
+    public function getCommandPalette(): CommandPaletteConfig
+    {
+        return $this->commandPalette ??= new CommandPaletteConfig;
     }
 
     public function getRootView(): string

@@ -11,6 +11,8 @@ import {
 	type ChromeUser,
 	type NavGroup,
 } from "./chromeContext";
+import { CommandPalette } from "./commandPalette/CommandPalette";
+import type { CommandPaletteData } from "./commandPalette/types";
 import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
 
 /** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
@@ -31,6 +33,7 @@ interface SharedProps {
 		navigation?: NavigationLayout;
 		notifications?: { pollInterval?: number | null };
 		appearance?: Appearance | null;
+		palette?: CommandPaletteData | null;
 	};
 	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
@@ -125,21 +128,25 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 	const { props, url } = usePage<SharedProps>();
 	const nav = props.tbtop?.nav ?? [];
 	const user = props.auth?.user ?? null;
+	const palette = props.tbtop?.palette;
 
 	return (
-		<AdminLayoutShell
-			nav={nav}
-			user={user}
-			currentUrl={url}
-			slots={slots}
-			chrome={props.tbtop?.chrome}
-			brand={props.tbtop?.brand}
-			navigation={props.tbtop?.navigation ?? "sidebar"}
-			notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
-			appearance={props.tbtop?.appearance}
-		>
-			{children}
-		</AdminLayoutShell>
+		<>
+			<AdminLayoutShell
+				nav={nav}
+				user={user}
+				currentUrl={url}
+				slots={slots}
+				chrome={props.tbtop?.chrome}
+				brand={props.tbtop?.brand}
+				navigation={props.tbtop?.navigation ?? "sidebar"}
+				notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
+				appearance={props.tbtop?.appearance}
+			>
+				{children}
+			</AdminLayoutShell>
+			{palette != null ? <CommandPalette nav={nav} data={palette} /> : null}
+		</>
 	);
 }
 
