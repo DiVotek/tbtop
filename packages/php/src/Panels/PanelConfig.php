@@ -136,7 +136,7 @@ final class PanelConfig
      * renders the same chrome blocks; only their arrangement changes. Both
      * layouts collapse to a burger drawer on mobile.
      *
-     * @param  'sidebar'|'topbar'  $navigation
+     * @param  string  $navigation  One of self::NAVIGATIONS ('sidebar'|'topbar')
      */
     public function navigation(string $navigation): static
     {
