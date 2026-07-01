@@ -9,7 +9,7 @@ trait HasIcon
 
     private const ICON_POSITIONS = ['left', 'right'];
 
-    /** @param  'left'|'right'  $position */
+    /** @param  string  $position  One of self::ICON_POSITIONS ('left'|'right') */
     public function icon(string $name, string $position = 'left'): static
     {
         if (! in_array($position, self::ICON_POSITIONS, true)) {

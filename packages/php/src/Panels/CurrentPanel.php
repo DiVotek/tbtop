@@ -94,6 +94,14 @@ final class CurrentPanel
         return $this->config->getNotificationsPolling();
     }
 
+    /** Sparse command-palette options for the client, or null when disabled. @return array<string, mixed>|null */
+    public function commandPalette(): ?array
+    {
+        $palette = $this->config->getCommandPalette();
+
+        return $palette->isEnabled() ? $palette->toArray() : null;
+    }
+
     public function rootView(): string
     {
         return $this->config->getRootView();

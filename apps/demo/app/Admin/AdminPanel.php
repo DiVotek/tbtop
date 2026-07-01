@@ -26,6 +26,8 @@ use App\Admin\Pages\TwoFactorSetupPage;
 use App\Admin\Pages\UploadDemoPage;
 use App\Admin\Pages\ValidationRulesPage;
 use App\Http\Middleware\RequireFullAuth;
+use Tbtop\Admin\CommandPalette\Command;
+use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
 use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\MediaLibraryPage;
 use Tbtop\Admin\Panels\Panel;
@@ -72,6 +74,10 @@ class AdminPanel extends Panel
                 NavGroup::make('System')->icon('settings')->collapsible()->collapsed(),
             ])
             ->navigation('topbar')
+            ->commandPalette(fn (CommandPaletteConfig $p) => $p->commands([
+                Command::make('Create post')->icon('file-text')->url('/admin/posts/new')->group('Actions'),
+                Command::make('tbtop on GitHub')->icon('globe')->url('https://github.com/DiVotek/tbtop')->openInNewTab()->group('Links'),
+            ]))
             ->maxContentWidth('7xl')
             ->locales(['en', 'uk'])
             ->defaultLocale('en')

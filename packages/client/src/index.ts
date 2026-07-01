@@ -1,5 +1,7 @@
 export { AdminLayout } from "./app/AdminLayout";
 export { AuthUserProvider, useAuthUser } from "./app/authUser";
+export { definePaletteCommand } from "./app/commandPalette/handlers";
+export type { CommandPaletteData, PaletteCommand } from "./app/commandPalette/types";
 export { type NavigateFn, useNavigate } from "./app/navigate";
 export {
 	type PageParams,

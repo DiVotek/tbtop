@@ -103,7 +103,7 @@ final class ActionBuilder implements JsonSerializable
     /**
      * Set the modal dialog width. Only valid on modal actions.
      *
-     * @param  'sm'|'md'|'lg'|'full'  $width
+     * @param  string  $width  One of self::MODAL_SIZES ('sm'|'md'|'lg'|'full')
      */
     public function modalWidth(string $width): self
     {
@@ -120,7 +120,7 @@ final class ActionBuilder implements JsonSerializable
     /**
      * Set the trigger button size.
      *
-     * @param  'sm'|'md'|'lg'  $size
+     * @param  string  $size  One of self::BUTTON_SIZES ('sm'|'md'|'lg')
      */
     public function size(string $size): self
     {
