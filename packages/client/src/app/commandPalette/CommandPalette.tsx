@@ -44,6 +44,7 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 	function close() {
 		setOpen(false);
 		setQuery("");
+		setSelected(0);
 	}
 
 	function run(index: number) {

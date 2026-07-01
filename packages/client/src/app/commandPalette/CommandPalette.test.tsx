@@ -45,6 +45,22 @@ describe("CommandPalette", () => {
 		visit.mockRestore();
 	});
 
+	test("closing without selecting resets the highlight for the next open", () => {
+		const { getByTestId, getByText, queryByTestId } = render(
+			<CommandPalette nav={NAV} data={{ hotkey: "mod+k" }} />,
+		);
+		openPalette();
+		const input = getByTestId("command-palette-input");
+		fireEvent.keyDown(input, { key: "ArrowDown" });
+		fireEvent.keyDown(input, { key: "ArrowDown" });
+		act(() => {
+			fireEvent.keyDown(document, { key: "Escape" });
+		});
+		expect(queryByTestId("command-palette-input")).toBeNull();
+		openPalette();
+		expect(getByText("Dashboard").closest("button")?.className).toContain("bg-accent");
+	});
+
 	test("a commands-only palette omits nav destinations", () => {
 		const { getByText, queryByText } = render(
 			<CommandPalette
