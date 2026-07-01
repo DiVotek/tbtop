@@ -32,15 +32,15 @@ it('serializes a handler command without an href', function () {
         ->toBe(['label' => 'Toggle theme', 'handler' => 'toggleTheme']);
 });
 
-it('emits an empty options array for a default-on palette', function () {
-    expect((new CommandPaletteConfig)->toArray())->toBe([]);
+it('emits only the default hotkey for a default-on palette', function () {
+    expect((new CommandPaletteConfig)->toArray())->toBe(['hotkey' => 'mod+k']);
 });
 
-it('omits the hotkey while it holds the default', function () {
-    expect((new CommandPaletteConfig)->hotkey('mod+k')->toArray())->toBe([]);
+it('always emits the hotkey, even while it holds the default', function () {
+    expect((new CommandPaletteConfig)->hotkey('mod+k')->toArray())->toBe(['hotkey' => 'mod+k']);
 });
 
-it('serializes only the options changed from their defaults', function () {
+it('serializes the hotkey plus only the options changed from their defaults', function () {
     $palette = (new CommandPaletteConfig)
         ->placeholder('Find…')
         ->hotkey('mod+/')
@@ -48,8 +48,8 @@ it('serializes only the options changed from their defaults', function () {
         ->commands([Command::make('Posts')->url('/admin/posts')]);
 
     expect($palette->toArray())->toBe([
-        'placeholder' => 'Find…',
         'hotkey' => 'mod+/',
+        'placeholder' => 'Find…',
         'includeNav' => false,
         'commands' => [['label' => 'Posts', 'href' => '/admin/posts']],
     ]);
@@ -69,7 +69,7 @@ it('configures the palette through a closure', function () {
     );
 
     expect($config->getCommandPalette()->toArray())
-        ->toBe(['placeholder' => 'Jump to…', 'includeNav' => false]);
+        ->toBe(['hotkey' => 'mod+k', 'placeholder' => 'Jump to…', 'includeNav' => false]);
 });
 
 it('re-enables a previously disabled palette', function () {
@@ -79,7 +79,7 @@ it('re-enables a previously disabled palette', function () {
 });
 
 it('exposes sparse options through the current panel when enabled', function () {
-    expect((new CurrentPanel(new PanelConfig))->commandPalette())->toBe([]);
+    expect((new CurrentPanel(new PanelConfig))->commandPalette())->toBe(['hotkey' => 'mod+k']);
 });
 
 it('returns null through the current panel when disabled', function () {

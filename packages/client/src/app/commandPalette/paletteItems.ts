@@ -1,15 +1,16 @@
 import { router } from "@inertiajs/react";
+import { isExternalUrl } from "../../structure/actionBlock";
 import type { NavGroup } from "../chromeContext";
 import { getPaletteCommand } from "./handlers";
 import type { CommandPaletteData, PaletteCommand, PaletteItem } from "./types";
-
-const EXTERNAL_URL = /^[a-z][a-z0-9+.-]*:\/\//i;
 
 function runCommand(cmd: PaletteCommand): () => void {
 	if (cmd.handler) {
 		const name = cmd.handler;
 		return () => {
-			void getPaletteCommand(name)?.();
+			Promise.resolve(getPaletteCommand(name)?.()).catch((err: unknown) => {
+				console.error("[command-palette] handler error", name, err);
+			});
 		};
 	}
 	const href = cmd.href;
@@ -21,7 +22,7 @@ function runCommand(cmd: PaletteCommand): () => void {
 			window.open(href, "_blank", "noopener");
 		};
 	}
-	if (EXTERNAL_URL.test(href)) {
+	if (isExternalUrl(href)) {
 		return () => {
 			window.location.assign(href);
 		};

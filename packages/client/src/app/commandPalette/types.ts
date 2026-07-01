@@ -14,7 +14,7 @@ export interface PaletteCommand {
 /** Command-palette config from the `tbtop.palette` shared prop; null = disabled. */
 export interface CommandPaletteData {
 	placeholder?: string;
-	hotkey?: string;
+	hotkey: string;
 	includeNav?: boolean;
 	commands?: PaletteCommand[];
 }

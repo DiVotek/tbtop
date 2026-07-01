@@ -29,7 +29,7 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 	const filtered = useMemo(() => filterPaletteItems(items, query), [items, query]);
 
 	useEffect(() => {
-		const spec = parseKeybinding(data.hotkey ?? "mod+k");
+		const spec = parseKeybinding(data.hotkey);
 		if (!spec) {
 			return;
 		}

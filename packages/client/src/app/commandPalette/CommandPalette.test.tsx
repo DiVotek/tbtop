@@ -26,7 +26,7 @@ afterEach(cleanup);
 describe("CommandPalette", () => {
 	test("the hotkey opens the palette and lists nav destinations", () => {
 		const { queryByTestId, getByTestId, getByText } = render(
-			<CommandPalette nav={NAV} data={{}} />,
+			<CommandPalette nav={NAV} data={{ hotkey: "mod+k" }} />,
 		);
 		expect(queryByTestId("command-palette-input")).toBeNull();
 		openPalette();
@@ -36,7 +36,7 @@ describe("CommandPalette", () => {
 
 	test("arrow keys move the selection and Enter runs it", () => {
 		const visit = spyOn(router, "visit").mockImplementation(() => {});
-		const { getByTestId } = render(<CommandPalette nav={NAV} data={{}} />);
+		const { getByTestId } = render(<CommandPalette nav={NAV} data={{ hotkey: "mod+k" }} />);
 		openPalette();
 		const input = getByTestId("command-palette-input");
 		fireEvent.keyDown(input, { key: "ArrowDown" });
@@ -49,7 +49,11 @@ describe("CommandPalette", () => {
 		const { getByText, queryByText } = render(
 			<CommandPalette
 				nav={NAV}
-				data={{ includeNav: false, commands: [{ label: "Docs", href: "/docs" }] }}
+				data={{
+					hotkey: "mod+k",
+					includeNav: false,
+					commands: [{ label: "Docs", href: "/docs" }],
+				}}
 			/>,
 		);
 		openPalette();

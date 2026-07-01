@@ -73,19 +73,18 @@ final class CommandPaletteConfig
     }
 
     /**
-     * Sparse options for the client; empty when all defaults hold. Disabled
-     * palettes are omitted from the wire by the caller, not flagged here.
+     * Sparse options for the client; empty when all defaults hold except the
+     * hotkey, which is always emitted — the client has no default of its own
+     * to fall back to. Disabled palettes are omitted from the wire by the
+     * caller, not flagged here.
      *
      * @return array<string, mixed>
      */
     public function toArray(): array
     {
-        $out = [];
+        $out = ['hotkey' => $this->hotkey];
         if ($this->placeholder !== null) {
             $out['placeholder'] = $this->placeholder;
-        }
-        if ($this->hotkey !== self::DEFAULT_HOTKEY) {
-            $out['hotkey'] = $this->hotkey;
         }
         if (! $this->includeNav) {
             $out['includeNav'] = false;
