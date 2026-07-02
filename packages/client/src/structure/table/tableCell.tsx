@@ -8,7 +8,14 @@ import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { CopyButton } from "../../ui/copyButton";
 import type { TableColumn } from "../types";
-import { BadgeCell, BooleanIconCell, ColorCell, IconMapCell, ImageCell } from "./cellHelpers";
+import {
+	BadgeCell,
+	BooleanIconCell,
+	ColorCell,
+	IconMapCell,
+	ImageCell,
+	TimeCell,
+} from "./cellHelpers";
 import { EditableCell } from "./editableCell";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -84,6 +91,9 @@ function renderCell(
 	}
 	if (col.kind === "color") {
 		return <ColorCell value={row[col.name]} col={col} />;
+	}
+	if (col.kind === "time") {
+		return <TimeCell value={row[col.name]} />;
 	}
 	const descriptor = col.kind ? getBlockDescriptor(col.kind) : undefined;
 	if (descriptor?.behavior === "field") {

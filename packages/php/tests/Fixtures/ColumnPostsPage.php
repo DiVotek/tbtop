@@ -24,7 +24,7 @@ class ColumnPostsPage extends Page
         return $s->stack([
             $s->table('cposts')
                 ->columns([
-                    Column::make('title')->label('Title')->searchable(),
+                    Column::make('title')->label('Title')->searchable()->individuallySearchable(),
                     Column::make('status')->label('Status')->searchable(),  // NOT sortable, but searchable
                     Column::make('price')->label('Price')->sortable(),
                     Column::make('published_at')->label('Published')->date('Y-m-d'),

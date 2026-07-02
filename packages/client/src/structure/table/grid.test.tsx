@@ -6,7 +6,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
-import type { TableEmptyState } from "../tableBlock.types";
+import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
 import { wrapForStructure } from "../testFixtures";
 import type { TableColumn } from "../types";
 import { TableGrid } from "./grid";
@@ -27,6 +27,7 @@ interface Overrides {
 	rows?: Record<string, unknown>[];
 	emptyState?: TableEmptyState;
 	recordUrl?: boolean;
+	groups?: TableGroupsConfig;
 }
 
 function renderGrid(over: Overrides = {}) {
@@ -51,6 +52,7 @@ function renderGrid(over: Overrides = {}) {
 				onRefresh={() => {}}
 				emptyState={over.emptyState}
 				recordUrl={over.recordUrl}
+				groups={over.groups}
 			/>
 		</Wrap>,
 	);
@@ -123,5 +125,35 @@ describe("TableGrid record URL + empty-state config", () => {
 			rows: [{ id: "1", title: "a", _recordUrl: "/admin/posts/1" }],
 		});
 		expect(getByTestId("table-row-1").className).not.toContain("cursor-pointer");
+	});
+});
+
+describe("TableGrid row grouping", () => {
+	const GROUPED_ROWS = [
+		{ id: "1", title: "a", status: "draft" },
+		{ id: "2", title: "b", status: "draft" },
+		{ id: "3", title: "c", status: "published" },
+	];
+
+	test("renders a group header before each contiguous run when groups is set", () => {
+		const { getAllByText, queryAllByText } = renderGrid({
+			rows: GROUPED_ROWS,
+			groups: { column: "status" },
+		});
+		expect(getAllByText("draft")).toHaveLength(1);
+		expect(queryAllByText("published")).toHaveLength(1);
+	});
+
+	test("skips grouping entirely while reorder is active, even with groups set", () => {
+		const { queryAllByText } = renderGrid({
+			rows: GROUPED_ROWS,
+			groups: { column: "status" },
+			reorderColumn: "position",
+			reorderEnabled: true,
+		});
+		// Group header rows never render; only cell content ("draft"/"published"
+		// as row values, not header labels) would otherwise show as one node.
+		expect(queryAllByText("draft")).toHaveLength(0);
+		expect(queryAllByText("published")).toHaveLength(0);
 	});
 });

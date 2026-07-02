@@ -5,11 +5,20 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslation } from "../../i18n/i18n";
+import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { Button } from "../../ui/button";
-import { ModalShell } from "../../ui/modal-shell";
+import { ModalShell, type ModalSize } from "../../ui/modal-shell";
 import type { StructureNode } from "../types";
+
+/** Tailwind grid-cols classes for filtersFormColumns (1-4). */
+const FORM_COLS_CLASS: Record<number, string> = {
+	1: "grid-cols-1",
+	2: "grid-cols-1 sm:grid-cols-2",
+	3: "grid-cols-1 sm:grid-cols-3",
+	4: "grid-cols-1 sm:grid-cols-4",
+};
 
 interface FiltersProps {
 	filters: StructureNode[];
@@ -17,6 +26,13 @@ interface FiltersProps {
 	onFilterChange: (name: string, value: unknown) => void;
 	onReset: () => void;
 	activeCount: number;
+	/** Require an explicit Apply action before filter changes narrow the query. */
+	deferred?: boolean;
+	onApply?: () => void;
+	/** Grid column count for the filters form layout (1-4). */
+	formColumns?: number;
+	/** Width of the filters modal; only meaningful for ModalFilters. */
+	formWidth?: ModalSize;
 }
 
 // Shared count badge, used by both inline + modal so the active indicator reads
@@ -41,11 +57,28 @@ export function InlineFilters({
 	onFilterChange,
 	onReset,
 	activeCount,
+	deferred,
+	onApply,
+	formColumns,
 }: FiltersProps) {
 	const t = useTranslation();
+	const gridClass = formColumns
+		? (FORM_COLS_CLASS[formColumns] ?? FORM_COLS_CLASS[1])
+		: undefined;
 	return (
 		<div className="flex items-center gap-2 flex-wrap" data-testid="table-filters-inline">
-			{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
+			<div
+				className={
+					gridClass ? cn("grid gap-2", gridClass) : "flex items-center gap-2 flex-wrap"
+				}
+			>
+				{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
+			</div>
+			{deferred && (
+				<Button size="sm" onClick={onApply} data-testid="table-filters-apply">
+					{t("table.filters.apply")}
+				</Button>
+			)}
 			{activeCount > 0 && (
 				<Button variant="ghost" size="sm" onClick={onReset}>
 					{t("table.filters.reset")}
@@ -62,9 +95,24 @@ export function ModalFilters({
 	onFilterChange,
 	onReset,
 	activeCount,
+	deferred,
+	onApply,
+	formColumns,
+	formWidth,
 }: FiltersProps) {
 	const t = useTranslation();
 	const [open, setOpen] = useState(false);
+	const gridClass = formColumns
+		? (FORM_COLS_CLASS[formColumns] ?? FORM_COLS_CLASS[1])
+		: undefined;
+
+	function handleDone() {
+		if (deferred) {
+			onApply?.();
+		}
+		setOpen(false);
+	}
+
 	return (
 		<>
 			<Button
@@ -80,6 +128,7 @@ export function ModalFilters({
 				open={open}
 				onOpenChange={setOpen}
 				title={t("table.filters.label")}
+				size={formWidth}
 				footer={
 					<div className="flex items-center justify-end gap-2">
 						{activeCount > 0 && (
@@ -87,11 +136,11 @@ export function ModalFilters({
 								{t("table.filters.reset")}
 							</Button>
 						)}
-						<Button onClick={() => setOpen(false)}>{t("table.filters.apply")}</Button>
+						<Button onClick={handleDone}>{t("table.filters.apply")}</Button>
 					</div>
 				}
 			>
-				<div className="flex flex-col gap-4">
+				<div className={gridClass ? cn("grid gap-4", gridClass) : "flex flex-col gap-4"}>
 					{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
 				</div>
 			</ModalShell>

@@ -9,6 +9,7 @@ import { TablePagination } from "./table/pagination";
 import { canReorder } from "./table/reorder";
 import { TableError } from "./table/tableError";
 import { TableTabBar, TableToolbar } from "./table/toolbar";
+import { useColumnSearch } from "./table/useColumnSearch";
 import { countActiveFilters, useColumnVisibility } from "./table/useColumnVisibility";
 import { useTableParams } from "./table/useTableParams";
 import {
@@ -107,6 +108,10 @@ export function TableBlock({ options }: TableRenderProps) {
 			saveCell={saveCell}
 			reorderColumn={options.reorder?.column}
 			reorderRows={reorderRows}
+			groups={options.groups}
+			deferFilters={options.deferFilters}
+			filtersFormColumns={options.filtersFormColumns}
+			filtersFormWidth={options.filtersFormWidth}
 		/>
 	);
 }
@@ -134,6 +139,11 @@ function TableBody(props: TableBodyProps) {
 
 	const activeFilterCount = countActiveFilters(filterValues);
 	const hasActiveFilters = activeFilterCount > 0 || Boolean(props.queryParams.search);
+
+	const { colSearchValues, handleColSearchChange } = useColumnSearch(
+		props.queryParams.colSearch,
+		props.onChangeParams,
+	);
 
 	const { handleResetFilters, handleSort, handleSelectTab } = useTableParams(
 		props.onChangeParams,
@@ -194,6 +204,9 @@ function TableBody(props: TableBodyProps) {
 					onToggleColumn={toggleColumn}
 					onChangeParams={props.onChangeParams}
 					searchPlaceholder={props.searchPlaceholder}
+					deferFilters={props.deferFilters}
+					filtersFormColumns={props.filtersFormColumns}
+					filtersFormWidth={props.filtersFormWidth}
 				/>
 
 				{hasBulk && (
@@ -227,6 +240,9 @@ function TableBody(props: TableBodyProps) {
 					reorderEnabled={reorderEnabled}
 					reorderRows={props.reorderRows}
 					onRefresh={props.onRefresh}
+					groups={props.groups}
+					colSearchValues={colSearchValues}
+					onColSearchChange={handleColSearchChange}
 				/>
 
 				{showPagination && (

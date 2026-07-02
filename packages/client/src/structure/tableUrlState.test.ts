@@ -44,6 +44,22 @@ const ROUND_TRIP_CASES: RoundTripCase[] = [
 		label: "combined search + filter + page",
 		params: { search: "world", page: 2, filters: { status: "published" } },
 	},
+	{
+		label: "single-column search",
+		params: { colSearch: { title: "hello" } },
+	},
+	{
+		label: "multi-column search",
+		params: { colSearch: { title: "hello", slug: "world" } },
+	},
+	{
+		label: "colSearch alongside filters and search",
+		params: {
+			search: "top",
+			filters: { status: "draft" },
+			colSearch: { title: "abc" },
+		},
+	},
 ];
 
 describe("tableUrlState: serialisation round-trip", () => {

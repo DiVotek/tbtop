@@ -2,6 +2,8 @@
  * Shared prop/option shapes + the query-context stub for TableBlock/TableBody.
  * Split out of tableBlock.tsx to keep that file under the size cap.
  */
+
+import type { ModalSize } from "../ui/modal-shell";
 import type { AsyncBlock } from "./asyncBlock";
 import type {
 	ActionConfig,
@@ -13,6 +15,11 @@ import type {
 	TablePaginationOptions,
 	TableTab,
 } from "./types";
+
+/** Row-grouping config: partitions contiguous rows sharing `column`'s value. */
+export interface TableGroupsConfig {
+	column: string;
+}
 
 export type SaveCellArgs = { column: string; id: string; value: unknown };
 
@@ -40,6 +47,14 @@ export interface TableBlockOptions extends AsyncBlock {
 	headerActions?: ActionConfig[];
 	recordUrl?: boolean;
 	recordUrlNewTab?: boolean;
+	/** Require an explicit Apply action before filter changes narrow the query. */
+	deferFilters?: boolean;
+	/** Grid column count for the filters form layout (1-4). */
+	filtersFormColumns?: number;
+	/** Width of the filters modal; only meaningful when filtersIn === "modal". */
+	filtersFormWidth?: ModalSize;
+	/** Partitions contiguous rows sharing a column's value under group headers. */
+	groups?: TableGroupsConfig;
 	/** Present when the table declares reorderable(); carries the sort column. */
 	reorder?: { column: string };
 	/** Materialized by materialize.ts — takes actionCtx + args; bound in TableBlock. */
@@ -71,6 +86,10 @@ export interface TableBodyProps {
 	headerActions?: ActionConfig[];
 	recordUrl?: boolean;
 	recordUrlNewTab?: boolean;
+	deferFilters?: boolean;
+	filtersFormColumns?: number;
+	filtersFormWidth?: ModalSize;
+	groups?: TableGroupsConfig;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 	/** Reorder column when reorderable() is declared; undefined otherwise. */
 	reorderColumn?: string;

@@ -7,13 +7,14 @@ import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifi
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
 import { ReloadOverlay } from "../../ui/spinner";
-import type { TableEmptyState } from "../tableBlock.types";
+import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
 import type { TableColumn } from "../types";
 import { EmptyState } from "./emptyState";
 import { TableHead } from "./gridHead";
 import { isSelected, readId } from "./normalize";
 import { ReorderHint } from "./reorderHint";
 import type { RowActionEntry } from "./rowActions";
+import { GroupHeaderRow, partitionRowGroups } from "./rowGroups";
 import { SortableRow } from "./sortableRow";
 import { TableRow } from "./tableRow";
 import { useRowReorder } from "./useRowReorder";
@@ -52,6 +53,11 @@ interface TableGridProps {
 	emptyState?: TableEmptyState;
 	recordUrl?: boolean;
 	recordUrlNewTab?: boolean;
+	/** Partitions contiguous rows sharing a column's value under group headers. */
+	groups?: TableGroupsConfig;
+	/** Per-column search values, keyed by column name. */
+	colSearchValues?: Record<string, string>;
+	onColSearchChange?: (column: string, value: string) => void;
 }
 
 export function TableGrid(props: TableGridProps) {
@@ -87,19 +93,11 @@ export function TableGrid(props: TableGridProps) {
 		(props.hasRowActions ? 1 : 0) +
 		(reorderActive ? 1 : 0);
 
-	const body = isEmpty ? (
-		<tr>
-			<td colSpan={colSpan}>
-				<EmptyState
-					hasActiveFilters={props.hasActiveFilters}
-					onReset={props.onResetFilters}
-					config={props.emptyState}
-				/>
-			</td>
-		</tr>
-	) : (
-		rows.map((row) => renderRow(row, props, reorderActive))
-	);
+	// Grouping is v1-incompatible with drag-reorder (the group partition would
+	// fight the optimistic drag order), so it's disabled whenever reorder is live.
+	const groupsActive = Boolean(props.groups) && !reorderActive;
+
+	const body = renderBody(rows, props, { isEmpty, groupsActive, reorderActive, colSpan });
 
 	const shell = (
 		<div className="relative overflow-x-auto rounded-md border">
@@ -118,6 +116,8 @@ export function TableGrid(props: TableGridProps) {
 					allSelected={allSelected}
 					someSelected={someSelected}
 					onSelectAll={handleSelectAll}
+					colSearchValues={props.colSearchValues}
+					onColSearchChange={props.onColSearchChange}
 				/>
 				<tbody>{body}</tbody>
 			</table>
@@ -141,6 +141,37 @@ export function TableGrid(props: TableGridProps) {
 			</SortableContext>
 		</DndContext>
 	);
+}
+
+interface RenderBodyFlags {
+	isEmpty: boolean;
+	groupsActive: boolean;
+	reorderActive: boolean;
+	colSpan: number;
+}
+
+function renderBody(
+	rows: Record<string, unknown>[],
+	props: TableGridProps,
+	flags: RenderBodyFlags,
+): ReactNode {
+	if (flags.isEmpty) {
+		return (
+			<tr>
+				<td colSpan={flags.colSpan}>
+					<EmptyState
+						hasActiveFilters={props.hasActiveFilters}
+						onReset={props.onResetFilters}
+						config={props.emptyState}
+					/>
+				</td>
+			</tr>
+		);
+	}
+	if (flags.groupsActive && props.groups) {
+		return renderGroupedRows(rows, props, flags.colSpan);
+	}
+	return rows.map((row) => renderRow(row, props, flags.reorderActive));
 }
 
 function renderRow(
@@ -180,4 +211,19 @@ function renderRow(
 			saveCell={props.saveCell}
 		/>
 	);
+}
+
+function renderGroupedRows(
+	rows: Record<string, unknown>[],
+	props: TableGridProps,
+	colSpan: number,
+): ReactNode {
+	const column = props.groups?.column;
+	if (!column) {
+		return rows.map((row) => renderRow(row, props, false));
+	}
+	return partitionRowGroups(rows, column).flatMap((group, i) => [
+		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} />,
+		...group.rows.map((row) => renderRow(row, props, false)),
+	]);
 }

@@ -45,6 +45,11 @@ it('Column: searchable emits true on wire', function (): void {
     expect($json['searchable'])->toBeTrue();
 });
 
+it('Column: individuallySearchable() emits columnSearchable:true on wire', function (): void {
+    $json = encodeColumn(Column::make('title')->individuallySearchable());
+    expect($json['columnSearchable'])->toBeTrue();
+});
+
 it('Column: toggleable with hiddenByDefault emits both flags', function (): void {
     $json = encodeColumn(Column::make('meta')->toggleable(true, true));
 
@@ -103,6 +108,20 @@ it('Column: datetime() sets kind=datetime', function (): void {
 
     expect($json['kind'])->toBe('datetime')
         ->and($json['format'])->toBe('Y-m-d H:i');
+});
+
+it('Column: time() sets kind=time and emits format', function (): void {
+    $json = encodeColumn(Column::make('published_at')->time('H:i'));
+
+    expect($json['kind'])->toBe('time')
+        ->and($json['format'])->toBe('H:i');
+});
+
+it('Column: time() without format omits format key', function (): void {
+    $json = encodeColumn(Column::make('published_at')->time());
+
+    expect($json['kind'])->toBe('time')
+        ->and($json)->not->toHaveKey('format');
 });
 
 it('Column: number() sets kind=number and decimals', function (): void {

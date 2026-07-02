@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { useDebounce } from "../../lib/useDebounce";
 import { Input } from "../../ui/input";
+import type { ModalSize } from "../../ui/modal-shell";
 import { NodeIcon } from "../../ui/node-icon";
 import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
@@ -23,6 +24,12 @@ interface TableToolbarProps {
 	onToggleColumn: (name: string) => void;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
 	searchPlaceholder?: string;
+	/** Require an explicit Apply action before filter changes narrow the query. */
+	deferFilters?: boolean;
+	/** Grid column count for the filters form layout (1-4). */
+	filtersFormColumns?: number;
+	/** Width of the filters modal; only meaningful when filtersIn === "modal". */
+	filtersFormWidth?: ModalSize;
 }
 
 export function TableToolbar(props: TableToolbarProps) {
@@ -38,6 +45,7 @@ export function TableToolbar(props: TableToolbarProps) {
 		visibleColumns,
 		onToggleColumn,
 		onChangeParams,
+		deferFilters,
 	} = props;
 	const t = useTranslation();
 
@@ -67,10 +75,16 @@ export function TableToolbar(props: TableToolbarProps) {
 		(name: string, value: unknown) => {
 			const next = { ...filterValues, [name]: value };
 			setFilterValues(next);
-			pushFilters(next);
+			if (!deferFilters) {
+				pushFilters(next);
+			}
 		},
-		[filterValues, setFilterValues, pushFilters],
+		[filterValues, setFilterValues, pushFilters, deferFilters],
 	);
+
+	const handleApply = useCallback(() => {
+		onChangeParams({ filters: filterValues, page: 1 });
+	}, [filterValues, onChangeParams]);
 
 	const handleReset = useCallback(() => {
 		setFilterValues({});
@@ -100,6 +114,9 @@ export function TableToolbar(props: TableToolbarProps) {
 					onFilterChange={handleFilterChange}
 					onReset={handleReset}
 					activeCount={activeFilterCount}
+					deferred={deferFilters}
+					onApply={handleApply}
+					formColumns={props.filtersFormColumns}
 				/>
 			)}
 			{hasFilters && filtersIn === "modal" && (
@@ -109,6 +126,10 @@ export function TableToolbar(props: TableToolbarProps) {
 					onFilterChange={handleFilterChange}
 					onReset={handleReset}
 					activeCount={activeFilterCount}
+					deferred={deferFilters}
+					onApply={handleApply}
+					formColumns={props.filtersFormColumns}
+					formWidth={props.filtersFormWidth}
 				/>
 			)}
 			<ColumnVisibilityDropdown
