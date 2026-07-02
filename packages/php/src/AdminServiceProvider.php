@@ -50,6 +50,7 @@ class AdminServiceProvider extends PackageServiceProvider
             return [
                 'panel' => $panel->id(),
                 'nav' => NavBuilder::build($panel),
+                'userMenuItems' => $panel->userMenuItems(),
                 'chrome' => ChromeSerializer::forPanel($panel),
                 'brand' => $panel->brand(),
                 'navigation' => $panel->navigation(),
