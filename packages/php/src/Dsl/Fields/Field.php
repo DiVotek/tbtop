@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\ColumnsValidator;
 use Tbtop\Admin\Dsl\Concerns\CollectsRules;
 use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
@@ -128,6 +129,22 @@ abstract class Field implements JsonSerializable
     public function default(mixed $value): static
     {
         return $this->set('default', $value);
+    }
+
+    /** Grid column span: int (1-8) or a breakpoint object {sm?, md?, lg?, xl?}. */
+    public function columnSpan(int|array $span): static
+    {
+        ColumnsValidator::validate($span, 'colSpan');
+
+        return $this->set('colSpan', $span);
+    }
+
+    /** Grid column start: int (1-8) or a breakpoint object {sm?, md?, lg?, xl?}. */
+    public function columnStart(int|array $start): static
+    {
+        ColumnsValidator::validate($start, 'colStart');
+
+        return $this->set('colStart', $start);
     }
 
     public function set(string $key, mixed $value): static

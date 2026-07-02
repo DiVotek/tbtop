@@ -210,16 +210,51 @@ final class S
         return new Node('flex', $opts);
     }
 
-    /** @param  array<string, mixed>  $opts @param  list<mixed>  $children */
+    /**
+     * Grid layout. `cols` accepts an int (1-8, back-compat: single column
+     * below md) or a breakpoint object {sm?, md?, lg?, xl?} (each 1-8).
+     *
+     * @param  array{cols?: int|array<string, int>}  $opts
+     * @param  list<mixed>  $children
+     */
     public function grid(array $opts, array $children): Node
     {
+        if (isset($opts['cols'])) {
+            ColumnsValidator::validate($opts['cols'], 'grid cols');
+        }
+
         return self::layout('grid', $children, $opts);
     }
 
-    /** @param  array<string, mixed>  $opts @param  list<mixed>  $children */
+    /**
+     * Card section. Accepted $opts keys: 'title', 'description' (muted text
+     * under the title), 'icon' (string name or {name, position}), 'aside'
+     * (a child node rendered as a right-side column on wide screens),
+     * 'collapsible' (bool, default false), 'collapsed' (bool, only relevant
+     * when collapsible), 'columns' (int|breakpoint-object — lays out the
+     * section's children in a grid instead of a stack).
+     *
+     * @param  array<string, mixed>  $opts
+     * @param  list<mixed>  $children
+     */
     public function section(array $opts, array $children): Node
     {
+        if (isset($opts['columns'])) {
+            ColumnsValidator::validate($opts['columns'], 'section columns');
+        }
+        if (isset($opts['icon'])) {
+            $opts['icon'] = self::normalizeIcon($opts['icon']);
+        }
+
         return self::layout('section', $children, $opts);
+    }
+
+    /** @param  string|array{name: string, position?: string}  $icon @return array{name: string, position: string} */
+    private static function normalizeIcon(string|array $icon): array
+    {
+        return is_array($icon)
+            ? ['name' => $icon['name'], 'position' => $icon['position'] ?? 'left']
+            : ['name' => $icon, 'position' => 'left'];
     }
 
     /**
@@ -372,7 +407,10 @@ final class S
         return DisplayKeyValueBlock::make($map);
     }
 
-    /** @param  list<array{label: string, body: mixed, icon?: string|array{name: string, position?: string}, badge?: string|int}>  $tabs @param  array<string, mixed>  $opts */
+    /**
+     * @param  list<array{label: string, body?: mixed, children?: list<mixed>, columns?: int|array<string, int>, icon?: string|array{name: string, position?: string}, badge?: string|int}>  $tabs  Each entry needs 'body' XOR 'children' ('columns' only applies with 'children')
+     * @param  array<string, mixed>  $opts
+     */
     public function tabs(array $tabs, array $opts = []): Node
     {
         [$options, $meta] = Meta::split($opts);
@@ -382,25 +420,44 @@ final class S
     }
 
     /**
-     * Normalize a form-tab entry to the wire shape (string icon → {name, position}).
+     * Normalize a form-tab entry to the wire shape. Either 'body' (a single
+     * Node) or 'children' (a list, optionally laid out via 'columns') must
+     * be given, not both.
      *
      * @param  array<string, mixed>  $tab
      * @return array<string, mixed>
      */
     private static function normalizeTab(array $tab): array
     {
-        $out = ['label' => $tab['label'], 'body' => $tab['body']];
+        $out = ['label' => $tab['label'], 'body' => self::normalizeTabBody($tab)];
         if (isset($tab['icon'])) {
-            $icon = $tab['icon'];
-            $out['icon'] = is_array($icon)
-                ? ['name' => $icon['name'], 'position' => $icon['position'] ?? 'left']
-                : ['name' => (string) $icon, 'position' => 'left'];
+            $out['icon'] = self::normalizeIcon($tab['icon']);
         }
         if (isset($tab['badge'])) {
             $out['badge'] = (string) $tab['badge'];
         }
 
         return $out;
+    }
+
+    /** @param  array<string, mixed>  $tab */
+    private static function normalizeTabBody(array $tab): mixed
+    {
+        if (isset($tab['body'])) {
+            if (isset($tab['children']) || isset($tab['columns'])) {
+                throw new InvalidArgumentException("Tab \"{$tab['label']}\" cannot combine 'body' with 'children'/'columns'.");
+            }
+
+            return $tab['body'];
+        }
+        if (! isset($tab['children'])) {
+            throw new InvalidArgumentException("Tab \"{$tab['label']}\" needs either 'body' or 'children'.");
+        }
+        if (isset($tab['columns'])) {
+            return (new self)->grid(['cols' => $tab['columns']], $tab['children']);
+        }
+
+        return (new self)->stack($tab['children']);
     }
 
     // -------------------------------------------------------------------------
