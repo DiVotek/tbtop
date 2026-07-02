@@ -121,9 +121,16 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
 | `aside` | `aside(array $children): Node` | Right-column sticky panel on wide screens |
 
-Any field or layout child inside a `grid`/`section(columns: ...)` can also call
-`->columnSpan(int|array $span)` / `->columnStart(int|array $start)` on itself (same
-int-or-breakpoint-object shape, 1-8) to span or offset columns in the parent grid.
+A section's `'aside'` is a persistent context slot: when a `section` sets both
+`'aside'` and `'collapsible'`, collapsing hides only the main body — the aside stays visible.
+
+`->columnSpan(int|array $span)` / `->columnStart(int|array $start)` are fluent
+methods on `Field` only (same int-or-breakpoint-object shape, 1-8) — `Node`
+(what layout blocks like `section`/`stack`/`grid` return) has no such methods.
+A layout block placed as a grid/section child instead passes `colSpan`/`colStart`
+directly as keys in its own `$opts`, e.g. `$s->stack($children, ['colSpan' => 2])`
+— the renderer applies grid placement generically from any node's options, field
+or not.
 
 ### Display blocks
 

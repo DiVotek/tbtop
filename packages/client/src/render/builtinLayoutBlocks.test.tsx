@@ -249,6 +249,16 @@ test("SectionBlock collapsible with collapsed:true starts collapsed", () => {
 	expect(getByText("Hidden initially")).toBeTruthy();
 });
 
+test("SectionBlock aside stays visible when a collapsible section is collapsed", () => {
+	const node = s.section({ title: "Advanced", aside: textNode("Status"), collapsible: true }, [
+		textNode("Body"),
+	]);
+	const { getByTestId, queryByText } = render(renderNode(node));
+	fireEvent.click(getByTestId("section-toggle"));
+	expect(queryByText("Body")).toBeNull();
+	expect(getByTestId("section-aside").textContent).toBe("Status");
+});
+
 // ---------------------------------------------------------------------------
 // Field colSpan/colStart — generic column-placement wrapping
 // ---------------------------------------------------------------------------

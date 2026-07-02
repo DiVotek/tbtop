@@ -130,6 +130,8 @@ export function SectionBlock({ options, children, renderChild }: RenderProps<Sec
 				open={open}
 				onToggle={() => setOpen((prev) => !prev)}
 			/>
+			{/* aside is a persistent context slot (actions/status) — it stays visible
+			   even when collapsible hides the body; see docs/ai/authoring-pages.md */}
 			{options.aside ? (
 				<div className="flex flex-col gap-4 md:flex-row">
 					<div className="min-w-0 flex-1">{body}</div>
