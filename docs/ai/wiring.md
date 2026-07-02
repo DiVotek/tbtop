@@ -171,6 +171,26 @@ mirrors the table:
 For the full picture of adding a new field kind to both sides, see
 [./fields.md](./fields.md).
 
+### Navigation wire shapes
+
+`tbtop.nav` (`$defs/nav`) and `tbtop.userMenuItems` (`$defs/userMenuItems`) are shared
+Inertia props built by `NavBuilder::build($panel)` and `PanelConfig::userMenuItems()`
+respectively (`packages/php/src/AdminServiceProvider.php:52-53`). Three `$defs` in
+`structure.schema.json` cover them:
+
+- **`navItem`** — `{label, href, order, icon?, badge?, badgeColor?, newTab?, children?}`.
+  `children` is a self-referencing array of `navItem` — the nesting mechanism for
+  `nav()['parent']` (see [./recipes.md](./recipes.md#recipe-9--navigation-configuration)).
+- **`navGroup`** — `{group, items: navItem[], icon?, collapsible?, collapsed?}`; `nav` is
+  `navGroup[]`.
+- **`userMenuItem`** — `{label, href, icon?, newTab?}`; no `order`/`children` — user-menu
+  entries are a flat list, not grouped or nested.
+
+All three are `additionalProperties: false`, same drift-guard discipline as every other
+wire shape: `ContractTest.php` asserts a nested-nav tree and a `userMenuItems` payload
+against these `$defs` directly (not via the kitchen-sink snapshot, since nav depends on
+panel/page wiring the kitchen-sink fixture doesn't exercise).
+
 ---
 
 ## Client extension points

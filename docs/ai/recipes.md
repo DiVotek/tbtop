@@ -535,6 +535,83 @@ ships nothing.
 
 ---
 
+## Recipe 9 — Navigation configuration
+
+**What Filament calls it:** `navigationParentItem()` (nested sidebar items), custom
+`NavigationItem`s not tied to a resource, and profile-menu items.
+
+**How it works here:** three independent mechanisms, all resolved by
+`Tbtop\Admin\Navigation\NavBuilder` and rendered by the same nav components as
+page-derived items.
+
+### Nested nav (a page under another page)
+
+A page's `nav()` array takes a `parent` key pointing at another `nav()`-eligible page class
+in the same panel. `NavBuilder::build()` (`packages/php/src/Navigation/NavBuilder.php:17-19`)
+nests it under the parent's item instead of listing it at the group's top level:
+
+```php
+// apps/demo/app/Admin/Pages/SettingsGeneralPage.php
+public static function nav(): ?array
+{
+    return ['group' => 'System', 'label' => 'General', 'order' => 1, 'parent' => SettingsPage::class];
+}
+```
+
+Two safety rules enforced at build time, not render time — a broken reference fails the
+same way for every visitor rather than silently vanishing for some:
+
+- **Unknown or cyclic `parent`** — a `parent` outside the panel's nav-eligible page set, or a
+  parent cycle, throws `InvalidArgumentException`/`LogicException`
+  (`NavBuilder.php:88-91` — `assertValidParents`).
+- **Gated-out parent** — if the current user's gate fails the parent's `can()` but passes the
+  child's, the child promotes to its own group's top level instead of disappearing
+  (`NavBuilder.php:46-48`).
+
+The client (`packages/client/src/app/navGroupSection.tsx:120-162`, `NavItemNode`) renders a
+leaf item as a plain link; a parent (has `children`) renders its own link plus a chevron
+that expands to indented children — the same collapse affordance as a group header. The
+topbar layout nests the same way via a `DropdownMenuSub` (`navGroupDropdown.tsx`).
+
+### Custom nav items (no page, no gate)
+
+`PanelConfig::navigationItems()` (`packages/php/src/Panels/PanelConfig.php:211-223`) adds
+always-shown entries — typically external links — merged into the built tree alongside
+page-derived items and grouped by label the same way `navigationGroups()` matches groups.
+Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class and no per-request gate:
+
+```php
+// apps/demo/app/Admin/AdminPanel.php
+->navigationItems([
+    NavItem::make('Documentation')->url('https://github.com/DiVotek/tbtop')
+        ->icon('globe')->group('Resources')->newTab(),
+])
+```
+
+### User-menu items (profile dropdown)
+
+`PanelConfig::userMenuItems()` (`PanelConfig.php:225-238`) takes the same `NavItem` links,
+rendered in the profile dropdown between the identity header and the fixed theme/locale/logout
+controls (`packages/client/src/app/ProfileDropdown.tsx:133-148`). Link-only — no server
+closure — because chrome trees are page-independent, with no per-request endpoint for a
+closure to resolve against (the same constraint `NotificationAction` has):
+
+```php
+// apps/demo/app/Admin/AdminPanel.php
+->userMenuItems([
+    NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key'),
+])
+```
+
+### Group ordering
+
+`navigationGroups()`'s declaration order controls the group order in the built tree — a
+group not mentioned there keeps its first-seen (page-registration) order and sorts after
+every declared group (`NavBuilder.php:225-229`, `assemble()`). Per-group icon/collapsible
+metadata is matched by label the same way.
+
+---
+
 ## Not yet expressible
 
 These Filament features do not compose today. Do NOT attempt to fake them with existing
