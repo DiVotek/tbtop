@@ -20,18 +20,16 @@ export function useColumnSearch(
 
 	const handleColSearchChange = useCallback(
 		(column: string, value: string) => {
-			setColSearchValues((prev) => {
-				const next = { ...prev };
-				if (value) {
-					next[column] = value;
-				} else {
-					delete next[column];
-				}
-				onChangeParams({ colSearch: next, page: 1 });
-				return next;
-			});
+			const next = { ...colSearchValues };
+			if (value) {
+				next[column] = value;
+			} else {
+				delete next[column];
+			}
+			setColSearchValues(next);
+			onChangeParams({ colSearch: next, page: 1 });
 		},
-		[onChangeParams],
+		[colSearchValues, onChangeParams],
 	);
 
 	return { colSearchValues, handleColSearchChange };

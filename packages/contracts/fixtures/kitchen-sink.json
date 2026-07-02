@@ -839,6 +839,7 @@
                         {
                             "name": "title",
                             "label": "Title",
+                            "kind": "text",
                             "columnSearchable": true
                         },
                         {
