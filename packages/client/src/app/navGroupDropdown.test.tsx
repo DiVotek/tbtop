@@ -70,4 +70,29 @@ describe("NavGroupDropdown (topbar)", () => {
 		expect(getByTestId("nav-group-trigger-Content").className).toContain("font-medium");
 		expect(getByTestId("nav-group-trigger-Overview").className).not.toContain("font-medium");
 	});
+
+	test("a nav item with children renders as a submenu trigger, not a direct link", async () => {
+		const nestedNav: NavGroup[] = [
+			{
+				group: "System",
+				items: [
+					{
+						label: "Settings",
+						href: "/admin/settings",
+						children: [{ label: "General", href: "/admin/settings/general" }],
+					},
+				],
+			},
+		];
+		const { getByTestId } = render(
+			<AdminLayoutShell nav={nestedNav} user={USER} currentUrl="/admin" navigation="topbar">
+				<div />
+			</AdminLayoutShell>,
+		);
+		await openGroup(getByTestId("nav-group-trigger-System"));
+
+		const subtrigger = getByTestId("nav-group-subtrigger-/admin/settings");
+		expect(subtrigger.textContent).toBe("Settings");
+		expect(subtrigger.tagName).not.toBe("A");
+	});
 });

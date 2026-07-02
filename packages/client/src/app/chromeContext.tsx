@@ -8,6 +8,8 @@ export interface NavItem {
 	icon?: IconDef;
 	badge?: string;
 	badgeColor?: string;
+	newTab?: boolean;
+	children?: NavItem[];
 }
 
 export interface NavGroup {
@@ -47,6 +49,8 @@ export interface ChromeData {
 	darkMode?: boolean;
 	/** Initial theme when the visitor has no saved preference. */
 	defaultTheme?: ThemeMode;
+	/** Custom profile-dropdown entries from PanelConfig::userMenuItems(). */
+	userMenuItems?: NavItem[];
 }
 
 const EMPTY_CHROME_DATA: ChromeData = {

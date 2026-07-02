@@ -2,6 +2,7 @@ import { Link } from "@inertiajs/react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/cn";
+import { isExternalUrl } from "../structure/actionBlock";
 import { resolveColorClasses } from "../structure/table/colorRegistry";
 import { Badge } from "../ui/badge";
 import { NodeIcon } from "../ui/node-icon";
@@ -46,7 +47,7 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 			{expanded && (
 				<div className="flex flex-col gap-1">
 					{group.items.map((item) => (
-						<NavItemLink key={item.href} item={item} currentUrl={currentUrl} />
+						<NavItemNode key={item.href} item={item} currentUrl={currentUrl} />
 					))}
 				</div>
 			)}
@@ -71,19 +72,92 @@ interface NavItemLinkProps {
 export function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
 	const active = currentUrl.startsWith(item.href);
 	const icon = item.icon ? <NodeIcon icon={item.icon} className="size-4 shrink-0" /> : null;
-	return (
-		<Link
-			href={item.href}
-			className={cn(
-				"flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
-				active && "bg-accent font-medium",
-			)}
-		>
+	const className = cn(
+		"flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
+		active && "bg-accent font-medium",
+	);
+	const content = (
+		<>
 			{item.icon?.position !== "right" && icon}
 			<span className="flex-1 truncate">{item.label}</span>
 			{item.icon?.position === "right" && icon}
 			{item.badge !== undefined && <NavBadge badge={item.badge} color={item.badgeColor} />}
+		</>
+	);
+
+	if (item.newTab || isExternalUrl(item.href)) {
+		return (
+			<a
+				href={item.href}
+				className={className}
+				target={item.newTab ? "_blank" : undefined}
+				rel={item.newTab ? "noopener noreferrer" : undefined}
+			>
+				{content}
+			</a>
+		);
+	}
+	return (
+		<Link href={item.href} className={className}>
+			{content}
 		</Link>
+	);
+}
+
+/** True when the item or any nested descendant matches the current URL. */
+function containsActive(item: NavItem, currentUrl: string): boolean {
+	if (currentUrl.startsWith(item.href)) {
+		return true;
+	}
+	return (item.children ?? []).some((child) => containsActive(child, currentUrl));
+}
+
+interface NavItemNodeProps {
+	item: NavItem;
+	currentUrl: string;
+}
+
+/**
+ * A leaf item renders as a link. A parent (has children) renders its own
+ * link plus a chevron toggle — the same collapse affordance as a nav group
+ * header — expanding to its indented children.
+ */
+export function NavItemNode({ item, currentUrl }: NavItemNodeProps) {
+	const children = item.children ?? [];
+	const [open, setOpen] = useState(() => containsActive(item, currentUrl));
+
+	if (children.length === 0) {
+		return <NavItemLink item={item} currentUrl={currentUrl} />;
+	}
+
+	return (
+		<div className="flex flex-col gap-1">
+			<div className="flex items-center gap-1">
+				<div className="min-w-0 flex-1">
+					<NavItemLink item={item} currentUrl={currentUrl} />
+				</div>
+				<button
+					type="button"
+					onClick={() => setOpen((value) => !value)}
+					aria-expanded={open}
+					data-testid={`nav-item-toggle-${item.href}`}
+					className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+				>
+					{open ? (
+						<ChevronDownIcon className="size-3.5 shrink-0" aria-hidden />
+					) : (
+						<ChevronRightIcon className="size-3.5 shrink-0" aria-hidden />
+					)}
+				</button>
+			</div>
+			{open && (
+				<div className="ml-3 flex flex-col gap-1 border-l pl-3">
+					{children.map((child) => (
+						<NavItemNode key={child.href} item={child} currentUrl={currentUrl} />
+					))}
+				</div>
+			)}
+		</div>
 	);
 }
 
