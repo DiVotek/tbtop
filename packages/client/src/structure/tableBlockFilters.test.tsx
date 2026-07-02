@@ -132,3 +132,71 @@ describe("TableToolbar: modal filters", () => {
 		expect(trigger).toBeTruthy();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Item 3: deferFilters gates narrowing behind an explicit Apply click
+// ---------------------------------------------------------------------------
+describe("TableToolbar: deferFilters", () => {
+	test("filter change does not refetch until Apply is clicked", async () => {
+		const capturedParams: Record<string, unknown>[] = [];
+		const node = s.table({
+			query: async (ctx) => {
+				capturedParams.push({ ...ctx.table?.queryParams });
+				return [{ id: "1", title: "Alpha" }];
+			},
+			columns: [{ name: "title" }],
+			filters: [{ kind: "text", name: "author", options: { label: "Author" }, meta: {} }],
+			filtersIn: "inline",
+			deferFilters: true,
+		} as Parameters<typeof s.table>[0]);
+
+		const user = userEvent.setup({ delay: null });
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+
+		const input = container.querySelector<HTMLInputElement>('input[name="author"]');
+		if (!input) {
+			throw new Error("author filter input not found");
+		}
+		await act(async () => {
+			await user.type(input, "jane");
+		});
+
+		// Give the (non-existent, since deferred) debounce window a chance to fire.
+		const { promise: delayed, resolve: finishDelay } = Promise.withResolvers<void>();
+		setTimeout(finishDelay, 350);
+		await act(async () => {
+			await delayed;
+		});
+		expect(capturedParams.some((p) => (p.filters as Record<string, unknown>)?.author)).toBe(
+			false,
+		);
+
+		const applyBtn = await findByTestId("table-filters-apply");
+		await act(async () => {
+			await user.click(applyBtn);
+		});
+
+		await waitFor(() => {
+			expect(
+				capturedParams.some(
+					(p) => (p.filters as Record<string, unknown>)?.author === "jane",
+				),
+			).toBe(true);
+		});
+	});
+
+	test("Apply button is absent when deferFilters is not set", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Alpha" }],
+			columns: [{ name: "title" }],
+			filters: [{ kind: "text", name: "author", options: { label: "Author" }, meta: {} }],
+			filtersIn: "inline",
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(queryByTestId("table-filters-apply")).toBeNull();
+	});
+});

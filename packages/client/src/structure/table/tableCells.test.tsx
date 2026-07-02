@@ -311,3 +311,35 @@ describe("TableCell: copyable", () => {
 		expect(await findByRole("button", { name: "Copy" })).toBeTruthy();
 	});
 });
+
+describe("TableCell: time kind", () => {
+	test("renders the server-formatted time string verbatim", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", opens_at: "14:30" }],
+			columns: [{ name: "opens_at", label: "Opens", kind: "time" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(await findByText("14:30")).toBeTruthy();
+	});
+
+	test("renders '—' for a null time value", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", opens_at: null }],
+			columns: [{ name: "opens_at", label: "Opens", kind: "time" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(await findByText("—")).toBeTruthy();
+	});
+
+	test("renders '—' for an empty-string time value", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", opens_at: "" }],
+			columns: [{ name: "opens_at", label: "Opens", kind: "time" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(await findByText("—")).toBeTruthy();
+	});
+});
