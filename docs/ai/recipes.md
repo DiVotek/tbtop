@@ -251,15 +251,16 @@ definition — the only difference is the slug's `unique` rule, passed in as an 
 ### 2. Index page — table with tabs, filters, sort, pagination, row + bulk actions
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:45-180 (abridged)
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:45-191 (abridged)
 $s->table('posts')
     ->rowClick('edit')
     ->columns([
         Column::make('title')->label('Title')->kind('text')
-            ->translatable()->sortable()->searchable(),
+            ->translatable()->sortable()->searchable()->individuallySearchable(),
         Column::make('published')->label('Published')->badge([
             '1' => Color::Success, '0' => Color::Gray,
         ])->toggleable(),
+        Column::make('published_time')->time('H:i')->label('Published time'),
         Column::make('views')->label('Views')->number()->sortable()->align('right'),
     ])
     ->filters([
@@ -270,6 +271,8 @@ $s->table('posts')
         Daterange::make('published_at')->label('Published date'),
     ])
     ->filtersIn('modal')
+    ->deferFilters()
+    ->filtersFormColumns(2)
     ->tabs([
         Tab::make('all')->label('All'),
         Tab::make('published')->label('Published')
@@ -277,7 +280,8 @@ $s->table('posts')
         Tab::make('draft')->label('Draft')
             ->query(fn ($q) => $q->where('published', false))->count(),
     ])
-    ->defaultSort('created_at', 'desc')
+    ->defaultSort('published', 'desc')
+    ->groups('published')
     ->paginate(25, [10, 25, 50, 100])
     ->query(fn () => Post::query())
     ->rowActions([
@@ -305,6 +309,14 @@ $s->table('posts')
 URL cannot use `visit()` (a static string), so `edit` is a server `handle()` returning a
 `redirect` effect built from `$ctx->row['id']`. `DeleteAction` is a prebuilt preset
 (see [authoring-pages.md](./authoring-pages.md) presets section).
+
+`individuallySearchable()` adds a per-column search box (independent debounce, own URL
+state — see [authoring-pages.md](./authoring-pages.md#individuallysearchable--per-column-search)).
+`deferFilters()->filtersFormColumns(2)` requires an explicit Apply before filter changes
+narrow the query, laid out in a 2-column grid. `groups('published')` partitions rows into
+group headers by that column's value — **single-page client-side partitioning only**, not
+a cross-page aggregate; see [authoring-pages.md](./authoring-pages.md#groups--row-grouping)
+for the full scope note.
 
 ### 3. Edit page — route param, save, delete-with-redirect
 
