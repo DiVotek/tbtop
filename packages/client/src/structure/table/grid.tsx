@@ -55,6 +55,9 @@ interface TableGridProps {
 	recordUrlNewTab?: boolean;
 	/** Partitions contiguous rows sharing a column's value under group headers. */
 	groups?: TableGroupsConfig;
+	/** Per-column search values, keyed by column name. */
+	colSearchValues?: Record<string, string>;
+	onColSearchChange?: (column: string, value: string) => void;
 }
 
 export function TableGrid(props: TableGridProps) {
@@ -113,6 +116,8 @@ export function TableGrid(props: TableGridProps) {
 					allSelected={allSelected}
 					someSelected={someSelected}
 					onSelectAll={handleSelectAll}
+					colSearchValues={props.colSearchValues}
+					onColSearchChange={props.onColSearchChange}
 				/>
 				<tbody>{body}</tbody>
 			</table>

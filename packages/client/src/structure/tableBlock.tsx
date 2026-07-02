@@ -9,6 +9,7 @@ import { TablePagination } from "./table/pagination";
 import { canReorder } from "./table/reorder";
 import { TableError } from "./table/tableError";
 import { TableTabBar, TableToolbar } from "./table/toolbar";
+import { useColumnSearch } from "./table/useColumnSearch";
 import { countActiveFilters, useColumnVisibility } from "./table/useColumnVisibility";
 import { useTableParams } from "./table/useTableParams";
 import {
@@ -139,6 +140,11 @@ function TableBody(props: TableBodyProps) {
 	const activeFilterCount = countActiveFilters(filterValues);
 	const hasActiveFilters = activeFilterCount > 0 || Boolean(props.queryParams.search);
 
+	const { colSearchValues, handleColSearchChange } = useColumnSearch(
+		props.queryParams.colSearch,
+		props.onChangeParams,
+	);
+
 	const { handleResetFilters, handleSort, handleSelectTab } = useTableParams(
 		props.onChangeParams,
 		setFilterValues,
@@ -235,6 +241,8 @@ function TableBody(props: TableBodyProps) {
 					reorderRows={props.reorderRows}
 					onRefresh={props.onRefresh}
 					groups={props.groups}
+					colSearchValues={colSearchValues}
+					onColSearchChange={handleColSearchChange}
 				/>
 
 				{showPagination && (

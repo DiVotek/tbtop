@@ -102,6 +102,7 @@ export const defaultMessages: Messages = {
 	"table.pagination.prev": "Previous",
 	"table.pagination.next": "Next",
 	"table.select_all": "Select all",
+	"table.column_search.aria_label": "Search {column}",
 	"table.selected_count": "{count} selected",
 	"table.actions.label": "Actions",
 	"table.reorder_handle": "Reorder row",
