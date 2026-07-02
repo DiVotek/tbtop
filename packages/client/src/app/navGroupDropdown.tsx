@@ -11,7 +11,7 @@ import {
 } from "../ui/dropdown-menu";
 import { NodeIcon } from "../ui/node-icon";
 import type { ChromeData, NavGroup, NavItem } from "./chromeContext";
-import { NavItemLink } from "./navGroupSection";
+import { containsActive, NavItemLink } from "./navGroupSection";
 
 interface NavGroupDropdownProps {
 	group: NavGroup;
@@ -27,7 +27,7 @@ interface NavGroupDropdownProps {
  * until opened.
  */
 export function NavGroupDropdown({ group, currentUrl }: NavGroupDropdownProps) {
-	const active = group.items.some((item) => currentUrl.startsWith(item.href));
+	const active = group.items.some((item) => containsActive(item, currentUrl));
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger

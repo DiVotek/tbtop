@@ -105,7 +105,7 @@ export function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
 }
 
 /** True when the item or any nested descendant matches the current URL. */
-function containsActive(item: NavItem, currentUrl: string): boolean {
+export function containsActive(item: NavItem, currentUrl: string): boolean {
 	if (currentUrl.startsWith(item.href)) {
 		return true;
 	}
