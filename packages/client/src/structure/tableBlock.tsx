@@ -107,6 +107,10 @@ export function TableBlock({ options }: TableRenderProps) {
 			saveCell={saveCell}
 			reorderColumn={options.reorder?.column}
 			reorderRows={reorderRows}
+			groups={options.groups}
+			deferFilters={options.deferFilters}
+			filtersFormColumns={options.filtersFormColumns}
+			filtersFormWidth={options.filtersFormWidth}
 		/>
 	);
 }
@@ -194,6 +198,9 @@ function TableBody(props: TableBodyProps) {
 					onToggleColumn={toggleColumn}
 					onChangeParams={props.onChangeParams}
 					searchPlaceholder={props.searchPlaceholder}
+					deferFilters={props.deferFilters}
+					filtersFormColumns={props.filtersFormColumns}
+					filtersFormWidth={props.filtersFormWidth}
 				/>
 
 				{hasBulk && (
@@ -227,6 +234,7 @@ function TableBody(props: TableBodyProps) {
 					reorderEnabled={reorderEnabled}
 					reorderRows={props.reorderRows}
 					onRefresh={props.onRefresh}
+					groups={props.groups}
 				/>
 
 				{showPagination && (

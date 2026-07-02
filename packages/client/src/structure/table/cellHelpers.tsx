@@ -119,3 +119,17 @@ export function ColorCell({ value, col }: ColorCellProps): ReactNode {
 		/>
 	);
 }
+
+// ─── Time cell ──────────────────────────────────────────────────────────────
+
+interface TimeCellProps {
+	value: unknown;
+}
+
+/** Server pre-formats the time string via KindFormat; render it verbatim. */
+export function TimeCell({ value }: TimeCellProps): ReactNode {
+	if (value == null || value === "") {
+		return <span className="text-muted-foreground">—</span>;
+	}
+	return <span>{String(value)}</span>;
+}
