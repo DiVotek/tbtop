@@ -7,7 +7,6 @@ use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\FormBuilder;
-use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
 /**
@@ -46,22 +45,8 @@ final class EditAction
 
         return $s->action($name)
             ->label('Edit')
-            ->modal($title, self::formWith($s, $form, $actions))
+            ->modal($title, RecordAction::formWithActions($form, $s, $actions))
             ->query($loadUsing, needs: ['row']);
-    }
-
-    /**
-     * Rebuild the form node with the given inner actions appended as an actionsRow.
-     *
-     * @param  list<ActionBuilder>  $actions
-     */
-    private static function formWith(S $s, FormBuilder $form, array $actions): Node
-    {
-        $node = $form->toNode();
-        $children = $node->options['children'] ?? [];
-        $children[] = $s->actionsRow($actions);
-
-        return new Node('form', [...$node->options, 'children' => $children], $node->name, $node->meta);
     }
 
     /** The Save server action — gets row + form; void return → default tail. */
