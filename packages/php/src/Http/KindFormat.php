@@ -23,6 +23,7 @@ final class KindFormat
         return match ($kind) {
             'date' => self::formatDate($value, $meta['format'] ?? 'Y-m-d'),
             'datetime' => self::formatDate($value, $meta['format'] ?? 'Y-m-d H:i:s'),
+            'time' => self::formatDate($value, $meta['format'] ?? 'H:i'),
             'number' => isset($meta['decimals'])
                 ? number_format((float) $value, $meta['decimals'])
                 : $value,

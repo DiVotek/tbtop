@@ -693,6 +693,8 @@
                     "searchable": [
                         "title"
                     ],
+                    "deferFilters": true,
+                    "filtersFormColumns": 2,
                     "searchPlaceholder": "Search posts\u2026",
                     "emptyState": {
                         "heading": "No posts yet",
@@ -725,6 +727,9 @@
                     },
                     "reorder": {
                         "column": "sort_order"
+                    },
+                    "groups": {
+                        "column": "views"
                     },
                     "rowActions": [
                         {
@@ -834,12 +839,18 @@
                         {
                             "name": "title",
                             "label": "Title",
-                            "kind": "text"
+                            "columnSearchable": true
                         },
                         {
                             "name": "views",
                             "label": "Views",
                             "kind": "text"
+                        },
+                        {
+                            "name": "published_at",
+                            "label": "Published time",
+                            "kind": "time",
+                            "format": "H:i"
                         },
                         {
                             "name": "cover",

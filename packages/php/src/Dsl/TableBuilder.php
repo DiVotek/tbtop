@@ -19,6 +19,8 @@ final class TableBuilder implements JsonSerializable
 {
     use HasServerQuery;
 
+    private const FILTERS_FORM_WIDTHS = ['sm', 'md', 'lg', 'full'];
+
     /**
      * All column descriptors, including hidden ones (they need to participate
      * in projection decisions but not in wire serialization).
@@ -165,9 +167,58 @@ final class TableBuilder implements JsonSerializable
         return $this->filterFields;
     }
 
+    /** Require an explicit Apply action before filter changes narrow the query. */
+    public function deferFilters(bool $value = true): self
+    {
+        $this->opts['deferFilters'] = $value;
+
+        return $this;
+    }
+
+    /** Number of grid columns for the filters form layout. */
+    public function filtersFormColumns(int $columns): self
+    {
+        $this->opts['filtersFormColumns'] = $columns;
+
+        return $this;
+    }
+
+    /**
+     * Width of the filters modal. Only meaningful when filtersIn('modal').
+     *
+     * @param  string  $width  One of self::FILTERS_FORM_WIDTHS ('sm'|'md'|'lg'|'full')
+     */
+    public function filtersFormWidth(string $width): self
+    {
+        if (! in_array($width, self::FILTERS_FORM_WIDTHS, true)) {
+            throw new InvalidArgumentException(
+                "Invalid filters form width \"{$width}\". Allowed: ".implode(', ', self::FILTERS_FORM_WIDTHS).'.'
+            );
+        }
+        $this->opts['filtersFormWidth'] = $width;
+
+        return $this;
+    }
+
     public function defaultSort(string $field, string $dir = 'asc'): self
     {
         $this->opts['defaultSort'] = ['field' => $field, 'dir' => $dir];
+
+        return $this;
+    }
+
+    /**
+     * Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first.
+     */
+    public function groups(string $column): self
+    {
+        $sortField = $this->defaultSortSpec()['field'] ?? null;
+        if ($sortField !== $column) {
+            throw new InvalidArgumentException(
+                "groups(\"{$column}\") requires defaultSort(\"{$column}\", ...) to be set first."
+            );
+        }
+        $this->opts['groups'] = ['column' => $column];
 
         return $this;
     }
@@ -352,6 +403,19 @@ final class TableBuilder implements JsonSerializable
         }
 
         return $fields;
+    }
+
+    /** @return list<string> Column names with individuallySearchable() enabled. */
+    public function individuallySearchableColumns(): array
+    {
+        $names = [];
+        foreach ($this->columnObjects as $col) {
+            if ($col->isIndividuallySearchable()) {
+                $names[] = $col->name;
+            }
+        }
+
+        return $names;
     }
 
     /** @return list<string> Column names declared translatable */

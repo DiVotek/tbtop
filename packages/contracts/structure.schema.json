@@ -81,7 +81,18 @@
 									},
 									"headerActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 									"recordUrl": { "type": "boolean" },
-									"recordUrlNewTab": { "type": "boolean" }
+									"recordUrlNewTab": { "type": "boolean" },
+									"deferFilters": { "type": "boolean" },
+									"filtersFormColumns": { "type": "integer" },
+									"filtersFormWidth": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+									"groups": {
+										"type": "object",
+										"required": ["column"],
+										"properties": {
+											"column": { "type": "string" }
+										},
+										"additionalProperties": false
+									}
 								}
 							}
 						}
@@ -429,6 +440,7 @@
 					"kind": { "type": "string" },
 					"sortable": { "type": "boolean" },
 					"searchable": { "type": "boolean" },
+					"columnSearchable": { "type": "boolean" },
 					"toggleable": { "type": "boolean" },
 					"hiddenByDefault": { "type": "boolean" },
 					"align": { "type": "string", "enum": ["left", "center", "right"] },

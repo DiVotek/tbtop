@@ -146,8 +146,9 @@ class KitchenSinkPage extends Page
             ]),
             $s->table('posts')
                 ->columns([
-                    'title' => 'Title',
+                    Column::make('title')->label('Title')->individuallySearchable(),
                     'views' => 'Views',
+                    Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
                     Column::make('brand_color')->color()->rounded()->label('Color'),
                     Column::make('published')
@@ -170,6 +171,8 @@ class KitchenSinkPage extends Page
                         ->onSave(fn ($record, $value) => null),
                 ])
                 ->searchable(['title'])
+                ->deferFilters()
+                ->filtersFormColumns(2)
                 ->searchPlaceholder('Search posts…')
                 ->emptyState('No posts yet', 'Create your first post to get started.', 'file-text')
                 ->headerActions([
@@ -179,6 +182,7 @@ class KitchenSinkPage extends Page
                 ->openRecordUrlInNewTab()
                 ->defaultSort('views', 'desc')
                 ->reorderable('sort_order')
+                ->groups('views')
                 ->tabs([
                     Tab::make('all'),
                     Tab::make('published')->label('Published')
