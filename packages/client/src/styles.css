@@ -145,6 +145,56 @@
 	}
 }
 
+/* ── Responsive field grid placement ────────────────────────────── */
+/* colSpan/colStart are dynamic per-field (1-8, optionally per-breakpoint) —  */
+/* too combinatorial for static Tailwind classes, so GridBlock/SectionBlock  */
+/* set --col-span-N / --col-start-N inline vars and this utility reads them. */
+.field-col-place {
+	grid-column: var(--col-start, auto) / span var(--col-span, 1);
+}
+
+@media (min-width: 640px) {
+	.field-col-place {
+		grid-column:
+			var(--col-start-sm, var(--col-start, auto)) / span
+			var(--col-span-sm, var(--col-span, 1));
+	}
+}
+
+@media (min-width: 768px) {
+	.field-col-place {
+		grid-column:
+			var(--col-start-md, var(--col-start-sm, var(--col-start, auto))) / span
+			var(--col-span-md, var(--col-span-sm, var(--col-span, 1)));
+	}
+}
+
+@media (min-width: 1024px) {
+	.field-col-place {
+		grid-column:
+			var(--col-start-lg, var(--col-start-md, var(--col-start-sm, var(--col-start, auto)))) /
+			span var(--col-span-lg, var(--col-span-md, var(--col-span-sm, var(--col-span, 1))));
+	}
+}
+
+@media (min-width: 1280px) {
+	.field-col-place {
+		grid-column:
+			var(
+				--col-start-xl,
+				var(
+					--col-start-lg,
+					var(--col-start-md, var(--col-start-sm, var(--col-start, auto)))
+				)
+			)
+			/ span
+			var(
+				--col-span-xl,
+				var(--col-span-lg, var(--col-span-md, var(--col-span-sm, var(--col-span, 1))))
+			);
+	}
+}
+
 /* ── Lexical rich-text editor ─────────────────────────────────────── */
 
 .tabletop-editor {
