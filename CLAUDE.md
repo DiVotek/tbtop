@@ -38,7 +38,7 @@ code, place it:
 | Validation logic | PHP (Laravel rules) — **always** | PHP is the security boundary. The client zod is UX-only (on-blur), never trusted. |
 | Backend behavior (queue, job, notification, auth method, DB) | Plain Laravel in the consumer app | Laravel owns the backend. Don't reinvent it in the DSL. |
 | Rendering / interactivity | `packages/client/src/` | The client owns the screen |
-| A new effect | **Don't, by default.** The set is closed (`notify/redirect/refreshTable/resetForm/closeModal`). "I need a new effect" usually means a `custom` client handler or a server redirect. |
+| A new effect | **Don't, by default.** The set is closed (`notify/redirect/refreshTable/resetForm/closeModal/haltModal`). "I need a new effect" usually means a `custom` client handler or a server redirect. |
 
 If you can't place it from this table, **ask** — don't guess. A misplaced responsibility is
 the most expensive mistake on this stack.

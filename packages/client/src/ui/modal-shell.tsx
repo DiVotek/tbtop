@@ -26,6 +26,8 @@ import {
 
 // ─── Size map ─────────────────────────────────────────────────────────────────
 
+// Legacy abstract sizes (sm/md/lg/full) predate this PR's Tailwind-literal scale (xl-7xl).
+// Names diverge intentionally (e.g. xl < lg) — not a bug.
 const SIZE_CLASS: Record<ModalSize, string> = {
 	sm: "sm:max-w-md",
 	md: "sm:max-w-lg",
