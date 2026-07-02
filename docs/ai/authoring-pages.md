@@ -116,10 +116,14 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `stack` | `stack(array $children, array $opts = []): Node` | Vertical stack of children |
 | `row` | `row(array $children, array $opts = []): Node` | Horizontal row of children |
 | `flex` | `flex(array $children, string $direction = 'row', ?string $justify = null, ?string $align = null, ?int $gap = null, bool $wrap = false): Node` | Flex container with explicit direction (`'row'`\|`'col'`), justify, align, gap, wrap |
-| `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts` carries `'cols'` and other CSS-grid options |
-| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'` |
+| `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8) |
+| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack) |
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
 | `aside` | `aside(array $children): Node` | Right-column sticky panel on wide screens |
+
+Any field or layout child inside a `grid`/`section(columns: ...)` can also call
+`->columnSpan(int|array $span)` / `->columnStart(int|array $start)` on itself (same
+int-or-breakpoint-object shape, 1-8) to span or offset columns in the parent grid.
 
 ### Display blocks
 
