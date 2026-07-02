@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { renderNode } from "../render/structureRenderer";
+import { Alert, AlertDescription, type AlertVariant } from "../ui/alert";
 import { Button } from "../ui/button";
 import { ModalShell } from "../ui/modal-shell";
 import {
@@ -18,8 +19,15 @@ import { parseKeybinding, registerKeybinding } from "./keybinding";
 import { ModalProvider, useNearestModal } from "./modalContext";
 import { ModalDataProvider } from "./modalDataContext";
 import { s } from "./structure";
-import type { StructureNode } from "./types";
+import type { NotificationConfig, StructureNode } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
+
+const HALT_VARIANT: Record<NonNullable<NotificationConfig["kind"]>, AlertVariant> = {
+	info: "info",
+	success: "success",
+	warning: "warning",
+	error: "danger",
+};
 
 export function ModalActionBlock({
 	options: opts,
@@ -33,6 +41,9 @@ export function ModalActionBlock({
 	const tint = outlinedTintClass(opts);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [open, setOpen] = useState(false);
+	const [halt, setHalt] = useState<{ message: string; level: NotificationConfig["kind"] } | null>(
+		null,
+	);
 	const parent = useNearestModal();
 	const modal = opts.modal as ActionModalOpts;
 
@@ -48,6 +59,10 @@ export function ModalActionBlock({
 	}, [opts.keybinding]);
 
 	const close = useCallback(() => setOpen(false), []);
+	const haltModal = useCallback(
+		(message: string, level?: NotificationConfig["kind"]) => setHalt({ message, level }),
+		[],
+	);
 	const body = resolveBody(modal.body);
 
 	return (
@@ -60,7 +75,10 @@ export function ModalActionBlock({
 					size={buttonSize}
 					className={tint}
 					disabled={disabled}
-					onClick={() => setOpen(true)}
+					onClick={() => {
+						setHalt(null);
+						setOpen(true);
+					}}
 					data-testid={`action-${actionKey(opts)}`}
 				>
 					<ActionLabel opts={opts} />
@@ -72,10 +90,19 @@ export function ModalActionBlock({
 				title={modal.title}
 				description={modal.description}
 				size={modal.size}
+				slideOver={modal.slideOver}
 				data-testid={`modal-${actionKey(opts)}`}
 			>
+				{halt && (
+					<Alert
+						variant={HALT_VARIANT[halt.level ?? "error"]}
+						data-testid="modal-halt-message"
+					>
+						<AlertDescription>{halt.message}</AlertDescription>
+					</Alert>
+				)}
 				{body && open && (
-					<ModalProvider close={close} parent={parent}>
+					<ModalProvider close={close} halt={haltModal} parent={parent}>
 						<ModalBody body={body} query={modal.query} />
 					</ModalProvider>
 				)}

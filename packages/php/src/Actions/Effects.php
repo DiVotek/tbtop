@@ -43,6 +43,12 @@ final class Effects implements JsonSerializable
         return $this->push(['kind' => 'closeModal']);
     }
 
+    /** Surfaces $message inside the still-open modal; does NOT close it. */
+    public function haltModal(string $message, string $kind = 'error'): self
+    {
+        return $this->push(['kind' => 'haltModal', 'message' => $message, 'level' => $kind]);
+    }
+
     /** @return list<array<string, mixed>> */
     public function jsonSerialize(): array
     {

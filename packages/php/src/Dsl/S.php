@@ -254,7 +254,7 @@ final class S
      */
     public function actionGroup(string $label, array $actions, ?string $as = null): Node
     {
-        $opts = ['label' => $label, 'children' => $actions];
+        $opts = ['label' => $label, 'children' => ActionBuilder::filterAuthorized($actions)];
         if ($as !== null) {
             $opts['as'] = $as;
         }
@@ -480,7 +480,7 @@ final class S
     /** @param  list<ActionBuilder>  $actions */
     public function actionsRow(array $actions): Node
     {
-        return new Node('row', ['children' => $actions]);
+        return new Node('row', ['children' => ActionBuilder::filterAuthorized($actions)]);
     }
 
     // -------------------------------------------------------------------------

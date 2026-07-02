@@ -129,6 +129,60 @@ describe("Action with modal", () => {
 		expect(queryByText("Delete post?")).toBeNull();
 	});
 
+	test("Action inside modal receives c.modal.halt that keeps the modal open and shows the message", async () => {
+		const node = s.action({
+			name: "delete",
+			label: "Delete",
+			modal: {
+				title: "Delete post?",
+				body: (sb) =>
+					sb.row([
+						sb.action({
+							name: "confirm",
+							label: "Confirm",
+							handler: async (c) => {
+								c.modal?.halt?.("Cannot delete: has children", "error");
+							},
+						}),
+					]),
+			},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, findByText, queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const trigger = await findByTestId("action-delete");
+		await act(async () => {
+			fireEvent.click(trigger);
+		});
+		const confirm = await findByTestId("action-confirm");
+		await act(async () => {
+			fireEvent.click(confirm);
+		});
+		// halt does NOT close the modal (contrast with c.modal.close above).
+		expect(queryByText("Delete post?")).not.toBeNull();
+		await findByText("Cannot delete: has children");
+	});
+
+	test("Modal action with slideOver renders as a right-anchored, edge-flush panel", async () => {
+		const node = s.action({
+			name: "open",
+			label: "Open",
+			modal: {
+				title: "Edit post",
+				slideOver: true,
+			},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, baseElement } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const trigger = await findByTestId("action-open");
+		await act(async () => {
+			fireEvent.click(trigger);
+		});
+		const dialog = baseElement.querySelector('[role="dialog"]');
+		const classes = dialog?.className ?? "";
+		expect(classes).toContain("right-0");
+		expect(classes).toContain("inset-y-0");
+	});
+
 	test("Action c.modal.closeAll closes nested modal stack", async () => {
 		const node = s.action({
 			name: "outer",

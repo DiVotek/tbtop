@@ -17,6 +17,7 @@ import { DisplayKeyValueBlock } from "./displayKeyValueBlock";
 import { DisplayRichtextBlock } from "./displayRichtextBlock";
 import { DisplayTextBlock } from "./displayTextBlock";
 import { DisplayValueBlock } from "./displayValueBlock";
+import { ModalDataProvider } from "./modalDataContext";
 
 const NOOP_CTX = { surface: "form" as const, form: undefined };
 const NOOP_RENDER = () => null;
@@ -328,6 +329,46 @@ describe("DisplayValueBlock", () => {
 		);
 		expect(container.querySelector('[data-slot="badge"]')?.textContent).toBe("active");
 		expect(getByRole("button", { name: "Copy" })).not.toBeNull();
+	});
+
+	test("field-bound value resolves from the modal record over the static value", () => {
+		const { container } = render(
+			<ModalDataProvider value={{ title: "Live title" }}>
+				<DisplayValueBlock
+					options={{ value: "stale", field: "title" }}
+					meta={NOOP_META}
+					ctx={NOOP_CTX}
+					renderChild={NOOP_RENDER}
+				/>
+			</ModalDataProvider>,
+		);
+		expect(container.textContent).toBe("Live title");
+	});
+
+	test("field-bound value falls back to the static value when no modal data is present", () => {
+		const { container } = render(
+			<DisplayValueBlock
+				options={{ value: "static fallback", field: "title" }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.textContent).toBe("static fallback");
+	});
+
+	test("field-bound value falls back to the static value when the field is absent on the record", () => {
+		const { container } = render(
+			<ModalDataProvider value={{ other: "irrelevant" }}>
+				<DisplayValueBlock
+					options={{ value: "static fallback", field: "title" }}
+					meta={NOOP_META}
+					ctx={NOOP_CTX}
+					renderChild={NOOP_RENDER}
+				/>
+			</ModalDataProvider>,
+		);
+		expect(container.textContent).toBe("static fallback");
 	});
 });
 
