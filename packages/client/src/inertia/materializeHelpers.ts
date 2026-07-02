@@ -125,6 +125,11 @@ export function tableQueryParams(ctx: ClientActionContext): QueryParams {
 			query[k] = v as QueryParams[string];
 		}
 	}
+	for (const [field, value] of Object.entries(params.colSearch ?? {})) {
+		if (value) {
+			query[`colSearch[${field}]`] = value;
+		}
+	}
 	return query;
 }
 
