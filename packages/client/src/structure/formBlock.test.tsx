@@ -290,3 +290,39 @@ describe("Form 422 auto-handling", () => {
 		expect(fieldError.textContent).toBe("too short");
 	});
 });
+
+describe("Form field colSpan/colStart placement", () => {
+	test("a field with an int colSpan is wrapped in field-col-place with --col-span", async () => {
+		const node = s.form({ query: async () => ({ title: "" }) }, [
+			{ kind: "text", name: "title", options: { label: "Title", colSpan: 2 }, meta: {} },
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
+		const field = getByTestId("form-block").querySelector('[data-field-name="title"]');
+		const wrapper = field?.closest(".field-col-place") as HTMLElement;
+		expect(wrapper).not.toBeNull();
+		expect(wrapper.style.getPropertyValue("--col-span")).toBe("2");
+	});
+
+	test("a field with a breakpoint colStart gets per-breakpoint --col-start-* vars", async () => {
+		const node = s.form({ query: async () => ({ rating: null }) }, [
+			{ kind: "number", name: "rating", options: { colStart: 2 }, meta: {} },
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
+		const field = getByTestId("form-block").querySelector('[data-field-name="rating"]');
+		const wrapper = field?.closest(".field-col-place") as HTMLElement;
+		expect(wrapper.style.getPropertyValue("--col-start")).toBe("2");
+	});
+
+	test("a field without colSpan/colStart is not wrapped in field-col-place", async () => {
+		const node = s.form({ query: async () => ({ title: "" }) }, [s.text({ name: "title" })]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
+		const field = getByTestId("form-block").querySelector('[data-field-name="title"]');
+		expect(field?.closest(".field-col-place")).toBeNull();
+	});
+});

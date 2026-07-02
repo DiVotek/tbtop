@@ -362,6 +362,49 @@
 							}
 						}
 					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "grid" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"cols": { "$ref": "#/$defs/columnsSpec" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "section" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"title": { "type": "string" },
+									"description": { "type": "string" },
+									"icon": { "$ref": "#/$defs/icon" },
+									"aside": { "$ref": "#/$defs/node" },
+									"collapsible": { "type": "boolean" },
+									"collapsed": { "type": "boolean" },
+									"columns": { "$ref": "#/$defs/columnsSpec" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "radio" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"options": { "$ref": "#/$defs/choiceOptions" },
+									"inline": { "type": "boolean" }
+								}
+							}
+						}
+					}
 				}
 			]
 		},
@@ -408,6 +451,8 @@
 				"dependsOn": { "type": "array", "items": { "type": "string" } },
 				"keepValue": { "type": "boolean" },
 				"whenParentEmpty": { "type": "string", "enum": ["disabled", "empty"] },
+				"colSpan": { "$ref": "#/$defs/columnsSpec" },
+				"colStart": { "$ref": "#/$defs/columnsSpec" },
 				"create": {
 					"type": "object",
 					"required": ["fields"],
@@ -417,6 +462,21 @@
 					"additionalProperties": false
 				}
 			}
+		},
+		"columnsSpec": {
+			"oneOf": [
+				{ "type": "integer", "minimum": 1, "maximum": 8 },
+				{
+					"type": "object",
+					"properties": {
+						"sm": { "type": "integer", "minimum": 1, "maximum": 8 },
+						"md": { "type": "integer", "minimum": 1, "maximum": 8 },
+						"lg": { "type": "integer", "minimum": 1, "maximum": 8 },
+						"xl": { "type": "integer", "minimum": 1, "maximum": 8 }
+					},
+					"additionalProperties": false
+				}
+			]
 		},
 		"columns": {
 			"type": "array",
@@ -527,7 +587,9 @@
 				"required": ["value", "label"],
 				"properties": {
 					"value": { "type": "string" },
-					"label": { "type": "string" }
+					"label": { "type": "string" },
+					"description": { "type": "string" },
+					"disabled": { "type": "boolean" }
 				}
 			}
 		},

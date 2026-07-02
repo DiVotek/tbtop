@@ -85,4 +85,66 @@ describe("Radio field", () => {
 		const { container } = render(<RadioCell value={null} options={{ options: CHOICES }} />);
 		expect(container.textContent).toBe("");
 	});
+
+	test("renders per-option description text", () => {
+		const choices = [
+			{ value: "low", label: "Low", description: "No rush" },
+			{ value: "high", label: "High", description: "Time sensitive" },
+		];
+		const { getByText } = render(
+			<RadioForm
+				name="priority"
+				value={null}
+				onChange={() => {}}
+				options={{ options: choices }}
+			/>,
+		);
+		expect(getByText("No rush")).toBeTruthy();
+		expect(getByText("Time sensitive")).toBeTruthy();
+	});
+
+	test("inline:true renders a horizontal row layout instead of the stacked grid", () => {
+		const { container } = render(
+			<RadioForm
+				name="plan"
+				value={null}
+				onChange={() => {}}
+				options={{ options: CHOICES, inline: true }}
+			/>,
+		);
+		const group = container.querySelector('[data-slot="radio-group"]') as HTMLElement;
+		expect(group.className).toContain("flex-row");
+		expect(group.className).not.toContain("grid");
+	});
+
+	test("without inline, the group keeps the default stacked grid layout", () => {
+		const { container } = render(
+			<RadioForm
+				name="plan"
+				value={null}
+				onChange={() => {}}
+				options={{ options: CHOICES }}
+			/>,
+		);
+		const group = container.querySelector('[data-slot="radio-group"]') as HTMLElement;
+		expect(group.className).toContain("grid");
+	});
+
+	test("a per-option disabled:true disables only that item, not its siblings", () => {
+		const choices = [
+			{ value: "free", label: "Free" },
+			{ value: "pro", label: "Pro", disabled: true },
+		];
+		const { container } = render(
+			<RadioForm
+				name="plan"
+				value={null}
+				onChange={() => {}}
+				options={{ options: choices }}
+			/>,
+		);
+		const items = container.querySelectorAll('[data-slot="radio-group-item"]');
+		expect((items[0] as HTMLButtonElement).disabled).toBe(false);
+		expect((items[1] as HTMLButtonElement).disabled).toBe(true);
+	});
 });

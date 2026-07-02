@@ -1,8 +1,10 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useState } from "react";
+import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import type { StructureNode } from "../structure/structure";
 import { type IconDef, NodeIcon } from "../ui/node-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
+import { SectionHeader } from "./sectionHeader";
 
 type JustifyValue = "start" | "center" | "end" | "between" | "around" | "evenly";
 type AlignValue = "start" | "center" | "end" | "stretch" | "baseline";
@@ -16,11 +18,17 @@ interface RowOptions {
 }
 
 interface GridOptions {
-	cols: number;
+	cols?: ColumnsSpec;
 }
 
 interface SectionOptions {
 	title?: string;
+	description?: string;
+	icon?: IconDef;
+	aside?: StructureNode;
+	collapsible?: boolean;
+	collapsed?: boolean;
+	columns?: ColumnsSpec;
 }
 
 interface TabsOptions {
@@ -96,32 +104,44 @@ export function FlexBlock({ options, children, renderChild }: RenderProps<FlexBl
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
-// Stack to one column on mobile, authored count at md+.
-// Static classes (1-8) so Tailwind's purge keeps them.
-const GRID_COLS: Record<number, string> = {
-	1: "grid-cols-1",
-	2: "grid-cols-1 md:grid-cols-2",
-	3: "grid-cols-1 md:grid-cols-3",
-	4: "grid-cols-1 md:grid-cols-4",
-	5: "grid-cols-1 md:grid-cols-5",
-	6: "grid-cols-1 md:grid-cols-6",
-	7: "grid-cols-1 md:grid-cols-7",
-	8: "grid-cols-1 md:grid-cols-8",
-};
-
 export function GridBlock({ options, children, renderChild }: RenderProps<GridOptions>) {
 	return (
-		<div className={`grid gap-4 ${GRID_COLS[options.cols] ?? "grid-cols-1"}`}>
+		<div className={`grid gap-4 ${resolveColumnsClass(options.cols)}`}>
 			{mapChildren(children, renderChild)}
 		</div>
 	);
 }
 
 export function SectionBlock({ options, children, renderChild }: RenderProps<SectionOptions>) {
+	const [open, setOpen] = useState(!options.collapsed);
+	const expanded = options.collapsible ? open : true;
+	const bodyClass =
+		options.columns != null
+			? `grid gap-4 ${resolveColumnsClass(options.columns)}`
+			: "flex flex-col gap-3";
+	const body = expanded && <div className={bodyClass}>{mapChildren(children, renderChild)}</div>;
 	return (
-		<section className="flex flex-col gap-3">
-			{options.title && <h2 className="text-lg font-semibold">{options.title}</h2>}
-			{mapChildren(children, renderChild)}
+		<section className="flex flex-col gap-3" data-testid="section-block">
+			<SectionHeader
+				title={options.title}
+				description={options.description}
+				icon={options.icon}
+				collapsible={options.collapsible}
+				open={open}
+				onToggle={() => setOpen((prev) => !prev)}
+			/>
+			{/* aside is a persistent context slot (actions/status) — it stays visible
+			   even when collapsible hides the body; see docs/ai/authoring-pages.md */}
+			{options.aside ? (
+				<div className="flex flex-col gap-4 md:flex-row">
+					<div className="min-w-0 flex-1">{body}</div>
+					<div className="w-full shrink-0 md:w-64" data-testid="section-aside">
+						{renderChild(options.aside)}
+					</div>
+				</div>
+			) : (
+				body
+			)}
 		</section>
 	);
 }

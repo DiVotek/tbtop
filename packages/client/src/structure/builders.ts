@@ -40,6 +40,23 @@ export function layoutOptsFirst(kind: string) {
 		return { kind, options: { ...split.options, children }, meta: split.meta };
 	};
 }
+/** Section layout: normalizes a bare-string icon to {name, position} like buildTab. */
+export function buildSection(opts: Bag, children: StructureNode[]): StructureNode {
+	const split = splitMeta(opts);
+	const { icon, ...rest } = split.options;
+	let normalizedIcon: IconDef | undefined;
+	if (icon !== undefined) {
+		normalizedIcon =
+			typeof icon === "string"
+				? { name: icon, position: "left" }
+				: { position: "left", ...(icon as IconDef) };
+	}
+	return {
+		kind: "section",
+		options: { ...rest, ...(normalizedIcon ? { icon: normalizedIcon } : {}), children },
+		meta: split.meta,
+	};
+}
 
 export function buildTabs(items: TabItem[], opts?: Bag): StructureNode {
 	const split = splitMeta(opts);
