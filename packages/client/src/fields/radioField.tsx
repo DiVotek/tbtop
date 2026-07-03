@@ -1,3 +1,4 @@
+import { cn } from "../lib/cn";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { nullableCell } from "./cellHelpers";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
@@ -6,10 +7,13 @@ import { OptionRow } from "./optionList";
 interface RadioOption {
 	value: string;
 	label: string;
+	description?: string;
+	disabled?: boolean;
 }
 
 interface RadioOptionsBag {
 	options?: RadioOption[];
+	inline?: boolean;
 }
 
 export function RadioCell({ value, options }: FieldCellProps<string, RadioOptionsBag>) {
@@ -37,6 +41,7 @@ export function RadioForm({
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
 			disabled={disabled}
+			className={cn(options?.inline && "flex flex-row flex-wrap gap-4")}
 			data-testid={`radio-${name}`}
 		>
 			{choices.map((opt) => (
@@ -45,7 +50,11 @@ export function RadioForm({
 					groupId={groupId}
 					value={opt.value}
 					label={opt.label}
-					control={(itemId) => <RadioGroupItem id={itemId} value={opt.value} />}
+					description={opt.description}
+					disabled={disabled || opt.disabled}
+					control={(itemId) => (
+						<RadioGroupItem id={itemId} value={opt.value} disabled={opt.disabled} />
+					)}
 				/>
 			))}
 		</RadioGroup>

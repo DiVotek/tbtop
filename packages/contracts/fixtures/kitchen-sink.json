@@ -27,6 +27,13 @@
                 "kind": "section",
                 "options": {
                     "title": "Display primitives",
+                    "description": "Read-only render blocks for detail/show pages.",
+                    "icon": {
+                        "name": "monitor",
+                        "position": "left"
+                    },
+                    "collapsible": true,
+                    "columns": 2,
                     "children": [
                         {
                             "kind": "displayValue",
@@ -183,7 +190,11 @@
             {
                 "kind": "grid",
                 "options": {
-                    "cols": 2,
+                    "cols": {
+                        "sm": 1,
+                        "md": 2,
+                        "lg": 4
+                    },
                     "children": [
                         {
                             "kind": "stat",
@@ -282,6 +293,18 @@
                 "kind": "section",
                 "options": {
                     "title": "Form",
+                    "icon": {
+                        "name": "file-text",
+                        "position": "right"
+                    },
+                    "aside": {
+                        "kind": "displayText",
+                        "options": {
+                            "content": "Fill every field to see full validation coverage.",
+                            "variant": "muted"
+                        },
+                        "meta": {}
+                    },
                     "children": [
                         {
                             "kind": "form",
@@ -293,6 +316,10 @@
                                         "options": {
                                             "label": "Title",
                                             "required": true,
+                                            "colSpan": {
+                                                "sm": 1,
+                                                "md": 2
+                                            },
                                             "constraints": {
                                                 "required": true,
                                                 "max": 200
@@ -323,6 +350,7 @@
                                     {
                                         "kind": "number",
                                         "options": {
+                                            "colStart": 2,
                                             "constraints": {
                                                 "integer": true,
                                                 "min": 0,
@@ -337,6 +365,46 @@
                                         "options": {},
                                         "meta": {},
                                         "name": "published"
+                                    },
+                                    {
+                                        "kind": "radio",
+                                        "options": {
+                                            "label": "Priority",
+                                            "inline": true,
+                                            "options": [
+                                                {
+                                                    "value": "low",
+                                                    "label": "Low",
+                                                    "description": "No rush"
+                                                },
+                                                {
+                                                    "value": "high",
+                                                    "label": "High",
+                                                    "description": "Time sensitive",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "priority"
+                                    },
+                                    {
+                                        "kind": "radio",
+                                        "options": {
+                                            "label": "Archived",
+                                            "options": [
+                                                {
+                                                    "value": "1",
+                                                    "label": "Yes"
+                                                },
+                                                {
+                                                    "value": "0",
+                                                    "label": "No"
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "archived"
                                     },
                                     {
                                         "kind": "date",
@@ -687,6 +755,34 @@
                                 "options": {
                                     "content": "Second tab",
                                     "variant": "muted"
+                                },
+                                "meta": {}
+                            }
+                        },
+                        {
+                            "label": "Grid",
+                            "body": {
+                                "kind": "grid",
+                                "options": {
+                                    "cols": 2,
+                                    "children": [
+                                        {
+                                            "kind": "displayText",
+                                            "options": {
+                                                "content": "Left",
+                                                "variant": "body"
+                                            },
+                                            "meta": {}
+                                        },
+                                        {
+                                            "kind": "displayText",
+                                            "options": {
+                                                "content": "Right",
+                                                "variant": "body"
+                                            },
+                                            "meta": {}
+                                        }
+                                    ]
                                 },
                                 "meta": {}
                             }

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { isNodeHidden } from "../structure/meta";
 import type { ConditionContext, StructureNode } from "../structure/structure";
 import type { NodeMeta, RenderContext } from "./blockRegistry";
+import { applyColumnPlacement } from "./columnPlacement";
 import { ensureBuiltinsRegistered } from "./registerBuiltins";
 import { invokeBlock } from "./renderDescriptor";
 
@@ -18,7 +19,7 @@ export function renderNode(node: StructureNode, ctx: RenderContext = DEFAULT_CTX
 	const baseOptions = (node.options as Record<string, unknown> | undefined) ?? {};
 	const options = node.name ? { name: node.name, ...baseOptions } : baseOptions;
 	const children = view.children ?? (options as { children?: StructureNode[] }).children;
-	return invokeBlock({
+	const rendered = invokeBlock({
 		kind: node.kind,
 		options,
 		meta: (node.meta ?? {}) as NodeMeta,
@@ -26,4 +27,5 @@ export function renderNode(node: StructureNode, ctx: RenderContext = DEFAULT_CTX
 		children,
 		renderChild: (child: StructureNode) => renderNode(child, ctx),
 	});
+	return applyColumnPlacement(rendered, options);
 }

@@ -126,10 +126,21 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `stack` | `stack(array $children, array $opts = []): Node` | Vertical stack of children |
 | `row` | `row(array $children, array $opts = []): Node` | Horizontal row of children |
 | `flex` | `flex(array $children, string $direction = 'row', ?string $justify = null, ?string $align = null, ?int $gap = null, bool $wrap = false): Node` | Flex container with explicit direction (`'row'`\|`'col'`), justify, align, gap, wrap |
-| `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts` carries `'cols'` and other CSS-grid options |
-| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'` |
+| `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8) |
+| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack) |
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
 | `aside` | `aside(array $children): Node` | Right-column sticky panel on wide screens |
+
+A section's `'aside'` is a persistent context slot: when a `section` sets both
+`'aside'` and `'collapsible'`, collapsing hides only the main body — the aside stays visible.
+
+`->columnSpan(int|array $span)` / `->columnStart(int|array $start)` are fluent
+methods on `Field` only (same int-or-breakpoint-object shape, 1-8) — `Node`
+(what layout blocks like `section`/`stack`/`grid` return) has no such methods.
+A layout block placed as a grid/section child instead passes `colSpan`/`colStart`
+directly as keys in its own `$opts`, e.g. `$s->stack($children, ['colSpan' => 2])`
+— the renderer applies grid placement generically from any node's options, field
+or not.
 
 ### Display blocks
 

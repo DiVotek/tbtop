@@ -35,7 +35,13 @@ class KitchenSinkPage extends Page
             $s->displayText('Kitchen sink')->variant('heading'),
             $s->displayText('Every node kind the PHP DSL can emit.')->variant('muted'),
             $s->displayDivider(),
-            $s->section(['title' => 'Display primitives'], [
+            $s->section([
+                'title' => 'Display primitives',
+                'description' => 'Read-only render blocks for detail/show pages.',
+                'icon' => 'monitor',
+                'collapsible' => true,
+                'columns' => 2,
+            ], [
                 $s->displayValue('active')->badge(['active' => Color::Success]),
                 $s->displayValue(true)->boolean(trueColor: Color::Success),
                 $s->displayValue('shipped')->icon(['shipped' => ['icon' => 'truck', 'color' => 'success']]),
@@ -62,7 +68,7 @@ class KitchenSinkPage extends Page
                 ]),
                 $s->displayKeyValue(['SKU' => 'A-1', 'Weight' => '2kg']),
             ]),
-            $s->grid(['cols' => 2], [
+            $s->grid(['cols' => ['sm' => 1, 'md' => 2, 'lg' => 4]], [
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
                     ->icon('dollar-sign')->tooltip('Monthly revenue')
                     ->hiddenIf('period', '=', 'all')->toNode(),
@@ -83,14 +89,23 @@ class KitchenSinkPage extends Page
                     ])
                     ->toNode(),
             ]),
-            $s->section(['title' => 'Form'], [
+            $s->section([
+                'title' => 'Form',
+                'icon' => ['name' => 'file-text', 'position' => 'right'],
+                'aside' => $s->displayText('Fill every field to see full validation coverage.')->variant('muted'),
+            ], [
                 $s->form('post', [
-                    $s->text('title')->label('Title')->required()->rules('max:200'),
+                    $s->text('title')->label('Title')->required()->rules('max:200')->columnSpan(['sm' => 1, 'md' => 2]),
                     $s->otp('auth_code')->label('Code')->length(6)->rules('digits:6'),
                     $s->textarea('body')->label('Body')
                         ->helperText('Supports Markdown.')->tooltip('Write the post body here.'),
-                    $s->number('rating')->rules('integer|min:0|max:5'),
+                    $s->number('rating')->rules('integer|min:0|max:5')->columnStart(2),
                     $s->boolean('published'),
+                    $s->radio('priority')->label('Priority')->inline()->options([
+                        ['value' => 'low', 'label' => 'Low', 'description' => 'No rush'],
+                        ['value' => 'high', 'label' => 'High', 'description' => 'Time sensitive', 'disabled' => true],
+                    ]),
+                    $s->radio('archived')->label('Archived')->boolean(),
                     $s->date('publishedAt')->hiddenIf('published', '=', false),
                     $s->text('video_url')->hiddenIf('type', '!=', 'video'),
                     $s->text('caption')->disabledIf(
@@ -150,6 +165,10 @@ class KitchenSinkPage extends Page
             $s->tabs([
                 ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3'],
                 ['label' => 'More', 'body' => $s->displayText('Second tab')->variant('muted')],
+                ['label' => 'Grid', 'children' => [
+                    $s->displayText('Left')->variant('body'),
+                    $s->displayText('Right')->variant('body'),
+                ], 'columns' => 2],
             ]),
             $s->table('posts')
                 ->columns([
