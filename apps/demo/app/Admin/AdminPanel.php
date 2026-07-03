@@ -2,6 +2,7 @@
 
 namespace App\Admin;
 
+use App\Admin\Pages\ApiTokensPage;
 use App\Admin\Pages\BrandsIndexPage;
 use App\Admin\Pages\DashboardPage;
 use App\Admin\Pages\DependentFieldsDemoPage;
@@ -19,6 +20,8 @@ use App\Admin\Pages\PostsIndexPage;
 use App\Admin\Pages\RecordDetailPage;
 use App\Admin\Pages\RelationDemoPage;
 use App\Admin\Pages\ReorderablePostsPage;
+use App\Admin\Pages\SettingsGeneralPage;
+use App\Admin\Pages\SettingsMailPage;
 use App\Admin\Pages\SettingsPage;
 use App\Admin\Pages\SoftDeletesDemoPage;
 use App\Admin\Pages\TwoFactorChallengePage;
@@ -29,6 +32,7 @@ use App\Http\Middleware\RequireFullAuth;
 use Tbtop\Admin\CommandPalette\Command;
 use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
 use Tbtop\Admin\Navigation\NavGroup;
+use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\MediaLibraryPage;
 use Tbtop\Admin\Panels\Panel;
 use Tbtop\Admin\Panels\PanelConfig;
@@ -55,6 +59,8 @@ class AdminPanel extends Panel
                 MediaEditPage::class,
                 UploadDemoPage::class,
                 SettingsPage::class,
+                SettingsGeneralPage::class,
+                SettingsMailPage::class,
                 SoftDeletesDemoPage::class,
                 PlaygroundPage::class,
                 NewFeaturesPage::class,
@@ -67,6 +73,7 @@ class AdminPanel extends Panel
                 TwoFactorSetupPage::class,
                 LoginPage::class,
                 TwoFactorChallengePage::class,
+                ApiTokensPage::class,
             ])
             ->navigationGroups([
                 NavGroup::make('Overview')->icon('home'),
@@ -74,6 +81,13 @@ class AdminPanel extends Panel
                 NavGroup::make('System')->icon('settings')->collapsible()->collapsed(),
             ])
             ->navigation('topbar')
+            ->navigationItems([
+                NavItem::make('Documentation')->url('https://github.com/DiVotek/tbtop')
+                    ->icon('globe')->group('Resources')->newTab(),
+            ])
+            ->userMenuItems([
+                NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key'),
+            ])
             ->commandPalette(fn (CommandPaletteConfig $p) => $p->commands([
                 Command::make('Create post')->icon('file-text')->url('/admin/posts/new')->group('Actions'),
                 Command::make('tbtop on GitHub')->icon('globe')->url('https://github.com/DiVotek/tbtop')->openInNewTab()->group('Links'),

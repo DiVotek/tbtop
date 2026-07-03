@@ -2,7 +2,7 @@ import { router } from "@inertiajs/react";
 import type { ClientActionContext, NotificationConfig } from "../structure/types";
 
 export interface ServerEffect {
-	kind: "notify" | "redirect" | "refreshTable" | "resetForm" | "closeModal";
+	kind: "notify" | "redirect" | "refreshTable" | "resetForm" | "closeModal" | "haltModal";
 	message?: string;
 	level?: NotificationConfig["kind"];
 	href?: string;
@@ -22,24 +22,20 @@ export function executeEffects(effects: ServerEffect[], ctx: EffectContext): voi
 	}
 }
 
+const EFFECT_HANDLERS: Record<
+	ServerEffect["kind"],
+	(effect: ServerEffect, ctx: EffectContext) => void
+> = {
+	notify: applyNotify,
+	redirect: (effect) => applyRedirect(effect),
+	refreshTable: (_effect, ctx) => refreshTable(ctx),
+	resetForm: (_effect, ctx) => ctx.form?.reset(),
+	closeModal: (_effect, ctx) => ctx.modal?.close(),
+	haltModal: (effect, ctx) => ctx.modal?.halt?.(effect.message ?? "", effect.level),
+};
+
 function applyEffect(effect: ServerEffect, ctx: EffectContext): void {
-	switch (effect.kind) {
-		case "notify":
-			applyNotify(effect, ctx);
-			break;
-		case "redirect":
-			applyRedirect(effect);
-			break;
-		case "refreshTable":
-			refreshTable(ctx);
-			break;
-		case "resetForm":
-			ctx.form?.reset();
-			break;
-		case "closeModal":
-			ctx.modal?.close();
-			break;
-	}
+	EFFECT_HANDLERS[effect.kind]?.(effect, ctx);
 }
 
 function applyNotify(effect: ServerEffect, ctx: EffectContext): void {

@@ -98,6 +98,14 @@
                             "meta": {}
                         },
                         {
+                            "kind": "displayValue",
+                            "options": {
+                                "value": null,
+                                "field": "title"
+                            },
+                            "meta": {}
+                        },
+                        {
                             "kind": "displayImage",
                             "options": {
                                 "src": "/img/cover.png",
@@ -1033,7 +1041,8 @@
                                     "type": "modal",
                                     "title": "Details",
                                     "description": "More info",
-                                    "size": "lg"
+                                    "size": "4xl",
+                                    "slideOver": true
                                 }
                             },
                             "meta": {},
@@ -1137,6 +1146,162 @@
                             },
                             "meta": {},
                             "name": "edit"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Validate",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "Validate",
+                                    "body": {
+                                        "kind": "stack",
+                                        "options": {
+                                            "children": [
+                                                {
+                                                    "kind": "action",
+                                                    "options": {
+                                                        "label": "Check",
+                                                        "color": "primary",
+                                                        "spec": {
+                                                            "type": "server",
+                                                            "needs": [
+                                                                "form"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "runValidation"
+                                                }
+                                            ]
+                                        },
+                                        "meta": {}
+                                    }
+                                }
+                            },
+                            "meta": {},
+                            "name": "validate"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Create",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "Create record",
+                                    "body": {
+                                        "kind": "form",
+                                        "options": {
+                                            "name": "createPost",
+                                            "children": [
+                                                {
+                                                    "kind": "text",
+                                                    "options": {
+                                                        "label": "Title",
+                                                        "required": true,
+                                                        "constraints": {
+                                                            "required": true
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "title"
+                                                },
+                                                {
+                                                    "kind": "row",
+                                                    "options": {
+                                                        "children": [
+                                                            {
+                                                                "kind": "action",
+                                                                "options": {
+                                                                    "label": "Create",
+                                                                    "color": "primary",
+                                                                    "spec": {
+                                                                        "type": "server",
+                                                                        "needs": [
+                                                                            "form"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "createStore"
+                                                            },
+                                                            {
+                                                                "kind": "action",
+                                                                "options": {
+                                                                    "label": "Cancel",
+                                                                    "spec": {
+                                                                        "type": "server",
+                                                                        "needs": []
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "createCancel"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "meta": {}
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "createPost"
+                                    }
+                                }
+                            },
+                            "meta": {},
+                            "name": "create"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "View",
+                                "spec": {
+                                    "type": "modal",
+                                    "title": "View record",
+                                    "body": {
+                                        "kind": "stack",
+                                        "options": {
+                                            "children": [
+                                                {
+                                                    "kind": "displayValue",
+                                                    "options": {
+                                                        "value": null,
+                                                        "field": "title"
+                                                    },
+                                                    "meta": {}
+                                                },
+                                                {
+                                                    "kind": "row",
+                                                    "options": {
+                                                        "children": [
+                                                            {
+                                                                "kind": "action",
+                                                                "options": {
+                                                                    "label": "Close",
+                                                                    "spec": {
+                                                                        "type": "server",
+                                                                        "needs": []
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "viewClose"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "meta": {}
+                                                }
+                                            ]
+                                        },
+                                        "meta": {}
+                                    },
+                                    "query": true,
+                                    "queryNeeds": [
+                                        "row"
+                                    ]
+                                }
+                            },
+                            "meta": {},
+                            "name": "view"
                         }
                     ]
                 },

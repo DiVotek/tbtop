@@ -3,11 +3,21 @@
 use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Navigation\NavBuilder;
 use Tbtop\Admin\Navigation\NavGroup;
+use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\GatedNavPage;
+use Tbtop\Admin\Tests\Fixtures\GatedNavParentPage;
 use Tbtop\Admin\Tests\Fixtures\IconBadgeNavPage;
+use Tbtop\Admin\Tests\Fixtures\NavAlphaGroupPage;
+use Tbtop\Admin\Tests\Fixtures\NavBetaGroupPage;
+use Tbtop\Admin\Tests\Fixtures\NavChildOfGatedParentPage;
+use Tbtop\Admin\Tests\Fixtures\NavChildPage;
+use Tbtop\Admin\Tests\Fixtures\NavCyclePageA;
+use Tbtop\Admin\Tests\Fixtures\NavCyclePageB;
+use Tbtop\Admin\Tests\Fixtures\NavOrphanChildPage;
 use Tbtop\Admin\Tests\Fixtures\NavPage;
+use Tbtop\Admin\Tests\Fixtures\NavParentPage;
 use Tbtop\Admin\Tests\Fixtures\PostEditPage;
 use Tbtop\Admin\Tests\Fixtures\PostsIndexPage;
 
@@ -99,4 +109,131 @@ it('NavBuilder: a collapsible-only group omits collapsed and icon flags', functi
     expect($group)->toHaveKey('collapsible')
         ->and($group)->not->toHaveKey('collapsed')
         ->and($group)->not->toHaveKey('icon');
+});
+
+it('NavBuilder: nests a child page under its parent via nav()[\'parent\']', function () {
+    $panel = panelWithPages([NavParentPage::class, NavChildPage::class]);
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect(array_column($group['items'], 'label'))->toBe(['Parent'])
+        ->and($group['items'][0]['children'])->toBe([
+            ['label' => 'Child', 'href' => '/admin/nav-child', 'order' => 1],
+        ]);
+});
+
+it('NavBuilder: throws when nav()[\'parent\'] references a page outside the nav-eligible set', function () {
+    $panel = panelWithPages([PostEditPage::class, NavOrphanChildPage::class]);
+
+    NavBuilder::build($panel);
+})->throws(InvalidArgumentException::class, 'not a nav-eligible page');
+
+it('NavBuilder: throws when nav()[\'parent\'] references an unregistered class', function () {
+    $panel = panelWithPages([NavChildPage::class]);
+
+    NavBuilder::build($panel);
+})->throws(InvalidArgumentException::class, 'not a nav-eligible page');
+
+it('NavBuilder: throws on a nav parent cycle', function () {
+    $panel = panelWithPages([NavCyclePageA::class, NavCyclePageB::class]);
+
+    NavBuilder::build($panel);
+})->throws(LogicException::class, 'cycle detected');
+
+it('NavBuilder: promotes a child to top level when its parent fails the gate', function () {
+    $panel = panelWithPages([GatedNavParentPage::class, NavChildOfGatedParentPage::class]);
+
+    Gate::define('view-gated-parent', fn (?object $user) => false);
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect(array_column($group['items'], 'label'))->toBe(['Child of gated']);
+});
+
+it('NavBuilder: keeps a child nested when both it and its parent pass the gate', function () {
+    $panel = panelWithPages([GatedNavParentPage::class, NavChildOfGatedParentPage::class]);
+
+    Gate::define('view-gated-parent', fn (?object $user) => true);
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect(array_column($group['items'], 'label'))->toBe(['Gated Parent'])
+        ->and(array_column($group['items'][0]['children'], 'label'))->toBe(['Child of gated']);
+});
+
+it('NavBuilder: orders groups per navigationGroups() declaration, not page registration order', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([NavBetaGroupPage::class, NavAlphaGroupPage::class])
+            ->navigationGroups([NavGroup::make('Alpha'), NavGroup::make('Beta')])
+    );
+
+    expect(array_column(NavBuilder::build($panel), 'group'))->toBe(['Alpha', 'Beta']);
+});
+
+it('NavBuilder: an undeclared group sorts after every declared group, keeping first-seen order', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([NavBetaGroupPage::class, NavPage::class, NavAlphaGroupPage::class])
+            ->navigationGroups([NavGroup::make('Alpha')])
+    );
+
+    expect(array_column(NavBuilder::build($panel), 'group'))->toBe(['Alpha', 'Beta', 'Content']);
+});
+
+it('NavBuilder: merges panel navigationItems() into their declared group alongside page items, sorted by order', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([NavPage::class])
+            ->navigationItems([
+                NavItem::make('Documentation')->url('https://example.test/docs')->icon('globe')
+                    ->group('Content')->sort(1)->newTab(),
+            ])
+    );
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect($group['group'])->toBe('Content')
+        ->and($group['items'])->toBe([
+            [
+                'label' => 'Documentation',
+                'href' => 'https://example.test/docs',
+                'order' => 1,
+                'icon' => ['name' => 'globe', 'position' => 'left'],
+                'newTab' => true,
+            ],
+            ['label' => 'Nav Demo', 'href' => '/admin/nav-demo', 'order' => 2],
+        ]);
+});
+
+it('NavBuilder: a navigationItems() entry without a group defaults to General', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([])
+            ->navigationItems([NavItem::make('Docs')->url('https://example.test')])
+    );
+
+    expect(NavBuilder::build($panel))->toBe([
+        ['group' => 'General', 'items' => [['label' => 'Docs', 'href' => 'https://example.test', 'order' => 0]]],
+    ]);
+});
+
+it('PanelConfig: exposes userMenuItems as sparse wire payloads through the current panel', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)->userMenuItems([
+            NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key'),
+        ])
+    );
+
+    expect($panel->userMenuItems())->toBe([
+        ['label' => 'API Tokens', 'href' => '/admin/api-tokens', 'icon' => ['name' => 'key', 'position' => 'left']],
+    ]);
 });

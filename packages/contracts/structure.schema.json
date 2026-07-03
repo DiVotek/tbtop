@@ -305,6 +305,7 @@
 										}
 									},
 									"iconMap": { "type": "object" },
+									"field": { "type": "string" },
 									"copyable": {
 										"type": "object",
 										"properties": {
@@ -557,6 +558,46 @@
 			},
 			"additionalProperties": false
 		},
+		"navItem": {
+			"type": "object",
+			"required": ["label", "href", "order"],
+			"properties": {
+				"label": { "type": "string" },
+				"href": { "type": "string" },
+				"order": { "type": "integer" },
+				"icon": { "$ref": "#/$defs/icon" },
+				"badge": { "type": "string" },
+				"badgeColor": { "type": "string" },
+				"newTab": { "type": "boolean" },
+				"children": { "type": "array", "items": { "$ref": "#/$defs/navItem" } }
+			},
+			"additionalProperties": false
+		},
+		"navGroup": {
+			"type": "object",
+			"required": ["group", "items"],
+			"properties": {
+				"group": { "type": "string" },
+				"items": { "type": "array", "items": { "$ref": "#/$defs/navItem" } },
+				"icon": { "$ref": "#/$defs/icon" },
+				"collapsible": { "type": "boolean" },
+				"collapsed": { "type": "boolean" }
+			},
+			"additionalProperties": false
+		},
+		"userMenuItem": {
+			"type": "object",
+			"required": ["label", "href"],
+			"properties": {
+				"label": { "type": "string" },
+				"href": { "type": "string" },
+				"icon": { "$ref": "#/$defs/icon" },
+				"newTab": { "type": "boolean" }
+			},
+			"additionalProperties": false
+		},
+		"nav": { "type": "array", "items": { "$ref": "#/$defs/navGroup" } },
+		"userMenuItems": { "type": "array", "items": { "$ref": "#/$defs/userMenuItem" } },
 		"tableTab": {
 			"type": "object",
 			"required": ["name", "label", "count"],
@@ -647,7 +688,8 @@
 						"title": { "type": "string" },
 						"description": { "type": "string" },
 						"body": { "$ref": "#/$defs/node" },
-						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+						"size": { "type": "string", "enum": ["sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "full"] },
+						"slideOver": { "type": "boolean" },
 						"query": { "type": "boolean" },
 						"queryNeeds": {
 							"type": "array",
@@ -780,6 +822,16 @@
 						"type": "object",
 						"required": ["kind"],
 						"properties": { "kind": { "const": "closeModal" } },
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind", "message"],
+						"properties": {
+							"kind": { "const": "haltModal" },
+							"message": { "type": "string" },
+							"level": { "enum": ["info", "success", "error", "warning"] }
+						},
 						"additionalProperties": false
 					}
 				]

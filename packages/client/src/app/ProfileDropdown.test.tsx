@@ -223,4 +223,39 @@ describe("ProfileDropdown", () => {
 		renderInChrome({ defaultTheme: "dark" });
 		expect(window.document.documentElement.classList.contains("dark")).toBe(true);
 	});
+
+	test("ProfileDropdown: renders custom userMenuItems above the theme controls", async () => {
+		const { getByTestId, findByTestId } = renderInChrome({
+			userMenuItems: [{ label: "API Tokens", href: "/admin/api-tokens" }],
+		});
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		const item = await findByTestId("user-menu-item-/admin/api-tokens");
+		expect(item.textContent).toBe("API Tokens");
+	});
+
+	test("ProfileDropdown: clicking an internal userMenuItem navigates via router.visit", async () => {
+		const visitMock = mock(() => {});
+		(inertiaReact.router as unknown as Record<string, unknown>).visit = visitMock;
+		const { getByTestId, findByTestId } = renderInChrome({
+			userMenuItems: [{ label: "API Tokens", href: "/admin/api-tokens" }],
+		});
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		fireEvent.click(await findByTestId("user-menu-item-/admin/api-tokens"));
+		expect(visitMock).toHaveBeenCalledWith("/admin/api-tokens");
+		(inertiaReact.router as unknown as Record<string, unknown>).visit =
+			originalRouter.visit.bind(originalRouter);
+	});
+
+	test("ProfileDropdown: omits the custom-items section when userMenuItems is empty", async () => {
+		const { getByTestId, findByTestId, queryByTestId } = renderInChrome({});
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		await findByTestId("profile-menu");
+		expect(queryByTestId(/^user-menu-item-/)).toBeNull();
+	});
 });
