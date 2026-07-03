@@ -77,7 +77,7 @@ are overridable hooks with sensible defaults.
 | `view()` | `view(S $s): Node` | Yes | Returns the root `Node` tree the client renders |
 | `slug()` | `static slug(): string` | No | Stable identifier used in action/form endpoint URLs. Defaults to kebab-cased class basename |
 | `title()` | `title(): string` | No | Page heading. Defaults to headline-cased class basename |
-| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0]`, or `null` to hide from nav |
+| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. `parent` nests this page under another page's nav item — see [./recipes.md](./recipes.md#navigation-configuration) |
 | `can()` | `static can(): ?string` | No | Gate ability name required to view this page. `null` = no gate (any authenticated user) |
 | `breadcrumbs()` | `breadcrumbs(): array\|\Closure\|null` | No | Override breadcrumbs. Return `[['label' => '...', 'url' => '...']]`, a closure receiving the page instance, or `null` to auto-build from the nav tree |
 | `layout()` | `layout(): string` | No | Shell layout: `'admin'` (sidebar + header, the default) or `'center'` (chrome-less, content centered) |
@@ -88,6 +88,16 @@ Example nav registration (from `apps/demo/app/Admin/Pages/PostsIndexPage.php`):
 public static function nav(): ?array
 {
     return ['group' => 'Content', 'label' => 'Posts', 'order' => 1];
+}
+```
+
+Nested nav registration — `parent` points at another `nav()`-eligible page class in the
+same panel (from `apps/demo/app/Admin/Pages/SettingsGeneralPage.php`):
+
+```php
+public static function nav(): ?array
+{
+    return ['group' => 'System', 'label' => 'General', 'order' => 1, 'parent' => SettingsPage::class];
 }
 ```
 
