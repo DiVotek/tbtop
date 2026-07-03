@@ -5,8 +5,14 @@ use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Navigation\NavBuilder;
+use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Panels\ChromeSerializer;
+use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\KitchenSinkPage;
+use Tbtop\Admin\Tests\Fixtures\NavChildPage;
+use Tbtop\Admin\Tests\Fixtures\NavParentPage;
 
 const SCHEMA_PATH = __DIR__.'/../../contracts/structure.schema.json';
 const FIXTURE_PATH = __DIR__.'/../../contracts/fixtures/kitchen-sink.json';
@@ -78,4 +84,29 @@ it('copyable and mask options conform to the wire grammar schema', function () {
         json_decode(json_encode([Column::make('slug')->copyable('Slug copied!')])),
         '#/$defs/columns'
     );
+});
+
+it('nested nav tree with a merged custom item conforms to the nav contract', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([NavParentPage::class, NavChildPage::class])
+            ->navigationItems([
+                NavItem::make('Documentation')->url('https://example.test')->icon('globe')
+                    ->group('Content')->sort(5)->newTab(),
+            ])
+    );
+
+    validateAgainstSchema(json_decode(json_encode(NavBuilder::build($panel))), '#/$defs/nav');
+});
+
+it('userMenuItems serialization conforms to the nav contract', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)->userMenuItems([
+            NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key'),
+        ])
+    );
+
+    validateAgainstSchema(json_decode(json_encode($panel->userMenuItems())), '#/$defs/userMenuItems');
 });

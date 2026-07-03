@@ -4,11 +4,14 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { NodeIcon } from "../ui/node-icon";
-import type { ChromeData, NavGroup } from "./chromeContext";
-import { NavItemLink } from "./navGroupSection";
+import type { ChromeData, NavGroup, NavItem } from "./chromeContext";
+import { containsActive, NavItemLink } from "./navGroupSection";
 
 interface NavGroupDropdownProps {
 	group: NavGroup;
@@ -24,7 +27,7 @@ interface NavGroupDropdownProps {
  * until opened.
  */
 export function NavGroupDropdown({ group, currentUrl }: NavGroupDropdownProps) {
-	const active = group.items.some((item) => currentUrl.startsWith(item.href));
+	const active = group.items.some((item) => containsActive(item, currentUrl));
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -44,11 +47,32 @@ export function NavGroupDropdown({ group, currentUrl }: NavGroupDropdownProps) {
 				data-testid={`nav-group-menu-${group.group}`}
 			>
 				{group.items.map((item) => (
-					<DropdownMenuItem key={item.href} asChild>
-						<NavItemLink item={item} currentUrl={currentUrl} />
-					</DropdownMenuItem>
+					<DropdownNavItem key={item.href} item={item} currentUrl={currentUrl} />
 				))}
 			</DropdownMenuContent>
 		</DropdownMenu>
+	);
+}
+
+function DropdownNavItem({ item, currentUrl }: { item: NavItem; currentUrl: string }) {
+	if (!item.children || item.children.length === 0) {
+		return (
+			<DropdownMenuItem asChild>
+				<NavItemLink item={item} currentUrl={currentUrl} />
+			</DropdownMenuItem>
+		);
+	}
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger data-testid={`nav-group-subtrigger-${item.href}`}>
+				<NodeIcon icon={item.icon} className="size-4 shrink-0" />
+				<span>{item.label}</span>
+			</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent data-testid={`nav-group-submenu-${item.href}`}>
+				{item.children.map((child) => (
+					<DropdownNavItem key={child.href} item={child} currentUrl={currentUrl} />
+				))}
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
 	);
 }

@@ -6,6 +6,7 @@ use Closure;
 use InvalidArgumentException;
 use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
 use Tbtop\Admin\Navigation\NavGroup;
+use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\Concerns\ConfiguresAppearance;
 
@@ -55,6 +56,12 @@ final class PanelConfig
 
     /** @var list<NavGroup> */
     private array $navigationGroups = [];
+
+    /** @var list<NavItem> */
+    private array $navigationItems = [];
+
+    /** @var list<NavItem> */
+    private array $userMenuItems = [];
 
     public function id(string $id): static
     {
@@ -201,6 +208,35 @@ final class PanelConfig
         return $this;
     }
 
+    /**
+     * Extra always-shown nav entries with no page/gate (e.g. an external
+     * link), merged into the built tree alongside page-derived items,
+     * grouped by label the same way navigationGroups() matches groups.
+     *
+     * @param  list<NavItem>  $items
+     */
+    public function navigationItems(array $items): static
+    {
+        $this->navigationItems = $items;
+
+        return $this;
+    }
+
+    /**
+     * Custom profile-dropdown entries rendered alongside the fixed
+     * theme/locale/logout controls. Link-only (label/icon/href/newTab) —
+     * chrome trees are page-independent (no per-request endpoint for a
+     * server closure to resolve against), same constraint as NotificationAction.
+     *
+     * @param  list<NavItem>  $items
+     */
+    public function userMenuItems(array $items): static
+    {
+        $this->userMenuItems = $items;
+
+        return $this;
+    }
+
     public function getId(): string
     {
         return $this->id;
@@ -298,5 +334,17 @@ final class PanelConfig
     public function getNavigationGroups(): array
     {
         return $this->navigationGroups;
+    }
+
+    /** @return list<NavItem> */
+    public function getNavigationItems(): array
+    {
+        return $this->navigationItems;
+    }
+
+    /** @return list<NavItem> */
+    public function getUserMenuItems(): array
+    {
+        return $this->userMenuItems;
     }
 }

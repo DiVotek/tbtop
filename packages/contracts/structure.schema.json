@@ -498,6 +498,46 @@
 			},
 			"additionalProperties": false
 		},
+		"navItem": {
+			"type": "object",
+			"required": ["label", "href", "order"],
+			"properties": {
+				"label": { "type": "string" },
+				"href": { "type": "string" },
+				"order": { "type": "integer" },
+				"icon": { "$ref": "#/$defs/icon" },
+				"badge": { "type": "string" },
+				"badgeColor": { "type": "string" },
+				"newTab": { "type": "boolean" },
+				"children": { "type": "array", "items": { "$ref": "#/$defs/navItem" } }
+			},
+			"additionalProperties": false
+		},
+		"navGroup": {
+			"type": "object",
+			"required": ["group", "items"],
+			"properties": {
+				"group": { "type": "string" },
+				"items": { "type": "array", "items": { "$ref": "#/$defs/navItem" } },
+				"icon": { "$ref": "#/$defs/icon" },
+				"collapsible": { "type": "boolean" },
+				"collapsed": { "type": "boolean" }
+			},
+			"additionalProperties": false
+		},
+		"userMenuItem": {
+			"type": "object",
+			"required": ["label", "href"],
+			"properties": {
+				"label": { "type": "string" },
+				"href": { "type": "string" },
+				"icon": { "$ref": "#/$defs/icon" },
+				"newTab": { "type": "boolean" }
+			},
+			"additionalProperties": false
+		},
+		"nav": { "type": "array", "items": { "$ref": "#/$defs/navGroup" } },
+		"userMenuItems": { "type": "array", "items": { "$ref": "#/$defs/userMenuItem" } },
 		"tableTab": {
 			"type": "object",
 			"required": ["name", "label", "count"],

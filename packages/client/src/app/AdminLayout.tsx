@@ -10,6 +10,7 @@ import {
 	ChromeDataContext,
 	type ChromeUser,
 	type NavGroup,
+	type NavItem,
 } from "./chromeContext";
 import { CommandPalette } from "./commandPalette/CommandPalette";
 import type { CommandPaletteData } from "./commandPalette/types";
@@ -28,6 +29,7 @@ export type NavigationLayout = "sidebar" | "topbar";
 interface SharedProps {
 	tbtop?: {
 		nav?: NavGroup[];
+		userMenuItems?: NavItem[];
 		chrome?: ChromeTrees;
 		brand?: string | null;
 		navigation?: NavigationLayout;
@@ -67,6 +69,7 @@ interface AdminLayoutShellProps {
 	navigation?: NavigationLayout;
 	notificationsPollInterval?: number | null;
 	appearance?: Appearance | null;
+	userMenuItems?: NavItem[];
 }
 
 /**
@@ -86,6 +89,7 @@ export function AdminLayoutShell({
 	navigation = "sidebar",
 	notificationsPollInterval,
 	appearance,
+	userMenuItems,
 }: AdminLayoutShellProps) {
 	const topbar = navigation === "topbar";
 	const maxWidth = appearance?.maxWidth ? MAX_WIDTH_CLASS[appearance.maxWidth] : undefined;
@@ -100,6 +104,7 @@ export function AdminLayoutShell({
 		notificationsPollInterval,
 		darkMode: appearance?.darkMode,
 		defaultTheme: appearance?.defaultTheme,
+		userMenuItems,
 	};
 
 	const sidebar = slots?.sidebar
@@ -142,6 +147,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 				navigation={props.tbtop?.navigation ?? "sidebar"}
 				notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
 				appearance={props.tbtop?.appearance}
+				userMenuItems={props.tbtop?.userMenuItems}
 			>
 				{children}
 			</AdminLayoutShell>

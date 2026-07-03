@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Panels;
 
 use Illuminate\Container\Container;
 use Tbtop\Admin\Navigation\NavGroup;
+use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
 
 /**
@@ -117,6 +118,18 @@ final class CurrentPanel
     public function navigationGroups(): array
     {
         return $this->config->getNavigationGroups();
+    }
+
+    /** @return list<NavItem> */
+    public function navigationItems(): array
+    {
+        return $this->config->getNavigationItems();
+    }
+
+    /** Sparse wire payloads for the profile-dropdown custom entries. @return list<array<string, mixed>> */
+    public function userMenuItems(): array
+    {
+        return array_map(static fn (NavItem $item): array => $item->toArray(), $this->config->getUserMenuItems());
     }
 
     /** @return array<string, mixed> */

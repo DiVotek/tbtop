@@ -89,3 +89,52 @@ describe("NavGroupSection", () => {
 		expect(getByText("Settings")).toBeTruthy();
 	});
 });
+
+describe("NavItemNode (nested nav)", () => {
+	const NESTED_NAV: NavGroup[] = [
+		{
+			group: "System",
+			items: [
+				{
+					label: "Settings",
+					href: "/admin/settings",
+					children: [
+						{ label: "General", href: "/admin/settings/general" },
+						{ label: "Mail", href: "/admin/settings/mail" },
+					],
+				},
+			],
+		},
+	];
+
+	function renderNested(currentUrl = "/admin") {
+		return render(
+			<AdminLayoutShell nav={NESTED_NAV} user={USER} currentUrl={currentUrl}>
+				<div />
+			</AdminLayoutShell>,
+		);
+	}
+
+	test("children are hidden until the parent toggle is expanded", () => {
+		const { queryByText } = renderNested();
+		expect(queryByText("General")).toBeNull();
+		expect(queryByText("Mail")).toBeNull();
+	});
+
+	test("clicking the parent toggle reveals its children", () => {
+		const { getByTestId, getByText } = renderNested();
+		fireEvent.click(getByTestId("nav-item-toggle-/admin/settings"));
+		expect(getByText("General")).toBeTruthy();
+		expect(getByText("Mail")).toBeTruthy();
+	});
+
+	test("auto-expands when the current URL matches a descendant", () => {
+		const { getByText } = renderNested("/admin/settings/general");
+		expect(getByText("General")).toBeTruthy();
+	});
+
+	test("the parent row itself still links to its own page", () => {
+		const { getByText } = renderNested();
+		expect(getByText("Settings").closest("a")?.getAttribute("href")).toBe("/admin/settings");
+	});
+});
