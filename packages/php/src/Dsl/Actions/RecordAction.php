@@ -6,6 +6,8 @@ use Closure;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\ActionBuilder;
+use Tbtop\Admin\Dsl\FormBuilder;
+use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
 /**
@@ -40,6 +42,20 @@ final class RecordAction
         $tail = $defaultTail ?? self::defaultTail();
 
         return $s->action($name)->handle(self::wrapBulk($userFn, $tail), needs: ['selection']);
+    }
+
+    /**
+     * Rebuild the form node with the given inner actions appended as an actionsRow.
+     *
+     * @param  list<ActionBuilder>  $actions
+     */
+    public static function formWithActions(FormBuilder $form, S $s, array $actions): Node
+    {
+        $node = $form->toNode();
+        $children = $node->options['children'] ?? [];
+        $children[] = $s->actionsRow($actions);
+
+        return new Node('form', [...$node->options, 'children' => $children], $node->name, $node->meta);
     }
 
     /**

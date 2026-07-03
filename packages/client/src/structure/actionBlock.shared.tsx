@@ -15,6 +15,7 @@ export interface ActionModalOpts {
 	description?: string;
 	body?: StructureNode | ((s: unknown) => StructureNode);
 	size?: ModalSize;
+	slideOver?: boolean;
 	/** Backend data query: run on open, fed to the body via ModalDataProvider. */
 	query?: (ctx: ClientActionContext) => Promise<unknown>;
 }

@@ -305,6 +305,7 @@
 										}
 									},
 									"iconMap": { "type": "object" },
+									"field": { "type": "string" },
 									"copyable": {
 										"type": "object",
 										"properties": {
@@ -625,7 +626,8 @@
 						"title": { "type": "string" },
 						"description": { "type": "string" },
 						"body": { "$ref": "#/$defs/node" },
-						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+						"size": { "type": "string", "enum": ["sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "full"] },
+						"slideOver": { "type": "boolean" },
 						"query": { "type": "boolean" },
 						"queryNeeds": {
 							"type": "array",
@@ -758,6 +760,16 @@
 						"type": "object",
 						"required": ["kind"],
 						"properties": { "kind": { "const": "closeModal" } },
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind", "message"],
+						"properties": {
+							"kind": { "const": "haltModal" },
+							"message": { "type": "string" },
+							"level": { "enum": ["info", "success", "error", "warning"] }
+						},
 						"additionalProperties": false
 					}
 				]

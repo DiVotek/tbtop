@@ -251,7 +251,7 @@ definition — the only difference is the slug's `unique` rule, passed in as an 
 ### 2. Index page — table with tabs, filters, sort, pagination, row + bulk actions
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:45-180 (abridged)
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:47-228 (abridged)
 $s->table('posts')
     ->rowClick('edit')
     ->columns([
@@ -394,7 +394,7 @@ The two closures you supply are the round-trip:
   `void` to accept the preset's default tail (notify + closeModal + refreshTable).
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:126-152
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:174-200
 EditAction::make(
     $s,
     name: 'editPublication',

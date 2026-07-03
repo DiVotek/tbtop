@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use Closure;
+use Illuminate\Support\Facades\Gate;
 use JsonSerializable;
 use LogicException;
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
@@ -32,10 +33,18 @@ final class ActionBuilder implements JsonSerializable
     /** @var list<string> */
     private array $queryNeeds = [];
 
-    /** @var 'sm'|'md'|'lg'|'full'|null */
+    /** @var 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl'|'4xl'|'5xl'|'6xl'|'7xl'|'full'|null */
     private ?string $modalSize = null;
 
-    private const MODAL_SIZES = ['sm', 'md', 'lg', 'full'];
+    private bool $slideOver = false;
+
+    private ?string $authorizeAbility = null;
+
+    private mixed $authorizeArg = null;
+
+    private const MODAL_SIZES = [
+        'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full',
+    ];
 
     private const BUTTON_SIZES = ['sm', 'md', 'lg'];
 
@@ -103,7 +112,7 @@ final class ActionBuilder implements JsonSerializable
     /**
      * Set the modal dialog width. Only valid on modal actions.
      *
-     * @param  string  $width  One of self::MODAL_SIZES ('sm'|'md'|'lg'|'full')
+     * @param  string  $width  One of self::MODAL_SIZES ('sm'|'md'|'lg'|'xl'|'2xl'|'3xl'|'4xl'|'5xl'|'6xl'|'7xl'|'full')
      */
     public function modalWidth(string $width): self
     {
@@ -115,6 +124,53 @@ final class ActionBuilder implements JsonSerializable
         $this->modalSize = $width;
 
         return $this;
+    }
+
+    /** Render the modal as a right-anchored, full-height slide-over panel. */
+    public function slideOver(bool $slideOver = true): self
+    {
+        $this->slideOver = $slideOver;
+
+        return $this;
+    }
+
+    /**
+     * Server-side Gate check. A failing check omits the action from the wire
+     * entirely (mirrors Filament's Gate::allows() auto-hide) — callers MUST
+     * filter with isAuthorized() at every collection point before toNode().
+     */
+    public function authorize(string $ability, mixed $arg = null): self
+    {
+        $this->authorizeAbility = $ability;
+        $this->authorizeArg = $arg;
+
+        return $this;
+    }
+
+    /** True when no ability was set, or the current user passes the Gate check. */
+    public function isAuthorized(): bool
+    {
+        if ($this->authorizeAbility === null) {
+            return true;
+        }
+
+        return Gate::allows($this->authorizeAbility, $this->authorizeArg);
+    }
+
+    /**
+     * Drop unauthorized actions from a mixed list before it reaches the wire.
+     * Non-ActionBuilder items (Node, e.g. actionGroup/dropdown) pass through —
+     * they filter their own children when built.
+     *
+     * @param  list<mixed>  $actions
+     * @return list<mixed>
+     */
+    public static function filterAuthorized(array $actions): array
+    {
+        return array_values(array_filter(
+            $actions,
+            static fn (mixed $a): bool => ! ($a instanceof self) || $a->isAuthorized(),
+        ));
     }
 
     /**
@@ -198,6 +254,13 @@ final class ActionBuilder implements JsonSerializable
             $spec = [...$this->spec, 'size' => $this->modalSize];
         } else {
             $spec = $this->spec;
+        }
+
+        if ($this->slideOver) {
+            if (($spec['type'] ?? '') !== 'modal') {
+                throw new LogicException("slideOver() is only valid on modal actions (action \"{$this->name}\").");
+            }
+            $spec = [...$spec, 'slideOver' => true];
         }
 
         if ($this->queryClosure !== null) {

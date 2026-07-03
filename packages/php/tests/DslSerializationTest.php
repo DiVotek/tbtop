@@ -113,7 +113,7 @@ it('omits size from modal spec when not set', function () {
 });
 
 it('rejects invalid modal size value', function () {
-    (new ActionBuilder('open'))->modal('Title')->modalWidth('xl');
+    (new ActionBuilder('open'))->modal('Title')->modalWidth('huge');
 })->throws(InvalidArgumentException::class);
 
 it('rejects modalWidth() on non-modal action', function () {

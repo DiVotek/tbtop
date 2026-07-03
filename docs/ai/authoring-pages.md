@@ -50,7 +50,7 @@ other way around.
 
 **Mis-placement 2 — inventing a new effect to navigate.** *"I need the form to redirect
 after save, so I'll add a `goTo` effect to `Effects`."* **Wrong.** The effect set is
-**closed** (`notify/redirect/refreshTable/resetForm/closeModal`). Redirect already exists —
+**closed** (`notify/redirect/refreshTable/resetForm/closeModal/haltModal`). Redirect already exists —
 return `Effects::make()->redirect($url)`, or return a string from `onSubmit`. Adding an
 effect kind edits the package for something the contract already covers.
 
@@ -347,11 +347,37 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `visit` | `visit(string $href): self` | **Spec.** Client-side navigation to a static URL |
 | `submit` | `submit(?string $form = null): self` | **Spec.** Submit a form; optional form name (defaults to the enclosing form) |
 | `handle` | `handle(Closure $handler, array $needs = []): self` | **Spec.** Server action handler; `$needs` declares payload sources (`'form'`\|`'row'`\|`'selection'`) |
-| `modal` | `modal(string $title, Node\|FormBuilder\|null $body = null, ?string $description = null): self` | **Spec.** Opens a modal dialog |
-| `size` | `size(string $size): self` | Modal dialog size: `'sm'`\|`'md'`\|`'lg'`\|`'full'`; only valid after `modal()` |
+| `modal` | `modal(string $title, Node\|FormBuilder\|JsonSerializable\|null $body = null, ?string $description = null): self` | **Spec.** Opens a modal dialog |
+| `modalWidth` | `modalWidth(string $width): self` | Modal dialog width: `'sm'`\|`'md'`\|`'lg'`\|`'xl'`\|`'2xl'`\|`'3xl'`\|`'4xl'`\|`'5xl'`\|`'6xl'`\|`'7xl'`\|`'full'`; only valid after `modal()`, defaults to `'md'` |
+| `slideOver` | `slideOver(bool $slideOver = true): self` | Renders the modal as a right-anchored, full-height slide-over panel instead of a centered dialog; only valid after `modal()` |
 | `query` | `query(callable $fn, array $needs = ['row']): static` | Backend data source for a modal; emits `query: true` + `queryNeeds`. The closure runs on open and feeds the modal body (a form prefills from it). Only valid after `modal()` |
 | `confirm` | `confirm(string $title, ?string $description = null): self` | Adds a confirmation dialog before the action fires |
+| `authorize` | `authorize(string $ability, mixed $arg = null): self` | Server-side `Gate::allows($ability, $arg)` check; a failing check drops the action from the wire entirely. See "Authorization" below for the collection points that enforce it |
 | `custom` | `custom(string $handler, array $params = []): self` | **Spec.** Delegates to a named client-side handler |
+
+#### Authorization — `authorize()`
+
+`->authorize($ability, $arg = null)` runs a `Gate::allows($ability, $arg)` check and, on
+failure, drops the action from the wire entirely — it mirrors Filament's `Gate::allows()`
+auto-hide rather than disabling the button. Check `isAuthorized(): bool` to inspect the
+result directly.
+
+**Every collection point that accepts a mixed action list filters unauthorized actions for
+you** before `toNode()`/serialization, via `ActionBuilder::filterAuthorized()`:
+
+- `S::actionsRow(array $actions)`
+- `S::actionGroup(string $label, array $actions, ?string $as = null)` (dropdowns)
+- `TableBuilder::toNode()` — `rowActions`, `headerActions`, and `bulkActions`, including the
+  `restoreSelected`/`forceDeleteSelected` actions `->softDeletes()` appends
+
+A hand-rolled loop over actions (not going through one of the above) does **not** get this
+filtering — call `ActionBuilder::filterAuthorized($actions)` yourself, or check
+`isAuthorized()` per action.
+
+This is defense in depth, not the only line: `ActionController` and `ActionDataController`
+re-check `isAuthorized()` at dispatch time and throw a 404 (not a 403) for an unauthorized
+direct POST/fetch to an action's endpoint — the same "pretend it doesn't exist" posture as a
+missing handler, closing the gap a client that ignores the hidden button could otherwise open.
 
 ### Prebuilt action presets (`Tbtop\Admin\Dsl\Actions`) — and why to reach for them
 
@@ -370,6 +396,8 @@ for a server action; always go through `$s->action()` or a preset that does.
 | Preset | Signature | Shape |
 |---|---|---|
 | `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', string $title = 'Edit record', ?string $saveName = null): ActionBuilder` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
+| `CreateAction` | `make(S $s, FormBuilder $form, Closure $storeUsing, array $defaultRecord = [], string $name = 'create', string $title = 'Create record'): ActionBuilder` | Modal, no `query` — the form's own defaults reach the client via the normal `collectedForms()` path. `$form` holds fields only; the helper appends an inner Store+Cancel `actionsRow`. `$storeUsing` runs the insert (void → notify+closeModal+refreshTable) |
+| `ViewAction` | `make(S $s, Closure $loadUsing, Closure $render, string $name = 'view', string $title = 'View record'): ActionBuilder` | Modal + `query` (preload); close-only, no save. `$render` builds the body **once at author time** — bind live per-row values with `S::displayValue(null)->field($name)` nodes resolved client-side from `$loadUsing`'s result |
 | `DeleteAction` | `make(S $s, Closure $using, string $name = 'delete', bool $bulk = false): ActionBuilder` | Danger + confirm server action; `$using` deletes. `bulk: true` switches to `needs: ['selection']` (empty selection → benign notify) |
 | `ReplicateAction` | `make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder` | Server action; `$using` clones. No auto-redirect — return a `redirect` effect from `$using` for edit-after-clone |
 | `RestoreAction` / `ForceDeleteAction` | `make(S $s, string $model): ActionBuilder`, `::bulk(...)` | Soft-delete row/bulk actions; usually applied for you by `->softDeletes()` |
@@ -378,7 +406,7 @@ for a server action; always go through `$s->action()` or a preset that does.
 `DeleteAction` in a row and a bulk action, straight from the demo:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:165-178
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:213-226
 DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
     Post::whereKey($ctx->row['id'] ?? null)->delete();
 }),
@@ -393,7 +421,7 @@ DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (Act
 `ReplicateAction` returns a `redirect` from its own closure to edit the clone:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:154-163
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:202-211
 ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
     $clone = Post::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->replicate();
     $clone->slug = $clone->slug.'-copy-'.uniqid();
@@ -401,6 +429,53 @@ ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
 
     return Effects::make()->notify('Post replicated')->redirect("/admin/posts/{$clone->id}/edit");
 }),
+```
+
+`CreateAction` in a table's `headerActions`, rendered as a slide-over panel via
+`->slideOver()`:
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:52-71
+CreateAction::make(
+    $s,
+    form: $s->form('quickCreatePost', [
+        $s->text('title')->label('Title')->required()->rules('max:200')->translatable(),
+        $s->slug('slug')->label('Slug')->required()
+            ->set('fromField', 'title')
+            ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', 'unique:posts,slug']),
+    ]),
+    storeUsing: function (ActionCtx $ctx): Effects {
+        Post::create($ctx->form);
+
+        return Effects::make()->notify('Post created')->closeModal()->refreshTable('posts');
+    },
+    defaultRecord: ['title' => null, 'slug' => ''],
+    name: 'quickCreate',
+    title: 'Quick create',
+)->label('Quick create')->slideOver(),
+```
+
+`ViewAction` widened past the default `'md'` with `->modalWidth('2xl')`, its body built from
+`field()`-bound `displayValue` blocks that resolve against `loadUsing`'s result per row:
+
+```php
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:154-170
+ViewAction::make(
+    $s,
+    name: 'viewPost',
+    title: 'Post detail',
+    loadUsing: fn (ActionCtx $ctx): array => Post::query()
+        ->whereKey($ctx->row['id'] ?? null)->firstOrFail()
+        ->only(['slug', 'published', 'views']),
+    render: fn () => $s->stack([
+        $s->displayText('Slug')->variant('subheading'),
+        $s->displayValue(null)->field('slug'),
+        $s->displayText('Published')->variant('subheading'),
+        $s->displayValue(null)->boolean()->field('published'),
+        $s->displayText('Views')->variant('subheading'),
+        $s->displayValue(null)->field('views'),
+    ]),
+)->modalWidth('2xl'),
 ```
 
 #### `FormActions` — form-footer button presets
@@ -435,7 +510,7 @@ falls back to that tail. You rarely call it directly.
 #### Worked example — `EditAction` modal with load/save
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:126-152
+// apps/demo/app/Admin/Pages/PostsIndexPage.php:174-200
 EditAction::make(
     $s,
     name: 'editPublication',
@@ -546,6 +621,7 @@ a named client-side handler, or let the server do a full Inertia redirect.
 | `refreshTable` | `refreshTable(?string $table = null): self` | Re-fetches the named table; `null` refreshes the first/only table on the page |
 | `resetForm` | `resetForm(?string $form = null): self` | Resets the named form to its `record` state; `null` resets the first/only form |
 | `closeModal` | `closeModal(): self` | Closes the currently open modal dialog |
+| `haltModal` | `haltModal(string $message, string $kind = 'error'): self` | Surfaces `$message` **inside the still-open modal** (e.g. a server-side validation failure) — does not close it, unlike every other effect that touches a modal |
 
 ---
 

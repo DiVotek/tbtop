@@ -2,8 +2,12 @@
 
 namespace Tbtop\Admin\Tests\Fixtures;
 
+use Illuminate\Support\Facades\Gate;
+use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
+use Tbtop\Admin\Dsl\Actions\ViewAction;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Cond;
@@ -25,6 +29,8 @@ class KitchenSinkPage extends Page
 
     public function view(S $s): Node
     {
+        Gate::define('kitchen-sink-edit', fn (?object $user): bool => true);
+
         return $s->stack([
             $s->displayText('Kitchen sink')->variant('heading'),
             $s->displayText('Every node kind the PHP DSL can emit.')->variant('muted'),
@@ -36,6 +42,7 @@ class KitchenSinkPage extends Page
                 $s->displayValue(12345)->money('USD'),
                 $s->displayValue('2024-03-15 10:30:00')->date('Y-m-d'),
                 $s->displayValue(1234.5)->number(2),
+                $s->displayValue(null)->field('title'),
                 $s->displayImage('/img/cover.png')->alt('Cover')->caption('Figure 1'),
                 $s->displayImage('/img/avatar.png')->circular(),
                 $s->displayImage('/img/thumb.png')->square(),
@@ -189,6 +196,7 @@ class KitchenSinkPage extends Page
                 ->rowActions([
                     $s->action('edit')->label('Edit')->icon('pencil')->tooltip('Edit this record')
                         ->hiddenIf('published', '=', true)
+                        ->authorize('kitchen-sink-edit')
                         ->handle(fn () => Effects::make(), needs: ['row']),
                     $s->action('delete')->label('Delete')->color('danger')->icon('trash')
                         ->disabledIf('locked', 'truthy')
@@ -204,7 +212,7 @@ class KitchenSinkPage extends Page
                 ->toNode(),
             $s->actionsRow([
                 $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted'))->size('sm')->outlined(),
-                $s->action('details')->label('Details')->modal('Details', null, 'More info')->modalWidth('lg'),
+                $s->action('details')->label('Details')->modal('Details', null, 'More info')->modalWidth('4xl')->slideOver(),
                 $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi'])->link(),
                 // Prebuilt edit-in-place: exercises the modal query/queryNeeds wire
                 // shape so the contract gate covers a modal+query action spec.
@@ -217,6 +225,29 @@ class KitchenSinkPage extends Page
                     loadUsing: fn () => ['title' => 'Hello', 'published' => true],
                     saveUsing: fn () => Effects::make(),
                     title: 'Edit post',
+                ),
+                // Halts the still-open modal with a validation-style message.
+                $s->action('validate')->label('Validate')->modal('Validate', $s->stack([
+                    $s->action('runValidation')->label('Check')->color('primary')
+                        ->handle(fn () => Effects::make()->haltModal('Title is required.'), needs: ['form']),
+                ])),
+                // Prebuilt create-in-modal: exercises the record-default + inner
+                // store action wire shape (no query — form data reaches the
+                // client via the normal collectedForms() prop path).
+                CreateAction::make(
+                    $s,
+                    form: $s->form('createPost', [
+                        $s->text('title')->label('Title')->required(),
+                    ]),
+                    storeUsing: fn (ActionCtx $ctx): Effects => Effects::make(),
+                    defaultRecord: ['title' => ''],
+                ),
+                // Prebuilt read-only detail modal: exercises query + a
+                // close-only actionsRow with field()-bound displayValue nodes.
+                ViewAction::make(
+                    $s,
+                    loadUsing: fn () => ['title' => 'Hello'],
+                    render: fn () => $s->displayValue(null)->field('title'),
                 ),
             ]),
             $s->collapsible(['label' => 'Advanced options'], [

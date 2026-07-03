@@ -36,7 +36,7 @@ Place it before you write it:
 | Validation | PHP (Laravel rules) — always | PHP is the security boundary |
 | Backend behavior (queue, job, notification, auth, DB) | Plain Laravel in the consumer app | Laravel owns the backend |
 | Rendering / interactivity | The React client | The client owns the screen |
-| A new effect | **Don't — the set is closed.** Use a `custom` client handler or a server redirect | The effect set (`notify/redirect/refreshTable/resetForm/closeModal`) is fixed. See [./authoring-pages.md](./authoring-pages.md) |
+| A new effect | **Don't — the set is closed.** Use a `custom` client handler or a server redirect | The effect set (`notify/redirect/refreshTable/resetForm/closeModal/haltModal`) is fixed. See [./authoring-pages.md](./authoring-pages.md) |
 | An app-specific field, without touching core | The client registry (`registerBlock`) + a PHP class in your app | See the custom-field section in [./wiring.md](./wiring.md) |
 
 If you can't place it from this table, **ask** — don't guess.
