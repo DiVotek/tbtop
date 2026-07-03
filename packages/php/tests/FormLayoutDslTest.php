@@ -75,7 +75,7 @@ it('section carries an aside child node', function () {
     expect($options['aside']['name'])->toBe('note');
 });
 
-it('section without collapsible/columns omits both keys', function () {
+it('section without collapsible/columns/aside omits all three keys', function () {
     $s = new S;
     $node = $s->section(['title' => 'Plain'], [$s->text('x')]);
 

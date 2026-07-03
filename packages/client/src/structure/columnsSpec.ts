@@ -99,9 +99,13 @@ export function resolveColumnsClass(spec: ColumnsSpec | undefined): string {
 
 const PLACEMENT_BREAKPOINTS = ["sm", "md", "lg", "xl"] as const;
 
+// Back-compat: a bare int places at md+ only, matching resolveColumnsClass's
+// LEGACY_INT — the base .field-col-place rule already defaults to span 1 /
+// auto below md, so a bare int must NOT set the unscoped --col-span/--col-start
+// or it would apply below md too and overflow a single-column mobile grid.
 function placementVars(prop: "span" | "start", spec: ColumnsSpec): Record<string, string> {
 	if (typeof spec === "number") {
-		return { [`--col-${prop}`]: String(spec) };
+		return { [`--col-${prop}-md`]: String(spec) };
 	}
 	const vars: Record<string, string> = {};
 	for (const bp of PLACEMENT_BREAKPOINTS) {

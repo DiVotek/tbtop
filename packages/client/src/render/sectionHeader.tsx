@@ -36,6 +36,7 @@ export function SectionHeader({
 					type="button"
 					className="flex items-center justify-between gap-2 text-left"
 					onClick={onToggle}
+					aria-expanded={open}
 					data-testid="section-toggle"
 				>
 					{heading}

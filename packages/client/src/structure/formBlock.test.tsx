@@ -292,7 +292,7 @@ describe("Form 422 auto-handling", () => {
 });
 
 describe("Form field colSpan/colStart placement", () => {
-	test("a field with an int colSpan is wrapped in field-col-place with --col-span", async () => {
+	test("a field with an int colSpan is wrapped in field-col-place with --col-span-md", async () => {
 		const node = s.form({ query: async () => ({ title: "" }) }, [
 			{ kind: "text", name: "title", options: { label: "Title", colSpan: 2 }, meta: {} },
 		]);
@@ -302,10 +302,11 @@ describe("Form field colSpan/colStart placement", () => {
 		const field = getByTestId("form-block").querySelector('[data-field-name="title"]');
 		const wrapper = field?.closest(".field-col-place") as HTMLElement;
 		expect(wrapper).not.toBeNull();
-		expect(wrapper.style.getPropertyValue("--col-span")).toBe("2");
+		expect(wrapper.style.getPropertyValue("--col-span-md")).toBe("2");
+		expect(wrapper.style.getPropertyValue("--col-span")).toBe("");
 	});
 
-	test("a field with a breakpoint colStart gets per-breakpoint --col-start-* vars", async () => {
+	test("a field with an int colStart gets the --col-start-md var, not the unscoped one", async () => {
 		const node = s.form({ query: async () => ({ rating: null }) }, [
 			{ kind: "number", name: "rating", options: { colStart: 2 }, meta: {} },
 		]);
@@ -314,7 +315,8 @@ describe("Form field colSpan/colStart placement", () => {
 		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
 		const field = getByTestId("form-block").querySelector('[data-field-name="rating"]');
 		const wrapper = field?.closest(".field-col-place") as HTMLElement;
-		expect(wrapper.style.getPropertyValue("--col-start")).toBe("2");
+		expect(wrapper.style.getPropertyValue("--col-start-md")).toBe("2");
+		expect(wrapper.style.getPropertyValue("--col-start")).toBe("");
 	});
 
 	test("a field without colSpan/colStart is not wrapped in field-col-place", async () => {

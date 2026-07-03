@@ -239,6 +239,15 @@ test("SectionBlock collapsible:true starts expanded by default and hides on togg
 	expect(queryByText("Hidden?")).toBeNull();
 });
 
+test("SectionBlock toggle button reflects expanded state via aria-expanded", () => {
+	const node = s.section({ title: "Advanced", collapsible: true }, [textNode("Hidden?")]);
+	const { getByTestId } = render(renderNode(node));
+	const toggle = getByTestId("section-toggle");
+	expect(toggle.getAttribute("aria-expanded")).toBe("true");
+	fireEvent.click(toggle);
+	expect(toggle.getAttribute("aria-expanded")).toBe("false");
+});
+
 test("SectionBlock collapsible with collapsed:true starts collapsed", () => {
 	const node = s.section({ title: "Advanced", collapsible: true, collapsed: true }, [
 		textNode("Hidden initially"),
@@ -263,14 +272,23 @@ test("SectionBlock aside stays visible when a collapsible section is collapsed",
 // Field colSpan/colStart — generic column-placement wrapping
 // ---------------------------------------------------------------------------
 
-test("a grid child with colSpan gets the field-col-place class and --col-span var", () => {
+test("a grid child with a bare-int colSpan gets the field-col-place class and --col-span-md var", () => {
 	const node = s.grid({ cols: 4 }, [
 		{ kind: "displayText", options: { content: "wide", colSpan: 2 }, meta: {} },
 	]);
 	const { getByText } = render(renderNode(node));
 	const wrapper = getByText("wide").closest(".field-col-place") as HTMLElement;
 	expect(wrapper).not.toBeNull();
-	expect(wrapper.style.getPropertyValue("--col-span")).toBe("2");
+	expect(wrapper.style.getPropertyValue("--col-span-md")).toBe("2");
+});
+
+test("a bare-int colSpan does not set the unscoped --col-span var, so mobile stays span 1", () => {
+	const node = s.grid({ cols: 4 }, [
+		{ kind: "displayText", options: { content: "wide", colSpan: 2 }, meta: {} },
+	]);
+	const { getByText } = render(renderNode(node));
+	const wrapper = getByText("wide").closest(".field-col-place") as HTMLElement;
+	expect(wrapper.style.getPropertyValue("--col-span")).toBe("");
 });
 
 test("a grid child with a breakpoint colStart gets per-breakpoint --col-start-* vars", () => {

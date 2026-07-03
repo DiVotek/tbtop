@@ -147,8 +147,9 @@
 
 /* ── Responsive field grid placement ────────────────────────────── */
 /* colSpan/colStart are dynamic per-field (1-8, optionally per-breakpoint) —  */
-/* too combinatorial for static Tailwind classes, so GridBlock/SectionBlock  */
-/* set --col-span-N / --col-start-N inline vars and this utility reads them. */
+/* too combinatorial for static Tailwind classes, so resolveColumnPlacement   */
+/* sets --col-span[-bp] / --col-start[-bp] inline vars and this utility reads */
+/* them. A bare int sets only the -md var (mobile stays span 1 / auto).      */
 .field-col-place {
 	grid-column: var(--col-start, auto) / span var(--col-span, 1);
 }
