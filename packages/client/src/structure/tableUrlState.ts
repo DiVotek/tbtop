@@ -14,7 +14,13 @@
  * Empty / default values are omitted: `t[posts][search]=` does not appear.
  */
 
-import { readFilters, writeFilterValue, writeScalar } from "./tableUrlStateHelpers";
+import {
+	readColSearch,
+	readFilters,
+	writeColSearch,
+	writeFilterValue,
+	writeScalar,
+} from "./tableUrlStateHelpers";
 import type { ListQueryParams } from "./types";
 
 // Prefix used to namespace table state in the URL.
@@ -52,6 +58,7 @@ export function writeTableParams(
 	for (const [field, value] of Object.entries(params.filters ?? {})) {
 		writeFilterValue({ params: next, name, field, value });
 	}
+	writeColSearch({ params: next, name, colSearch: params.colSearch });
 	return next;
 }
 
@@ -93,6 +100,11 @@ export function readTableParams(searchParams: URLSearchParams, name: string): Li
 	const filters = readFilters(searchParams, name, prefix);
 	if (Object.keys(filters).length > 0) {
 		params.filters = filters;
+	}
+
+	const colSearch = readColSearch(searchParams, prefix);
+	if (Object.keys(colSearch).length > 0) {
+		params.colSearch = colSearch;
 	}
 
 	return params;

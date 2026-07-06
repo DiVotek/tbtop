@@ -65,7 +65,7 @@ export function readFilters(
 	prefix: string,
 ): Record<string, unknown> {
 	const filters: Record<string, unknown> = {};
-	const reserved = new Set(["search", "sort", "page", "perPage", "tab"]);
+	const reserved = new Set(["search", "sort", "page", "perPage", "tab", "colSearch"]);
 	const scalarRe = new RegExp(`^${escapeRegex(prefix)}\\[([^\\]]+)\\]$`);
 	const nestedRe = new RegExp(`^${escapeRegex(prefix)}\\[([^\\]]+)\\]\\[([^\\]]+)\\]$`);
 
@@ -74,6 +74,11 @@ export function readFilters(
 			continue;
 		}
 		const nested = nestedRe.exec(key);
+		// "colSearch" is a reserved namespace (see writeColSearch/readColSearch)
+		// handled separately — never let it fall through to a nested filter.
+		if (nested && nested[1] === "colSearch") {
+			continue;
+		}
 		if (nested) {
 			applyNestedFilter(filters, nested, value);
 			continue;
@@ -81,6 +86,35 @@ export function readFilters(
 		applyScalarFilter({ filters, scalarRe, key, value, reserved });
 	}
 	return filters;
+}
+
+export type WriteColSearchInput = {
+	params: URLSearchParams;
+	name: string;
+	colSearch: Record<string, string> | undefined;
+};
+
+/** Writes `t[name][colSearch][field]=value` for each non-empty column search value. */
+export function writeColSearch({ params, name, colSearch }: WriteColSearchInput): void {
+	for (const [field, value] of Object.entries(colSearch ?? {})) {
+		if (value) {
+			params.set(`${URL_NS}[${name}][colSearch][${field}]`, value);
+		}
+	}
+}
+
+/** Reads `t[name][colSearch][field]=value` back into a plain scalar map. */
+export function readColSearch(params: URLSearchParams, prefix: string): Record<string, string> {
+	const colSearch: Record<string, string> = {};
+	const re = new RegExp(`^${escapeRegex(prefix)}\\[colSearch\\]\\[([^\\]]+)\\]$`);
+	for (const [key, value] of params.entries()) {
+		const match = re.exec(key);
+		const field = match?.[1];
+		if (field && value) {
+			colSearch[field] = value;
+		}
+	}
+	return colSearch;
 }
 
 function applyNestedFilter(

@@ -31,6 +31,8 @@ final class Column implements JsonSerializable
 
     private ?bool $searchable = null;
 
+    private ?bool $individuallySearchable = null;
+
     private ?bool $toggleable = null;
 
     private bool $hiddenByDefault = false;
@@ -114,6 +116,14 @@ final class Column implements JsonSerializable
     public function searchable(bool $searchable = true): static
     {
         $this->searchable = $searchable;
+
+        return $this;
+    }
+
+    /** Enable a per-column search input in the table toolbar/header. */
+    public function individuallySearchable(bool $value = true): static
+    {
+        $this->individuallySearchable = $value;
 
         return $this;
     }
@@ -218,6 +228,16 @@ final class Column implements JsonSerializable
     public function datetime(?string $format = null): static
     {
         $this->kind = 'datetime';
+        if ($format !== null) {
+            $this->kindMeta['format'] = $format;
+        }
+
+        return $this;
+    }
+
+    public function time(?string $format = null): static
+    {
+        $this->kind = 'time';
         if ($format !== null) {
             $this->kindMeta['format'] = $format;
         }
@@ -442,6 +462,11 @@ final class Column implements JsonSerializable
         return $this->searchable === true;
     }
 
+    public function isIndividuallySearchable(): bool
+    {
+        return $this->individuallySearchable === true;
+    }
+
     public function isTranslatable(): bool
     {
         return $this->translatable === true;
@@ -483,6 +508,9 @@ final class Column implements JsonSerializable
         }
         if ($this->searchable !== null) {
             $out['searchable'] = $this->searchable;
+        }
+        if ($this->individuallySearchable !== null) {
+            $out['columnSearchable'] = $this->individuallySearchable;
         }
         if ($this->toggleable !== null) {
             $out['toggleable'] = $this->toggleable;

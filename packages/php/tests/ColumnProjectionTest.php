@@ -70,6 +70,18 @@ it('ColumnProjection: datetime() formats timestamps with time', function (): voi
     expect($result[0]->published_at)->toBe('15/01/2024 10:00');
 });
 
+it('ColumnProjection: time() formats timestamps with default H:i format', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('published_at')->time()])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->published_at)->toBe('10:00')
+        ->and($result[1]->published_at)->toBeNull();
+});
+
 // ---------------------------------------------------------------------------
 // hidden columns excluded from projection
 // ---------------------------------------------------------------------------
@@ -180,4 +192,29 @@ it('ColumnProjection: no _recordUrl when recordUrl() is not set', function (): v
     $result = ColumnProjection::apply($table, $rows);
 
     expect(property_exists($result[0], '_recordUrl'))->toBeFalse();
+});
+
+// ---------------------------------------------------------------------------
+// Per-column search (colSearch) allowlist
+// ---------------------------------------------------------------------------
+
+it('TableQuery: colSearch on an individuallySearchable column narrows results', function (): void {
+    $rows = $this->getJson('/admin/cposts/tables/cposts?colSearch[title]=A')
+        ->json('data.data');
+
+    expect(array_column($rows, 'title'))->toBe(['Post A']);
+});
+
+it('TableQuery: colSearch on an undeclared column is silently ignored', function (): void {
+    $response = $this->getJson('/admin/cposts/tables/cposts?colSearch[secret_column]=x');
+
+    $response->assertOk();
+    expect(array_column($response->json('data.data'), 'title'))->toBe(['Post A', 'Post B']);
+});
+
+it('TableQuery: colSearch on a searchable() (but not individuallySearchable()) column is ignored', function (): void {
+    $response = $this->getJson('/admin/cposts/tables/cposts?colSearch[status]=published');
+
+    $response->assertOk();
+    expect(array_column($response->json('data.data'), 'title'))->toBe(['Post A', 'Post B']);
 });

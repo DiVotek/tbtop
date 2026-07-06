@@ -17,6 +17,7 @@ final class TableQuery
     {
         self::applyTab($table, $request, $builder);
         self::applySearch($table, $request, $builder);
+        self::applyColumnSearch($table, $request, $builder);
         self::applyFilters($table, $request, $builder);
         self::applySort($table, $request, $builder);
 
@@ -110,6 +111,26 @@ final class TableQuery
                 $q->orWhere($field, 'like', "%{$search}%");
             }
         });
+    }
+
+    /** Per-column search: each declared field narrows independently (AND), unlike the union search(). */
+    private static function applyColumnSearch(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
+    {
+        $raw = $request->query('colSearch', []);
+        if (! is_array($raw)) {
+            return;
+        }
+        $allowed = $table->individuallySearchableColumns();
+        foreach ($raw as $field => $value) {
+            if (! is_string($field) || ! in_array($field, $allowed, true)) {
+                continue;
+            }
+            $value = (string) $value;
+            if ($value === '') {
+                continue;
+            }
+            $builder->where($field, 'like', "%{$value}%");
+        }
     }
 
     private static function applyFilters(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void

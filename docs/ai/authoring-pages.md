@@ -248,13 +248,38 @@ Returned by `$s->table(string $name)`.
 | `searchable` | `searchable(array $fields): self` | Table-level list of globally-searchable field names |
 | `filters` | `filters(array $fields): self` | Filter fields (same `Field` instances as forms); defaults `filtersIn` to `'modal'` |
 | `filtersIn` | `filtersIn(string $mode): self` | `'modal'` (filter icon opens a drawer) or `'inline'` (filters always visible) |
+| `deferFilters` | `deferFilters(bool $value = true): self` | Require an explicit Apply action before filter changes narrow the query |
+| `filtersFormColumns` | `filtersFormColumns(int $columns): self` | Grid columns for the filters form layout |
+| `filtersFormWidth` | `filtersFormWidth(string $width): self` | Modal width when `filtersIn('modal')`: `'sm'`\|`'md'`\|`'lg'`\|`'full'` |
 | `tabs` | `tabs(array $tabs): self` | Predefined query-scope tabs; first tab is the default |
 | `defaultSort` | `defaultSort(string $field, string $dir = 'asc'): self` | Default sort column and direction |
+| `groups` | `groups(string $column): self` | Partition contiguous rows sharing `$column`'s value under group headers (see below) |
 | `paginate` | `paginate(int $perPage = 25, array $options = [10, 25, 50, 100]): self` | Pagination config |
 | `rowActions` | `rowActions(array $actions): self` | Per-row action buttons; `ActionBuilder` instances |
 | `rowClick` | `rowClick(string $actionName): self` | Name of a row action to trigger when the row is clicked |
 | `bulkActions` | `bulkActions(array $actions): self` | Checkbox bulk-select actions; `ActionBuilder` instances |
 | `softDeletes` | `softDeletes(S $s, string $model, array $options = []): self` | Soft-delete convenience layer (see below) |
+
+#### `groups()` — row grouping
+
+`->groups(string $column)` partitions contiguous rows sharing `$column`'s value under a
+group header row. It requires `->defaultSort($column, ...)` to already be set (throws
+`InvalidArgumentException` otherwise) — grouping only makes sense on a sorted column,
+since it partitions *contiguous* runs, not a full re-bucketing.
+
+**Scope: single-page, client-side partitioning — not a cross-page aggregate.** The
+client (`rowGroups.tsx`/`partitionRowGroups`) groups whatever rows are on the current
+page after they arrive; a value split across two pages renders as two separate group
+runs, one per page. This is intentionally not a server-side `GROUP BY` or a
+cross-page rollup. Grouping is also v1-incompatible with drag-reorder: `grid.tsx` skips
+grouping entirely while reorder is active (`groupsActive = Boolean(groups) &&
+!reorderActive`), since the group partition would fight the optimistic drag order.
+
+```php
+$s->table('posts')
+    ->defaultSort('published', 'desc')
+    ->groups('published') // requires defaultSort('published', ...) above
+```
 
 #### `softDeletes()` — soft-delete convenience layer
 
@@ -304,9 +329,10 @@ Instantiate with `Column::make(string $name)`.
 | Method | Signature | Purpose |
 |---|---|---|
 | `label` | `label(string $label): static` | Column header text |
-| `kind` | `kind(string $kind): static` | Display kind: `'text'`, `'date'`, `'datetime'`, `'number'`, `'money'`, `'boolean'`, `'badge'`, `'icon'` |
+| `kind` | `kind(string $kind): static` | Display kind: `'text'`, `'date'`, `'datetime'`, `'time'`, `'number'`, `'money'`, `'boolean'`, `'badge'`, `'icon'` |
 | `sortable` | `sortable(bool $sortable = true): static` | Enables sort on this column |
 | `searchable` | `searchable(bool $searchable = true): static` | Includes this column in global search |
+| `individuallySearchable` | `individuallySearchable(bool $value = true): static` | Adds a per-column search input in the table header, debounced independently of the global search box |
 | `toggleable` | `toggleable(bool $toggleable = true, bool $hiddenByDefault = false): static` | User can toggle column visibility; optionally hide by default |
 | `hidden` | `hidden(): static` | Always exclude from wire and projection |
 | `visible` | `visible(Closure $closure): static` | Conditional visibility; closure returns bool |
@@ -325,6 +351,7 @@ Instantiate with `Column::make(string $name)`.
 |---|---|---|
 | `date` | `date(?string $format = null): static` | Optional PHP date format string |
 | `datetime` | `datetime(?string $format = null): static` | Optional PHP date format string |
+| `time` | `time(?string $format = null): static` | Optional PHP date format string; defaults to `'H:i'` |
 | `number` | `number(?int $decimals = null): static` | Optional decimal places |
 | `money` | `money(string $currency): static` | ISO currency code, e.g. `'USD'` |
 | `boolean` | `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): static` | Icon/color overrides optional |
@@ -343,7 +370,18 @@ Column::make('published_at')
     ->date('Y-m-d')
     ->sortable()
     ->toggleable(true, true), // toggleable, hidden by default
+
+Column::make('published_time')
+    ->time('H:i')
+    ->label('Published time'),
 ```
+
+#### `individuallySearchable()` — per-column search
+
+Each `individuallySearchable()` column gets its own search box in the table header
+(`ColumnSearchInput`), separate from the table's global search. Every instance debounces
+independently (300ms) — typing in one column's box never resets another's timer. Values
+persist in the URL under `t[{table}][colSearch][{column}]`, alongside `filters`/`search`.
 
 ### ActionBuilder
 

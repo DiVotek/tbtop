@@ -65,6 +65,8 @@ export interface ListQueryParams {
 	sort?: string;
 	search?: string;
 	filters?: Record<string, unknown>;
+	/** Per-column search input values, keyed by column name. */
+	colSearch?: Record<string, string>;
 	/** Active predefined tab name; the first declared tab when absent. */
 	tab?: string;
 }
@@ -226,6 +228,8 @@ export interface TableColumn<TRow = unknown> {
 	// --- wire-contract additions ---
 	sortable?: boolean;
 	searchable?: boolean;
+	/** Renders a per-column search input in the table header. */
+	columnSearchable?: boolean;
 	toggleable?: boolean;
 	hiddenByDefault?: boolean;
 	align?: "left" | "center" | "right";

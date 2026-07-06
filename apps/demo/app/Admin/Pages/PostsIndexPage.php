@@ -78,11 +78,13 @@ class PostsIndexPage extends Page
                         ->kind('text')
                         ->translatable()
                         ->sortable()
-                        ->searchable(),
+                        ->searchable()
+                        ->individuallySearchable(),
                     Column::make('slug')
                         ->label('Slug')
                         ->kind('text')
-                        ->copyable(copyMessage: 'Slug copied!'),
+                        ->copyable(copyMessage: 'Slug copied!')
+                        ->individuallySearchable(),
                     Column::make('published')
                         ->label('Published')
                         ->toggle()
@@ -101,6 +103,9 @@ class PostsIndexPage extends Page
                         ->date('Y-m-d')
                         ->sortable()
                         ->toggleable(true, true),
+                    Column::make('published_time')
+                        ->time('H:i')
+                        ->label('Published time'),
                     Column::make('views')
                         ->label('Views')
                         ->number()
@@ -130,6 +135,8 @@ class PostsIndexPage extends Page
                         ),
                 ])
                 ->filtersIn('modal')
+                ->deferFilters()
+                ->filtersFormColumns(2)
                 ->tabs([
                     Tab::make('all')->label('All'),
                     Tab::make('published')->label('Published')
@@ -138,7 +145,8 @@ class PostsIndexPage extends Page
                         ->query(fn ($q) => $q->where('published', false))
                         ->count(),
                 ])
-                ->defaultSort('created_at', 'desc')
+                ->defaultSort('published', 'desc')
+                ->groups('published')
                 ->paginate(25, [10, 25, 50, 100])
                 ->query(fn () => Post::query())
                 ->rowActions([

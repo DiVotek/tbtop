@@ -59,6 +59,49 @@ it('TableSerialization: filtersIn inline serializes correctly', function (): voi
     expect($json['options']['filtersIn'])->toBe('inline');
 });
 
+it('TableSerialization: deferFilters emits true on wire', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->filters([Text::make('q')])
+        ->deferFilters()
+        ->query(fn () => null);
+
+    $json = encodeTable($table->toNode());
+
+    expect($json['options']['deferFilters'])->toBeTrue();
+});
+
+it('TableSerialization: filtersFormColumns emits the column count', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->filters([Text::make('q')])
+        ->filtersFormColumns(2)
+        ->query(fn () => null);
+
+    $json = encodeTable($table->toNode());
+
+    expect($json['options']['filtersFormColumns'])->toBe(2);
+});
+
+it('TableSerialization: filtersFormWidth emits the width string', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->filters([Text::make('q')])
+        ->filtersFormWidth('lg')
+        ->query(fn () => null);
+
+    $json = encodeTable($table->toNode());
+
+    expect($json['options']['filtersFormWidth'])->toBe('lg');
+});
+
+it('TableSerialization: filtersFormWidth rejects an invalid width', function (): void {
+    (new S)->table('posts')->filtersFormWidth('xl');
+})->throws(InvalidArgumentException::class);
+
 it('TableSerialization: searchable serializes as list of column names', function (): void {
     $s = new S;
     $table = $s->table('posts')
