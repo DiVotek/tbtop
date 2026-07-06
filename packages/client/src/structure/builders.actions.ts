@@ -25,6 +25,7 @@ interface ResolvedModal {
 	description?: string;
 	body?: StructureNode;
 	size?: ModalSize;
+	slideOver?: boolean;
 	query?: ModalQuery;
 }
 
@@ -35,6 +36,7 @@ interface ModalInput {
 	description?: string;
 	body?: ModalBodyInput;
 	size?: ModalSize;
+	slideOver?: boolean;
 	query?: ModalQuery;
 }
 
@@ -48,6 +50,9 @@ function resolveModal(modal: ModalInput, sProxy: unknown): ResolvedModal {
 	}
 	if (modal.size !== undefined) {
 		resolved.size = modal.size;
+	}
+	if (modal.slideOver !== undefined) {
+		resolved.slideOver = modal.slideOver;
 	}
 	if (modal.query !== undefined) {
 		resolved.query = modal.query;

@@ -20,7 +20,7 @@ final class ActionController
         $resolved = ResolvedPage::fromRequest($request);
         $action = $resolved->s->collectedActions()[$tbtopAction] ?? null;
         $handler = $action?->handler();
-        if ($action === null || $handler === null) {
+        if ($action === null || $handler === null || ! $action->isAuthorized()) {
             throw new NotFoundHttpException("Action \"{$tbtopAction}\" has no server handler on this page.");
         }
 

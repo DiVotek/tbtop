@@ -26,14 +26,34 @@ import {
 
 // ─── Size map ─────────────────────────────────────────────────────────────────
 
+// Legacy abstract sizes (sm/md/lg/full) predate this PR's Tailwind-literal scale (xl-7xl).
+// Names diverge intentionally (e.g. xl < lg) — not a bug.
 const SIZE_CLASS: Record<ModalSize, string> = {
 	sm: "sm:max-w-md",
 	md: "sm:max-w-lg",
 	lg: "sm:max-w-2xl",
+	xl: "sm:max-w-xl",
+	"2xl": "sm:max-w-2xl",
+	"3xl": "sm:max-w-3xl",
+	"4xl": "sm:max-w-4xl",
+	"5xl": "sm:max-w-5xl",
+	"6xl": "sm:max-w-6xl",
+	"7xl": "sm:max-w-7xl",
 	full: "sm:max-w-4xl",
 };
 
-export type ModalSize = "sm" | "md" | "lg" | "full";
+export type ModalSize =
+	| "sm"
+	| "md"
+	| "lg"
+	| "xl"
+	| "2xl"
+	| "3xl"
+	| "4xl"
+	| "5xl"
+	| "6xl"
+	| "7xl"
+	| "full";
 
 // ─── ModalShell ───────────────────────────────────────────────────────────────
 
@@ -51,6 +71,8 @@ export interface ModalShellProps extends ContentExtras {
 	size?: ModalSize;
 	footer?: ReactNode;
 	onlyDialog?: boolean;
+	/** Render as a right-anchored, edge-flush, full-height slide-over panel. */
+	slideOver?: boolean;
 	children: ReactNode;
 }
 
@@ -62,15 +84,28 @@ export function ModalShell({
 	size = "md",
 	footer,
 	onlyDialog,
+	slideOver = false,
 	children,
 	...contentProps
 }: ModalShellProps): ReactNode {
 	return (
-		<ResponsiveDialog open={open} onOpenChange={onOpenChange} onlyDialog={onlyDialog}>
-			{/* flex column + min-h-0 body: lets tall dialogs scroll */}
-			{/* instead of overflowing the viewport (grid variant won't shrink). */}
+		<ResponsiveDialog
+			open={open}
+			onOpenChange={onOpenChange}
+			onlyDialog={onlyDialog}
+			onlyDrawer={slideOver}
+			direction={slideOver ? "right" : "bottom"}
+		>
 			<ResponsiveDialogContent
-				className={cn("flex flex-col p-6", SIZE_CLASS[size])}
+				className={cn(
+					"flex flex-col p-6",
+					slideOver
+						? cn(
+								"inset-y-0 right-0 h-full w-full rounded-none border-l",
+								SIZE_CLASS[size],
+							)
+						: SIZE_CLASS[size],
+				)}
 				{...contentProps}
 			>
 				<ResponsiveDialogHeader>

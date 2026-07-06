@@ -2,8 +2,12 @@
 
 namespace Tbtop\Admin\Tests\Fixtures;
 
+use Illuminate\Support\Facades\Gate;
+use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
+use Tbtop\Admin\Dsl\Actions\ViewAction;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Cond;
@@ -25,17 +29,26 @@ class KitchenSinkPage extends Page
 
     public function view(S $s): Node
     {
+        Gate::define('kitchen-sink-edit', fn (?object $user): bool => true);
+
         return $s->stack([
             $s->displayText('Kitchen sink')->variant('heading'),
             $s->displayText('Every node kind the PHP DSL can emit.')->variant('muted'),
             $s->displayDivider(),
-            $s->section(['title' => 'Display primitives'], [
+            $s->section([
+                'title' => 'Display primitives',
+                'description' => 'Read-only render blocks for detail/show pages.',
+                'icon' => 'monitor',
+                'collapsible' => true,
+                'columns' => 2,
+            ], [
                 $s->displayValue('active')->badge(['active' => Color::Success]),
                 $s->displayValue(true)->boolean(trueColor: Color::Success),
                 $s->displayValue('shipped')->icon(['shipped' => ['icon' => 'truck', 'color' => 'success']]),
                 $s->displayValue(12345)->money('USD'),
                 $s->displayValue('2024-03-15 10:30:00')->date('Y-m-d'),
                 $s->displayValue(1234.5)->number(2),
+                $s->displayValue(null)->field('title'),
                 $s->displayImage('/img/cover.png')->alt('Cover')->caption('Figure 1'),
                 $s->displayImage('/img/avatar.png')->circular(),
                 $s->displayImage('/img/thumb.png')->square(),
@@ -55,7 +68,7 @@ class KitchenSinkPage extends Page
                 ]),
                 $s->displayKeyValue(['SKU' => 'A-1', 'Weight' => '2kg']),
             ]),
-            $s->grid(['cols' => 2], [
+            $s->grid(['cols' => ['sm' => 1, 'md' => 2, 'lg' => 4]], [
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
                     ->icon('dollar-sign')->tooltip('Monthly revenue')
                     ->hiddenIf('period', '=', 'all')->toNode(),
@@ -76,14 +89,23 @@ class KitchenSinkPage extends Page
                     ])
                     ->toNode(),
             ]),
-            $s->section(['title' => 'Form'], [
+            $s->section([
+                'title' => 'Form',
+                'icon' => ['name' => 'file-text', 'position' => 'right'],
+                'aside' => $s->displayText('Fill every field to see full validation coverage.')->variant('muted'),
+            ], [
                 $s->form('post', [
-                    $s->text('title')->label('Title')->required()->rules('max:200'),
+                    $s->text('title')->label('Title')->required()->rules('max:200')->columnSpan(['sm' => 1, 'md' => 2]),
                     $s->otp('auth_code')->label('Code')->length(6)->rules('digits:6'),
                     $s->textarea('body')->label('Body')
                         ->helperText('Supports Markdown.')->tooltip('Write the post body here.'),
-                    $s->number('rating')->rules('integer|min:0|max:5'),
+                    $s->number('rating')->rules('integer|min:0|max:5')->columnStart(2),
                     $s->boolean('published'),
+                    $s->radio('priority')->label('Priority')->inline()->options([
+                        ['value' => 'low', 'label' => 'Low', 'description' => 'No rush'],
+                        ['value' => 'high', 'label' => 'High', 'description' => 'Time sensitive', 'disabled' => true],
+                    ]),
+                    $s->radio('archived')->label('Archived')->boolean(),
                     $s->date('publishedAt')->hiddenIf('published', '=', false),
                     $s->text('video_url')->hiddenIf('type', '!=', 'video'),
                     $s->text('caption')->disabledIf(
@@ -143,6 +165,10 @@ class KitchenSinkPage extends Page
             $s->tabs([
                 ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3'],
                 ['label' => 'More', 'body' => $s->displayText('Second tab')->variant('muted')],
+                ['label' => 'Grid', 'children' => [
+                    $s->displayText('Left')->variant('body'),
+                    $s->displayText('Right')->variant('body'),
+                ], 'columns' => 2],
             ]),
             $s->table('posts')
                 ->columns([
@@ -193,6 +219,7 @@ class KitchenSinkPage extends Page
                 ->rowActions([
                     $s->action('edit')->label('Edit')->icon('pencil')->tooltip('Edit this record')
                         ->hiddenIf('published', '=', true)
+                        ->authorize('kitchen-sink-edit')
                         ->handle(fn () => Effects::make(), needs: ['row']),
                     $s->action('delete')->label('Delete')->color('danger')->icon('trash')
                         ->disabledIf('locked', 'truthy')
@@ -208,7 +235,7 @@ class KitchenSinkPage extends Page
                 ->toNode(),
             $s->actionsRow([
                 $s->action('info')->label('About')->modal('About', $s->displayText('Modal body')->variant('muted'))->size('sm')->outlined(),
-                $s->action('details')->label('Details')->modal('Details', null, 'More info')->modalWidth('lg'),
+                $s->action('details')->label('Details')->modal('Details', null, 'More info')->modalWidth('4xl')->slideOver(),
                 $s->action('copy')->label('Copy')->custom('clipboard', ['text' => 'hi'])->link(),
                 // Prebuilt edit-in-place: exercises the modal query/queryNeeds wire
                 // shape so the contract gate covers a modal+query action spec.
@@ -221,6 +248,29 @@ class KitchenSinkPage extends Page
                     loadUsing: fn () => ['title' => 'Hello', 'published' => true],
                     saveUsing: fn () => Effects::make(),
                     title: 'Edit post',
+                ),
+                // Halts the still-open modal with a validation-style message.
+                $s->action('validate')->label('Validate')->modal('Validate', $s->stack([
+                    $s->action('runValidation')->label('Check')->color('primary')
+                        ->handle(fn () => Effects::make()->haltModal('Title is required.'), needs: ['form']),
+                ])),
+                // Prebuilt create-in-modal: exercises the record-default + inner
+                // store action wire shape (no query — form data reaches the
+                // client via the normal collectedForms() prop path).
+                CreateAction::make(
+                    $s,
+                    form: $s->form('createPost', [
+                        $s->text('title')->label('Title')->required(),
+                    ]),
+                    storeUsing: fn (ActionCtx $ctx): Effects => Effects::make(),
+                    defaultRecord: ['title' => ''],
+                ),
+                // Prebuilt read-only detail modal: exercises query + a
+                // close-only actionsRow with field()-bound displayValue nodes.
+                ViewAction::make(
+                    $s,
+                    loadUsing: fn () => ['title' => 'Hello'],
+                    render: fn () => $s->displayValue(null)->field('title'),
                 ),
             ]),
             $s->collapsible(['label' => 'Advanced options'], [

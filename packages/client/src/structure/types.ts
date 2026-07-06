@@ -1,16 +1,14 @@
 import type { ReactNode } from "react";
 import type { AdminClient } from "../data/client";
 import type { FieldConstraints } from "../inertia/constraints";
+import type { ModalSize } from "../ui/modal-shell";
 import type { IconDef } from "../ui/node-icon";
 import type { AsyncBlock } from "./asyncBlock";
 import type { CopyableConfig } from "./copyable";
 
 // Inlined from the old auth/AuthProvider — session auth lives on the Laravel
 // side now; the Inertia layout will hydrate this from shared page props.
-export type AuthUser = {
-	id: string;
-	email: string;
-};
+export type AuthUser = { id: string; email: string };
 
 export type NodeId = string;
 
@@ -102,6 +100,8 @@ export interface NotificationConfig {
 export interface ModalController {
 	close: () => void;
 	closeAll: () => void;
+	/** Surface a message in the still-open modal (e.g. a haltModal effect). */
+	halt?: (message: string, level?: NotificationConfig["kind"]) => void;
 }
 
 export interface ClientActionContext {
@@ -121,7 +121,8 @@ export interface ModalConfig<TBuilder = unknown> {
 	title: string;
 	description?: string;
 	body?: (s: TBuilder) => StructureNode;
-	size?: "sm" | "md" | "lg" | "full";
+	size?: ModalSize;
+	slideOver?: boolean;
 	/** Backend data query: run on open, fed to the body via ModalDataProvider. */
 	query?: (ctx: ClientActionContext) => Promise<unknown>;
 }

@@ -86,6 +86,41 @@ describe("ModalShell", () => {
 		expect(classes).toContain("z-50");
 		expect(classes).not.toMatch(/z-\[\d+\]/);
 	});
+
+	test.each([
+		["xl", "sm:max-w-xl"],
+		["2xl", "sm:max-w-2xl"],
+		["3xl", "sm:max-w-3xl"],
+		["4xl", "sm:max-w-4xl"],
+		["5xl", "sm:max-w-5xl"],
+		["6xl", "sm:max-w-6xl"],
+		["7xl", "sm:max-w-7xl"],
+	] as const)("extended size %s applies %s on the dialog content", (size, expectedClass) => {
+		const { baseElement } = render(
+			wrap(
+				<ModalShell open onOpenChange={() => {}} title="Title" size={size} onlyDialog>
+					<p>body</p>
+				</ModalShell>,
+			),
+		);
+		const content = baseElement.querySelector('[role="dialog"]');
+		expect(content?.className ?? "").toContain(expectedClass);
+	});
+
+	test("slideOver renders as a right-anchored, edge-flush panel", () => {
+		const { baseElement } = render(
+			wrap(
+				<ModalShell open onOpenChange={() => {}} title="Title" slideOver>
+					<p>body</p>
+				</ModalShell>,
+			),
+		);
+		const content = baseElement.querySelector('[role="dialog"]');
+		const classes = content?.className ?? "";
+		expect(classes).toContain("right-0");
+		expect(classes).toContain("inset-y-0");
+		expect(classes).not.toContain("right-2");
+	});
 });
 
 describe("ConfirmDialog", () => {

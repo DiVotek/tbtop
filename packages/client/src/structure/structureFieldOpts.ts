@@ -45,6 +45,8 @@ export interface OtpOpts {
 export interface ChoiceOption {
 	value: string;
 	label: string;
+	description?: string;
+	disabled?: boolean;
 }
 
 export interface DateOpts {
@@ -112,6 +114,7 @@ export interface RadioOpts {
 	label?: string;
 	required?: boolean;
 	options: ChoiceOption[];
+	inline?: boolean;
 }
 
 export interface CheckboxListOpts {

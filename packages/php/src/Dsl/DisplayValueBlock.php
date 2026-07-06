@@ -22,6 +22,10 @@ final class DisplayValueBlock implements JsonSerializable
     /** @var array<string, mixed> */
     private array $kindMeta = [];
 
+    private ?string $fieldName = null;
+
+    private const BAKED_KINDS = ['date', 'datetime', 'number', 'money'];
+
     private function __construct(private readonly mixed $value) {}
 
     public static function make(mixed $value): self
@@ -35,6 +39,7 @@ final class DisplayValueBlock implements JsonSerializable
 
     public function date(?string $format = null): self
     {
+        $this->guardNotFieldBound('date');
         $clone = clone $this;
         $clone->kind = 'date';
         if ($format !== null) {
@@ -46,6 +51,7 @@ final class DisplayValueBlock implements JsonSerializable
 
     public function datetime(?string $format = null): self
     {
+        $this->guardNotFieldBound('datetime');
         $clone = clone $this;
         $clone->kind = 'datetime';
         if ($format !== null) {
@@ -57,6 +63,7 @@ final class DisplayValueBlock implements JsonSerializable
 
     public function number(?int $decimals = null): self
     {
+        $this->guardNotFieldBound('number');
         $clone = clone $this;
         $clone->kind = 'number';
         if ($decimals !== null) {
@@ -68,11 +75,38 @@ final class DisplayValueBlock implements JsonSerializable
 
     public function money(string $currency): self
     {
+        $this->guardNotFieldBound('money');
         $clone = clone $this;
         $clone->kind = 'money';
         $clone->kindMeta['currency'] = $currency;
 
         return $clone;
+    }
+
+    /**
+     * Bind this block to a modal-data field by name (client resolves the raw
+     * value from useModalData() at render time, like a form field's `name`).
+     * Incompatible with baked kinds (date/datetime/number/money) since their
+     * formatting runs once at author time, before any live value exists.
+     */
+    public function field(string $name): self
+    {
+        if (in_array($this->kind, self::BAKED_KINDS, true)) {
+            throw new \LogicException(
+                "field() cannot combine with a baked kind (\"{$this->kind}\"): badge/boolean/icon or no kind only."
+            );
+        }
+        $clone = clone $this;
+        $clone->fieldName = $name;
+
+        return $clone;
+    }
+
+    private function guardNotFieldBound(string $kind): void
+    {
+        if ($this->fieldName !== null) {
+            throw new \LogicException("\"{$kind}\" cannot combine with field() — its formatting bakes at author time.");
+        }
     }
 
     public function boolean(
@@ -139,6 +173,9 @@ final class DisplayValueBlock implements JsonSerializable
         }
         foreach ($this->copyableOption() as $key => $value) {
             $options[$key] = $value;
+        }
+        if ($this->fieldName !== null) {
+            $options['field'] = $this->fieldName;
         }
 
         return (new Node('displayValue', $options))->jsonSerialize();

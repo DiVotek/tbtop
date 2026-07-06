@@ -316,6 +316,7 @@
 										}
 									},
 									"iconMap": { "type": "object" },
+									"field": { "type": "string" },
 									"copyable": {
 										"type": "object",
 										"properties": {
@@ -373,6 +374,49 @@
 							}
 						}
 					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "grid" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"cols": { "$ref": "#/$defs/columnsSpec" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "section" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"title": { "type": "string" },
+									"description": { "type": "string" },
+									"icon": { "$ref": "#/$defs/icon" },
+									"aside": { "$ref": "#/$defs/node" },
+									"collapsible": { "type": "boolean" },
+									"collapsed": { "type": "boolean" },
+									"columns": { "$ref": "#/$defs/columnsSpec" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "radio" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"options": { "$ref": "#/$defs/choiceOptions" },
+									"inline": { "type": "boolean" }
+								}
+							}
+						}
+					}
 				}
 			]
 		},
@@ -419,6 +463,8 @@
 				"dependsOn": { "type": "array", "items": { "type": "string" } },
 				"keepValue": { "type": "boolean" },
 				"whenParentEmpty": { "type": "string", "enum": ["disabled", "empty"] },
+				"colSpan": { "$ref": "#/$defs/columnsSpec" },
+				"colStart": { "$ref": "#/$defs/columnsSpec" },
 				"create": {
 					"type": "object",
 					"required": ["fields"],
@@ -428,6 +474,21 @@
 					"additionalProperties": false
 				}
 			}
+		},
+		"columnsSpec": {
+			"oneOf": [
+				{ "type": "integer", "minimum": 1, "maximum": 8 },
+				{
+					"type": "object",
+					"properties": {
+						"sm": { "type": "integer", "minimum": 1, "maximum": 8 },
+						"md": { "type": "integer", "minimum": 1, "maximum": 8 },
+						"lg": { "type": "integer", "minimum": 1, "maximum": 8 },
+						"xl": { "type": "integer", "minimum": 1, "maximum": 8 }
+					},
+					"additionalProperties": false
+				}
+			]
 		},
 		"columns": {
 			"type": "array",
@@ -509,6 +570,46 @@
 			},
 			"additionalProperties": false
 		},
+		"navItem": {
+			"type": "object",
+			"required": ["label", "href", "order"],
+			"properties": {
+				"label": { "type": "string" },
+				"href": { "type": "string" },
+				"order": { "type": "integer" },
+				"icon": { "$ref": "#/$defs/icon" },
+				"badge": { "type": "string" },
+				"badgeColor": { "type": "string" },
+				"newTab": { "type": "boolean" },
+				"children": { "type": "array", "items": { "$ref": "#/$defs/navItem" } }
+			},
+			"additionalProperties": false
+		},
+		"navGroup": {
+			"type": "object",
+			"required": ["group", "items"],
+			"properties": {
+				"group": { "type": "string" },
+				"items": { "type": "array", "items": { "$ref": "#/$defs/navItem" } },
+				"icon": { "$ref": "#/$defs/icon" },
+				"collapsible": { "type": "boolean" },
+				"collapsed": { "type": "boolean" }
+			},
+			"additionalProperties": false
+		},
+		"userMenuItem": {
+			"type": "object",
+			"required": ["label", "href"],
+			"properties": {
+				"label": { "type": "string" },
+				"href": { "type": "string" },
+				"icon": { "$ref": "#/$defs/icon" },
+				"newTab": { "type": "boolean" }
+			},
+			"additionalProperties": false
+		},
+		"nav": { "type": "array", "items": { "$ref": "#/$defs/navGroup" } },
+		"userMenuItems": { "type": "array", "items": { "$ref": "#/$defs/userMenuItem" } },
 		"tableTab": {
 			"type": "object",
 			"required": ["name", "label", "count"],
@@ -539,7 +640,9 @@
 				"required": ["value", "label"],
 				"properties": {
 					"value": { "type": "string" },
-					"label": { "type": "string" }
+					"label": { "type": "string" },
+					"description": { "type": "string" },
+					"disabled": { "type": "boolean" }
 				}
 			}
 		},
@@ -597,7 +700,8 @@
 						"title": { "type": "string" },
 						"description": { "type": "string" },
 						"body": { "$ref": "#/$defs/node" },
-						"size": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+						"size": { "type": "string", "enum": ["sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "full"] },
+						"slideOver": { "type": "boolean" },
 						"query": { "type": "boolean" },
 						"queryNeeds": {
 							"type": "array",
@@ -730,6 +834,16 @@
 						"type": "object",
 						"required": ["kind"],
 						"properties": { "kind": { "const": "closeModal" } },
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind", "message"],
+						"properties": {
+							"kind": { "const": "haltModal" },
+							"message": { "type": "string" },
+							"level": { "enum": ["info", "success", "error", "warning"] }
+						},
 						"additionalProperties": false
 					}
 				]

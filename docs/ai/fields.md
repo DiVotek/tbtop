@@ -35,6 +35,8 @@ Every field class extends `Field.php`. These methods are available on every fiel
 | `filterUsing` | `filterUsing(callable $fn): static` | Server-only filter closure `fn($query, $value) => $query`; never sent to the wire |
 | `hiddenIf` | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Hides the field when a condition is met (client-evaluated) |
 | `disabledIf` | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Disables the field when a condition is met (client-evaluated) |
+| `columnSpan` | `columnSpan(int\|array $span): static` | Grid column span inside a `grid`/`section(columns: ...)` parent: int (1-8) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8) |
+| `columnStart` | `columnStart(int\|array $start): static` | Grid column start offset inside a `grid`/`section(columns: ...)` parent; same int-or-breakpoint-object shape as `columnSpan` |
 
 > **Validation is always PHP.** The client renders zod constraints for on-blur UX
 > feedback only — they are never trusted as the security boundary. All rules live in
@@ -116,7 +118,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | none; value shape: `{from?: string, to?: string}` | No |
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |
-| **Radio** | `$s->radio('x')` / `Radio::make('x')` | `radio` | `options(list<{value, label}> $options)` — static option list | No |
+| **Radio** | `$s->radio('x')` / `Radio::make('x')` | `radio` | `options(list<{value, label, description?, disabled?}> $options)` — static option list, each option can carry its own `description` and `disabled`; `inline(bool $value = true)` — horizontal layout instead of the default stacked list; `boolean()` — shorthand for a 2-option Yes/No radio, no-op if `options()` was already called | No |
 | **Select** | `$s->select('x')` / `Select::make('x')` | `select` | `options(array)`, `searchable(bool)`, `query(callable)` (async), `creatable(array $fields, callable $using)`, `multiple(bool)` — multi-value selection rendered as a searchable combobox with chips; when `creatable()` is set and the typed query has no exact match a "Create" row appears inline | `query()` → async-select endpoint; `creatable()` → select-create endpoint. See [./wiring.md](./wiring.md) |
 | **Tags** | `$s->tags('x')` / `Tags::make('x')` | `tags` | none; multi-value string array | No |
 | **Colorpicker** | `$s->colorpicker('x')` / `Colorpicker::make('x')` | `colorpicker` | none | No |

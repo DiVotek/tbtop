@@ -488,12 +488,16 @@ final class TableBuilder implements JsonSerializable
     public function toNode(): Node
     {
         $opts = $this->opts;
+        foreach (['rowActions', 'headerActions', 'bulkActions'] as $key) {
+            if (isset($opts[$key])) {
+                $opts[$key] = ActionBuilder::filterAuthorized($opts[$key]);
+            }
+        }
         if ($this->filterFields !== []) {
             $opts['filters'] = array_map(fn (Field $f) => $f->toNode(), $this->filterFields);
             $opts['filtersIn'] = $this->filtersIn ?? 'modal';
         }
         if ($this->tabObjects !== []) {
-            // Closures never serialize — only name/label/count go on the wire.
             $opts['tabs'] = array_map(fn (Tab $t) => $t->toWire(), $this->tabObjects);
         }
 

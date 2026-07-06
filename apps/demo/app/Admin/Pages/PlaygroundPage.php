@@ -72,6 +72,45 @@ class PlaygroundPage extends Page
                     ->confirm('Really?', 'This is the confirm-modal path.')
                     ->handle(fn (): Effects => Effects::make()->notify('Boom confirmed', 'warning')),
             ]),
+            $s->displayDivider(),
+            $s->displayText('Form layout: grid breakpoints, section, radio')->variant('subheading'),
+            $s->form('preferences', [
+                $s->section([
+                    'title' => 'Notifications',
+                    'description' => 'Choose how you want to hear from us.',
+                    'icon' => 'globe',
+                    'columns' => ['sm' => 1, 'md' => 2],
+                ], [
+                    $s->radio('frequency')->label('Email frequency')->options([
+                        ['value' => 'realtime', 'label' => 'Real-time', 'description' => 'Send every event as it happens.'],
+                        ['value' => 'daily', 'label' => 'Daily digest', 'description' => 'One summary email per day.'],
+                        ['value' => 'off', 'label' => 'Off', 'description' => 'Never email me.'],
+                    ])->rules('in:realtime,daily,off'),
+                    $s->radio('channel')->label('Preferred channel')->inline()->options([
+                        ['value' => 'email', 'label' => 'Email'],
+                        ['value' => 'sms', 'label' => 'SMS'],
+                    ])->rules('in:email,sms'),
+                    $s->text('digest_subject')->label('Digest subject line')
+                        ->helperText('Spans both columns on md+ screens.')
+                        ->columnSpan(['md' => 2])
+                        ->rules('nullable|max:120'),
+                ]),
+                $s->section([
+                    'title' => 'Advanced',
+                    'description' => 'Rarely-needed settings, collapsed by default.',
+                    'icon' => 'lock',
+                    'collapsible' => true,
+                    'collapsed' => true,
+                ], [
+                    $s->boolean('beta_features')->label('Enable beta features')->rules('boolean'),
+                ]),
+                $s->actionsRow([
+                    $s->action('save_preferences')->label('Save')->color('primary')->submit(),
+                ]),
+            ])
+                ->record(['frequency' => 'daily', 'channel' => 'email', 'digest_subject' => '', 'beta_features' => false])
+                ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
+                    ->notify("Preferences saved: {$ctx->form['frequency']}")),
         ]);
     }
 }

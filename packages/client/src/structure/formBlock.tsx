@@ -5,6 +5,7 @@ import type { FieldFormProps } from "../fields/fieldProps";
 import { TranslatableWrapper } from "../fields/translatableWrapper";
 import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
+import { applyColumnPlacement } from "../render/columnPlacement";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
 import { Label } from "../ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
@@ -198,17 +199,18 @@ function renderFormChild(
 	const disabled = isNodeDisabled(node.meta, condCtx);
 	const descriptor = getBlockDescriptor(node.kind);
 	const options = mergeName(node);
-	if (descriptor?.behavior === "field" && node.name) {
-		return renderFieldNode({ descriptor, node, options, ctrl, locales, disabled });
-	}
-	return invokeBlock({
-		kind: node.kind,
-		options,
-		meta: node.meta,
-		ctx: { surface: "form" },
-		children: (options as { children?: StructureNode[] }).children,
-		renderChild: (child) => renderFormChild(child, ctrl, locales),
-	});
+	const rendered =
+		descriptor?.behavior === "field" && node.name
+			? renderFieldNode({ descriptor, node, options, ctrl, locales, disabled })
+			: invokeBlock({
+					kind: node.kind,
+					options,
+					meta: node.meta,
+					ctx: { surface: "form" },
+					children: (options as { children?: StructureNode[] }).children,
+					renderChild: (child) => renderFormChild(child, ctrl, locales),
+				});
+	return applyColumnPlacement(rendered, options);
 }
 
 interface RenderFieldInput {

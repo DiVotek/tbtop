@@ -6,9 +6,11 @@ use App\Models\Post;
 use App\Models\User;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
 use Tbtop\Admin\Dsl\Actions\ReplicateAction;
+use Tbtop\Admin\Dsl\Actions\ViewAction;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
@@ -44,6 +46,30 @@ class PostsIndexPage extends Page
             ]),
             $s->table('posts')
                 ->rowClick('edit')
+                ->headerActions([
+                    // Quick create in a slide-over panel; the full form lives
+                    // at PostCreatePage for the "New post" button above.
+                    CreateAction::make(
+                        $s,
+                        form: $s->form('quickCreatePost', [
+                            $s->text('title')->label('Title')->required()->rules('max:200')->translatable(),
+                            $s->slug('slug')->label('Slug')->required()
+                                ->set('fromField', 'title')
+                                ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', 'unique:posts,slug']),
+                        ]),
+                        storeUsing: function (ActionCtx $ctx): Effects {
+                            Post::create($ctx->form);
+
+                            return Effects::make()
+                                ->notify('Post created')
+                                ->closeModal()
+                                ->refreshTable('posts');
+                        },
+                        defaultRecord: ['title' => null, 'slug' => ''],
+                        name: 'quickCreate',
+                        title: 'Quick create',
+                    )->label('Quick create')->slideOver(),
+                ])
                 ->columns([
                     Column::make('cover_url')->image()->square()->label('Cover')->alt('Cover'),
                     Column::make('color')->color()->rounded()->label('Color'),
@@ -131,6 +157,25 @@ class PostsIndexPage extends Page
                             ->redirect("/admin/posts/{$ctx->row['id']}/edit"),
                         needs: ['row'],
                     ),
+                    // Prebuilt read-only detail modal, widened past the default
+                    // 'md'; field()-bound values resolve from loadUsing per row.
+                    ViewAction::make(
+                        $s,
+                        name: 'viewPost',
+                        title: 'Post detail',
+                        loadUsing: fn (ActionCtx $ctx): array => Post::query()
+                            ->whereKey($ctx->row['id'] ?? null)
+                            ->firstOrFail()
+                            ->only(['slug', 'published', 'views']),
+                        render: fn () => $s->stack([
+                            $s->displayText('Slug')->variant('subheading'),
+                            $s->displayValue(null)->field('slug'),
+                            $s->displayText('Published')->variant('subheading'),
+                            $s->displayValue(null)->boolean()->field('published'),
+                            $s->displayText('Views')->variant('subheading'),
+                            $s->displayValue(null)->field('views'),
+                        ]),
+                    )->modalWidth('2xl'),
                     // Prebuilt edit-in-place modal, named editPublication: opens a
                     // form prefilled per row (loadUsing keys match field names),
                     // saved by the helper's inner Save action. Hidden on drafts.

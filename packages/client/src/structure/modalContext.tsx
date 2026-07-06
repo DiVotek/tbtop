@@ -1,14 +1,16 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
-import type { ModalController } from "./types";
+import type { ModalController, NotificationConfig } from "./types";
 
 const ModalCtx = createContext<ModalController | null>(null);
 
 export function ModalProvider({
 	close,
+	halt,
 	parent,
 	children,
 }: {
 	close: () => void;
+	halt?: (message: string, level?: NotificationConfig["kind"]) => void;
 	parent: ModalController | null;
 	children: ReactNode;
 }) {
@@ -19,8 +21,9 @@ export function ModalProvider({
 				close();
 				parent?.closeAll();
 			},
+			halt,
 		}),
-		[close, parent],
+		[close, halt, parent],
 	);
 	return <ModalCtx.Provider value={value}>{children}</ModalCtx.Provider>;
 }

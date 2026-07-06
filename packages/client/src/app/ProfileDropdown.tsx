@@ -2,6 +2,8 @@ import { router } from "@inertiajs/react";
 import { MonitorIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslation } from "../i18n/i18n";
+import { isExternalUrl } from "../structure/actionBlock";
+import { NodeIcon } from "../ui/node-icon";
 import { useChromeData } from "./chromeContext";
 
 type Theme = "light" | "dark" | "system";
@@ -32,6 +34,18 @@ function applyTheme(theme: Theme, enabled: boolean): void {
 	document.documentElement.classList.toggle("dark", isDark);
 }
 
+function openUserMenuItem(href: string, newTab?: boolean): void {
+	if (newTab) {
+		window.open(href, "_blank", "noopener");
+		return;
+	}
+	if (isExternalUrl(href)) {
+		window.location.assign(href);
+		return;
+	}
+	router.visit(href);
+}
+
 interface ProfileDropdownUser {
 	name?: string;
 	email?: string;
@@ -53,7 +67,7 @@ const THEMES: Theme[] = ["light", "dark", "system"];
 export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdownProps) {
 	const t = useTranslation();
 	const { locale, setLocale, available: availableLocales } = useLocale();
-	const { darkMode = true, defaultTheme = "system" } = useChromeData();
+	const { darkMode = true, defaultTheme = "system", userMenuItems = [] } = useChromeData();
 	const [open, setOpen] = useState(false);
 	const [theme, setThemeState] = useState<Theme>(() => readThemeCookie(defaultTheme));
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -115,6 +129,23 @@ export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdow
 						</div>
 						<div className="px-3 py-1 text-sm font-medium">{displayName}</div>
 					</div>
+
+					{userMenuItems.length > 0 && (
+						<div className="border-b pb-1 mb-1">
+							{userMenuItems.map((item) => (
+								<button
+									key={item.href}
+									type="button"
+									className="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent"
+									data-testid={`user-menu-item-${item.href}`}
+									onClick={() => openUserMenuItem(item.href, item.newTab)}
+								>
+									<NodeIcon icon={item.icon} className="size-4 shrink-0" />
+									<span className="flex-1 text-left truncate">{item.label}</span>
+								</button>
+							))}
+						</div>
+					)}
 
 					{darkMode && (
 						<div className="border-b pb-1 mb-1">
