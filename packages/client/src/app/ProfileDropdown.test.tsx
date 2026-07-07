@@ -11,14 +11,14 @@ let routerPostMock: ReturnType<typeof mock>;
 beforeEach(() => {
 	routerPostMock = mock(() => {});
 	(inertiaReact.router as unknown as Record<string, unknown>).post = routerPostMock;
-	window.document.cookie = "tbtop_theme=; max-age=0";
+	window.document.cookie = "tbtop_theme=; path=/; max-age=0";
 	window.document.documentElement.classList.remove("dark");
 });
 
 afterEach(() => {
 	(inertiaReact.router as unknown as Record<string, unknown>).post =
 		originalRouter.post.bind(originalRouter);
-	window.document.cookie = "tbtop_theme=; max-age=0";
+	window.document.cookie = "tbtop_theme=; path=/; max-age=0";
 	window.document.documentElement.classList.remove("dark");
 });
 

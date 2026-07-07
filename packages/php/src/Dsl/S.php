@@ -503,6 +503,12 @@ final class S
         return new Node('notifications');
     }
 
+    /** Standalone theme toggle; one click cycles light → dark → system. */
+    public function themeToggle(): Node
+    {
+        return new Node('themeToggle');
+    }
+
     // -------------------------------------------------------------------------
     // Data builders
     // -------------------------------------------------------------------------

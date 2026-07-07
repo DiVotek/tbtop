@@ -88,8 +88,13 @@ function PlainActionBlock({
 					className={tint}
 					data-testid={`action-${actionKey(opts)}`}
 				>
-					{isExternalUrl(interpolated) ? (
-						<a href={interpolated}>
+					{isExternalUrl(interpolated) || opts.newTab ? (
+						<a
+							href={interpolated}
+							{...(opts.newTab
+								? { target: "_blank", rel: "noopener noreferrer" }
+								: {})}
+						>
 							<ActionLabel opts={opts} />
 						</a>
 					) : (

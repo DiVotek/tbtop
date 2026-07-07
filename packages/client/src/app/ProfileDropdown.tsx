@@ -5,34 +5,7 @@ import { useLocale, useTranslation } from "../i18n/i18n";
 import { isExternalUrl } from "../structure/actionBlock";
 import { NodeIcon } from "../ui/node-icon";
 import { useChromeData } from "./chromeContext";
-
-type Theme = "light" | "dark" | "system";
-
-const THEME_COOKIE = "tbtop_theme";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-
-function readThemeCookie(fallback: Theme): Theme {
-	const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`));
-	const value = match?.[1];
-	if (value === "light" || value === "dark" || value === "system") {
-		return value;
-	}
-	return fallback;
-}
-
-function writeThemeCookie(theme: Theme): void {
-	document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-}
-
-function applyTheme(theme: Theme, enabled: boolean): void {
-	if (!enabled) {
-		document.documentElement.classList.remove("dark");
-		return;
-	}
-	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-	const isDark = theme === "dark" || (theme === "system" && prefersDark);
-	document.documentElement.classList.toggle("dark", isDark);
-}
+import { applyTheme, readThemeCookie, THEMES, type Theme, writeThemeCookie } from "./theme";
 
 function openUserMenuItem(href: string, newTab?: boolean): void {
 	if (newTab) {
@@ -61,8 +34,6 @@ const THEME_ICONS: Record<Theme, React.ReactNode> = {
 	dark: <MoonIcon className="size-4" />,
 	system: <MonitorIcon className="size-4" />,
 };
-
-const THEMES: Theme[] = ["light", "dark", "system"];
 
 export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdownProps) {
 	const t = useTranslation();
@@ -112,7 +83,7 @@ export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdow
 				onClick={() => setOpen((prev) => !prev)}
 				data-testid="profile-trigger"
 			>
-				<span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
+				<span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
 					{initials || <UserIcon className="size-4" />}
 				</span>
 				<span data-testid="profile-name">{displayName}</span>

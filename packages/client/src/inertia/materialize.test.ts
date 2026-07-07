@@ -36,6 +36,19 @@ describe("materialize actions", () => {
 		expect(opts(out).spec).toBeUndefined();
 	});
 
+	it("carries newTab from a visit spec to the url option", () => {
+		const out = materialize(
+			node(
+				"action",
+				{ label: "Site", spec: { type: "visit", href: "https://x.test", newTab: true } },
+				"site",
+			),
+			BASE,
+		);
+		expect(opts(out).url).toBe("https://x.test");
+		expect(opts(out).newTab).toBe(true);
+	});
+
 	it("maps a server spec to a handler posting needs-driven payload and running effects", async () => {
 		const calls: { path: string; body: unknown }[] = [];
 		const notifications: string[] = [];

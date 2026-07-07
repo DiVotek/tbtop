@@ -6,6 +6,7 @@ import {
 	UserMenuBlock,
 } from "../app/chromeBlocks";
 import { NotificationsBell } from "../app/NotificationsBell";
+import { ThemeToggle } from "../app/ThemeToggle";
 import { MediaLibraryBlock } from "../media/mediaLibraryBlock";
 import { ActionBlock } from "../structure/actionBlock";
 import { ActionGroupBlock } from "../structure/actionGroupBlock";
@@ -65,6 +66,7 @@ function registerChrome(): void {
 	defineBlock("localeSwitcher", { behavior: "leaf", render: LocaleSwitcherBlock });
 	defineBlock("spacer", { behavior: "leaf", render: SpacerBlock });
 	defineBlock("notifications", { behavior: "leaf", render: NotificationsBell });
+	defineBlock("themeToggle", { behavior: "leaf", render: ThemeToggle });
 }
 
 function registerLayout(): void {

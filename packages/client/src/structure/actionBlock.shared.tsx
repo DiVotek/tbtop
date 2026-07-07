@@ -26,6 +26,8 @@ export interface ActionOptionsBag {
 	color?: ActionColor;
 	handler?: Extract<ActionConfig, { handler: unknown }>["handler"];
 	url?: Extract<ActionConfig, { url: unknown }>["url"];
+	/** Open a visit URL in a new browser tab (external links only). */
+	newTab?: boolean;
 	modal?: ActionModalOpts;
 	keybinding?: ActionConfig["keybinding"];
 	icon?: { name: string; position: string };

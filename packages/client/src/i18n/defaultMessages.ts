@@ -39,6 +39,7 @@ export const defaultMessages: Messages = {
 	"delete.confirm.body": "This action cannot be undone.",
 	"nav.home.welcome": "Welcome",
 	"nav.language": "Language",
+	"nav.theme": "Toggle theme",
 	"state.pageNotFound": "Page not found",
 	"field.otp.label": "One-time code",
 	"field.password.hide": "Hide password",

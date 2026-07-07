@@ -19,6 +19,7 @@ interface ActionMaterializeCtx {
 interface ActionSpec {
 	type: "visit" | "submit" | "server" | "modal" | "custom";
 	href?: string;
+	newTab?: boolean;
 	form?: string;
 	needs?: string[];
 	title?: string;
@@ -52,10 +53,11 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 		if (href.includes("{row.")) {
 			return {
 				...base,
+				newTab: spec.newTab,
 				url: (actionCtx: ClientActionContext) => fillRowTemplate(href, actionCtx),
 			};
 		}
-		return { ...base, url: href };
+		return { ...base, newTab: spec.newTab, url: href };
 	}
 	if (spec.type === "modal") {
 		return { ...base, modal: materializeModal(node.name ?? "", spec, ctx) };
