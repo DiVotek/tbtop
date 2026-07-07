@@ -44,7 +44,7 @@ export function LogoBlock() {
 
 export function LocaleSwitcherBlock() {
 	const { locale, setLocale, available } = useLocale();
-	if (available.length < 2) {
+	if (available.length === 0) {
 		return null;
 	}
 	return (
@@ -53,7 +53,7 @@ export function LocaleSwitcherBlock() {
 				<button
 					key={code}
 					type="button"
-					className="rounded-md px-2 py-1 text-xs uppercase hover:bg-accent data-[active=true]:bg-accent data-[active=true]:font-medium"
+					className="flex size-8 items-center justify-center rounded-md text-xs uppercase hover:bg-accent data-[active=true]:font-medium"
 					data-active={locale === code}
 					data-testid={`locale-switcher-${code}`}
 					onClick={() => setLocale(code)}

@@ -1,11 +1,10 @@
 import { router } from "@inertiajs/react";
-import { MonitorIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { UserIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslation } from "../i18n/i18n";
 import { isExternalUrl } from "../structure/actionBlock";
 import { NodeIcon } from "../ui/node-icon";
 import { useChromeData } from "./chromeContext";
-import { applyTheme, readThemeCookie, THEMES, type Theme, writeThemeCookie } from "./theme";
 
 function openUserMenuItem(href: string, newTab?: boolean): void {
 	if (newTab) {
@@ -29,32 +28,12 @@ interface ProfileDropdownProps {
 	logoutPath?: string;
 }
 
-const THEME_ICONS: Record<Theme, React.ReactNode> = {
-	light: <SunIcon className="size-4" />,
-	dark: <MoonIcon className="size-4" />,
-	system: <MonitorIcon className="size-4" />,
-};
-
 export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdownProps) {
 	const t = useTranslation();
 	const { locale, setLocale, available: availableLocales } = useLocale();
-	const { darkMode = true, defaultTheme = "system", userMenuItems = [] } = useChromeData();
+	const { userMenuItems = [] } = useChromeData();
 	const [open, setOpen] = useState(false);
-	const [theme, setThemeState] = useState<Theme>(() => readThemeCookie(defaultTheme));
 	const containerRef = useRef<HTMLDivElement>(null);
-
-	const setTheme = useCallback(
-		(next: Theme) => {
-			setThemeState(next);
-			writeThemeCookie(next);
-			applyTheme(next, darkMode);
-		},
-		[darkMode],
-	);
-
-	useEffect(() => {
-		applyTheme(theme, darkMode);
-	}, [theme, darkMode]);
 
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -72,18 +51,18 @@ export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdow
 		return null;
 	}
 
-	const displayName = user.name ?? user.email ?? "";
+	const displayName = resolveDisplayName(user);
 	const initials = getInitials(displayName);
 
 	return (
 		<div className="relative" ref={containerRef}>
 			<button
 				type="button"
-				className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+				className="flex h-8 items-center gap-1.5 rounded-full border bg-background pl-1.5 pr-3 text-sm hover:bg-accent"
 				onClick={() => setOpen((prev) => !prev)}
 				data-testid="profile-trigger"
 			>
-				<span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
+				<span className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
 					{initials || <UserIcon className="size-4" />}
 				</span>
 				<span data-testid="profile-name">{displayName}</span>
@@ -113,27 +92,6 @@ export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdow
 								>
 									<NodeIcon icon={item.icon} className="size-4 shrink-0" />
 									<span className="flex-1 text-left truncate">{item.label}</span>
-								</button>
-							))}
-						</div>
-					)}
-
-					{darkMode && (
-						<div className="border-b pb-1 mb-1">
-							<div className="px-3 py-1.5 text-xs text-muted-foreground">
-								{t("nav.title")}
-							</div>
-							{THEMES.map((th) => (
-								<button
-									key={th}
-									type="button"
-									className="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent data-[active=true]:font-medium"
-									data-active={theme === th}
-									data-testid={`theme-option-${th}`}
-									onClick={() => setTheme(th)}
-								>
-									{THEME_ICONS[th]}
-									<span className="capitalize">{th}</span>
 								</button>
 							))}
 						</div>
@@ -171,6 +129,15 @@ export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdow
 			)}
 		</div>
 	);
+}
+
+/** Prefer the profile name; fall back to the email's local part (before @). */
+function resolveDisplayName(user: ProfileDropdownUser): string {
+	const name = user.name?.trim();
+	if (name) {
+		return name;
+	}
+	return user.email?.split("@")[0] ?? "";
 }
 
 function getInitials(name: string): string {

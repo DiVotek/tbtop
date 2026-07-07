@@ -15,6 +15,7 @@ import {
 import { CommandPalette } from "./commandPalette/CommandPalette";
 import type { CommandPaletteData } from "./commandPalette/types";
 import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
+import { TopbarSidebarFrame } from "./TopbarSidebarFrame";
 
 /** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
 export interface ChromeTrees {
@@ -24,7 +25,7 @@ export interface ChromeTrees {
 }
 
 /** Shell navigation layout, mirrors PanelConfig::navigation() on the server. */
-export type NavigationLayout = "sidebar" | "topbar";
+export type NavigationLayout = "sidebar" | "topbar" | "topbar-sidebar";
 
 interface SharedProps {
 	tbtop?: {
@@ -72,6 +73,12 @@ interface AdminLayoutShellProps {
 	userMenuItems?: NavItem[];
 }
 
+const FRAMES: Record<NavigationLayout, (props: ShellFrameProps) => ReactNode> = {
+	sidebar: SidebarFrame,
+	topbar: TopbarFrame,
+	"topbar-sidebar": TopbarSidebarFrame,
+};
+
 /**
  * Pure shell — testable without Inertia context. Receives nav/user/url
  * as props. Each area resolves React `slots` first (escape hatch), then
@@ -91,7 +98,7 @@ export function AdminLayoutShell({
 	appearance,
 	userMenuItems,
 }: AdminLayoutShellProps) {
-	const topbar = navigation === "topbar";
+	const Frame = FRAMES[navigation] ?? SidebarFrame;
 	const maxWidth = appearance?.maxWidth ? MAX_WIDTH_CLASS[appearance.maxWidth] : undefined;
 	const slotProps: AdminLayoutSlotProps = { nav, user };
 	const chromeData: ChromeData = {
@@ -119,7 +126,7 @@ export function AdminLayoutShell({
 
 	return (
 		<ChromeDataContext.Provider value={chromeData}>
-			{topbar ? <TopbarFrame {...frameProps} /> : <SidebarFrame {...frameProps} />}
+			<Frame {...frameProps} />
 		</ChromeDataContext.Provider>
 	);
 }

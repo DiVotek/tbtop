@@ -2,16 +2,21 @@ import { BellIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Badge } from "../ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+	ResponsiveDialog,
+	ResponsiveDialogClose,
+	ResponsiveDialogContent,
+	ResponsiveDialogTrigger,
+} from "../ui/revola";
 import { useChromeData } from "./chromeContext";
 import { NotificationsPanel } from "./NotificationsPanel";
 import { useNotifications } from "./useNotifications";
 
 /**
  * Header notifications bell (chrome block kind `notifications`). Polls the
- * panel's interval for the unread count, opens a popover with the list, and
- * marks/deletes notifications. Enablement is presence: the bell only appears
- * where the chrome tree places it.
+ * panel's interval for the unread count and opens a right-edge slide-over
+ * with the full list. Enablement is presence: the bell only appears where
+ * the chrome tree places it.
  */
 export function NotificationsBell() {
 	const t = useTranslation();
@@ -26,7 +31,9 @@ export function NotificationsBell() {
 			: t("notifications.aria");
 
 	return (
-		<Popover
+		<ResponsiveDialog
+			onlyDrawer
+			direction="right"
 			open={open}
 			onOpenChange={(next) => {
 				setOpen(next);
@@ -35,29 +42,29 @@ export function NotificationsBell() {
 				}
 			}}
 		>
-			<PopoverTrigger asChild>
+			<ResponsiveDialogTrigger asChild>
 				<button
 					type="button"
 					aria-label={ariaLabel}
-					className="relative flex size-9 items-center justify-center rounded-md hover:bg-accent"
+					className="relative flex size-8 items-center justify-center rounded-md hover:bg-accent"
 					data-testid="notifications-trigger"
 				>
-					<BellIcon className="size-5" aria-hidden />
+					<BellIcon className="size-4" aria-hidden />
 					{unreadCount > 0 && (
 						<Badge
 							variant="destructive"
 							aria-hidden
-							className="absolute -right-1 -top-1 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"
+							className="absolute -top-1 -right-1 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"
 							data-testid="notifications-badge"
 						>
 							{unreadCount > 99 ? "99+" : unreadCount}
 						</Badge>
 					)}
 				</button>
-			</PopoverTrigger>
-			<PopoverContent
-				align="end"
-				className="w-[min(22rem,calc(100vw-2rem))] p-0"
+			</ResponsiveDialogTrigger>
+			<ResponsiveDialogContent
+				showCloseButton={false}
+				className="ml-auto flex h-full w-[min(24rem,100vw)] flex-col p-0"
 				data-testid="notifications-popover"
 			>
 				<NotificationsPanel
@@ -67,8 +74,19 @@ export function NotificationsBell() {
 					onMarkRead={markRead}
 					onDelete={remove}
 					onClearAll={clearAll}
+					closeSlot={
+						<ResponsiveDialogClose asChild>
+							<button
+								type="button"
+								className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+								data-testid="notifications-close"
+							>
+								{t("notifications.close")}
+							</button>
+						</ResponsiveDialogClose>
+					}
 				/>
-			</PopoverContent>
-		</Popover>
+			</ResponsiveDialogContent>
+		</ResponsiveDialog>
 	);
 }

@@ -163,6 +163,7 @@ export const defaultMessages: Messages = {
 	"media.upload.status_error": "Failed",
 	"notifications.title": "Notifications",
 	"notifications.clear_all": "Clear all",
+	"notifications.close": "Close",
 	"notifications.delete": "Delete",
 	"notifications.empty": "You're all caught up",
 	"notifications.empty_hint": "New notifications show up here.",

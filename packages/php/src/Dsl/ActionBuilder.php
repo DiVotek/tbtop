@@ -64,6 +64,17 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /** Count badge after the label. Pass a Color for the badge tint. */
+    public function badge(string|int $count, ?Color $color = null): self
+    {
+        $this->opts['badge'] = (string) $count;
+        if ($color !== null) {
+            $this->opts['badgeColor'] = $color->value;
+        }
+
+        return $this;
+    }
+
     public function keybinding(string $keys): self
     {
         $this->opts['keybinding'] = $keys;

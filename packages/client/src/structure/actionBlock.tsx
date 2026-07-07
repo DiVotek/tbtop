@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "../lib/cn";
 import { Button } from "../ui/button";
 import {
 	ActionLabel,
@@ -85,7 +86,7 @@ function PlainActionBlock({
 					ref={buttonRef}
 					variant={variant}
 					size={buttonSize}
-					className={tint}
+					className={cn(opts.badge && "relative overflow-visible", tint)}
 					data-testid={`action-${actionKey(opts)}`}
 				>
 					{isExternalUrl(interpolated) || opts.newTab ? (

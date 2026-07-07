@@ -1,5 +1,6 @@
 import { describe, expect, mock, spyOn, test } from "bun:test";
 import { fireEvent, render } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { I18nProvider } from "../i18n/i18n";
 import { NotificationsPanel } from "./NotificationsPanel";
 import type { AdminNotification } from "./notificationsParse";
@@ -25,6 +26,7 @@ interface PanelProps {
 	onMarkRead?: (id: string) => void;
 	onDelete?: (id: string) => void;
 	onClearAll?: () => void;
+	closeSlot?: ReactNode;
 }
 
 function renderPanel(props: PanelProps = {}) {
@@ -37,6 +39,7 @@ function renderPanel(props: PanelProps = {}) {
 				onMarkRead={props.onMarkRead ?? (() => {})}
 				onDelete={props.onDelete ?? (() => {})}
 				onClearAll={props.onClearAll ?? (() => {})}
+				closeSlot={props.closeSlot}
 			/>
 		</I18nProvider>,
 	);
@@ -61,6 +64,13 @@ describe("NotificationsPanel", () => {
 	test("disables clear-all when the list is empty", () => {
 		const { getByTestId } = renderPanel({});
 		expect(getByTestId("notifications-clear-all").hasAttribute("disabled")).toBe(true);
+	});
+
+	test("renders the close slot in the header when provided", () => {
+		const { getByTestId } = renderPanel({
+			closeSlot: <button type="button" data-testid="my-close" />,
+		});
+		expect(getByTestId("my-close")).toBeTruthy();
 	});
 
 	test("enables clear-all when there are notifications", () => {

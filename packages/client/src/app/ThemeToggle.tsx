@@ -5,9 +5,9 @@ import { useChromeData } from "./chromeContext";
 import { applyTheme, nextTheme, readThemeCookie, type Theme, writeThemeCookie } from "./theme";
 
 const ICONS: Record<Theme, ReactNode> = {
-	light: <SunIcon className="size-5" aria-hidden />,
-	dark: <MoonIcon className="size-5" aria-hidden />,
-	system: <MonitorIcon className="size-5" aria-hidden />,
+	light: <SunIcon className="size-4" aria-hidden />,
+	dark: <MoonIcon className="size-4" aria-hidden />,
+	system: <MonitorIcon className="size-4" aria-hidden />,
 };
 
 /**
@@ -39,7 +39,7 @@ export function ThemeToggle() {
 		<button
 			type="button"
 			aria-label={t("nav.theme")}
-			className="flex size-9 items-center justify-center rounded-md hover:bg-accent"
+			className="flex size-8 items-center justify-center rounded-md hover:bg-accent"
 			data-testid="theme-toggle"
 			data-theme-mode={theme}
 			onClick={cycle}

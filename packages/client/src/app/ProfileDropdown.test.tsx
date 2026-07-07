@@ -30,9 +30,16 @@ describe("ProfileDropdown", () => {
 		expect(getByTestId("profile-name").textContent).toBe("Alice Smith");
 	});
 
-	test("ProfileDropdown: falls back to email when name is absent", () => {
+	test("ProfileDropdown: falls back to the email local part when name is absent", () => {
 		const { getByTestId } = render(<ProfileDropdown user={{ email: "bob@example.com" }} />);
-		expect(getByTestId("profile-name").textContent).toBe("bob@example.com");
+		expect(getByTestId("profile-name").textContent).toBe("bob");
+	});
+
+	test("ProfileDropdown: falls back to email local part when name is blank", () => {
+		const { getByTestId } = render(
+			<ProfileDropdown user={{ name: "   ", email: "carol@example.com" }} />,
+		);
+		expect(getByTestId("profile-name").textContent).toBe("carol");
 	});
 
 	test("ProfileDropdown: returns null when user is null", () => {
@@ -77,43 +84,6 @@ describe("ProfileDropdown", () => {
 			fireEvent.click(getByTestId("profile-logout"));
 		});
 		expect(routerPostMock.mock.calls[0]?.[0]).toBe("/admin/logout");
-	});
-
-	test("ProfileDropdown: selecting dark theme adds dark class to html element", async () => {
-		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
-		await act(async () => {
-			fireEvent.click(getByTestId("profile-trigger"));
-		});
-		await findByTestId("profile-menu");
-		await act(async () => {
-			fireEvent.click(getByTestId("theme-option-dark"));
-		});
-		expect(window.document.documentElement.classList.contains("dark")).toBe(true);
-	});
-
-	test("ProfileDropdown: selecting light theme removes dark class from html element", async () => {
-		window.document.documentElement.classList.add("dark");
-		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
-		await act(async () => {
-			fireEvent.click(getByTestId("profile-trigger"));
-		});
-		await findByTestId("profile-menu");
-		await act(async () => {
-			fireEvent.click(getByTestId("theme-option-light"));
-		});
-		expect(window.document.documentElement.classList.contains("dark")).toBe(false);
-	});
-
-	test("ProfileDropdown: selecting a theme writes tbtop_theme cookie", async () => {
-		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
-		await act(async () => {
-			fireEvent.click(getByTestId("profile-trigger"));
-		});
-		await findByTestId("profile-menu");
-		await act(async () => {
-			fireEvent.click(getByTestId("theme-option-dark"));
-		});
-		expect(window.document.cookie).toContain("tbtop_theme=dark");
 	});
 
 	test("ProfileDropdown: shows locale options in menu when multiple languages configured", async () => {
@@ -204,27 +174,7 @@ describe("ProfileDropdown", () => {
 		);
 	}
 
-	test("ProfileDropdown: hides the theme toggle when darkMode is disabled", async () => {
-		const { getByTestId, queryByTestId, findByTestId } = renderInChrome({ darkMode: false });
-		await act(async () => {
-			fireEvent.click(getByTestId("profile-trigger"));
-		});
-		await findByTestId("profile-menu");
-		expect(queryByTestId("theme-option-dark")).toBeNull();
-	});
-
-	test("ProfileDropdown: darkMode disabled forces the light theme", () => {
-		window.document.documentElement.classList.add("dark");
-		renderInChrome({ darkMode: false });
-		expect(window.document.documentElement.classList.contains("dark")).toBe(false);
-	});
-
-	test("ProfileDropdown: defaultTheme dark applies when no cookie is set", () => {
-		renderInChrome({ defaultTheme: "dark" });
-		expect(window.document.documentElement.classList.contains("dark")).toBe(true);
-	});
-
-	test("ProfileDropdown: renders custom userMenuItems above the theme controls", async () => {
+	test("ProfileDropdown: renders custom userMenuItems in the menu", async () => {
 		const { getByTestId, findByTestId } = renderInChrome({
 			userMenuItems: [{ label: "API Tokens", href: "/admin/api-tokens" }],
 		});
