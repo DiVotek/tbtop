@@ -10,6 +10,7 @@ use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelConfig;
+use Tbtop\Admin\Tests\Fixtures\Chromes\LocaleSwitcherChrome;
 use Tbtop\Admin\Tests\Fixtures\KitchenSinkPage;
 use Tbtop\Admin\Tests\Fixtures\NavChildPage;
 use Tbtop\Admin\Tests\Fixtures\NavParentPage;
@@ -55,6 +56,19 @@ it('default chrome serialization conforms to the chrome contract', function () {
     $chrome = ChromeSerializer::forPanel(panelWithPages([]));
 
     validateAgainstSchema(json_decode(json_encode($chrome)), '#/$defs/chrome');
+});
+
+it('chrome with a dropdown-variant locale switcher conforms to the chrome contract', function () {
+    $chrome = ChromeSerializer::forPanel(panelWithChrome(LocaleSwitcherChrome::class));
+
+    validateAgainstSchema(json_decode(json_encode($chrome)), '#/$defs/chrome');
+});
+
+it('chrome with a default (buttons) locale switcher conforms to the chrome contract', function () {
+    $s = new S;
+    $node = $s->localeSwitcher();
+
+    validateAgainstSchema(json_decode(json_encode($node)));
 });
 
 it('effects serialization conforms to the effects schema', function () {

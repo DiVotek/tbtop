@@ -2,21 +2,9 @@
 
 use Tbtop\Admin\Panels\Chrome;
 use Tbtop\Admin\Panels\ChromeSerializer;
-use Tbtop\Admin\Panels\CurrentPanel;
-use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\Chromes\FooterChrome;
 use Tbtop\Admin\Tests\Fixtures\Chromes\HeaderActionChrome;
 use Tbtop\Admin\Tests\Fixtures\Chromes\ServerActionChrome;
-
-function panelWithChrome(?string $chrome): CurrentPanel
-{
-    $config = (new PanelConfig)->id('admin')->prefix('admin');
-    if ($chrome !== null) {
-        $config->chrome($chrome);
-    }
-
-    return new CurrentPanel($config);
-}
 
 /** @return list<string> */
 function childKinds(stdClass $area): array

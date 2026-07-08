@@ -39,7 +39,7 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 					type="button"
 					onClick={toggle}
 					aria-expanded={expanded}
-					data-testid={`nav-group-toggle-${group.group}`}
+					data-testid={`nav-group-toggle-${group.key}`}
 					className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium uppercase text-muted-foreground hover:text-foreground"
 				>
 					<GroupHeading group={group} />

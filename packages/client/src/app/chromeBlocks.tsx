@@ -25,7 +25,7 @@ export function NavMenuBlock() {
 		return (
 			<nav className="flex flex-row items-center gap-1" data-testid="admin-sidebar">
 				{nav.map((group) => (
-					<NavGroupDropdown key={group.group} group={group} currentUrl={currentUrl} />
+					<NavGroupDropdown key={group.key} group={group} currentUrl={currentUrl} />
 				))}
 			</nav>
 		);
@@ -36,12 +36,7 @@ export function NavMenuBlock() {
 		return (
 			<nav className="flex flex-col items-center gap-1" data-testid="admin-sidebar">
 				{nav.map((group) => (
-					<NavGroupDropdown
-						key={group.group}
-						group={group}
-						currentUrl={currentUrl}
-						rail
-					/>
+					<NavGroupDropdown key={group.key} group={group} currentUrl={currentUrl} rail />
 				))}
 			</nav>
 		);
@@ -49,7 +44,7 @@ export function NavMenuBlock() {
 	return (
 		<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
 			{nav.map((group) => (
-				<NavGroupSection key={group.group} group={group} currentUrl={currentUrl} />
+				<NavGroupSection key={group.key} group={group} currentUrl={currentUrl} />
 			))}
 		</nav>
 	);
