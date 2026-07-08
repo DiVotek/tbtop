@@ -39,10 +39,17 @@
 	--color-warning-foreground: var(--warning-foreground);
 	--color-info: var(--info);
 	--color-info-foreground: var(--info-foreground);
-	--radius: 0.625rem;
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
 }
 
 :root {
+	/* shadcn v4 base radius; --radius-sm/md/lg/xl above derive from it and
+	   feed Tailwind's rounded-sm/md/lg/xl utilities. 0.5rem keeps rounded-md
+	   at the same 6px it rendered at before this var existed. */
+	--radius: 0.5rem;
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.145 0 0);
 	--card: oklch(1 0 0);

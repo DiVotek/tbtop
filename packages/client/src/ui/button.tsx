@@ -1,7 +1,7 @@
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
-
+import { useDensity } from "../app/densityContext";
 import { cn } from "../lib/cn";
 
 const buttonVariants = cva(
@@ -39,7 +39,7 @@ const buttonVariants = cva(
 function Button({
 	className,
 	variant = "default",
-	size = "default",
+	size,
 	asChild = false,
 	type,
 	...props
@@ -47,6 +47,9 @@ function Button({
 	VariantProps<typeof buttonVariants> & {
 		asChild?: boolean;
 	}) {
+	const density = useDensity();
+	// Explicit `size` always wins; compact density only changes the default.
+	const resolvedSize = size ?? (density === "compact" ? "sm" : "default");
 	const Comp = asChild ? Slot : "button";
 	const resolvedType = asChild ? type : (type ?? "button");
 
@@ -54,8 +57,12 @@ function Button({
 		<Comp
 			data-slot="button"
 			data-variant={variant}
-			data-size={size}
-			className={cn(buttonVariants({ variant, size, className }))}
+			data-size={resolvedSize}
+			className={cn(
+				buttonVariants({ variant, size: resolvedSize }),
+				size === undefined && density === "compact" && "shadow-sm",
+				className,
+			)}
 			{...(resolvedType !== undefined ? { type: resolvedType } : {})}
 			{...props}
 		/>

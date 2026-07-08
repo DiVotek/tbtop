@@ -1,5 +1,8 @@
 export type ThemeMode = "light" | "dark" | "system";
 
+/** Shell density: "compact" tightens control heights, spacing, and the sidebar width. */
+export type Density = "default" | "compact";
+
 /**
  * Panel appearance shared prop (tbtop.appearance). Sparse — only keys the
  * author changed from the default are present. Colors / radius / fonts are
@@ -13,6 +16,8 @@ export interface Appearance {
 	defaultTheme?: ThemeMode;
 	/** Tailwind max-w token the page content is centered to. */
 	maxWidth?: string;
+	/** Shell density; undefined behaves as "default". */
+	density?: Density;
 }
 
 // Static token → class map so Tailwind keeps these utilities in the build

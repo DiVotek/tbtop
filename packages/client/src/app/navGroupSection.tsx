@@ -7,6 +7,7 @@ import { resolveColorClasses } from "../structure/table/colorRegistry";
 import { Badge } from "../ui/badge";
 import { NodeIcon } from "../ui/node-icon";
 import type { ChromeData, NavGroup, NavItem } from "./chromeContext";
+import { useDensity } from "./densityContext";
 import { readGroupExpanded, writeGroupExpanded } from "./navGroupStorage";
 
 interface NavGroupSectionProps {
@@ -40,7 +41,7 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 					onClick={toggle}
 					aria-expanded={expanded}
 					data-testid={`nav-group-toggle-${group.key}`}
-					className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium uppercase text-muted-foreground hover:text-foreground"
+					className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground hover:text-foreground"
 				>
 					<GroupHeading group={group} />
 					{expanded ? (
@@ -50,7 +51,7 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 					)}
 				</button>
 			) : (
-				<div className="flex items-center gap-1.5 px-2 text-xs font-medium uppercase text-muted-foreground">
+				<div className="flex items-center gap-1.5 px-2 text-xs font-semibold tracking-wide uppercase text-muted-foreground">
 					<GroupHeading group={group} />
 				</div>
 			)}
@@ -83,9 +84,11 @@ interface NavItemLinkProps {
 
 export function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
 	const active = currentUrl.startsWith(item.href);
+	const density = useDensity();
 	const icon = item.icon ? <NodeIcon icon={item.icon} className="size-4 shrink-0" /> : null;
 	const className = cn(
-		"flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
+		"flex items-center gap-2 rounded-md text-sm hover:bg-accent",
+		density === "compact" ? "px-3 py-2" : "px-2 py-1.5",
 		active && "bg-accent font-medium",
 	);
 	const content = (

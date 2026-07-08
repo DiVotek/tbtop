@@ -18,6 +18,11 @@ class CenterPage extends Page
         return 'center';
     }
 
+    public function subtitle(): ?string
+    {
+        return 'Centered subtitle';
+    }
+
     public function view(S $s): Node
     {
         return $s->stack([$s->displayText('Centered content')]);

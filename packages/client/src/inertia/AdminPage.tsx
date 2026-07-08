@@ -19,6 +19,8 @@ import { materialize } from "./materialize";
 interface AdminPageProps {
 	slug: string;
 	title: string;
+	/** Optional line rendered under the page title. */
+	subtitle?: string;
 	layout?: "admin" | "center";
 	structure: StructureNode;
 	data: Record<string, Record<string, unknown>>;
@@ -44,7 +46,7 @@ interface AdminPageProps {
  */
 export function AdminPage() {
 	const page = usePage<AdminPageProps>();
-	const { structure, data, params, title, breadcrumbs, tbtop, auth } = page.props;
+	const { structure, data, params, title, subtitle, breadcrumbs, tbtop, auth } = page.props;
 	ensureBuiltinsRegistered();
 	if (tbtop?.prefix) {
 		setRoutesBase(tbtop.prefix);
@@ -82,7 +84,12 @@ export function AdminPage() {
 					>
 						<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
 							{breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
-							<h1 className="text-2xl font-semibold">{title}</h1>
+							<div>
+								<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+								{subtitle && (
+									<p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+								)}
+							</div>
 							{renderNode(node)}
 						</div>
 						<Toaster />

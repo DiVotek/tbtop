@@ -14,6 +14,7 @@ import {
 } from "./chromeContext";
 import { CommandPalette } from "./commandPalette/CommandPalette";
 import type { CommandPaletteData } from "./commandPalette/types";
+import { DensityContext } from "./densityContext";
 import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
 import { TopbarSidebarFrame } from "./TopbarSidebarFrame";
 
@@ -100,6 +101,7 @@ export function AdminLayoutShell({
 }: AdminLayoutShellProps) {
 	const Frame = FRAMES[navigation] ?? SidebarFrame;
 	const maxWidth = appearance?.maxWidth ? MAX_WIDTH_CLASS[appearance.maxWidth] : undefined;
+	const density = appearance?.density ?? "default";
 	const slotProps: AdminLayoutSlotProps = { nav, user };
 	const chromeData: ChromeData = {
 		nav,
@@ -125,9 +127,11 @@ export function AdminLayoutShell({
 	const frameProps: ShellFrameProps = { sidebar, header, footer, children, maxWidth };
 
 	return (
-		<ChromeDataContext.Provider value={chromeData}>
-			<Frame {...frameProps} />
-		</ChromeDataContext.Provider>
+		<DensityContext.Provider value={density}>
+			<ChromeDataContext.Provider value={chromeData}>
+				<Frame {...frameProps} />
+			</ChromeDataContext.Provider>
+		</DensityContext.Provider>
 	);
 }
 

@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { fireEvent, render } from "@testing-library/react";
 import { AdminLayoutShell } from "./AdminLayout";
 import type { NavGroup } from "./chromeContext";
+import { DensityContext } from "./densityContext";
+import { NavItemLink } from "./navGroupSection";
 
 const USER = { name: "Alice", email: "alice@example.com" };
 
@@ -132,6 +134,28 @@ describe("NavGroupSection", () => {
 
 		const stored = JSON.parse(window.localStorage.getItem("tbtop:nav-collapsed") ?? "{}");
 		expect(stored.content).toBe(false);
+	});
+});
+
+describe("NavItemLink density", () => {
+	const ITEM = { label: "Posts", href: "/admin/posts" };
+
+	test("default density uses px-2 py-1.5", () => {
+		const { getByText } = render(<NavItemLink item={ITEM} currentUrl="/admin" />);
+		const link = getByText("Posts").closest("a");
+		expect(link?.className).toContain("px-2");
+		expect(link?.className).toContain("py-1.5");
+	});
+
+	test("compact density uses px-3 py-2", () => {
+		const { getByText } = render(
+			<DensityContext.Provider value="compact">
+				<NavItemLink item={ITEM} currentUrl="/admin" />
+			</DensityContext.Provider>,
+		);
+		const link = getByText("Posts").closest("a");
+		expect(link?.className).toContain("px-3");
+		expect(link?.className).toContain("py-2");
 	});
 });
 
