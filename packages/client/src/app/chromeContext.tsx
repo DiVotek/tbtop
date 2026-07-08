@@ -13,6 +13,8 @@ export interface NavItem {
 }
 
 export interface NavGroup {
+	/** Stable, unlocalized key — used to persist collapse state across locales. */
+	key: string;
 	group: string;
 	items: NavItem[];
 	icon?: IconDef;

@@ -587,8 +587,9 @@
 		},
 		"navGroup": {
 			"type": "object",
-			"required": ["group", "items"],
+			"required": ["key", "group", "items"],
 			"properties": {
+				"key": { "type": "string" },
 				"group": { "type": "string" },
 				"items": { "type": "array", "items": { "$ref": "#/$defs/navItem" } },
 				"icon": { "$ref": "#/$defs/icon" },

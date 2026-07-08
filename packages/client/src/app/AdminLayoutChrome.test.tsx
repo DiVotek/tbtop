@@ -5,7 +5,9 @@ import type { StructureNode } from "../structure/types";
 import { AdminLayoutShell, type ChromeTrees } from "./AdminLayout";
 
 const DEFAULT_USER = { name: "Alice Smith", email: "alice@example.com" };
-const DEFAULT_NAV = [{ group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] }];
+const DEFAULT_NAV = [
+	{ key: "Content", group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] },
+];
 
 function node(kind: string, options: Record<string, unknown> = {}, name?: string): StructureNode {
 	return name ? { kind, name, options, meta: {} } : { kind, options, meta: {} };

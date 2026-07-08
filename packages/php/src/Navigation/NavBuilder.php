@@ -224,9 +224,11 @@ final class NavBuilder
 
     /**
      * Sort each group's items by order and merge the matching group meta
-     * (icon/collapsible/collapsed) keyed by label. Groups are ordered per
-     * navigationGroups()'s declaration; groups it doesn't mention keep their
-     * first-seen order and sort after every declared group.
+     * (icon/collapsible/collapsed/label) keyed by the group's stable key.
+     * Groups are ordered per navigationGroups()'s declaration; groups it
+     * doesn't mention keep their first-seen order and sort after every
+     * declared group. The emitted 'group' is the translated display label
+     * (falling back to the key when no NavGroup declared one).
      *
      * @param  array<string, list<array<string, mixed>>>  $groups
      * @param  list<NavGroup>  $navGroups
@@ -235,23 +237,26 @@ final class NavBuilder
     private static function assemble(array $groups, array $navGroups): array
     {
         $meta = [];
+        $labels = [];
         $declaredOrder = [];
         foreach ($navGroups as $index => $navGroup) {
-            $meta[$navGroup->label()] = $navGroup->meta();
-            $declaredOrder[$navGroup->label()] = $index;
+            $key = $navGroup->key();
+            $meta[$key] = $navGroup->meta();
+            $labels[$key] = $navGroup->displayLabel();
+            $declaredOrder[$key] = $index;
         }
 
-        $names = array_keys($groups);
+        $keys = array_keys($groups);
         usort(
-            $names,
+            $keys,
             static fn (string $a, string $b) => ($declaredOrder[$a] ?? PHP_INT_MAX) <=> ($declaredOrder[$b] ?? PHP_INT_MAX),
         );
 
         $out = [];
-        foreach ($names as $name) {
-            $items = $groups[$name];
+        foreach ($keys as $key) {
+            $items = $groups[$key];
             usort($items, static fn (array $a, array $b) => $a['order'] <=> $b['order']);
-            $out[] = ['group' => $name, 'items' => $items, ...($meta[$name] ?? [])];
+            $out[] = ['key' => $key, 'group' => $labels[$key] ?? $key, 'items' => $items, ...($meta[$key] ?? [])];
         }
 
         return $out;

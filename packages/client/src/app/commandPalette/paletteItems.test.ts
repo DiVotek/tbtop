@@ -6,8 +6,13 @@ import { buildPaletteItems, filterPaletteItems } from "./paletteItems";
 import type { CommandPaletteData } from "./types";
 
 const NAV: NavGroup[] = [
-	{ group: "Overview", items: [{ label: "Dashboard", href: "/admin", icon: { name: "star" } }] },
 	{
+		key: "Overview",
+		group: "Overview",
+		items: [{ label: "Dashboard", href: "/admin", icon: { name: "star" } }],
+	},
+	{
+		key: "Content",
 		group: "Content",
 		items: [
 			{ label: "Posts", href: "/admin/posts" },

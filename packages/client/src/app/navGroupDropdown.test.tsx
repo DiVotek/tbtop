@@ -7,11 +7,13 @@ const USER = { name: "Alice", email: "alice@example.com" };
 
 const NAV: NavGroup[] = [
 	{
+		key: "Overview",
 		group: "Overview",
 		icon: { name: "star", position: "left" },
 		items: [{ label: "Dashboard", href: "/admin/dashboard" }],
 	},
 	{
+		key: "Content",
 		group: "Content",
 		items: [
 			{
@@ -74,6 +76,7 @@ describe("NavGroupDropdown (topbar)", () => {
 	test("the trigger highlights when a nested child is active even if its URL is not a sub-path of the parent", () => {
 		const nestedNav: NavGroup[] = [
 			{
+				key: "System",
 				group: "System",
 				items: [
 					{
@@ -101,6 +104,7 @@ describe("NavGroupDropdown (topbar)", () => {
 	test("a nav item with children renders as a submenu trigger, not a direct link", async () => {
 		const nestedNav: NavGroup[] = [
 			{
+				key: "System",
 				group: "System",
 				items: [
 					{

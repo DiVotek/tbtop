@@ -3,7 +3,9 @@ import { fireEvent, render } from "@testing-library/react";
 import { AdminLayoutShell } from "./AdminLayout";
 
 const USER = { name: "Alice Smith", email: "alice@example.com" };
-const NAV = [{ group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] }];
+const NAV = [
+	{ key: "Content", group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] },
+];
 
 function renderTopbarSidebar() {
 	return render(
