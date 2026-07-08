@@ -25,6 +25,7 @@ use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Http\TableController;
 use Tbtop\Admin\Http\TableReorderController;
 use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Panels\PanelRegistry;
 
 /**
@@ -112,6 +113,26 @@ $registerChromeRoutes = static function (): void {
     });
 };
 
+/**
+ * The path the panel root should redirect to: the first declared page with a
+ * static (parameter-less) path. Null when no page qualifies, or when a page
+ * already owns the root path — registering a redirect would shadow it.
+ */
+$panelHomePath = static function (PanelConfig $panel): ?string {
+    $home = null;
+    foreach ($panel->getPages() as $class) {
+        $path = trim($class::path(), '/');
+        if ($path === '') {
+            return null;
+        }
+        if ($home === null && ! str_contains($path, '{')) {
+            $home = $path;
+        }
+    }
+
+    return $home;
+};
+
 // One route group per distinct resolved middleware stack within a panel. Pages
 // that inherit (Page::middleware() === null) collapse into the panel's default
 // group, which also carries the chrome cluster; each distinct override gets its
@@ -144,9 +165,16 @@ foreach (app(PanelRegistry::class)->all() as $panel) {
         ])
             ->prefix($panel->getPrefix())
             ->name('tbtop.'.$panel->getId().'.')
-            ->group(function () use ($bucket, $isDefault, $registerPageRoutes, $registerChromeRoutes): void {
+            ->group(function () use ($panel, $bucket, $isDefault, $registerPageRoutes, $registerChromeRoutes, $panelHomePath): void {
                 if ($isDefault) {
                     $registerChromeRoutes();
+
+                    // Panel root (the logo link target) 302s to the panel's
+                    // home page under the same auth stack as its pages.
+                    $home = $panelHomePath($panel);
+                    if ($home !== null) {
+                        Route::get('/', static fn () => redirect('/'.trim($panel->getPrefix(), '/').'/'.$home));
+                    }
                 }
 
                 $registerPageRoutes($bucket['pages']);
