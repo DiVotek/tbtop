@@ -2,6 +2,7 @@ import { router, usePage } from "@inertiajs/react";
 import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Toaster, toast } from "sonner";
 import { AdminLayout } from "../app/AdminLayout";
+import { type Appearance, MAX_WIDTH_CLASS } from "../app/appearance";
 import { AuthUserProvider } from "../app/authUser";
 import { CenterLayout } from "../app/CenterLayout";
 import { PageParamsProvider } from "../app/pageParams";
@@ -35,6 +36,7 @@ interface AdminPageProps {
 		messages?: Record<string, string>;
 		contentLocales?: string[];
 		defaultContentLocale?: string;
+		appearance?: Appearance | null;
 	};
 	auth?: { user?: AuthUser | null };
 	[key: string]: unknown;
@@ -74,6 +76,10 @@ export function AdminPage() {
 
 	const contentLocales = tbtop?.contentLocales ?? ["en"];
 	const defaultContentLocale = tbtop?.defaultContentLocale ?? contentLocales[0] ?? "en";
+	// Panel-configured content width (appearance.maxWidth); 5xl matches the
+	// pre-option behavior for panels that never set it.
+	const widthToken = tbtop?.appearance?.maxWidth;
+	const maxWidth = (widthToken && MAX_WIDTH_CLASS[widthToken]) || "max-w-5xl";
 
 	return (
 		<ClientProvider apiBase={apiBase}>
@@ -82,7 +88,7 @@ export function AdminPage() {
 					<ContentLocaleConfigProvider
 						config={{ locales: contentLocales, defaultLocale: defaultContentLocale }}
 					>
-						<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+						<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
 							{breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
 							<div>
 								<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

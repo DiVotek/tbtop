@@ -45,6 +45,8 @@ export interface ChromeData {
 	orientation: "vertical" | "horizontal" | "rail";
 	/** React `slots.logo` escape hatch, threaded into the logo block. */
 	logoSlot?: ReactNode;
+	/** Panel home URL (tbtop.prefix); the logo links here when present. */
+	homeUrl?: string | null;
 	/** Poll interval (ms) for the notifications bell; null disables polling. */
 	notificationsPollInterval?: number | null;
 	/** Dark-mode policy from tbtop.appearance; undefined = enabled. */

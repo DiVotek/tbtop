@@ -1,5 +1,6 @@
 /**
- * Page title/subtitle rendering (props.title / props.subtitle -> h1 + <p>).
+ * AdminPage content rendering: title/subtitle (props.title / props.subtitle
+ * -> h1 + <p>) and the content-wrapper width from tbtop.appearance.maxWidth.
  *
  * Mocks ONLY usePage + router from @inertiajs/react, mirroring
  * app/CenterLayout.test.tsx: bun mock.module is process-global, so a
@@ -50,5 +51,27 @@ describe("AdminPage: title and subtitle", () => {
 		const h1 = getByRole("heading", { level: 1 });
 		expect(h1.parentElement?.querySelector("p")).toBeNull();
 		expect(container.querySelectorAll("p")).toHaveLength(0);
+	});
+});
+
+describe("AdminPage: content width from appearance.maxWidth", () => {
+	test("defaults the content wrapper to max-w-5xl without appearance", () => {
+		currentProps = { ...BASE_PROPS };
+		const { getByRole } = render(<AdminPage />);
+		expect(getByRole("heading", { level: 1 }).closest(".max-w-5xl")).toBeTruthy();
+	});
+
+	test("appearance.maxWidth widens the content wrapper", () => {
+		currentProps = { ...BASE_PROPS, tbtop: { appearance: { maxWidth: "full" } } };
+		const { getByRole } = render(<AdminPage />);
+		const h1 = getByRole("heading", { level: 1 });
+		expect(h1.closest(".max-w-full")).toBeTruthy();
+		expect(h1.closest(".max-w-5xl")).toBeNull();
+	});
+
+	test("an unknown maxWidth token falls back to max-w-5xl", () => {
+		currentProps = { ...BASE_PROPS, tbtop: { appearance: { maxWidth: "8xl" } } };
+		const { getByRole } = render(<AdminPage />);
+		expect(getByRole("heading", { level: 1 }).closest(".max-w-5xl")).toBeTruthy();
 	});
 });
