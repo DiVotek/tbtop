@@ -35,3 +35,14 @@ function panelWithPages(array $pages): CurrentPanel
 {
     return new CurrentPanel((new PanelConfig)->id('admin')->prefix('admin')->pages($pages));
 }
+
+/** A request-scoped panel with an optional chrome class override. */
+function panelWithChrome(?string $chrome): CurrentPanel
+{
+    $config = (new PanelConfig)->id('admin')->prefix('admin');
+    if ($chrome !== null) {
+        $config->chrome($chrome);
+    }
+
+    return new CurrentPanel($config);
+}
