@@ -4,7 +4,9 @@ import type { AdminLayoutSlotProps } from "./AdminLayout";
 import { AdminLayoutShell } from "./AdminLayout";
 
 const DEFAULT_USER = { name: "Alice Smith", email: "alice@example.com" };
-const DEFAULT_NAV = [{ group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] }];
+const DEFAULT_NAV = [
+	{ key: "Content", group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] },
+];
 
 describe("AdminLayout slots", () => {
 	test("AdminLayout: default shell renders sidebar with nav.title", () => {

@@ -3,7 +3,9 @@ import { fireEvent, render } from "@testing-library/react";
 import { AdminLayoutShell } from "./AdminLayout";
 
 const USER = { name: "Alice Smith", email: "alice@example.com" };
-const NAV = [{ group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] }];
+const NAV = [
+	{ key: "Content", group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] },
+];
 
 function renderTopbarSidebar() {
 	return render(
@@ -32,11 +34,12 @@ describe("TopbarSidebarFrame", () => {
 		expect(getAllByTestId("admin-sidebar").length).toBeGreaterThan(0);
 	});
 
-	test("collapse toggle hides the desktop sidebar nav", () => {
-		const { getByTestId, getAllByTestId, queryAllByTestId } = renderTopbarSidebar();
-		const before = getAllByTestId("admin-sidebar").length;
+	test("collapse toggle switches the desktop sidebar to an icon rail", () => {
+		const { getByTestId, queryAllByTestId } = renderTopbarSidebar();
+		// Expanded: the group renders as a full section, no rail trigger.
+		expect(queryAllByTestId("nav-group-trigger-Content").length).toBe(0);
 		fireEvent.click(getByTestId("sidebar-collapse"));
-		// The desktop <aside> unmounts; the mobile drawer copy remains.
-		expect(queryAllByTestId("admin-sidebar").length).toBeLessThan(before);
+		// Collapsed: the desktop aside becomes a rail of group-icon triggers.
+		expect(queryAllByTestId("nav-group-trigger-Content").length).toBeGreaterThan(0);
 	});
 });

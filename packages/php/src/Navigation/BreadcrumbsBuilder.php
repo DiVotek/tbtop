@@ -53,16 +53,32 @@ final class BreadcrumbsBuilder
         }
 
         $group = (string) ($nav['group'] ?? 'General');
+        $label = self::groupLabel($group, $panel);
 
         // Find if any nav item in this group corresponds to a page with the same path
         // (without route params) — if so, include href on the parent crumb.
         $parentUrl = self::resolveGroupUrl($group, $page, $panel);
 
         $parent = $parentUrl !== null
-            ? ['label' => $group, 'url' => $parentUrl]
-            : ['label' => $group];
+            ? ['label' => $label, 'url' => $parentUrl]
+            : ['label' => $label];
 
         return [$parent, ['label' => $title]];
+    }
+
+    /**
+     * Resolves a group key to its translated display label from the panel's
+     * navigationGroups(). Falls back to the key when no NavGroup declared it.
+     */
+    private static function groupLabel(string $key, CurrentPanel $panel): string
+    {
+        foreach ($panel->navigationGroups() as $navGroup) {
+            if ($navGroup->key() === $key) {
+                return $navGroup->displayLabel();
+            }
+        }
+
+        return $key;
     }
 
     /**

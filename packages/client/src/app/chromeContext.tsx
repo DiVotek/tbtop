@@ -13,6 +13,8 @@ export interface NavItem {
 }
 
 export interface NavGroup {
+	/** Stable, unlocalized key — used to persist collapse state across locales. */
+	key: string;
 	group: string;
 	items: NavItem[];
 	icon?: IconDef;
@@ -37,10 +39,10 @@ export interface ChromeData {
 	brand: string | null;
 	/**
 	 * How the nav menu lays itself out. "vertical" is the sidebar default;
-	 * "horizontal" is the topbar layout, where the nav goes inline on wide
-	 * screens and still stacks inside the mobile drawer.
+	 * "horizontal" is the topbar layout; "rail" is the collapsed sidebar — a
+	 * narrow strip of group icons, each opening its items in a side dropdown.
 	 */
-	orientation: "vertical" | "horizontal";
+	orientation: "vertical" | "horizontal" | "rail";
 	/** React `slots.logo` escape hatch, threaded into the logo block. */
 	logoSlot?: ReactNode;
 	/** Poll interval (ms) for the notifications bell; null disables polling. */

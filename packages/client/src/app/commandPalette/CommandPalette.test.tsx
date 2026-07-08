@@ -5,8 +5,9 @@ import type { NavGroup } from "../chromeContext";
 import { CommandPalette } from "./CommandPalette";
 
 const NAV: NavGroup[] = [
-	{ group: "Overview", items: [{ label: "Dashboard", href: "/admin" }] },
+	{ key: "Overview", group: "Overview", items: [{ label: "Dashboard", href: "/admin" }] },
 	{
+		key: "Content",
 		group: "Content",
 		items: [
 			{ label: "Posts", href: "/admin/posts" },

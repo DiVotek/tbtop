@@ -7,6 +7,7 @@ const USER = { name: "Alice", email: "alice@example.com" };
 
 const NAV: NavGroup[] = [
 	{
+		key: "Overview",
 		group: "Overview",
 		icon: { name: "star", position: "left" },
 		items: [
@@ -18,6 +19,7 @@ const NAV: NavGroup[] = [
 		],
 	},
 	{
+		key: "Content",
 		group: "Content",
 		collapsible: true,
 		items: [
@@ -32,6 +34,7 @@ const NAV: NavGroup[] = [
 		],
 	},
 	{
+		key: "System",
 		group: "System",
 		collapsible: true,
 		collapsed: true,
@@ -88,11 +91,30 @@ describe("NavGroupSection", () => {
 		fireEvent.click(getByTestId("nav-group-toggle-System"));
 		expect(getByText("Settings")).toBeTruthy();
 	});
+
+	test("persists a group's collapse choice to localStorage on toggle", () => {
+		window.localStorage.clear();
+		const { getByTestId } = renderNav();
+
+		fireEvent.click(getByTestId("nav-group-toggle-Content")); // collapse Content
+		const stored = JSON.parse(window.localStorage.getItem("tbtop:nav-collapsed") ?? "{}");
+		expect(stored.Content).toBe(false);
+	});
+
+	test("restores a stored collapse choice over the server default", () => {
+		window.localStorage.clear();
+		// System defaults collapsed; a stored "expanded" should win on load.
+		window.localStorage.setItem("tbtop:nav-collapsed", JSON.stringify({ System: true }));
+
+		const { getByText } = renderNav();
+		expect(getByText("Settings")).toBeTruthy();
+	});
 });
 
 describe("NavItemNode (nested nav)", () => {
 	const NESTED_NAV: NavGroup[] = [
 		{
+			key: "System",
 			group: "System",
 			items: [
 				{

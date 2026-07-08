@@ -7,11 +7,13 @@ const USER = { name: "Alice", email: "alice@example.com" };
 
 const NAV: NavGroup[] = [
 	{
+		key: "Overview",
 		group: "Overview",
 		icon: { name: "star", position: "left" },
 		items: [{ label: "Dashboard", href: "/admin/dashboard" }],
 	},
 	{
+		key: "Content",
 		group: "Content",
 		items: [
 			{
@@ -74,6 +76,7 @@ describe("NavGroupDropdown (topbar)", () => {
 	test("the trigger highlights when a nested child is active even if its URL is not a sub-path of the parent", () => {
 		const nestedNav: NavGroup[] = [
 			{
+				key: "System",
 				group: "System",
 				items: [
 					{
@@ -101,6 +104,7 @@ describe("NavGroupDropdown (topbar)", () => {
 	test("a nav item with children renders as a submenu trigger, not a direct link", async () => {
 		const nestedNav: NavGroup[] = [
 			{
+				key: "System",
 				group: "System",
 				items: [
 					{
@@ -121,5 +125,41 @@ describe("NavGroupDropdown (topbar)", () => {
 		const subtrigger = getByTestId("nav-group-subtrigger-/admin/settings");
 		expect(subtrigger.textContent).toBe("Settings");
 		expect(subtrigger.tagName).not.toBe("A");
+	});
+});
+
+describe("NavGroupDropdown (rail)", () => {
+	function renderRail(currentUrl = "/admin") {
+		const shell = render(
+			<AdminLayoutShell
+				nav={NAV}
+				user={USER}
+				currentUrl={currentUrl}
+				navigation="topbar-sidebar"
+			>
+				<div />
+			</AdminLayoutShell>,
+		);
+		fireEvent.click(shell.getByTestId("sidebar-collapse"));
+		return shell;
+	}
+
+	test("the rail trigger shows only the group icon, not its label text", () => {
+		const { getByTestId } = renderRail();
+		const trigger = getByTestId("nav-group-trigger-Overview");
+		expect(trigger.querySelector("svg")).toBeTruthy();
+		expect(trigger.textContent).toBe("");
+		expect(trigger.getAttribute("aria-label")).toBe("Overview");
+	});
+
+	test("opening a rail group reveals its items in a right-side menu", async () => {
+		const { getByTestId, findByText } = renderRail();
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+		expect(await findByText("Iconic")).toBeTruthy();
+	});
+
+	test("the rail trigger for the group holding the current page is highlighted", () => {
+		const { getByTestId } = renderRail("/admin/iconic");
+		expect(getByTestId("nav-group-trigger-Content").className).toContain("bg-accent");
 	});
 });

@@ -3,7 +3,10 @@
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\BreadcrumbsBuilder;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\NavPage;
 use Tbtop\Admin\Tests\Fixtures\PostsIndexPage;
 
@@ -29,6 +32,23 @@ it('BreadcrumbsBuilder: page with nav() returns group + title, group without url
         ['label' => 'Content'],
         ['label' => 'Nav Page'],
     ]);
+});
+
+// --------------------------------------------------------------------------
+// Auto-build: the group crumb shows the translated NavGroup label, not the key
+// --------------------------------------------------------------------------
+it('BreadcrumbsBuilder: group crumb uses the translated NavGroup label', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([NavPage::class])
+            ->navigationGroups([NavGroup::make('Content')->label('Контент')])
+    );
+
+    $crumbs = BreadcrumbsBuilder::build(new NavPage, $panel);
+
+    expect($crumbs[0])->toBe(['label' => 'Контент']);
 });
 
 // --------------------------------------------------------------------------

@@ -5,9 +5,11 @@ namespace Tbtop\Admin\Navigation;
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
 
 /**
- * Panel-level metadata for a sidebar nav group. The groups themselves are
- * derived from each page's nav()['group'] label; this builder attaches an
- * icon and collapsible behavior, matched back to a group by its label.
+ * Panel-level metadata for a sidebar nav group. Groups are keyed by the
+ * stable, unlocalized string a page's nav()['group'] returns; this builder
+ * matches by that key and attaches an icon, collapse behavior, and an
+ * optional translated display label. Keying by a stable key (not the label)
+ * keeps ordering and meta intact when the label is translated.
  *
  * Reuses the shared HasIcon trait so a group icon serializes to the same
  * {name, position} wire shape as action/stat/column icons.
@@ -20,11 +22,28 @@ final class NavGroup
 
     private bool $collapsed = false;
 
-    private function __construct(private readonly string $label) {}
+    /** @var string|(\Closure(): string)|null */
+    private string|\Closure|null $label = null;
 
-    public static function make(string $label): self
+    private function __construct(private readonly string $key) {}
+
+    public static function make(string $key): self
     {
-        return new self($label);
+        return new self($key);
+    }
+
+    /**
+     * Translated header text shown in the sidebar. Pass a Closure to defer
+     * translation to request time — panel config is built once (singleton),
+     * so a bare __() there would freeze on the first request's locale.
+     *
+     * @param  string|(\Closure(): string)  $label
+     */
+    public function label(string|\Closure $label): self
+    {
+        $this->label = $label;
+
+        return $this;
     }
 
     /** Render the group header as a collapse toggle. */
@@ -46,9 +65,20 @@ final class NavGroup
         return $this;
     }
 
-    public function label(): string
+    /** The stable, unlocalized key pages match against. */
+    public function key(): string
     {
-        return $this->label;
+        return $this->key;
+    }
+
+    /** The display text, falling back to the key when none was set. */
+    public function displayLabel(): string
+    {
+        if ($this->label instanceof \Closure) {
+            return ($this->label)();
+        }
+
+        return $this->label ?? $this->key;
     }
 
     /**

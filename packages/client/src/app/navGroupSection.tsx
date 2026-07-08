@@ -7,6 +7,7 @@ import { resolveColorClasses } from "../structure/table/colorRegistry";
 import { Badge } from "../ui/badge";
 import { NodeIcon } from "../ui/node-icon";
 import type { ChromeData, NavGroup, NavItem } from "./chromeContext";
+import { readGroupExpanded, writeGroupExpanded } from "./navGroupStorage";
 
 interface NavGroupSectionProps {
 	group: NavGroup;
@@ -19,15 +20,24 @@ interface NavGroupSectionProps {
  * own icon and badge.
  */
 export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
-	const [open, setOpen] = useState(!group.collapsed);
+	// Restore the last collapse choice; fall back to the server's default.
+	const [open, setOpen] = useState(() => readGroupExpanded(group.key) ?? !group.collapsed);
 	const expanded = group.collapsible ? open : true;
+
+	const toggle = () => {
+		setOpen((value) => {
+			const next = !value;
+			writeGroupExpanded(group.key, next);
+			return next;
+		});
+	};
 
 	return (
 		<div className="flex flex-col gap-1">
 			{group.collapsible ? (
 				<button
 					type="button"
-					onClick={() => setOpen((value) => !value)}
+					onClick={toggle}
 					aria-expanded={expanded}
 					data-testid={`nav-group-toggle-${group.group}`}
 					className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium uppercase text-muted-foreground hover:text-foreground"
@@ -45,7 +55,9 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 				</div>
 			)}
 			{expanded && (
-				<div className="flex flex-col gap-1">
+				// Indent items by the group icon + its gap (size-3.5 + gap-1.5 = 20px)
+				// so item text lines up under the group label, showing the nesting.
+				<div className="flex flex-col gap-1 pl-5">
 					{group.items.map((item) => (
 						<NavItemNode key={item.href} item={item} currentUrl={currentUrl} />
 					))}
