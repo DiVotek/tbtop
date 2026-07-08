@@ -47,6 +47,7 @@ describe("density: Button", () => {
 		const button = getByText("Click");
 		expect(button.getAttribute("data-size")).toBe("sm");
 		expect(button.className).toContain("shadow-sm");
+		expect(button.className).toContain("text-xs");
 	});
 
 	test("an explicit size prop wins over compact density", () => {
