@@ -10,12 +10,18 @@ import {
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { NodeIcon } from "../ui/node-icon";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import type { ChromeData, NavGroup, NavItem } from "./chromeContext";
 import { containsActive, NavItemLink } from "./navGroupSection";
 
 interface NavGroupDropdownProps {
 	group: NavGroup;
 	currentUrl: ChromeData["currentUrl"];
+	/**
+	 * Rail mode: an icon-only trigger with the group name in a tooltip, and
+	 * the item menu opening to the right (the collapsed-sidebar strip).
+	 */
+	rail?: boolean;
 }
 
 /**
@@ -26,23 +32,14 @@ interface NavGroupDropdownProps {
  * the sidebar's collapsible/collapsed behaviour — every group is collapsed
  * until opened.
  */
-export function NavGroupDropdown({ group, currentUrl }: NavGroupDropdownProps) {
+export function NavGroupDropdown({ group, currentUrl, rail = false }: NavGroupDropdownProps) {
 	const active = group.items.some((item) => containsActive(item, currentUrl));
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger
-				data-testid={`nav-group-trigger-${group.group}`}
-				className={cn(
-					"flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
-					active && "bg-accent font-medium",
-				)}
-			>
-				<NodeIcon icon={group.icon} className="size-4 shrink-0" />
-				<span>{group.group}</span>
-				<ChevronDownIcon className="size-3.5 shrink-0 opacity-60" aria-hidden />
-			</DropdownMenuTrigger>
+			<GroupTrigger group={group} active={active} rail={rail} />
 			<DropdownMenuContent
 				align="start"
+				side={rail ? "right" : "bottom"}
 				className="min-w-44"
 				data-testid={`nav-group-menu-${group.group}`}
 			>
@@ -51,6 +48,49 @@ export function NavGroupDropdown({ group, currentUrl }: NavGroupDropdownProps) {
 				))}
 			</DropdownMenuContent>
 		</DropdownMenu>
+	);
+}
+
+function GroupTrigger({
+	group,
+	active,
+	rail,
+}: {
+	group: NavGroup;
+	active: boolean;
+	rail: boolean;
+}) {
+	if (rail) {
+		return (
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<DropdownMenuTrigger
+						data-testid={`nav-group-trigger-${group.group}`}
+						aria-label={group.group}
+						className={cn(
+							"flex size-9 items-center justify-center rounded-md hover:bg-accent",
+							active && "bg-accent",
+						)}
+					>
+						<NodeIcon icon={group.icon} className="size-4 shrink-0" />
+					</DropdownMenuTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="right">{group.group}</TooltipContent>
+			</Tooltip>
+		);
+	}
+	return (
+		<DropdownMenuTrigger
+			data-testid={`nav-group-trigger-${group.group}`}
+			className={cn(
+				"flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
+				active && "bg-accent font-medium",
+			)}
+		>
+			<NodeIcon icon={group.icon} className="size-4 shrink-0" />
+			<span>{group.group}</span>
+			<ChevronDownIcon className="size-3.5 shrink-0 opacity-60" aria-hidden />
+		</DropdownMenuTrigger>
 	);
 }
 

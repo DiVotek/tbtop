@@ -2,6 +2,7 @@ import { PanelLeftIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { LogoBlock } from "./chromeBlocks";
+import { OrientationProvider } from "./chromeContext";
 import { SidebarDrawer } from "./SidebarDrawer";
 import type { ShellFrameProps } from "./shellFrames";
 import { ShellMain } from "./shellMain";
@@ -40,7 +41,11 @@ export function TopbarSidebarFrame({
 				<div className="ml-auto flex items-center gap-2">{header}</div>
 			</header>
 			<div className="flex min-h-0 flex-1">
-				{!collapsed && (
+				{collapsed ? (
+					<aside className="hidden w-14 shrink-0 flex-col items-center gap-4 border-r p-2 lg:flex">
+						<OrientationProvider orientation="rail">{sidebar}</OrientationProvider>
+					</aside>
+				) : (
 					<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
 						{sidebar}
 					</aside>

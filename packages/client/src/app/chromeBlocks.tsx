@@ -22,6 +22,22 @@ export function NavMenuBlock() {
 			</nav>
 		);
 	}
+	// Rail (collapsed sidebar): a vertical strip of group icons, each opening
+	// its items in a dropdown to the right.
+	if (orientation === "rail") {
+		return (
+			<nav className="flex flex-col items-center gap-1" data-testid="admin-sidebar">
+				{nav.map((group) => (
+					<NavGroupDropdown
+						key={group.group}
+						group={group}
+						currentUrl={currentUrl}
+						rail
+					/>
+				))}
+			</nav>
+		);
+	}
 	return (
 		<nav className="flex flex-col gap-4" data-testid="admin-sidebar">
 			{nav.map((group) => (
