@@ -43,8 +43,10 @@ jobs:
 
       # Node 22 bundles npm 10.9.x; OIDC publishing needs npm >= 11.5.1.
       # Without this, npm silently skips OIDC and publish fails as a masked E404.
+      # Pinned (not @latest): npm 12.0.0 ships a broken publish (MODULE_NOT_FOUND
+      # sigstore), which killed the 0.2.11 release run.
       - name: Upgrade npm for OIDC
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.18.0
 
       # prepublishOnly builds dist via tsup, which runs on bun.
       - name: Setup Bun
