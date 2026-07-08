@@ -10,6 +10,19 @@ it('themeToggle: builds a leaf node of kind themeToggle', function (): void {
         ->and($node->options)->toBe([]);
 });
 
+it('localeSwitcher: defaults to no variant option (buttons)', function (): void {
+    $node = (new S)->localeSwitcher();
+
+    expect($node->kind)->toBe('localeSwitcher')
+        ->and($node->options)->toBe([]);
+});
+
+it('localeSwitcher: carries the variant into the options when given', function (): void {
+    $node = (new S)->localeSwitcher('dropdown');
+
+    expect($node->options)->toBe(['variant' => 'dropdown']);
+});
+
 it('visit: omits newTab by default', function (): void {
     $node = (new S)->action('go')->visit('/x')->toNode();
 

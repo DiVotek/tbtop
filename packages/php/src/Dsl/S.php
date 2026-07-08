@@ -485,10 +485,15 @@ final class S
         return new Node('logo');
     }
 
-    /** Standalone UI-locale switcher; hidden when the panel has one locale. */
-    public function localeSwitcher(): Node
+    /**
+     * Standalone UI-locale switcher; hidden when the panel has one locale.
+     *
+     * @param  'buttons'|'dropdown'|null  $variant  'buttons' (default) shows a
+     *                                              button per locale; 'dropdown' collapses them into a single menu.
+     */
+    public function localeSwitcher(?string $variant = null): Node
     {
-        return new Node('localeSwitcher');
+        return new Node('localeSwitcher', $variant !== null ? ['variant' => $variant] : []);
     }
 
     /** Flex spacer pushing the following siblings to the far edge. */

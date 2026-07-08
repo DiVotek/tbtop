@@ -1,4 +1,12 @@
+import { ChevronDownIcon } from "lucide-react";
 import { useLocale, useTranslation } from "../i18n/i18n";
+import type { RenderProps } from "../render/blockRegistry";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { useChromeData } from "./chromeContext";
 import { NavGroupDropdown } from "./navGroupDropdown";
 import { NavGroupSection } from "./navGroupSection";
@@ -58,11 +66,29 @@ export function LogoBlock() {
 	return <div className="text-lg font-semibold">{logoSlot ?? brand ?? t("nav.title")}</div>;
 }
 
-export function LocaleSwitcherBlock() {
+interface LocaleSwitcherOptions {
+	/** "buttons" (default): a code per button. "dropdown": one trigger + menu. */
+	variant?: "buttons" | "dropdown";
+}
+
+export function LocaleSwitcherBlock({ options }: RenderProps<LocaleSwitcherOptions>) {
 	const { locale, setLocale, available } = useLocale();
 	if (available.length === 0) {
 		return null;
 	}
+	if (options?.variant === "dropdown") {
+		return <LocaleDropdown locale={locale} setLocale={setLocale} available={available} />;
+	}
+	return <LocaleButtons locale={locale} setLocale={setLocale} available={available} />;
+}
+
+interface LocaleVariantProps {
+	locale: string;
+	setLocale: (code: string) => void;
+	available: string[];
+}
+
+function LocaleButtons({ locale, setLocale, available }: LocaleVariantProps) {
 	return (
 		<div className="flex items-center gap-1" data-testid="locale-switcher">
 			{available.map((code) => (
@@ -78,6 +104,33 @@ export function LocaleSwitcherBlock() {
 				</button>
 			))}
 		</div>
+	);
+}
+
+function LocaleDropdown({ locale, setLocale, available }: LocaleVariantProps) {
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				data-testid="locale-switcher"
+				className="inline-flex h-8 items-center gap-1 rounded-md px-3 text-xs uppercase hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			>
+				{locale}
+				<ChevronDownIcon className="size-3.5 shrink-0 opacity-60" aria-hidden />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="min-w-0" data-testid="locale-switcher-menu">
+				{available.map((code) => (
+					<DropdownMenuItem
+						key={code}
+						className="cursor-pointer justify-center text-xs uppercase data-[active=true]:font-medium"
+						data-active={locale === code}
+						data-testid={`locale-switcher-${code}`}
+						onSelect={() => setLocale(code)}
+					>
+						{code}
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
