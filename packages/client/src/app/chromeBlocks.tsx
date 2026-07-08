@@ -1,3 +1,4 @@
+import { Link } from "@inertiajs/react";
 import { ChevronDownIcon } from "lucide-react";
 import { useLocale, useTranslation } from "../i18n/i18n";
 import type { RenderProps } from "../render/blockRegistry";
@@ -57,8 +58,17 @@ export function UserMenuBlock() {
 
 export function LogoBlock() {
 	const t = useTranslation();
-	const { brand, logoSlot } = useChromeData();
-	return <div className="text-lg font-semibold">{logoSlot ?? brand ?? t("nav.title")}</div>;
+	const { brand, logoSlot, homeUrl } = useChromeData();
+	const content = logoSlot ?? brand ?? t("nav.title");
+	if (homeUrl) {
+		return (
+			<Link href={homeUrl} className="text-lg font-semibold">
+				{content}
+			</Link>
+		);
+	}
+	// No home URL on the wire (older server / shell used standalone) — plain text.
+	return <div className="text-lg font-semibold">{content}</div>;
 }
 
 interface LocaleSwitcherOptions {

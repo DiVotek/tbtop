@@ -38,6 +38,7 @@ interface SharedProps {
 		notifications?: { pollInterval?: number | null };
 		appearance?: Appearance | null;
 		palette?: CommandPaletteData | null;
+		prefix?: string;
 	};
 	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
@@ -72,6 +73,7 @@ interface AdminLayoutShellProps {
 	notificationsPollInterval?: number | null;
 	appearance?: Appearance | null;
 	userMenuItems?: NavItem[];
+	homeUrl?: string | null;
 }
 
 const FRAMES: Record<NavigationLayout, (props: ShellFrameProps) => ReactNode> = {
@@ -98,6 +100,7 @@ export function AdminLayoutShell({
 	notificationsPollInterval,
 	appearance,
 	userMenuItems,
+	homeUrl,
 }: AdminLayoutShellProps) {
 	const Frame = FRAMES[navigation] ?? SidebarFrame;
 	const maxWidth = appearance?.maxWidth ? MAX_WIDTH_CLASS[appearance.maxWidth] : undefined;
@@ -110,6 +113,7 @@ export function AdminLayoutShell({
 		brand: brand ?? null,
 		orientation: "vertical",
 		logoSlot: slots?.logo?.(slotProps),
+		homeUrl,
 		notificationsPollInterval,
 		darkMode: appearance?.darkMode,
 		defaultTheme: appearance?.defaultTheme,
@@ -159,6 +163,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 				notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
 				appearance={props.tbtop?.appearance}
 				userMenuItems={props.tbtop?.userMenuItems}
+				homeUrl={props.tbtop?.prefix}
 			>
 				{children}
 			</AdminLayoutShell>

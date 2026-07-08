@@ -106,6 +106,25 @@ describe("AdminLayout slots", () => {
 		expect(queryByText("Tabletop")).toBeNull();
 	});
 
+	test("AdminLayout: logo links to the panel home when homeUrl is provided", () => {
+		const { getAllByText } = render(
+			<AdminLayoutShell nav={[]} user={DEFAULT_USER} currentUrl="/" homeUrl="/admin">
+				<div />
+			</AdminLayoutShell>,
+		);
+		const logo = getAllByText("Tabletop")[0];
+		expect(logo?.closest("a")?.getAttribute("href")).toBe("/admin");
+	});
+
+	test("AdminLayout: logo stays a plain element without homeUrl", () => {
+		const { getAllByText } = render(
+			<AdminLayoutShell nav={[]} user={DEFAULT_USER} currentUrl="/">
+				<div />
+			</AdminLayoutShell>,
+		);
+		expect(getAllByText("Tabletop")[0]?.closest("a")).toBeNull();
+	});
+
 	test("AdminLayout: slot header receives nav and user as props", () => {
 		let receivedProps: AdminLayoutSlotProps | null = null;
 		render(
