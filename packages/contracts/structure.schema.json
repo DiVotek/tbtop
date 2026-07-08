@@ -188,7 +188,7 @@
 					"if": {
 						"properties": {
 							"kind": {
-								"enum": ["navMenu", "userMenu", "logo", "localeSwitcher", "spacer", "notifications"]
+								"enum": ["navMenu", "userMenu", "logo", "spacer", "notifications"]
 							}
 						}
 					},
@@ -197,6 +197,19 @@
 							"options": {
 								"additionalProperties": false,
 								"properties": {}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "localeSwitcher" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"additionalProperties": false,
+								"properties": {
+									"variant": { "type": "string", "enum": ["buttons", "dropdown"] }
+								}
 							}
 						}
 					}

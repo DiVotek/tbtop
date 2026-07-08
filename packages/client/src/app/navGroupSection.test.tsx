@@ -109,6 +109,30 @@ describe("NavGroupSection", () => {
 		const { getByText } = renderNav();
 		expect(getByText("Settings")).toBeTruthy();
 	});
+
+	test("when key differs from the localized group label, the label renders but the testid and persistence key follow the stable key", () => {
+		window.localStorage.clear();
+		const localizedNav: NavGroup[] = [
+			{
+				key: "content",
+				group: "Контент",
+				collapsible: true,
+				items: [{ label: "Iconic", href: "/admin/iconic" }],
+			},
+		];
+		const { getByTestId, getByText, queryByText } = render(
+			<AdminLayoutShell nav={localizedNav} user={USER} currentUrl="/admin">
+				<div />
+			</AdminLayoutShell>,
+		);
+
+		expect(getByText("Контент")).toBeTruthy();
+		fireEvent.click(getByTestId("nav-group-toggle-content"));
+		expect(queryByText("Iconic")).toBeNull();
+
+		const stored = JSON.parse(window.localStorage.getItem("tbtop:nav-collapsed") ?? "{}");
+		expect(stored.content).toBe(false);
+	});
 });
 
 describe("NavItemNode (nested nav)", () => {

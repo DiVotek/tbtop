@@ -162,4 +162,29 @@ describe("NavGroupDropdown (rail)", () => {
 		const { getByTestId } = renderRail("/admin/iconic");
 		expect(getByTestId("nav-group-trigger-Content").className).toContain("bg-accent");
 	});
+
+	test("when key differs from the localized group label, the rail testid follows the key while the tooltip and aria-label show the label", () => {
+		const localizedNav: NavGroup[] = [
+			{
+				key: "content",
+				group: "Контент",
+				items: [{ label: "Iconic", href: "/admin/iconic" }],
+			},
+		];
+		const { getByTestId } = render(
+			<AdminLayoutShell
+				nav={localizedNav}
+				user={USER}
+				currentUrl="/admin"
+				navigation="topbar-sidebar"
+			>
+				<div />
+			</AdminLayoutShell>,
+		);
+		fireEvent.click(getByTestId("sidebar-collapse"));
+
+		const trigger = getByTestId("nav-group-trigger-content");
+		expect(trigger.textContent).toBe("");
+		expect(trigger.getAttribute("aria-label")).toBe("Контент");
+	});
 });

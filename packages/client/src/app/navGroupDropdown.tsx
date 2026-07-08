@@ -41,7 +41,7 @@ export function NavGroupDropdown({ group, currentUrl, rail = false }: NavGroupDr
 				align="start"
 				side={rail ? "right" : "bottom"}
 				className="min-w-44"
-				data-testid={`nav-group-menu-${group.group}`}
+				data-testid={`nav-group-menu-${group.key}`}
 			>
 				{group.items.map((item) => (
 					<DropdownNavItem key={item.href} item={item} currentUrl={currentUrl} />
@@ -65,7 +65,7 @@ function GroupTrigger({
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<DropdownMenuTrigger
-						data-testid={`nav-group-trigger-${group.group}`}
+						data-testid={`nav-group-trigger-${group.key}`}
 						aria-label={group.group}
 						className={cn(
 							"flex size-9 items-center justify-center rounded-md hover:bg-accent",
@@ -81,7 +81,7 @@ function GroupTrigger({
 	}
 	return (
 		<DropdownMenuTrigger
-			data-testid={`nav-group-trigger-${group.group}`}
+			data-testid={`nav-group-trigger-${group.key}`}
 			className={cn(
 				"flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
 				active && "bg-accent font-medium",
