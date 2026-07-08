@@ -83,7 +83,7 @@ function GroupTrigger({
 		<DropdownMenuTrigger
 			data-testid={`nav-group-trigger-${group.key}`}
 			className={cn(
-				"flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
+				"flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm tracking-wide hover:bg-accent",
 				active && "bg-accent font-medium",
 			)}
 		>

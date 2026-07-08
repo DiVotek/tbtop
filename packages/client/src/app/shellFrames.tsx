@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { cn } from "../lib/cn";
 import { OrientationProvider } from "./chromeContext";
+import { useDensity } from "./densityContext";
 import { SidebarDrawer } from "./SidebarDrawer";
 import { ShellMain } from "./shellMain";
 
@@ -14,9 +16,15 @@ export interface ShellFrameProps {
 
 /** Default layout: persistent left sidebar, header strip, mobile drawer. */
 export function SidebarFrame({ sidebar, header, footer, children, maxWidth }: ShellFrameProps) {
+	const density = useDensity();
 	return (
 		<div className="flex min-h-screen bg-background text-foreground">
-			<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
+			<aside
+				className={cn(
+					"hidden shrink-0 flex-col gap-4 border-r p-4 lg:flex",
+					density === "compact" ? "w-48" : "w-56",
+				)}
+			>
 				{sidebar}
 			</aside>
 			<div className="flex min-w-0 flex-1 flex-col">

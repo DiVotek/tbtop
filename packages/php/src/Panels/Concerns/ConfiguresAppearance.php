@@ -23,11 +23,15 @@ trait ConfiguresAppearance
 
     private const THEME_MODES = ['light', 'dark', 'system'];
 
+    private const DENSITIES = ['default', 'compact'];
+
     private bool $darkMode = true;
 
     private string $defaultThemeMode = 'system';
 
     private ?string $maxContentWidth = null;
+
+    private string $density = 'default';
 
     /** Allow or disable the dark-mode toggle entirely (default: allowed). */
     public function darkMode(bool $enabled = true): static
@@ -59,6 +63,17 @@ trait ConfiguresAppearance
         return $this;
     }
 
+    /** Shell density: 'compact' tightens control heights, spacing, and the sidebar width. */
+    public function density(string $mode): static
+    {
+        if (! in_array($mode, self::DENSITIES, true)) {
+            throw new InvalidArgumentException("Unknown density \"{$mode}\". Expected one of: ".implode(', ', self::DENSITIES).'.');
+        }
+        $this->density = $mode;
+
+        return $this;
+    }
+
     /**
      * Sparse appearance payload for the client; omits keys left at defaults.
      * Returns [] when nothing was changed.
@@ -71,6 +86,7 @@ trait ConfiguresAppearance
             'darkMode' => $this->darkMode === false ? false : null,
             'defaultTheme' => $this->defaultThemeMode !== 'system' ? $this->defaultThemeMode : null,
             'maxWidth' => $this->maxContentWidth,
+            'density' => $this->density !== 'default' ? $this->density : null,
         ], static fn (mixed $v): bool => $v !== null);
     }
 }

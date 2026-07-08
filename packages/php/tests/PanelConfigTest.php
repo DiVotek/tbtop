@@ -44,3 +44,16 @@ it('rejects an unknown max content width', function () {
 it('rejects an unknown default theme mode', function () {
     (new PanelConfig)->defaultThemeMode('sepia');
 })->throws(InvalidArgumentException::class, 'Unknown theme mode');
+
+it('omits density while it holds its default', function () {
+    expect((new PanelConfig)->appearance())->toBe([]);
+});
+
+it('serializes density when set to compact', function () {
+    expect((new PanelConfig)->density('compact')->appearance())
+        ->toBe(['density' => 'compact']);
+});
+
+it('rejects an unknown density', function () {
+    (new PanelConfig)->density('cozy');
+})->throws(InvalidArgumentException::class, 'Unknown density');

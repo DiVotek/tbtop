@@ -25,6 +25,12 @@ abstract class Page
         return Str::headline(class_basename(static::class));
     }
 
+    /** Optional line rendered under the page title. Null renders nothing. */
+    public function subtitle(): ?string
+    {
+        return null;
+    }
+
     /** Nav placement: ['group' => ..., 'label' => ..., 'order' => ...] or null to hide. @return array<string, mixed>|null */
     public static function nav(): ?array
     {

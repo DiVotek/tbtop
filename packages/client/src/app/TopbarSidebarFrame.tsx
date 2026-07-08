@@ -1,8 +1,10 @@
 import { PanelLeftIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { cn } from "../lib/cn";
 import { LogoBlock } from "./chromeBlocks";
 import { OrientationProvider } from "./chromeContext";
+import { useDensity } from "./densityContext";
 import { SidebarDrawer } from "./SidebarDrawer";
 import type { ShellFrameProps } from "./shellFrames";
 import { ShellMain } from "./shellMain";
@@ -22,6 +24,7 @@ export function TopbarSidebarFrame({
 }: ShellFrameProps) {
 	const t = useTranslation();
 	const [collapsed, setCollapsed] = useState(false);
+	const density = useDensity();
 
 	return (
 		<div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -46,7 +49,12 @@ export function TopbarSidebarFrame({
 						<OrientationProvider orientation="rail">{sidebar}</OrientationProvider>
 					</aside>
 				) : (
-					<aside className="hidden w-56 shrink-0 flex-col gap-4 border-r p-4 lg:flex">
+					<aside
+						className={cn(
+							"hidden shrink-0 flex-col gap-4 border-r p-4 lg:flex",
+							density === "compact" ? "w-48" : "w-56",
+						)}
+					>
 						{sidebar}
 					</aside>
 				)}

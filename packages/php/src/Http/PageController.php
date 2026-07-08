@@ -40,6 +40,10 @@ final class PageController
             'data' => $data,
         ];
 
+        if ($resolved->page->subtitle() !== null) {
+            $props['subtitle'] = $resolved->page->subtitle();
+        }
+
         if ($panel->breadcrumbs()) {
             $props['breadcrumbs'] = BreadcrumbsBuilder::build($resolved->page, $panel);
         }
