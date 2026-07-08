@@ -64,6 +64,17 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /** Count badge after the label. Pass a Color for the badge tint. */
+    public function badge(string|int $count, ?Color $color = null): self
+    {
+        $this->opts['badge'] = (string) $count;
+        if ($color !== null) {
+            $this->opts['badgeColor'] = $color->value;
+        }
+
+        return $this;
+    }
+
     public function keybinding(string $keys): self
     {
         $this->opts['keybinding'] = $keys;
@@ -71,9 +82,14 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
-    public function visit(string $href): self
+    /** @param  bool  $newTab  Open the target in a new browser tab. */
+    public function visit(string $href, bool $newTab = false): self
     {
-        return $this->setSpec(['type' => 'visit', 'href' => $href]);
+        return $this->setSpec(array_filter([
+            'type' => 'visit',
+            'href' => $href,
+            'newTab' => $newTab ?: null,
+        ], static fn (mixed $v): bool => $v !== null));
     }
 
     public function submit(?string $form = null): self

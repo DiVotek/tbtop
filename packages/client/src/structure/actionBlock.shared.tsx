@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Badge } from "../ui/badge";
 import type { ModalSize } from "../ui/modal-shell";
 import { NodeIcon } from "../ui/node-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
@@ -26,9 +27,14 @@ export interface ActionOptionsBag {
 	color?: ActionColor;
 	handler?: Extract<ActionConfig, { handler: unknown }>["handler"];
 	url?: Extract<ActionConfig, { url: unknown }>["url"];
+	/** Open a visit URL in a new browser tab (external links only). */
+	newTab?: boolean;
 	modal?: ActionModalOpts;
 	keybinding?: ActionConfig["keybinding"];
 	icon?: { name: string; position: string };
+	/** Count badge shown after the label (e.g. an inbox unread count). */
+	badge?: string;
+	badgeColor?: string;
 	tooltip?: string;
 	/** Submit-type actions render as <button type="submit"> so Enter submits the form. */
 	isSubmit?: boolean;
@@ -100,22 +106,23 @@ export function actionKey(opts: ActionOptionsBag): string {
 
 export function ActionLabel({ opts }: { opts: ActionOptionsBag }) {
 	const text = opts.label ?? opts.name;
-	if (!opts.icon) {
-		return <>{text}</>;
-	}
-	const icon = <NodeIcon icon={opts.icon} className="size-4 shrink-0" />;
-	if (opts.icon.position === "right") {
-		return (
-			<>
-				{text}
-				{icon}
-			</>
-		);
-	}
+	const badge = opts.badge ? (
+		<Badge
+			variant={opts.badgeColor === "danger" ? "destructive" : "default"}
+			className="absolute -top-1.5 -right-1.5 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"
+			data-testid="action-badge"
+		>
+			{opts.badge}
+		</Badge>
+	) : null;
+	const icon = opts.icon ? <NodeIcon icon={opts.icon} className="size-4 shrink-0" /> : null;
+
 	return (
 		<>
-			{icon}
+			{opts.icon?.position !== "right" && icon}
 			{text}
+			{opts.icon?.position === "right" && icon}
+			{badge}
 		</>
 	);
 }

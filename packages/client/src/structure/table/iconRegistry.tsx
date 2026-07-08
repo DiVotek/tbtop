@@ -8,17 +8,22 @@ import type { LucideIcon } from "lucide-react";
 import {
 	AlertCircle,
 	Archive,
+	Bell,
 	Check,
 	Circle,
 	Clock,
+	ExternalLink,
 	Eye,
 	EyeOff,
 	FileText,
 	Globe,
+	Inbox,
 	Lock,
+	Mail,
 	Pencil,
 	Star,
 	Trash,
+	User,
 	X,
 } from "lucide-react";
 
@@ -37,6 +42,11 @@ const builtins: Record<string, LucideIcon> = {
 	circle: Circle,
 	"file-text": FileText,
 	"alert-circle": AlertCircle,
+	inbox: Inbox,
+	mail: Mail,
+	bell: Bell,
+	user: User,
+	"external-link": ExternalLink,
 };
 
 const custom: Record<string, LucideIcon> = {};

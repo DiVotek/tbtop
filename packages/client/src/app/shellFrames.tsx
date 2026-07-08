@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { OrientationProvider } from "./chromeContext";
 import { SidebarDrawer } from "./SidebarDrawer";
+import { ShellMain } from "./shellMain";
 
 export interface ShellFrameProps {
 	sidebar: ReactNode;
@@ -9,15 +10,6 @@ export interface ShellFrameProps {
 	children: ReactNode;
 	/** Tailwind max-w class centering page content; full-bleed when absent. */
 	maxWidth?: string;
-}
-
-/** Page content area, optionally centered to a max-width (PanelConfig::maxContentWidth). */
-function ShellMain({ children, maxWidth }: { children: ReactNode; maxWidth?: string }) {
-	return (
-		<main className="min-w-0 flex-1">
-			{maxWidth ? <div className={`mx-auto w-full ${maxWidth}`}>{children}</div> : children}
-		</main>
-	);
 }
 
 /** Default layout: persistent left sidebar, header strip, mobile drawer. */

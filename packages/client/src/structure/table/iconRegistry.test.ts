@@ -17,6 +17,16 @@ describe("iconRegistry", () => {
 		expect(resolveIcon("no-such-icon-xyz")).toBeUndefined();
 	});
 
+	test.each([
+		"inbox",
+		"mail",
+		"bell",
+		"user",
+		"external-link",
+	])("resolves the chrome icon %s", (name) => {
+		expect(resolveIcon(name)).toBeTruthy();
+	});
+
 	test("returns undefined for undefined input", () => {
 		expect(resolveIcon(undefined)).toBeUndefined();
 	});
