@@ -41,7 +41,7 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 					onClick={toggle}
 					aria-expanded={expanded}
 					data-testid={`nav-group-toggle-${group.key}`}
-					className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground hover:text-foreground"
+					className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground hover:text-foreground"
 				>
 					<GroupHeading group={group} />
 					{expanded ? (
@@ -51,7 +51,7 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 					)}
 				</button>
 			) : (
-				<div className="flex items-center gap-1.5 px-2 text-xs font-semibold tracking-wide uppercase text-muted-foreground">
+				<div className="flex items-center gap-1.5 px-2 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
 					<GroupHeading group={group} />
 				</div>
 			)}

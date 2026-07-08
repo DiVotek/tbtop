@@ -60,7 +60,7 @@ function Button({
 			data-size={resolvedSize}
 			className={cn(
 				buttonVariants({ variant, size: resolvedSize }),
-				size === undefined && density === "compact" && "shadow-sm",
+				size === undefined && density === "compact" && "text-xs shadow-sm",
 				className,
 			)}
 			{...(resolvedType !== undefined ? { type: resolvedType } : {})}
