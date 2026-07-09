@@ -18,6 +18,8 @@ final class ChartBuilder implements JsonSerializable
     use HasServerQuery;
     use WithMeta;
 
+    private const MIN_POLL_SECONDS = 5;
+
     /** @var list<Field> */
     private array $paramFields = [];
 
@@ -49,6 +51,22 @@ final class ChartBuilder implements JsonSerializable
     public function paramFields(): array
     {
         return $this->paramFields;
+    }
+
+    /**
+     * Re-fetch the chart's data endpoint every $seconds (client-clamped to a
+     * 5s minimum). Only meaningful together with ->query().
+     */
+    public function poll(int $seconds): self
+    {
+        if ($seconds < self::MIN_POLL_SECONDS) {
+            throw new \InvalidArgumentException(
+                'Chart poll interval must be at least '.self::MIN_POLL_SECONDS.' seconds.'
+            );
+        }
+        $this->opts['poll'] = $seconds;
+
+        return $this;
     }
 
     public function set(string $key, mixed $value): self

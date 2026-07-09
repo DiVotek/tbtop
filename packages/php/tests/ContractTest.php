@@ -121,6 +121,58 @@ it('section action option conforms to the wire grammar schema', function () {
     validateAgainstSchema(json_decode(json_encode($node)));
 });
 
+it('list node conforms to the wire grammar schema', function () {
+    $s = new S;
+    $node = $s->list('recent')->items(fn () => [
+        ['title' => 'Home', 'meta' => '2 min ago', 'color' => 'success', 'url' => '/admin/pages/1'],
+        ['title' => 'About'],
+    ]);
+
+    validateAgainstSchema(json_decode(json_encode($node)));
+});
+
+it('section card and plain variants conform to the wire grammar schema', function () {
+    $s = new S;
+    $card = $s->section(
+        ['title' => 'Recently updated', 'variant' => 'card', 'action' => ['label' => 'Open', 'url' => '/x']],
+        [$s->displayText('...')]
+    );
+    $plain = $s->section(['title' => 'Browse', 'variant' => 'plain'], [$s->displayText('...')]);
+
+    validateAgainstSchema(json_decode(json_encode($card)));
+    validateAgainstSchema(json_decode(json_encode($plain)));
+});
+
+it('actionsRow grid variant conforms to the wire grammar schema', function () {
+    $s = new S;
+    $node = $s->actionsRow(
+        [$s->action('pages')->label('Pages')->visit('/admin/pages')],
+        ['variant' => 'grid']
+    );
+
+    validateAgainstSchema(json_decode(json_encode($node)));
+});
+
+it('stat with poll, colored description, trend, and sparkline color conforms to the wire grammar schema', function () {
+    $s = new S;
+    $stat = $s->stat('Active users')
+        ->value(fn () => 42)
+        ->description('online now', 'success')
+        ->trend('up')
+        ->sparkline([1, 2, 3], 'bottom')
+        ->sparklineColor('success')
+        ->poll(10);
+
+    validateAgainstSchema(json_decode(json_encode($stat)));
+});
+
+it('chart with poll conforms to the wire grammar schema', function () {
+    $s = new S;
+    $chart = $s->chart('load', 'line')->query(fn () => [])->poll(15);
+
+    validateAgainstSchema(json_decode(json_encode($chart)));
+});
+
 it('nested nav tree with a merged custom item conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)

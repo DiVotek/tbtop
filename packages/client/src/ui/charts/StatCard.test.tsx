@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
 import type { StatDescriptor } from "./StatCard";
-import { StatCard } from "./StatCard";
+import { resolveSparklineColor, StatCard } from "./StatCard";
 
 function renderStat(opts: StatDescriptor) {
 	return render(<StatCard options={opts} />);
@@ -155,5 +155,95 @@ describe("StatCard", () => {
 			sparklinePosition: "bottom",
 		});
 		expect(queryByTestId("stat-sparkline")).toBeNull();
+	});
+
+	// -------------------------------------------------------------------------
+	// Colored description + trend arrow
+	// -------------------------------------------------------------------------
+
+	test("descriptionColor success renders the emerald text classes", () => {
+		const { getByTestId } = renderStat({
+			label: "Disk",
+			value: "64.43 / 74.79 GB",
+			description: "healthy",
+			descriptionColor: "success",
+		});
+		const el = getByTestId("stat-description");
+		expect(el.dataset["color"]).toBe("success");
+		expect(el.className).toContain("text-emerald-600");
+		expect(el.className).toContain("dark:text-emerald-400");
+	});
+
+	test("descriptionColor warning maps to amber", () => {
+		const { getByTestId } = renderStat({
+			label: "A",
+			value: 1,
+			description: "w",
+			descriptionColor: "warning",
+		});
+		expect(getByTestId("stat-description").className).toContain("text-amber-600");
+	});
+
+	test("descriptionColor danger maps to red", () => {
+		const { getByTestId } = renderStat({
+			label: "B",
+			value: 1,
+			description: "d",
+			descriptionColor: "danger",
+		});
+		expect(getByTestId("stat-description").className).toContain("text-red-600");
+	});
+
+	test("description without a color keeps the default muted style", () => {
+		const { getByTestId } = renderStat({ label: "X", value: 1, description: "plain" });
+		const el = getByTestId("stat-description");
+		expect(el.dataset["color"]).toBeUndefined();
+		expect(el.className).not.toContain("text-emerald-600");
+	});
+
+	test("trend up renders an arrow icon after the description", () => {
+		const { getByTestId } = renderStat({
+			label: "MRR",
+			value: 1,
+			description: "vs last week",
+			trend: "up",
+		});
+		const arrow = getByTestId("stat-trend");
+		expect(arrow.dataset["direction"]).toBe("up");
+		// lives inside the description so it inherits the text color
+		expect(getByTestId("stat-description").contains(arrow)).toBe(true);
+	});
+
+	test("trend down renders with down direction", () => {
+		const { getByTestId } = renderStat({
+			label: "Churn",
+			value: 1,
+			description: "vs last week",
+			trend: "down",
+		});
+		expect(getByTestId("stat-trend").dataset["direction"]).toBe("down");
+	});
+
+	test("no trend renders no arrow", () => {
+		const { queryByTestId } = renderStat({ label: "X", value: 1, description: "plain" });
+		expect(queryByTestId("stat-trend")).toBeNull();
+	});
+
+	test("string values with separators render as-is", () => {
+		const { getByText } = renderStat({ label: "Disk", value: "64.43 / 74.79 GB" });
+		expect(getByText("64.43 / 74.79 GB")).toBeTruthy();
+	});
+});
+
+describe("resolveSparklineColor", () => {
+	test("maps semantic tokens to paintable colors", () => {
+		expect(resolveSparklineColor("success", "fallback")).toBe("#10b981");
+		expect(resolveSparklineColor("warning", "fallback")).toBe("#f59e0b");
+		expect(resolveSparklineColor("danger", "fallback")).toBe("#ef4444");
+		expect(resolveSparklineColor("primary", "fallback")).toBe("var(--primary)");
+	});
+
+	test("keeps the chart default when no token is given", () => {
+		expect(resolveSparklineColor(undefined, "var(--chart-1)")).toBe("var(--chart-1)");
 	});
 });

@@ -1,10 +1,13 @@
-import { Fragment, type ReactNode, useState } from "react";
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import type { StructureNode } from "../structure/structure";
 import { type IconDef, NodeIcon } from "../ui/node-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
-import { SectionHeader } from "./sectionHeader";
+import { mapChildren } from "./mapChildren";
+
+// SectionBlock lives in its own module (variant dispatch grew it past this
+// file's budget); re-exported so existing importers keep working.
+export { SectionBlock } from "./sectionBlock";
 
 type JustifyValue = "start" | "center" | "end" | "between" | "around" | "evenly";
 type AlignValue = "start" | "center" | "end" | "stretch" | "baseline";
@@ -14,22 +17,12 @@ interface StackOptions {
 }
 
 interface RowOptions {
+	variant?: "grid";
 	[key: string]: unknown;
 }
 
 interface GridOptions {
 	cols?: ColumnsSpec;
-}
-
-interface SectionOptions {
-	title?: string;
-	description?: string;
-	icon?: IconDef;
-	aside?: StructureNode;
-	action?: { label: string; url: string };
-	collapsible?: boolean;
-	collapsed?: boolean;
-	columns?: ColumnsSpec;
 }
 
 interface TabsOptions {
@@ -81,7 +74,26 @@ export function StackBlock({ children, renderChild }: RenderProps<StackOptions>)
 	return <div className="flex flex-col gap-4">{mapChildren(children, renderChild)}</div>;
 }
 
-export function RowBlock({ children, renderChild }: RenderProps<RowOptions>) {
+export function RowBlock({ options, children, renderChild }: RenderProps<RowOptions>) {
+	if (options.variant === "grid") {
+		return (
+			<div
+				className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+				data-testid="row-grid"
+			>
+				{(children ?? []).map((child, i) => (
+					<div
+						// biome-ignore lint/suspicious/noArrayIndexKey: structure nodes are positional
+						key={i}
+						className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-sm hover:border-primary/50 hover:bg-muted/40"
+						data-testid="row-grid-item"
+					>
+						{renderChild(child)}
+					</div>
+				))}
+			</div>
+		);
+	}
 	return <div className="flex flex-row gap-2">{mapChildren(children, renderChild)}</div>;
 }
 
@@ -110,41 +122,6 @@ export function GridBlock({ options, children, renderChild }: RenderProps<GridOp
 		<div className={`grid gap-4 ${resolveColumnsClass(options.cols)}`}>
 			{mapChildren(children, renderChild)}
 		</div>
-	);
-}
-
-export function SectionBlock({ options, children, renderChild }: RenderProps<SectionOptions>) {
-	const [open, setOpen] = useState(!options.collapsed);
-	const expanded = options.collapsible ? open : true;
-	const bodyClass =
-		options.columns != null
-			? `grid gap-4 ${resolveColumnsClass(options.columns)}`
-			: "flex flex-col gap-3";
-	const body = expanded && <div className={bodyClass}>{mapChildren(children, renderChild)}</div>;
-	return (
-		<section className="flex flex-col gap-3" data-testid="section-block">
-			<SectionHeader
-				title={options.title}
-				description={options.description}
-				icon={options.icon}
-				action={options.action}
-				collapsible={options.collapsible}
-				open={open}
-				onToggle={() => setOpen((prev) => !prev)}
-			/>
-			{/* aside is a persistent context slot (actions/status) — it stays visible
-			   even when collapsible hides the body; see docs/ai/authoring-pages.md */}
-			{options.aside ? (
-				<div className="flex flex-col gap-4 md:flex-row">
-					<div className="min-w-0 flex-1">{body}</div>
-					<div className="w-full shrink-0 md:w-64" data-testid="section-aside">
-						{renderChild(options.aside)}
-					</div>
-				</div>
-			) : (
-				body
-			)}
-		</section>
 	);
 }
 
@@ -188,17 +165,4 @@ export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 export function WidgetBlock({ options }: RenderProps<WidgetOptions>) {
 	const Component = options.component;
 	return <Component {...(options.props ?? {})} />;
-}
-
-function mapChildren(
-	children: StructureNode[] | undefined,
-	renderChild: (node: StructureNode) => ReactNode,
-): ReactNode {
-	if (!children) {
-		return null;
-	}
-	return children.map((child, i) => (
-		// biome-ignore lint/suspicious/noArrayIndexKey: structure nodes are positional
-		<Fragment key={i}>{renderChild(child)}</Fragment>
-	));
 }

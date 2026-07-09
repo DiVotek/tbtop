@@ -168,3 +168,100 @@ it('S::stat() delegates to Stat::make()', function (): void {
     expect($json['kind'])->toBe('stat')
         ->and($json['options']['value'])->toBe(77);
 });
+
+it('S::stat() registers the stat in the collector keyed by label', function (): void {
+    $s = new S;
+    $stat = $s->stat('Signups')->value(77);
+
+    expect($s->collectedStats())->toBe(['Signups' => $stat]);
+});
+
+// ---------------------------------------------------------------------------
+// Colored description, trend, sparkline color
+// ---------------------------------------------------------------------------
+
+it('Stat: description with a semantic color emits descriptionColor', function (): void {
+    $json = encodeStat(Stat::make('Disk')->value('64 GB')->description('healthy', 'success'));
+
+    expect($json['options']['description'])->toBe('healthy')
+        ->and($json['options']['descriptionColor'])->toBe('success');
+});
+
+it('Stat: description without a color omits descriptionColor (back-compat)', function (): void {
+    $json = encodeStat(Stat::make('Disk')->value(0)->description('as before'));
+
+    expect($json['options'])->not->toHaveKey('descriptionColor');
+});
+
+it('Stat: description with an invalid color throws', function (): void {
+    Stat::make('Disk')->value(0)->description('x', 'primary');
+})->throws(InvalidArgumentException::class);
+
+it('Stat: trend emits direction', function (): void {
+    $json = encodeStat(Stat::make('MRR')->value(1)->trend('up'));
+
+    expect($json['options']['trend'])->toBe('up');
+});
+
+it('Stat: invalid trend direction throws', function (): void {
+    Stat::make('MRR')->value(1)->trend('flat');
+})->throws(InvalidArgumentException::class);
+
+it('Stat: sparklineColor emits semantic token', function (): void {
+    $json = encodeStat(Stat::make('CPU')->value(1)->sparkline([1, 2])->sparklineColor('success'));
+
+    expect($json['options']['sparklineColor'])->toBe('success');
+});
+
+it('Stat: invalid sparklineColor throws', function (): void {
+    Stat::make('CPU')->value(1)->sparklineColor('teal');
+})->throws(InvalidArgumentException::class);
+
+it('Stat: string value with slashes and units serializes as-is', function (): void {
+    $json = encodeStat(Stat::make('Disk')->value('64.43 / 74.79 GB'));
+
+    expect($json['options']['value'])->toBe('64.43 / 74.79 GB');
+});
+
+// ---------------------------------------------------------------------------
+// Polling
+// ---------------------------------------------------------------------------
+
+it('Stat: poll emits poll seconds and source keyed by label', function (): void {
+    $json = encodeStat(Stat::make('Active users')->value(fn () => 1)->poll(10));
+
+    expect($json['options']['poll'])->toBe(10)
+        ->and($json['options']['source'])->toBe('Active users');
+});
+
+it('Stat: without poll neither poll nor source is emitted (back-compat)', function (): void {
+    $json = encodeStat(Stat::make('Active users')->value(1));
+
+    expect($json['options'])->not->toHaveKey('poll')
+        ->and($json['options'])->not->toHaveKey('source');
+});
+
+it('Stat: poll below the 5s minimum throws', function (): void {
+    Stat::make('Active users')->value(1)->poll(4);
+})->throws(InvalidArgumentException::class);
+
+it('Stat: queryClosure is null without poll', function (): void {
+    expect(Stat::make('Plain')->value(1)->queryClosure())->toBeNull();
+});
+
+it('Stat: queryClosure re-invokes the value closure and returns the descriptor slice', function (): void {
+    $calls = 0;
+    $stat = Stat::make('Active users')
+        ->value(function () use (&$calls): int {
+            $calls++;
+
+            return $calls;
+        })
+        ->description('online')
+        ->sparkline([1, 2])
+        ->poll(10);
+
+    $query = $stat->queryClosure();
+    expect($query())->toBe(['value' => 1, 'description' => 'online', 'sparkline' => [1, 2]])
+        ->and($query())->toBe(['value' => 2, 'description' => 'online', 'sparkline' => [1, 2]]);
+});

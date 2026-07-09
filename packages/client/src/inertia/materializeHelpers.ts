@@ -90,6 +90,28 @@ export function materializeChart(node: StructureNode, basePath: string): Structu
 }
 
 // ---------------------------------------------------------------------------
+// Stat materialization (polling stats only — plain stats stay static)
+// ---------------------------------------------------------------------------
+
+export function materializeStat(node: StructureNode, basePath: string): StructureNode {
+	const opts = node.options as Bag;
+	const source = opts.source as string | undefined;
+	if (!source) {
+		return node;
+	}
+	// source is the stat's label — encode it, labels are human text.
+	const endpoint = `${basePath}/data/${encodeURIComponent(source)}`;
+	return {
+		...node,
+		options: {
+			...opts,
+			query: (actionCtx: ClientActionContext) =>
+				actionCtx.client.get(endpoint).then(unwrapData),
+		},
+	};
+}
+
+// ---------------------------------------------------------------------------
 // Constraint collection
 // ---------------------------------------------------------------------------
 

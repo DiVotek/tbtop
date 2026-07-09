@@ -6,6 +6,7 @@ import { DndContext } from "@dnd-kit/core";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
+import { useSectionFrameless } from "../../render/sectionChrome";
 import { ReloadOverlay } from "../../ui/spinner";
 import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
 import type { TableColumn } from "../types";
@@ -99,8 +100,17 @@ export function TableGrid(props: TableGridProps) {
 
 	const body = renderBody(rows, props, { isEmpty, groupsActive, reorderActive, colSpan });
 
+	// Inside a card-variant section the card draws the frame — drop our own border.
+	const frameless = useSectionFrameless();
+
 	const shell = (
-		<div className="relative overflow-x-auto rounded-md border">
+		<div
+			className={
+				frameless
+					? "relative overflow-x-auto"
+					: "relative overflow-x-auto rounded-md border"
+			}
+		>
 			{/* Reload overlay sits below the sticky header (z-20 > overlay z-10). */}
 			{props.isReloading && <ReloadOverlay testId="table-reloading-overlay" />}
 			{reorderFeature && !reorderActive && <ReorderHint />}

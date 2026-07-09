@@ -3,9 +3,10 @@ import { cn } from "../../lib/cn";
 import { useChartColors } from "../../lib/useChartColors";
 import { resolveColorClasses } from "../../structure/table/colorRegistry";
 import { resolveIcon } from "../../structure/table/iconRegistry";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
+import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 import { Sparkline } from "./Sparkline";
+import { type DescriptionColor, StatDescription, type TrendDirection } from "./StatDescription";
 
 type DeltaDirection = "up" | "down" | "flat";
 
@@ -17,16 +18,21 @@ interface DeltaInfo {
 /** 'inline' (default) sits under the card content; 'bottom' pins full-bleed to the card's bottom edge. */
 type SparklinePosition = "inline" | "bottom";
 
+type SparklineColorToken = "success" | "warning" | "danger" | "primary";
+
 export interface StatDescriptor {
 	label: string;
 	value: unknown;
 	description?: string;
+	descriptionColor?: DescriptionColor;
+	trend?: TrendDirection;
 	delta?: DeltaInfo;
 	icon?: { name: string; position: string };
 	tooltip?: string;
 	color?: string;
 	sparkline?: number[];
 	sparklinePosition?: SparklinePosition;
+	sparklineColor?: SparklineColorToken;
 }
 
 const DELTA_ICONS: Record<DeltaDirection, React.ElementType> = {
@@ -41,7 +47,23 @@ const DELTA_COLORS: Record<DeltaDirection, string> = {
 	flat: "text-muted-foreground",
 };
 
+// Concrete values — recharts needs a paintable color, not a class name.
+const SPARKLINE_COLORS: Record<SparklineColorToken, string> = {
+	success: "#10b981", // emerald-500
+	warning: "#f59e0b", // amber-500
+	danger: "#ef4444", // red-500
+	primary: "var(--primary)",
+};
+
 const BOTTOM_SPARKLINE_HEIGHT = 36;
+
+/** Semantic token → paintable sparkline color; undefined token keeps the chart default. */
+export function resolveSparklineColor(
+	token: SparklineColorToken | undefined,
+	fallback: string | undefined,
+): string | undefined {
+	return token !== undefined ? SPARKLINE_COLORS[token] : fallback;
+}
 
 interface StatCardProps {
 	options: StatDescriptor;
@@ -51,7 +73,7 @@ export function StatCard({ options }: StatCardProps) {
 	const { label, value, description, delta, icon, tooltip, color, sparkline } = options;
 	const hasSparkline = sparkline !== undefined && sparkline.length > 0;
 	const bottomSparkline = hasSparkline && (options.sparklinePosition ?? "inline") === "bottom";
-	const sparklineColor = useChartColors()[0];
+	const sparklineColor = resolveSparklineColor(options.sparklineColor, useChartColors()[0]);
 
 	const card = (
 		<Card className={cn(bottomSparkline && "overflow-hidden")} data-testid="stat-card">
@@ -62,7 +84,11 @@ export function StatCard({ options }: StatCardProps) {
 				<p className="text-3xl font-bold tracking-tight">{String(value ?? "")}</p>
 				{delta !== undefined && <DeltaBadge delta={delta} />}
 				{description !== undefined && (
-					<CardDescription className="mt-1">{description}</CardDescription>
+					<StatDescription
+						text={description}
+						color={options.descriptionColor}
+						trend={options.trend}
+					/>
 				)}
 				{hasSparkline && !bottomSparkline && (
 					<div className="mt-3" data-testid="stat-sparkline">
