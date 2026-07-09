@@ -27,6 +27,20 @@ describe("iconRegistry", () => {
 		expect(resolveIcon(name)).toBeTruthy();
 	});
 
+	// Previously only a hand-picked allowlist of ~19 names resolved; any other
+	// valid lucide-react icon (e.g. the ones dashboard system stats use)
+	// silently rendered nothing. Every lucide.dev slug must resolve now.
+	test.each([
+		"cpu",
+		"memory-stick",
+		"hard-drive",
+		"database",
+		"server",
+		"activity",
+	])("resolves the full lucide icon set, e.g. %s", (name) => {
+		expect(resolveIcon(name)).toBeTruthy();
+	});
+
 	test("returns undefined for undefined input", () => {
 		expect(resolveIcon(undefined)).toBeUndefined();
 	});
