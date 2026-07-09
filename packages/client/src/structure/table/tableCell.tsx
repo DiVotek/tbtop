@@ -43,12 +43,14 @@ export function RowDataCell({
 	const alignClass = rowColAlignClass(col.align);
 	const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
 	const rendered = renderCell(col, row, saveCell);
-	// Emphasized: primary link-style label (pairs with rowClick for a divotek-style title cell).
-	const content = col.emphasized ? (
-		<span className="font-medium text-primary hover:underline">{rendered}</span>
-	) : (
-		rendered
+	// Text-style flags: emphasized = primary link-style label (pairs with
+	// rowClick), muted = small secondary metadata, uppercase = code-like values.
+	const textClass = cn(
+		col.emphasized && "font-medium text-primary hover:underline",
+		col.muted && "text-xs text-muted-foreground",
+		col.uppercase && "uppercase tracking-wide",
 	);
+	const content = textClass ? <span className={textClass}>{rendered}</span> : rendered;
 	return (
 		<td
 			className={cn("px-3 py-2", alignClass, wrapClass)}

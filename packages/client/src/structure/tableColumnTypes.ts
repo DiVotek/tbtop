@@ -54,6 +54,10 @@ export interface TableColumn<TRow = unknown> {
 	tooltip?: string;
 	/** Emphasized primary link-style cell text (e.g. a title column driving rowClick). */
 	emphasized?: boolean;
+	/** Small muted cell text — secondary metadata columns (dates, parents, counts). */
+	muted?: boolean;
+	/** Uppercase wide-tracked cell text — short code-like values (types, statuses). */
+	uppercase?: boolean;
 	copyable?: CopyableConfig;
 	translatable?: boolean;
 	badge?: TableColumnBadgeOptions;

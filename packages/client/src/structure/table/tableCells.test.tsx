@@ -285,6 +285,21 @@ describe("TableCell: column display properties", () => {
 		expect(span.className).toContain("hover:underline");
 	});
 
+	test("muted + uppercase column wraps the cell text in secondary code-style classes", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", type: "category" }],
+			columns: [{ name: "type", label: "Type", muted: true, uppercase: true }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const span = getByText("category");
+		expect(span.className).toContain("text-muted-foreground");
+		expect(span.className).toContain("text-xs");
+		expect(span.className).toContain("uppercase");
+		expect(span.className).toContain("tracking-wide");
+	});
+
 	test("non-emphasized column renders plain cell text without the primary link styling", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", name: "About us" }],

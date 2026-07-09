@@ -312,6 +312,15 @@ it('Column: emphasized(false) and default both omit the emphasized key', functio
         ->and(encodeColumn(Column::make('name')->emphasized(false)))->not->toHaveKey('emphasized');
 });
 
+it('Column: muted() and uppercase() serialize their flags and are omitted by default', function (): void {
+    $json = encodeColumn(Column::make('type')->muted()->uppercase());
+
+    expect($json['muted'])->toBeTrue()
+        ->and($json['uppercase'])->toBeTrue()
+        ->and(encodeColumn(Column::make('type')))->not->toHaveKey('muted')
+        ->and(encodeColumn(Column::make('type')))->not->toHaveKey('uppercase');
+});
+
 // ---------------------------------------------------------------------------
 // Color enum
 // ---------------------------------------------------------------------------
