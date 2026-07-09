@@ -45,17 +45,17 @@ export function TopbarSidebarFrame({
 			</header>
 			<div className="flex min-h-0 flex-1">
 				{collapsed ? (
-					<aside className="hidden w-14 shrink-0 flex-col items-center gap-4 border-r p-2 lg:flex">
+					<aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-14 shrink-0 flex-col items-center gap-4 overflow-y-auto border-r p-2 lg:flex">
 						<OrientationProvider orientation="rail">{sidebar}</OrientationProvider>
 					</aside>
 				) : (
 					<aside
 						className={cn(
-							"hidden shrink-0 flex-col gap-4 border-r p-4 lg:flex",
+							"sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col gap-4 overflow-hidden border-r p-4 lg:flex",
 							density === "compact" ? "w-48" : "w-56",
 						)}
 					>
-						{sidebar}
+						<div className="min-h-0 flex-1 overflow-y-auto">{sidebar}</div>
 					</aside>
 				)}
 				<ShellMain maxWidth={maxWidth}>{children}</ShellMain>

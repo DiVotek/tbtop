@@ -3,7 +3,6 @@ import { cn } from "../../lib/cn";
 import { useChartColors } from "../../lib/useChartColors";
 import { resolveColorClasses } from "../../structure/table/colorRegistry";
 import { resolveIcon } from "../../structure/table/iconRegistry";
-import { Card, CardContent, CardHeader, CardTitle } from "../card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 import { Sparkline } from "./Sparkline";
 import { type DescriptionColor, StatDescription, type TrendDirection } from "./StatDescription";
@@ -55,7 +54,7 @@ const SPARKLINE_COLORS: Record<SparklineColorToken, string> = {
 	primary: "var(--primary)",
 };
 
-const BOTTOM_SPARKLINE_HEIGHT = 36;
+const BOTTOM_SPARKLINE_HEIGHT = 32;
 
 /** Semantic token → paintable sparkline color; undefined token keeps the chart default. */
 export function resolveSparklineColor(
@@ -76,28 +75,30 @@ export function StatCard({ options }: StatCardProps) {
 	const sparklineColor = resolveSparklineColor(options.sparklineColor, useChartColors()[0]);
 
 	const card = (
-		<Card className={cn(bottomSparkline && "overflow-hidden")} data-testid="stat-card">
-			<CardHeader>
-				<StatHeader label={label} icon={icon} color={color} />
-			</CardHeader>
-			<CardContent className={cn(bottomSparkline && "pb-9")}>
-				<p className="text-3xl font-bold tracking-tight">{String(value ?? "")}</p>
-				{delta !== undefined && <DeltaBadge delta={delta} />}
-				{description !== undefined && (
-					<StatDescription
-						text={description}
-						color={options.descriptionColor}
-						trend={options.trend}
-					/>
-				)}
-				{hasSparkline && !bottomSparkline && (
-					<div className="mt-3" data-testid="stat-sparkline">
-						<Sparkline data={sparkline} color={sparklineColor} />
-					</div>
-				)}
-			</CardContent>
+		<div
+			className={cn(
+				"group relative flex flex-col items-start gap-1 rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50",
+				bottomSparkline && "overflow-hidden pb-10",
+			)}
+			data-testid="stat-card"
+		>
+			<StatHeader label={label} icon={icon} color={color} />
+			<div className="text-3xl font-semibold tracking-tight">{String(value ?? "")}</div>
+			{delta !== undefined && <DeltaBadge delta={delta} />}
+			{description !== undefined && (
+				<StatDescription
+					text={description}
+					color={options.descriptionColor}
+					trend={options.trend}
+				/>
+			)}
+			{hasSparkline && !bottomSparkline && (
+				<div className="mt-3 w-full" data-testid="stat-sparkline">
+					<Sparkline data={sparkline} color={sparklineColor} />
+				</div>
+			)}
 			{bottomSparkline && <BottomSparkline data={sparkline} color={sparklineColor} />}
-		</Card>
+		</div>
 	);
 
 	if (tooltip) {
@@ -122,13 +123,15 @@ function StatHeader({ label, icon, color }: StatHeaderProps) {
 	const Icon = icon ? resolveIcon(icon.name) : undefined;
 	const colorClasses = color ? resolveColorClasses(color) : undefined;
 	return (
-		<div className="flex items-center gap-1.5">
-			{Icon !== undefined && (
-				<Icon className={`h-4 w-4 ${colorClasses?.text ?? "text-muted-foreground"}`} />
-			)}
-			<CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+		<div className="flex w-full items-center justify-between text-muted-foreground">
+			<span className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide">
+				{Icon !== undefined && (
+					<Icon
+						className={cn("h-4 w-4", colorClasses?.text ?? "text-muted-foreground")}
+					/>
+				)}
 				{label}
-			</CardTitle>
+			</span>
 		</div>
 	);
 }
@@ -138,12 +141,13 @@ interface BottomSparklineProps {
 	color: string | undefined;
 }
 
-// Negative margins punch through Card's py-6/px-6 padding so the sparkline
-// reaches the actual edges; Card's overflow-hidden clips it to the rounded corners.
+// Absolute overlay pinned to the card's bottom edge — not in the flow, so it
+// never pushes the card's natural height. The card's overflow-hidden clips it
+// to the rounded corners (rounded-b-lg is inherited from that clip).
 function BottomSparkline({ data, color }: BottomSparklineProps) {
 	return (
 		<div
-			className="pointer-events-none -mx-6 -mb-6 mt-2"
+			className="pointer-events-none absolute inset-x-0 bottom-0 h-8 overflow-hidden"
 			data-testid="stat-sparkline"
 			data-position="bottom"
 		>
@@ -158,11 +162,11 @@ function DeltaBadge({ delta }: { delta: DeltaInfo }) {
 
 	return (
 		<span
-			className={`mt-1 flex items-center gap-1 text-sm font-medium ${colorClass}`}
+			className={`flex items-center gap-1 text-xs font-medium ${colorClass}`}
 			data-testid="stat-delta"
 			data-direction={delta.direction}
 		>
-			<DeltaIcon className="h-4 w-4" aria-hidden="true" />
+			<DeltaIcon className="h-3.5 w-3.5" aria-hidden="true" />
 			{delta.text}
 		</span>
 	);

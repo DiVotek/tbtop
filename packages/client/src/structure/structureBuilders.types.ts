@@ -49,7 +49,11 @@ type FieldInputFor<TForm, TExtra> = NodeMeta & TExtra & { name: FieldName<TForm>
 
 export interface StructureBuilders<TForm = unknown> {
 	stack: (children: StructureNode[], opts?: NodeMeta & { gap?: number }) => StructureNode;
-	row: (children: StructureNode[], opts?: NodeMeta & { gap?: number }) => StructureNode;
+	/** variant "grid": each child renders in a bordered, hoverable grid cell instead of a flex row. */
+	row: (
+		children: StructureNode[],
+		opts?: NodeMeta & { gap?: number; variant?: "grid" },
+	) => StructureNode;
 	flex: (children: StructureNode[], opts?: NodeMeta & FlexOpts) => StructureNode;
 	grid: (opts: NodeMeta & { cols?: ColumnsSpec }, children: StructureNode[]) => StructureNode;
 	section: (
