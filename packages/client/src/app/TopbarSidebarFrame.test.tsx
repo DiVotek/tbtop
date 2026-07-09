@@ -42,4 +42,12 @@ describe("TopbarSidebarFrame", () => {
 		// Collapsed: the desktop aside becomes a rail of group-icon triggers.
 		expect(queryAllByTestId("nav-group-trigger-Content").length).toBeGreaterThan(0);
 	});
+
+	test("the sidebar sticks below the h-14 topbar and fills the remaining viewport height", () => {
+		const { container } = renderTopbarSidebar();
+		const aside = container.querySelector("aside") as HTMLElement;
+		expect(aside.className).toContain("sticky");
+		expect(aside.className).toContain("top-14");
+		expect(aside.className).toContain("h-[calc(100vh-3.5rem)]");
+	});
 });

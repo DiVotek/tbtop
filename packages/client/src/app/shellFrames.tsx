@@ -14,18 +14,23 @@ export interface ShellFrameProps {
 	maxWidth?: string;
 }
 
-/** Default layout: persistent left sidebar, header strip, mobile drawer. */
+/**
+ * Default layout: persistent left sidebar, header strip, mobile drawer. The
+ * sidebar is pinned to the viewport (sticky + full height) instead of
+ * scrolling with the page; if its nav content overflows, the scrollbar
+ * appears inside that content area, not on the whole aside.
+ */
 export function SidebarFrame({ sidebar, header, footer, children, maxWidth }: ShellFrameProps) {
 	const density = useDensity();
 	return (
 		<div className="flex min-h-screen bg-background text-foreground">
 			<aside
 				className={cn(
-					"hidden shrink-0 flex-col gap-4 border-r p-4 lg:flex",
+					"sticky top-0 hidden h-screen shrink-0 flex-col gap-4 overflow-hidden border-r p-4 lg:flex",
 					density === "compact" ? "w-48" : "w-56",
 				)}
 			>
-				{sidebar}
+				<div className="min-h-0 flex-1 overflow-y-auto">{sidebar}</div>
 			</aside>
 			<div className="flex min-w-0 flex-1 flex-col">
 				<header className="flex items-center justify-end gap-3 border-b px-6 py-3">

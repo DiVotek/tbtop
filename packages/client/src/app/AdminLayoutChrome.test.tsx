@@ -108,6 +108,33 @@ describe("AdminLayout chrome trees", () => {
 		expect(container.querySelector("aside")).toBeTruthy();
 	});
 
+	test("the sidebar is pinned to the viewport (sticky + full height) instead of scrolling with the page", () => {
+		const { container } = renderShell(defaultChrome());
+		const aside = container.querySelector("aside") as HTMLElement;
+		expect(aside.className).toContain("sticky");
+		expect(aside.className).toContain("top-0");
+		expect(aside.className).toContain("h-screen");
+	});
+
+	test("the sidebar's nav content sits in its own overflow-y-auto zone, not on the aside itself", () => {
+		const { container } = renderShell(defaultChrome());
+		const aside = container.querySelector("aside") as HTMLElement;
+		// The aside itself must not scroll (would drag the whole rail, logo
+		// included); the scroll boundary is the inner wrapper around the slot.
+		expect(aside.className).not.toContain("overflow-y-auto");
+		const scrollZone = aside.querySelector(".overflow-y-auto");
+		expect(scrollZone).toBeTruthy();
+		expect(scrollZone?.contains(container.querySelector('[data-testid="admin-sidebar"]'))).toBe(
+			true,
+		);
+	});
+
+	test("the content column keeps its width when the sidebar becomes sticky", () => {
+		const { getByText } = renderShell(defaultChrome());
+		const main = getByText("Page content").closest("main");
+		expect(main?.className).toContain("flex-1");
+	});
+
 	test("topbar navigation renders nav, user menu, and mobile drawer in a bar (no aside)", () => {
 		const { container, getByTestId } = renderShell(defaultChrome(), { navigation: "topbar" });
 
