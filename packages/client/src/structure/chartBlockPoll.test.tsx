@@ -73,6 +73,9 @@ describe("chart polling", () => {
 		expect(state.calls).toBe(2);
 	});
 
+	// 12s window: any real poll is clamped to >=5s, so it would fire here.
+	// Kept small — recharts animation replays every faked frame, and a
+	// 60s advance blew the 5s test timeout on slow CI runners.
 	test("no poll option means a single fetch and no timers", async () => {
 		const { state, query } = countingQuery();
 		const Wrap = wrapForStructure(() => new Response("{}"));
@@ -80,9 +83,9 @@ describe("chart polling", () => {
 		await flush();
 		expect(state.calls).toBe(1);
 
-		await advance(60_000);
+		await advance(12_000);
 		expect(state.calls).toBe(1);
-	});
+	}, 15_000);
 
 	test("unmount stops polling", async () => {
 		const { state, query } = countingQuery();
