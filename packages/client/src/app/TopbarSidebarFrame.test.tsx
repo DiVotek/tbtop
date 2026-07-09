@@ -50,4 +50,12 @@ describe("TopbarSidebarFrame", () => {
 		expect(aside.className).toContain("top-14");
 		expect(aside.className).toContain("h-[calc(100vh-3.5rem)]");
 	});
+
+	test("the topbar is pinned to the viewport above the sidebar and content", () => {
+		const { container } = renderTopbarSidebar();
+		const header = container.querySelector("header") as HTMLElement;
+		expect(header.className).toContain("sticky");
+		expect(header.className).toContain("top-0");
+		expect(header.className).toContain("bg-background");
+	});
 });

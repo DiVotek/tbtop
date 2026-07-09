@@ -33,7 +33,7 @@ export function SidebarFrame({ sidebar, header, footer, children, maxWidth }: Sh
 				<div className="min-h-0 flex-1 overflow-y-auto">{sidebar}</div>
 			</aside>
 			<div className="flex min-w-0 flex-1 flex-col">
-				<header className="flex items-center justify-end gap-3 border-b px-6 py-3">
+				<header className="sticky top-0 z-30 flex items-center justify-end gap-3 border-b bg-background px-6 py-3">
 					<SidebarDrawer sidebar={sidebar} />
 					{header}
 				</header>
@@ -55,7 +55,7 @@ export function SidebarFrame({ sidebar, header, footer, children, maxWidth }: Sh
 export function TopbarFrame({ sidebar, header, footer, children, maxWidth }: ShellFrameProps) {
 	return (
 		<div className="flex min-h-screen flex-col bg-background text-foreground">
-			<header className="flex items-center gap-4 border-b px-4 py-3 lg:px-6">
+			<header className="sticky top-0 z-30 flex items-center gap-4 border-b bg-background px-4 py-3 lg:px-6">
 				<SidebarDrawer sidebar={sidebar} />
 				<div className="hidden min-w-0 flex-1 items-center gap-6 lg:flex [&>*]:contents">
 					<OrientationProvider orientation="horizontal">{sidebar}</OrientationProvider>
