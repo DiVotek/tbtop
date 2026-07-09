@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionBlock } from "./actionBlock";
 import { useClientActionContext } from "./actionContext";
 import { TableSkeleton } from "./defaults";
+import { useSetPageSubtitle } from "./pageSubtitleContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { BulkActionsBar } from "./table/bulkActionsBar";
 import { normalizeRows, TableGrid } from "./table/grid";
@@ -106,6 +107,8 @@ export function TableBlock({ options }: TableRenderProps) {
 			recordUrl={options.recordUrl}
 			recordUrlNewTab={options.recordUrlNewTab}
 			embedded={options.embedded}
+			searchInput={options.searchInput}
+			columnToggle={options.columnToggle}
 			saveCell={saveCell}
 			reorderColumn={options.reorder?.column}
 			reorderRows={reorderRows}
@@ -128,7 +131,7 @@ function TableBody(props: TableBodyProps) {
 
 	const hasBulk = (props.bulkActions ?? []).length > 0;
 	const hasRowActions = (props.rowActions ?? []).length > 0;
-	const hasSearch = (props.searchable ?? []).length > 0;
+	const hasSearch = (props.searchable ?? []).length > 0 && props.searchInput !== false;
 	const hasFilters = (props.filters ?? []).length > 0;
 
 	const { visibleColumns, toggleColumn } = useColumnVisibility(props.columns, props.tableName);
@@ -153,13 +156,29 @@ function TableBody(props: TableBodyProps) {
 
 	const tabs = props.tabs ?? [];
 	const activeTab = props.queryParams.tab ?? tabs[0]?.name;
+	const activeTabDescription = tabs.find((t) => t.name === activeTab)?.description;
+
+	// Surface the active tab's description as the page subtitle; clear it on
+	// tab switch (no description) or unmount so a stale line never lingers.
+	const setPageSubtitle = useSetPageSubtitle();
+	useEffect(() => {
+		setPageSubtitle(activeTabDescription);
+		return () => setPageSubtitle(undefined);
+	}, [activeTabDescription, setPageSubtitle]);
 
 	const visibleCols = props.columns.filter((c) => visibleColumns.has(c.name));
 
-	// Footer only when the server sends pagination config and a total, and the
-	// table isn't embedded (embedded tables hide toolbar + pagination footer).
+	// Footer only when the server sends pagination config and a total, the
+	// table isn't embedded (embedded tables hide toolbar + pagination footer),
+	// and there's more than one page's worth of rows to page through — a
+	// first-page result that already fits within perPage has nothing to
+	// paginate, so the footer would just show inert controls.
 	const { total, pagination } = props;
-	const showPagination = pagination !== undefined && total !== undefined && !props.embedded;
+	const perPage = props.queryParams.perPage ?? pagination?.perPage ?? 25;
+	const page = props.queryParams.page ?? 1;
+	const fitsOnFirstPage = total !== undefined && total <= perPage && page === 1;
+	const showPagination =
+		pagination !== undefined && total !== undefined && !props.embedded && !fitsOnFirstPage;
 
 	// Reorder is allowed only while rows are shown in their persisted order.
 	const reorderEnabled = canReorder({
@@ -210,6 +229,7 @@ function TableBody(props: TableBodyProps) {
 						deferFilters={props.deferFilters}
 						filtersFormColumns={props.filtersFormColumns}
 						filtersFormWidth={props.filtersFormWidth}
+						columnToggle={props.columnToggle}
 					/>
 				)}
 

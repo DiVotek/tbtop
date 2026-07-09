@@ -260,6 +260,35 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Show/hide the search input and column-visibility dropdown as a pair.
+     * Tabs and headerActions are unaffected. Filters (inline/modal) are
+     * unaffected — they render alongside the toolbar regardless.
+     */
+    public function toolbar(bool $value = true): self
+    {
+        $this->opts['searchInput'] = $value;
+        $this->opts['columnToggle'] = $value;
+
+        return $this;
+    }
+
+    /** Show/hide just the search input in the toolbar. */
+    public function searchInput(bool $value = true): self
+    {
+        $this->opts['searchInput'] = $value;
+
+        return $this;
+    }
+
+    /** Show/hide just the column-visibility ("Columns") dropdown in the toolbar. */
+    public function columnToggle(bool $value = true): self
+    {
+        $this->opts['columnToggle'] = $value;
+
+        return $this;
+    }
+
     /** @param  list<ActionBuilder|Node>  $actions — plain actions render inline; wrap in S::dropdown()/actionGroup() to collapse into a menu. */
     public function rowActions(array $actions): self
     {

@@ -346,6 +346,16 @@ describe("Table integration", () => {
 		);
 	}
 
+	// total exceeds perPage so the pagination footer isn't auto-hidden — used
+	// by the "still renders toolbar and pagination" (non-embedded) assertions.
+	function multiPageRowsResponse(): Response {
+		return new Response(
+			JSON.stringify({
+				data: { data: [{ id: "a", title: "A" }], total: 100, page: 1, perPage: 25 },
+			}),
+		);
+	}
+
 	test("Table embedded hides the toolbar (search input, filters, column-visibility)", async () => {
 		const node = materialize(embeddedTableNode(true), { basePath: "/admin/posts", data: {} });
 		const Wrap = wrap(rowsResponse);
@@ -368,7 +378,7 @@ describe("Table integration", () => {
 			basePath: "/admin/posts",
 			data: {},
 		});
-		const Wrap = wrap(rowsResponse);
+		const Wrap = wrap(multiPageRowsResponse);
 		const { findByText, getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		await findByText("A");
 		expect(getByTestId("table-toolbar")).toBeTruthy();
@@ -377,7 +387,7 @@ describe("Table integration", () => {
 
 	test("Table embedded:false explicitly still renders toolbar and pagination", async () => {
 		const node = materialize(embeddedTableNode(false), { basePath: "/admin/posts", data: {} });
-		const Wrap = wrap(rowsResponse);
+		const Wrap = wrap(multiPageRowsResponse);
 		const { findByText, getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		await findByText("A");
 		expect(getByTestId("table-toolbar")).toBeTruthy();
