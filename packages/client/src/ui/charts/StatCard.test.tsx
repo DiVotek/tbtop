@@ -86,6 +86,24 @@ describe("StatCard", () => {
 		expect(getByTestId("stat-card")).toBeTruthy();
 	});
 
+	// -------------------------------------------------------------------------
+	// Divotek reference sizing: no fixed height, hover feedback on every card
+	// -------------------------------------------------------------------------
+
+	test("card has no fixed or min height — height stays natural", () => {
+		const { getByTestId } = renderStat({ label: "Pages", value: 22 });
+		const card = getByTestId("stat-card");
+		expect(card.className).not.toMatch(/\bh-\d/);
+		expect(card.className).not.toContain("min-h-");
+	});
+
+	test("card carries the hover border-color transition on every stat, not just clickable ones", () => {
+		const { getByTestId } = renderStat({ label: "Pages", value: 22 });
+		const card = getByTestId("stat-card");
+		expect(card.className).toContain("transition-colors");
+		expect(card.className).toContain("hover:border-primary/50");
+	});
+
 	test("string value renders as-is", () => {
 		const { getByText } = renderStat({ label: "Status", value: "Active" });
 		expect(getByText("Active")).toBeTruthy();
@@ -157,6 +175,30 @@ describe("StatCard", () => {
 		expect(queryByTestId("stat-sparkline")).toBeNull();
 	});
 
+	test("sparklinePosition 'bottom' is an absolute overlay pinned to the bottom edge, not in the flow", () => {
+		const { getByTestId } = renderStat({
+			label: "Trend",
+			value: 42,
+			sparkline: [1, 2, 3],
+			sparklinePosition: "bottom",
+		});
+		const wrapper = getByTestId("stat-sparkline");
+		expect(wrapper.className).toContain("absolute");
+		expect(wrapper.className).toContain("bottom-0");
+		expect(wrapper.className).toContain("inset-x-0");
+	});
+
+	test("sparklinePosition 'bottom' pads the card so the absolute overlay does not cover the description", () => {
+		const { getByTestId } = renderStat({
+			label: "Trend",
+			value: 42,
+			description: "vs last week",
+			sparkline: [1, 2, 3],
+			sparklinePosition: "bottom",
+		});
+		expect(getByTestId("stat-card").className).toContain("pb-10");
+	});
+
 	// -------------------------------------------------------------------------
 	// Colored description + trend arrow
 	// -------------------------------------------------------------------------
@@ -170,8 +212,8 @@ describe("StatCard", () => {
 		});
 		const el = getByTestId("stat-description");
 		expect(el.dataset["color"]).toBe("success");
-		expect(el.className).toContain("text-emerald-600");
-		expect(el.className).toContain("dark:text-emerald-400");
+		expect(el.querySelector("span")?.className).toContain("text-emerald-700");
+		expect(el.querySelector("span")?.className).toContain("dark:text-emerald-400");
 	});
 
 	test("descriptionColor warning maps to amber", () => {
@@ -181,7 +223,9 @@ describe("StatCard", () => {
 			description: "w",
 			descriptionColor: "warning",
 		});
-		expect(getByTestId("stat-description").className).toContain("text-amber-600");
+		expect(getByTestId("stat-description").querySelector("span")?.className).toContain(
+			"text-amber-700",
+		);
 	});
 
 	test("descriptionColor danger maps to red", () => {
@@ -191,14 +235,17 @@ describe("StatCard", () => {
 			description: "d",
 			descriptionColor: "danger",
 		});
-		expect(getByTestId("stat-description").className).toContain("text-red-600");
+		expect(getByTestId("stat-description").querySelector("span")?.className).toContain(
+			"text-red-700",
+		);
 	});
 
 	test("description without a color keeps the default muted style", () => {
 		const { getByTestId } = renderStat({ label: "X", value: 1, description: "plain" });
 		const el = getByTestId("stat-description");
 		expect(el.dataset["color"]).toBeUndefined();
-		expect(el.className).not.toContain("text-emerald-600");
+		expect(el.querySelector("span")?.className).toContain("text-muted-foreground");
+		expect(el.querySelector("span")?.className).not.toContain("text-emerald-700");
 	});
 
 	test("trend up renders an arrow icon after the description", () => {
