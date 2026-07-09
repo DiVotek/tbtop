@@ -33,6 +33,9 @@ async function advance(ms: number) {
 }
 
 describe("stat polling", () => {
+	// 12s window: any real poll is clamped to >=5s, so it would fire here.
+	// Large advances replay every faked timer and blow the 5s test
+	// timeout on slow CI runners (bit us twice on main pushes).
 	test("without poll the stat renders statically and never fetches", async () => {
 		let calls = 0;
 		const query = async () => {
@@ -41,10 +44,10 @@ describe("stat polling", () => {
 		};
 		const Wrap = wrapForStructure(() => new Response("{}"));
 		const { getByText } = render(<Wrap>{renderNode(statNode({ query }))}</Wrap>);
-		await advance(60_000);
+		await advance(12_000);
 		expect(getByText("1")).toBeTruthy();
 		expect(calls).toBe(0);
-	});
+	}, 15_000);
 
 	test("polled stat refetches on the interval and updates the card", async () => {
 		let calls = 0;
@@ -98,9 +101,9 @@ describe("stat polling", () => {
 		expect(calls).toBe(1);
 
 		unmount();
-		await advance(30_000);
+		await advance(12_000);
 		expect(calls).toBe(1);
-	});
+	}, 15_000);
 
 	test("a failed poll keeps the last shown value", async () => {
 		let calls = 0;
