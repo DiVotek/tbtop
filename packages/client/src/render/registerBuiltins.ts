@@ -22,6 +22,7 @@ import { DisplayRichtextBlock } from "../structure/displayRichtextBlock";
 import { DisplayTextBlock } from "../structure/displayTextBlock";
 import { DisplayValueBlock } from "../structure/displayValueBlock";
 import { FormBlock } from "../structure/formBlock";
+import { ListBlock } from "../structure/listBlock";
 import { TableBlock } from "../structure/tableBlock";
 import {
 	renderAreaChart,
@@ -96,6 +97,7 @@ function registerDataBlocks(): void {
 	defineBlock("action", { behavior: "leaf", render: ActionBlock });
 	defineBlock("mediaLibrary", { behavior: "leaf", render: MediaLibraryBlock });
 	defineBlock("stat", { behavior: "leaf", render: StatBlock });
+	defineBlock("list", { behavior: "leaf", render: ListBlock });
 }
 
 function registerCharts(): void {
