@@ -232,7 +232,9 @@ final class S
      * (a child node rendered as a right-side column on wide screens),
      * 'collapsible' (bool, default false), 'collapsed' (bool, only relevant
      * when collapsible), 'columns' (int|breakpoint-object — lays out the
-     * section's children in a grid instead of a stack).
+     * section's children in a grid instead of a stack), 'action'
+     * (['label' => string, 'url' => string] — a quiet link rendered right-aligned
+     * in the header row, e.g. "Open pages").
      *
      * @param  array<string, mixed>  $opts
      * @param  list<mixed>  $children
@@ -245,8 +247,23 @@ final class S
         if (isset($opts['icon'])) {
             $opts['icon'] = self::normalizeIcon($opts['icon']);
         }
+        if (isset($opts['action'])) {
+            $opts['action'] = self::normalizeSectionAction($opts['action']);
+        }
 
         return self::layout('section', $children, $opts);
+    }
+
+    /** @param  array<string, mixed>  $action @return array{label: string, url: string} */
+    private static function normalizeSectionAction(array $action): array
+    {
+        if (! isset($action['label']) || ! isset($action['url'])) {
+            throw new InvalidArgumentException(
+                "section 'action' requires both 'label' and 'url' keys."
+            );
+        }
+
+        return ['label' => (string) $action['label'], 'url' => (string) $action['url']];
     }
 
     /** @param  string|array{name: string, position?: string}  $icon @return array{name: string, position: string} */

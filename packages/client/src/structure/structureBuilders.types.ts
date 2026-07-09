@@ -58,6 +58,7 @@ export interface StructureBuilders<TForm = unknown> {
 			description?: string;
 			icon?: string | IconDef;
 			aside?: StructureNode;
+			action?: { label: string; url: string };
 			collapsible?: boolean;
 			collapsed?: boolean;
 			columns?: ColumnsSpec;

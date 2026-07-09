@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
+import { materialize } from "../inertia/materialize";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
+import type { StructureNode } from "./types";
 
 describe("Table integration", () => {
 	test("Table query resolves to rows and renders cells", async () => {
@@ -311,5 +313,83 @@ describe("Table integration", () => {
 		});
 		expect(queries.length).toBeGreaterThan(callsBefore);
 		expect(secondParams).toEqual({ page: 2 });
+	});
+
+	// -------------------------------------------------------------------------
+	// embedded — hides toolbar + pagination footer, keeps rows/perPage as-is
+	//
+	// `embedded` is a server (PHP DSL) only option, like `tabs`/`deferFilters`:
+	// it reaches the client on the wire, not through the client's s.table()
+	// builder type. Tests build the wire node directly and run it through the
+	// real materialize() path, mirroring tableBlockTabs.test.tsx.
+	// -------------------------------------------------------------------------
+
+	function embeddedTableNode(embedded: boolean | undefined): StructureNode {
+		return {
+			kind: "table",
+			name: "posts",
+			options: {
+				columns: [{ name: "title", label: "Title" }],
+				searchable: ["title"],
+				pagination: { perPage: 25, options: [10, 25, 50] },
+				...(embedded !== undefined ? { embedded } : {}),
+			},
+			meta: {},
+		};
+	}
+
+	function rowsResponse(): Response {
+		return new Response(
+			JSON.stringify({
+				data: { data: [{ id: "a", title: "A" }], total: 1, page: 1, perPage: 25 },
+			}),
+		);
+	}
+
+	test("Table embedded hides the toolbar (search input, filters, column-visibility)", async () => {
+		const node = materialize(embeddedTableNode(true), { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(rowsResponse);
+		const { findByText, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("A");
+		expect(queryByTestId("table-toolbar")).toBeNull();
+		expect(queryByTestId("table-search-input")).toBeNull();
+	});
+
+	test("Table embedded hides the pagination footer", async () => {
+		const node = materialize(embeddedTableNode(true), { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(rowsResponse);
+		const { findByText, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("A");
+		expect(queryByTestId("table-pagination")).toBeNull();
+	});
+
+	test("Table non-embedded (default, no embedded key) still renders toolbar and pagination", async () => {
+		const node = materialize(embeddedTableNode(undefined), {
+			basePath: "/admin/posts",
+			data: {},
+		});
+		const Wrap = wrap(rowsResponse);
+		const { findByText, getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("A");
+		expect(getByTestId("table-toolbar")).toBeTruthy();
+		expect(getByTestId("table-pagination")).toBeTruthy();
+	});
+
+	test("Table embedded:false explicitly still renders toolbar and pagination", async () => {
+		const node = materialize(embeddedTableNode(false), { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(rowsResponse);
+		const { findByText, getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("A");
+		expect(getByTestId("table-toolbar")).toBeTruthy();
+		expect(getByTestId("table-pagination")).toBeTruthy();
+	});
+
+	test("Table embedded still renders rows and reflects the server perPage", async () => {
+		const node = materialize(embeddedTableNode(true), { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(rowsResponse);
+		const { findByText, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("A");
+		// perPage still applies to the query even though the footer is hidden.
+		expect(queryByTestId("pagination-per-page")).toBeNull();
 	});
 });

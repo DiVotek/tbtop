@@ -100,6 +100,27 @@ it('copyable and mask options conform to the wire grammar schema', function () {
     );
 });
 
+it('table embedded option conforms to the wire grammar schema', function () {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->embedded()
+        ->query(fn () => null)
+        ->toNode();
+
+    validateAgainstSchema(json_decode(json_encode($table)));
+});
+
+it('section action option conforms to the wire grammar schema', function () {
+    $s = new S;
+    $node = $s->section(
+        ['title' => 'Recently updated pages', 'action' => ['label' => 'Open pages', 'url' => '/admin/pages']],
+        [$s->displayText('...')]
+    );
+
+    validateAgainstSchema(json_decode(json_encode($node)));
+});
+
 it('nested nav tree with a merged custom item conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)

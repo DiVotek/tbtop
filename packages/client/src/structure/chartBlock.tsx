@@ -108,24 +108,28 @@ export function createChartBlock(
 			const fallback = <ChartError message={state.message} />;
 			return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 		}
+		// Params render via ChartCard's toolbar slot, ABOVE the fixed-height
+		// canvas — inside it they steal height and push the legend out of the card.
+		const toolbar = hasParams ? (
+			<div className="mb-3 flex flex-wrap gap-2" data-testid="chart-params">
+				{paramNodes.map((pNode) => (
+					<ParamControl
+						key={pNode.name}
+						node={pNode}
+						value={paramValues[pNode.name ?? ""] ?? null}
+						onChange={onChange}
+					/>
+				))}
+			</div>
+		) : undefined;
+
 		return (
 			<ChartCard
 				title={options.title}
 				description={options.description}
 				height={options.height}
+				toolbar={toolbar}
 			>
-				{hasParams && (
-					<div className="mb-3 flex flex-wrap gap-2">
-						{paramNodes.map((pNode) => (
-							<ParamControl
-								key={pNode.name}
-								node={pNode}
-								value={paramValues[pNode.name ?? ""] ?? null}
-								onChange={onChange}
-							/>
-						))}
-					</div>
-				)}
 				{renderFn(state.data, options, colors)}
 			</ChartCard>
 		);

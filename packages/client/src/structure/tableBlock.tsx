@@ -105,6 +105,7 @@ export function TableBlock({ options }: TableRenderProps) {
 			headerActions={options.headerActions}
 			recordUrl={options.recordUrl}
 			recordUrlNewTab={options.recordUrlNewTab}
+			embedded={options.embedded}
 			saveCell={saveCell}
 			reorderColumn={options.reorder?.column}
 			reorderRows={reorderRows}
@@ -155,9 +156,10 @@ function TableBody(props: TableBodyProps) {
 
 	const visibleCols = props.columns.filter((c) => visibleColumns.has(c.name));
 
-	// Footer only when the server sends pagination config and a total.
+	// Footer only when the server sends pagination config and a total, and the
+	// table isn't embedded (embedded tables hide toolbar + pagination footer).
 	const { total, pagination } = props;
-	const showPagination = pagination !== undefined && total !== undefined;
+	const showPagination = pagination !== undefined && total !== undefined && !props.embedded;
 
 	// Reorder is allowed only while rows are shown in their persisted order.
 	const reorderEnabled = canReorder({
@@ -191,23 +193,25 @@ function TableBody(props: TableBodyProps) {
 					/>
 				)}
 
-				<TableToolbar
-					hasSearch={hasSearch}
-					hasFilters={hasFilters}
-					filtersIn={props.filtersIn}
-					filters={props.filters ?? []}
-					filterValues={filterValues}
-					setFilterValues={setFilterValues}
-					activeFilterCount={activeFilterCount}
-					columns={props.columns}
-					visibleColumns={visibleColumns}
-					onToggleColumn={toggleColumn}
-					onChangeParams={props.onChangeParams}
-					searchPlaceholder={props.searchPlaceholder}
-					deferFilters={props.deferFilters}
-					filtersFormColumns={props.filtersFormColumns}
-					filtersFormWidth={props.filtersFormWidth}
-				/>
+				{!props.embedded && (
+					<TableToolbar
+						hasSearch={hasSearch}
+						hasFilters={hasFilters}
+						filtersIn={props.filtersIn}
+						filters={props.filters ?? []}
+						filterValues={filterValues}
+						setFilterValues={setFilterValues}
+						activeFilterCount={activeFilterCount}
+						columns={props.columns}
+						visibleColumns={visibleColumns}
+						onToggleColumn={toggleColumn}
+						onChangeParams={props.onChangeParams}
+						searchPlaceholder={props.searchPlaceholder}
+						deferFilters={props.deferFilters}
+						filtersFormColumns={props.filtersFormColumns}
+						filtersFormWidth={props.filtersFormWidth}
+					/>
+				)}
 
 				{hasBulk && (
 					<BulkActionsBar

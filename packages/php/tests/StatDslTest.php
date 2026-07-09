@@ -94,6 +94,28 @@ it('Stat: sparkline emits numeric array', function (): void {
     expect($json['options']['sparkline'])->toBe([10, 20, 15, 30]);
 });
 
+it('Stat: sparkline without a position omits sparklinePosition (back-compat)', function (): void {
+    $json = encodeStat(Stat::make('Revenue')->value(0)->sparkline([10, 20, 15, 30]));
+
+    expect($json['options'])->not->toHaveKey('sparklinePosition');
+});
+
+it('Stat: sparkline position defaults to inline explicitly and still omits the key', function (): void {
+    $json = encodeStat(Stat::make('Revenue')->value(0)->sparkline([10, 20], 'inline'));
+
+    expect($json['options'])->not->toHaveKey('sparklinePosition');
+});
+
+it('Stat: sparkline position "bottom" emits sparklinePosition', function (): void {
+    $json = encodeStat(Stat::make('Revenue')->value(0)->sparkline([10, 20, 15, 30], 'bottom'));
+
+    expect($json['options']['sparklinePosition'])->toBe('bottom');
+});
+
+it('Stat: sparkline with an invalid position throws', function (): void {
+    Stat::make('Revenue')->value(0)->sparkline([10, 20], 'top');
+})->throws(InvalidArgumentException::class);
+
 it('Stat: closure value is resolved at serialization time', function (): void {
     $json = encodeStat(Stat::make('Posts')->value(fn () => 99));
 

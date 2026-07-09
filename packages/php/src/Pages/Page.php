@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Pages;
 
 use Illuminate\Support\Str;
+use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Panels\PanelConfig;
@@ -29,6 +30,18 @@ abstract class Page
     public function subtitle(): ?string
     {
         return null;
+    }
+
+    /**
+     * Actions rendered right of the title/subtitle block. Reuses the action
+     * DSL (S::action()), so visit/server/modal actions all work as on any
+     * other page. Empty by default — renders nothing extra.
+     *
+     * @return list<ActionBuilder|Node>
+     */
+    public function headerActions(S $s): array
+    {
+        return [];
     }
 
     /** Nav placement: ['group' => ..., 'label' => ..., 'order' => ...] or null to hide. @return array<string, mixed>|null */

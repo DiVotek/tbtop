@@ -83,3 +83,9 @@ it('404s an action without a server handler', function () {
 it('404s an unknown form', function () {
     $this->post('/admin/posts/1/edit/forms/nope')->assertNotFound();
 });
+
+it('omits headerActions prop when the page declares none', function () {
+    $response = $this->get('/admin/posts/1/edit', ['X-Inertia' => 'true']);
+
+    expect($response->json('props'))->not->toHaveKey('headerActions');
+});

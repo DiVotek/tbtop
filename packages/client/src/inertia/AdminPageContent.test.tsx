@@ -75,3 +75,69 @@ describe("AdminPage: content width from appearance.maxWidth", () => {
 		expect(getByRole("heading", { level: 1 }).closest(".max-w-5xl")).toBeTruthy();
 	});
 });
+
+describe("AdminPage: headerActions", () => {
+	test("renders a headerActions visit action right of the title block", () => {
+		currentProps = {
+			...BASE_PROPS,
+			headerActions: [
+				{
+					kind: "action",
+					name: "create",
+					options: {
+						label: "New item",
+						spec: { type: "visit", href: "/admin/posts/create" },
+					},
+					meta: {},
+				},
+			],
+		};
+		const { getByTestId, getByText } = render(<AdminPage />);
+		const actions = getByTestId("page-header-actions");
+		expect(getByText("New item")).toBeTruthy();
+		expect(actions.querySelector("a")?.getAttribute("href")).toBe("/admin/posts/create");
+	});
+
+	test("renders nothing extra when headerActions is absent", () => {
+		currentProps = { ...BASE_PROPS };
+		const { queryByTestId } = render(<AdminPage />);
+		expect(queryByTestId("page-header-actions")).toBeNull();
+	});
+
+	test("renders nothing extra when headerActions is an empty array", () => {
+		currentProps = { ...BASE_PROPS, headerActions: [] };
+		const { queryByTestId } = render(<AdminPage />);
+		expect(queryByTestId("page-header-actions")).toBeNull();
+	});
+
+	test("renders multiple headerActions in order", () => {
+		currentProps = {
+			...BASE_PROPS,
+			headerActions: [
+				{
+					kind: "action",
+					name: "create",
+					options: {
+						label: "New item",
+						spec: { type: "visit", href: "/admin/posts/create" },
+					},
+					meta: {},
+				},
+				{
+					kind: "action",
+					name: "export",
+					options: {
+						label: "Export",
+						spec: { type: "visit", href: "/admin/posts/export" },
+					},
+					meta: {},
+				},
+			],
+		};
+		const { getByTestId } = render(<AdminPage />);
+		const labels = Array.from(getByTestId("page-header-actions").querySelectorAll("a")).map(
+			(a) => a.textContent,
+		);
+		expect(labels).toEqual(["New item", "Export"]);
+	});
+});

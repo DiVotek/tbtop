@@ -26,6 +26,7 @@ interface SectionOptions {
 	description?: string;
 	icon?: IconDef;
 	aside?: StructureNode;
+	action?: { label: string; url: string };
 	collapsible?: boolean;
 	collapsed?: boolean;
 	columns?: ColumnsSpec;
@@ -126,6 +127,7 @@ export function SectionBlock({ options, children, renderChild }: RenderProps<Sec
 				title={options.title}
 				description={options.description}
 				icon={options.icon}
+				action={options.action}
 				collapsible={options.collapsible}
 				open={open}
 				onToggle={() => setOpen((prev) => !prev)}

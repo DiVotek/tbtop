@@ -47,6 +47,8 @@ export interface TableBlockOptions extends AsyncBlock {
 	headerActions?: ActionConfig[];
 	recordUrl?: boolean;
 	recordUrlNewTab?: boolean;
+	/** Hides the toolbar (search/filters/column-visibility) and pagination footer. */
+	embedded?: boolean;
 	/** Require an explicit Apply action before filter changes narrow the query. */
 	deferFilters?: boolean;
 	/** Grid column count for the filters form layout (1-4). */
@@ -86,6 +88,7 @@ export interface TableBodyProps {
 	headerActions?: ActionConfig[];
 	recordUrl?: boolean;
 	recordUrlNewTab?: boolean;
+	embedded?: boolean;
 	deferFilters?: boolean;
 	filtersFormColumns?: number;
 	filtersFormWidth?: ModalSize;
