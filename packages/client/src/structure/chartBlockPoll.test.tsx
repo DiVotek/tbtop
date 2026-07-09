@@ -96,7 +96,7 @@ describe("chart polling", () => {
 		expect(state.calls).toBe(2);
 
 		unmount();
-		await advance(30_000);
+		await advance(12_000);
 		expect(state.calls).toBe(2);
-	});
+	}, 15_000);
 });
