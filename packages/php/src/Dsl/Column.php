@@ -53,6 +53,9 @@ final class Column implements JsonSerializable
 
     private ?Closure $formatUsing = null;
 
+    /** Server-only: url resolver for the 'link' kind — never serialized. Receives the row, returns a URL or null. */
+    private ?Closure $linkResolver = null;
+
     /** Extra kind-specific payload (badge, boolean, iconMap, format, decimals, currency…). */
     /** @var array<string, mixed> */
     private array $kindMeta = [];
@@ -314,6 +317,32 @@ final class Column implements JsonSerializable
         $this->kind = 'color';
 
         return $this;
+    }
+
+    /**
+     * Render the column as a link; sets kind = 'link'. The resolver runs
+     * server-side per row and returns a URL or null (null → empty cell).
+     * The closure never serializes.
+     */
+    public function link(Closure $url, bool $external = false, ?string $icon = null): static
+    {
+        $this->kind = 'link';
+        $this->linkResolver = $url;
+        $meta = array_filter(
+            ['external' => $external ? true : null, 'icon' => $icon],
+            fn ($v) => $v !== null,
+        );
+        if ($meta !== []) {
+            $this->kindMeta['link'] = $meta;
+        }
+
+        return $this;
+    }
+
+    /** Server-only: url resolver for the 'link' kind, or null when link() wasn't called. */
+    public function linkResolver(): ?Closure
+    {
+        return $this->linkResolver;
     }
 
     /** Square shape (sharp corners). Last shape call wins. */

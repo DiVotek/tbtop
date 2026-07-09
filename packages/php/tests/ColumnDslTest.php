@@ -249,6 +249,55 @@ it('Column: color() last shape call wins (rounded then square)', function (): vo
 });
 
 // ---------------------------------------------------------------------------
+// Link column kind
+// ---------------------------------------------------------------------------
+
+it('Column: link() sets kind=link and omits the link meta key when no options passed', function (): void {
+    $json = encodeColumn(Column::make('view')->link(fn ($row) => '/x'));
+
+    expect($json['kind'])->toBe('link')
+        ->and(array_key_exists('link', $json))->toBeFalse();
+});
+
+it('Column: link() with external:true emits link.external', function (): void {
+    $json = encodeColumn(Column::make('view')->link(fn ($row) => '/x', external: true));
+
+    expect($json['link'])->toBe(['external' => true]);
+});
+
+it('Column: link() with icon emits link.icon', function (): void {
+    $json = encodeColumn(Column::make('view')->link(fn ($row) => '/x', icon: 'external-link'));
+
+    expect($json['link'])->toBe(['icon' => 'external-link']);
+});
+
+it('Column: link() with external and icon emits both', function (): void {
+    $json = encodeColumn(
+        Column::make('view')->link(fn ($row) => '/x', external: true, icon: 'external-link')
+    );
+
+    expect($json['link'])->toBe(['external' => true, 'icon' => 'external-link']);
+});
+
+it('Column: link() url closure does NOT appear in jsonSerialize() output', function (): void {
+    $json = encodeColumn(Column::make('view')->link(fn ($row) => '/x'));
+
+    expect($json)->not->toHaveKey('linkResolver')
+        ->and($json)->not->toHaveKey('url');
+});
+
+it('Column: linkResolver() returns the closure passed to link()', function (): void {
+    $resolver = fn ($row) => '/x';
+    $col = Column::make('view')->link($resolver);
+
+    expect($col->linkResolver())->toBe($resolver);
+});
+
+it('Column: linkResolver() is null when link() was not called', function (): void {
+    expect(Column::make('view')->linkResolver())->toBeNull();
+});
+
+// ---------------------------------------------------------------------------
 // Color enum
 // ---------------------------------------------------------------------------
 

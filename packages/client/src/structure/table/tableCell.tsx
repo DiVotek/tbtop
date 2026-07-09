@@ -14,6 +14,7 @@ import {
 	ColorCell,
 	IconMapCell,
 	ImageCell,
+	LinkCell,
 	TimeCell,
 } from "./cellHelpers";
 import { EditableCell } from "./editableCell";
@@ -94,6 +95,9 @@ function renderCell(
 	}
 	if (col.kind === "time") {
 		return <TimeCell value={row[col.name]} />;
+	}
+	if (col.kind === "link") {
+		return <LinkCell value={row[col.name]} col={col} />;
 	}
 	const descriptor = col.kind ? getBlockDescriptor(col.kind) : undefined;
 	if (descriptor?.behavior === "field") {

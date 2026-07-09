@@ -133,3 +133,42 @@ export function TimeCell({ value }: TimeCellProps): ReactNode {
 	}
 	return <span>{String(value)}</span>;
 }
+
+// ─── Link cell ──────────────────────────────────────────────────────────────
+
+interface LinkCellProps {
+	value: unknown;
+	col: TableColumn;
+}
+
+/**
+ * Renders the per-row URL resolved server-side (Column::link()). A null/empty
+ * value renders nothing. stopPropagation keeps the click from also firing the
+ * row's rowClick/recordUrl navigation. When an icon is configured, the cell
+ * shows the icon only (no link text); otherwise it falls back to the URL.
+ */
+export function LinkCell({ value, col }: LinkCellProps): ReactNode {
+	const url = typeof value === "string" && value !== "" ? value : undefined;
+	if (!url) {
+		return null;
+	}
+	const external = col.link?.external === true;
+	const Icon = col.link?.icon ? resolveIcon(col.link.icon) : undefined;
+	return (
+		<a
+			href={url}
+			onClick={(e) => e.stopPropagation()}
+			className="inline-flex items-center gap-1 text-primary hover:underline"
+			{...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+		>
+			{Icon ? (
+				<Icon
+					className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
+					aria-hidden
+				/>
+			) : (
+				url
+			)}
+		</a>
+	);
+}

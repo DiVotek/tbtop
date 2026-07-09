@@ -195,6 +195,38 @@ it('ColumnProjection: no _recordUrl when recordUrl() is not set', function (): v
 });
 
 // ---------------------------------------------------------------------------
+// link()
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: link() resolves a per-row URL from the raw row (stdClass path)', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('view')->link(fn ($row) => '/admin/cposts/'.$row->id),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->view)->toBe('/admin/cposts/'.$result[0]->id)
+        ->and($result[1]->view)->toBe('/admin/cposts/'.$result[1]->id);
+});
+
+it('ColumnProjection: link() closure returning null yields a null cell value', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('view')->link(fn ($row) => $row->status === 'published' ? '/x' : null),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->view)->toBe('/x')
+        ->and($result[1]->view)->toBeNull();
+});
+
+// ---------------------------------------------------------------------------
 // Per-column search (colSearch) allowlist
 // ---------------------------------------------------------------------------
 
