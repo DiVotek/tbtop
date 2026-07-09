@@ -86,6 +86,9 @@ final class S
     /** @var array<string, ChartBuilder> */
     private array $charts = [];
 
+    /** @var array<string, Stat> */
+    private array $stats = [];
+
     // -------------------------------------------------------------------------
     // Registry
     // -------------------------------------------------------------------------
@@ -234,7 +237,9 @@ final class S
      * when collapsible), 'columns' (int|breakpoint-object — lays out the
      * section's children in a grid instead of a stack), 'action'
      * (['label' => string, 'url' => string] — a quiet link rendered right-aligned
-     * in the header row, e.g. "Open pages").
+     * in the header row, e.g. "Open pages"), 'variant' ('card'|'plain' — 'card'
+     * wraps the section in a bordered card with an inline header; 'plain' renders
+     * the title as an uppercase muted label. Omitted = current stack render).
      *
      * @param  array<string, mixed>  $opts
      * @param  list<mixed>  $children
@@ -250,8 +255,23 @@ final class S
         if (isset($opts['action'])) {
             $opts['action'] = self::normalizeSectionAction($opts['action']);
         }
+        if (isset($opts['variant'])) {
+            $opts['variant'] = self::normalizeSectionVariant($opts['variant']);
+        }
 
         return self::layout('section', $children, $opts);
+    }
+
+    private static function normalizeSectionVariant(mixed $variant): string
+    {
+        $allowed = ['card', 'plain'];
+        if (! is_string($variant) || ! in_array($variant, $allowed, true)) {
+            throw new InvalidArgumentException(
+                "Invalid section variant \"{$variant}\". Allowed: ".implode(', ', $allowed).'.'
+            );
+        }
+
+        return $variant;
     }
 
     /** @param  array<string, mixed>  $action @return array{label: string, url: string} */
@@ -548,7 +568,13 @@ final class S
 
     public function stat(string $label): Stat
     {
-        return Stat::make($label);
+        return $this->stats[$label] = Stat::make($label);
+    }
+
+    /** Generic row list — "Recently updated pages" style widget. */
+    public function list(string $name): ListBuilder
+    {
+        return ListBuilder::make($name);
     }
 
     /** @param  array<string, mixed>  $opts */
@@ -562,10 +588,30 @@ final class S
         return $this->actions[$name] = new ActionBuilder($name);
     }
 
-    /** @param  list<ActionBuilder>  $actions */
-    public function actionsRow(array $actions): Node
+    /**
+     * @param  list<ActionBuilder>  $actions
+     * @param  array{variant?: 'grid'}  $opts  'grid' lays the actions out as a
+     *                                         responsive card grid instead of an inline row.
+     */
+    public function actionsRow(array $actions, array $opts = []): Node
     {
-        return new Node('row', ['children' => ActionBuilder::filterAuthorized($actions)]);
+        $options = ['children' => ActionBuilder::filterAuthorized($actions)];
+        if (isset($opts['variant'])) {
+            $options['variant'] = self::normalizeRowVariant($opts['variant']);
+        }
+
+        return new Node('row', $options);
+    }
+
+    private static function normalizeRowVariant(mixed $variant): string
+    {
+        if ($variant !== 'grid') {
+            throw new InvalidArgumentException(
+                "Invalid actionsRow variant \"{$variant}\". Allowed: grid."
+            );
+        }
+
+        return $variant;
     }
 
     // -------------------------------------------------------------------------
@@ -594,6 +640,12 @@ final class S
     public function collectedCharts(): array
     {
         return $this->charts;
+    }
+
+    /** @return array<string, Stat> */
+    public function collectedStats(): array
+    {
+        return $this->stats;
     }
 
     /**

@@ -14,6 +14,9 @@ class ChartParamsPage extends Page
     /** @var array<string, mixed>|null Captured params for assertions. */
     public static ?array $capturedParams = null;
 
+    /** Counts polled-stat value closure invocations across requests. */
+    public static int $statValueCalls = 0;
+
     public static function path(): string
     {
         return 'chart-params';
@@ -22,6 +25,17 @@ class ChartParamsPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
+            $s->stat('Active users')
+                ->value(function (): int {
+                    static::$statValueCalls++;
+
+                    return 100 + static::$statValueCalls;
+                })
+                ->description('online now')
+                ->sparkline([1, 2, 3])
+                ->poll(10)
+                ->toNode(),
+            $s->stat('Plain stat')->value(fn (): int => 5)->toNode(),
             $s->chart('withParams', 'bar')
                 ->params([
                     $s->select('interval')->set('options', [

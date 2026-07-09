@@ -422,7 +422,90 @@
 											"url": { "type": "string" }
 										},
 										"additionalProperties": false
+									},
+									"variant": { "type": "string", "enum": ["card", "plain"] }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "row" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"variant": { "type": "string", "enum": ["grid"] }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "list" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["items"],
+								"properties": {
+									"items": {
+										"type": "array",
+										"items": { "$ref": "#/$defs/listItem" }
 									}
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "stat" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"required": ["label"],
+								"properties": {
+									"label": { "type": "string" },
+									"value": {},
+									"description": { "type": "string" },
+									"descriptionColor": {
+										"type": "string",
+										"enum": ["success", "warning", "danger"]
+									},
+									"trend": { "type": "string", "enum": ["up", "down"] },
+									"delta": {
+										"type": "object",
+										"required": ["text", "direction"],
+										"properties": {
+											"text": { "type": "string" },
+											"direction": { "type": "string", "enum": ["up", "down", "flat"] }
+										},
+										"additionalProperties": false
+									},
+									"color": { "type": "string" },
+									"sparkline": { "type": "array", "items": { "type": "number" } },
+									"sparklinePosition": { "type": "string", "enum": ["inline", "bottom"] },
+									"sparklineColor": {
+										"type": "string",
+										"enum": ["success", "warning", "danger", "primary"]
+									},
+									"poll": { "type": "integer", "minimum": 5 },
+									"source": { "type": "string" },
+									"icon": { "$ref": "#/$defs/icon" },
+									"tooltip": { "type": "string" }
+								}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "type": "string", "pattern": "^chart:" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"type": { "type": "string" },
+									"source": { "type": "string" },
+									"poll": { "type": "integer", "minimum": 5 }
 								}
 							}
 						}
@@ -634,6 +717,20 @@
 		},
 		"nav": { "type": "array", "items": { "$ref": "#/$defs/navGroup" } },
 		"userMenuItems": { "type": "array", "items": { "$ref": "#/$defs/userMenuItem" } },
+		"listItem": {
+			"type": "object",
+			"required": ["title"],
+			"properties": {
+				"title": { "type": "string" },
+				"meta": { "type": "string" },
+				"color": {
+					"type": "string",
+					"enum": ["success", "warning", "danger", "muted"]
+				},
+				"url": { "type": "string" }
+			},
+			"additionalProperties": false
+		},
 		"tableTab": {
 			"type": "object",
 			"required": ["name", "label", "count"],

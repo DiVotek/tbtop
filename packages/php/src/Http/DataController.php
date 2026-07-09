@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tbtop\Admin\Dsl\ChartBuilder;
 use Tbtop\Admin\Dsl\Fields\Field;
 
 final class DataController
@@ -17,10 +18,26 @@ final class DataController
 
         $name = (string) $request->route('tbtopData');
         $resolved = ResolvedPage::fromRequest($request);
+
         $chart = $resolved->s->collectedCharts()[$name] ?? null;
-        $query = $chart?->queryClosure();
-        if ($chart === null || $query === null) {
-            throw new NotFoundHttpException("Data source \"{$name}\" is not defined on this page.");
+        if ($chart !== null) {
+            return $this->chartResponse($chart, $request);
+        }
+
+        $stat = $resolved->s->collectedStats()[$name] ?? null;
+        $query = $stat?->queryClosure();
+        if ($stat !== null && $query !== null) {
+            return response()->json(['data' => $query()]);
+        }
+
+        throw new NotFoundHttpException("Data source \"{$name}\" is not defined on this page.");
+    }
+
+    private function chartResponse(ChartBuilder $chart, Request $request): JsonResponse
+    {
+        $query = $chart->queryClosure();
+        if ($query === null) {
+            throw new NotFoundHttpException("Data source \"{$chart->name}\" is not defined on this page.");
         }
 
         $params = $this->resolveParams($chart->paramFields(), $request);
