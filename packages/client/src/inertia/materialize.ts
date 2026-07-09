@@ -11,6 +11,7 @@ import {
 	collectConstraints,
 	materializeChart,
 	materializeRelation,
+	materializeStat,
 	materializeUpload,
 } from "./materializeHelpers";
 import { actionBags, materializeTable } from "./materializeTable";
@@ -64,6 +65,9 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	}
 	if (node.kind.startsWith("chart:")) {
 		return materializeChart({ ...node, meta }, ctx.basePath);
+	}
+	if (node.kind === "stat") {
+		return materializeStat({ ...node, meta }, ctx.basePath);
 	}
 	if (node.kind === "select" && node.name) {
 		return materializeSelect({ ...node, meta }, ctx);

@@ -249,6 +249,35 @@ describe("materialize chart", () => {
 	});
 });
 
+describe("materialize stat", () => {
+	it("injects a query hitting the encoded data endpoint when source is present", async () => {
+		let captured = null as string | null;
+		const client = {
+			get: async (path: string) => {
+				captured = path;
+				return { data: { value: 7 } };
+			},
+		} as unknown as AdminClient;
+
+		const out = materialize(
+			node("stat", { label: "Active users", value: 5, poll: 10, source: "Active users" }),
+			BASE,
+		);
+		const query = opts(out).query as (ctx: ClientActionContext) => Promise<unknown>;
+		const result = await query(fakeCtx({ client }));
+
+		expect(captured).toBe("/admin/posts/data/Active%20users");
+		expect(result).toEqual({ value: 7 });
+	});
+
+	it("leaves a stat without source untouched (no query injected)", () => {
+		const out = materialize(node("stat", { label: "Plain", value: 5 }), BASE);
+
+		expect(opts(out).query).toBeUndefined();
+		expect(opts(out).value).toBe(5);
+	});
+});
+
 describe("materialize table", () => {
 	it("queries the page-scoped endpoint with list params and unwraps the envelope", async () => {
 		let captured = null as { path: string; query: unknown } | null;

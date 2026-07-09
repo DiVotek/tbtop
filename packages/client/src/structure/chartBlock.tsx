@@ -1,7 +1,9 @@
 import type { ComponentType, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
+import { pollIntervalMs } from "../lib/pollInterval";
 import { useChartColors } from "../lib/useChartColors";
 import { useDebounce } from "../lib/useDebounce";
+import { usePolling } from "../lib/usePolling";
 import type { RenderProps } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { invokeBlock } from "../render/renderDescriptor";
@@ -34,6 +36,8 @@ export interface ChartBlockOptions<TPoint extends ChartPoint = ChartPoint> {
 	description?: string;
 	height?: number;
 	params?: unknown[];
+	/** Server-declared refresh interval in seconds; clamped to a 5s minimum. */
+	poll?: number;
 	loading?: ReactNode;
 	error?: ReactNode | ((err: Error) => ReactNode);
 }
@@ -91,11 +95,14 @@ export function createChartBlock(
 		// non-node entries in params are treated as raw deps for backward-compat
 		const rawDeps = (options.params ?? []).filter((p) => !isParamNode(p));
 
-		const { state } = useAsyncQuery<ChartPoint[]>({
+		const { state, refetch } = useAsyncQuery<ChartPoint[]>({
 			query: boundQuery,
 			ctx,
 			deps: rawDeps,
 		});
+
+		// Server-declared poll: refetch on an interval (cleanup handled by the hook).
+		usePolling(refetch, pollIntervalMs(options.poll));
 
 		const onChange = useCallback((name: string, value: unknown) => {
 			setParamValues((prev) => ({ ...prev, [name]: String(value ?? "") }));
