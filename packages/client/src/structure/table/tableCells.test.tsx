@@ -311,6 +311,18 @@ describe("TableCell: column display properties", () => {
 		expect(container.querySelector("td .text-primary")).toBeNull();
 	});
 
+	test("date column with an explicit server format renders the projected string as-is", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", updated_at: "09.07.2026" }],
+			columns: [{ name: "updated_at", label: "Updated", kind: "date", format: "d.m.Y" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		// No reparse: new Date("09.07.2026") would misread this as Sep 7 (US order).
+		expect(getByText("09.07.2026")).toBeTruthy();
+	});
+
 	test("hiddenByDefault column is not visible initially", async () => {
 		const node = s.table({
 			name: "scored",

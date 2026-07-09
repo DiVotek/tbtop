@@ -107,6 +107,12 @@ function renderCell(
 	if (col.kind === "link") {
 		return <LinkCell value={row[col.name]} col={col} />;
 	}
+	// Server already formatted the value with an explicit format — render it
+	// as-is. Reparsing "09.07.2026" via new Date() would misread it (US order)
+	// and re-localize, discarding the format the page author chose.
+	if ((col.kind === "date" || col.kind === "datetime") && col.format) {
+		return String(row[col.name] ?? "");
+	}
 	const descriptor = col.kind ? getBlockDescriptor(col.kind) : undefined;
 	if (descriptor?.behavior === "field") {
 		return renderDescriptor(descriptor, {

@@ -56,6 +56,8 @@ export interface TableColumn<TRow = unknown> {
 	emphasized?: boolean;
 	/** Small muted cell text — secondary metadata columns (dates, parents, counts). */
 	muted?: boolean;
+	/** Explicit server-side date/datetime format — the cell renders the projected string as-is. */
+	format?: string;
 	/** Uppercase wide-tracked cell text — short code-like values (types, statuses). */
 	uppercase?: boolean;
 	copyable?: CopyableConfig;
