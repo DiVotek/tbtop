@@ -43,11 +43,6 @@ export function ModalActionBlock({
 	const tint = plain ? undefined : outlinedTintClass(opts);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [open, setOpen] = useState(false);
-	const [halt, setHalt] = useState<{ message: string; level: NotificationConfig["kind"] } | null>(
-		null,
-	);
-	const parent = useNearestModal();
-	const modal = opts.modal as ActionModalOpts;
 
 	useEffect(() => {
 		if (!opts.keybinding) {
@@ -60,13 +55,6 @@ export function ModalActionBlock({
 		return registerKeybinding(spec, () => buttonRef.current?.click());
 	}, [opts.keybinding]);
 
-	const close = useCallback(() => setOpen(false), []);
-	const haltModal = useCallback(
-		(message: string, level?: NotificationConfig["kind"]) => setHalt({ message, level }),
-		[],
-	);
-	const body = resolveBody(modal.body);
-
 	return (
 		<>
 			<MaybeTooltip tooltip={opts.tooltip} disabled={disabled}>
@@ -77,39 +65,75 @@ export function ModalActionBlock({
 					size={buttonSize}
 					className={tint}
 					disabled={disabled}
-					onClick={() => {
-						setHalt(null);
-						setOpen(true);
-					}}
+					onClick={() => setOpen(true)}
 					data-testid={`action-${actionKey(opts)}`}
 				>
 					<ActionLabel opts={opts} />
 				</Button>
 			</MaybeTooltip>
-			<ModalShell
-				open={open}
-				onOpenChange={setOpen}
-				title={modal.title}
-				description={modal.description}
-				size={modal.size}
-				slideOver={modal.slideOver}
-				data-testid={`modal-${actionKey(opts)}`}
-			>
-				{halt && (
-					<Alert
-						variant={HALT_VARIANT[halt.level ?? "error"]}
-						data-testid="modal-halt-message"
-					>
-						<AlertDescription>{halt.message}</AlertDescription>
-					</Alert>
-				)}
-				{body && open && (
-					<ModalProvider close={close} halt={haltModal} parent={parent}>
-						<ModalBody body={body} query={modal.query} />
-					</ModalProvider>
-				)}
-			</ModalShell>
+			<ActionModal opts={opts} open={open} onOpenChange={setOpen} />
 		</>
+	);
+}
+
+/**
+ * The modal half of a modal action, controlled from outside — used by
+ * ModalActionBlock's own trigger button and by rowClick (a row click opens
+ * the modal of a rowActions entry that may itself be hidden).
+ */
+export function ActionModal({
+	opts,
+	open,
+	onOpenChange,
+}: {
+	opts: ActionOptionsBag;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}) {
+	const [halt, setHalt] = useState<{ message: string; level: NotificationConfig["kind"] } | null>(
+		null,
+	);
+	const parent = useNearestModal();
+	const modal = opts.modal as ActionModalOpts;
+
+	// A fresh open starts with a clean halt banner.
+	useEffect(() => {
+		if (open) {
+			setHalt(null);
+		}
+	}, [open]);
+
+	const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+	const haltModal = useCallback(
+		(message: string, level?: NotificationConfig["kind"]) => setHalt({ message, level }),
+		[],
+	);
+	const body = resolveBody(modal.body);
+
+	return (
+		<ModalShell
+			open={open}
+			onOpenChange={onOpenChange}
+			title={modal.title}
+			description={modal.description}
+			size={modal.size}
+			slideOver={modal.slideOver}
+			data-testid={`modal-${actionKey(opts)}`}
+		>
+			{halt && (
+				<Alert
+					variant={HALT_VARIANT[halt.level ?? "error"]}
+					data-testid="modal-halt-message"
+				>
+					<AlertDescription>{halt.message}</AlertDescription>
+				</Alert>
+			)}
+			{body && open && (
+				<ModalProvider close={close} halt={haltModal} parent={parent}>
+					<ModalBody body={body} query={modal.query} />
+				</ModalProvider>
+			)}
+		</ModalShell>
 	);
 }
 

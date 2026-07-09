@@ -271,6 +271,58 @@ describe("TableCell: column display properties", () => {
 		expect(th).toBeTruthy();
 	});
 
+	test("emphasized column wraps the cell text in a primary link-style span", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", name: "About us" }],
+			columns: [{ name: "name", label: "Title", emphasized: true }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const span = getByText("About us");
+		expect(span.className).toContain("text-primary");
+		expect(span.className).toContain("font-medium");
+		expect(span.className).toContain("hover:underline");
+	});
+
+	test("muted + uppercase column wraps the cell text in secondary code-style classes", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", type: "category" }],
+			columns: [{ name: "type", label: "Type", muted: true, uppercase: true }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const span = getByText("category");
+		expect(span.className).toContain("text-muted-foreground");
+		expect(span.className).toContain("text-xs");
+		expect(span.className).toContain("uppercase");
+		expect(span.className).toContain("tracking-wide");
+	});
+
+	test("non-emphasized column renders plain cell text without the primary link styling", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", name: "About us" }],
+			columns: [{ name: "name", label: "Title" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector("td .text-primary")).toBeNull();
+	});
+
+	test("date column with an explicit server format renders the projected string as-is", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", updated_at: "09.07.2026" }],
+			columns: [{ name: "updated_at", label: "Updated", kind: "date", format: "d.m.Y" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		// No reparse: new Date("09.07.2026") would misread this as Sep 7 (US order).
+		expect(getByText("09.07.2026")).toBeTruthy();
+	});
+
 	test("hiddenByDefault column is not visible initially", async () => {
 		const node = s.table({
 			name: "scored",

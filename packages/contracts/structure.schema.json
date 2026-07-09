@@ -618,6 +618,9 @@
 					"width": { "type": "string" },
 					"wrap": { "type": "boolean" },
 					"tooltip": { "type": "string" },
+					"emphasized": { "type": "boolean" },
+					"muted": { "type": "boolean" },
+					"uppercase": { "type": "boolean" },
 					"copyable": {
 						"type": "object",
 						"properties": {

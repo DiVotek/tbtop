@@ -42,7 +42,15 @@ export function RowDataCell({
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
-	const content = renderCell(col, row, saveCell);
+	const rendered = renderCell(col, row, saveCell);
+	// Text-style flags: emphasized = primary link-style label (pairs with
+	// rowClick), muted = small secondary metadata, uppercase = code-like values.
+	const textClass = cn(
+		col.emphasized && "font-medium text-primary hover:underline",
+		col.muted && "text-xs text-muted-foreground",
+		col.uppercase && "uppercase tracking-wide",
+	);
+	const content = textClass ? <span className={textClass}>{rendered}</span> : rendered;
 	return (
 		<td
 			className={cn("px-3 py-2", alignClass, wrapClass)}
@@ -98,6 +106,12 @@ function renderCell(
 	}
 	if (col.kind === "link") {
 		return <LinkCell value={row[col.name]} col={col} />;
+	}
+	// Server already formatted the value with an explicit format — render it
+	// as-is. Reparsing "09.07.2026" via new Date() would misread it (US order)
+	// and re-localize, discarding the format the page author chose.
+	if ((col.kind === "date" || col.kind === "datetime") && col.format) {
+		return String(row[col.name] ?? "");
 	}
 	const descriptor = col.kind ? getBlockDescriptor(col.kind) : undefined;
 	if (descriptor?.behavior === "field") {

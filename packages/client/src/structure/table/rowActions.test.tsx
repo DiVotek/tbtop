@@ -56,6 +56,12 @@ describe("RowActionsCell — hiddenIf filters per row", () => {
 		const { queryByTestId } = renderCell([action], { status: "done" });
 		expect(queryByTestId("action-approve")).toBeNull();
 	});
+
+	test("action with static meta hidden=true is always absent (rowClick-only target)", () => {
+		const action = visitAction("edit", { meta: { hidden: true } });
+		const { queryByTestId } = renderCell([action], { status: "pending" });
+		expect(queryByTestId("action-edit")).toBeNull();
+	});
 });
 
 describe("RowActionsCell — role-gated via user", () => {

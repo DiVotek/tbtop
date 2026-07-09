@@ -52,6 +52,14 @@ export interface TableColumn<TRow = unknown> {
 	width?: string;
 	wrap?: boolean;
 	tooltip?: string;
+	/** Emphasized primary link-style cell text (e.g. a title column driving rowClick). */
+	emphasized?: boolean;
+	/** Small muted cell text — secondary metadata columns (dates, parents, counts). */
+	muted?: boolean;
+	/** Explicit server-side date/datetime format — the cell renders the projected string as-is. */
+	format?: string;
+	/** Uppercase wide-tracked cell text — short code-like values (types, statuses). */
+	uppercase?: boolean;
 	copyable?: CopyableConfig;
 	translatable?: boolean;
 	badge?: TableColumnBadgeOptions;

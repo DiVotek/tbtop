@@ -49,6 +49,15 @@ final class Column implements JsonSerializable
 
     private ?string $tooltip = null;
 
+    /** Renders the cell text as an emphasized primary-colored link-style label. */
+    private ?bool $emphasized = null;
+
+    /** Renders the cell text small and muted (secondary metadata columns). */
+    private ?bool $muted = null;
+
+    /** Renders the cell text uppercase with wide tracking. */
+    private ?bool $uppercase = null;
+
     private ?bool $translatable = null;
 
     private ?Closure $formatUsing = null;
@@ -203,6 +212,30 @@ final class Column implements JsonSerializable
     public function translatable(bool $value = true): static
     {
         $this->translatable = $value;
+
+        return $this;
+    }
+
+    /** Style the cell text as an emphasized primary link-style label (e.g. a title column driving rowClick). */
+    public function emphasized(bool $value = true): static
+    {
+        $this->emphasized = $value;
+
+        return $this;
+    }
+
+    /** Style the cell text small and muted — for secondary metadata columns (dates, parents, counts). */
+    public function muted(bool $value = true): static
+    {
+        $this->muted = $value;
+
+        return $this;
+    }
+
+    /** Style the cell text uppercase with wide tracking — for short code-like values (types, statuses). */
+    public function uppercase(bool $value = true): static
+    {
+        $this->uppercase = $value;
 
         return $this;
     }
@@ -561,6 +594,15 @@ final class Column implements JsonSerializable
         }
         if ($this->tooltip !== null) {
             $out['tooltip'] = $this->tooltip;
+        }
+        if ($this->emphasized === true) {
+            $out['emphasized'] = true;
+        }
+        if ($this->muted === true) {
+            $out['muted'] = true;
+        }
+        if ($this->uppercase === true) {
+            $out['uppercase'] = true;
         }
         if ($this->translatable === true) {
             $out['translatable'] = true;
