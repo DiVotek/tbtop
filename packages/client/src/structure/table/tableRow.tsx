@@ -4,10 +4,11 @@
  */
 import { router } from "@inertiajs/react";
 import type { CSSProperties, ReactNode } from "react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { cn } from "../../lib/cn";
 import { isExternalUrl } from "../actionBlock";
 import { useClientActionContext } from "../actionContext";
+import { ActionModal } from "../modalActionBlock";
 import { RowProvider } from "../rowContext";
 import type { ActionConfig, TableColumn } from "../types";
 import { readId } from "./normalize";
@@ -50,6 +51,11 @@ export function TableRow(props: TableRowProps) {
 				(a): a is ActionConfig => !isActionGroupEntry(a) && a.name === props.rowClick,
 			)
 		: undefined;
+	// A modal rowClick target has no handler — the row click opens its modal.
+	const rowClickModal = Boolean(
+		rowClickAction && "modal" in rowClickAction && rowClickAction.modal,
+	);
+	const [rowModalOpen, setRowModalOpen] = useState(false);
 	const recordHref =
 		props.recordUrl && typeof props.row._recordUrl === "string"
 			? props.row._recordUrl
@@ -76,6 +82,10 @@ export function TableRow(props: TableRowProps) {
 		}
 		if (recordHref) {
 			navigateToRecord(recordHref, props.recordUrlNewTab ?? false);
+			return;
+		}
+		if (rowClickModal) {
+			setRowModalOpen(true);
 			return;
 		}
 		runRowClick(props, rowClickAction, ctx);
@@ -130,6 +140,13 @@ export function TableRow(props: TableRowProps) {
 					<td className="px-3 py-2">
 						<RowActionsCell actions={props.rowActions} />
 					</td>
+				)}
+				{rowClickModal && rowClickAction && (
+					<ActionModal
+						opts={rowClickAction}
+						open={rowModalOpen}
+						onOpenChange={setRowModalOpen}
+					/>
 				)}
 			</RowProvider>
 		</tr>
