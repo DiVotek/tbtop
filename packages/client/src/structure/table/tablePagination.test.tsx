@@ -40,18 +40,9 @@ describe("TablePagination: record range counter", () => {
 		expect(range.textContent).toBe("1–25 of 100");
 	});
 
-	test("shows '0' when total is 0", async () => {
-		const node = s.table({
-			name: "empty",
-			query: async () => ({ data: [], total: 0, page: 1, perPage: 25 }),
-			columns: [{ name: "title" }],
-			pagination: { perPage: 25, options: [25] },
-		} as Parameters<typeof s.table>[0]);
-		const Wrap = wrap(() => new Response("{}"));
-		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
-		const range = await findByTestId("pagination-range");
-		expect(range.textContent).toBe("0");
-	});
+	// total=0 on page 1 now auto-hides the footer entirely (0 <= perPage) —
+	// covered by "TablePagination: auto-hidden when everything fits on the
+	// first page" below, so there's no range counter to assert here anymore.
 });
 
 describe("TablePagination: page navigation", () => {
@@ -64,8 +55,26 @@ describe("TablePagination: page navigation", () => {
 	});
 
 	test("next button is disabled on last page", async () => {
-		// 25 rows, 25 perPage → 1 page total
-		const node = makePaginatedTable(25, 25);
+		// 30 rows, 25 perPage → 2 pages; land on page 2 (the last one) via the
+		// URL-seeded page param so the footer isn't auto-hidden (page !== 1).
+		const sp = new URLSearchParams();
+		sp.set("t[items][page]", "2");
+		window.history.replaceState(null, "", `/?${sp.toString()}`);
+
+		const node = s.table({
+			name: "items",
+			query: async () => ({
+				data: Array.from({ length: 5 }, (_, i) => ({
+					id: String(i + 26),
+					title: `Row ${i}`,
+				})),
+				total: 30,
+				page: 2,
+				perPage: 25,
+			}),
+			columns: [{ name: "title", label: "Title" }],
+			pagination: { perPage: 25, options: [10, 25, 50] },
+		} as Parameters<typeof s.table>[0]);
 		const Wrap = wrap(() => new Response("{}"));
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		const next = await findByTestId("pagination-next");
@@ -117,5 +126,54 @@ describe("TablePagination: per-page not shown without pagination option", () => 
 		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		await findByTestId("table-block");
 		expect(queryByTestId("table-pagination")).toBeNull();
+	});
+});
+
+describe("TablePagination: auto-hidden when everything fits on the first page", () => {
+	test("footer absent when total <= perPage on page 1", async () => {
+		const node = makePaginatedTable(10, 25);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(queryByTestId("table-pagination")).toBeNull();
+	});
+
+	test("footer absent when total === perPage exactly on page 1", async () => {
+		const node = makePaginatedTable(25, 25);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(queryByTestId("table-pagination")).toBeNull();
+	});
+
+	test("footer renders when total exceeds perPage", async () => {
+		const node = makePaginatedTable(100, 25);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(await findByTestId("table-pagination")).toBeTruthy();
+	});
+
+	test("footer renders on page 1 with a small total when seeded on a later page (still fits)", async () => {
+		// Regression guard: page must gate the hide, not just total<=perPage —
+		// exercised via the URL-seeded page param.
+		const sp = new URLSearchParams();
+		sp.set("t[items][page]", "2");
+		window.history.replaceState(null, "", `/?${sp.toString()}`);
+
+		const node = s.table({
+			name: "items",
+			query: async () => ({
+				data: [{ id: "1", title: "Row 1" }],
+				total: 10,
+				page: 2,
+				perPage: 25,
+			}),
+			columns: [{ name: "title", label: "Title" }],
+			pagination: { perPage: 25, options: [10, 25, 50] },
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(await findByTestId("table-pagination")).toBeTruthy();
+		window.history.replaceState(null, "", "http://localhost/");
 	});
 });

@@ -312,6 +312,95 @@ describe("TableCell: copyable", () => {
 	});
 });
 
+describe("TableCell: link kind", () => {
+	test("renders an anchor with the resolved URL as href", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", view: "/admin/posts/1" }],
+			columns: [{ name: "view", label: "View", kind: "link" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const anchor = container.querySelector("td a");
+		expect(anchor?.getAttribute("href")).toBe("/admin/posts/1");
+		expect(anchor?.textContent).toBe("/admin/posts/1");
+	});
+
+	test("null value renders no anchor and no cell content", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", view: null }],
+			columns: [{ name: "view", label: "View", kind: "link" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector("td a")).toBeNull();
+	});
+
+	test("external:true sets target=_blank and rel=noopener noreferrer", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", view: "https://example.com" }],
+			columns: [{ name: "view", label: "View", kind: "link", link: { external: true } }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const anchor = container.querySelector("td a");
+		expect(anchor?.getAttribute("target")).toBe("_blank");
+		expect(anchor?.getAttribute("rel")).toBe("noopener noreferrer");
+	});
+
+	test("no icon set: anchor has no target/rel by default", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", view: "/x" }],
+			columns: [{ name: "view", label: "View", kind: "link" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const anchor = container.querySelector("td a");
+		expect(anchor?.getAttribute("target")).toBeNull();
+	});
+
+	test("icon set: renders icon-only, no visible URL text", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", view: "/admin/posts/1" }],
+			columns: [{ name: "view", label: "View", kind: "link", link: { icon: "eye" } }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const anchor = container.querySelector("td a");
+		expect(anchor?.textContent).toBe("");
+		expect(anchor?.querySelector("svg")).toBeTruthy();
+	});
+
+	test("clicking the link stops propagation so rowClick does not also fire", async () => {
+		const rowClickCalls: unknown[] = [];
+		const node = s.table({
+			query: async () => [{ id: "1", view: "/x" }],
+			columns: [{ name: "view", label: "View", kind: "link" }],
+			rowClick: "open",
+			rowActions: [
+				{
+					name: "open",
+					label: "Open",
+					handler: () => {
+						rowClickCalls.push(1);
+					},
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const anchor = container.querySelector("td a") as HTMLAnchorElement;
+		anchor.addEventListener("click", (e) => e.preventDefault());
+		anchor.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+		expect(rowClickCalls.length).toBe(0);
+	});
+});
+
 describe("TableCell: time kind", () => {
 	test("renders the server-formatted time string verbatim", async () => {
 		const node = s.table({

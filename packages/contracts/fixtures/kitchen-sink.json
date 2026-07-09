@@ -800,6 +800,7 @@
                     "deferFilters": true,
                     "filtersFormColumns": 2,
                     "searchPlaceholder": "Search posts\u2026",
+                    "columnToggle": false,
                     "emptyState": {
                         "heading": "No posts yet",
                         "description": "Create your first post to get started.",
@@ -926,7 +927,8 @@
                                 "name": "check",
                                 "position": "left"
                             },
-                            "tooltip": "Published posts"
+                            "tooltip": "Published posts",
+                            "description": "Live posts visible to readers"
                         }
                     ],
                     "pagination": {
@@ -1012,6 +1014,15 @@
                                         "label": "Published"
                                     }
                                 ]
+                            }
+                        },
+                        {
+                            "name": "view",
+                            "label": "View",
+                            "kind": "link",
+                            "link": {
+                                "external": true,
+                                "icon": "external-link"
                             }
                         }
                     ]

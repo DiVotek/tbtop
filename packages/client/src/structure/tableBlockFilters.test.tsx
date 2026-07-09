@@ -200,3 +200,64 @@ describe("TableToolbar: deferFilters", () => {
 		expect(queryByTestId("table-filters-apply")).toBeNull();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// searchInput / columnToggle / toolbar visibility toggles
+// ---------------------------------------------------------------------------
+describe("TableToolbar: searchInput/columnToggle visibility", () => {
+	test("searchInput:false hides the search input even when searchable is set", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Alpha" }],
+			columns: [{ name: "title" }],
+			searchable: ["title"],
+			searchInput: false,
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(queryByTestId("table-search-input")).toBeNull();
+	});
+
+	test("columnToggle:false hides the Columns dropdown", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Alpha" }],
+			columns: [{ name: "title" }],
+			columnToggle: false,
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(queryByTestId("column-visibility-trigger")).toBeNull();
+	});
+
+	test("without searchInput/columnToggle options, both render as before (back-compat)", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Alpha" }],
+			columns: [{ name: "title" }],
+			searchable: ["title"],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(await findByTestId("table-search-input")).toBeTruthy();
+		expect(await findByTestId("column-visibility-trigger")).toBeTruthy();
+	});
+
+	test("searchInput:false + columnToggle:false hides both, tabs and headerActions stay", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Alpha" }],
+			columns: [{ name: "title" }],
+			searchable: ["title"],
+			searchInput: false,
+			columnToggle: false,
+			tabs: [{ name: "all", label: "All", count: false }],
+			headerActions: [{ name: "create", label: "Create", url: "/x" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(queryByTestId("table-search-input")).toBeNull();
+		expect(queryByTestId("column-visibility-trigger")).toBeNull();
+		expect(await findByTestId("table-tabs")).toBeTruthy();
+		expect(await findByTestId("table-header-actions")).toBeTruthy();
+	});
+});

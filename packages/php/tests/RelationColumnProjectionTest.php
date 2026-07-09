@@ -53,3 +53,22 @@ it('leaves the dotted relation key null when the related row is absent', functio
 
     expect($result[0]['location.name'])->toBeNull();
 });
+
+// ---------------------------------------------------------------------------
+// link() on the Eloquent model array path
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: link() resolves a per-row URL on the Eloquent model path', function (): void {
+    $car = CarModel::create(['name' => 'A', 'location_id' => null]);
+
+    $table = (new TableBuilder('cars'))
+        ->columns([
+            Column::make('name')->kind('text'),
+            Column::make('view')->link(fn ($row) => '/admin/cars/'.$row->id),
+        ])
+        ->query(fn () => CarModel::query());
+
+    $result = ColumnProjection::apply($table, CarModel::all());
+
+    expect($result[0]['view'])->toBe('/admin/cars/'.$car->id);
+});

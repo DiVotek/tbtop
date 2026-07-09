@@ -76,6 +76,12 @@ final class ColumnProjection
         $out = $row->toArray();
         foreach ($columns as $col) {
             $name = $col->name;
+            $linkResolver = $col->linkResolver();
+            if ($linkResolver !== null) {
+                $out[$name] = $linkResolver($row);
+
+                continue;
+            }
             $source = $col->isTranslatable()
                 ? self::rawAttribute($row, $name)
                 : data_get($out, $name);
@@ -92,6 +98,12 @@ final class ColumnProjection
     {
         foreach ($columns as $col) {
             $name = $col->name;
+            $linkResolver = $col->linkResolver();
+            if ($linkResolver !== null) {
+                data_set($row, $name, $linkResolver($row));
+
+                continue;
+            }
             $raw = data_get($row, $name);
             $value = self::computeValue($col, $raw);
             if ($value !== $raw) {

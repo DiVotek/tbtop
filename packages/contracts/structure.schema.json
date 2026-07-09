@@ -81,6 +81,9 @@
 									},
 									"headerActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 									"embedded": { "type": "boolean" },
+									"toolbar": { "type": "boolean" },
+									"searchInput": { "type": "boolean" },
+									"columnToggle": { "type": "boolean" },
 									"recordUrl": { "type": "boolean" },
 									"recordUrlNewTab": { "type": "boolean" },
 									"deferFilters": { "type": "boolean" },
@@ -644,6 +647,13 @@
 					"iconMap": { "type": "object" },
 					"shape": { "type": "string", "enum": ["square", "circular", "rounded"] },
 					"alt": { "type": "string" },
+					"link": {
+						"type": "object",
+						"properties": {
+							"external": { "type": "boolean" },
+							"icon": { "type": "string" }
+						}
+					},
 					"editable": {
 						"type": "object",
 						"required": ["as"],
@@ -739,7 +749,8 @@
 				"label": { "type": "string" },
 				"count": { "type": "boolean" },
 				"icon": { "$ref": "#/$defs/icon" },
-				"tooltip": { "type": "string" }
+				"tooltip": { "type": "string" },
+				"description": { "type": "string" }
 			},
 			"additionalProperties": false
 		},

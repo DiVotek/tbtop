@@ -195,11 +195,15 @@ class KitchenSinkPage extends Page
                         ])
                         ->rules('required|in:draft,published')
                         ->onSave(fn ($record, $value) => null),
+                    Column::make('view')
+                        ->label('View')
+                        ->link(fn ($row) => '/admin/posts/'.data_get($row, 'id'), external: true, icon: 'external-link'),
                 ])
                 ->searchable(['title'])
                 ->deferFilters()
                 ->filtersFormColumns(2)
                 ->searchPlaceholder('Search posts…')
+                ->columnToggle(false)
                 ->emptyState('No posts yet', 'Create your first post to get started.', 'file-text')
                 ->headerActions([
                     $s->action('createPost')->label('New post')->icon('pencil')->visit('/admin/posts/create'),
@@ -213,6 +217,7 @@ class KitchenSinkPage extends Page
                     Tab::make('all'),
                     Tab::make('published')->label('Published')
                         ->icon('check')->tooltip('Published posts')
+                        ->description('Live posts visible to readers')
                         ->query(fn ($q) => $q->where('published', true))
                         ->count(),
                 ])

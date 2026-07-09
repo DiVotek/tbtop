@@ -30,6 +30,8 @@ interface TableToolbarProps {
 	filtersFormColumns?: number;
 	/** Width of the filters modal; only meaningful when filtersIn === "modal". */
 	filtersFormWidth?: ModalSize;
+	/** Hides the column-visibility ("Columns") dropdown. Defaults to shown. */
+	columnToggle?: boolean;
 }
 
 export function TableToolbar(props: TableToolbarProps) {
@@ -132,11 +134,13 @@ export function TableToolbar(props: TableToolbarProps) {
 					formWidth={props.filtersFormWidth}
 				/>
 			)}
-			<ColumnVisibilityDropdown
-				columns={dropdownCols}
-				visibleColumns={visibleColumns}
-				onToggle={onToggleColumn}
-			/>
+			{props.columnToggle !== false && (
+				<ColumnVisibilityDropdown
+					columns={dropdownCols}
+					visibleColumns={visibleColumns}
+					onToggle={onToggleColumn}
+				/>
+			)}
 		</div>
 	);
 }

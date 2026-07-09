@@ -13,6 +13,8 @@ import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
 import { ActionBlock } from "../structure/actionBlock";
 import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
+import { PageContentErrorBoundary } from "../structure/pageContentErrorBoundary";
+import { PageSubtitleProvider, usePageSubtitle } from "../structure/pageSubtitleContext";
 import type { ActionConfig, AuthUser, StructureNode } from "../structure/types";
 import { type BreadcrumbItem, Breadcrumbs } from "./Breadcrumbs";
 import { executeEffects, readEffects } from "./effects";
@@ -96,23 +98,23 @@ export function AdminPage() {
 					<ContentLocaleConfigProvider
 						config={{ locales: contentLocales, defaultLocale: defaultContentLocale }}
 					>
-						<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
-							{breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
-							<div className="flex items-start justify-between gap-4">
-								<div>
-									<h1 className="text-2xl font-semibold tracking-tight">
-										{title}
-									</h1>
-									{subtitle && (
-										<p className="mt-1 text-sm text-muted-foreground">
-											{subtitle}
-										</p>
-									)}
+						<PageSubtitleProvider>
+							<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
+								{breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
+								<div className="flex items-start justify-between gap-4">
+									<div>
+										<h1 className="text-2xl font-semibold tracking-tight">
+											{title}
+										</h1>
+										<PageSubtitle staticSubtitle={subtitle} />
+									</div>
+									<PageHeaderActions actions={headerActionBags} />
 								</div>
-								<PageHeaderActions actions={headerActionBags} />
+								<PageContentErrorBoundary>
+									{renderNode(node)}
+								</PageContentErrorBoundary>
 							</div>
-							{renderNode(node)}
-						</div>
+						</PageSubtitleProvider>
 						<Toaster />
 					</ContentLocaleConfigProvider>
 				</PageParamsProvider>
@@ -178,6 +180,20 @@ function notifyToast(kind: string | undefined, message: string): void {
 	} else {
 		toast.success(message);
 	}
+}
+
+/**
+ * Subtitle line under the page title. An active table tab's description()
+ * (pushed via PageSubtitleContext) takes priority over the page's own static
+ * subtitle prop — it reflects what the user is currently looking at.
+ */
+function PageSubtitle({ staticSubtitle }: { staticSubtitle?: string }) {
+	const tabSubtitle = usePageSubtitle();
+	const text = tabSubtitle ?? staticSubtitle;
+	if (!text) {
+		return null;
+	}
+	return <p className="mt-1 text-sm text-muted-foreground">{text}</p>;
 }
 
 /** Actions rendered right of the title/subtitle block; empty renders nothing. */

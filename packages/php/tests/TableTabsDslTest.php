@@ -30,3 +30,28 @@ it('throws on duplicate tab names at build time', function () {
         Tab::make('all')->label('Again'),
     ]);
 })->throws(InvalidArgumentException::class, 'Duplicate tab name "all" on table "posts".');
+
+it('Tab: description() emits a description string on the wire', function () {
+    $node = (new TableBuilder('posts'))
+        ->columns(['title' => 'Title'])
+        ->tabs([
+            Tab::make('published')->label('Published')->description('Live posts visible to readers'),
+        ])
+        ->toNode();
+
+    expect($node->options['tabs'][0])->toBe([
+        'name' => 'published',
+        'label' => 'Published',
+        'count' => false,
+        'description' => 'Live posts visible to readers',
+    ]);
+});
+
+it('Tab: description is omitted from the wire when not set', function () {
+    $node = (new TableBuilder('posts'))
+        ->columns(['title' => 'Title'])
+        ->tabs([Tab::make('all')])
+        ->toNode();
+
+    expect($node->options['tabs'][0])->not->toHaveKey('description');
+});
