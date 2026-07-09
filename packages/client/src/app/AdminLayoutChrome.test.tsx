@@ -135,6 +135,22 @@ describe("AdminLayout chrome trees", () => {
 		expect(main?.className).toContain("flex-1");
 	});
 
+	test("the header strip is pinned to the viewport above the scrolling content", () => {
+		const { container } = renderShell(defaultChrome());
+		const header = container.querySelector("header") as HTMLElement;
+		expect(header.className).toContain("sticky");
+		expect(header.className).toContain("top-0");
+		expect(header.className).toContain("bg-background");
+	});
+
+	test("the topbar layout's bar is pinned to the viewport", () => {
+		const { container } = renderShell(defaultChrome(), { navigation: "topbar" });
+		const header = container.querySelector("header") as HTMLElement;
+		expect(header.className).toContain("sticky");
+		expect(header.className).toContain("top-0");
+		expect(header.className).toContain("bg-background");
+	});
+
 	test("topbar navigation renders nav, user menu, and mobile drawer in a bar (no aside)", () => {
 		const { container, getByTestId } = renderShell(defaultChrome(), { navigation: "topbar" });
 
