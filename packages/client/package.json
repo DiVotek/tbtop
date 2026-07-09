@@ -1,6 +1,6 @@
 {
 	"name": "@tbtop/inertia-admin",
-	"version": "0.2.13",
+	"version": "0.2.14",
 	"description": "Tabletop admin render layer for Laravel + Inertia: server-described pages, block registry, field clients.",
 	"license": "MIT",
 	"repository": {
