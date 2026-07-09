@@ -38,8 +38,10 @@ export type ConditionFn = (ctx: ConditionContext) => boolean;
 
 export interface NodeMeta {
 	id?: NodeId;
-	hidden?: ConditionFn;
-	disabled?: ConditionFn;
+	/** Static boolean (server-side meta('hidden', true)) or a compiled hiddenIf condition. */
+	hidden?: ConditionFn | boolean;
+	/** Static boolean (server-side meta('disabled', true)) or a compiled disabledIf condition. */
+	disabled?: ConditionFn | boolean;
 }
 
 export interface StructureNode<TKind extends string = string, TOptions = unknown> {
