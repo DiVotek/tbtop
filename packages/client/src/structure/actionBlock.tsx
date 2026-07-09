@@ -17,6 +17,7 @@ import { useNearestFormController } from "./formContext";
 import { parseKeybinding, registerKeybinding } from "./keybinding";
 import { ModalActionBlock } from "./modalActionBlock";
 import { useNearestRow } from "./rowContext";
+import { useNearestTriggerVariant } from "./triggerVariantContext";
 import type { ClientActionContext } from "./types";
 
 type ActionOptions = ActionOptionsBag;
@@ -40,9 +41,10 @@ function PlainActionBlock({
 	const formHandle = useNearestFormController();
 	const row = useNearestRow();
 	const [pending, setPending] = useState(false);
-	const variant = actionVariant(opts);
-	const buttonSize = actionButtonSize(opts);
-	const tint = outlinedTintClass(opts);
+	const plain = useNearestTriggerVariant() === "plain";
+	const variant = plain ? "plain" : actionVariant(opts);
+	const buttonSize = plain ? "full" : actionButtonSize(opts);
+	const tint = plain ? undefined : outlinedTintClass(opts);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 
 	useEffect(() => {

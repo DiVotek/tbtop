@@ -19,6 +19,7 @@ import { parseKeybinding, registerKeybinding } from "./keybinding";
 import { ModalProvider, useNearestModal } from "./modalContext";
 import { ModalDataProvider } from "./modalDataContext";
 import { s } from "./structure";
+import { useNearestTriggerVariant } from "./triggerVariantContext";
 import type { NotificationConfig, StructureNode } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
 
@@ -36,9 +37,10 @@ export function ModalActionBlock({
 	options: ActionOptionsBag;
 	disabled?: boolean;
 }) {
-	const variant = actionVariant(opts);
-	const buttonSize = actionButtonSize(opts);
-	const tint = outlinedTintClass(opts);
+	const plain = useNearestTriggerVariant() === "plain";
+	const variant = plain ? "plain" : actionVariant(opts);
+	const buttonSize = plain ? "full" : actionButtonSize(opts);
+	const tint = plain ? undefined : outlinedTintClass(opts);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [open, setOpen] = useState(false);
 	const [halt, setHalt] = useState<{ message: string; level: NotificationConfig["kind"] } | null>(

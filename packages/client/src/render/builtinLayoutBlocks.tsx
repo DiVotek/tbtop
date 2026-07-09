@@ -1,5 +1,6 @@
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import type { StructureNode } from "../structure/structure";
+import { TriggerVariantProvider } from "../structure/triggerVariantContext";
 import { type IconDef, NodeIcon } from "../ui/node-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
@@ -88,7 +89,9 @@ export function RowBlock({ options, children, renderChild }: RenderProps<RowOpti
 						className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-sm hover:border-primary/50 hover:bg-muted/40"
 						data-testid="row-grid-item"
 					>
-						{renderChild(child)}
+						<TriggerVariantProvider value="plain">
+							{renderChild(child)}
+						</TriggerVariantProvider>
 					</div>
 				))}
 			</div>

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { fireEvent, render } from "@testing-library/react";
 import { type StructureNode, s } from "../structure/structure";
+import { wrapForStructure } from "../structure/testFixtures";
 import { clearBlockRegistry } from "./blockRegistry";
 import { ensureBuiltinsRegistered } from "./registerBuiltins";
 import { renderNode } from "./structureRenderer";
@@ -339,4 +340,54 @@ test("a child without colSpan/colStart is not wrapped in field-col-place", () =>
 	const node = s.grid({ cols: 2 }, [textNode("plain")]);
 	const { getByText } = render(renderNode(node));
 	expect(getByText("plain").closest(".field-col-place")).toBeNull();
+});
+
+// ---------------------------------------------------------------------------
+// RowBlock variant:grid — cell chrome lives on the cell, trigger renders flat
+// ---------------------------------------------------------------------------
+
+test("RowBlock variant:grid gives each cell the bordered/hoverable chrome", () => {
+	const node = s.row([s.action({ name: "restart", label: "Restart", url: "/restart" })], {
+		variant: "grid",
+	});
+	const Wrap = wrapForStructure(() => new Response("{}"));
+	const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+	const cell = getByTestId("row-grid-item");
+	expect(cell.className).toContain("border");
+	expect(cell.className).toContain("hover:border-primary/50");
+});
+
+test("RowBlock variant:grid renders the action trigger without Button chrome (no border/shadow class)", () => {
+	const node = s.row([s.action({ name: "restart", label: "Restart", url: "/restart" })], {
+		variant: "grid",
+	});
+	const Wrap = wrapForStructure(() => new Response("{}"));
+	const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+	const trigger = getByTestId("action-restart");
+	expect(trigger.dataset["variant"]).toBe("plain");
+	// No visible border/background/shadow chrome; only the shared focus-ring
+	// utilities (border-ring, ring-*) survive, which are invisible at rest.
+	expect(trigger.className).not.toContain("bg-background");
+	expect(trigger.className).not.toContain("shadow-xs");
+	const visibleBorderClasses = trigger.className
+		.split(" ")
+		.filter((cls) => cls === "border" || cls.startsWith("border "));
+	expect(visibleBorderClasses).toHaveLength(0);
+});
+
+test("RowBlock variant:grid trigger still renders the action's label as plain text", () => {
+	const node = s.row([s.action({ name: "restart", label: "Restart", url: "/restart" })], {
+		variant: "grid",
+	});
+	const Wrap = wrapForStructure(() => new Response("{}"));
+	const { getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+	expect(getByText("Restart")).toBeTruthy();
+});
+
+test("a normal (non-grid) RowBlock action keeps the regular Button chrome", () => {
+	const node = s.row([s.action({ name: "restart", label: "Restart", url: "/restart" })]);
+	const Wrap = wrapForStructure(() => new Response("{}"));
+	const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+	const trigger = getByTestId("action-restart");
+	expect(trigger.dataset["variant"]).not.toBe("plain");
 });
