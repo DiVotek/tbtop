@@ -35,6 +35,7 @@ export const defaultMessages: Messages = {
 	"state.forbidden": "You do not have access to this page",
 	"state.empty": "No records yet",
 	"state.error": "Something went wrong",
+	"state.reload": "Reload",
 	"delete.confirm.title": "Delete record?",
 	"delete.confirm.body": "This action cannot be undone.",
 	"nav.home.welcome": "Welcome",

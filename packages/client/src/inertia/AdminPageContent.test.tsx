@@ -7,9 +7,10 @@
  * prop-dropping stub for anything else (e.g. Link) would leak into later
  * test files.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { render } from "@testing-library/react";
+import { registerBlock } from "../render/blockRegistry";
 
 type PageProps = Record<string, unknown>;
 let currentProps: PageProps = {};
@@ -139,5 +140,35 @@ describe("AdminPage: headerActions", () => {
 			(a) => a.textContent,
 		);
 		expect(labels).toEqual(["New item", "Export"]);
+	});
+});
+
+describe("AdminPage: page content error boundary", () => {
+	const originalError = console.error;
+	beforeEach(() => {
+		console.error = () => {};
+		registerBlock({
+			kind: "bomb",
+			behavior: "leaf",
+			render: () => {
+				throw new Error("invalid SelectItem: value cannot be empty");
+			},
+		});
+	});
+	afterEach(() => {
+		console.error = originalError;
+	});
+
+	test("a crashing structure node shows the fallback card without blanking the page title", () => {
+		currentProps = {
+			...BASE_PROPS,
+			structure: { kind: "bomb", meta: {}, options: {} },
+		};
+		const { getByRole, getByTestId, getByText } = render(<AdminPage />);
+		// The title block (outside the boundary) still renders — only the
+		// content tree inside the boundary is replaced by the fallback.
+		expect(getByRole("heading", { level: 1 }).textContent).toBe("Posts");
+		expect(getByTestId("page-content-error-boundary")).toBeTruthy();
+		expect(getByText("invalid SelectItem: value cannot be empty")).toBeTruthy();
 	});
 });

@@ -21,6 +21,8 @@ final class Tab
 
     private bool $count = false;
 
+    private ?string $description = null;
+
     public function __construct(public readonly string $name) {}
 
     public static function make(string $name): self
@@ -31,6 +33,14 @@ final class Tab
     public function label(?string $label): self
     {
         $this->label = $label;
+
+        return $this;
+    }
+
+    /** Optional subtitle shown under the page title while this tab is active. */
+    public function description(string $description): self
+    {
+        $this->description = $description;
 
         return $this;
     }
@@ -57,6 +67,7 @@ final class Tab
             'count' => $this->count,
             ...$this->iconOption(),
             ...$this->tooltipOption(),
+            ...($this->description !== null ? ['description' => $this->description] : []),
         ];
     }
 }
