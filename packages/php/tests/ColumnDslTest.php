@@ -298,6 +298,21 @@ it('Column: linkResolver() is null when link() was not called', function (): voi
 });
 
 // ---------------------------------------------------------------------------
+// Emphasized
+// ---------------------------------------------------------------------------
+
+it('Column: emphasized() serializes emphasized=true', function (): void {
+    $json = encodeColumn(Column::make('name')->emphasized());
+
+    expect($json['emphasized'])->toBeTrue();
+});
+
+it('Column: emphasized(false) and default both omit the emphasized key', function (): void {
+    expect(encodeColumn(Column::make('name')))->not->toHaveKey('emphasized')
+        ->and(encodeColumn(Column::make('name')->emphasized(false)))->not->toHaveKey('emphasized');
+});
+
+// ---------------------------------------------------------------------------
 // Color enum
 // ---------------------------------------------------------------------------
 

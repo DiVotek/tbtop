@@ -42,7 +42,13 @@ export function RowDataCell({
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
-	const content = renderCell(col, row, saveCell);
+	const rendered = renderCell(col, row, saveCell);
+	// Emphasized: primary link-style label (pairs with rowClick for a divotek-style title cell).
+	const content = col.emphasized ? (
+		<span className="font-medium text-primary hover:underline">{rendered}</span>
+	) : (
+		rendered
+	);
 	return (
 		<td
 			className={cn("px-3 py-2", alignClass, wrapClass)}

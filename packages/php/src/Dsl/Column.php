@@ -49,6 +49,9 @@ final class Column implements JsonSerializable
 
     private ?string $tooltip = null;
 
+    /** Renders the cell text as an emphasized primary-colored link-style label. */
+    private ?bool $emphasized = null;
+
     private ?bool $translatable = null;
 
     private ?Closure $formatUsing = null;
@@ -203,6 +206,14 @@ final class Column implements JsonSerializable
     public function translatable(bool $value = true): static
     {
         $this->translatable = $value;
+
+        return $this;
+    }
+
+    /** Style the cell text as an emphasized primary link-style label (e.g. a title column driving rowClick). */
+    public function emphasized(bool $value = true): static
+    {
+        $this->emphasized = $value;
 
         return $this;
     }
@@ -561,6 +572,9 @@ final class Column implements JsonSerializable
         }
         if ($this->tooltip !== null) {
             $out['tooltip'] = $this->tooltip;
+        }
+        if ($this->emphasized === true) {
+            $out['emphasized'] = true;
         }
         if ($this->translatable === true) {
             $out['translatable'] = true;

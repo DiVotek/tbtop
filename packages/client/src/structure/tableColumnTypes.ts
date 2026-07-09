@@ -52,6 +52,8 @@ export interface TableColumn<TRow = unknown> {
 	width?: string;
 	wrap?: boolean;
 	tooltip?: string;
+	/** Emphasized primary link-style cell text (e.g. a title column driving rowClick). */
+	emphasized?: boolean;
 	copyable?: CopyableConfig;
 	translatable?: boolean;
 	badge?: TableColumnBadgeOptions;

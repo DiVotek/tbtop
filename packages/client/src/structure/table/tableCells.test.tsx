@@ -271,6 +271,31 @@ describe("TableCell: column display properties", () => {
 		expect(th).toBeTruthy();
 	});
 
+	test("emphasized column wraps the cell text in a primary link-style span", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", name: "About us" }],
+			columns: [{ name: "name", label: "Title", emphasized: true }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const span = getByText("About us");
+		expect(span.className).toContain("text-primary");
+		expect(span.className).toContain("font-medium");
+		expect(span.className).toContain("hover:underline");
+	});
+
+	test("non-emphasized column renders plain cell text without the primary link styling", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", name: "About us" }],
+			columns: [{ name: "name", label: "Title" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector("td .text-primary")).toBeNull();
+	});
+
 	test("hiddenByDefault column is not visible initially", async () => {
 		const node = s.table({
 			name: "scored",
