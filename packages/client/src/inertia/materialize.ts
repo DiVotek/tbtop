@@ -1,5 +1,9 @@
-import { unwrapData } from "../data/envelope";
-import type { ClientActionContext, NodeMeta, StructureNode } from "../structure/types";
+import type {
+	ActionConfig,
+	ClientActionContext,
+	NodeMeta,
+	StructureNode,
+} from "../structure/types";
 import { type ConditionAst, compileCondition } from "./conditionCompiler";
 import { compileConstraints } from "./constraints";
 import { materializeActionOptions } from "./materializeActions";
@@ -8,8 +12,8 @@ import {
 	materializeChart,
 	materializeRelation,
 	materializeUpload,
-	tableQueryParams,
 } from "./materializeHelpers";
+import { actionBags, materializeTable } from "./materializeTable";
 
 type Bag = Record<string, unknown>;
 
@@ -32,6 +36,18 @@ export function materialize(root: StructureNode, input: MaterializeInput): Struc
 	return walk(root, { ...input });
 }
 
+/**
+ * Materializes a flat list of wire action nodes (e.g. Page::headerActions())
+ * into the ActionConfig bags ActionBlock expects. Same walk() path table
+ * headerActions use internally, exposed for page-level (non-table) action lists.
+ */
+export function materializeActionList(
+	nodes: StructureNode[],
+	input: MaterializeInput,
+): ActionConfig[] {
+	return actionBags(nodes, (n) => walk(n, { ...input }));
+}
+
 function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const meta = compileMeta(node.meta);
 	if (node.kind === "action") {
@@ -41,7 +57,10 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 		return materializeForm({ ...node, meta }, ctx);
 	}
 	if (node.kind === "table") {
-		return materializeTable({ ...node, meta }, ctx);
+		return materializeTable(
+			{ ...node, meta },
+			{ basePath: ctx.basePath, walk: (n) => walk(n, ctx) },
+		);
 	}
 	if (node.kind.startsWith("chart:")) {
 		return materializeChart({ ...node, meta }, ctx.basePath);
@@ -146,58 +165,6 @@ function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
 			schema: compileConstraints(constraints),
 		},
 	};
-}
-
-function materializeTable(node: StructureNode, ctx: WalkCtx): StructureNode {
-	const opts = node.options as Bag;
-	const name = node.name ?? "";
-	const compiledFilters = Array.isArray(opts.filters)
-		? (opts.filters as StructureNode[]).map((f) => walk(f, ctx))
-		: undefined;
-	return {
-		...node,
-		options: {
-			...opts,
-			// Expose name so TableBlock can namespace its URL-persisted query state.
-			name,
-			rowActions: actionBags(opts.rowActions, ctx),
-			bulkActions: actionBags(opts.bulkActions, ctx),
-			headerActions: actionBags(opts.headerActions, ctx),
-			...(compiledFilters !== undefined ? { filters: compiledFilters } : {}),
-			query: (actionCtx: ClientActionContext) =>
-				actionCtx.client
-					.get(`${ctx.basePath}/tables/${name}`, tableQueryParams(actionCtx))
-					.then(unwrapData),
-			saveCell: (
-				actionCtx: ClientActionContext,
-				args: { column: string; id: string; value: unknown },
-			) =>
-				actionCtx.client
-					.post(`${ctx.basePath}/cells/${name}/${args.column}`, {
-						payload: { id: args.id, value: args.value },
-					})
-					.then((body) => (body as { effects?: unknown }).effects),
-			reorderRows: (actionCtx: ClientActionContext, ids: string[]) =>
-				actionCtx.client
-					.post(`${ctx.basePath}/tables/${name}/reorder`, { ids })
-					.then((body) => (body as { effects?: unknown }).effects),
-		},
-	};
-}
-
-function actionBags(raw: unknown, ctx: WalkCtx): Bag[] {
-	if (!Array.isArray(raw)) {
-		return [];
-	}
-	// Route through walk() so each action's meta (compiled hidden/disabled
-	// ConditionFns) rides onto the config; actionOptions alone drops it.
-	return (raw as StructureNode[]).map((n) => {
-		const m = walk(n, ctx);
-		if (m.kind === "action") {
-			return { ...(m.options as Bag), meta: m.meta };
-		}
-		return { kind: m.kind, ...(m.options as Bag), meta: m.meta };
-	});
 }
 
 function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {

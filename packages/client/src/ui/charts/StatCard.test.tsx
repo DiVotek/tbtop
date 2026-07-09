@@ -90,4 +90,70 @@ describe("StatCard", () => {
 		const { getByText } = renderStat({ label: "Status", value: "Active" });
 		expect(getByText("Active")).toBeTruthy();
 	});
+
+	// -------------------------------------------------------------------------
+	// Header restyle: inline icon + uppercase label, single row
+	// -------------------------------------------------------------------------
+
+	test("header renders the label in uppercase-tracking style", () => {
+		const { getByText } = renderStat({ label: "Pages", value: 22 });
+		const title = getByText("Pages");
+		expect(title.className).toContain("uppercase");
+		expect(title.className).toContain("text-xs");
+	});
+
+	test("icon renders inline in the header (no colored circle wrapper)", () => {
+		const { container } = renderStat({
+			label: "Pages",
+			value: 22,
+			icon: { name: "file-text", position: "left" },
+		});
+		const icon = container.querySelector("svg");
+		expect(icon).not.toBeNull();
+		expect(icon?.classList.contains("h-4")).toBe(true);
+		expect(container.querySelector(".rounded-full")).toBeNull();
+	});
+
+	test("omits the icon element when no icon is provided", () => {
+		const { container } = renderStat({ label: "Pages", value: 22 });
+		expect(container.querySelector("svg")).toBeNull();
+	});
+
+	// -------------------------------------------------------------------------
+	// Sparkline position: inline (default) vs bottom (full-bleed)
+	// -------------------------------------------------------------------------
+
+	test("sparkline defaults to inline position when no position is given", () => {
+		const { getByTestId } = renderStat({ label: "Trend", value: 42, sparkline: [1, 2, 3] });
+		expect(getByTestId("stat-sparkline").dataset["position"]).toBeUndefined();
+	});
+
+	test("sparklinePosition 'bottom' renders the sparkline with data-position=bottom", () => {
+		const { getByTestId } = renderStat({
+			label: "Trend",
+			value: 42,
+			sparkline: [1, 2, 3],
+			sparklinePosition: "bottom",
+		});
+		expect(getByTestId("stat-sparkline").dataset["position"]).toBe("bottom");
+	});
+
+	test("sparklinePosition 'bottom' renders exactly one sparkline (not both inline and bottom)", () => {
+		const { getAllByTestId } = renderStat({
+			label: "Trend",
+			value: 42,
+			sparkline: [1, 2, 3],
+			sparklinePosition: "bottom",
+		});
+		expect(getAllByTestId("stat-sparkline")).toHaveLength(1);
+	});
+
+	test("sparklinePosition 'bottom' with no sparkline data renders no sparkline", () => {
+		const { queryByTestId } = renderStat({
+			label: "Trend",
+			value: 42,
+			sparklinePosition: "bottom",
+		});
+		expect(queryByTestId("stat-sparkline")).toBeNull();
+	});
 });

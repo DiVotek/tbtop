@@ -18,6 +18,8 @@ final class Stat implements JsonSerializable
     use HasTooltip;
     use WithMeta;
 
+    private const SPARKLINE_POSITIONS = ['inline', 'bottom'];
+
     private mixed $value = null;
 
     private ?string $description = null;
@@ -29,6 +31,8 @@ final class Stat implements JsonSerializable
 
     /** @var list<int|float>|null */
     private ?array $sparkline = null;
+
+    private string $sparklinePosition = 'inline';
 
     public function __construct(
         private readonly string $label,
@@ -70,10 +74,21 @@ final class Stat implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<int|float>  $numbers */
-    public function sparkline(array $numbers): self
+    /**
+     * @param  list<int|float>  $numbers
+     * @param  string  $position  One of self::SPARKLINE_POSITIONS ('inline'|'bottom').
+     *                            'inline' (default, back-compat) renders under the card
+     *                            content; 'bottom' pins it full-bleed to the card's bottom edge.
+     */
+    public function sparkline(array $numbers, string $position = 'inline'): self
     {
+        if (! in_array($position, self::SPARKLINE_POSITIONS, true)) {
+            throw new \InvalidArgumentException(
+                'Invalid sparkline position "'.$position.'". Allowed: '.implode(', ', self::SPARKLINE_POSITIONS).'.'
+            );
+        }
         $this->sparkline = $numbers;
+        $this->sparklinePosition = $position;
 
         return $this;
     }
@@ -97,6 +112,9 @@ final class Stat implements JsonSerializable
         }
         if ($this->sparkline !== null) {
             $options['sparkline'] = $this->sparkline;
+            if ($this->sparklinePosition !== 'inline') {
+                $options['sparklinePosition'] = $this->sparklinePosition;
+            }
         }
 
         return new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->metaBag);

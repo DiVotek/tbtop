@@ -11,17 +11,20 @@ import { setRoutesBase } from "../data/entityRoutes";
 import { I18nProvider } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
+import { ActionBlock } from "../structure/actionBlock";
 import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
-import type { AuthUser, StructureNode } from "../structure/types";
+import type { ActionConfig, AuthUser, StructureNode } from "../structure/types";
 import { type BreadcrumbItem, Breadcrumbs } from "./Breadcrumbs";
 import { executeEffects, readEffects } from "./effects";
-import { materialize } from "./materialize";
+import { materialize, materializeActionList } from "./materialize";
 
 interface AdminPageProps {
 	slug: string;
 	title: string;
 	/** Optional line rendered under the page title. */
 	subtitle?: string;
+	/** Actions rendered right of the title/subtitle block. */
+	headerActions?: StructureNode[];
 	layout?: "admin" | "center";
 	structure: StructureNode;
 	data: Record<string, Record<string, unknown>>;
@@ -48,7 +51,8 @@ interface AdminPageProps {
  */
 export function AdminPage() {
 	const page = usePage<AdminPageProps>();
-	const { structure, data, params, title, subtitle, breadcrumbs, tbtop, auth } = page.props;
+	const { structure, data, params, title, subtitle, headerActions, breadcrumbs, tbtop, auth } =
+		page.props;
 	ensureBuiltinsRegistered();
 	if (tbtop?.prefix) {
 		setRoutesBase(tbtop.prefix);
@@ -59,6 +63,10 @@ export function AdminPage() {
 	const node = useMemo(
 		() => materialize(structure, { basePath, data: data ?? {} }),
 		[structure, basePath, data],
+	);
+	const headerActionBags = useMemo(
+		() => materializeActionList(headerActions ?? [], { basePath, data: data ?? {} }),
+		[headerActions, basePath, data],
 	);
 
 	// Native Inertia flash: the adapter delivers a fresh object per response,
@@ -90,11 +98,18 @@ export function AdminPage() {
 					>
 						<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
 							{breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
-							<div>
-								<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-								{subtitle && (
-									<p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-								)}
+							<div className="flex items-start justify-between gap-4">
+								<div>
+									<h1 className="text-2xl font-semibold tracking-tight">
+										{title}
+									</h1>
+									{subtitle && (
+										<p className="mt-1 text-sm text-muted-foreground">
+											{subtitle}
+										</p>
+									)}
+								</div>
+								<PageHeaderActions actions={headerActionBags} />
 							</div>
 							{renderNode(node)}
 						</div>
@@ -163,4 +178,18 @@ function notifyToast(kind: string | undefined, message: string): void {
 	} else {
 		toast.success(message);
 	}
+}
+
+/** Actions rendered right of the title/subtitle block; empty renders nothing. */
+function PageHeaderActions({ actions }: { actions: ActionConfig[] }) {
+	if (actions.length === 0) {
+		return null;
+	}
+	return (
+		<div className="flex shrink-0 items-center gap-2" data-testid="page-header-actions">
+			{actions.map((action) => (
+				<ActionBlock key={action.name} options={action} meta={action.meta ?? {}} />
+			))}
+		</div>
+	);
 }

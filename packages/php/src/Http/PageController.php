@@ -5,6 +5,8 @@ namespace Tbtop\Admin\Http;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Tbtop\Admin\Dsl\ActionBuilder;
+use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Navigation\BreadcrumbsBuilder;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Uploads\UploadFieldUrl;
@@ -42,6 +44,14 @@ final class PageController
 
         if ($resolved->page->subtitle() !== null) {
             $props['subtitle'] = $resolved->page->subtitle();
+        }
+
+        $headerActions = ActionBuilder::filterAuthorized($resolved->page->headerActions($resolved->s));
+        if ($headerActions !== []) {
+            $props['headerActions'] = array_map(
+                fn (ActionBuilder|Node $action) => $action instanceof ActionBuilder ? $action->toNode() : $action,
+                $headerActions,
+            );
         }
 
         if ($panel->breadcrumbs()) {

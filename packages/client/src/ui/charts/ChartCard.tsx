@@ -7,10 +7,12 @@ interface ChartCardProps {
 	title?: string;
 	description?: string;
 	height?: number;
+	/** Controls (e.g. chart param fields) rendered ABOVE the fixed-height canvas. */
+	toolbar?: ReactNode;
 	children: ReactNode;
 }
 
-export function ChartCard({ title, description, height, children }: ChartCardProps) {
+export function ChartCard({ title, description, height, toolbar, children }: ChartCardProps) {
 	const hasHeader = title !== undefined || description !== undefined;
 	return (
 		<Card data-testid="chart-block">
@@ -21,7 +23,12 @@ export function ChartCard({ title, description, height, children }: ChartCardPro
 				</CardHeader>
 			)}
 			<CardContent>
-				<div style={{ height: height ?? DEFAULT_HEIGHT }}>{children}</div>
+				{/* toolbar stays OUTSIDE the fixed-height canvas — content inside it
+				    steals height from ResponsiveContainer and pushes the legend out. */}
+				{toolbar}
+				<div style={{ height: height ?? DEFAULT_HEIGHT }} data-testid="chart-canvas">
+					{children}
+				</div>
 			</CardContent>
 		</Card>
 	);

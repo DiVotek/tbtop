@@ -248,6 +248,18 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Render the table without its toolbar (search/filters/column-visibility)
+     * or pagination footer — for embedding inside a section/card alongside
+     * other content. Rows, badges, recordUrl, and perPage still apply.
+     */
+    public function embedded(bool $value = true): self
+    {
+        $this->opts['embedded'] = $value;
+
+        return $this;
+    }
+
     /** @param  list<ActionBuilder|Node>  $actions — plain actions render inline; wrap in S::dropdown()/actionGroup() to collapse into a menu. */
     public function rowActions(array $actions): self
     {

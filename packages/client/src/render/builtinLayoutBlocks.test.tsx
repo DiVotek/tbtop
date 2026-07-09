@@ -269,6 +269,41 @@ test("SectionBlock aside stays visible when a collapsible section is collapsed",
 });
 
 // ---------------------------------------------------------------------------
+// SectionBlock — header action link
+// ---------------------------------------------------------------------------
+
+test("SectionBlock renders a right-aligned header action link", () => {
+	const node = s.section(
+		{ title: "Recently updated pages", action: { label: "Open pages", url: "/admin/pages" } },
+		[textNode("x")],
+	);
+	const { getByTestId, getByText } = render(renderNode(node));
+	const action = getByTestId("section-action");
+	expect(getByText("Open pages")).toBeTruthy();
+	expect(action.getAttribute("href")).toBe("/admin/pages");
+});
+
+test("SectionBlock without an action option renders no action link", () => {
+	const node = s.section({ title: "Plain" }, [textNode("x")]);
+	const { queryByTestId } = render(renderNode(node));
+	expect(queryByTestId("section-action")).toBeNull();
+});
+
+test("SectionBlock action link sits alongside a collapsible toggle", () => {
+	const node = s.section(
+		{
+			title: "Advanced",
+			collapsible: true,
+			action: { label: "Open pages", url: "/admin/pages" },
+		},
+		[textNode("Hidden?")],
+	);
+	const { getByTestId } = render(renderNode(node));
+	expect(getByTestId("section-toggle")).toBeTruthy();
+	expect(getByTestId("section-action")).toBeTruthy();
+});
+
+// ---------------------------------------------------------------------------
 // Field colSpan/colStart — generic column-placement wrapping
 // ---------------------------------------------------------------------------
 

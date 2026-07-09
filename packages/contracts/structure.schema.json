@@ -80,6 +80,7 @@
 										}
 									},
 									"headerActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+									"embedded": { "type": "boolean" },
 									"recordUrl": { "type": "boolean" },
 									"recordUrlNewTab": { "type": "boolean" },
 									"deferFilters": { "type": "boolean" },
@@ -412,7 +413,16 @@
 									"aside": { "$ref": "#/$defs/node" },
 									"collapsible": { "type": "boolean" },
 									"collapsed": { "type": "boolean" },
-									"columns": { "$ref": "#/$defs/columnsSpec" }
+									"columns": { "$ref": "#/$defs/columnsSpec" },
+									"action": {
+										"type": "object",
+										"required": ["label", "url"],
+										"properties": {
+											"label": { "type": "string" },
+											"url": { "type": "string" }
+										},
+										"additionalProperties": false
+									}
 								}
 							}
 						}
