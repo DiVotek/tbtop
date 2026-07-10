@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\User as AuthUser;
 use Tbtop\Admin\Tests\Fixtures\Panels\AdminPanel;
 use Tbtop\Admin\Tests\Fixtures\Panels\PlainPanel;
 use Tbtop\Admin\Tests\Fixtures\PostEditPage;
+use Tbtop\Admin\Tests\Fixtures\TabbedFormPage;
 
 class HttpTestCase extends TestCase
 {
@@ -13,6 +14,7 @@ class HttpTestCase extends TestCase
     {
         parent::setUp();
         PostEditPage::$submitted = null;
+        TabbedFormPage::$submitted = null;
         $this->actingAs(new AuthUser);
     }
 

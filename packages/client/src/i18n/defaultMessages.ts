@@ -88,6 +88,7 @@ export const defaultMessages: Messages = {
 	"nav.open_sidebar": "Open navigation menu",
 	"form.unsaved_guard.title": "You have unsaved changes.",
 	"form.unsaved_guard.body": "Are you sure you want to leave? Your changes will be lost.",
+	"form.submit.validationError": "Please fix the highlighted fields.",
 	"table.search.placeholder": "Search…",
 	"table.filters.label": "Filters",
 	"table.filters.reset": "Reset",

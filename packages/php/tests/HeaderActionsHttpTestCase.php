@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Tests;
 
 use Illuminate\Foundation\Auth\User as AuthUser;
+use Tbtop\Admin\Tests\Fixtures\HeaderActionsPage;
 use Tbtop\Admin\Tests\Fixtures\Panels\HeaderActionsPanel;
 
 class HeaderActionsHttpTestCase extends TestCase
@@ -10,6 +11,7 @@ class HeaderActionsHttpTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        HeaderActionsPage::$refreshed = false;
         $this->actingAs(new AuthUser);
     }
 

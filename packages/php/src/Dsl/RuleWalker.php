@@ -36,9 +36,7 @@ final class RuleWalker
             return self::fromField($child, $prefix);
         }
         if ($child instanceof Node) {
-            $nested = $child->options['children'] ?? $child->options['fields'] ?? [];
-
-            return is_array($nested) ? self::collect(array_values($nested), $prefix) : [];
+            return self::collect($child->nestedChildren(), $prefix);
         }
 
         return [];

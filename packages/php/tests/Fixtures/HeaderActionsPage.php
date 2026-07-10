@@ -3,18 +3,23 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Illuminate\Support\Facades\Gate;
+use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
 
 /**
- * Exercises Page::headerActions(): a visit action (always visible) and a
- * gate-authorized action (hidden unless the gate passes) rendered right of
- * the title/subtitle block.
+ * Exercises Page::headerActions(): a visit action (always visible), a
+ * gate-authorized action (hidden unless the gate passes), and a server
+ * action rendered right of the title/subtitle block.
  */
 class HeaderActionsPage extends Page
 {
+    /** @var bool Set true when the server-handled header action runs. */
+    public static bool $refreshed = false;
+
     public static function path(): string
     {
         return 'header-actions';
@@ -33,6 +38,11 @@ class HeaderActionsPage extends Page
         return [
             $s->action('create')->label('New item')->visit('/admin/header-actions/create'),
             $s->action('export')->label('Export')->authorize('header-actions-export')->visit('/admin/header-actions/export'),
+            $s->action('refresh')->label('Refresh')->handle(function (ActionCtx $ctx): Effects {
+                static::$refreshed = true;
+
+                return Effects::make()->notify('Refreshed');
+            }),
         ];
     }
 
