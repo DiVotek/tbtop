@@ -176,6 +176,8 @@ final class S
      * @param  'row'|'col'  $direction
      * @param  'start'|'center'|'end'|'between'|'around'|'evenly'|null  $justify
      * @param  'start'|'center'|'end'|'stretch'|'baseline'|null  $align
+     * @param  'card'|null  $variant  'card' renders a compact bordered toolbar strip
+     * @param  string|null  $class  Extra Tailwind classes merged onto the root element
      */
     public function flex(
         array $children,
@@ -184,6 +186,8 @@ final class S
         ?string $align = null,
         ?int $gap = null,
         bool $wrap = false,
+        ?string $variant = null,
+        ?string $class = null,
     ): Node {
         FlexValidator::direction($direction);
         if ($justify !== null) {
@@ -194,6 +198,9 @@ final class S
         }
         if ($gap !== null) {
             FlexValidator::gap($gap);
+        }
+        if ($variant !== null) {
+            FlexValidator::variant($variant);
         }
 
         $opts = ['direction' => $direction, 'children' => $children];
@@ -209,6 +216,12 @@ final class S
         if ($wrap) {
             $opts['wrap'] = true;
         }
+        if ($variant !== null) {
+            $opts['variant'] = $variant;
+        }
+        if ($class !== null) {
+            $opts['class'] = $class;
+        }
 
         return new Node('flex', $opts);
     }
@@ -216,14 +229,19 @@ final class S
     /**
      * Grid layout. `cols` accepts an int (1-8, back-compat: single column
      * below md) or a breakpoint object {sm?, md?, lg?, xl?} (each 1-8).
+     * `gap` (0-12, default 4) reuses the flex gap-N scale. `class` merges
+     * extra Tailwind classes onto the root element.
      *
-     * @param  array{cols?: int|array<string, int>}  $opts
+     * @param  array{cols?: int|array<string, int>, gap?: int, class?: string}  $opts
      * @param  list<mixed>  $children
      */
     public function grid(array $opts, array $children): Node
     {
         if (isset($opts['cols'])) {
             ColumnsValidator::validate($opts['cols'], 'grid cols');
+        }
+        if (isset($opts['gap'])) {
+            FlexValidator::gap((int) $opts['gap'], 'grid gap');
         }
 
         return self::layout('grid', $children, $opts);
@@ -239,7 +257,8 @@ final class S
      * (['label' => string, 'url' => string] — a quiet link rendered right-aligned
      * in the header row, e.g. "Open pages"), 'variant' ('card'|'plain' — 'card'
      * wraps the section in a bordered card with an inline header; 'plain' renders
-     * the title as an uppercase muted label. Omitted = current stack render).
+     * the title as an uppercase muted label. Omitted = current stack render),
+     * 'class' (extra Tailwind classes merged onto the section's root element).
      *
      * @param  array<string, mixed>  $opts
      * @param  list<mixed>  $children
@@ -310,12 +329,14 @@ final class S
 
     /**
      * Aside layout node: renders as a right-column sticky panel on wide screens.
+     * $opts supports 'class' (extra Tailwind classes merged onto the root element).
      *
      * @param  list<mixed>  $children
+     * @param  array{class?: string}  $opts
      */
-    public function aside(array $children): Node
+    public function aside(array $children, array $opts = []): Node
     {
-        return self::layout('aside', $children, []);
+        return self::layout('aside', $children, $opts);
     }
 
     /**
@@ -531,6 +552,16 @@ final class S
     public function spacer(): Node
     {
         return new Node('spacer');
+    }
+
+    /**
+     * "Unsaved changes" indicator for the nearest enclosing form. Renders
+     * nothing when that form is clean. $label overrides the default
+     * translated text.
+     */
+    public function unsavedIndicator(?string $label = null): Node
+    {
+        return new Node('unsavedIndicator', $label !== null ? ['label' => $label] : []);
     }
 
     /** Header notifications bell: unread badge + polled dropdown list. */

@@ -76,6 +76,48 @@ describe("section variant card", () => {
 		expect(shell.className).not.toContain("border");
 	});
 
+	test("a table inside a card section stays frameless: body gets no px-4/pb-4 padding wrapper", async () => {
+		const table = s.table({ query: async () => [], columns: [{ name: "title" }] });
+		const section = node("section", { title: "Rows", variant: "card", children: [table] });
+		const Wrap = wrapForStructure(() => new Response("{}"));
+		const { findByTestId, getByTestId } = render(<Wrap>{renderNode(section)}</Wrap>);
+		await findByTestId("table-block");
+		const card = getByTestId("section-card");
+		// the table's own wrapper (queried by table-block) must be a direct-ish
+		// descendant, not nested inside a padded div the frameless carve-out adds
+		expect(card.querySelector(".px-4.pb-4")).toBeNull();
+	});
+
+	test("card body without a table gets px-4 pb-4 pt-3 padding when a header is present", () => {
+		const section = node("section", { title: "Padded", variant: "card", children: [text] });
+		const { getByTestId, getByText } = render(renderNode(section));
+		const card = getByTestId("section-card");
+		const body = getByText("hello").closest(".px-4") as HTMLElement;
+		expect(card.contains(body)).toBe(true);
+		expect(body.className).toContain("pb-4");
+		expect(body.className).toContain("pt-3");
+	});
+
+	test("card body without a header gets pt-4 instead of pt-3", () => {
+		const section = node("section", { variant: "card", children: [text] });
+		const { getByText } = render(renderNode(section));
+		const body = getByText("hello").closest(".px-4") as HTMLElement;
+		expect(body.className).toContain("pt-4");
+		expect(body.className).not.toContain("pt-3");
+	});
+
+	test("options.class merges onto the card section's root element", () => {
+		const section = node("section", {
+			title: "Classy",
+			variant: "card",
+			class: "custom-card",
+			children: [text],
+		});
+		const { getByTestId } = render(renderNode(section));
+		expect(getByTestId("section-card").className).toContain("custom-card");
+		expect(getByTestId("section-card").className).toContain("rounded-lg");
+	});
+
 	test("a standalone table keeps its border frame (control)", async () => {
 		const table = s.table({ query: async () => [], columns: [{ name: "title" }] });
 		const Wrap = wrapForStructure(() => new Response("{}"));
@@ -98,6 +140,20 @@ describe("section variant plain", () => {
 		expect(label.className).toContain("mb-3");
 		expect(queryByTestId("section-card")).toBeNull();
 	});
+
+	test("options.class merges onto the plain section's root element", () => {
+		const { getByTestId } = render(
+			renderNode(
+				node("section", {
+					title: "Browse",
+					variant: "plain",
+					class: "custom-plain",
+					children: [text],
+				}),
+			),
+		);
+		expect(getByTestId("section-plain").className).toContain("custom-plain");
+	});
 });
 
 describe("section without variant", () => {
@@ -108,6 +164,17 @@ describe("section without variant", () => {
 		expect(getByText("Default").tagName).toBe("H2");
 		expect(queryByTestId("section-card")).toBeNull();
 		expect(queryByTestId("section-plain")).toBeNull();
+	});
+
+	test("options.class merges onto the default section's root element", () => {
+		const { getByTestId } = render(
+			renderNode(
+				node("section", { title: "Default", class: "custom-default", children: [text] }),
+			),
+		);
+		const section = getByTestId("section-block");
+		expect(section.className).toContain("custom-default");
+		expect(section.className).toContain("flex-col");
 	});
 });
 

@@ -1,3 +1,4 @@
+import { cn } from "../lib/cn";
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import type { StructureNode } from "../structure/structure";
 import { TriggerVariantProvider } from "../structure/triggerVariantContext";
@@ -14,6 +15,7 @@ type JustifyValue = "start" | "center" | "end" | "between" | "around" | "evenly"
 type AlignValue = "start" | "center" | "end" | "stretch" | "baseline";
 
 interface StackOptions {
+	class?: string;
 	[key: string]: unknown;
 }
 
@@ -24,6 +26,8 @@ interface RowOptions {
 
 interface GridOptions {
 	cols?: ColumnsSpec;
+	gap?: number;
+	class?: string;
 }
 
 interface TabsOptions {
@@ -71,8 +75,12 @@ const GAP: Record<number, string> = {
 	12: "gap-12",
 };
 
-export function StackBlock({ children, renderChild }: RenderProps<StackOptions>) {
-	return <div className="flex flex-col gap-4">{mapChildren(children, renderChild)}</div>;
+export function StackBlock({ options, children, renderChild }: RenderProps<StackOptions>) {
+	return (
+		<div className={cn("flex flex-col gap-4", options.class)}>
+			{mapChildren(children, renderChild)}
+		</div>
+	);
 }
 
 export function RowBlock({ options, children, renderChild }: RenderProps<RowOptions>) {
@@ -106,6 +114,8 @@ interface FlexBlockOptions {
 	align?: AlignValue;
 	gap?: number;
 	wrap?: boolean;
+	variant?: "card";
+	class?: string;
 	[key: string]: unknown;
 }
 
@@ -116,13 +126,15 @@ export function FlexBlock({ options, children, renderChild }: RenderProps<FlexBl
 	const align = options.align != null ? (ALIGN[options.align] ?? "") : "";
 	const gap = options.gap != null ? (GAP[options.gap] ?? defaultGap) : defaultGap;
 	const wrap = options.wrap ? "flex-wrap" : "";
-	const className = ["flex", dir, justify, align, gap, wrap].filter(Boolean).join(" ");
+	const card = options.variant === "card" ? "rounded-md border bg-card px-3 py-2" : "";
+	const className = cn("flex", dir, justify, align, gap, wrap, card, options.class);
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
 export function GridBlock({ options, children, renderChild }: RenderProps<GridOptions>) {
+	const gap = options.gap != null ? (GAP[options.gap] ?? "gap-4") : "gap-4";
 	return (
-		<div className={`grid gap-4 ${resolveColumnsClass(options.cols)}`}>
+		<div className={cn("grid", gap, resolveColumnsClass(options.cols), options.class)}>
 			{mapChildren(children, renderChild)}
 		</div>
 	);

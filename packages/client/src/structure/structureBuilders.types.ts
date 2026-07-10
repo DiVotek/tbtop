@@ -43,19 +43,29 @@ export type FlexOpts = {
 	align?: "start" | "center" | "end" | "stretch" | "baseline";
 	gap?: number;
 	wrap?: boolean;
+	/** "card" renders a compact bordered toolbar strip. */
+	variant?: "card";
+	/** Extra Tailwind classes merged onto the root element. */
+	class?: string;
 };
 
 type FieldInputFor<TForm, TExtra> = NodeMeta & TExtra & { name: FieldName<TForm> };
 
 export interface StructureBuilders<TForm = unknown> {
-	stack: (children: StructureNode[], opts?: NodeMeta & { gap?: number }) => StructureNode;
+	stack: (
+		children: StructureNode[],
+		opts?: NodeMeta & { gap?: number; class?: string },
+	) => StructureNode;
 	/** variant "grid": each child renders in a bordered, hoverable grid cell instead of a flex row. */
 	row: (
 		children: StructureNode[],
-		opts?: NodeMeta & { gap?: number; variant?: "grid" },
+		opts?: NodeMeta & { gap?: number; variant?: "grid"; class?: string },
 	) => StructureNode;
 	flex: (children: StructureNode[], opts?: NodeMeta & FlexOpts) => StructureNode;
-	grid: (opts: NodeMeta & { cols?: ColumnsSpec }, children: StructureNode[]) => StructureNode;
+	grid: (
+		opts: NodeMeta & { cols?: ColumnsSpec; gap?: number; class?: string },
+		children: StructureNode[],
+	) => StructureNode;
 	section: (
 		opts: NodeMeta & {
 			title?: string;
@@ -66,6 +76,8 @@ export interface StructureBuilders<TForm = unknown> {
 			collapsible?: boolean;
 			collapsed?: boolean;
 			columns?: ColumnsSpec;
+			variant?: "card" | "plain";
+			class?: string;
 		},
 		children: StructureNode[],
 	) => StructureNode;
@@ -113,7 +125,7 @@ export interface StructureBuilders<TForm = unknown> {
 		opts: NodeMeta & { label: string; collapsed?: boolean },
 		children: StructureNode[],
 	) => StructureNode;
-	aside: (children: StructureNode[], opts?: NodeMeta) => StructureNode;
+	aside: (children: StructureNode[], opts?: NodeMeta & { class?: string }) => StructureNode;
 	actionGroup: (
 		label: string,
 		actions: StructureNode[],

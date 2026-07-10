@@ -298,6 +298,10 @@ class KitchenSinkPage extends Page
                 $s->notifications(),
                 $s->userMenu(),
             ]),
+            $s->flex([
+                $s->unsavedIndicator(),
+                $s->unsavedIndicator('Custom label'),
+            ]),
         ]);
     }
 }

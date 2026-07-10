@@ -3,6 +3,7 @@ import {
 	LogoBlock,
 	NavMenuBlock,
 	SpacerBlock,
+	UnsavedIndicatorBlock,
 	UserMenuBlock,
 } from "../app/chromeBlocks";
 import { NotificationsBell } from "../app/NotificationsBell";
@@ -66,6 +67,7 @@ function registerChrome(): void {
 	defineBlock("logo", { behavior: "leaf", render: LogoBlock });
 	defineBlock("localeSwitcher", { behavior: "leaf", render: LocaleSwitcherBlock });
 	defineBlock("spacer", { behavior: "leaf", render: SpacerBlock });
+	defineBlock("unsavedIndicator", { behavior: "leaf", render: UnsavedIndicatorBlock });
 	defineBlock("notifications", { behavior: "leaf", render: NotificationsBell });
 	defineBlock("themeToggle", { behavior: "leaf", render: ThemeToggle });
 }
