@@ -125,11 +125,11 @@ Each layout block accepts children and optional option arrays, and returns a `No
 |---|---|---|
 | `stack` | `stack(array $children, array $opts = []): Node` | Vertical stack of children |
 | `row` | `row(array $children, array $opts = []): Node` | Horizontal row of children |
-| `flex` | `flex(array $children, string $direction = 'row', ?string $justify = null, ?string $align = null, ?int $gap = null, bool $wrap = false): Node` | Flex container with explicit direction (`'row'`\|`'col'`), justify, align, gap, wrap |
-| `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8) |
-| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack) |
+| `flex` | `flex(array $children, string $direction = 'row', ?string $justify = null, ?string $align = null, ?int $gap = null, bool $wrap = false, ?string $variant = null, ?string $class = null): Node` | Flex container with explicit direction (`'row'`\|`'col'`), justify, align, gap, wrap, an optional `'card'` variant, and an escape-hatch `class` |
+| `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8); `$opts['gap']` is 0-12 (default 4); `$opts['class']` is an escape-hatch |
+| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch) |
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
-| `aside` | `aside(array $children): Node` | Right-column sticky panel on wide screens |
+| `aside` | `aside(array $children, array $opts = []): Node` | Right-column sticky panel on wide screens; `$opts` supports `'class'` (escape-hatch) |
 
 A section's `'aside'` is a persistent context slot: when a `section` sets both
 `'aside'` and `'collapsible'`, collapsing hides only the main body — the aside stays visible.
@@ -141,6 +141,56 @@ A layout block placed as a grid/section child instead passes `colSpan`/`colStart
 directly as keys in its own `$opts`, e.g. `$s->stack($children, ['colSpan' => 2])`
 — the renderer applies grid placement generically from any node's options, field
 or not.
+
+#### Custom classes — the `class` escape hatch
+
+`stack`/`flex`/`grid`/`section`/`aside` all accept a `class` option (a plain string of
+Tailwind utility classes) that the client merges onto that block's own root element —
+`$s->stack($children, ['class' => 'gap-6'])`, `$s->grid(['cols' => 3, 'class' => '...'], $children)`,
+`$s->section(['title' => '...', 'class' => '...'], $children)`. `flex` takes it as a trailing
+named parameter instead, since it already has named options: `$s->flex($children, variant: 'card', class: 'mt-2')`.
+
+This is a plain merge onto the existing root (via `cn()`, so a conflicting utility in `class`
+wins over the block's own default) — it never adds a wrapper `<div>`, so it's safe on `flex`/`grid`
+parents where an extra wrapper would break child layout.
+
+**Warning:** classes passed through `class` must already appear verbatim somewhere in the
+consumer app's Tailwind content scan (a literal string in PHP, a component, a safelist entry —
+anywhere Tailwind's scanner sees the exact class name). Tailwind only emits CSS for classes it
+sees as source text; a class assembled dynamically or living only in a PHP string that Tailwind
+never scans will silently produce no styles. Prefer classes that already exist elsewhere in the
+app's compiled output.
+
+#### `flex` — `variant: 'card'`
+
+`$s->flex($children, variant: 'card')` renders a compact bordered toolbar strip — the root
+gets `rounded-md border bg-card px-3 py-2` in addition to its normal flex classes. Useful for a
+row of controls (filters, quick actions) that reads as a distinct strip rather than bare
+inline flex. `variant` only accepts `'card'` today; anything else throws
+`InvalidArgumentException`. Combine with `class` for one-off tweaks — `class` classes are
+merged after the variant's classes, so they win on conflicts.
+
+#### `grid` — `gap`
+
+`$s->grid(['cols' => 3, 'gap' => 6], $children)` sets the grid's row/column gap on the
+0-12 Tailwind `gap-N` scale (same range and validation as `flex`'s `gap`). Omitting it keeps
+the existing default of `4`.
+
+#### `section` — `variant: 'card'` body padding
+
+A `variant: 'card'` section's body is padded (`px-4 pb-4`, plus `pt-3` when the card has a
+header — a title or an `action` — or `pt-4` when it doesn't) so fields sit clear of the card's
+border instead of touching it, matching the header row's own `px-4 py-3` rhythm.
+
+**Exception — a table child stays frameless.** If a `section(['variant' => 'card'], ...)`'s
+direct children include a `table` node, the body renders with no padding at all: the table
+draws its own border and row dividers, and padding would double-frame it (border-inside-border,
+a visible gutter around the table's own edge). This is judged from **direct** children only —
+a table nested one layout level deeper (inside a `stack`/`grid` wrapped in the section) still
+gets the padded treatment, matching how the frameless carve-out already reads for
+`SectionFramelessContext` (`packages/client/src/render/sectionChrome.ts`) elsewhere in the
+render tree. In practice, put a table straight in a card section's children if you want the
+frameless look; wrap it in something else if you want the card's own padding around it.
 
 ### Display blocks
 

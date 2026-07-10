@@ -76,6 +76,24 @@ describe("Aside block", () => {
 		await findByDisplayValue("hello");
 	});
 
+	test("Aside: options.class merges onto the aside root alongside the default classes", () => {
+		const node = s.aside(
+			[
+				{
+					kind: "displayText" as const,
+					options: { content: "Sidebar", variant: "body" as const },
+					meta: {},
+				},
+			],
+			{ class: "custom-aside" },
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const aside = getByTestId("aside-block");
+		expect(aside.className).toContain("w-80");
+		expect(aside.className).toContain("custom-aside");
+	});
+
 	test("Aside: hiddenIf=true hides the aside block entirely", () => {
 		const node = s.aside(
 			[

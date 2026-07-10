@@ -1,14 +1,16 @@
 import { Fragment, type ReactNode } from "react";
+import { cn } from "../lib/cn";
 import type { RenderProps } from "../render/blockRegistry";
 import type { StructureNode } from "./structure";
 
 interface AsideOptions {
+	class?: string;
 	[key: string]: unknown;
 }
 
-export function AsideBlock({ children, renderChild }: RenderProps<AsideOptions>) {
+export function AsideBlock({ options, children, renderChild }: RenderProps<AsideOptions>) {
 	return (
-		<div className="w-80 shrink-0" data-testid="aside-block">
+		<div className={cn("w-80 shrink-0", options.class)} data-testid="aside-block">
 			{mapChildren(children, renderChild)}
 		</div>
 	);

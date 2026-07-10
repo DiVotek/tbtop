@@ -251,7 +251,9 @@
 										"minimum": 0,
 										"maximum": 12
 									},
-									"wrap": { "type": "boolean" }
+									"wrap": { "type": "boolean" },
+									"variant": { "type": "string", "enum": ["card"] },
+									"class": { "type": "string" }
 								}
 							}
 						}
@@ -398,7 +400,9 @@
 						"properties": {
 							"options": {
 								"properties": {
-									"cols": { "$ref": "#/$defs/columnsSpec" }
+									"cols": { "$ref": "#/$defs/columnsSpec" },
+									"gap": { "type": "integer", "minimum": 0, "maximum": 12 },
+									"class": { "type": "string" }
 								}
 							}
 						}
@@ -426,7 +430,8 @@
 										},
 										"additionalProperties": false
 									},
-									"variant": { "type": "string", "enum": ["card", "plain"] }
+									"variant": { "type": "string", "enum": ["card", "plain"] },
+									"class": { "type": "string" }
 								}
 							}
 						}
@@ -581,7 +586,8 @@
 						"fields": { "type": "array", "items": { "$ref": "#/$defs/node" } }
 					},
 					"additionalProperties": false
-				}
+				},
+				"class": { "type": "string" }
 			}
 		},
 		"columnsSpec": {

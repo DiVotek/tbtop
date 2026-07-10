@@ -142,3 +142,26 @@ it('negative gap throws InvalidArgumentException', function () {
     $s = new S;
     $s->flex([$s->text('a')], gap: -1);
 })->throws(InvalidArgumentException::class);
+
+// ---------------------------------------------------------------------------
+// S::flex — variant:card
+// ---------------------------------------------------------------------------
+
+it('flex with variant card serializes options.variant', function () {
+    $s = new S;
+    $json = encodeLayout($s->flex([$s->text('a')], variant: 'card'));
+
+    expect($json['options']['variant'])->toBe('card');
+});
+
+it('flex without variant emits no variant key (back-compat)', function () {
+    $s = new S;
+    $json = encodeLayout($s->flex([$s->text('a')]));
+
+    expect($json['options'])->not->toHaveKey('variant');
+});
+
+it('flex with an invalid variant throws InvalidArgumentException', function () {
+    $s = new S;
+    $s->flex([$s->text('a')], variant: 'junk');
+})->throws(InvalidArgumentException::class);

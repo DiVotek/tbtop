@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cn } from "../lib/cn";
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import type { StructureNode } from "../structure/structure";
 import type { IconDef } from "../ui/node-icon";
@@ -17,6 +18,15 @@ interface SectionOptions {
 	collapsed?: boolean;
 	columns?: ColumnsSpec;
 	variant?: "card" | "plain";
+	class?: string;
+}
+
+// A table draws its own border/rows; a card section's body padding would
+// double the frame. Detected from direct children only — a table nested
+// inside a further layout wrapper (stack/grid) still gets the card padding,
+// matching how the frameless carve-out reads today (see sectionVariants.tsx).
+function hasTableChild(children: StructureNode[] | undefined): boolean {
+	return (children ?? []).some((child) => child.kind === "table");
 }
 
 export function SectionBlock({ options, children, renderChild }: RenderProps<SectionOptions>) {
@@ -29,16 +39,25 @@ export function SectionBlock({ options, children, renderChild }: RenderProps<Sec
 	const body = expanded && <div className={bodyClass}>{mapChildren(children, renderChild)}</div>;
 	if (options.variant === "card") {
 		return (
-			<CardSection title={options.title} action={options.action}>
+			<CardSection
+				title={options.title}
+				action={options.action}
+				frameless={hasTableChild(children)}
+				class={options.class}
+			>
 				{body}
 			</CardSection>
 		);
 	}
 	if (options.variant === "plain") {
-		return <PlainSection title={options.title}>{body}</PlainSection>;
+		return (
+			<PlainSection title={options.title} class={options.class}>
+				{body}
+			</PlainSection>
+		);
 	}
 	return (
-		<section className="flex flex-col gap-3" data-testid="section-block">
+		<section className={cn("flex flex-col gap-3", options.class)} data-testid="section-block">
 			<SectionHeader
 				title={options.title}
 				description={options.description}

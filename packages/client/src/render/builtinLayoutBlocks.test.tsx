@@ -391,3 +391,93 @@ test("a normal (non-grid) RowBlock action keeps the regular Button chrome", () =
 	const trigger = getByTestId("action-restart");
 	expect(trigger.dataset["variant"]).not.toBe("plain");
 });
+
+// ---------------------------------------------------------------------------
+// options.class — generic escape hatch merged onto each block's root element
+// ---------------------------------------------------------------------------
+
+test("StackBlock merges options.class onto the root alongside the default classes", () => {
+	const node = { kind: "stack", options: { children: [], class: "gap-6" }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("flex-col");
+	expect(el.className).toContain("gap-6");
+	expect(el.className).not.toContain("gap-4");
+});
+
+test("FlexBlock merges options.class onto the root alongside the computed classes", () => {
+	const node = {
+		kind: "flex",
+		options: { direction: "row", children: [], class: "custom-flex" },
+		meta: {},
+	} as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("flex-row");
+	expect(el.className).toContain("custom-flex");
+});
+
+test("GridBlock merges options.class onto the root alongside the grid classes", () => {
+	const node = s.grid({ cols: 2, class: "custom-grid" }, [textNode("a")]);
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("grid-cols-1");
+	expect(el.className).toContain("custom-grid");
+});
+
+// ---------------------------------------------------------------------------
+// GridBlock — gap option (0-12, default 4, reuses the flex GAP scale)
+// ---------------------------------------------------------------------------
+
+test("GridBlock with gap:6 renders gap-6 instead of the gap-4 default", () => {
+	const node = s.grid({ cols: 2, gap: 6 }, [textNode("a")]);
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("gap-6");
+	expect(el.className).not.toContain("gap-4");
+});
+
+test("GridBlock with no gap option defaults to gap-4 (unchanged behavior)", () => {
+	const node = s.grid({ cols: 2 }, [textNode("a")]);
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("gap-4");
+});
+
+// ---------------------------------------------------------------------------
+// FlexBlock — variant:card (compact bordered toolbar strip)
+// ---------------------------------------------------------------------------
+
+test("FlexBlock variant:card adds the bordered card toolbar classes", () => {
+	const node = {
+		kind: "flex",
+		options: { direction: "row", children: [], variant: "card" },
+		meta: {},
+	} as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("rounded-md");
+	expect(el.className).toContain("border");
+	expect(el.className).toContain("bg-card");
+	expect(el.className).toContain("px-3");
+	expect(el.className).toContain("py-2");
+});
+
+test("FlexBlock without variant does not add the card toolbar classes", () => {
+	const node = { kind: "flex", options: { direction: "row", children: [] }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).not.toContain("bg-card");
+});
+
+test("FlexBlock variant:card + options.class: class is present alongside the card classes", () => {
+	const node = {
+		kind: "flex",
+		options: { direction: "row", children: [], variant: "card", class: "extra-class" },
+		meta: {},
+	} as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("bg-card");
+	expect(el.className).toContain("extra-class");
+});
