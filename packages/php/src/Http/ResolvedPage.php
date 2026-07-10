@@ -30,8 +30,18 @@ final class ResolvedPage
         /** @var Page $page */
         $page = app($class);
         $s = new S;
+        $tree = $page->view($s);
 
-        return new self($page, $s, $page->view($s));
+        // Registration only: header actions with ->handle() are declared inside
+        // headerActions(), never inside view(). POST controllers (ActionController,
+        // FormSubmitController) resolve handlers from $s->collectedActions()/
+        // collectedForms(), which only fill up as a side effect of calling these
+        // closures. PageController's GET render calls headerActions($s) itself to
+        // serialize the prop — this second call only feeds the registry and is
+        // never re-serialized, so it can't double up the wire output.
+        $page->headerActions($s);
+
+        return new self($page, $s, $tree);
     }
 
     /** Route params excluding tbtop internals. @return array<string, string> */
