@@ -146,6 +146,12 @@ interface ActionConfigBase {
 	outlined?: boolean;
 	as?: "link" | "button";
 	keybinding?: string;
+	/**
+	 * Whether the handler reads the surrounding form. Explicit `false` skips
+	 * the form's pre-flight schema parse (Cancel/close actions must run even
+	 * when required fields are empty). Absent = pre-flight when inside a form.
+	 */
+	consumesForm?: boolean;
 	/** Compiled hidden/disabled ConditionFns; evaluated per row (or user) at render. */
 	meta?: NodeMeta;
 }

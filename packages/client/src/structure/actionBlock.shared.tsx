@@ -38,6 +38,13 @@ export interface ActionOptionsBag {
 	tooltip?: string;
 	/** Submit-type actions render as <button type="submit"> so Enter submits the form. */
 	isSubmit?: boolean;
+	/**
+	 * Whether the handler reads the surrounding form (submit, or a server
+	 * action with needs:['form']). Explicit `false` skips the pre-flight
+	 * schema parse — a Cancel/close action must run even when required
+	 * fields are empty. Absent = legacy behavior (pre-flight when in a form).
+	 */
+	consumesForm?: boolean;
 	/** Trigger button size; absent → the Button default (medium). */
 	size?: "sm" | "md" | "lg";
 	/** Render the trigger as an outlined button. */

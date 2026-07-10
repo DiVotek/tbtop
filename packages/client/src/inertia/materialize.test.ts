@@ -69,6 +69,25 @@ describe("materialize actions", () => {
 		expect(opts(out).newTab).toBe(true);
 	});
 
+	it("marks a server action without needs:['form'] as consumesForm:false (Cancel must skip pre-flight)", () => {
+		const out = materialize(
+			node("action", { spec: { type: "server", needs: [] } }, "cancel"),
+			BASE,
+		);
+		expect(opts(out).consumesForm).toBe(false);
+	});
+
+	it("marks form-consuming actions as consumesForm:true (server needs:['form'] and submit)", () => {
+		const server = materialize(
+			node("action", { spec: { type: "server", needs: ["form"] } }, "save"),
+			BASE,
+		);
+		expect(opts(server).consumesForm).toBe(true);
+
+		const submit = materialize(node("action", { spec: { type: "submit" } }, "save"), BASE);
+		expect(opts(submit).consumesForm).toBe(true);
+	});
+
 	it("maps a server spec to a handler posting needs-driven payload and running effects", async () => {
 		const calls: { path: string; body: unknown }[] = [];
 		const notifications: string[] = [];

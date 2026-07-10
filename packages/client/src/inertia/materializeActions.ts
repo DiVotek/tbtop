@@ -2,6 +2,7 @@ import type { FormDataConvertible } from "@inertiajs/core";
 import { router } from "@inertiajs/react";
 import { unwrapData } from "../data/envelope";
 import type { ClientActionContext, StructureNode } from "../structure/types";
+import { type ConfirmSpec, confirmModal } from "./confirmModal";
 import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects } from "./effects";
 import { serializeFormData } from "./serializeFormData";
@@ -62,14 +63,31 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 	if (spec.type === "modal") {
 		return { ...base, modal: materializeModal(node.name ?? "", spec, ctx) };
 	}
+	return handlerBag({ base, node, spec, ctx, confirm });
+}
+
+interface HandlerBagInput {
+	base: Bag;
+	node: StructureNode;
+	spec: ActionSpec;
+	ctx: ActionMaterializeCtx;
+	confirm?: ConfirmSpec;
+}
+
+/**
+ * Handler-carrying branches (submit / server / custom). `consumesForm` marks
+ * whether the handler reads the form — only submit and server actions with
+ * needs:['form'] do; everything else (Cancel/close, row-scoped actions) must
+ * not trip the surrounding form's pre-flight validation.
+ */
+function handlerBag({ base, node, spec, ctx, confirm }: HandlerBagInput): Bag {
 	const handler = buildHandler(node, spec, ctx);
+	const consumesForm = spec.type === "submit" || (spec.needs ?? []).includes("form");
+	const bag = { ...base, consumesForm };
 	if (confirm) {
-		return { ...base, modal: confirmModal(base, confirm, handler) };
+		return { ...bag, modal: confirmModal(bag, confirm, handler) };
 	}
-	if (spec.type === "submit") {
-		return { ...base, handler, isSubmit: true };
-	}
-	return { ...base, handler };
+	return spec.type === "submit" ? { ...bag, handler, isSubmit: true } : { ...bag, handler };
 }
 
 function fillRowTemplate(template: string, ctx: ClientActionContext): string {
@@ -205,39 +223,4 @@ function materializeModal(name: string, spec: ActionSpec, ctx: ActionMaterialize
 		modal.query = modalDataQuery(ctx.basePath, name, spec.queryNeeds ?? ["row"]);
 	}
 	return modal;
-}
-
-/** A server action with `confirm` renders as a modal with confirm/cancel. */
-function confirmModal(
-	base: Bag,
-	confirm: { title: string; description?: string },
-	handler: Handler,
-): Bag {
-	const confirmedHandler: Handler = async (ctx) => {
-		await handler(ctx);
-		ctx.modal?.close();
-	};
-	return {
-		title: confirm.title,
-		description: confirm.description,
-		body: {
-			kind: "row",
-			options: {
-				children: [
-					{
-						kind: "action",
-						name: "confirm",
-						options: {
-							name: "confirm",
-							label: (base.label as string | undefined) ?? "Confirm",
-							color: base.color ?? "danger",
-							handler: confirmedHandler,
-						},
-						meta: {},
-					},
-				],
-			},
-			meta: {},
-		},
-	};
 }
