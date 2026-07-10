@@ -1,16 +1,19 @@
 /**
- * Tests for scroll-to-first-error behaviour on failed form submit.
+ * Tests for scroll-to-first-error and error-toast behaviour on failed form submit.
  *
  * scrollIntoView is not implemented in happy-dom — we stub it on
  * Element.prototype and assert that it was called on the right element.
  *
  * Channels covered:
  *  1. Client-side zod validation failure
- *  2. Server-side 422 (fieldErrors)
+ *  2. Server-side 422 (fieldErrors) — also asserts the error toast fires
+ *     alongside the scroll, so a failed submit on a long/off-screen field
+ *     is never silent (regression: scroll fired, no toast).
  *  3. Translatable field with error in inactive locale — active locale tab switches
  */
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { renderNode } from "../render/structureRenderer";
 import { type ContentLocaleConfig, ContentLocaleConfigProvider } from "./contentLocaleContext";
 import { s } from "./structure";
@@ -24,6 +27,8 @@ type ScrollArgs = ScrollIntoViewOptions | undefined;
 
 let scrollCalls: { el: Element; args: ScrollArgs }[] = [];
 let originalScrollIntoView: Element["scrollIntoView"];
+let originalToastError: typeof toast.error;
+let toastErrorSpy: ReturnType<typeof mock>;
 
 beforeEach(() => {
 	scrollCalls = [];
@@ -31,11 +36,15 @@ beforeEach(() => {
 	Element.prototype.scrollIntoView = function (args?: ScrollArgs) {
 		scrollCalls.push({ el: this, args });
 	};
+	originalToastError = toast.error;
+	toastErrorSpy = mock(() => "id");
+	(toast as unknown as { error: typeof toastErrorSpy }).error = toastErrorSpy;
 });
 
 afterEach(() => {
 	Element.prototype.scrollIntoView = originalScrollIntoView;
 	scrollCalls = [];
+	(toast as unknown as { error: typeof originalToastError }).error = originalToastError;
 });
 
 // ---------------------------------------------------------------------------
@@ -137,6 +146,9 @@ describe("Form scroll-to-error — server 422", () => {
 		expect(scrolledEl).toBeTruthy();
 		// smooth + center
 		expect(scrollCalls[0]?.args).toMatchObject({ behavior: "smooth", block: "center" });
+		// A generic error toast surfaces the failure even when the errored
+		// field is scrolled to but the user's eyes are still on the button.
+		expect(toastErrorSpy.mock.calls.length).toBeGreaterThan(0);
 	});
 
 	test("first field in DOM order is scrolled to when multiple errors", async () => {

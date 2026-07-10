@@ -156,6 +156,13 @@ async function runHandlerWithValidation(input: RunInput): Promise<void> {
 	} catch (err) {
 		if (input.formHandle && tryApplyServerFieldErrors(err, input.formHandle)) {
 			input.formHandle.notifyErrorsApplied();
+			// Field errors alone are easy to miss on a long form or in a modal
+			// where the offending field is out of the viewport — surface a toast
+			// alongside the scroll-into-view so a failed submit is never silent.
+			input.ctx.notify({
+				kind: "error",
+				message: input.ctx.t("form.submit.validationError"),
+			});
 			return;
 		}
 		reportActionError(err, input.ctx);
