@@ -125,6 +125,40 @@ describe("materialize actions", () => {
 		expect(calls.indexOf("closeModal")).toBe(1);
 	});
 
+	it("does NOT reset the form when the action never consumed form data", async () => {
+		// A row/page server action on a page that also renders a form must not
+		// wipe the user's unsaved input on success — only actions whose needs
+		// include "form" mark the form clean.
+		const client = {
+			post: async () => ({ effects: [] }),
+		} as unknown as AdminClient;
+
+		const calls: string[] = [];
+		const out = materialize(
+			node("action", { spec: { type: "server", needs: ["row"] } }, "rowThing"),
+			BASE,
+		);
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await handler(
+			fakeCtx({
+				client,
+				row: { id: "1" },
+				form: {
+					initial: { title: "Old" },
+					data: { title: "New" },
+					isDirty: true,
+					isValid: true,
+					changedFields: ["title"],
+					set: () => {},
+					reset: () => calls.push("reset"),
+				},
+			}),
+		);
+
+		expect(calls).not.toContain("reset");
+	});
+
 	it("serializes upload preview objects for server actions that need form data", async () => {
 		registerFields();
 		const calls: { path: string; body: unknown }[] = [];
