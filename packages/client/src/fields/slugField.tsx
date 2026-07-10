@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Wand2, X } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { useNearestFormController } from "../structure/formContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
 import { slugify } from "./slugify";
 import { usePanelLocale } from "./translatableWrapper";
@@ -42,6 +44,14 @@ export function SlugCell({ value }: FieldCellProps<string>) {
 	return <span>{value ?? ""}</span>;
 }
 
+/**
+ * The input is permanently read-only: the slug is only ever machine-derived.
+ * Clear empties it and stops auto-derivation (so it STAYS empty while the
+ * source keeps changing); Generate re-derives from the source and re-engages
+ * auto mode. Mounting over an existing slug that no longer matches its source
+ * starts in manual mode, so opening an edit form never silently rewrites a
+ * published slug.
+ */
 export function SlugForm({
 	name,
 	value,
@@ -53,7 +63,6 @@ export function SlugForm({
 	const ctrl = useNearestFormController();
 	const panelLocale = usePanelLocale();
 	const syncBroken = useRef(false);
-	const [isEditing, setIsEditing] = useState(false);
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 
@@ -84,20 +93,16 @@ export function SlugForm({
 		emitDerived(sourceValue);
 	}, [sourceValue, emitDerived, currentSlug]);
 
-	function handleInputChange(next: string): void {
-		syncBroken.current = true;
-		onChangeRef.current(next === "" ? null : next);
-	}
-
 	function handleClear(): void {
-		syncBroken.current = false;
-		setIsEditing(false);
+		// Break auto-derivation: a cleared slug must stay empty until the user
+		// explicitly asks to Generate — otherwise the derive-effect would refill
+		// it from the source on the very next render.
+		syncBroken.current = true;
 		onChangeRef.current(null);
 	}
 
 	function handleGenerate(): void {
 		syncBroken.current = false;
-		setIsEditing(false);
 		emitDerived(sourceValue);
 	}
 
@@ -108,34 +113,49 @@ export function SlugForm({
 				<input
 					type="text"
 					value={currentSlug}
-					readOnly={!isEditing}
+					readOnly
 					disabled={disabled}
-					onChange={(e) => handleInputChange(e.target.value)}
-					onFocus={() => setIsEditing(true)}
-					onBlur={() => {
-						if (!syncBroken.current) {
-							setIsEditing(false);
-						}
-					}}
-					className="flex-1 rounded border border-input bg-background px-3 py-1.5 text-sm font-mono"
+					className="flex-1 rounded border border-input bg-muted/50 px-3 py-1.5 text-sm font-mono text-muted-foreground"
 				/>
-				<button
-					type="button"
+				<IconButton
+					label={t("field.slug.clear")}
 					disabled={disabled}
 					onClick={handleClear}
-					className="rounded border border-input px-2 py-1.5 text-sm"
-				>
-					{t("field.slug.clear")}
-				</button>
-				<button
-					type="button"
+					icon={<X className="size-4" />}
+				/>
+				<IconButton
+					label={t("field.slug.generate")}
 					disabled={disabled}
 					onClick={handleGenerate}
-					className="rounded border border-input px-2 py-1.5 text-sm"
-				>
-					{t("field.slug.generate")}
-				</button>
+					icon={<Wand2 className="size-4" />}
+				/>
 			</div>
 		</div>
+	);
+}
+
+interface IconButtonProps {
+	label: string;
+	disabled?: boolean;
+	onClick: () => void;
+	icon: React.ReactNode;
+}
+
+function IconButton({ label, disabled, onClick, icon }: IconButtonProps) {
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					aria-label={label}
+					disabled={disabled}
+					onClick={onClick}
+					className="rounded border border-input p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+				>
+					{icon}
+				</button>
+			</TooltipTrigger>
+			<TooltipContent>{label}</TooltipContent>
+		</Tooltip>
 	);
 }
