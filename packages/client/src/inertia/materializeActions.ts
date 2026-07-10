@@ -160,6 +160,11 @@ function serverHandler({ basePath, name, needs, formNode }: ServerHandlerInput):
 		const body = (await ctx.client.post(`${basePath}/actions/${name}`, { payload })) as {
 			effects?: unknown;
 		};
+		// Mark the form clean before applying effects: a redirect effect is a
+		// plain GET router.visit, and the unsaved-changes guard would otherwise
+		// see a still-dirty form and block it with a native "leave site?"/confirm
+		// prompt right after a successful save.
+		ctx.form?.reset();
 		executeEffects(readEffects(body?.effects), ctx);
 	};
 }

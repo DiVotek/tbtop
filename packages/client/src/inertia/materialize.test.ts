@@ -86,6 +86,45 @@ describe("materialize actions", () => {
 		expect(notifications).toEqual(["done"]);
 	});
 
+	it("marks the form clean before applying effects, so a redirect after save does not hit the unsaved guard", async () => {
+		// Regression: a create-modal save that returns closeModal+redirect left
+		// the form controller dirty. A redirect effect is a plain GET router.visit,
+		// so the unsaved-changes guard saw isDirty=true and threw up a native
+		// "leave site?"/confirm prompt right after a successful save. The guard
+		// reads form.isDirty at visit time, so form.reset() must run first.
+		const client = {
+			post: async () => ({
+				effects: [{ kind: "closeModal" }],
+			}),
+		} as unknown as AdminClient;
+
+		const calls: string[] = [];
+		const out = materialize(
+			node("action", { spec: { type: "server", needs: ["form"] } }, "save"),
+			BASE,
+		);
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await handler(
+			fakeCtx({
+				client,
+				form: {
+					initial: { title: "Old" },
+					data: { title: "New" },
+					isDirty: true,
+					isValid: true,
+					changedFields: ["title"],
+					set: () => {},
+					reset: () => calls.push("reset"),
+				},
+				modal: { close: () => calls.push("closeModal"), closeAll: () => {} },
+			}),
+		);
+
+		expect(calls.indexOf("reset")).toBe(0);
+		expect(calls.indexOf("closeModal")).toBe(1);
+	});
+
 	it("serializes upload preview objects for server actions that need form data", async () => {
 		registerFields();
 		const calls: { path: string; body: unknown }[] = [];
