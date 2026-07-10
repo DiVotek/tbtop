@@ -354,3 +354,23 @@ it('DisplayKeyValueBlock is accessible via S::displayKeyValue', function () {
     expect($json['kind'])->toBe('displayKeyValue')
         ->and($json['options']['entries'])->toBe(['Status' => 'Open']);
 });
+
+// ---------------------------------------------------------------------------
+// unsavedIndicator (chrome-style leaf Node, like spacer())
+// ---------------------------------------------------------------------------
+
+it('unsavedIndicator serializes empty options with no label', function () {
+    $s = new S;
+
+    expect(json_encode($s->unsavedIndicator()))
+        ->toBe('{"kind":"unsavedIndicator","options":{},"meta":{}}');
+});
+
+it('unsavedIndicator serializes the label option when given', function () {
+    $s = new S;
+    $json = encodeDisplay($s->unsavedIndicator('Draft in progress'));
+
+    expect($json['kind'])->toBe('unsavedIndicator')
+        ->and($json['options']['label'])->toBe('Draft in progress')
+        ->and($json['meta'])->toBe([]);
+});

@@ -2,6 +2,7 @@ import { Link } from "@inertiajs/react";
 import { ChevronDownIcon } from "lucide-react";
 import { useLocale, useTranslation } from "../i18n/i18n";
 import type { RenderProps } from "../render/blockRegistry";
+import { useFormDirty } from "../structure/useFormDirty";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -141,4 +142,35 @@ function LocaleDropdown({ locale, setLocale, available }: LocaleVariantProps) {
 
 export function SpacerBlock() {
 	return <div className="flex-1" data-testid="chrome-spacer" />;
+}
+
+interface UnsavedIndicatorOptions {
+	label?: string;
+}
+
+/**
+ * "Unsaved changes" hint for the nearest enclosing form. Renders nothing
+ * outside a form, and nothing while that form is clean — dirty state comes
+ * from the same FormController.isDirty useUnsavedGuard's caller reads,
+ * via the shared useFormDirty hook.
+ */
+export function UnsavedIndicatorBlock({ options }: RenderProps<UnsavedIndicatorOptions>) {
+	const t = useTranslation();
+	const isDirty = useFormDirty();
+	if (process.env.NODE_ENV !== "production" && isDirty === null) {
+		console.warn('[tbtop] "unsavedIndicator" rendered outside a form — nothing to track.');
+	}
+	if (!isDirty) {
+		return null;
+	}
+	return (
+		<span
+			className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+			aria-live="polite"
+			data-testid="unsaved-indicator"
+		>
+			<span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+			{options?.label ?? t("form.unsaved")}
+		</span>
+	);
 }

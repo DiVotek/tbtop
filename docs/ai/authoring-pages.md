@@ -192,6 +192,21 @@ gets the padded treatment, matching how the frameless carve-out already reads fo
 render tree. In practice, put a table straight in a card section's children if you want the
 frameless look; wrap it in something else if you want the card's own padding around it.
 
+#### `unsavedIndicator` — "unsaved changes" hint for the nearest form
+
+`$s->unsavedIndicator(?string $label = null)` is a chrome-style leaf node, same shape as
+`spacer()`: it reads its state from context rather than page data. It looks up the nearest
+enclosing form and renders nothing while that form is clean. Once the form is dirty it shows a
+compact amber-dot indicator with `$label` (defaults to the translated `form.unsaved` string).
+Saving the form (which calls `ctx.form.reset()` client-side) clears dirty state and the
+indicator disappears again. Outside any form it renders nothing.
+
+Typical placement is a form's own status bar, next to the Save button:
+
+```php
+$s->flex([$badge, $s->unsavedIndicator(), $s->spacer(), $save], variant: 'card')
+```
+
 ### Display blocks
 
 | Method | Signature | Purpose |
@@ -228,6 +243,7 @@ from shared Inertia props.
 | `logo()` | Panel brand text |
 | `localeSwitcher()` | UI-locale switcher; hidden when the panel has one locale |
 | `spacer()` | Flex spacer pushing siblings to the far edge |
+| `unsavedIndicator(?string $label = null)` | "Unsaved changes" hint for the nearest enclosing form; renders nothing while that form is clean |
 
 ### Data builders
 

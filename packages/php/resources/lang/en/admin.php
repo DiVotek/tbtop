@@ -63,6 +63,7 @@ return [
             'title' => 'You have unsaved changes.',
             'body' => 'Are you sure you want to leave? Your changes will be lost.',
         ],
+        'unsaved' => 'Unsaved changes',
     ],
     'table' => [
         'search' => ['placeholder' => 'Search…'],

@@ -554,6 +554,16 @@ final class S
         return new Node('spacer');
     }
 
+    /**
+     * "Unsaved changes" indicator for the nearest enclosing form. Renders
+     * nothing when that form is clean. $label overrides the default
+     * translated text.
+     */
+    public function unsavedIndicator(?string $label = null): Node
+    {
+        return new Node('unsavedIndicator', $label !== null ? ['label' => $label] : []);
+    }
+
     /** Header notifications bell: unread badge + polled dropdown list. */
     public function notifications(): Node
     {
