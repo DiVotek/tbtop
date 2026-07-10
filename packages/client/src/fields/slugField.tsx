@@ -3,14 +3,14 @@ import { useTranslation } from "../i18n/i18n";
 import { useNearestFormController } from "../structure/formContext";
 import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
 import { slugify } from "./slugify";
+import { usePanelLocale } from "./translatableWrapper";
 
 interface SlugOptionsBag {
 	fromField?: string;
 }
 
-// Dotted paths reach into nested sources, e.g. translatable "title.en".
-function sourceAt(data: Record<string, unknown>, path: string): string {
-	const resolved = path
+function resolvePath(data: Record<string, unknown>, path: string): unknown {
+	return path
 		.split(".")
 		.reduce<unknown>(
 			(acc, key) =>
@@ -19,7 +19,23 @@ function sourceAt(data: Record<string, unknown>, path: string): string {
 					: undefined,
 			data,
 		);
-	return typeof resolved === "string" || typeof resolved === "number" ? String(resolved) : "";
+}
+
+// Dotted paths reach into nested sources, e.g. translatable "title.en". When
+// fromField resolves to a locale-map object instead of a scalar (fromField
+// points at a translatable field's root, not one of its locale leaves) and
+// this slug is itself mounted inside a translatable panel, fall back to
+// reading that panel's own locale off the source — panelLocale is the slug's
+// own panel, independent of whichever locale tab the user has open.
+function sourceAt(data: Record<string, unknown>, path: string, panelLocale: string | null): string {
+	const resolved = resolvePath(data, path);
+	if (typeof resolved === "string" || typeof resolved === "number") {
+		return String(resolved);
+	}
+	if (resolved !== null && typeof resolved === "object" && panelLocale) {
+		return sourceAt(data, `${path}.${panelLocale}`, null);
+	}
+	return "";
 }
 
 export function SlugCell({ value }: FieldCellProps<string>) {
@@ -35,13 +51,14 @@ export function SlugForm({
 }: FieldFormProps<string, SlugOptionsBag>) {
 	const fromField = options?.fromField ?? "";
 	const ctrl = useNearestFormController();
+	const panelLocale = usePanelLocale();
 	const syncBroken = useRef(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 
 	const currentSlug = asString(value);
-	const sourceValue = ctrl ? sourceAt(ctrl.data, fromField) : "";
+	const sourceValue = ctrl ? sourceAt(ctrl.data, fromField, panelLocale) : "";
 
 	const emitDerived = useCallback((source: string) => {
 		const derived = slugify(source);
