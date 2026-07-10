@@ -121,6 +121,27 @@ describe("Slug field", () => {
 		expect(slugify("   ")).toBe("");
 	});
 
+	test("slugify transliterates Ukrainian/Russian Cyrillic to Latin", () => {
+		expect(slugify("Про нас")).toBe("pro-nas");
+		expect(slugify("Категорія")).toBe("kategoriya");
+	});
+
+	test("slugify handles mixed Cyrillic and Latin text", () => {
+		expect(slugify("Про нас — About us")).toBe("pro-nas-about-us");
+	});
+
+	test("slugify still folds Latin diacritics via NFKD (not broken by the Cyrillic map)", () => {
+		expect(slugify("café")).toBe("cafe");
+	});
+
+	test("slugify drops Cyrillic soft/hard signs (ъ, ь) with no Latin output", () => {
+		expect(slugify("подъезд")).toBe("podezd");
+	});
+
+	test("slugify returns empty string for punctuation-only Cyrillic-adjacent input", () => {
+		expect(slugify("!!! ??? ---")).toBe("");
+	});
+
 	test("SlugCell renders the value verbatim", () => {
 		const { getByText } = render(<SlugCell value="my-slug-value" />);
 		expect(getByText("my-slug-value")).toBeTruthy();
