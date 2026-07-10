@@ -1,6 +1,7 @@
 import { router } from "@inertiajs/react";
 import { useEffect } from "react";
 import type { Translate } from "../i18n/i18n";
+import { consumeServerRedirect } from "../inertia/navigationIntent";
 
 /**
  * Registers two navigation guards when `guardUnsaved` is true and `isDirty` is true:
@@ -29,6 +30,17 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean, t: Tran
 		window.addEventListener("beforeunload", handleBeforeUnload);
 
 		const offBefore = router.on("before", (event) => {
+			// A server-authored redirect (AdminPage's flash effect) is never
+			// subject to this guard, regardless of isDirty: it's the reset in
+			// router.post's onSuccess racing the flash-driven router.visit as
+			// two independently-scheduled updates, not a reliably-ordered pair,
+			// so isDirty can still read true when this fires. Consumed before
+			// the isDirty check (and for every navigation, not just GET) so the
+			// one-shot flag can't outlive the redirect it was set for and
+			// silently wave through a later, unrelated navigation.
+			if (consumeServerRedirect()) {
+				return;
+			}
 			// Only intercept GET navigation (page changes). POST/PATCH/DELETE
 			// visits are form submissions — block those and the save button itself
 			// would show the confirm dialog.
