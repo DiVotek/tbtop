@@ -1,8 +1,28 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
+import * as inertiaReact from "@inertiajs/react";
 import type { AdminClient } from "../data/client";
 import { registerFields } from "../render/registerFields";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import { materialize } from "./materialize";
+
+// materializeActions' submitHandler calls router.post directly. bun's
+// mock.module is process-global, so spread the real module and override only
+// router (mirroring inertia/AdminPageContent.test.tsx) to avoid leaking a
+// prop-dropping stub for Link/usePage/etc. into other test files.
+let postImpl: (
+	url: string,
+	data: unknown,
+	options: { onSuccess?: () => void; onError?: (errors: Record<string, string>) => void },
+) => void = () => {};
+
+mock.module("@inertiajs/react", () => ({
+	...inertiaReact,
+	router: {
+		post: (url: string, data: unknown, options: Record<string, unknown>) =>
+			postImpl(url, data, options as never),
+		on: mock(() => () => {}),
+	},
+}));
 
 function node(kind: string, options: Record<string, unknown>, name?: string): StructureNode {
 	return { kind, options, meta: {}, ...(name ? { name } : {}) } as StructureNode;
@@ -277,6 +297,42 @@ describe("materialize form", () => {
 		const save = children.find((c) => c.name === "save") as StructureNode;
 		expect(opts(save).isSubmit).toBe(true);
 		expect(opts(back).isSubmit).toBeUndefined();
+	});
+
+	it("marks the form clean before resolving, so a redirect flash effect after save does not hit the unsaved guard", async () => {
+		// Regression, submit-path counterpart to the serverHandler fix above:
+		// router.post's onSuccess resolves the action promise, but the server's
+		// back() response carries flash effects (executed in AdminPage's
+		// useEffect, with no form in context) that can include a redirect —
+		// a plain GET router.visit. useUnsavedGuard reads form.isDirty at visit
+		// time, so if the form controller is still dirty when that GET fires,
+		// the user sees a native "leave site?" confirm right after a successful
+		// save. form.reset() must run before the promise resolves.
+		postImpl = (_url, _data, options) => {
+			options.onSuccess?.();
+		};
+
+		const calls: string[] = [];
+		const out = materialize(form, { ...BASE, data: {} });
+		const children = opts(out).children as StructureNode[];
+		const save = children.find((c) => c.name === "save") as StructureNode;
+		const handler = opts(save).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await handler(
+			fakeCtx({
+				form: {
+					initial: { title: "Old" },
+					data: { title: "New" },
+					isDirty: true,
+					isValid: true,
+					changedFields: ["title"],
+					set: () => {},
+					reset: () => calls.push("reset"),
+				},
+			}),
+		);
+
+		expect(calls).toEqual(["reset"]);
 	});
 });
 

@@ -109,7 +109,18 @@ function submitHandler(
 			router.post(`${basePath}/forms/${formName}`, data, {
 				preserveScroll: true,
 				preserveState: true,
-				onSuccess: () => resolve(),
+				onSuccess: () => {
+					// Mark the form clean before resolving: props are already updated
+					// at this point, so initial reflects the freshly saved record and
+					// reset() re-syncs to it. Flash effects (executed separately in
+					// AdminPage, without a form in context) may include a redirect —
+					// a plain GET router.visit — and the unsaved-changes guard would
+					// otherwise see a still-dirty form and block it with a native
+					// "leave site?"/confirm prompt right after a successful save. See
+					// the same fix for serverHandler above.
+					ctx.form?.reset();
+					resolve();
+				},
 				onError: (errors) => reject({ errors: liftNestedErrors(errors) }),
 			});
 		});
