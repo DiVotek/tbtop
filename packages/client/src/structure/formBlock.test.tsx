@@ -189,6 +189,32 @@ describe("Form validation cadence", () => {
 		expect(queryByTestId("field-error-title")).toBeNull();
 	});
 
+	test("consumesForm:false action (Cancel) runs its handler even when the form is invalid", async () => {
+		// Regression: the create modal's Cancel was blocked by the form's
+		// required-field pre-flight — a cancel/close action must always run.
+		let handlerFired = false;
+		const node = s.form(
+			{ query: async () => ({ title: "ab" }), schema: makeBlockingSchema() },
+			[
+				s.text({ name: "title" }),
+				s.action({
+					name: "cancel",
+					consumesForm: false,
+					handler: async () => {
+						handlerFired = true;
+					},
+				}),
+			],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const btn = await findByTestId("action-cancel");
+		await act(async () => {
+			fireEvent.click(btn);
+		});
+		expect(handlerFired).toBe(true);
+	});
+
 	test("Form schema parse blocks handler when invalid", async () => {
 		let handlerFired = false;
 		const node = s.form(

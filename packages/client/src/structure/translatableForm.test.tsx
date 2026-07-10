@@ -219,4 +219,53 @@ describe("Translatable form integration", () => {
 		expect((getByLabelText("note.en") as HTMLInputElement).value).toBe("A");
 		expect((getByLabelText("note.uk") as HTMLInputElement).value).toBe("Б");
 	});
+
+	// -----------------------------------------------------------------------
+	// Regression: a translatable slug reading a translatable source field must
+	// derive per-locale, not go blank. Before the fix, SlugForm resolved
+	// fromField ("name") against the top-level form data, which is a
+	// {en, uk} locale-map, not a string — sourceAt returned "" for every panel.
+	// -----------------------------------------------------------------------
+	test("translatable slug sourced from a translatable field derives independently per locale", async () => {
+		const user = userEvent.setup();
+		const Wrap = wrapWithLocales(["en", "uk"], "en");
+		const node = s.form(
+			{ query: async () => ({ name: { en: "", uk: "" }, slug: { en: "", uk: "" } }) },
+			[
+				s.text({ name: "name", translatable: true } as Parameters<typeof s.text>[0]),
+				s.slug({
+					name: "slug",
+					fromField: "name",
+					translatable: true,
+				} as Parameters<typeof s.slug>[0]),
+			],
+		);
+		const { container, findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("content-locale-bar");
+
+		const nameEn = inputByName(container, "name.en");
+		const slugEn = container.querySelector<HTMLInputElement>(
+			"[data-field='slug.en'] input",
+		) as HTMLInputElement;
+		await user.type(nameEn, "Hello World");
+		await waitFor(() => expect(slugEn.value).toBe("hello-world"));
+
+		// The uk panel's slug must stay untouched by the en-panel input.
+		const slugUk = container.querySelector<HTMLInputElement>(
+			"[data-field='slug.uk'] input",
+		) as HTMLInputElement;
+		expect(slugUk.value).toBe("");
+
+		// Switch to uk and type into name.uk — only the uk slug panel reacts.
+		const ukTab = await findByTestId("locale-tab-uk");
+		await act(async () => {
+			fireEvent.click(ukTab);
+		});
+		const nameUk = inputByName(container, "name.uk");
+		await user.type(nameUk, "Про нас");
+		await waitFor(() => expect(slugUk.value).toBe("pro-nas"));
+
+		// en panel's slug is unaffected by the uk-panel input.
+		expect(slugEn.value).toBe("hello-world");
+	});
 });

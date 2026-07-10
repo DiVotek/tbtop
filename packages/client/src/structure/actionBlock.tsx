@@ -116,7 +116,14 @@ function PlainActionBlock({
 		}
 		setPending(true);
 		try {
-			await runHandlerWithValidation({ handler: opts.handler, ctx, formHandle });
+			await runHandlerWithValidation({
+				handler: opts.handler,
+				ctx,
+				formHandle,
+				// Explicit false = the handler never reads the form (Cancel, close,
+				// row actions) — it must run even when required fields are empty.
+				preflight: opts.consumesForm !== false,
+			});
 		} finally {
 			setPending(false);
 		}
@@ -144,10 +151,12 @@ interface RunInput {
 	handler: NonNullable<ActionOptions["handler"]>;
 	ctx: ClientActionContext;
 	formHandle: ReturnType<typeof useNearestFormController>;
+	/** Run the form's pre-flight schema parse before the handler. */
+	preflight: boolean;
 }
 
 async function runHandlerWithValidation(input: RunInput): Promise<void> {
-	if (input.formHandle && !preFlightSchemaParse(input.formHandle)) {
+	if (input.preflight && input.formHandle && !preFlightSchemaParse(input.formHandle)) {
 		input.formHandle.notifyErrorsApplied();
 		return;
 	}

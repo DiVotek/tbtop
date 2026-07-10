@@ -1,8 +1,24 @@
-import type { ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 import { useActiveLocale } from "../structure/contentLocaleContext";
 import type { FieldFormProps } from "./fieldProps";
 
 type LocaleMap = Record<string, unknown>;
+
+// Tells an inner field which locale panel it is mounted in. Distinct from
+// ActiveLocaleContext (which locale panel is currently VISIBLE): every panel
+// is mounted regardless of visibility, and each one needs to know its OWN
+// locale — e.g. a slug field resolving a translatable source field must read
+// `${fromField}.${panelLocale}`, not the currently active tab's locale.
+const PanelLocaleCtx = createContext<string | null>(null);
+
+export function PanelLocaleProvider({ locale, children }: { locale: string; children: ReactNode }) {
+	return <PanelLocaleCtx.Provider value={locale}>{children}</PanelLocaleCtx.Provider>;
+}
+
+/** The content locale of the translatable panel this field is mounted in, if any. */
+export function usePanelLocale(): string | null {
+	return useContext(PanelLocaleCtx);
+}
 
 interface TranslatableWrapperProps {
 	name: string;
@@ -96,7 +112,7 @@ function renderLocalePanel(input: PanelInput) {
 			data-locale={locale}
 			style={locale !== active ? { display: "none" } : undefined}
 		>
-			{renderInner(props)}
+			<PanelLocaleProvider locale={locale}>{renderInner(props)}</PanelLocaleProvider>
 		</div>
 	);
 }

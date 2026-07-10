@@ -1,5 +1,6 @@
 import { router } from "@inertiajs/react";
 import type { ClientActionContext, NotificationConfig } from "../structure/types";
+import { markServerRedirect } from "./navigationIntent";
 
 export interface ServerEffect {
 	kind: "notify" | "redirect" | "refreshTable" | "resetForm" | "closeModal" | "haltModal";
@@ -44,6 +45,10 @@ function applyNotify(effect: ServerEffect, ctx: EffectContext): void {
 
 function applyRedirect(effect: ServerEffect): void {
 	if (effect.href) {
+		// A server-authored redirect is an intentional navigation, not an
+		// accidental page leave — see navigationIntent.ts for why the
+		// unsaved-changes guard must not block it regardless of ordering.
+		markServerRedirect();
 		router.visit(effect.href);
 	}
 }
