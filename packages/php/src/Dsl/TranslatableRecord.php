@@ -40,10 +40,7 @@ final class TranslatableRecord
             if ($child instanceof Field && $child->isTranslatableField()) {
                 $names[] = $child->name;
             } elseif ($child instanceof Node) {
-                $nested = $child->options['children'] ?? [];
-                if (is_array($nested)) {
-                    $names = [...$names, ...self::translatableNames(array_values($nested))];
-                }
+                $names = [...$names, ...self::translatableNames($child->nestedChildren())];
             }
         }
 

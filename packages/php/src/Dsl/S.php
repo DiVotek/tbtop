@@ -362,13 +362,7 @@ final class S
                 return $child->translatable();
             }
             if ($child instanceof Node) {
-                $nested = $child->options['children'] ?? $child->options['fields'] ?? null;
-                if (is_array($nested)) {
-                    $key = isset($child->options['children']) ? 'children' : 'fields';
-                    $newOpts = array_merge($child->options, [$key => self::cascadeTranslatable($nested)]);
-
-                    return new Node($child->kind, $newOpts, $child->name, $child->meta);
-                }
+                return $child->translatable();
             }
 
             return $child;

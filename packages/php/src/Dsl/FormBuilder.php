@@ -203,9 +203,7 @@ final class FormBuilder implements JsonSerializable
             return $child->childFields();
         }
         if ($child instanceof Node) {
-            $nested = $child->options['children'] ?? $child->options['fields'] ?? [];
-
-            return is_array($nested) ? array_values($nested) : [];
+            return $child->nestedChildren();
         }
 
         return [];

@@ -30,8 +30,39 @@ final class Node implements JsonSerializable
                 $newOpts[$key] = S::cascadeTranslatable($newOpts[$key]);
             }
         }
+        if (isset($newOpts['tabs']) && is_array($newOpts['tabs'])) {
+            $newOpts['tabs'] = array_map(static function (mixed $tab): mixed {
+                if (is_array($tab) && isset($tab['body'])) {
+                    $tab['body'] = S::cascadeTranslatable([$tab['body']])[0];
+                }
+
+                return $tab;
+            }, $newOpts['tabs']);
+        }
 
         return new self($this->kind, $newOpts, $this->name, $this->meta);
+    }
+
+    /**
+     * Nested children of a container Node for tree-walkers: 'children'/'fields'
+     * directly, plus every tab body when this is a tabs() node. A tab's body is a
+     * single DSL value (Field|Node|TextBlock|...), not a list, so it is appended
+     * as one more child rather than merged in.
+     *
+     * @return list<mixed>
+     */
+    public function nestedChildren(): array
+    {
+        $nested = $this->options['children'] ?? $this->options['fields'] ?? [];
+        $out = is_array($nested) ? array_values($nested) : [];
+
+        foreach ($this->options['tabs'] ?? [] as $tab) {
+            if (is_array($tab) && isset($tab['body'])) {
+                $out[] = $tab['body'];
+            }
+        }
+
+        return $out;
     }
 
     /** @return array<string, mixed> */
