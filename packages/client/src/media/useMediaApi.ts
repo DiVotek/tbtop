@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApiBase, useClient } from "../data/client";
-import { extractMessage } from "./mediaApiHelpers";
+import {
+	extractMessage,
+	normalizeMediaFolder,
+	normalizeMediaListResponse,
+} from "./mediaApiHelpers";
 import type { MediaFolder, MediaListResponse } from "./types";
 
 export {
@@ -106,7 +110,7 @@ export function useMediaItems(params: MediaQueryParams): {
 		client.get("/media", query).then(
 			(raw) => {
 				if (!cancelled) {
-					setState({ kind: "loaded", data: raw as MediaListResponse });
+					setState({ kind: "loaded", data: normalizeMediaListResponse(raw) });
 				}
 			},
 			(err: unknown) => {
@@ -153,7 +157,7 @@ export function useMediaFolders(): {
 		client.get("/media/folders").then(
 			(raw) => {
 				if (!cancelled) {
-					setFolders(raw as MediaFolder[]);
+					setFolders(Array.isArray(raw) ? raw.map(normalizeMediaFolder) : []);
 					setLoading(false);
 				}
 			},

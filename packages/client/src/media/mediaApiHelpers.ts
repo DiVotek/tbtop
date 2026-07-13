@@ -3,9 +3,48 @@
  * folder CRUD — plus pure utilities shared across media components.
  */
 import type { useClient } from "../data/client";
-import type { MediaFolder, MediaItem } from "./types";
+import type { MediaFolder, MediaItem, MediaListResponse } from "./types";
 
 // ─── API helpers (non-hook) ────────────────────────────────────────────────────
+
+/**
+ * The PHP MediaResource serialises ids as integers while the client contract
+ * declares them as strings; form values always arrive as strings. Normalise
+ * every API response at the boundary so id comparisons never mix types.
+ */
+export function normalizeMediaItem(raw: unknown): MediaItem {
+	const item = raw as MediaItem;
+	return {
+		...item,
+		id: String(item.id),
+		folderId: item.folderId == null ? null : String(item.folderId),
+	};
+}
+
+export function normalizeMediaFolder(raw: unknown): MediaFolder {
+	const folder = raw as MediaFolder;
+	return {
+		...folder,
+		id: String(folder.id),
+		parentId: folder.parentId == null ? null : String(folder.parentId),
+	};
+}
+
+/**
+ * Normalise item and child-folder ids in a list payload; malformed payloads
+ * pass through unchanged.
+ */
+export function normalizeMediaListResponse(raw: unknown): MediaListResponse {
+	const data = raw as MediaListResponse;
+	if (!Array.isArray(data?.data)) {
+		return data;
+	}
+	return {
+		...data,
+		data: data.data.map(normalizeMediaItem),
+		...(Array.isArray(data.folders) ? { folders: data.folders.map(normalizeMediaFolder) } : {}),
+	};
+}
 
 interface UploadItemInput {
 	file: File;
@@ -22,9 +61,9 @@ export async function uploadMediaItem(
 	if (input.folderId !== null) {
 		fd.append("folderId", input.folderId);
 	}
-	return (await client.upload("/media/upload", fd, {
-		onProgress: input.onProgress,
-	})) as MediaItem;
+	return normalizeMediaItem(
+		await client.upload("/media/upload", fd, { onProgress: input.onProgress }),
+	);
 }
 
 interface ImportUrlInput {
@@ -44,7 +83,7 @@ export async function importMediaUrl(
 	if (input.folderId !== null) {
 		body.folderId = input.folderId;
 	}
-	return (await client.post("/media/import-url", body)) as MediaItem;
+	return normalizeMediaItem(await client.post("/media/import-url", body));
 }
 
 interface PatchItemInput {
@@ -60,7 +99,7 @@ export async function patchMediaItem(
 	id: string,
 	patch: PatchItemInput,
 ): Promise<MediaItem> {
-	return (await client.patch(`/media/${id}`, patch)) as MediaItem;
+	return normalizeMediaItem(await client.patch(`/media/${id}`, patch));
 }
 
 export async function replaceMediaItem(
@@ -70,7 +109,7 @@ export async function replaceMediaItem(
 ): Promise<MediaItem> {
 	const fd = new FormData();
 	fd.append("file", file);
-	return (await client.upload(`/media/${id}/replace`, fd)) as MediaItem;
+	return normalizeMediaItem(await client.upload(`/media/${id}/replace`, fd));
 }
 
 export async function deleteMediaItem(
@@ -84,7 +123,7 @@ export async function fetchMediaItem(
 	client: ReturnType<typeof useClient>,
 	id: string,
 ): Promise<MediaItem> {
-	return (await client.get(`/media/${id}`)) as MediaItem;
+	return normalizeMediaItem(await client.get(`/media/${id}`));
 }
 
 export async function createFolder(
@@ -96,7 +135,7 @@ export async function createFolder(
 	if (parentId !== null) {
 		body.parentId = parentId;
 	}
-	return (await client.post("/media/folders", body)) as MediaFolder;
+	return normalizeMediaFolder(await client.post("/media/folders", body));
 }
 
 export async function renameFolder(
@@ -104,7 +143,7 @@ export async function renameFolder(
 	id: string,
 	name: string,
 ): Promise<MediaFolder> {
-	return (await client.patch(`/media/folders/${id}`, { name })) as MediaFolder;
+	return normalizeMediaFolder(await client.patch(`/media/folders/${id}`, { name }));
 }
 
 export async function deleteFolder(
