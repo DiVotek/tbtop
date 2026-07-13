@@ -158,6 +158,7 @@ function AdminShell({ children }: { children: ReactNode }) {
 
 	return (
 		<I18nProvider
+			locale={locale}
 			defaultLang={locale}
 			languages={languages}
 			pluginMessages={pluginMessages}

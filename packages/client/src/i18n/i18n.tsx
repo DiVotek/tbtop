@@ -36,12 +36,23 @@ const TranslateContext = createContext<Translate | undefined>(undefined);
 const LocaleContext = createContext<I18nState | undefined>(undefined);
 
 export function I18nProvider({
+	locale: serverLocale,
 	defaultLang,
 	languages,
 	pluginMessages,
 	onLocaleChange,
 	children,
 }: {
+	/**
+	 * The locale the server actually resolved messages for. When set, it wins
+	 * over the stored preference and is mirrored back to localStorage — the
+	 * stored value is just a hint, while this is the only locale whose
+	 * translations are guaranteed present. Without this, a stale stored
+	 * preference (e.g. a session recreated by remember-login without the
+	 * locale key) makes the switcher show one locale while every string
+	 * silently renders from the fallback.
+	 */
+	locale?: string;
 	defaultLang?: string;
 	languages?: Record<string, LocaleLoader>;
 	pluginMessages?: PluginMessages;
@@ -50,9 +61,19 @@ export function I18nProvider({
 }) {
 	const fallbackLang = defaultLang ?? BUILTIN_DEFAULT_LANG;
 	const available = useMemo(() => Object.keys(languages ?? {}), [languages]);
-	const initialLocale = pickInitialLocale(available, fallbackLang);
+	const resolvedServerLocale =
+		serverLocale && (available.length === 0 || available.includes(serverLocale))
+			? serverLocale
+			: undefined;
+	const initialLocale = resolvedServerLocale ?? pickInitialLocale(available, fallbackLang);
 
 	const [locale, setLocaleState] = useState(initialLocale);
+
+	useEffect(() => {
+		if (resolvedServerLocale) {
+			writeStoredLocale(resolvedServerLocale);
+		}
+	}, [resolvedServerLocale]);
 	const [resolved, setResolved] = useState<ResolvedMessages>(() => ({
 		active: pluginMessages?.[initialLocale] ?? {},
 		fallback: pluginMessages?.[fallbackLang] ?? {},
