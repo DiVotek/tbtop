@@ -167,6 +167,34 @@ describe("MediaPickerForm: variant preview", () => {
 		expect(getByTestId("media-picker-preview-cover").tagName).toBe("BUTTON");
 	});
 
+	test("preview hydrates when the API returns a numeric id for a string form value", async () => {
+		// The PHP MediaResource serialises ids as integers; form values arrive
+		// as strings. Hydration must not depend on the id's runtime type — and
+		// must not refetch in a loop when the types differ.
+		let fetches = 0;
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/1")) {
+				fetches += 1;
+				return new Response(JSON.stringify({ ...ITEM_IMG, id: 1 }), { status: 200 });
+			}
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+		const { findByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="cover"
+					value="1"
+					onChange={() => {}}
+					options={{ multiple: false, variant: "preview" }}
+				/>
+			</Wrap>,
+		);
+		const img = await findByTestId("media-preview-img-1");
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		expect(fetches).toBe(1);
+	});
+
 	test("corner clear button fires onChange(null)", async () => {
 		const user = userEvent.setup({ delay: null });
 		const changes: Array<unknown> = [];

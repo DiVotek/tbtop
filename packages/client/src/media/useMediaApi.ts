@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApiBase, useClient } from "../data/client";
-import { extractMessage } from "./mediaApiHelpers";
+import { extractMessage, normalizeMediaFolder, normalizeMediaItem } from "./mediaApiHelpers";
 import type { MediaFolder, MediaListResponse } from "./types";
 
 export {
@@ -80,6 +80,12 @@ function buildMediaQuery(p: MediaQueryParams): Record<string, string> {
 
 // ─── useMediaItems ────────────────────────────────────────────────────────────
 
+/** Normalise item ids in a list payload; malformed payloads pass through. */
+function normalizeListResponse(raw: unknown): MediaListResponse {
+	const data = raw as MediaListResponse;
+	return Array.isArray(data?.data) ? { ...data, data: data.data.map(normalizeMediaItem) } : data;
+}
+
 export function useMediaItems(params: MediaQueryParams): {
 	state: MediaQueryState;
 	refetch: () => void;
@@ -106,7 +112,7 @@ export function useMediaItems(params: MediaQueryParams): {
 		client.get("/media", query).then(
 			(raw) => {
 				if (!cancelled) {
-					setState({ kind: "loaded", data: raw as MediaListResponse });
+					setState({ kind: "loaded", data: normalizeListResponse(raw) });
 				}
 			},
 			(err: unknown) => {
@@ -153,7 +159,7 @@ export function useMediaFolders(): {
 		client.get("/media/folders").then(
 			(raw) => {
 				if (!cancelled) {
-					setFolders(raw as MediaFolder[]);
+					setFolders(Array.isArray(raw) ? raw.map(normalizeMediaFolder) : []);
 					setLoading(false);
 				}
 			},
