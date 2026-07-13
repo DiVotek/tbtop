@@ -69,11 +69,16 @@ export function I18nProvider({
 
 	const [locale, setLocaleState] = useState(initialLocale);
 
+	// Follows later prop changes too, not just the mount: the admin shell is
+	// an Inertia persistent layout, so a session recreated mid-navigation
+	// swaps the server locale without remounting this provider.
 	useEffect(() => {
 		if (resolvedServerLocale) {
 			writeStoredLocale(resolvedServerLocale);
+			setLocaleState(resolvedServerLocale);
 		}
 	}, [resolvedServerLocale]);
+
 	const [resolved, setResolved] = useState<ResolvedMessages>(() => ({
 		active: pluginMessages?.[initialLocale] ?? {},
 		fallback: pluginMessages?.[fallbackLang] ?? {},

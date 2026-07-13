@@ -222,6 +222,39 @@ test("i18n mirrors the server-resolved locale to localStorage", async () => {
 	await waitFor(() => expect(window.localStorage.getItem("tbtop:locale")).toBe("en"));
 });
 
+test("i18n follows a server locale change without remount (persistent layout)", async () => {
+	// The admin shell is an Inertia persistent layout: a session recreated
+	// mid-navigation swaps the server locale via props, no remount happens.
+	const languages = { en: async () => ({}), uk: async () => ({}) };
+	const { getByTestId, rerender } = render(
+		<I18nProvider
+			locale="uk"
+			defaultLang="uk"
+			languages={languages}
+			pluginMessages={{ uk: { "action.save": "Зберегти" } }}
+		>
+			<LocaleProbe />
+			<Probe k="action.save" />
+		</I18nProvider>,
+	);
+	expect(getByTestId("locale").textContent).toBe("uk");
+
+	rerender(
+		<I18nProvider
+			locale="en"
+			defaultLang="en"
+			languages={languages}
+			pluginMessages={{ en: { "action.save": "SaveEN" } }}
+		>
+			<LocaleProbe />
+			<Probe k="action.save" />
+		</I18nProvider>,
+	);
+	await waitFor(() => expect(getByTestId("locale").textContent).toBe("en"));
+	await waitFor(() => expect(getByTestId("out").textContent).toBe("SaveEN"));
+	expect(window.localStorage.getItem("tbtop:locale")).toBe("en");
+});
+
 test("i18n falls back to the stored pick when the server locale is not available", async () => {
 	window.localStorage.setItem("tbtop:locale", "uk");
 	const { getByTestId } = render(
