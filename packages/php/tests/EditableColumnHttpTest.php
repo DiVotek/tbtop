@@ -113,6 +113,19 @@ it('Editable: oversized value fails validation with 422 and errors bag', functio
         ->assertJsonValidationErrors(['note']);
 });
 
+it('Editable: validation error message uses the column label, not the raw name', function (): void {
+    $post = EcPost::where('title', 'First')->first();
+
+    $response = $this->postJson(
+        '/admin/editable-posts/cells/ecposts/note',
+        ['payload' => ['id' => $post->id, 'value' => 'toolong_value']],
+    );
+
+    $message = $response->json('errors.note.0');
+    expect($message)->toContain('Note')
+        ->and($message)->not->toContain('note must');
+});
+
 // ---------------------------------------------------------------------------
 // Non-editable column → 404
 // ---------------------------------------------------------------------------

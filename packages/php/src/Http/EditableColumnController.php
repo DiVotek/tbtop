@@ -75,9 +75,14 @@ final class EditableColumnController
             return $value;
         }
 
+        $label = $col->labelText();
+        $attributes = $label === null ? [] : [$columnName => $label];
+
         $validated = Validator::make(
             [$columnName => $value],
             [$columnName => $rules],
+            [],
+            $attributes,
         )->validate();
 
         return $validated[$columnName];

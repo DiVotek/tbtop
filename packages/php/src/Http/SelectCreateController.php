@@ -32,7 +32,8 @@ final class SelectCreateController
         }
 
         $rules = RuleWalker::collect($field->creatableFields());
-        $validated = $request->validate($rules);
+        $attributes = RuleWalker::collectAttributes($field->creatableFields());
+        $validated = $request->validate($rules, [], $attributes);
 
         $closure = $field->creatableClosure();
         /** @var array{value: string, label: string} $result */

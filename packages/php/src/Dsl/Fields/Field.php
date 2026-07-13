@@ -192,6 +192,11 @@ abstract class Field implements JsonSerializable
         return $this->opts['default'] ?? null;
     }
 
+    public function labelText(): ?string
+    {
+        return $this->opts['label'] ?? null;
+    }
+
     /** @return list<mixed> */
     public function childFields(): array
     {

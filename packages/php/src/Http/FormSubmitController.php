@@ -25,7 +25,7 @@ final class FormSubmitController
             throw new NotFoundHttpException("Form \"{$tbtopForm}\" is not submittable on this page.");
         }
 
-        $validated = $request->validate($form->collectRules());
+        $validated = $request->validate($form->collectRules(), [], $form->collectAttributes());
         $ctx = new ActionCtx(
             request: $request,
             user: $request->user(),
