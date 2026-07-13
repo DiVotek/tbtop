@@ -27,6 +27,7 @@ final class EditAction
     /**
      * @param  Closure(ActionCtx): array<string, mixed>  $loadUsing
      * @param  Closure(ActionCtx): mixed  $saveUsing
+     * @param  string|null  $title  Modal title; defaults to the translated "Edit record".
      * @param  string|null  $saveName  Inner save action name; defaults to "{name}Save".
      */
     public static function make(
@@ -35,7 +36,7 @@ final class EditAction
         Closure $loadUsing,
         Closure $saveUsing,
         string $name = 'edit',
-        string $title = 'Edit record',
+        ?string $title = null,
         ?string $saveName = null,
     ): ActionBuilder {
         $actions = [
@@ -44,8 +45,8 @@ final class EditAction
         ];
 
         return $s->action($name)
-            ->label('Edit')
-            ->modal($title, RecordAction::formWithActions($form, $s, $actions))
+            ->label(__('tbtop-admin::admin.action.edit'))
+            ->modal($title ?? __('tbtop-admin::admin.edit.title'), RecordAction::formWithActions($form, $s, $actions))
             ->query($loadUsing, needs: ['row']);
     }
 
@@ -58,19 +59,19 @@ final class EditAction
             return $result instanceof Effects ? $result : self::saveTail();
         };
 
-        return $s->action($saveName)->label('Save')->color('primary')
+        return $s->action($saveName)->label(__('tbtop-admin::admin.action.save'))->color('primary')
             ->handle($wrapped, needs: ['row', 'form']);
     }
 
     /** The Cancel button — a server round-trip that only closes the modal. */
     private static function cancelAction(S $s, string $name): ActionBuilder
     {
-        return $s->action($name.'Cancel')->label('Cancel')
+        return $s->action($name.'Cancel')->label(__('tbtop-admin::admin.action.cancel'))
             ->handle(static fn (): Effects => Effects::make()->closeModal());
     }
 
     private static function saveTail(): Effects
     {
-        return Effects::make()->notify('Saved')->closeModal()->refreshTable();
+        return Effects::make()->notify(__('tbtop-admin::admin.entity.update.success'))->closeModal()->refreshTable();
     }
 }

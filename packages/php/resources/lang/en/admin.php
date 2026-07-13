@@ -5,6 +5,7 @@ return [
         'save' => 'Save',
         'cancel' => 'Cancel',
         'delete' => 'Delete',
+        'delete_selected' => 'Delete selected',
         'create' => 'Create',
         'edit' => 'Edit',
         'confirm' => 'Confirm',
@@ -55,8 +56,16 @@ return [
     'delete' => [
         'confirm' => [
             'title' => 'Delete record?',
+            'bulk_title' => 'Delete selected records?',
             'body' => 'This action cannot be undone.',
         ],
+        'notify' => [
+            'success' => 'Record deleted',
+            'bulk_success' => 'Selected records deleted',
+        ],
+    ],
+    'edit' => [
+        'title' => 'Edit record',
     ],
     'form' => [
         'unsaved_guard' => [
