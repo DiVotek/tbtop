@@ -3,7 +3,7 @@ import type { FormEvent, ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 import type { FieldFormProps } from "../fields/fieldProps";
 import { TranslatableWrapper } from "../fields/translatableWrapper";
-import { useTranslation } from "../i18n/i18n";
+import { type Translate, translateValidationMessage, useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { applyColumnPlacement } from "../render/columnPlacement";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
@@ -94,6 +94,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 	const ctrl = useFormController({ initial, schema });
 	const localeConfig = useContentLocaleConfig();
 	const t = useTranslation();
+	const formCtx: FormRenderCtx = { ctrl, locales: localeConfig.locales, t };
 	useSyncInitial(initial, ctrl.reset);
 	const guard = useUnsavedGuard(ctrl.isDirty, guardUnsaved);
 	const hasTranslatable = detectTranslatableFields(children ?? []);
@@ -120,7 +121,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 					/>
 					{(children ?? []).map((child, i) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: structure children are positional
-						<div key={i}>{renderFormChild(child, ctrl, localeConfig.locales)}</div>
+						<div key={i}>{renderFormChild(child, formCtx)}</div>
 					))}
 				</form>
 			</ActiveLocaleProvider>
@@ -199,11 +200,15 @@ function useSyncInitial(initial: Bag, reset: () => void): void {
 	}, [initial, reset]);
 }
 
-function renderFormChild(
-	node: StructureNode,
-	ctrl: ControllerHandle,
-	locales: string[],
-): ReactNode {
+/** Per-form values every recursive renderFormChild/renderFieldNode call needs. */
+interface FormRenderCtx {
+	ctrl: ControllerHandle;
+	locales: string[];
+	t: Translate;
+}
+
+function renderFormChild(node: StructureNode, formCtx: FormRenderCtx): ReactNode {
+	const { ctrl } = formCtx;
 	const condCtx: ConditionContext = { record: undefined, data: ctrl.data, user: null };
 	if (isNodeHidden(node.meta, condCtx)) {
 		return null;
@@ -213,14 +218,14 @@ function renderFormChild(
 	const options = mergeName(node);
 	const rendered =
 		descriptor?.behavior === "field" && node.name
-			? renderFieldNode({ descriptor, node, options, ctrl, locales, disabled })
+			? renderFieldNode({ descriptor, node, options, disabled, formCtx })
 			: invokeBlock({
 					kind: node.kind,
 					options,
 					meta: node.meta,
 					ctx: { surface: "form" },
 					children: (options as { children?: StructureNode[] }).children,
-					renderChild: (child) => renderFormChild(child, ctrl, locales),
+					renderChild: (child) => renderFormChild(child, formCtx),
 				});
 	return applyColumnPlacement(rendered, options);
 }
@@ -229,13 +234,13 @@ interface RenderFieldInput {
 	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>;
 	node: StructureNode;
 	options: Bag;
-	ctrl: ControllerHandle;
-	locales: string[];
 	disabled: boolean;
+	formCtx: FormRenderCtx;
 }
 
 function renderFieldNode(input: RenderFieldInput): ReactNode {
-	const { descriptor, node, options, ctrl, locales, disabled } = input;
+	const { descriptor, node, options, disabled, formCtx } = input;
+	const { ctrl, t } = formCtx;
 	const name = node.name as string;
 	const fieldError = ctrl.fieldErrors[name];
 	const label = (options as { label?: string }).label;
@@ -250,11 +255,10 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 				descriptor,
 				node,
 				options,
-				ctrl,
-				locales,
 				name,
 				fieldId,
 				disabled,
+				formCtx,
 			})
 		: renderDescriptor(descriptor, {
 				kind: node.kind,
@@ -268,13 +272,13 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 						onChange: (next) => ctrl.set(name, next),
 						onBlur: () => {
 							ctrl.markTouched(name);
-							revalidateField(ctrl, name);
+							revalidateField(ctrl, name, t);
 						},
 						disabled,
 					},
 				},
 				children: undefined,
-				renderChild: (child) => renderFormChild(child, ctrl, locales),
+				renderChild: (child) => renderFormChild(child, formCtx),
 			});
 
 	return (
@@ -297,20 +301,20 @@ interface TranslatableFieldInput {
 	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>;
 	node: StructureNode;
 	options: Bag;
-	ctrl: ControllerHandle;
-	locales: string[];
 	name: string;
 	fieldId: string;
 	disabled: boolean;
+	formCtx: FormRenderCtx;
 }
 
 function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
-	const { descriptor, node, options, ctrl, locales, name, fieldId, disabled } = input;
+	const { descriptor, node, options, name, fieldId, disabled, formCtx } = input;
+	const { ctrl, locales } = formCtx;
 	// Strip name + translatable before forwarding to the wrapper — the wrapper
 	// derives per-locale names itself and must not see the parent field name.
 	const {
 		name: _n,
-		translatable: _t,
+		translatable: _translatable,
 		...innerOptions
 	} = options as Bag & {
 		name?: string;
@@ -320,9 +324,8 @@ function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
 		descriptor,
 		node,
 		options: innerOptions,
-		locales,
-		ctrl,
 		disabled,
+		formCtx,
 	});
 	const value = normalizeTranslatableValue(ctrl.data[name], locales);
 	return (
@@ -345,9 +348,8 @@ type MakeInnerRendererInput = {
 	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>;
 	node: StructureNode;
 	options: Bag;
-	locales: string[];
-	ctrl: ControllerHandle;
 	disabled: boolean;
+	formCtx: FormRenderCtx;
 };
 
 /**
@@ -360,9 +362,8 @@ function makeInnerRenderer({
 	descriptor,
 	node,
 	options,
-	locales,
-	ctrl,
 	disabled,
+	formCtx,
 }: MakeInnerRendererInput): (props: FieldFormProps<unknown>) => ReactNode {
 	return (props: FieldFormProps<unknown>) =>
 		renderDescriptor(descriptor, {
@@ -380,7 +381,7 @@ function makeInnerRenderer({
 				},
 			},
 			children: undefined,
-			renderChild: (child) => renderFormChild(child, ctrl, locales),
+			renderChild: (child) => renderFormChild(child, formCtx),
 		}) as ReactNode;
 }
 
@@ -404,7 +405,7 @@ function normalizeTranslatableValue(raw: unknown, locales: string[]): Record<str
 	return map;
 }
 
-export function revalidateField(ctrl: ControllerHandle, name: string): void {
+export function revalidateField(ctrl: ControllerHandle, name: string, t: Translate): void {
 	if (!ctrl.schema) {
 		return;
 	}
@@ -422,7 +423,7 @@ export function revalidateField(ctrl: ControllerHandle, name: string): void {
 			return;
 		}
 		const match = issues.find((i) => i.path[0] === name);
-		ctrl.setFieldError(name, match ? match.message : null);
+		ctrl.setFieldError(name, match ? translateValidationMessage(t, match.message) : null);
 	}
 }
 

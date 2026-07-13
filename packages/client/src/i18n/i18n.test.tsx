@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
-import { defaultMessages, I18nProvider, useLocale, useTranslation } from "./i18n";
+import {
+	defaultMessages,
+	I18nProvider,
+	translateValidationMessage,
+	useLocale,
+	useTranslation,
+} from "./i18n";
 
 function Probe({ k, fallback }: { k: string; fallback?: string }) {
 	const t = useTranslation();
@@ -370,4 +376,37 @@ test("i18n pluginMessages with {count} placeholder interpolates correctly via re
 	await waitFor(() =>
 		expect(getByTestId("out").textContent?.replace("{count}", "3")).toBe("3 selected"),
 	);
+});
+
+// ---------------------------------------------------------------------------
+// translateValidationMessage — the bridge between constraints.ts's compiled
+// preflight schema (which emits i18n keys, since it runs outside React and
+// has no useTranslation()) and the fieldError text actually shown to the user.
+// ---------------------------------------------------------------------------
+
+const identityT = (key: string, fallback?: string) => defaultMessages[key] ?? fallback ?? key;
+
+test("translateValidationMessage resolves a plain key (validation.required)", () => {
+	expect(translateValidationMessage(identityT, "validation.required")).toBe("Required");
+});
+
+test("translateValidationMessage resolves a parameterized key and interpolates the value", () => {
+	expect(translateValidationMessage(identityT, "validation.min:5")).toBe("Must be at least 5");
+	expect(translateValidationMessage(identityT, "validation.max:10")).toBe("Must be at most 10");
+});
+
+test("translateValidationMessage leaves a consumer-authored zod message unchanged", () => {
+	// A real zod schema throws arbitrary English text, not one of our keys —
+	// t() must fall through to the message itself, not mangle it.
+	expect(translateValidationMessage(identityT, "Title must be unique")).toBe(
+		"Title must be unique",
+	);
+});
+
+test("translateValidationMessage respects the active locale's override", () => {
+	const ukT = (key: string) =>
+		({ "validation.required": "Обов'язкове поле", "validation.min": "Мінімум {min}" })[key] ??
+		key;
+	expect(translateValidationMessage(ukT, "validation.required")).toBe("Обов'язкове поле");
+	expect(translateValidationMessage(ukT, "validation.min:3")).toBe("Мінімум 3");
 });

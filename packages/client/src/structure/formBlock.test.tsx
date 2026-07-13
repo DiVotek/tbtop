@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { I18nProvider } from "../i18n/i18n";
+import { compileConstraints } from "../inertia/constraints";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
@@ -314,6 +317,94 @@ describe("Form 422 auto-handling", () => {
 		});
 		const fieldError = await findByTestId("field-error-title");
 		expect(fieldError.textContent).toBe("too short");
+	});
+
+	test("Client-side preflight (compileConstraints) shows the translated 'Required' text, not a raw i18n key", async () => {
+		// Regression: compileConstraints emits i18n keys ("validation.required"),
+		// not display text — a missing translation step would leak the raw key
+		// into the UI on submit.
+		const schema = compileConstraints({ title: { required: true } });
+		const node = s.form({ query: async () => ({ title: "" }), schema }, [
+			s.text({ name: "title", label: "Title" }),
+			s.action({ name: "save", handler: async () => {} }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const btn = await findByTestId("action-save");
+		await act(async () => {
+			fireEvent.click(btn);
+		});
+		const fieldError = await findByTestId("field-error-title");
+		expect(fieldError.textContent).toBe("Required");
+		expect(fieldError.textContent).not.toBe("validation.required");
+	});
+
+	test("Client-side preflight respects the active locale — proves real translation, not a hardcoded English string", async () => {
+		// A hardcoded "Required" (the pre-fix behavior) can never do this: it's
+		// locale-blind by construction. Only translating the emitted key at
+		// display time can make the message follow the active locale.
+		const schema = compileConstraints({ title: { required: true } });
+		const node = s.form({ query: async () => ({ title: "" }), schema }, [
+			s.text({ name: "title", label: "Title" }),
+			s.action({ name: "save", handler: async () => {} }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(
+			<I18nProvider
+				defaultLang="en"
+				pluginMessages={{ uk: { "validation.required": "Обов'язкове поле" } }}
+				locale="uk"
+			>
+				<Wrap>{renderNode(node)}</Wrap>
+			</I18nProvider>,
+		);
+		const btn = await findByTestId("action-save");
+		await act(async () => {
+			fireEvent.click(btn);
+		});
+		const fieldError = await findByTestId("field-error-title");
+		expect(fieldError.textContent).toBe("Обов'язкове поле");
+	});
+
+	test("Client-side preflight min/max messages interpolate the constraint value on blur", async () => {
+		const user = userEvent.setup();
+		const schema = compileConstraints({ title: { min: 5 } });
+		const node = s.form({ query: async () => ({ title: "" }), schema }, [
+			s.text({ name: "title", label: "Title" }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByLabelText, findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => getByLabelText("Title"));
+		const input = getByLabelText("Title");
+		await user.type(input, "ab");
+		await user.tab();
+		const fieldError = await findByTestId("field-error-title");
+		expect(fieldError.textContent).toBe("Must be at least 5");
+		expect(fieldError.textContent).not.toBe("validation.min:5");
+	});
+
+	test("Client-side preflight min message respects the active locale with the value interpolated", async () => {
+		const user = userEvent.setup();
+		const schema = compileConstraints({ title: { min: 5 } });
+		const node = s.form({ query: async () => ({ title: "" }), schema }, [
+			s.text({ name: "title", label: "Title" }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByLabelText, findByTestId } = render(
+			<I18nProvider
+				defaultLang="en"
+				pluginMessages={{ uk: { "validation.min": "Мінімум {min}" } }}
+				locale="uk"
+			>
+				<Wrap>{renderNode(node)}</Wrap>
+			</I18nProvider>,
+		);
+		await waitFor(() => getByLabelText("Title"));
+		const input = getByLabelText("Title");
+		await user.type(input, "ab");
+		await user.tab();
+		const fieldError = await findByTestId("field-error-title");
+		expect(fieldError.textContent).toBe("Мінімум 5");
 	});
 });
 
