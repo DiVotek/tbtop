@@ -8,6 +8,7 @@
  */
 import { beforeAll, describe, expect, mock, test } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import { defaultMessages } from "../../i18n/defaultMessages";
 
 // ---------------------------------------------------------------------------
 // Module mocks — must be declared before any import of the mocked module.
@@ -23,7 +24,11 @@ mock.module("../actionContext", () => ({
 		params: {},
 		navigate: mock(() => {}),
 		notify: mockNotify,
-		t: (k: string) => k,
+		// Mirrors useTranslation()'s no-provider fallback (defaultMessages lookup,
+		// else the key itself) so EditableCell's translated pre-validation
+		// messages (translateValidationMessage) resolve the same way they do
+		// in the real app instead of leaking a raw "validation.required" key.
+		t: (k: string, fallback?: string) => defaultMessages[k] ?? fallback ?? k,
 		table: {
 			refresh: mockRefresh,
 			rows: [],

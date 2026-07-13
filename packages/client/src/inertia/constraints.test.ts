@@ -26,25 +26,52 @@ describe("compileConstraints max size", () => {
 	it("rejects an array that exceeds max by item count", () => {
 		const schema = { sections: { max: 2 } };
 		const tooMany = { sections: [{}, {}, {}] };
-		expect(errors(schema, tooMany)).toEqual(["Must be at most 2"]);
+		expect(errors(schema, tooMany)).toEqual(["validation.max:2"]);
 	});
 
 	it("counts array items for min", () => {
 		const schema = { sections: { min: 2 } };
-		expect(errors(schema, { sections: [{}] })).toEqual(["Must be at least 2"]);
+		expect(errors(schema, { sections: [{}] })).toEqual(["validation.min:2"]);
 		expect(errors(schema, { sections: [{}, {}] })).toEqual([]);
 	});
 
 	it("still measures strings by character length", () => {
 		const schema = { title: { max: 5 } };
-		expect(errors(schema, { title: "abcdef" })).toEqual(["Must be at most 5"]);
+		expect(errors(schema, { title: "abcdef" })).toEqual(["validation.max:5"]);
 		expect(errors(schema, { title: "abc" })).toEqual([]);
 	});
 
 	it("still measures numbers by value", () => {
 		const schema = { qty: { max: 10, min: 1 } };
-		expect(errors(schema, { qty: 11 })).toEqual(["Must be at most 10"]);
-		expect(errors(schema, { qty: 0 })).toEqual(["Must be at least 1"]);
+		expect(errors(schema, { qty: 11 })).toEqual(["validation.max:10"]);
+		expect(errors(schema, { qty: 0 })).toEqual(["validation.min:1"]);
 		expect(errors(schema, { qty: 5 })).toEqual([]);
+	});
+});
+
+describe("compileConstraints message keys (i18n)", () => {
+	it("required emits the validation.required key, not literal English text", () => {
+		const schema = { title: { required: true } };
+		expect(errors(schema, { title: "" })).toEqual(["validation.required"]);
+	});
+
+	it("email emits the validation.email key", () => {
+		const schema = { email: { email: true } };
+		expect(errors(schema, { email: "not-an-email" })).toEqual(["validation.email"]);
+	});
+
+	it("integer emits the validation.integer key", () => {
+		const schema = { qty: { integer: true } };
+		expect(errors(schema, { qty: "1.5" })).toEqual(["validation.integer"]);
+	});
+
+	it("regex emits the validation.regex key", () => {
+		const schema = { slug: { regex: "^[a-z]+$" } };
+		expect(errors(schema, { slug: "Not Valid" })).toEqual(["validation.regex"]);
+	});
+
+	it("in emits the validation.in key", () => {
+		const schema = { role: { in: ["admin", "editor"] } };
+		expect(errors(schema, { role: "superuser" })).toEqual(["validation.in"]);
 	});
 });

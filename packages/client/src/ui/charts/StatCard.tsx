@@ -127,7 +127,7 @@ function StatHeader({ label, icon, color }: StatHeaderProps) {
 			<span className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide">
 				{Icon !== undefined && (
 					<Icon
-						className={cn("h-4 w-4", colorClasses?.text ?? "text-muted-foreground")}
+						className={cn("h-4 w-4", colorClasses?.icon ?? "text-muted-foreground")}
 					/>
 				)}
 				{label}

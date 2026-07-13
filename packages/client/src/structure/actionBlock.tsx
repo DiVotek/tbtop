@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
+import { type Translate, translateValidationMessage } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { Button } from "../ui/button";
 import {
@@ -156,7 +157,11 @@ interface RunInput {
 }
 
 async function runHandlerWithValidation(input: RunInput): Promise<void> {
-	if (input.preflight && input.formHandle && !preFlightSchemaParse(input.formHandle)) {
+	if (
+		input.preflight &&
+		input.formHandle &&
+		!preFlightSchemaParse(input.formHandle, input.ctx.t)
+	) {
 		input.formHandle.notifyErrorsApplied();
 		return;
 	}
@@ -195,6 +200,7 @@ function extractMessage(err: unknown): string {
 
 function preFlightSchemaParse(
 	handle: NonNullable<ReturnType<typeof useNearestFormController>>,
+	t: Translate,
 ): boolean {
 	if (!handle.schema) {
 		return true;
@@ -203,7 +209,7 @@ function preFlightSchemaParse(
 		handle.schema.parse(handle.data);
 		return true;
 	} catch (err) {
-		applyZodIssues(err, handle);
+		applyZodIssues(err, handle, t);
 		return false;
 	}
 }
@@ -215,6 +221,7 @@ interface ZodLike {
 function applyZodIssues(
 	err: unknown,
 	handle: NonNullable<ReturnType<typeof useNearestFormController>>,
+	t: Translate,
 ): void {
 	const issues = (err as ZodLike).issues;
 	if (!Array.isArray(issues)) {
@@ -223,7 +230,7 @@ function applyZodIssues(
 	for (const issue of issues) {
 		const name = issue.path[0];
 		if (typeof name === "string") {
-			handle.setFieldError(name, issue.message);
+			handle.setFieldError(name, translateValidationMessage(t, issue.message));
 		}
 	}
 }

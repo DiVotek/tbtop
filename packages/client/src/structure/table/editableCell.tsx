@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { translateValidationMessage } from "../../i18n/i18n";
 import { checkField } from "../../inertia/constraints";
 import { executeEffects, readEffects } from "../../inertia/effects";
 import { getBlockDescriptor } from "../../render/blockRegistry";
@@ -31,7 +32,7 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 		// UX-only pre-validation (server re-validates regardless)
 		const msg = checkField(next, col.editable.constraints ?? {});
 		if (msg) {
-			setError(msg);
+			setError(translateValidationMessage(ctx.t, msg));
 			return;
 		}
 		setError(null);

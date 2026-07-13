@@ -69,9 +69,17 @@ export function SlugForm({
 	const currentSlug = asString(value);
 	const sourceValue = ctrl ? sourceAt(ctrl.data, fromField, panelLocale) : "";
 
-	const emitDerived = useCallback((source: string) => {
+	const emitDerived = useCallback((source: string, current: string) => {
 		const derived = slugify(source);
-		onChangeRef.current(derived === "" ? null : derived);
+		const next = derived === "" ? null : derived;
+		// Skip the no-op emit: an empty slug is stored as "" (create-modal
+		// defaults) or absent, but derives to null — writing that back with
+		// nothing to actually re-derive dirties a freshly opened, untouched
+		// form (initial "" vs written-back null).
+		if (next === (current === "" ? null : current)) {
+			return;
+		}
+		onChangeRef.current(next);
 	}, []);
 
 	// On mount: if a non-empty slug already exists and it differs from what
@@ -90,7 +98,7 @@ export function SlugForm({
 		if (syncBroken.current) {
 			return;
 		}
-		emitDerived(sourceValue);
+		emitDerived(sourceValue, currentSlug);
 	}, [sourceValue, emitDerived, currentSlug]);
 
 	function handleClear(): void {
@@ -103,7 +111,7 @@ export function SlugForm({
 
 	function handleGenerate(): void {
 		syncBroken.current = false;
-		emitDerived(sourceValue);
+		emitDerived(sourceValue, currentSlug);
 	}
 
 	const t = useTranslation();

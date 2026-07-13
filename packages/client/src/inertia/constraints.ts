@@ -42,10 +42,22 @@ export function compileConstraints(byField: Record<string, FieldConstraints>): {
 	};
 }
 
+/**
+ * Messages are i18n KEYS (validation.*), not display text — compileConstraints
+ * runs outside React (no useTranslation hook available at materialize time),
+ * so translation happens once, at the single point each caller turns an issue
+ * into a displayed fieldError (formBlock's revalidateField, actionBlock's
+ * applyZodIssues). A parameterized key carries its value as a ":value" suffix
+ * (e.g. "validation.min:5") since the Issue.message wire shape is a plain
+ * string shared with consumer-authored zod schemas — the translator (see
+ * translateValidationMessage in i18n.tsx) splits on ":" and interpolates
+ * {min}/{max} into the looked-up template, matching the {count}-style
+ * convention used elsewhere (e.g. field.repeater.items).
+ */
 export function checkField(value: unknown, c: FieldConstraints): string | null {
 	const empty = value === undefined || value === null || value === "";
 	if (empty) {
-		return c.required ? "Required" : null;
+		return c.required ? "validation.required" : null;
 	}
 	return checkPresent(value, c);
 }
@@ -68,10 +80,10 @@ function sizeOf(value: unknown): number {
 function checkSize(value: unknown, c: FieldConstraints): string | null {
 	const size = sizeOf(value);
 	if (c.min !== undefined && size < c.min) {
-		return `Must be at least ${c.min}`;
+		return `validation.min:${c.min}`;
 	}
 	if (c.max !== undefined && size > c.max) {
-		return `Must be at most ${c.max}`;
+		return `validation.max:${c.max}`;
 	}
 	return null;
 }
@@ -79,16 +91,16 @@ function checkSize(value: unknown, c: FieldConstraints): string | null {
 function checkFormat(value: unknown, c: FieldConstraints): string | null {
 	const str = String(value);
 	if (c.integer && !Number.isInteger(Number(value))) {
-		return "Must be an integer";
+		return "validation.integer";
 	}
 	if (c.email && !EMAIL_RE.test(str)) {
-		return "Invalid email";
+		return "validation.email";
 	}
 	if (c.regex && !new RegExp(c.regex).test(str)) {
-		return "Invalid format";
+		return "validation.regex";
 	}
 	if (c.in && !c.in.includes(str)) {
-		return "Invalid choice";
+		return "validation.in";
 	}
 	return null;
 }

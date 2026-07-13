@@ -46,9 +46,9 @@ export function BooleanIconCell({ value, col }: BooleanCellProps): ReactNode {
 	const Icon = resolveIcon(iconName);
 	const classes = resolveColorClasses(colorName);
 	if (!Icon) {
-		return <span className={classes.text}>{truthy ? "✓" : "✗"}</span>;
+		return <span className={classes.icon}>{truthy ? "✓" : "✗"}</span>;
 	}
-	return <Icon className={cn("size-4", classes.text)} aria-hidden />;
+	return <Icon className={cn("size-4", classes.icon)} aria-hidden />;
 }
 
 // ─── Icon-map cell ────────────────────────────────────────────────────────────
@@ -68,9 +68,9 @@ export function IconMapCell({ value, col }: IconCellProps): ReactNode {
 	const Icon = resolveIcon(entry.icon);
 	const classes = resolveColorClasses(entry.color);
 	if (!Icon) {
-		return <span className={classes.text}>{str}</span>;
+		return <span className={classes.icon}>{str}</span>;
 	}
-	return <Icon className={cn("size-4", classes.text)} aria-hidden aria-label={str} />;
+	return <Icon className={cn("size-4", classes.icon)} aria-hidden aria-label={str} />;
 }
 
 // ─── Image cell ───────────────────────────────────────────────────────────────

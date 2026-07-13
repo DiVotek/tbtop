@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "../structure/structure";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
+import type { FormController } from "../structure/types";
 import { SlugCell, SlugForm } from "./slugField";
 import { slugify } from "./slugify";
 
@@ -279,6 +280,39 @@ describe("Slug field", () => {
 			const input = getByRole("textbox") as HTMLInputElement;
 			expect(input.value).toBe("custom-slug");
 		});
+	});
+
+	test("Slug: mounting a fresh create-modal default (empty-string slug, empty source) does not dirty the form", async () => {
+		// Regression: a create-modal's default record uses slug:"" (not null/absent).
+		// On mount the derive-effect ran unconditionally, computing slugify("") === ""
+		// and writing that back as `null` — a type-only change ("" -> null) that
+		// tripped isDirty before the user touched anything. See formController's
+		// isEqual (JSON.stringify comparison): "" and null differ.
+		let probed: Pick<FormController, "isDirty" | "changedFields"> | null = null;
+		const node = s.form({ query: async () => ({ title: null, slug: "" }) }, [
+			s.slug({ name: "slug", fromField: "title" }),
+			s.action({
+				name: "probe",
+				handler: async (c) => {
+					probed = c.form
+						? { isDirty: c.form.isDirty, changedFields: c.form.changedFields }
+						: null;
+				},
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const probeBtn = await findByTestId("action-probe");
+		await act(async () => {
+			fireEvent.click(probeBtn);
+		});
+
+		const snapshot = probed as unknown as Pick<
+			FormController,
+			"isDirty" | "changedFields"
+		> | null;
+		expect(snapshot).toEqual({ isDirty: false, changedFields: [] });
 	});
 
 	test("Slug: in manual mode editing the source title must NOT regenerate the slug", async () => {

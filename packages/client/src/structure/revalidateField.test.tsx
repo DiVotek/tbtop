@@ -1,9 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { act, render } from "@testing-library/react";
+import type { Translate } from "../i18n/i18n";
 import { revalidateField } from "./formBlock";
 import { useFormController } from "./formController";
 
 type Handle = ReturnType<typeof useFormController>;
+
+// Consumer-authored schemas (like makeSchema() below) throw plain-English
+// messages, not validation.* keys — translateValidationMessage falls back to
+// the message itself for unrecognized keys, so an identity stub is enough.
+const t: Translate = (key, fallback) => fallback ?? key;
 
 function makeSchema() {
 	return {
@@ -56,7 +62,7 @@ describe("revalidateField", () => {
 			last(captures).setFieldError("body", "body too short");
 		});
 		act(() => last(captures).set("title", "long enough"));
-		act(() => revalidateField(last(captures), "title"));
+		act(() => revalidateField(last(captures), "title", t));
 		expect(last(captures).fieldErrors.title).toBeUndefined();
 		expect(last(captures).fieldErrors.body).toBe("body too short");
 	});
@@ -64,14 +70,14 @@ describe("revalidateField", () => {
 	test("keeps title error and surfaces current message when title still fails", () => {
 		const captures = mount();
 		act(() => last(captures).set("title", "x"));
-		act(() => revalidateField(last(captures), "title"));
+		act(() => revalidateField(last(captures), "title", t));
 		expect(last(captures).fieldErrors.title).toBe("title too short");
 	});
 
 	test("noop when field is not in changedFields", () => {
 		const captures = mount();
 		act(() => last(captures).setFieldError("title", "stale"));
-		act(() => revalidateField(last(captures), "title"));
+		act(() => revalidateField(last(captures), "title", t));
 		expect(last(captures).fieldErrors.title).toBe("stale");
 	});
 });

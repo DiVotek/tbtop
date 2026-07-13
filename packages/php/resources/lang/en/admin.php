@@ -37,6 +37,11 @@ return [
         'required' => 'Required',
         'email' => 'Invalid email',
         'minLength' => 'Too short',
+        'min' => 'Must be at least {min}',
+        'max' => 'Must be at most {max}',
+        'integer' => 'Must be an integer',
+        'regex' => 'Invalid format',
+        'in' => 'Invalid choice',
     ],
     'entity' => [
         'create' => ['success' => 'Created'],
@@ -71,6 +76,8 @@ return [
         'unsaved_guard' => [
             'title' => 'You have unsaved changes.',
             'body' => 'Are you sure you want to leave? Your changes will be lost.',
+            'leave' => 'Leave',
+            'stay' => 'Stay',
         ],
         'unsaved' => 'Unsaved changes',
     ],

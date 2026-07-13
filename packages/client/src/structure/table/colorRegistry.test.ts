@@ -12,6 +12,7 @@ describe("colorRegistry", () => {
 		const c = resolveColorClasses("success");
 		expect(c.bg).toBe("bg-success");
 		expect(c.text).toBe("text-success-foreground");
+		expect(c.icon).toBe("text-success");
 	});
 
 	test("danger maps to destructive classes", () => {
@@ -34,5 +35,21 @@ describe("colorRegistry", () => {
 		const c = resolveColorClasses("brand");
 		expect(c.bg).toBe("bg-brand-500");
 		expect(c.text).toBe("text-white");
+	});
+
+	test("registerTableColor without icon falls back to text (back-compat)", () => {
+		registerTableColor("brand-no-icon", { bg: "bg-brand-500", text: "text-white" });
+		const c = resolveColorClasses("brand-no-icon");
+		expect(c.icon).toBe("text-white");
+	});
+
+	test("registerTableColor honors an explicit icon color", () => {
+		registerTableColor("brand-with-icon", {
+			bg: "bg-brand-500",
+			text: "text-white",
+			icon: "text-brand-500",
+		});
+		const c = resolveColorClasses("brand-with-icon");
+		expect(c.icon).toBe("text-brand-500");
 	});
 });

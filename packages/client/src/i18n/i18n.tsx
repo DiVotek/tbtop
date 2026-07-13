@@ -144,6 +144,34 @@ export function useTranslation(): Translate {
 	return (key, fallback) => defaultMessages[key] ?? fallback ?? key;
 }
 
+const VALUE_PARAM_KEYS: Record<string, string> = {
+	"validation.min": "min",
+	"validation.max": "max",
+};
+
+/**
+ * Translates a client-side validation Issue.message. compileConstraints
+ * (inertia/constraints.ts) emits i18n keys instead of display text — plain
+ * "validation.required", or "validation.min:5" for keys whose message needs
+ * an interpolated value, since Issue.message is a plain string shared with
+ * consumer-authored zod schemas (can't carry a structured params bag).
+ * A message that isn't one of ours (a real zod error, or anything with no
+ * matching key) round-trips unchanged: t() falls back to the key itself.
+ */
+export function translateValidationMessage(t: Translate, message: string): string {
+	const sepIndex = message.indexOf(":");
+	if (sepIndex === -1) {
+		return t(message);
+	}
+	const key = message.slice(0, sepIndex);
+	const value = message.slice(sepIndex + 1);
+	const param = VALUE_PARAM_KEYS[key];
+	if (!param) {
+		return t(message);
+	}
+	return t(key).replace(`{${param}}`, value);
+}
+
 export function useLocale(): I18nState {
 	const state = useContext(LocaleContext);
 	if (state) {
