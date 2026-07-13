@@ -92,7 +92,8 @@ export function AdminPage() {
 	const maxWidth = (widthToken && MAX_WIDTH_CLASS[widthToken]) || "max-w-5xl";
 	// Center-layout pages (auth screens) own their heading inside the content —
 	// the admin page-header chrome (breadcrumbs/h1/subtitle/actions) would
-	// duplicate it above the card. `title` still feeds the browser tab.
+	// duplicate it above the card. The title prop stays in the page contract
+	// (nothing here renders <Head>, so it has no other visible output).
 	const showPageHeader = page.props.layout !== "center";
 
 	return (
