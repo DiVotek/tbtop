@@ -71,10 +71,105 @@ afterEach(() => {
 	clearBlockRegistry();
 });
 
-// ─── Form: preview resolves from value ────────────────────────────────────────
+// ─── Form: inline (default) — Choose button + filename display ────────────────
 
-describe("MediaPickerForm: preview from initial value", () => {
-	test("renders image thumbnail when id resolves to an image item", async () => {
+describe("MediaPickerForm: inline filename display", () => {
+	test("display field shows the resolved file name (variant omitted = inline)", async () => {
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/img1")) {
+				return new Response(JSON.stringify(ITEM_IMG), { status: 200 });
+			}
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId, queryByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="cover"
+					value="img1"
+					onChange={() => {}}
+					options={{ multiple: false }}
+				/>
+			</Wrap>,
+		);
+		const input = getByTestId("media-picker-name-cover") as HTMLInputElement;
+		await waitFor(() => expect(input.value).toBe(ITEM_IMG.name));
+		// Inline is the default: no clickable preview block.
+		expect(queryByTestId("media-picker-preview-cover")).toBeNull();
+	});
+
+	test("display field is empty when value is null", () => {
+		const Wrap = wrap(() => new Response("[]"));
+		const { getByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="cover"
+					value={null}
+					onChange={() => {}}
+					options={{ multiple: false }}
+				/>
+			</Wrap>,
+		);
+		const input = getByTestId("media-picker-name-cover") as HTMLInputElement;
+		expect(input.value).toBe("");
+	});
+});
+
+// ─── Form: variant="preview" — clickable preview block ────────────────────────
+
+describe("MediaPickerForm: variant preview", () => {
+	test("empty placeholder block is clickable and opens the picker", async () => {
+		const user = userEvent.setup({ delay: null });
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/folders")) {
+				return new Response("[]");
+			}
+			return mediaListResponse([]);
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="cover"
+					value={null}
+					onChange={() => {}}
+					options={{ multiple: false, variant: "preview" }}
+				/>
+			</Wrap>,
+		);
+		await act(async () => {
+			await user.click(getByTestId("media-picker-preview-cover"));
+		});
+		await findByTestId("media-picker-modal");
+	});
+
+	test("renders the selected image inside the still-clickable block", async () => {
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/img1")) {
+				return new Response(JSON.stringify(ITEM_IMG), { status: 200 });
+			}
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+		const { findByTestId, getByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="cover"
+					value="img1"
+					onChange={() => {}}
+					options={{ multiple: false, variant: "preview" }}
+				/>
+			</Wrap>,
+		);
+		const img = await findByTestId("media-preview-img-img1");
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		// The block stays clickable for re-selection.
+		expect(getByTestId("media-picker-preview-cover").tagName).toBe("BUTTON");
+	});
+
+	test("corner clear button fires onChange(null)", async () => {
+		const user = userEvent.setup({ delay: null });
+		const changes: Array<unknown> = [];
 		const handler: FetchHandler = (req) => {
 			if (req.url.includes("/media/img1")) {
 				return new Response(JSON.stringify(ITEM_IMG), { status: 200 });
@@ -87,28 +182,63 @@ describe("MediaPickerForm: preview from initial value", () => {
 				<MediaPickerForm
 					name="cover"
 					value="img1"
-					onChange={() => {}}
-					options={{ multiple: false }}
+					onChange={(v) => changes.push(v)}
+					options={{ multiple: false, variant: "preview" }}
 				/>
 			</Wrap>,
 		);
-		// After the fetch resolves, the preview chip should appear
-		await findByTestId("media-preview-img1");
+		await findByTestId("media-preview-img-img1");
+		const clearBtn = await findByTestId("media-picker-clear-cover");
+		await act(async () => {
+			await user.click(clearBtn);
+		});
+		await waitFor(() => expect(changes).toHaveLength(1));
+		expect(changes[0]).toBeNull();
 	});
 
-	test("renders no preview when value is null", () => {
-		const Wrap = wrap(() => new Response("[]"));
-		const { queryByTestId } = render(
+	test("renders a typed file card for non-image items", async () => {
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/pdf1")) {
+				return new Response(JSON.stringify(ITEM_PDF), { status: 200 });
+			}
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+		const { findByTestId, queryByTestId, getByText } = render(
 			<Wrap>
 				<MediaPickerForm
-					name="cover"
-					value={null}
+					name="doc"
+					value="pdf1"
 					onChange={() => {}}
-					options={{ multiple: false }}
+					options={{ multiple: false, variant: "preview" }}
 				/>
 			</Wrap>,
 		);
-		expect(queryByTestId("media-preview-img1")).toBeNull();
+		await findByTestId("media-preview-icon-pdf1");
+		expect(queryByTestId("media-preview-img-pdf1")).toBeNull();
+		getByText(ITEM_PDF.name);
+	});
+
+	test("multiple mode keeps preview chips regardless of variant", async () => {
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/img1")) {
+				return new Response(JSON.stringify(ITEM_IMG), { status: 200 });
+			}
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+		const { findByTestId, queryByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="gallery"
+					value={["img1"]}
+					onChange={() => {}}
+					options={{ multiple: true, variant: "preview" }}
+				/>
+			</Wrap>,
+		);
+		await findByTestId("media-preview-img1");
+		expect(queryByTestId("media-picker-preview-gallery")).toBeNull();
 	});
 });
 
@@ -181,6 +311,10 @@ describe("MediaPickerForm: single select", () => {
 
 		// Modal should close
 		await waitFor(() => expect(queryByTestId("media-picker-modal")).toBeNull());
+
+		// The inline display field shows the selected file name
+		const input = getByTestId("media-picker-name-cover") as HTMLInputElement;
+		expect(input.value).toBe(ITEM_IMG.name);
 	});
 });
 
@@ -246,7 +380,7 @@ describe("MediaPickerForm: clear single value", () => {
 			return new Response("[]");
 		};
 		const Wrap = wrap(handler);
-		const { findByTestId } = render(
+		const { findByTestId, getByTestId } = render(
 			<Wrap>
 				<MediaPickerForm
 					name="cover"
@@ -256,8 +390,9 @@ describe("MediaPickerForm: clear single value", () => {
 				/>
 			</Wrap>,
 		);
-		// Wait for preview to render
-		await findByTestId("media-preview-img1");
+		// Wait for the display field to resolve the file name
+		const input = getByTestId("media-picker-name-cover") as HTMLInputElement;
+		await waitFor(() => expect(input.value).toBe(ITEM_IMG.name));
 		const clearBtn = await findByTestId("media-picker-clear-cover");
 		await act(async () => {
 			await user.click(clearBtn);

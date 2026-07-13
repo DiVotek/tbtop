@@ -1,25 +1,39 @@
 /**
  * MediaPickerField — form control + cell for kind=media.
  *
- * Form: shows selected item preview(s), a "Choose" button that opens the
- *       picker modal, and a clear button. Supports single and multiple modes.
+ * Form: opens a picker modal to select media items. Single-select rendering
+ *       depends on options.variant — "inline" (default) is a Choose button
+ *       next to a read-only filename display with a clear button; "preview"
+ *       is a fully clickable preview block (dashed placeholder when empty,
+ *       large image / typed file card when filled) with a corner clear
+ *       button. Multiple mode always renders preview chips + Choose,
+ *       regardless of variant.
  * Cell: icon + id stub (cells don't fetch; demo can enrich via column mapping).
  *
  * accept filtering: applied client-side only — the server list endpoint has no
  * mime filter. Server-side filtering can be added later.
  */
-import { FileIcon, XIcon } from "lucide-react";
+import { FileIcon, ImageIcon, XIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
 import { useTranslation } from "../i18n/i18n";
+import { cn } from "../lib/cn";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { ModalShell } from "../ui/modal-shell";
+import { fileKindOf } from "./fileType";
 import { FolderTree } from "./folderTree";
 import { MediaGrid } from "./mediaGrid";
 import { MediaThumb } from "./mediaThumb";
 import type { MediaItem } from "./types";
 import type { MediaQueryParams } from "./useMediaApi";
-import { fetchMediaItem, useMediaClient, useMediaFolders, useMediaItems } from "./useMediaApi";
+import {
+	fetchMediaItem,
+	isImageMime,
+	useMediaClient,
+	useMediaFolders,
+	useMediaItems,
+} from "./useMediaApi";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -27,6 +41,12 @@ interface MediaPickerOptions {
 	multiple?: boolean;
 	/** client-side MIME filter, e.g. ['image/*', 'application/pdf'] */
 	accept?: string[];
+	/**
+	 * Single-select display: "inline" (default) — Choose button + read-only
+	 * filename field; "preview" — clickable preview block. Ignored in multiple
+	 * mode (chips always).
+	 */
+	variant?: "inline" | "preview";
 }
 
 // ─── Value types ──────────────────────────────────────────────────────────────
@@ -68,6 +88,7 @@ export function MediaPickerForm({
 	const client = useMediaClient();
 	const multiple = options?.multiple ?? false;
 	const accept = options?.accept;
+	const variant = options?.variant ?? "inline";
 
 	const [resolvedItems, setResolvedItems] = useState<MediaItem[]>([]);
 	const [pickerOpen, setPickerOpen] = useState(false);
@@ -147,38 +168,72 @@ export function MediaPickerForm({
 
 	const hasValue = ids.length > 0;
 
-	return (
-		<div className="flex flex-col gap-2" data-testid={`media-picker-${name}`}>
-			{/* Preview chips */}
-			{resolvedItems.length > 0 && (
-				<div className="flex flex-wrap gap-2">
-					{resolvedItems.map((item) => (
-						<MediaPreviewChip
-							key={item.id}
-							item={item}
-							onRemove={() => handleRemove(item.id)}
-							disabled={disabled}
-						/>
-					))}
-				</div>
-			)}
+	function handleClear() {
+		setResolvedItems([]);
+		onChange(null);
+	}
 
-			{/* Choose / replace + clear buttons */}
-			<div className="flex gap-2">
-				{(!hasValue || multiple) && (
+	const singleControl =
+		variant === "preview" ? (
+			<MediaPreviewBlock
+				name={name}
+				item={resolvedItems[0]}
+				onOpen={() => setPickerOpen(true)}
+				onClear={handleClear}
+				disabled={disabled}
+			/>
+		) : (
+			<div className="flex items-center gap-2">
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={disabled}
+					onClick={() => setPickerOpen(true)}
+					data-testid={`media-picker-choose-${name}`}
+				>
+					{t("media.picker.choose")}
+				</Button>
+				<Input
+					readOnly
+					value={resolvedItems[0]?.name ?? ""}
+					placeholder={t("media.picker.no_selection")}
+					data-testid={`media-picker-name-${name}`}
+				/>
+				{hasValue && (
 					<Button
 						type="button"
-						variant="outline"
+						variant="ghost"
 						size="sm"
 						disabled={disabled}
-						onClick={() => setPickerOpen(true)}
-						data-testid={`media-picker-choose-${name}`}
+						onClick={handleClear}
+						aria-label="Clear selection"
+						data-testid={`media-picker-clear-${name}`}
 					>
-						{t("media.picker.choose")}
+						<XIcon className="h-4 w-4" />
 					</Button>
 				)}
-				{hasValue && !multiple && (
-					<>
+			</div>
+		);
+
+	return (
+		<div className="flex flex-col gap-2" data-testid={`media-picker-${name}`}>
+			{multiple ? (
+				<>
+					{/* Preview chips */}
+					{resolvedItems.length > 0 && (
+						<div className="flex flex-wrap gap-2">
+							{resolvedItems.map((item) => (
+								<MediaPreviewChip
+									key={item.id}
+									item={item}
+									onRemove={() => handleRemove(item.id)}
+									disabled={disabled}
+								/>
+							))}
+						</div>
+					)}
+					<div className="flex gap-2">
 						<Button
 							type="button"
 							variant="outline"
@@ -189,23 +244,11 @@ export function MediaPickerForm({
 						>
 							{t("media.picker.choose")}
 						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							disabled={disabled}
-							onClick={() => {
-								setResolvedItems([]);
-								onChange(null);
-							}}
-							aria-label="Clear selection"
-							data-testid={`media-picker-clear-${name}`}
-						>
-							<XIcon className="h-4 w-4" />
-						</Button>
-					</>
-				)}
-			</div>
+					</div>
+				</>
+			) : (
+				singleControl
+			)}
 
 			{/* Picker modal */}
 			<MediaPickerModal
@@ -254,6 +297,88 @@ function MediaPreviewChip({
 				</Button>
 			)}
 		</div>
+	);
+}
+
+// ─── MediaPreviewBlock ────────────────────────────────────────────────────────
+// Single-select variant="preview": one fully clickable block. Empty — dashed
+// placeholder inviting a choice; filled — large image (or typed file card)
+// that reopens the picker on click, with a corner clear button.
+
+function MediaPreviewBlock({
+	name,
+	item,
+	onOpen,
+	onClear,
+	disabled,
+}: {
+	name: string;
+	item?: MediaItem;
+	onOpen: () => void;
+	onClear: () => void;
+	disabled?: boolean;
+}): ReactNode {
+	const t = useTranslation();
+	return (
+		<div className="relative">
+			<button
+				type="button"
+				onClick={onOpen}
+				disabled={disabled}
+				className={cn(
+					"flex h-48 w-full items-center justify-center overflow-hidden rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+					item
+						? "bg-muted hover:opacity-90"
+						: "border-dashed text-muted-foreground hover:bg-muted/50",
+				)}
+				data-testid={`media-picker-preview-${name}`}
+			>
+				{item ? (
+					<MediaPreviewBlockContent item={item} />
+				) : (
+					<span className="flex flex-col items-center gap-2">
+						<ImageIcon className="h-8 w-8" />
+						<span className="text-sm">{t("media.picker.choose_image")}</span>
+					</span>
+				)}
+			</button>
+			{item && !disabled && (
+				<Button
+					type="button"
+					variant="secondary"
+					size="sm"
+					className="absolute top-2 right-2 h-6 w-6 p-0"
+					onClick={onClear}
+					aria-label="Clear selection"
+					data-testid={`media-picker-clear-${name}`}
+				>
+					<XIcon className="h-4 w-4" />
+				</Button>
+			)}
+		</div>
+	);
+}
+
+function MediaPreviewBlockContent({ item }: { item: MediaItem }): ReactNode {
+	if (isImageMime(item.mime)) {
+		return (
+			<img
+				src={item.sizes.profile ?? item.url}
+				alt={item.alt ?? item.name}
+				className="h-full w-full object-cover"
+				data-testid={`media-preview-img-${item.id}`}
+			/>
+		);
+	}
+	const { Icon, colorClass } = fileKindOf(item.mime, item.name);
+	return (
+		<span className="flex max-w-full flex-col items-center gap-2 px-3">
+			<Icon
+				className={cn("h-12 w-12", colorClass)}
+				data-testid={`media-preview-icon-${item.id}`}
+			/>
+			<span className="max-w-full truncate text-sm text-foreground">{item.name}</span>
+		</span>
 	);
 }
 
