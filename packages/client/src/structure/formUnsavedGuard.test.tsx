@@ -1,14 +1,17 @@
 /**
  * Tests for the unsaved-changes guard behaviour in FormControllerBody.
  *
- * Channels covered:
- *  1. beforeunload — browser tab close / page refresh
- *  2. router.on('before') — Inertia client-side navigation
+ * The guard is entirely in-app now: a dirty GET navigation is cancelled and
+ * surfaced as a ConfirmDialog (confirm-dialog-confirm/cancel testids) instead
+ * of window.confirm, and there is no beforeunload/native "leave site?" prompt
+ * at all — tab-close protection was dropped by design (see useUnsavedGuard.ts).
  *
  * Test approach:
  *  - The guard is opt-in via `guardUnsaved` in form options (default true per global config).
  *  - We pass guardUnsaved explicitly so tests don't depend on global config.
- *  - router is mocked via module augmentation to capture registered listeners.
+ *  - router is mocked via module augmentation to capture registered listeners
+ *    and record replayed visits (router.visit calls) so "Leave" can be
+ *    asserted against the exact cancelled navigation.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
@@ -30,20 +33,22 @@ import type { ClientActionContext, StructureNode } from "./types";
 // (mock.module is process-global) and break asChild testid forwarding (M-95).
 // ---------------------------------------------------------------------------
 
-type BeforeListener = (event: { detail: { visit: { method?: string } } }) => boolean | void;
+type BeforeListener = (event: {
+	detail: { visit: { method?: string; url?: unknown } };
+}) => boolean | void;
 type PostOptions = { onSuccess?: () => void; onError?: (errors: Record<string, string>) => void };
 
 const registeredBeforeListeners: BeforeListener[] = [];
 let routerOnCalled = false;
 let capturedPostOnSuccess: (() => void) | undefined;
 // Real router.visit() fires the registered 'before' listeners before
-// navigating — that's the whole mechanism useUnsavedGuard relies on. A bare
-// no-op mock would never invoke the guard at all, which made an earlier
-// version of this test pass for the wrong reason (nothing ran, not "guard
-// correctly skipped"). Route it through the same listener list router.on
-// populates so a redirect visit exercises the guard exactly like the app.
-const routerVisitMock = mock((href: string) => {
-	fireInertiaNavigation("get");
+// navigating — that's the whole mechanism useUnsavedGuard's replay relies on
+// (the leave-confirmed bypass flag is consumed by exactly that re-fire). A
+// bare no-op mock would never invoke the guard's replay path at all, and
+// would also leak the one-shot bypass flag into the next test (it stays
+// true forever with nothing to consume it).
+const routerVisitMock = mock((href: unknown, _options?: unknown) => {
+	fireInertiaNavigation("get", href);
 	return href;
 });
 
@@ -72,9 +77,9 @@ mock.module("@inertiajs/react", () => ({
 
 // Helper: fire a simulated Inertia 'before' event through the registered listeners.
 // Returns false if any listener returned false (navigation blocked).
-function fireInertiaNavigation(method = "get"): boolean {
+function fireInertiaNavigation(method = "get", url: unknown = "/admin/other"): boolean {
 	for (const listener of registeredBeforeListeners) {
-		const result = listener({ detail: { visit: { method } } });
+		const result = listener({ detail: { visit: { method, url } } });
 		if (result === false) {
 			return false;
 		}
@@ -87,94 +92,14 @@ beforeEach(() => {
 	routerOnCalled = false;
 	capturedPostOnSuccess = undefined;
 	routerVisitMock.mockClear();
-	// Reset window.confirm to return true by default
-	(global as unknown as { confirm: (msg: string) => boolean }).confirm = () => true;
 });
 
 afterEach(() => {
 	registeredBeforeListeners.length = 0;
 });
 
-describe("Form unsaved guard — beforeunload", () => {
-	test("beforeunload event is prevented when form is dirty and guardUnsaved is true", async () => {
-		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
-			s.text({ name: "title" }),
-			s.action({
-				name: "edit",
-				handler: async (c) => c.form?.set("title", "Changed"),
-			}),
-		]);
-		const Wrap = wrap(() => new Response("{}"));
-		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
-
-		// Make the form dirty
-		const editBtn = await findByTestId("action-edit");
-		await act(async () => {
-			fireEvent.click(editBtn);
-		});
-
-		// Simulate beforeunload
-		const event = new Event("beforeunload") as BeforeUnloadEvent & {
-			returnValue: string;
-			preventDefault: () => void;
-		};
-		event.returnValue = "";
-		fireEvent(window, event);
-
-		// The event should have been prevented (returnValue set or defaultPrevented)
-		expect(event.defaultPrevented || event.returnValue !== "").toBe(true);
-	});
-
-	test("beforeunload is NOT prevented when form is clean", async () => {
-		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
-			s.text({ name: "title" }),
-		]);
-		const Wrap = wrap(() => new Response("{}"));
-		render(<Wrap>{renderNode(node)}</Wrap>);
-		await waitFor(() => {}); // let query resolve
-
-		const event = new Event("beforeunload") as BeforeUnloadEvent & {
-			returnValue: string;
-			preventDefault: () => void;
-		};
-		event.returnValue = "";
-		fireEvent(window, event);
-
-		// Should NOT be prevented — clean form
-		expect(event.defaultPrevented).toBe(false);
-	});
-
-	test("beforeunload is NOT prevented when guardUnsaved is false even if dirty", async () => {
-		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: false }, [
-			s.text({ name: "title" }),
-			s.action({
-				name: "edit",
-				handler: async (c) => c.form?.set("title", "Changed"),
-			}),
-		]);
-		const Wrap = wrap(() => new Response("{}"));
-		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
-		const editBtn = await findByTestId("action-edit");
-		await act(async () => {
-			fireEvent.click(editBtn);
-		});
-
-		const event = new Event("beforeunload") as BeforeUnloadEvent & {
-			returnValue: string;
-			preventDefault: () => void;
-		};
-		event.returnValue = "";
-		fireEvent(window, event);
-
-		expect(event.defaultPrevented).toBe(false);
-	});
-});
-
 describe("Form unsaved guard — Inertia navigation", () => {
-	test("Inertia navigation is blocked when form is dirty and user cancels", async () => {
-		// User cancels (confirm returns false)
-		(global as unknown as { confirm: (msg: string) => boolean }).confirm = () => false;
-
+	test("Inertia navigation is blocked (cancelled) when the form is dirty", async () => {
 		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
 			s.text({ name: "title" }),
 			s.action({
@@ -190,13 +115,14 @@ describe("Form unsaved guard — Inertia navigation", () => {
 			fireEvent.click(editBtn);
 		});
 
-		const allowed = fireInertiaNavigation();
+		let allowed = true;
+		await act(async () => {
+			allowed = fireInertiaNavigation();
+		});
 		expect(allowed).toBe(false);
 	});
 
-	test("Inertia navigation is allowed when form is dirty and user confirms", async () => {
-		(global as unknown as { confirm: (msg: string) => boolean }).confirm = () => true;
-
+	test("cancelling navigation surfaces the in-app confirm dialog, not window.confirm", async () => {
 		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
 			s.text({ name: "title" }),
 			s.action({
@@ -212,13 +138,73 @@ describe("Form unsaved guard — Inertia navigation", () => {
 			fireEvent.click(editBtn);
 		});
 
-		const allowed = fireInertiaNavigation();
-		expect(allowed).toBe(true);
+		await act(async () => {
+			fireInertiaNavigation();
+		});
+
+		expect(await findByTestId("confirm-dialog-confirm")).toBeTruthy();
+		expect(await findByTestId("confirm-dialog-cancel")).toBeTruthy();
+	});
+
+	test('"Leave" replays the cancelled visit via router.visit', async () => {
+		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+			s.text({ name: "title" }),
+			s.action({
+				name: "edit",
+				handler: async (c) => c.form?.set("title", "Changed"),
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const editBtn = await findByTestId("action-edit");
+		await act(async () => {
+			fireEvent.click(editBtn);
+		});
+
+		await act(async () => {
+			fireInertiaNavigation("get", "/admin/other");
+		});
+
+		const leaveBtn = await findByTestId("confirm-dialog-confirm");
+		await act(async () => {
+			fireEvent.click(leaveBtn);
+		});
+
+		expect(routerVisitMock).toHaveBeenCalledTimes(1);
+		expect(routerVisitMock.mock.calls[0]?.[0]).toBe("/admin/other");
+	});
+
+	test('"Stay" dismisses the dialog and never calls router.visit', async () => {
+		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+			s.text({ name: "title" }),
+			s.action({
+				name: "edit",
+				handler: async (c) => c.form?.set("title", "Changed"),
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const editBtn = await findByTestId("action-edit");
+		await act(async () => {
+			fireEvent.click(editBtn);
+		});
+
+		await act(async () => {
+			fireInertiaNavigation();
+		});
+
+		const stayBtn = await findByTestId("confirm-dialog-cancel");
+		await act(async () => {
+			fireEvent.click(stayBtn);
+		});
+
+		expect(routerVisitMock).not.toHaveBeenCalled();
+		expect(queryByTestId("confirm-dialog-confirm")).toBeNull();
 	});
 
 	test("Inertia navigation is allowed when form is clean", async () => {
-		(global as unknown as { confirm: (msg: string) => boolean }).confirm = () => false; // would block if dirty
-
 		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
 			s.text({ name: "title" }),
 		]);
@@ -243,9 +229,6 @@ describe("Form unsaved guard — Inertia navigation", () => {
 	});
 
 	test("guard does NOT block a POST visit (form submit) even when form is dirty", async () => {
-		// If confirm is called and returns false it would block — proves guard was invoked.
-		(global as unknown as { confirm: (msg: string) => boolean }).confirm = () => false;
-
 		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
 			s.text({ name: "title" }),
 			s.action({
@@ -267,9 +250,7 @@ describe("Form unsaved guard — Inertia navigation", () => {
 		expect(allowed).toBe(true);
 	});
 
-	test("skips the confirm for a GET navigation marked as a server redirect, even when dirty and the user would cancel", async () => {
-		(global as unknown as { confirm: (msg: string) => boolean }).confirm = mock(() => false);
-
+	test("skips the confirm dialog for a GET navigation marked as a server redirect, even when dirty", async () => {
 		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
 			s.text({ name: "title" }),
 			s.action({
@@ -278,7 +259,7 @@ describe("Form unsaved guard — Inertia navigation", () => {
 			}),
 		]);
 		const Wrap = wrap(() => new Response("{}"));
-		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 
 		const editBtn = await findByTestId("action-edit");
 		await act(async () => {
@@ -286,15 +267,16 @@ describe("Form unsaved guard — Inertia navigation", () => {
 		});
 
 		markServerRedirect();
-		const allowed = fireInertiaNavigation("get");
+		let allowed = true;
+		await act(async () => {
+			allowed = fireInertiaNavigation("get");
+		});
 
 		expect(allowed).toBe(true);
-		expect(global.confirm).not.toHaveBeenCalled();
+		expect(queryByTestId("confirm-dialog-confirm")).toBeNull();
 	});
 
 	test("the server-redirect skip is one-shot: the NEXT navigation is guarded normally", async () => {
-		(global as unknown as { confirm: (msg: string) => boolean }).confirm = mock(() => false);
-
 		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
 			s.text({ name: "title" }),
 			s.action({
@@ -311,15 +293,19 @@ describe("Form unsaved guard — Inertia navigation", () => {
 		});
 
 		markServerRedirect();
-		const firstAllowed = fireInertiaNavigation("get");
+		let firstAllowed = true;
+		await act(async () => {
+			firstAllowed = fireInertiaNavigation("get");
+		});
 		expect(firstAllowed).toBe(true);
-		expect(global.confirm).not.toHaveBeenCalled();
 
 		// The flag was consumed by the first navigation — a second, unrelated
 		// GET navigation must go through the normal isDirty/confirm path.
-		const secondAllowed = fireInertiaNavigation("get");
+		let secondAllowed = true;
+		await act(async () => {
+			secondAllowed = fireInertiaNavigation("get");
+		});
 		expect(secondAllowed).toBe(false);
-		expect(global.confirm).toHaveBeenCalledTimes(1);
 	});
 });
 
@@ -408,11 +394,9 @@ function SaveFormWithFlashHarness() {
 }
 
 describe("Form unsaved guard — server-initiated redirect after save (real ordering)", () => {
-	test("window.confirm is NOT called when a flash redirect fires in the same tick as the post-save reset", async () => {
-		(global as unknown as { confirm: (msg: string) => boolean }).confirm = mock(() => false);
-
+	test("the confirm dialog does NOT appear when a flash redirect fires in the same tick as the post-save reset", async () => {
 		const Wrap = wrap(() => new Response("{}"));
-		const { findByTestId } = render(
+		const { findByTestId, queryByTestId } = render(
 			<Wrap>
 				<SaveFormWithFlashHarness />
 			</Wrap>,
@@ -448,6 +432,6 @@ describe("Form unsaved guard — server-initiated redirect after save (real orde
 		});
 
 		expect(routerVisitMock).toHaveBeenCalledWith("/admin/posts");
-		expect(global.confirm).not.toHaveBeenCalled();
+		expect(queryByTestId("confirm-dialog-confirm")).toBeNull();
 	});
 });

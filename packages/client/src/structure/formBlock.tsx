@@ -8,6 +8,7 @@ import { getBlockDescriptor } from "../render/blockRegistry";
 import { applyColumnPlacement } from "../render/columnPlacement";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
 import { Label } from "../ui/label";
+import { ConfirmDialog } from "../ui/modal-shell";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useClientActionContext } from "./actionContext";
 import type { AsyncBlock } from "./asyncBlock";
@@ -94,7 +95,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 	const localeConfig = useContentLocaleConfig();
 	const t = useTranslation();
 	useSyncInitial(initial, ctrl.reset);
-	useUnsavedGuard(ctrl.isDirty, guardUnsaved, t);
+	const guard = useUnsavedGuard(ctrl.isDirty, guardUnsaved);
 	const hasTranslatable = detectTranslatableFields(children ?? []);
 	const formRef = useRef<HTMLFormElement | null>(null);
 	return (
@@ -123,6 +124,17 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 					))}
 				</form>
 			</ActiveLocaleProvider>
+			<ConfirmDialog
+				open={guard.pending !== null}
+				onOpenChange={(open) => !open && guard.cancelLeave()}
+				title={t("form.unsaved_guard.title")}
+				body={t("form.unsaved_guard.body")}
+				confirmLabel={t("form.unsaved_guard.leave")}
+				cancelLabel={t("form.unsaved_guard.stay")}
+				destructive
+				onConfirm={guard.confirmLeave}
+				data-testid="unsaved-guard-dialog"
+			/>
 		</FormControllerProvider>
 	);
 }

@@ -71,6 +71,8 @@ return [
         'unsaved_guard' => [
             'title' => 'You have unsaved changes.',
             'body' => 'Are you sure you want to leave? Your changes will be lost.',
+            'leave' => 'Leave',
+            'stay' => 'Stay',
         ],
         'unsaved' => 'Unsaved changes',
     ],

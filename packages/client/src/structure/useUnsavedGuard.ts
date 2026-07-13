@@ -1,35 +1,74 @@
+import type { PendingVisit } from "@inertiajs/core";
 import { router } from "@inertiajs/react";
-import { useEffect } from "react";
-import type { Translate } from "../i18n/i18n";
+import { useCallback, useEffect, useState } from "react";
 import { consumeServerRedirect } from "../inertia/navigationIntent";
 
 /**
- * Registers two navigation guards when `guardUnsaved` is true and `isDirty` is true:
- *  1. `beforeunload` — warns when closing the tab or refreshing the page.
- *  2. `router.on('before')` — shows a confirm dialog for Inertia client-side navigation.
- *
- * Both guards use `window.confirm` with the i18n message so they can be tested
- * in happy-dom by stubbing `window.confirm`.
+ * A cancelled Inertia visit, captured so it can be replayed verbatim if the
+ * user confirms "Leave". Only the fields router.visit's options accept are
+ * kept — the rest of PendingVisit (completed/cancelled/interrupted/url as a
+ * bookkeeping URL object) isn't needed to replay the navigation.
  */
-export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean, t: Translate): void {
+export type PendingGuardVisit = Pick<
+	PendingVisit,
+	| "url"
+	| "method"
+	| "data"
+	| "replace"
+	| "preserveScroll"
+	| "preserveState"
+	| "only"
+	| "except"
+	| "headers"
+>;
+
+export interface UnsavedGuardState {
+	/** Set while a navigation was cancelled and is awaiting the user's confirm/cancel. */
+	pending: PendingGuardVisit | null;
+	/** "Leave" — bypass the guard and replay the cancelled visit. */
+	confirmLeave: () => void;
+	/** "Stay" — dismiss the dialog, the cancelled visit is simply dropped. */
+	cancelLeave: () => void;
+}
+
+/**
+ * One-shot bypass for the replayed visit: confirmLeave() re-issues the
+ * cancelled navigation through the same router.visit -> 'before' path this
+ * guard listens on. Without this flag the replay would immediately see the
+ * still-dirty form and cancel itself again, popping the same dialog in a loop.
+ */
+let leaveConfirmed = false;
+
+function markLeaveConfirmed(): void {
+	leaveConfirmed = true;
+}
+
+function consumeLeaveConfirmed(): boolean {
+	const confirmed = leaveConfirmed;
+	leaveConfirmed = false;
+	return confirmed;
+}
+
+/**
+ * Registers the unsaved-changes guard for Inertia client-side navigation when
+ * `guardUnsaved` and `isDirty` are both true: cancels the visit and returns
+ * it via `pending` so the caller can render an in-app confirm dialog (no
+ * native window.confirm/beforeunload — those are jarring inside an admin
+ * SPA and can't be styled or translated consistently with the rest of the UI).
+ *
+ * Tab-close/refresh protection (beforeunload) is intentionally not covered:
+ * there is no in-app dialog for that channel, and a native one is exactly
+ * what this guard exists to avoid — the browser's own "leave site?" prompt
+ * for that channel is out of scope by design, not an oversight.
+ */
+export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): UnsavedGuardState {
+	const [pending, setPending] = useState<PendingGuardVisit | null>(null);
+
 	useEffect(() => {
 		if (!guardUnsaved) {
 			return;
 		}
-
-		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-			if (!isDirty) {
-				return;
-			}
-			e.preventDefault();
-			// Legacy browser support: setting returnValue prevents the dialog from
-			// being suppressed. Modern browsers show their own message regardless.
-			e.returnValue = t("form.unsaved_guard.body");
-		};
-
-		window.addEventListener("beforeunload", handleBeforeUnload);
-
-		const offBefore = router.on("before", (event) => {
+		return router.on("before", (event) => {
 			// A server-authored redirect (AdminPage's flash effect) is never
 			// subject to this guard, regardless of isDirty: it's the reset in
 			// router.post's onSuccess racing the flash-driven router.visit as
@@ -41,24 +80,40 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean, t: Tran
 			if (consumeServerRedirect()) {
 				return;
 			}
+			// The user already confirmed "Leave" for this exact visit — let the
+			// replay through instead of cancelling it again. Checked before the
+			// method/isDirty gates (both still true on replay) but after the
+			// server-redirect check, mirroring that flag's own ordering.
+			if (consumeLeaveConfirmed()) {
+				return;
+			}
 			// Only intercept GET navigation (page changes). POST/PATCH/DELETE
 			// visits are form submissions — block those and the save button itself
 			// would show the confirm dialog.
-			const method = (event as { detail?: { visit?: { method?: string } } }).detail?.visit
-				?.method;
-			if (method && method !== "get") {
+			const visit = event.detail.visit;
+			if (visit.method !== "get") {
 				return;
 			}
 			if (!isDirty) {
 				return;
 			}
-			const msg = `${t("form.unsaved_guard.title")}\n\n${t("form.unsaved_guard.body")}`;
-			return window.confirm(msg);
+			setPending(visit);
+			return false;
 		});
+	}, [isDirty, guardUnsaved]);
 
-		return () => {
-			window.removeEventListener("beforeunload", handleBeforeUnload);
-			offBefore();
-		};
-	}, [isDirty, guardUnsaved, t]);
+	const confirmLeave = useCallback(() => {
+		setPending((visit) => {
+			if (visit) {
+				markLeaveConfirmed();
+				const { url, ...options } = visit;
+				router.visit(url, options);
+			}
+			return null;
+		});
+	}, []);
+
+	const cancelLeave = useCallback(() => setPending(null), []);
+
+	return { pending, confirmLeave, cancelLeave };
 }
