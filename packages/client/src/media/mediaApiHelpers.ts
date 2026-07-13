@@ -3,7 +3,7 @@
  * folder CRUD — plus pure utilities shared across media components.
  */
 import type { useClient } from "../data/client";
-import type { MediaFolder, MediaItem } from "./types";
+import type { MediaFolder, MediaItem, MediaListResponse } from "./types";
 
 // ─── API helpers (non-hook) ────────────────────────────────────────────────────
 
@@ -27,6 +27,22 @@ export function normalizeMediaFolder(raw: unknown): MediaFolder {
 		...folder,
 		id: String(folder.id),
 		parentId: folder.parentId == null ? null : String(folder.parentId),
+	};
+}
+
+/**
+ * Normalise item and child-folder ids in a list payload; malformed payloads
+ * pass through unchanged.
+ */
+export function normalizeMediaListResponse(raw: unknown): MediaListResponse {
+	const data = raw as MediaListResponse;
+	if (!Array.isArray(data?.data)) {
+		return data;
+	}
+	return {
+		...data,
+		data: data.data.map(normalizeMediaItem),
+		...(Array.isArray(data.folders) ? { folders: data.folders.map(normalizeMediaFolder) } : {}),
 	};
 }
 
