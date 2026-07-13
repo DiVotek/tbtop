@@ -1,6 +1,7 @@
 import { router } from "@inertiajs/react";
 import { UserIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { logoutPath as panelLogoutPath } from "../data/entityRoutes";
 import { useLocale, useTranslation } from "../i18n/i18n";
 import { isExternalUrl } from "../structure/actionBlock";
 import { NodeIcon } from "../ui/node-icon";
@@ -28,7 +29,10 @@ interface ProfileDropdownProps {
 	logoutPath?: string;
 }
 
-export function ProfileDropdown({ user, logoutPath = "/logout" }: ProfileDropdownProps) {
+// Defaulting to the panel-prefixed path (not a bare "/logout"): the logout
+// endpoint is registered under the admin prefix, and an unprefixed POST falls
+// through to the host app's own routes.
+export function ProfileDropdown({ user, logoutPath = panelLogoutPath() }: ProfileDropdownProps) {
 	const t = useTranslation();
 	const { locale, setLocale, available: availableLocales } = useLocale();
 	const { userMenuItems = [] } = useChromeData();

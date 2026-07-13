@@ -37,6 +37,10 @@ export function uploadPath(profile: string): string {
 	return `${routesBase}/uploads/${profile}`;
 }
 
+export function logoutPath(): string {
+	return `${routesBase}/logout`;
+}
+
 export function collection(client: AdminClient, entityName: string): EntityCollectionRoutes {
 	return {
 		list: (query) => client.get(collectionPath(entityName), query),

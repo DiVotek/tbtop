@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import { setRoutesBase } from "../data/entityRoutes";
 import { I18nProvider } from "../i18n/i18n";
 import { type ChromeData, ChromeDataContext } from "./chromeContext";
 import { ProfileDropdown } from "./ProfileDropdown";
@@ -60,7 +61,9 @@ describe("ProfileDropdown", () => {
 		await findByTestId("profile-menu");
 	});
 
-	test("ProfileDropdown: clicking logout button posts to /logout by default", async () => {
+	test("ProfileDropdown: clicking logout posts to the panel-prefixed logout by default", async () => {
+		// A bare "/logout" (the old default) doesn't exist — the endpoint lives
+		// under the admin prefix, so the default must follow routesBase.
 		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
 		await act(async () => {
 			fireEvent.click(getByTestId("profile-trigger"));
@@ -69,7 +72,26 @@ describe("ProfileDropdown", () => {
 		await act(async () => {
 			fireEvent.click(getByTestId("profile-logout"));
 		});
-		expect(routerPostMock.mock.calls[0]?.[0]).toBe("/logout");
+		expect(routerPostMock.mock.calls[0]?.[0]).toBe("/admin/logout");
+	});
+
+	test("ProfileDropdown: default logout path follows a custom panel prefix", async () => {
+		setRoutesBase("panel");
+		try {
+			const { getByTestId, findByTestId } = render(
+				<ProfileDropdown user={{ name: "Alice" }} />,
+			);
+			await act(async () => {
+				fireEvent.click(getByTestId("profile-trigger"));
+			});
+			await findByTestId("profile-menu");
+			await act(async () => {
+				fireEvent.click(getByTestId("profile-logout"));
+			});
+			expect(routerPostMock.mock.calls[0]?.[0]).toBe("/panel/logout");
+		} finally {
+			setRoutesBase("admin");
+		}
 	});
 
 	test("ProfileDropdown: logout posts to custom logoutPath when provided", async () => {
