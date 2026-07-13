@@ -1,6 +1,6 @@
 import type { PendingVisit } from "@inertiajs/core";
 import { router } from "@inertiajs/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { consumeServerRedirect } from "../inertia/navigationIntent";
 
 /**
@@ -32,22 +32,19 @@ export interface UnsavedGuardState {
 }
 
 /**
- * One-shot bypass for the replayed visit: confirmLeave() re-issues the
- * cancelled navigation through the same router.visit -> 'before' path this
- * guard listens on. Without this flag the replay would immediately see the
+ * Bypass for the replayed visit: confirmLeave() re-issues the cancelled
+ * navigation through the same router.visit -> 'before' path this guard
+ * listens on. Without this flag the replay would immediately see the
  * still-dirty form and cancel itself again, popping the same dialog in a loop.
+ *
+ * Module-scoped on purpose, but NOT consumed by readers: Inertia fires
+ * 'before' synchronously inside router.visit(), so the flag is raised just
+ * for that call and lowered right after. Every guard instance on the page
+ * (e.g. a dirty page form plus a dirty modal form) reads the same flag during
+ * the replay — a consuming read would let only the first listener through and
+ * make the second re-cancel the confirmed navigation.
  */
 let leaveConfirmed = false;
-
-function markLeaveConfirmed(): void {
-	leaveConfirmed = true;
-}
-
-function consumeLeaveConfirmed(): boolean {
-	const confirmed = leaveConfirmed;
-	leaveConfirmed = false;
-	return confirmed;
-}
 
 /**
  * Registers the unsaved-changes guard for Inertia client-side navigation when
@@ -63,6 +60,10 @@ function consumeLeaveConfirmed(): boolean {
  */
 export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): UnsavedGuardState {
 	const [pending, setPending] = useState<PendingGuardVisit | null>(null);
+	// Mirrors `pending` for confirmLeave: replaying from inside the setState
+	// updater would make it impure (Strict Mode double-invokes updaters, which
+	// would fire router.visit twice).
+	const pendingRef = useRef<PendingGuardVisit | null>(null);
 
 	useEffect(() => {
 		if (!guardUnsaved) {
@@ -84,7 +85,7 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): Unsave
 			// replay through instead of cancelling it again. Checked before the
 			// method/isDirty gates (both still true on replay) but after the
 			// server-redirect check, mirroring that flag's own ordering.
-			if (consumeLeaveConfirmed()) {
+			if (leaveConfirmed) {
 				return;
 			}
 			// Only intercept GET navigation (page changes). POST/PATCH/DELETE
@@ -97,23 +98,32 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): Unsave
 			if (!isDirty) {
 				return;
 			}
+			pendingRef.current = visit;
 			setPending(visit);
 			return false;
 		});
 	}, [isDirty, guardUnsaved]);
 
 	const confirmLeave = useCallback(() => {
-		setPending((visit) => {
-			if (visit) {
-				markLeaveConfirmed();
-				const { url, ...options } = visit;
-				router.visit(url, options);
-			}
-			return null;
-		});
+		const visit = pendingRef.current;
+		pendingRef.current = null;
+		setPending(null);
+		if (!visit) {
+			return;
+		}
+		const { url, ...options } = visit;
+		leaveConfirmed = true;
+		try {
+			router.visit(url, options);
+		} finally {
+			leaveConfirmed = false;
+		}
 	}, []);
 
-	const cancelLeave = useCallback(() => setPending(null), []);
+	const cancelLeave = useCallback(() => {
+		pendingRef.current = null;
+		setPending(null);
+	}, []);
 
 	return { pending, confirmLeave, cancelLeave };
 }

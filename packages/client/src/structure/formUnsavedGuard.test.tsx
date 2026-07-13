@@ -41,14 +41,14 @@ type PostOptions = { onSuccess?: () => void; onError?: (errors: Record<string, s
 const registeredBeforeListeners: BeforeListener[] = [];
 let routerOnCalled = false;
 let capturedPostOnSuccess: (() => void) | undefined;
-// Real router.visit() fires the registered 'before' listeners before
-// navigating — that's the whole mechanism useUnsavedGuard's replay relies on
-// (the leave-confirmed bypass flag is consumed by exactly that re-fire). A
-// bare no-op mock would never invoke the guard's replay path at all, and
-// would also leak the one-shot bypass flag into the next test (it stays
-// true forever with nothing to consume it).
+// Real router.visit() fires the registered 'before' listeners synchronously
+// before navigating — that's the whole mechanism useUnsavedGuard's replay
+// relies on (the leave-confirmed bypass flag is raised only for the duration
+// of that synchronous re-fire). A bare no-op mock would never exercise the
+// guard's replay path at all.
+let lastVisitBlocked = false;
 const routerVisitMock = mock((href: unknown, _options?: unknown) => {
-	fireInertiaNavigation("get", href);
+	lastVisitBlocked = !fireInertiaNavigation("get", href);
 	return href;
 });
 
@@ -92,6 +92,7 @@ beforeEach(() => {
 	routerOnCalled = false;
 	capturedPostOnSuccess = undefined;
 	routerVisitMock.mockClear();
+	lastVisitBlocked = false;
 });
 
 afterEach(() => {
@@ -248,6 +249,49 @@ describe("Form unsaved guard — Inertia navigation", () => {
 		// A POST visit (form submit) must NOT be blocked by the guard.
 		const allowed = fireInertiaNavigation("post");
 		expect(allowed).toBe(true);
+	});
+
+	test("one Leave confirmation covers every dirty form's guard on the page", async () => {
+		// Two independent dirty forms → two guard instances listening on the
+		// same navigation. Confirming Leave on one must let the replayed visit
+		// through BOTH guards: a consuming (one-shot per listener) bypass flag
+		// would be eaten by the first listener and make the second re-cancel
+		// the already-confirmed navigation.
+		const makeForm = (n: string) =>
+			s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+				s.text({ name: "title" }),
+				s.action({
+					name: `${n}Edit`,
+					handler: async (c) => c.form?.set("title", "Changed"),
+				}),
+			]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryAllByTestId } = render(
+			<Wrap>
+				{renderNode(makeForm("first"))}
+				{renderNode(makeForm("second"))}
+			</Wrap>,
+		);
+
+		for (const name of ["firstEdit", "secondEdit"]) {
+			const btn = await findByTestId(`action-${name}`);
+			await act(async () => {
+				fireEvent.click(btn);
+			});
+		}
+
+		await act(async () => {
+			fireInertiaNavigation("get", "/admin/other");
+		});
+
+		const leaveButtons = queryAllByTestId("confirm-dialog-confirm");
+		expect(leaveButtons.length).toBeGreaterThan(0);
+		await act(async () => {
+			fireEvent.click(leaveButtons[0] as HTMLElement);
+		});
+
+		expect(routerVisitMock).toHaveBeenCalledTimes(1);
+		expect(lastVisitBlocked).toBe(false);
 	});
 
 	test("skips the confirm dialog for a GET navigation marked as a server redirect, even when dirty", async () => {
