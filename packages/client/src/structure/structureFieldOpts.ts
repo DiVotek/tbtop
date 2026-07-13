@@ -11,6 +11,7 @@ export interface TextOpts {
 	label?: string;
 	required?: boolean;
 	maxLength?: number;
+	placeholder?: string;
 }
 
 export interface TextareaOpts {
@@ -33,6 +34,7 @@ export interface NumberOpts {
 	min?: number;
 	max?: number;
 	step?: number;
+	placeholder?: string;
 }
 
 export interface OtpOpts {

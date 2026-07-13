@@ -9,6 +9,7 @@ import { MaskedInput } from "./maskedInput";
 interface TextOptions {
 	mask?: string;
 	copyable?: CopyableConfig;
+	placeholder?: string;
 }
 
 export function TextCell({ value }: FieldCellProps<string>) {
@@ -27,6 +28,7 @@ export function TextForm({
 	const inputId = fieldId({ id, name });
 	const mask = options?.mask;
 	const copyable = options?.copyable;
+	const placeholder = options?.placeholder;
 	const inputClass = copyable ? "pr-9" : undefined;
 	const display = mask ? applyMask(asString(value), mask) : asString(value);
 
@@ -40,6 +42,7 @@ export function TextForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			className={inputClass}
+			placeholder={placeholder}
 		/>
 	) : (
 		<Input
@@ -50,6 +53,7 @@ export function TextForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			className={inputClass}
+			placeholder={placeholder}
 		/>
 	);
 

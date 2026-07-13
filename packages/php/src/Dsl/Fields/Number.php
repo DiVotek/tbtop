@@ -12,4 +12,9 @@ final class Number extends Field
     {
         return 'number';
     }
+
+    public function placeholder(string $text): static
+    {
+        return $this->set('placeholder', $text);
+    }
 }

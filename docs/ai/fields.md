@@ -108,11 +108,11 @@ the `KitchenSinkPage`/`ContractTest` gate.
 
 | Field | `S` factory | Wire `kind` | Field-specific methods | Needs server endpoint? |
 |---|---|---|---|---|
-| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | none | No |
-| **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | none | No |
+| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string $text)` | No |
+| **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | `placeholder(string $text)` | No |
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
 | **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
-| **Number** | `$s->number('x')` / `Number::make('x')` | `number` | none (use `->set('min', ...)`, `->set('step', ...)` via base `set`) | No |
+| **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)` (also `->set('min', ...)`, `->set('step', ...)` via base `set`) | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | none; value shape: `{from?: string, to?: string}` | No |
