@@ -30,4 +30,17 @@ final class MediaPicker extends Field
     {
         return $this->set('accept', $mimes);
     }
+
+    /**
+     * Visual variant of the picker. Applies to single-select only —
+     * ->multiple() always renders preview chips regardless of variant.
+     *
+     * @param  'inline'|'preview'  $variant  'inline' (default) — Choose button plus a
+     *                                       read-only filename display; 'preview' — a
+     *                                       clickable large-preview block.
+     */
+    public function variant(string $variant): static
+    {
+        return $this->set('variant', $variant);
+    }
 }

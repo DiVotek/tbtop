@@ -166,6 +166,7 @@ return [
             'title' => 'Select file',
             'title_multiple' => 'Select files',
             'choose' => 'Choose',
+            'choose_image' => 'Choose image',
             'confirm' => 'Confirm selection',
             'no_selection' => 'No file selected',
         ],

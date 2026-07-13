@@ -161,6 +161,7 @@ export const defaultMessages: Messages = {
 	"media.picker.title": "Select file",
 	"media.picker.title_multiple": "Select files",
 	"media.picker.choose": "Choose",
+	"media.picker.choose_image": "Choose image",
 	"media.picker.confirm": "Confirm selection",
 	"media.picker.no_selection": "No file selected",
 	"media.preview.open": "Open",

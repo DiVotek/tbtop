@@ -44,3 +44,15 @@ it('MediaField: S::media() dispatches to MediaPicker', function () {
 it('MediaField: media is in BUILT_IN_KINDS', function () {
     expect(S::BUILT_IN_KINDS)->toContain('media');
 });
+
+it('MediaField: ->variant() sets variant option', function () {
+    $json = encodeMediaField(MediaPicker::make('cover')->variant('preview'));
+
+    expect($json['options']['variant'])->toBe('preview');
+});
+
+it('MediaField: variant is absent by default (inline)', function () {
+    $json = encodeMediaField(MediaPicker::make('cover'));
+
+    expect($json['options'])->not->toHaveKey('variant');
+});
