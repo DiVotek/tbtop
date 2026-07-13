@@ -93,14 +93,16 @@ export function MediaPickerForm({
 	const [resolvedItems, setResolvedItems] = useState<MediaItem[]>([]);
 	const [pickerOpen, setPickerOpen] = useState(false);
 
+	// Form values may arrive as JSON numbers (e.g. settings-backed forms);
+	// coerce to strings so id comparisons never mix types.
 	function resolveIds(v: MediaPickerValue | null | undefined): string[] {
 		if (!v) {
 			return [];
 		}
 		if (Array.isArray(v)) {
-			return v as string[];
+			return (v as Array<string | number>).map(String);
 		}
-		return [v as string];
+		return [String(v as string | number)];
 	}
 	const ids = resolveIds(value);
 

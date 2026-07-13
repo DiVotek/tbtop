@@ -195,6 +195,30 @@ describe("MediaPickerForm: variant preview", () => {
 		expect(fetches).toBe(1);
 	});
 
+	test("preview hydrates when the form value itself is a number", async () => {
+		// Settings-backed forms can deliver the stored media id as a JSON
+		// number; id handling must not depend on the value's runtime type.
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/1")) {
+				return new Response(JSON.stringify({ ...ITEM_IMG, id: 1 }), { status: 200 });
+			}
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+		const { findByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="logo"
+					value={1 as unknown as string}
+					onChange={() => {}}
+					options={{ multiple: false, variant: "preview" }}
+				/>
+			</Wrap>,
+		);
+		const img = await findByTestId("media-preview-img-1");
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+	});
+
 	test("corner clear button fires onChange(null)", async () => {
 		const user = userEvent.setup({ delay: null });
 		const changes: Array<unknown> = [];
