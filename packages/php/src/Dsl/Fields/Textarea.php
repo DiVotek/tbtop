@@ -12,4 +12,9 @@ final class Textarea extends Field
     {
         return 'textarea';
     }
+
+    public function placeholder(string $text): static
+    {
+        return $this->set('placeholder', $text);
+    }
 }

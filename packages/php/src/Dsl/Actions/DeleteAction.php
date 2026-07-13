@@ -28,8 +28,12 @@ final class DeleteAction
             ? RecordAction::bulk($s, $name, $using, self::bulkTail())
             : RecordAction::server($s, $name, $using, self::rowTail());
 
+        $label = $bulk
+            ? __('tbtop-admin::admin.action.delete_selected')
+            : __('tbtop-admin::admin.action.delete');
+
         return $builder
-            ->label($bulk ? 'Delete selected' : 'Delete')
+            ->label($label)
             ->color('danger')
             ->confirm(...self::confirmCopy($bulk));
     }
@@ -37,18 +41,20 @@ final class DeleteAction
     /** @return array{0: string, 1: string} */
     private static function confirmCopy(bool $bulk): array
     {
-        return $bulk
-            ? ['Delete selected records?', 'This cannot be undone.']
-            : ['Delete record?', 'This cannot be undone.'];
+        $title = $bulk
+            ? __('tbtop-admin::admin.delete.confirm.bulk_title')
+            : __('tbtop-admin::admin.delete.confirm.title');
+
+        return [$title, __('tbtop-admin::admin.delete.confirm.body')];
     }
 
     private static function rowTail(): Effects
     {
-        return Effects::make()->notify('Record deleted')->refreshTable();
+        return Effects::make()->notify(__('tbtop-admin::admin.delete.notify.success'))->refreshTable();
     }
 
     private static function bulkTail(): Effects
     {
-        return Effects::make()->notify('Selected records deleted')->refreshTable();
+        return Effects::make()->notify(__('tbtop-admin::admin.delete.notify.bulk_success'))->refreshTable();
     }
 }

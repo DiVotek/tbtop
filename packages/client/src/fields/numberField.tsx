@@ -2,11 +2,22 @@ import { Input } from "../ui/input";
 import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
+interface NumberOptions {
+	placeholder?: string;
+}
+
 export function NumberCell({ value }: FieldCellProps<number>) {
 	return nullableCell(value, (v) => <span>{String(v)}</span>);
 }
 
-export function NumberForm({ id, name, value, onChange, disabled }: FieldFormProps<number>) {
+export function NumberForm({
+	id,
+	name,
+	value,
+	onChange,
+	disabled,
+	options,
+}: FieldFormProps<number, NumberOptions>) {
 	return (
 		<Input
 			id={fieldId({ id, name })}
@@ -15,6 +26,7 @@ export function NumberForm({ id, name, value, onChange, disabled }: FieldFormPro
 			defaultValue={typeof value === "number" ? String(value) : ""}
 			onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
 			disabled={disabled}
+			placeholder={options?.placeholder}
 		/>
 	);
 }

@@ -68,6 +68,12 @@ final class FormBuilder implements JsonSerializable
         return RuleWalker::collect($this->children);
     }
 
+    /** Validator attribute labels (->label()) keyed like collectRules(). @return array<string, string> */
+    public function collectAttributes(): array
+    {
+        return RuleWalker::collectAttributes($this->children);
+    }
+
     /**
      * Find a Select field by name that has a creatable closure, walking nested children.
      * Returns null when not found.

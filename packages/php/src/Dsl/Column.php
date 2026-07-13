@@ -490,6 +490,11 @@ final class Column implements JsonSerializable
         return $this->editRules;
     }
 
+    public function labelText(): ?string
+    {
+        return $this->label;
+    }
+
     public function onSaveClosure(): ?Closure
     {
         return $this->onSaveClosure;

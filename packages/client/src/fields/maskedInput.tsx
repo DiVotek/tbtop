@@ -11,6 +11,7 @@ interface MaskedInputProps {
 	onBlur?: () => void;
 	disabled?: boolean;
 	className?: string;
+	placeholder?: string;
 }
 
 export function MaskedInput({ mask, value, onChange, ...rest }: MaskedInputProps) {

@@ -236,6 +236,80 @@ final class RuleWalker
         return $rules;
     }
 
+    /**
+     * Walks the same tree as collect(), producing validator `attributes` for
+     * fields that set ->label() — so error messages show the label instead of
+     * the raw field name. Keyed identically to collect() for translatable and
+     * repeater fields; fields without a label are omitted (Laravel falls back
+     * to its own humanized name).
+     *
+     * @param  list<mixed>  $children
+     * @return array<string, string>
+     */
+    public static function collectAttributes(array $children, string $prefix = ''): array
+    {
+        $attributes = [];
+        foreach ($children as $child) {
+            foreach (self::attributesFromChild($child, $prefix) as $key => $label) {
+                $attributes[$key] = $label;
+            }
+        }
+
+        return $attributes;
+    }
+
+    /** @return array<string, string> */
+    private static function attributesFromChild(mixed $child, string $prefix): array
+    {
+        if ($child instanceof Field) {
+            return self::attributesFromField($child, $prefix);
+        }
+        if ($child instanceof Node) {
+            return self::collectAttributes($child->nestedChildren(), $prefix);
+        }
+
+        return [];
+    }
+
+    /** @return array<string, string> */
+    private static function attributesFromField(Field $field, string $prefix): array
+    {
+        $key = $prefix.$field->name;
+        $label = $field->labelText();
+
+        $attributes = $field->isTranslatableField()
+            ? self::translatableAttributes($key, $label)
+            : self::plainAttributes($key, $label);
+
+        $subFields = $field->childFields();
+        if ($subFields !== []) {
+            $attributes += self::collectAttributes($subFields, $key.'.*.');
+        }
+
+        return $attributes;
+    }
+
+    /** @return array<string, string> */
+    private static function plainAttributes(string $key, ?string $label): array
+    {
+        return $label === null ? [] : [$key => $label];
+    }
+
+    /** Translatable field attributes: `field.locale` => "Label (locale)". @return array<string, string> */
+    private static function translatableAttributes(string $key, ?string $label): array
+    {
+        if ($label === null) {
+            return [];
+        }
+
+        $attributes = [];
+        foreach (self::contentLocales() as $locale) {
+            $attributes["{$key}.{$locale}"] = "{$label} ({$locale})";
+        }
+
+        return $attributes;
+    }
+
     /** @return list<string> */
     private static function contentLocales(): array
     {

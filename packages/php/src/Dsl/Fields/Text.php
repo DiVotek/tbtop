@@ -19,4 +19,9 @@ final class Text extends Field
     {
         return $this->set('mask', $pattern);
     }
+
+    public function placeholder(string $text): static
+    {
+        return $this->set('placeholder', $text);
+    }
 }
