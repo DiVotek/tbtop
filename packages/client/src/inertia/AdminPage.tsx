@@ -90,6 +90,10 @@ export function AdminPage() {
 	// pre-option behavior for panels that never set it.
 	const widthToken = tbtop?.appearance?.maxWidth;
 	const maxWidth = (widthToken && MAX_WIDTH_CLASS[widthToken]) || "max-w-5xl";
+	// Center-layout pages (auth screens) own their heading inside the content —
+	// the admin page-header chrome (breadcrumbs/h1/subtitle/actions) would
+	// duplicate it above the card. `title` still feeds the browser tab.
+	const showPageHeader = page.props.layout !== "center";
 
 	return (
 		<ClientProvider apiBase={apiBase}>
@@ -100,16 +104,20 @@ export function AdminPage() {
 					>
 						<PageSubtitleProvider>
 							<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
-								{breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
-								<div className="flex items-start justify-between gap-4">
-									<div>
-										<h1 className="text-2xl font-semibold tracking-tight">
-											{title}
-										</h1>
-										<PageSubtitle staticSubtitle={subtitle} />
+								{showPageHeader && breadcrumbs && (
+									<Breadcrumbs items={breadcrumbs} />
+								)}
+								{showPageHeader && (
+									<div className="flex items-start justify-between gap-4">
+										<div>
+											<h1 className="text-2xl font-semibold tracking-tight">
+												{title}
+											</h1>
+											<PageSubtitle staticSubtitle={subtitle} />
+										</div>
+										<PageHeaderActions actions={headerActionBags} />
 									</div>
-									<PageHeaderActions actions={headerActionBags} />
-								</div>
+								)}
 								<PageContentErrorBoundary>
 									{renderNode(node)}
 								</PageContentErrorBoundary>
