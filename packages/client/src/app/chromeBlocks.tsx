@@ -52,9 +52,16 @@ export function NavMenuBlock() {
 	);
 }
 
-export function UserMenuBlock() {
+interface UserMenuOptions {
+	/** false hides the built-in language section of the dropdown. */
+	locales?: boolean;
+}
+
+// Options are partial (not RenderProps): the default header renders the
+// block directly, outside the registry.
+export function UserMenuBlock({ options }: { options?: UserMenuOptions }) {
 	const { user } = useChromeData();
-	return <ProfileDropdown user={user} />;
+	return <ProfileDropdown user={user} showLocales={options?.locales !== false} />;
 }
 
 export function LogoBlock() {

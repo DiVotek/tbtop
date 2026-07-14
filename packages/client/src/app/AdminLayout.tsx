@@ -16,6 +16,7 @@ import { CommandPalette } from "./commandPalette/CommandPalette";
 import type { CommandPaletteData } from "./commandPalette/types";
 import { DensityContext } from "./densityContext";
 import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
+import { ThemeSync } from "./ThemeSync";
 import { TopbarSidebarFrame } from "./TopbarSidebarFrame";
 
 /** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
@@ -133,6 +134,7 @@ export function AdminLayoutShell({
 	return (
 		<DensityContext.Provider value={density}>
 			<ChromeDataContext.Provider value={chromeData}>
+				<ThemeSync />
 				<Frame {...frameProps} />
 			</ChromeDataContext.Provider>
 		</DensityContext.Provider>

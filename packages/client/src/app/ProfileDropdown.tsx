@@ -27,12 +27,18 @@ interface ProfileDropdownUser {
 interface ProfileDropdownProps {
 	user: ProfileDropdownUser | null;
 	logoutPath?: string;
+	/** Hide the built-in language section (panel offers it elsewhere). */
+	showLocales?: boolean;
 }
 
 // Defaulting to the panel-prefixed path (not a bare "/logout"): the logout
 // endpoint is registered under the admin prefix, and an unprefixed POST falls
 // through to the host app's own routes.
-export function ProfileDropdown({ user, logoutPath = panelLogoutPath() }: ProfileDropdownProps) {
+export function ProfileDropdown({
+	user,
+	logoutPath = panelLogoutPath(),
+	showLocales = true,
+}: ProfileDropdownProps) {
 	const t = useTranslation();
 	const { locale, setLocale, available: availableLocales } = useLocale();
 	const { userMenuItems = [] } = useChromeData();
@@ -101,7 +107,7 @@ export function ProfileDropdown({ user, logoutPath = panelLogoutPath() }: Profil
 						</div>
 					)}
 
-					{availableLocales.length >= 2 && (
+					{showLocales && availableLocales.length >= 2 && (
 						<div className="border-b pb-1 mb-1">
 							<div className="px-3 py-1.5 text-xs text-muted-foreground">
 								{t("nav.language")}

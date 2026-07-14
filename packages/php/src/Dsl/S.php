@@ -525,10 +525,16 @@ final class S
         return new Node('navMenu');
     }
 
-    /** Profile dropdown: user identity, theme, locale, logout. */
-    public function userMenu(): Node
+    /**
+     * Profile dropdown: user identity, custom items, locale, logout.
+     * Pass ['locales' => false] to hide the built-in language section
+     * when the panel offers locale switching elsewhere.
+     *
+     * @param  array<string, mixed>  $opts
+     */
+    public function userMenu(array $opts = []): Node
     {
-        return new Node('userMenu');
+        return new Node('userMenu', $opts);
     }
 
     /** Panel brand text (falls back to the nav.title translation). */

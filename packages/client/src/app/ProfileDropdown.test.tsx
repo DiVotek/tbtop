@@ -159,6 +159,22 @@ describe("ProfileDropdown", () => {
 		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
 	});
 
+	test("ProfileDropdown: showLocales=false hides the language section despite multiple locales", async () => {
+		const { getByTestId, findByTestId, container } = render(
+			<I18nProvider
+				defaultLang="en"
+				languages={{ en: async () => ({}), uk: async () => ({}) }}
+			>
+				<ProfileDropdown user={{ name: "Alice" }} showLocales={false} />
+			</I18nProvider>,
+		);
+		await act(async () => {
+			fireEvent.click(getByTestId("profile-trigger"));
+		});
+		await findByTestId("profile-menu");
+		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
+	});
+
 	test("ProfileDropdown: language section heading shows translated label, not raw key", async () => {
 		// nav.language was missing from defaultMessages so t() fell back to the
 		// key itself, rendering "nav.language" as a visible string in the UI.

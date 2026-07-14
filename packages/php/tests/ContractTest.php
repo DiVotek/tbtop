@@ -71,6 +71,13 @@ it('chrome with a default (buttons) locale switcher conforms to the chrome contr
     validateAgainstSchema(json_decode(json_encode($node)));
 });
 
+it('userMenu with the locales option conforms to the chrome contract', function () {
+    $s = new S;
+    $node = $s->userMenu(['locales' => false]);
+
+    validateAgainstSchema(json_decode(json_encode($node)));
+});
+
 it('effects serialization conforms to the effects schema', function () {
     $effects = Effects::make()
         ->notify('Saved')
