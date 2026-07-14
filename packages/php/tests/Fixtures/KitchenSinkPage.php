@@ -142,6 +142,12 @@ class KitchenSinkPage extends Page
                         $s->text('heading')->required(),
                         $s->textarea('text'),
                     ]),
+                    $s->repeater('menu')->collapsible()->summary('label')->set('fields', [
+                        $s->text('label')->required(),
+                        $s->repeater('children')->collapsible()->summary('label')->set('fields', [
+                            $s->text('label')->required(),
+                        ]),
+                    ]),
                     $s->checkboxlist('tags')->options([
                         ['value' => 'news', 'label' => 'News'],
                         ['value' => 'guide', 'label' => 'Guide'],

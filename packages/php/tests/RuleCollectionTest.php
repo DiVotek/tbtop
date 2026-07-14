@@ -34,6 +34,25 @@ it('prefixes repeater sub-field rules with parent.*.', function () {
     ]);
 });
 
+it('prefixes nested repeater rules through both levels', function () {
+    $s = new S;
+    $form = $s->form('menu', [
+        $s->repeater('items')->set('fields', [
+            $s->text('label')->required(),
+            $s->repeater('children')->set('fields', [
+                $s->text('label')->required(),
+            ]),
+        ]),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'items' => ['nullable'],
+        'items.*.label' => ['required'],
+        'items.*.children' => ['nullable'],
+        'items.*.children.*.label' => ['required'],
+    ]);
+});
+
 // A regex: pattern passed as a string would be split on its own '|'. The shared
 // CollectsRules guard rejects it on both Field and Column; pass it as an array.
 
