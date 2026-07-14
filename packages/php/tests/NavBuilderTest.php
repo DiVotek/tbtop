@@ -289,3 +289,17 @@ it('PanelConfig: exposes userMenuItems as sparse wire payloads through the curre
         ['label' => 'API Tokens', 'href' => '/admin/api-tokens', 'icon' => ['name' => 'key', 'position' => 'left']],
     ]);
 });
+
+// Regression: panel config is built once at boot, so an eager __() label
+// froze on the boot locale. A Closure must resolve per serialization.
+it('NavItem: a Closure label resolves at serialization time, not construction', function () {
+    $locale = 'en';
+    $item = NavItem::make(function () use (&$locale): string {
+        return $locale === 'en' ? 'Profile' : 'Профіль';
+    })->url('/admin/profile');
+
+    $locale = 'uk';
+
+    expect($item->toArray()['label'])->toBe('Профіль')
+        ->and($item->label())->toBe('Профіль');
+});

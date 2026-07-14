@@ -20,7 +20,7 @@ import {
 } from "./contentLocaleContext";
 import { FormError, FormSkeleton } from "./defaults";
 import { FormControllerProvider } from "./formContext";
-import { useFormController } from "./formController";
+import { isEqual, useFormController } from "./formController";
 import { isNodeDisabled, isNodeHidden } from "./meta";
 import { useModalData } from "./modalDataContext";
 import { renderAsyncError } from "./renderAsyncError";
@@ -189,10 +189,17 @@ function submitter(e: FormEvent<HTMLFormElement>): HTMLElement | null {
 	return null;
 }
 
+/**
+ * Resync form state when the record VALUE changes. Identity alone is
+ * not a signal: every Inertia props refresh (e.g. the redirect after a
+ * failed submit) re-materializes the node and delivers a fresh, deep-
+ * equal record — resetting then would wipe the user's edits and the
+ * just-applied server field errors.
+ */
 function useSyncInitial(initial: Bag, reset: () => void): void {
 	const prevRef = useRef(initial);
 	useEffect(() => {
-		if (prevRef.current === initial) {
+		if (isEqual(prevRef.current, initial)) {
 			return;
 		}
 		prevRef.current = initial;

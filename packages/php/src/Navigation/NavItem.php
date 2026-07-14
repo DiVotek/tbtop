@@ -20,9 +20,17 @@ final class NavItem
 
     private bool $newTab = false;
 
-    private function __construct(private readonly string $label) {}
+    /** @param string|(\Closure(): string) $label */
+    private function __construct(private readonly string|\Closure $label) {}
 
-    public static function make(string $label): self
+    /**
+     * Pass a Closure to defer translation to request time — panel
+     * config is built once at boot, so a bare __() would freeze
+     * on the boot locale (same contract as NavGroup::label()).
+     *
+     * @param  string|(\Closure(): string)  $label
+     */
+    public static function make(string|\Closure $label): self
     {
         return new self($label);
     }
@@ -60,7 +68,7 @@ final class NavItem
 
     public function label(): string
     {
-        return $this->label;
+        return $this->label instanceof \Closure ? ($this->label)() : $this->label;
     }
 
     public function getHref(): string
@@ -87,7 +95,7 @@ final class NavItem
      */
     public function toArray(): array
     {
-        $out = ['label' => $this->label, 'href' => $this->href];
+        $out = ['label' => $this->label(), 'href' => $this->href];
         $out += $this->iconOption();
         if ($this->newTab) {
             $out['newTab'] = true;
