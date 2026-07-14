@@ -615,6 +615,50 @@
                                         "name": "sections"
                                     },
                                     {
+                                        "kind": "repeater",
+                                        "options": {
+                                            "collapsible": true,
+                                            "summary": "label",
+                                            "fields": [
+                                                {
+                                                    "kind": "text",
+                                                    "options": {
+                                                        "required": true,
+                                                        "constraints": {
+                                                            "required": true
+                                                        }
+                                                    },
+                                                    "meta": {},
+                                                    "name": "label"
+                                                },
+                                                {
+                                                    "kind": "repeater",
+                                                    "options": {
+                                                        "collapsible": true,
+                                                        "summary": "label",
+                                                        "fields": [
+                                                            {
+                                                                "kind": "text",
+                                                                "options": {
+                                                                    "required": true,
+                                                                    "constraints": {
+                                                                        "required": true
+                                                                    }
+                                                                },
+                                                                "meta": {},
+                                                                "name": "label"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "meta": {},
+                                                    "name": "children"
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "menu"
+                                    },
+                                    {
                                         "kind": "checkboxlist",
                                         "options": {
                                             "options": [

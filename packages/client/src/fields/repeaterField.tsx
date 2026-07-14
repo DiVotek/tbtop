@@ -14,6 +14,8 @@ interface RepeaterOptions {
 	minItems?: number;
 	maxItems?: number;
 	defaultItems?: number;
+	collapsible?: boolean;
+	summary?: string;
 }
 
 export function RepeaterCell({ value }: FieldCellProps<Item[]>) {
@@ -40,6 +42,8 @@ export function RepeaterForm({
 	const minItems = options?.minItems ?? 0;
 	const maxItems = options?.maxItems;
 	const defaultItems = options?.defaultItems ?? 0;
+	const collapsible = options?.collapsible === true;
+	const summaryField = options?.summary;
 	const seeded: Item[] =
 		defaultItems > 0 && !disabled ? Array.from({ length: defaultItems }, () => ({})) : [];
 	const items: Item[] = value !== undefined && value !== null ? value : seeded;
@@ -61,6 +65,8 @@ export function RepeaterForm({
 					subFields={subFields}
 					minItems={minItems}
 					disabled={disabled}
+					collapsible={collapsible}
+					summaryField={summaryField}
 					onSubFieldChange={(subName, next) => {
 						const nextItems = items.map((it, i) =>
 							i === index ? { ...it, [subName]: next } : it,

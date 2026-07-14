@@ -68,6 +68,8 @@ export const defaultMessages: Messages = {
 	"field.keyvalue.duplicate_key": "Duplicate key",
 	"field.repeater.add_item": "Add item",
 	"field.repeater.remove": "Remove item",
+	"field.repeater.edit": "Edit item",
+	"field.repeater.untitled_item": "Untitled",
 	"field.repeater.item_label": "Item",
 	"field.repeater.move_up": "Move up",
 	"field.repeater.move_down": "Move down",
