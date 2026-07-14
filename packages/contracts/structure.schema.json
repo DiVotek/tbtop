@@ -192,7 +192,7 @@
 					"if": {
 						"properties": {
 							"kind": {
-								"enum": ["navMenu", "userMenu", "logo", "spacer", "notifications"]
+								"enum": ["navMenu", "logo", "spacer", "notifications"]
 							}
 						}
 					},
@@ -201,6 +201,19 @@
 							"options": {
 								"additionalProperties": false,
 								"properties": {}
+							}
+						}
+					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "userMenu" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"additionalProperties": false,
+								"properties": {
+									"locales": { "type": "boolean" }
+								}
 							}
 						}
 					}
