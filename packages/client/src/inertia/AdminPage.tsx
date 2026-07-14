@@ -19,6 +19,7 @@ import type { ActionConfig, AuthUser, StructureNode } from "../structure/types";
 import { type BreadcrumbItem, Breadcrumbs } from "./Breadcrumbs";
 import { executeEffects, readEffects } from "./effects";
 import { materialize, materializeActionList } from "./materialize";
+import { pageBasePath } from "./pageBasePath";
 
 interface AdminPageProps {
 	slug: string;
@@ -61,7 +62,7 @@ export function AdminPage() {
 	}
 	const apiBase = tbtop?.apiBase ?? "";
 
-	const basePath = page.url.split("?")[0] ?? "";
+	const basePath = pageBasePath(page.url);
 	const node = useMemo(
 		() => materialize(structure, { basePath, data: data ?? {} }),
 		[structure, basePath, data],
