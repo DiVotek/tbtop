@@ -111,6 +111,58 @@ describe("Form integration", () => {
 		expect(seenChanged).toEqual(["title"]);
 	});
 
+	// Regression: after a failed submit Inertia refreshes props, materialize
+	// builds a fresh node, and the form's query resolves to a NEW object with
+	// the SAME content. Identity-based resync wiped the user's edits and the
+	// just-applied server field errors (visible on server-only rules like
+	// current_password, where no client schema mirrors the check).
+	test("server field errors and edits survive a rerender with a deep-equal record", async () => {
+		const makeNode = () =>
+			s.form({ query: async () => ({ title: "Hello" }) }, [
+				s.text({ name: "title" }),
+				s.action({ name: "edit", handler: async (c) => c.form?.set("title", "Hi") }),
+				s.action({
+					name: "save",
+					handler: async () => {
+						throw { errors: { title: "Taken" } };
+					},
+				}),
+			]);
+		const Wrap = wrap(() => new Response("{}"));
+		const view = render(<Wrap>{renderNode(makeNode())}</Wrap>);
+
+		const editBtn = await view.findByTestId("action-edit");
+		await act(async () => {
+			fireEvent.click(editBtn);
+		});
+		const saveBtn = await view.findByTestId("action-save");
+		await act(async () => {
+			fireEvent.click(saveBtn);
+		});
+		await view.findByTestId("field-error-title");
+
+		view.rerender(<Wrap>{renderNode(makeNode())}</Wrap>);
+		// Flush the re-triggered query so the initial-resync effect runs.
+		await act(async () => {
+			await Promise.resolve();
+		});
+
+		expect(view.getByTestId("field-error-title").textContent).toBe("Taken");
+		expect(view.getByDisplayValue("Hi")).toBeTruthy();
+	});
+
+	test("form resyncs to the refreshed record when it actually changed", async () => {
+		const makeNode = (title: string) =>
+			s.form({ query: async () => ({ title }) }, [s.text({ name: "title" })]);
+		const Wrap = wrap(() => new Response("{}"));
+		const view = render(<Wrap>{renderNode(makeNode("Hello"))}</Wrap>);
+		await waitFor(() => expect(view.getByDisplayValue("Hello")).toBeTruthy());
+
+		view.rerender(<Wrap>{renderNode(makeNode("Bye"))}</Wrap>);
+
+		await waitFor(() => expect(view.getByDisplayValue("Bye")).toBeTruthy());
+	});
+
 	test("Form reset returns data to initial and clears isDirty", async () => {
 		let stage1Dirty: boolean | undefined;
 		let stage2Dirty: boolean | undefined;

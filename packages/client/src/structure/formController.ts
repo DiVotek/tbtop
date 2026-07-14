@@ -100,7 +100,8 @@ function diffKeys(initial: Bag, data: Bag): string[] {
 	return out;
 }
 
-function isEqual(a: unknown, b: unknown): boolean {
+/** Value equality for form bags — JSON-shaped data only. */
+export function isEqual(a: unknown, b: unknown): boolean {
 	if (Object.is(a, b)) {
 		return true;
 	}
