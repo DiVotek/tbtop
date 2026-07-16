@@ -73,4 +73,32 @@ describe("Checkbox field", () => {
 		const { container } = render(<CheckboxCell value={null} />);
 		expect(container.textContent).toBe("");
 	});
+
+	test("label renders inline with the control, and clicking the label toggles it", async () => {
+		const user = userEvent.setup();
+		const node = s.form({ query: async () => ({ agree: false }) }, [
+			s.checkbox({ name: "agree", label: "I accept terms" }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
+
+		const field = getByTestId("form-block").querySelector('[data-field-name="agree"]');
+		const row = field?.firstElementChild as HTMLElement;
+		const checkboxRoot = row.querySelector('[data-slot="checkbox"]') as HTMLElement;
+		const labelEl = row.querySelector('[data-slot="label"]') as HTMLElement;
+
+		// Control and label share one row, control first.
+		expect(row.className).toContain("items-center");
+		expect(row.contains(checkboxRoot)).toBe(true);
+		expect(row.contains(labelEl)).toBe(true);
+		expect(
+			Array.prototype.indexOf.call(row.children, checkboxRoot) <
+				Array.prototype.indexOf.call(row.children, labelEl),
+		).toBe(true);
+
+		expect(checkboxRoot.getAttribute("data-state")).toBe("unchecked");
+		await user.click(getByText("I accept terms"));
+		await waitFor(() => expect(checkboxRoot.getAttribute("data-state")).toBe("checked"));
+	});
 });

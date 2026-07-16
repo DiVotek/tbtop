@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
 use Tbtop\Admin\Dsl\Actions\ReplicateAction;
@@ -24,6 +25,15 @@ class CrudActionsPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
+            CreateAction::make(
+                $s,
+                form: $s->form('createCaPost', [
+                    $s->text('title')->label('Title'),
+                ]),
+                storeUsing: function (ActionCtx $ctx): void {
+                    CaPost::create(['title' => $ctx->form['title'] ?? '']);
+                },
+            ),
             EditAction::make(
                 $s,
                 form: $s->form('editCaPost', [

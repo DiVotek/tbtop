@@ -76,7 +76,7 @@ final class RecordAction
     {
         return static function (ActionCtx $ctx) use ($userFn, $tail): Effects {
             if ($ctx->selection === []) {
-                return Effects::make()->notify('Nothing selected.', 'warning');
+                return Effects::make()->notify(__('tbtop-admin::admin.table.nothing_selected'), 'warning');
             }
             $result = $userFn($ctx);
 
@@ -86,6 +86,6 @@ final class RecordAction
 
     private static function defaultTail(): Effects
     {
-        return Effects::make()->notify('Done')->refreshTable();
+        return Effects::make()->notify(__('tbtop-admin::admin.action.done'))->refreshTable();
     }
 }

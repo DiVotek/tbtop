@@ -288,15 +288,34 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 				renderChild: (child) => renderFormChild(child, formCtx),
 			});
 
+	const labelNode = label && (
+		<Label htmlFor={fieldId}>
+			{label}
+			{required && <span className="text-destructive">*</span>}
+			{tooltip && <FieldTooltip text={tooltip} />}
+		</Label>
+	);
+
+	// Checkbox is a control-first, inline-label layout (control left, label
+	// right, one row) — not the label-above-control stack every other field
+	// kind uses. Other choice fields (boolean/switch, radio, etc.) keep the
+	// default stack; only checkbox needs this treatment.
+	if (node.kind === "checkbox") {
+		return (
+			<div className="flex flex-col gap-1.5" data-field-name={name}>
+				<div className="flex items-center gap-2">
+					{control}
+					{labelNode}
+				</div>
+				{helperText && <FieldHelperText text={helperText} />}
+				{fieldError && <FieldError name={name} message={fieldError} />}
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-col gap-1.5" data-field-name={name}>
-			{label && (
-				<Label htmlFor={fieldId}>
-					{label}
-					{required && <span className="text-destructive">*</span>}
-					{tooltip && <FieldTooltip text={tooltip} />}
-				</Label>
-			)}
+			{labelNode}
 			{control}
 			{helperText && <FieldHelperText text={helperText} />}
 			{fieldError && <FieldError name={name} message={fieldError} />}
