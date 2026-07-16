@@ -17,6 +17,35 @@ beforeEach(function (): void {
 });
 
 // ---------------------------------------------------------------------------
+// CreateAction — inner store action
+// ---------------------------------------------------------------------------
+
+it('CreateAction store creates the record and returns closeModal + refreshTable (void closure default tail)', function (): void {
+    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
+        'payload' => ['form' => ['title' => 'Third']],
+    ]);
+
+    $response->assertOk();
+    expect(CaPost::where('title', 'Third')->exists())->toBeTrue()
+        ->and($response->json('effects'))->toContain(['kind' => 'closeModal'])
+        ->and($response->json('effects'))->toContain(['kind' => 'refreshTable']);
+});
+
+// ---------------------------------------------------------------------------
+// CreateAction — Cancel action only closes the modal
+// ---------------------------------------------------------------------------
+
+it('CreateAction cancel action returns only closeModal and mutates nothing', function (): void {
+    $response = $this->postJson('/admin/crud-actions/actions/createCancel', [
+        'payload' => [],
+    ]);
+
+    $response->assertOk();
+    expect($response->json('effects'))->toBe([['kind' => 'closeModal']])
+        ->and(CaPost::count())->toBe(2);
+});
+
+// ---------------------------------------------------------------------------
 // DeleteAction — single row
 // ---------------------------------------------------------------------------
 

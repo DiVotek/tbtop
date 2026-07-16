@@ -21,7 +21,9 @@ it('serializes built-in action labels/confirm in English by default', function (
     $response->assertOk();
     $children = collect($response->json('props.structure.options.children'))->keyBy('name');
 
-    expect($children['edit']['options']['label'])->toBe('Edit')
+    expect($children['create']['options']['label'])->toBe('Create')
+        ->and($children['create']['options']['spec']['title'])->toBe('Create record')
+        ->and($children['edit']['options']['label'])->toBe('Edit')
         ->and($children['edit']['options']['spec']['title'])->toBe('Edit record')
         ->and($children['delete']['options']['label'])->toBe('Delete')
         ->and($children['delete']['options']['confirm'])->toBe([
@@ -40,7 +42,9 @@ it('serializes built-in action labels/confirm in Ukrainian when the admin locale
     $response->assertOk();
     $children = collect($response->json('props.structure.options.children'))->keyBy('name');
 
-    expect($children['edit']['options']['label'])->toBe('Редагувати')
+    expect($children['create']['options']['label'])->toBe('Створити')
+        ->and($children['create']['options']['spec']['title'])->toBe('Створити запис')
+        ->and($children['edit']['options']['label'])->toBe('Редагувати')
         ->and($children['edit']['options']['spec']['title'])->toBe('Редагування запису')
         ->and($children['delete']['options']['label'])->toBe('Видалити')
         ->and($children['delete']['options']['confirm'])->toBe([
@@ -87,4 +91,35 @@ it('runs edit save with Ukrainian notify text when the admin locale is uk', func
 
     $response->assertOk();
     expect($response->json('effects'))->toContain(['kind' => 'notify', 'message' => 'Збережено', 'level' => 'success']);
+});
+
+it('runs create store with English notify text by default', function (): void {
+    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
+        'payload' => ['form' => ['title' => 'New one']],
+    ]);
+
+    $response->assertOk();
+    expect($response->json('effects'))->toContain(['kind' => 'notify', 'message' => 'Created', 'level' => 'success']);
+});
+
+it('runs create store with Ukrainian notify text when the admin locale is uk', function (): void {
+    session(['tbtop.locale' => 'uk']);
+
+    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
+        'payload' => ['form' => ['title' => 'New one']],
+    ]);
+
+    $response->assertOk();
+    expect($response->json('effects'))->toContain(['kind' => 'notify', 'message' => 'Створено', 'level' => 'success']);
+});
+
+it('runs delete-selected bulk with Ukrainian "nothing selected" text when the admin locale is uk', function (): void {
+    session(['tbtop.locale' => 'uk']);
+
+    $response = $this->postJson('/admin/crud-actions/actions/delete-selected', [
+        'payload' => ['selection' => []],
+    ]);
+
+    $response->assertOk();
+    expect($response->json('effects'))->toContain(['kind' => 'notify', 'message' => 'Нічого не вибрано.', 'level' => 'warning']);
 });

@@ -12,6 +12,7 @@ return [
         'logout' => 'Вийти',
         'login' => 'Увійти',
         'register' => 'Реєстрація',
+        'done' => 'Готово',
     ],
     'auth' => [
         'login' => [
@@ -49,6 +50,9 @@ return [
         'delete' => ['success' => 'Видалено'],
         'save' => ['failed' => 'Не вдалося зберегти'],
         'delete_failed' => 'Не вдалося видалити',
+    ],
+    'create' => [
+        'title' => 'Створити запис',
     ],
     'state' => [
         'loading' => 'Завантаження…',
@@ -101,6 +105,12 @@ return [
         ],
         'select_all' => 'Вибрати всі',
         'selected_count' => '{count} вибрано',
+        'nothing_selected' => 'Нічого не вибрано.',
+        'tabs' => [
+            'active' => 'Активні',
+            'trashed' => 'Кошик',
+            'all' => 'Усі',
+        ],
     ],
     'nav' => [
         'home' => ['welcome' => 'Ласкаво просимо'],

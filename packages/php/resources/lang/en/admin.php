@@ -12,6 +12,7 @@ return [
         'logout' => 'Logout',
         'login' => 'Login',
         'register' => 'Register',
+        'done' => 'Done',
     ],
     'auth' => [
         'login' => [
@@ -49,6 +50,9 @@ return [
         'delete' => ['success' => 'Deleted'],
         'save' => ['failed' => 'Could not save'],
         'delete_failed' => 'Could not delete',
+    ],
+    'create' => [
+        'title' => 'Create record',
     ],
     'state' => [
         'loading' => 'Loading…',
@@ -101,6 +105,12 @@ return [
         ],
         'select_all' => 'Select all',
         'selected_count' => '{count} selected',
+        'nothing_selected' => 'Nothing selected.',
+        'tabs' => [
+            'active' => 'Active',
+            'trashed' => 'Trashed',
+            'all' => 'All',
+        ],
     ],
     'nav' => [
         'home' => ['welcome' => 'Welcome'],

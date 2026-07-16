@@ -21,6 +21,14 @@ it('prepends active/trashed/all tabs with active first', function (): void {
         ->and(array_column($opts['tabs'], 'label'))->toBe(['Active', 'Trashed', 'All']);
 });
 
+it('resolves tab labels in Ukrainian when the app locale is uk', function (): void {
+    app()->setLocale('uk');
+
+    $opts = softDeletesTableOptions(fn ($s, $table) => null);
+
+    expect(array_column($opts['tabs'], 'label'))->toBe(['Активні', 'Кошик', 'Усі']);
+});
+
 it('appends restore + forceDelete row actions with correct color/spec/confirm', function (): void {
     $actions = softDeletesTableOptions(fn ($s, $table) => null)['rowActions'];
     $byName = collect($actions)->keyBy('name');

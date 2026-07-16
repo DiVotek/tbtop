@@ -20,6 +20,7 @@ final class CreateAction
     /**
      * @param  array<string, mixed>  $defaultRecord
      * @param  Closure(ActionCtx): mixed  $storeUsing
+     * @param  string|null  $title  Modal title; defaults to the translated "Create record".
      */
     public static function make(
         S $s,
@@ -27,7 +28,7 @@ final class CreateAction
         Closure $storeUsing,
         array $defaultRecord = [],
         string $name = 'create',
-        string $title = 'Create record',
+        ?string $title = null,
     ): ActionBuilder {
         $form->record($defaultRecord);
 
@@ -37,8 +38,8 @@ final class CreateAction
         ];
 
         return $s->action($name)
-            ->label('Create')
-            ->modal($title, RecordAction::formWithActions($form, $s, $actions));
+            ->label(__('tbtop-admin::admin.action.create'))
+            ->modal($title ?? __('tbtop-admin::admin.create.title'), RecordAction::formWithActions($form, $s, $actions));
     }
 
     /** The Create server action — gets the form only; void return → default tail. */
@@ -50,19 +51,19 @@ final class CreateAction
             return $result instanceof Effects ? $result : self::storeTail();
         };
 
-        return $s->action($storeName)->label('Create')->color('primary')
+        return $s->action($storeName)->label(__('tbtop-admin::admin.action.create'))->color('primary')
             ->handle($wrapped, needs: ['form']);
     }
 
     /** The Cancel button — a server round-trip that only closes the modal. */
     private static function cancelAction(S $s, string $name): ActionBuilder
     {
-        return $s->action($name.'Cancel')->label('Cancel')
+        return $s->action($name.'Cancel')->label(__('tbtop-admin::admin.action.cancel'))
             ->handle(static fn (): Effects => Effects::make()->closeModal());
     }
 
     private static function storeTail(): Effects
     {
-        return Effects::make()->notify('Created')->closeModal()->refreshTable();
+        return Effects::make()->notify(__('tbtop-admin::admin.entity.create.success'))->closeModal()->refreshTable();
     }
 }

@@ -605,9 +605,9 @@ final class TableBuilder implements JsonSerializable
     private static function trashedTabs(): array
     {
         return [
-            Tab::make('active')->label('Active')->query(fn ($q) => $q),
-            Tab::make('trashed')->label('Trashed')->query(fn ($q) => $q->onlyTrashed()),
-            Tab::make('withTrashed')->label('All')->query(fn ($q) => $q->withTrashed()),
+            Tab::make('active')->label(__('tbtop-admin::admin.table.tabs.active'))->query(fn ($q) => $q),
+            Tab::make('trashed')->label(__('tbtop-admin::admin.table.tabs.trashed'))->query(fn ($q) => $q->onlyTrashed()),
+            Tab::make('withTrashed')->label(__('tbtop-admin::admin.table.tabs.all'))->query(fn ($q) => $q->withTrashed()),
         ];
     }
 }
