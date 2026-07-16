@@ -253,8 +253,8 @@ describe("Slug field", () => {
 	});
 
 	test("Slug form-context sync: empty source sets slug to empty string", async () => {
-		// NEW CONTRACT: slug:"old" with empty source → source differs from value → manual mode,
-		// slug stays "old" (not overwritten to empty).
+		// Any pre-existing non-empty slug starts in manual mode on mount, regardless
+		// of the source: slug:"old" with empty source stays "old" (not overwritten).
 		const node = s.form({ query: async () => ({ title: "", slug: "old" }) }, [
 			s.slug({ name: "slug", fromField: "title" }),
 		]);
@@ -280,6 +280,41 @@ describe("Slug field", () => {
 			const input = getByRole("textbox") as HTMLInputElement;
 			expect(input.value).toBe("custom-slug");
 		});
+	});
+
+	test("Slug: mounting with a slug matching the derived source still starts in manual mode", async () => {
+		// Product decision: a saved page's slug must never change from editing the
+		// name, even if — at mount — the slug happens to equal slugify(source) (the
+		// typical case of a page never renamed since creation). Only Generate
+		// should be able to re-derive it.
+		const user = userEvent.setup();
+		const node = s.form(
+			{ query: async () => ({ title: "Hello World", slug: "hello-world" }) },
+			[
+				s.text({ name: "title", label: "Title" }),
+				s.slug({ name: "slug", fromField: "title" }),
+			],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		let titleInput!: HTMLInputElement;
+		let slugInput!: HTMLInputElement;
+		await waitFor(() => {
+			titleInput = document.querySelector("#title") as HTMLInputElement;
+			slugInput = document.querySelector("[data-field='slug'] input") as HTMLInputElement;
+			expect(slugInput?.value).toBe("hello-world");
+		});
+		await user.clear(titleInput);
+		await user.type(titleInput, "Renamed Page");
+		// Manual mode from mount — slug must not follow the renamed title.
+		await waitFor(() => {
+			expect(slugInput.value).toBe("hello-world");
+		});
+		await user.click(getByRole("button", { name: "Generate" }));
+		await waitFor(() => expect(slugInput.value).toBe("renamed-page"));
+		// Generate re-engaged auto mode: further source edits derive again.
+		await user.type(titleInput, " Again");
+		await waitFor(() => expect(slugInput.value).toBe("renamed-page-again"));
 	});
 
 	test("Slug: mounting a fresh create-modal default (empty-string slug, empty source) does not dirty the form", async () => {
