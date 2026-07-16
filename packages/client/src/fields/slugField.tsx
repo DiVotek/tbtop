@@ -48,9 +48,10 @@ export function SlugCell({ value }: FieldCellProps<string>) {
  * The input is permanently read-only: the slug is only ever machine-derived.
  * Clear empties it and stops auto-derivation (so it STAYS empty while the
  * source keeps changing); Generate re-derives from the source and re-engages
- * auto mode. Mounting over an existing slug that no longer matches its source
- * starts in manual mode, so opening an edit form never silently rewrites a
- * published slug.
+ * auto mode. Mounting over any pre-existing non-empty slug starts in manual
+ * mode — a saved slug is treated as manually set regardless of whether it
+ * still matches its source — so opening an edit form and renaming the page
+ * never silently rewrites a published slug.
  */
 export function SlugForm({
 	name,
@@ -82,15 +83,16 @@ export function SlugForm({
 		onChangeRef.current(next);
 	}, []);
 
-	// On mount: if a non-empty slug already exists and it differs from what
-	// the source would derive, treat it as a manually-set value and start in
-	// manual mode. This prevents the edit-page bug where opening an existing
-	// post silently regenerated its slug.
+	// On mount: any pre-existing non-empty slug is treated as manually set,
+	// regardless of whether it still matches what the source would derive —
+	// a saved page's slug must never change just from editing its name. Start
+	// in manual mode so the mount-time render doesn't overwrite it; only the
+	// explicit Generate button re-derives and re-engages auto mode.
 	const isMountRef = useRef(true);
 	useEffect(() => {
 		if (isMountRef.current) {
 			isMountRef.current = false;
-			if (currentSlug !== "" && currentSlug !== slugify(sourceValue)) {
+			if (currentSlug !== "") {
 				syncBroken.current = true;
 				return;
 			}
