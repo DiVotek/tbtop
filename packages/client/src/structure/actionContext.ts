@@ -66,6 +66,7 @@ function toFormController(
 		changedFields: handle.changedFields,
 		set: handle.set,
 		reset: handle.reset,
+		setFieldError: handle.setFieldError,
 	};
 }
 

@@ -66,6 +66,13 @@ export interface FormController {
 	changedFields: string[];
 	set: (field: string, value: unknown) => void;
 	reset: () => void;
+	/**
+	 * Sets (or clears, with null) a field-level error — the action-endpoint
+	 * field-errors channel (audit 5.20): a server action that throws a
+	 * ValidationException surfaces per-field messages here instead of a
+	 * single generic toast.
+	 */
+	setFieldError: (field: string, message: string | null) => void;
 }
 
 export interface ListQueryParams {

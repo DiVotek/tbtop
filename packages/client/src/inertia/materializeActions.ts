@@ -189,16 +189,20 @@ function serverHandler({ basePath, name, needs, formNode }: ServerHandlerInput):
 		const body = (await ctx.client.post(`${basePath}/actions/${name}`, { payload })) as {
 			effects?: unknown;
 		};
+		const effects = readEffects(body?.effects);
 		// Mark the form clean before applying effects: a redirect effect is a
 		// plain GET router.visit, and the unsaved-changes guard would otherwise
 		// see a still-dirty form and block it with a native "leave site?"/confirm
 		// prompt right after a successful save. Only when the action actually
 		// consumed the form — a row/page action that never read form data must
-		// not wipe the user's unsaved input.
-		if (needs.includes("form")) {
+		// not wipe the user's unsaved input. A haltModal effect means the action
+		// rejected the submission (e.g. a caught ValidationException) and the
+		// modal stays open — resetting here would erase what the user typed
+		// right before showing them the error banner, so skip it in that case.
+		if (needs.includes("form") && !effects.some((e) => e.kind === "haltModal")) {
 			ctx.form?.reset();
 		}
-		executeEffects(readEffects(body?.effects), ctx);
+		executeEffects(effects, ctx);
 	};
 }
 

@@ -155,6 +155,7 @@ describe("materialize actions", () => {
 					changedFields: ["title"],
 					set: () => {},
 					reset: () => calls.push("reset"),
+					setFieldError: () => {},
 				},
 				modal: { close: () => calls.push("closeModal"), closeAll: () => {} },
 			}),
@@ -191,11 +192,79 @@ describe("materialize actions", () => {
 					changedFields: ["title"],
 					set: () => {},
 					reset: () => calls.push("reset"),
+					setFieldError: () => {},
 				},
 			}),
 		);
 
 		expect(calls).not.toContain("reset");
+	});
+
+	// Audit 5.20: a server action that catches a ValidationException and
+	// returns Effects::haltModal(...) (a 200 with effects, not a thrown
+	// error) means the modal stays open so the user can fix their input —
+	// resetting the form right before that banner renders would erase what
+	// they typed.
+	it("does NOT reset the form when the response carries a haltModal effect, even though needs includes form", async () => {
+		const client = {
+			post: async () => ({ effects: [{ kind: "haltModal", message: "Name already taken" }] }),
+		} as unknown as AdminClient;
+
+		const calls: string[] = [];
+		const out = materialize(
+			node("action", { spec: { type: "server", needs: ["form"] } }, "save"),
+			BASE,
+		);
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await handler(
+			fakeCtx({
+				client,
+				form: {
+					initial: {},
+					data: { title: "My unsaved input" },
+					isDirty: true,
+					isValid: true,
+					changedFields: ["title"],
+					set: () => {},
+					reset: () => calls.push("reset"),
+					setFieldError: () => {},
+				},
+			}),
+		);
+
+		expect(calls).not.toContain("reset");
+	});
+
+	it("still resets the form on a plain success (no haltModal) when needs includes form", async () => {
+		const client = {
+			post: async () => ({ effects: [{ kind: "closeModal" }] }),
+		} as unknown as AdminClient;
+
+		const calls: string[] = [];
+		const out = materialize(
+			node("action", { spec: { type: "server", needs: ["form"] } }, "save"),
+			BASE,
+		);
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await handler(
+			fakeCtx({
+				client,
+				form: {
+					initial: {},
+					data: { title: "Saved" },
+					isDirty: true,
+					isValid: true,
+					changedFields: ["title"],
+					set: () => {},
+					reset: () => calls.push("reset"),
+					setFieldError: () => {},
+				},
+			}),
+		);
+
+		expect(calls).toContain("reset");
 	});
 
 	it("serializes upload preview objects for server actions that need form data", async () => {
@@ -236,6 +305,7 @@ describe("materialize actions", () => {
 					changedFields: ["cover"],
 					set: () => {},
 					reset: () => {},
+					setFieldError: () => {},
 				},
 			}),
 		);
@@ -347,6 +417,7 @@ describe("materialize form", () => {
 					changedFields: ["title"],
 					set: () => {},
 					reset: () => calls.push("reset"),
+					setFieldError: () => {},
 				},
 			}),
 		);
