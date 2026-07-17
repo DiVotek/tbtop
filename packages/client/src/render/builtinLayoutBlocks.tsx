@@ -1,7 +1,11 @@
+import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
+import { collectFieldNames, countTabErrors, firstTabIndexWithError } from "../structure/fieldNames";
+import { useNearestFormController } from "../structure/formContext";
 import type { StructureNode } from "../structure/structure";
 import { TriggerVariantProvider } from "../structure/triggerVariantContext";
+import { Badge } from "../ui/badge";
 import { type IconDef, NodeIcon } from "../ui/node-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
@@ -38,6 +42,9 @@ interface WidgetOptions {
 	component: React.ComponentType<Record<string, unknown>>;
 	props?: Record<string, unknown>;
 }
+
+/** Stable reference for "no form controller" — see useTabErrorAutoSwitch. */
+const EMPTY_FIELD_ERRORS: Record<string, string> = {};
 
 // Static class maps — Tailwind only emits classes it sees verbatim in source.
 // Never build class names by string interpolation; purge will silently drop them.
@@ -141,33 +148,22 @@ export function GridBlock({ options, children, renderChild }: RenderProps<GridOp
 }
 
 export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
-	if (options.tabs.length === 0) {
+	const { tabs } = options;
+	const tabFieldNames = useTabFieldNames(tabs);
+	const [active, setActive] = useState("0");
+	const errorCounts = useTabErrorAutoSwitch({ tabFieldNames, active, setActive });
+
+	if (tabs.length === 0) {
 		return null;
 	}
 	return (
-		<Tabs defaultValue="0" data-testid="tabs">
+		<Tabs value={active} onValueChange={setActive} data-testid="tabs">
 			<TabsList>
-				{options.tabs.map((tab, i) => {
-					const icon = <NodeIcon icon={tab.icon} className="size-4 shrink-0" />;
-					return (
-						// biome-ignore lint/suspicious/noArrayIndexKey: tab positions are stable
-						<TabsTrigger key={i} value={String(i)} data-testid={`tab-${tab.label}`}>
-							{tab.icon?.position !== "right" && icon}
-							{tab.label}
-							{tab.icon?.position === "right" && icon}
-							{tab.badge !== undefined && (
-								<span
-									className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
-									data-testid={`tab-badge-${tab.label}`}
-								>
-									{tab.badge}
-								</span>
-							)}
-						</TabsTrigger>
-					);
-				})}
+				{tabs.map((tab, i) => (
+					<TabTrigger key={i} index={i} tab={tab} errorCount={errorCounts[i] ?? 0} />
+				))}
 			</TabsList>
-			{options.tabs.map((tab, i) => (
+			{tabs.map((tab, i) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: tab positions are stable
 				<TabsContent key={i} value={String(i)} data-testid={`tab-panel-${tab.label}`}>
 					{renderChild(tab.body)}
@@ -175,6 +171,105 @@ export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 			))}
 		</Tabs>
 	);
+}
+
+interface TabTriggerProps {
+	index: number;
+	tab: TabsOptions["tabs"][number];
+	errorCount: number;
+}
+
+function TabTrigger({ index, tab, errorCount }: TabTriggerProps) {
+	const icon = <NodeIcon icon={tab.icon} className="size-4 shrink-0" />;
+	return (
+		<TabsTrigger value={String(index)} data-testid={`tab-${tab.label}`}>
+			{tab.icon?.position !== "right" && icon}
+			{tab.label}
+			{tab.icon?.position === "right" && icon}
+			{tab.badge !== undefined && (
+				<span
+					className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
+					data-testid={`tab-badge-${tab.label}`}
+				>
+					{tab.badge}
+				</span>
+			)}
+			{errorCount > 0 && (
+				<Badge
+					variant="destructive"
+					className="ml-1 h-4 min-w-4 rounded-full px-1 text-[10px]"
+					data-testid={`tab-error-badge-${tab.label}`}
+				>
+					{errorCount}
+				</Badge>
+			)}
+		</TabsTrigger>
+	);
+}
+
+/** Field names declared under each tab's body, recomputed only when the tab set changes. */
+function useTabFieldNames(tabs: TabsOptions["tabs"]): string[][] {
+	const [names, setNames] = useState(() => tabs.map((tab) => collectFieldNames(tab.body)));
+	const tabsRef = useRef(tabs);
+	if (tabsRef.current !== tabs) {
+		tabsRef.current = tabs;
+		const next = tabs.map((tab) => collectFieldNames(tab.body));
+		setNames(next);
+		return next;
+	}
+	return names;
+}
+
+interface TabErrorAutoSwitchInput {
+	tabFieldNames: string[][];
+	active: string;
+	setActive: (value: string) => void;
+}
+
+/**
+ * Per-tab error counts (for badges) plus auto-switching to the first tab
+ * with an error whenever a submit attempt applies new field errors and the
+ * currently active tab is clean — otherwise a validation failure in a
+ * hidden tab is invisible behind a generic "fix the highlighted fields"
+ * toast. Outside a form (or a form with no fieldErrors/errorScrollTick,
+ * e.g. a plain display-tabs layout) this is a no-op: useNearestFormController
+ * returns null and every count is 0.
+ */
+function useTabErrorAutoSwitch({
+	tabFieldNames,
+	active,
+	setActive,
+}: TabErrorAutoSwitchInput): number[] {
+	const ctrl = useNearestFormController();
+	// A stable empty-object fallback: `ctrl?.fieldErrors ?? {}` would mint a
+	// fresh {} every render whenever ctrl is null, making the effect below
+	// see a "changed" dependency on every render instead of only on a real
+	// fieldErrors update.
+	const fieldErrors = ctrl?.fieldErrors ?? EMPTY_FIELD_ERRORS;
+	const errorScrollTick = ctrl?.errorScrollTick ?? 0;
+	const prevTickRef = useRef(0);
+	const counts = tabFieldNames.map((names) => countTabErrors(names, fieldErrors));
+
+	useEffect(() => {
+		if (errorScrollTick === 0 || errorScrollTick === prevTickRef.current) {
+			return;
+		}
+		prevTickRef.current = errorScrollTick;
+		const activeHasError = countTabErrors(tabFieldNames[Number(active)] ?? [], fieldErrors) > 0;
+		if (activeHasError) {
+			return;
+		}
+		const firstErrored = firstTabIndexWithError(tabFieldNames, fieldErrors);
+		if (firstErrored !== null) {
+			setActive(String(firstErrored));
+		}
+		// fieldErrors changes on every keystroke (revalidateField), but the
+		// errorScrollTick guard above makes every one of those extra runs a
+		// no-op — only a genuinely new tick (once per submit attempt) reaches
+		// past it and can switch tabs.
+	}, [errorScrollTick, active, tabFieldNames, fieldErrors, setActive]);
+
+	return counts;
 }
 
 export function WidgetBlock({ options }: RenderProps<WidgetOptions>) {
