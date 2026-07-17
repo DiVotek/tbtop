@@ -10,10 +10,11 @@
  *   GET  /media/folders      → MediaFolder[]
  *   DELETE /media/folders/:id → 204 | 409 { message }
  */
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import { ClientProvider, createAdminClient } from "../data/client";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
@@ -467,6 +468,94 @@ describe("MediaDetail: PATCH on save", () => {
 			description: "A signed contract.",
 			tags: ["legal"],
 		});
+	});
+});
+
+// ─── MediaDetail: PATCH failure surfaces an error, doesn't fake success ───────
+
+describe("MediaDetail: PATCH failure surfaces an error, doesn't fake success", () => {
+	const originalToastError = toast.error;
+	let toastErrorSpy: ReturnType<typeof mock>;
+
+	beforeEach(() => {
+		toastErrorSpy = mock(() => "id");
+		(toast as unknown as { error: typeof toastErrorSpy }).error = toastErrorSpy;
+	});
+
+	afterEach(() => {
+		(toast as unknown as { error: typeof originalToastError }).error = originalToastError;
+	});
+
+	test("a 500 with no body notifies via toast, shows inline error, and does not call onUpdated", async () => {
+		const user = userEvent.setup({ delay: null });
+		const handler: FetchHandler = (req) => {
+			if (req.method === "PATCH" && req.url.includes("/media/img1")) {
+				return new Response(null, { status: 500 });
+			}
+			return new Response("{}");
+		};
+		const Wrap = wrap(handler);
+		const updated: MediaItem[] = [];
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<MediaDetail
+					item={ITEM_IMG}
+					folders={[FOLDER_A]}
+					onClose={() => {}}
+					onUpdated={(i) => updated.push(i)}
+					onDeleted={() => {}}
+				/>
+			</Wrap>,
+		);
+		await act(async () => {
+			await user.click(getByTestId("detail-save-btn"));
+		});
+
+		const errEl = await findByTestId("detail-error");
+		expect(errEl.textContent?.length).toBeGreaterThan(0);
+		expect(toastErrorSpy.mock.calls.length).toBeGreaterThan(0);
+		expect(toastErrorSpy.mock.calls[0]?.[0]).toBe(errEl.textContent);
+		// Save must not be mistaken for success: no onUpdated call, modal stays open.
+		expect(updated).toHaveLength(0);
+		expect(getByTestId("media-detail")).toBeTruthy();
+	});
+
+	test("a 422 validation error surfaces the field message via toast and inline, without closing", async () => {
+		const user = userEvent.setup({ delay: null });
+		const handler: FetchHandler = (req) => {
+			if (req.method === "PATCH" && req.url.includes("/media/img1")) {
+				return new Response(
+					JSON.stringify({
+						message: "The given data was invalid.",
+						errors: { name: ["The name field is too long."] },
+					}),
+					{ status: 422, headers: { "Content-Type": "application/json" } },
+				);
+			}
+			return new Response("{}");
+		};
+		const Wrap = wrap(handler);
+		const updated: MediaItem[] = [];
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<MediaDetail
+					item={ITEM_IMG}
+					folders={[FOLDER_A]}
+					onClose={() => {}}
+					onUpdated={(i) => updated.push(i)}
+					onDeleted={() => {}}
+				/>
+			</Wrap>,
+		);
+		await act(async () => {
+			await user.click(getByTestId("detail-save-btn"));
+		});
+
+		const errEl = await findByTestId("detail-error");
+		expect(errEl.textContent).toBe("The name field is too long.");
+		expect(toastErrorSpy.mock.calls[0]?.[0]).toBe("The name field is too long.");
+		expect(updated).toHaveLength(0);
+		expect(getByTestId("media-detail")).toBeTruthy();
 	});
 });
 

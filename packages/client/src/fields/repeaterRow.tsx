@@ -2,6 +2,7 @@ import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { renderDescriptor } from "../render/renderDescriptor";
 import { useActiveLocale, useContentLocaleConfig } from "../structure/contentLocaleContext";
+import { FieldError } from "../structure/formBlock";
 import { useNearestFormController } from "../structure/formContext";
 import { isNodeDisabled, isNodeHidden } from "../structure/meta";
 import type { StructureNode } from "../structure/structure";
@@ -14,6 +15,8 @@ import { renderTranslatableField } from "./translatableField";
 type Item = Record<string, unknown>;
 
 interface RepeaterRowProps {
+	/** Dot-path to this repeater's own array field (e.g. "items", or "items.0.children" when nested). */
+	repeaterName: string;
 	item: Item;
 	index: number;
 	itemCount: number;
@@ -31,10 +34,12 @@ interface RepeaterRowProps {
 export function RepeaterRow(props: RepeaterRowProps) {
 	const ctrl = useNearestFormController();
 	const rootData = ctrl?.data ?? {};
+	const fieldErrors = ctrl?.fieldErrors ?? {};
 	const { locales, defaultLocale } = useContentLocaleConfig();
 	const activeLocaleCtx = useActiveLocale();
 	const activeLocale = activeLocaleCtx?.active ?? defaultLocale;
-	const { item, index, subFields, disabled } = props;
+	const { item, index, subFields, disabled, repeaterName } = props;
+	const itemPath = `${repeaterName}.${index}`;
 
 	const editor = subFields.map((node, sIdx) => {
 		const condCtx = makeScopedCondCtx(item, rootData);
@@ -42,10 +47,13 @@ export function RepeaterRow(props: RepeaterRowProps) {
 			node,
 			nodeKey: `${index}.${node.name ?? sIdx}`,
 			scopedId: `${index}-${node.name ?? sIdx}`,
+			itemPath,
 			itemValue: item,
 			condCtx,
 			parentDisabled: disabled ?? false,
 			locales,
+			activeLocale,
+			fieldErrors,
 			onChange: (next) => props.onSubFieldChange(node.name ?? "", next),
 		});
 	});
@@ -180,16 +188,59 @@ interface RenderSubFieldInput {
 	node: StructureNode;
 	nodeKey: string;
 	scopedId: string;
+	/** Dot-path to this row's item (e.g. "items.0", or "items.0.children.2" when nested). */
+	itemPath: string;
 	itemValue: Item;
 	condCtx: ConditionContext;
 	parentDisabled: boolean;
 	locales: string[];
+	activeLocale: string;
+	fieldErrors: Record<string, string>;
 	onChange: (next: unknown) => void;
 }
 
+interface SubFieldErrorInput {
+	fullPath: string;
+	isTranslatable: boolean;
+	activeLocale: string;
+	fieldErrors: Record<string, string>;
+}
+
+/**
+ * Resolves the inline error for a repeater sub-field. A plain sub-field's
+ * server error lands at the full path (`items.0.label`); a translatable
+ * sub-field's error lands per-locale (`items.0.label.en`) — no per-locale UI
+ * exists inside a repeater row, so this shows the active locale's error,
+ * falling back to any locale's error so a failure is never silently hidden.
+ */
+function subFieldError(input: SubFieldErrorInput): string | undefined {
+	const { fullPath, isTranslatable, activeLocale, fieldErrors } = input;
+	if (!isTranslatable) {
+		return fieldErrors[fullPath];
+	}
+	const activeError = fieldErrors[`${fullPath}.${activeLocale}`];
+	if (activeError) {
+		return activeError;
+	}
+	const prefix = `${fullPath}.`;
+	const anyLocaleKey = Object.keys(fieldErrors).find((key) => key.startsWith(prefix));
+	return anyLocaleKey ? fieldErrors[anyLocaleKey] : undefined;
+}
+
 function renderSubField(input: RenderSubFieldInput) {
-	const { node, nodeKey, scopedId, itemValue, condCtx, parentDisabled, locales, onChange } =
-		input;
+	const {
+		node,
+		nodeKey,
+		scopedId,
+		itemPath,
+		itemValue,
+		condCtx,
+		parentDisabled,
+		locales,
+		activeLocale,
+		fieldErrors,
+		onChange,
+	} = input;
 	if (isNodeHidden(node.meta, condCtx)) {
 		return null;
 	}
@@ -199,11 +250,18 @@ function renderSubField(input: RenderSubFieldInput) {
 		return null;
 	}
 	const subName = node.name;
+	const fullPath = `${itemPath}.${subName}`;
 	const baseOptions = (node.options as Record<string, unknown> | undefined) ?? {};
-	const options = { name: subName, ...baseOptions };
+	// A nested repeater's OWN name must be the full ancestor path (not just its
+	// bare name), so ITS sub-fields build correct error keys in turn — see this
+	// function's own fullPath. defineFieldClient's formPropsFrom reads
+	// options.name ahead of ctx.binding.name, so the override belongs here.
+	// Harmless for every other kind, which never re-derives a name from options.
+	const options = { name: node.kind === "repeater" ? fullPath : subName, ...baseOptions };
 	const label = (options as { label?: string }).label;
 	const required = (options as { required?: boolean }).required === true;
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
+	const fieldError = subFieldError({ fullPath, isTranslatable, activeLocale, fieldErrors });
 	const control = isTranslatable
 		? renderTranslatableSubField({
 				descriptor,
@@ -233,7 +291,7 @@ function renderSubField(input: RenderSubFieldInput) {
 				renderChild: () => null,
 			});
 	return (
-		<div key={nodeKey} className="flex flex-col gap-1.5">
+		<div key={nodeKey} className="flex flex-col gap-1.5" data-field-name={fullPath}>
 			{label && (
 				<Label htmlFor={scopedId}>
 					{label}
@@ -241,6 +299,7 @@ function renderSubField(input: RenderSubFieldInput) {
 				</Label>
 			)}
 			{control}
+			{fieldError && <FieldError name={fullPath} message={fieldError} />}
 		</div>
 	);
 }

@@ -160,6 +160,7 @@ export const defaultMessages: Messages = {
 	"media.detail.move_to_folder": "Folder",
 	"media.detail.replace": "Replace file",
 	"media.detail.delete_confirm": "Permanently delete this file?",
+	"media.detail.save_failed": "Could not save file details",
 	"media.picker.title": "Select file",
 	"media.picker.title_multiple": "Select files",
 	"media.picker.choose": "Choose",

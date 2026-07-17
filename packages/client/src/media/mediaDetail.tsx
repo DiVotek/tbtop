@@ -4,8 +4,10 @@
  */
 import { Trash2Icon, UploadIcon } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
+import { toast } from "sonner";
+import { isTabletopError } from "../data/envelope";
 import { OpenTagsForm } from "../fields/tagsOpen";
-import { useTranslation } from "../i18n/i18n";
+import { type Translate, useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { ModalShell } from "../ui/modal-shell";
@@ -27,6 +29,28 @@ interface MediaDetailProps {
 	onClose: () => void;
 	onUpdated: (item: MediaItem) => void;
 	onDeleted: (id: string) => void;
+}
+
+/**
+ * A failed PATCH surfaces its message: field-level (422) errors first
+ * (joined, since this dialog has no per-field error slots), then the
+ * server envelope's own message when it's more than a bare status code
+ * (e.g. a bodyless 500 decodes to "HTTP 500", not worth showing), then a
+ * plain Error's message, falling back to a generic save-failed string.
+ */
+function saveErrorMessage(err: unknown, t: Translate): string {
+	if (isTabletopError(err)) {
+		const fieldMessages = err.fields ? Object.values(err.fields) : [];
+		if (fieldMessages.length > 0) {
+			return fieldMessages.join(" ");
+		}
+		if (err.message && !/^HTTP \d+$/.test(err.message)) {
+			return err.message;
+		}
+	} else if (err instanceof Error && err.message) {
+		return err.message;
+	}
+	return t("media.detail.save_failed", "Could not save file details");
 }
 
 export function MediaDetail({
@@ -95,7 +119,12 @@ function DetailShell({
 			});
 			onUpdated(updated);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : t("entity.save.failed"));
+			const message = saveErrorMessage(err, t);
+			setError(message);
+			// A modal-scoped paragraph is easy to miss (e.g. scrolled out of
+			// view) — a toast makes a failed save impossible to mistake for
+			// success, matching how form/action submits report errors.
+			toast.error(message);
 		} finally {
 			setBusy(false);
 		}

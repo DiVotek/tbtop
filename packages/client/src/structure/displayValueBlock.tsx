@@ -21,6 +21,8 @@ interface DisplayValueOptions {
 	copyable?: CopyableConfig;
 	/** Resolve the raw value from useModalData()[field] instead of the baked value. */
 	field?: string;
+	/** Render embedded newlines as line breaks (whitespace-pre-line) instead of collapsing them. */
+	multiline?: boolean;
 }
 
 /** Unwraps a `{ data: record }` envelope the same way formBlock's modal-data path does. */
@@ -70,7 +72,8 @@ function renderValue(options: DisplayValueOptions, value: unknown, col: TableCol
 		return <IconMapCell value={value} col={col} />;
 	}
 	// date / datetime / number / money are pre-formatted server-side.
-	return <span>{value == null ? "" : String(value)}</span>;
+	const className = options.multiline ? "whitespace-pre-line" : undefined;
+	return <span className={className}>{value == null ? "" : String(value)}</span>;
 }
 
 export function DisplayValueBlock({ options }: RenderProps<DisplayValueOptions>) {

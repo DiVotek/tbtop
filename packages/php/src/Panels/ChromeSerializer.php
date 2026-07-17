@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Panels;
 
 use LogicException;
 use stdClass;
+use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
@@ -46,11 +47,38 @@ final class ChromeSerializer
         if ($node === null) {
             return null;
         }
+        $node = self::filterAuthorizedChildren($node);
         /** @var stdClass $tree decoding without assoc keeps empty option bags as JSON objects */
         $tree = json_decode((string) json_encode($node));
         self::assertNoServerActions($tree, $area, $chromeClass);
 
         return $tree;
+    }
+
+    /**
+     * Drop chrome items the current user isn't authorized for, mirroring how
+     * page-level lists (headerActions, actionsRow, actionGroup) already run
+     * ActionBuilder::filterAuthorized() before reaching the wire. Chrome
+     * trees are built with $s->row()/$s->stack(), which — unlike those
+     * page-level builders — do not filter their top-level children, so this
+     * is the one spot standing between an ->authorize()'d chrome action and
+     * an unauthorized user still seeing it in the header/sidebar/footer.
+     * Nested action groups filter their own children when built; only the
+     * top-level items list needs handling here.
+     */
+    private static function filterAuthorizedChildren(Node $node): Node
+    {
+        $children = $node->options['children'] ?? null;
+        if (! is_array($children)) {
+            return $node;
+        }
+
+        return new Node(
+            $node->kind,
+            [...$node->options, 'children' => ActionBuilder::filterAuthorized($children)],
+            $node->name,
+            $node->meta,
+        );
     }
 
     /**

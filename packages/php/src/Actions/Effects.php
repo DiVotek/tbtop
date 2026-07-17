@@ -49,6 +49,12 @@ final class Effects implements JsonSerializable
         return $this->push(['kind' => 'haltModal', 'message' => $message, 'level' => $kind]);
     }
 
+    /** Client writes $text to the clipboard and shows a success notify. */
+    public function copyToClipboard(string $text): self
+    {
+        return $this->push(['kind' => 'copyToClipboard', 'text' => $text]);
+    }
+
     /** @return list<array<string, mixed>> */
     public function jsonSerialize(): array
     {

@@ -59,6 +59,7 @@ export function RepeaterForm({
 			{items.map((item, index) => (
 				<RepeaterRow
 					key={keys.current[index]}
+					repeaterName={name}
 					item={item}
 					index={index}
 					itemCount={items.length}

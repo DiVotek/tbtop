@@ -384,7 +384,8 @@ export function revalidateField(ctrl: ControllerHandle, name: string, t: Transla
 	}
 }
 
-function FieldError({ name, message }: { name: string; message: string }) {
+/** Exported for reuse by repeaterRow.tsx — sub-fields render the same error UI at any nesting depth. */
+export function FieldError({ name, message }: { name: string; message: string }) {
 	return (
 		<p role="alert" className="text-sm text-destructive" data-testid={`field-error-${name}`}>
 			{message}

@@ -1,8 +1,10 @@
 <?php
 
+use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Panels\Chrome;
 use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Tests\Fixtures\Chromes\FooterChrome;
+use Tbtop\Admin\Tests\Fixtures\Chromes\GatedActionChrome;
 use Tbtop\Admin\Tests\Fixtures\Chromes\HeaderActionChrome;
 use Tbtop\Admin\Tests\Fixtures\Chromes\ServerActionChrome;
 
@@ -50,3 +52,35 @@ it('rejects a server-closure action inside a chrome tree', function () {
 it('rejects a chrome class that does not extend the Chrome base', function () {
     ChromeSerializer::forPanel(panelWithChrome(stdClass::class));
 })->throws(LogicException::class, 'must extend');
+
+// ---------------------------------------------------------------------------
+// authorize() — chrome items are gated like page-level action lists
+// ---------------------------------------------------------------------------
+
+it('drops a gated chrome header action when the user lacks the ability', function () {
+    Gate::define('chrome-gated-inbox', fn (?object $user) => false);
+
+    $chrome = ChromeSerializer::forPanel(panelWithChrome(GatedActionChrome::class));
+
+    expect(childKinds($chrome['header']))->toBe(['userMenu', 'action'])
+        ->and($chrome['header']->options->children[1]->name)->toBe('view-site');
+});
+
+it('keeps a gated chrome header action when the user has the ability', function () {
+    Gate::define('chrome-gated-inbox', fn (?object $user) => true);
+
+    $chrome = ChromeSerializer::forPanel(panelWithChrome(GatedActionChrome::class));
+
+    expect(childKinds($chrome['header']))->toBe(['userMenu', 'action', 'action']);
+    $names = array_column($chrome['header']->options->children, 'name');
+    expect($names)->toBe(['inbox', 'view-site']);
+});
+
+it('keeps an ungated chrome header action regardless of gates elsewhere', function () {
+    Gate::define('chrome-gated-inbox', fn (?object $user) => false);
+
+    $chrome = ChromeSerializer::forPanel(panelWithChrome(GatedActionChrome::class));
+
+    $names = array_column($chrome['header']->options->children, 'name');
+    expect($names)->toContain('view-site');
+});

@@ -24,6 +24,8 @@ final class DisplayValueBlock implements JsonSerializable
 
     private ?string $fieldName = null;
 
+    private bool $multiline = false;
+
     private const BAKED_KINDS = ['date', 'datetime', 'number', 'money'];
 
     private function __construct(private readonly mixed $value) {}
@@ -109,6 +111,20 @@ final class DisplayValueBlock implements JsonSerializable
         }
     }
 
+    /**
+     * Renders the value with `whitespace-pre-line` client-side, so embedded
+     * newlines (e.g. a payload string baked as "key: value\nkey: value")
+     * render as line breaks instead of collapsing into one line. Independent
+     * of kind/field() — a plain-text concern, not a formatting one.
+     */
+    public function multiline(bool $enabled = true): self
+    {
+        $clone = clone $this;
+        $clone->multiline = $enabled;
+
+        return $clone;
+    }
+
     public function boolean(
         ?string $trueIcon = null,
         ?string $falseIcon = null,
@@ -176,6 +192,9 @@ final class DisplayValueBlock implements JsonSerializable
         }
         if ($this->fieldName !== null) {
             $options['field'] = $this->fieldName;
+        }
+        if ($this->multiline) {
+            $options['multiline'] = true;
         }
 
         return (new Node('displayValue', $options))->jsonSerialize();
