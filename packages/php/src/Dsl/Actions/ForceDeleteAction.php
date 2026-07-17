@@ -26,8 +26,11 @@ final class ForceDeleteAction
             $s,
             $name,
             fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->forceDelete(),
-            Effects::make()->notify('Deleted permanently')->refreshTable(),
-        )->label('Delete permanently')->color('danger')->confirm('Delete permanently?', 'This cannot be undone.');
+            Effects::make()->notify(__('tbtop-admin::admin.force_delete.notify.success'))->refreshTable(),
+        )->label(__('tbtop-admin::admin.action.force_delete'))->color('danger')->confirm(
+            __('tbtop-admin::admin.force_delete.confirm.title'),
+            __('tbtop-admin::admin.force_delete.confirm.body'),
+        );
     }
 
     /**
@@ -39,7 +42,10 @@ final class ForceDeleteAction
             $s,
             $name,
             fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->forceDelete(),
-            Effects::make()->notify('Deleted selected permanently')->refreshTable(),
-        )->label('Delete permanently')->color('danger')->confirm('Delete permanently?', 'This cannot be undone.');
+            Effects::make()->notify(__('tbtop-admin::admin.force_delete.notify.bulk_success'))->refreshTable(),
+        )->label(__('tbtop-admin::admin.action.force_delete'))->color('danger')->confirm(
+            __('tbtop-admin::admin.force_delete.confirm.title'),
+            __('tbtop-admin::admin.force_delete.confirm.body'),
+        );
     }
 }

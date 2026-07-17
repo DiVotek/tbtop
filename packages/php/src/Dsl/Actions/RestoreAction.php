@@ -27,8 +27,8 @@ final class RestoreAction
             $s,
             $name,
             fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->restore(),
-            Effects::make()->notify('Restored')->refreshTable(),
-        )->label('Restore')->color('gray');
+            Effects::make()->notify(__('tbtop-admin::admin.restore.notify.success'))->refreshTable(),
+        )->label(__('tbtop-admin::admin.action.restore'))->color('gray');
     }
 
     /**
@@ -40,7 +40,7 @@ final class RestoreAction
             $s,
             $name,
             fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->restore(),
-            Effects::make()->notify('Restored selected')->refreshTable(),
-        )->label('Restore')->color('gray');
+            Effects::make()->notify(__('tbtop-admin::admin.restore.notify.bulk_success'))->refreshTable(),
+        )->label(__('tbtop-admin::admin.action.restore'))->color('gray');
     }
 }

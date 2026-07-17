@@ -13,6 +13,9 @@ return [
         'login' => 'Login',
         'register' => 'Register',
         'done' => 'Done',
+        'replicate' => 'Replicate',
+        'restore' => 'Restore',
+        'force_delete' => 'Delete permanently',
     ],
     'auth' => [
         'login' => [
@@ -71,6 +74,27 @@ return [
         'notify' => [
             'success' => 'Record deleted',
             'bulk_success' => 'Selected records deleted',
+        ],
+    ],
+    'replicate' => [
+        'notify' => [
+            'success' => 'Record replicated',
+        ],
+    ],
+    'restore' => [
+        'notify' => [
+            'success' => 'Restored',
+            'bulk_success' => 'Restored selected',
+        ],
+    ],
+    'force_delete' => [
+        'confirm' => [
+            'title' => 'Delete permanently?',
+            'body' => 'This cannot be undone.',
+        ],
+        'notify' => [
+            'success' => 'Deleted permanently',
+            'bulk_success' => 'Deleted selected permanently',
         ],
     ],
     'edit' => [
