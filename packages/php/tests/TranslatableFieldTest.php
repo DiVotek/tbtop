@@ -112,3 +112,60 @@ it('translatable field with no explicit rules gets nullable baseline for all loc
         ->and($rules['body.en'])->toBe(['nullable'])
         ->and($rules['body.uk'])->toBe(['nullable']);
 });
+
+it('translatable subfield inside a repeater expands to items.*.field.locale rules', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->fields([
+            $s->text('label')->required()->translatable(),
+        ]),
+    ]);
+
+    $rules = $form->collectRules();
+
+    expect($rules['items.*.label'])->toBe(['nullable', 'array'])
+        ->and($rules['items.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.label.uk'])->toBe(['nullable']);
+});
+
+it('translatable subfield inside a nested (depth-2) repeater expands correctly', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->fields([
+            $s->text('label')->required()->translatable(),
+            $s->repeater('children')->fields([
+                $s->text('label')->required()->translatable(),
+            ]),
+        ]),
+    ]);
+
+    $rules = $form->collectRules();
+
+    expect($rules['items.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.label.uk'])->toBe(['nullable'])
+        ->and($rules['items.*.children.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.children.*.label.uk'])->toBe(['nullable']);
+});
+
+it('translatable subfield inside a repeater emits per-locale validator attributes', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->fields([
+            $s->text('label')->label('Label')->required()->translatable(),
+        ]),
+    ]);
+
+    $attributes = $form->collectAttributes();
+
+    expect($attributes['items.*.label.en'])->toBe('Label (en)')
+        ->and($attributes['items.*.label.uk'])->toBe('Label (uk)');
+});

@@ -1,8 +1,7 @@
 import { InfoIcon } from "lucide-react";
 import type { FormEvent, ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
-import type { FieldFormProps } from "../fields/fieldProps";
-import { TranslatableWrapper } from "../fields/translatableWrapper";
+import { renderTranslatableField as renderTranslatableFieldShared } from "../fields/translatableField";
 import { type Translate, translateValidationMessage, useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { applyColumnPlacement } from "../render/columnPlacement";
@@ -258,7 +257,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
 
 	const control = isTranslatable
-		? renderTranslatableField({
+		? renderTranslatableFieldNode({
 				descriptor,
 				node,
 				options,
@@ -333,7 +332,7 @@ interface TranslatableFieldInput {
 	formCtx: FormRenderCtx;
 }
 
-function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
+function renderTranslatableFieldNode(input: TranslatableFieldInput): ReactNode {
 	const { descriptor, node, options, name, fieldId, disabled, formCtx } = input;
 	const { ctrl, locales } = formCtx;
 	// Strip name + translatable before forwarding to the wrapper — the wrapper
@@ -346,89 +345,21 @@ function renderTranslatableField(input: TranslatableFieldInput): ReactNode {
 		name?: string;
 		translatable?: boolean;
 	};
-	const renderInner = makeInnerRenderer({
+	return renderTranslatableFieldShared({
 		descriptor,
 		node,
-		options: innerOptions,
+		innerOptions,
+		name,
+		fieldId,
+		value: ctrl.data[name],
+		onChange: (next) => ctrl.set(name, next),
+		onBlur: () => {
+			ctrl.markTouched(name);
+		},
 		disabled,
-		formCtx,
+		locales,
+		renderChild: (child) => renderFormChild(child, formCtx),
 	});
-	const value = normalizeTranslatableValue(ctrl.data[name], locales);
-	return (
-		<TranslatableWrapper
-			name={name}
-			id={fieldId}
-			value={value}
-			onChange={(next) => ctrl.set(name, next)}
-			onBlur={() => {
-				ctrl.markTouched(name);
-			}}
-			options={innerOptions}
-			renderInner={renderInner}
-			locales={locales}
-		/>
-	);
-}
-
-type MakeInnerRendererInput = {
-	descriptor: NonNullable<ReturnType<typeof getBlockDescriptor>>;
-	node: StructureNode;
-	options: Bag;
-	disabled: boolean;
-	formCtx: FormRenderCtx;
-};
-
-/**
- * Builds a render FUNCTION (invoked, never mounted) that delegates to the
- * descriptor's field component. Must not return a component type: a fresh
- * component identity per render makes React remount the input on every
- * keystroke, dropping focus. Caller strips name/translatable from options.
- */
-function makeInnerRenderer({
-	descriptor,
-	node,
-	options,
-	disabled,
-	formCtx,
-}: MakeInnerRendererInput): (props: FieldFormProps<unknown>) => ReactNode {
-	return (props: FieldFormProps<unknown>) =>
-		renderDescriptor(descriptor, {
-			kind: node.kind,
-			options: { ...options, ...props.options },
-			meta: node.meta,
-			ctx: {
-				surface: "form",
-				binding: {
-					name: props.name,
-					value: props.value,
-					onChange: props.onChange,
-					onBlur: props.onBlur,
-					disabled,
-				},
-			},
-			children: undefined,
-			renderChild: (child) => renderFormChild(child, formCtx),
-		}) as ReactNode;
-}
-
-/**
- * Normalise a stored value to a locale map. Handles legacy: if the stored
- * value is a non-object (string/number/boolean), initialise the default locale
- * with that value and other locales as null.
- */
-function normalizeTranslatableValue(raw: unknown, locales: string[]): Record<string, unknown> {
-	if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-		return raw as Record<string, unknown>;
-	}
-	const defaultLocale = locales[0] ?? "en";
-	const map: Record<string, unknown> = {};
-	for (const locale of locales) {
-		map[locale] = null;
-	}
-	if (raw !== null && raw !== undefined && typeof raw !== "object") {
-		map[defaultLocale] = raw;
-	}
-	return map;
 }
 
 export function revalidateField(ctrl: ControllerHandle, name: string, t: Translate): void {
