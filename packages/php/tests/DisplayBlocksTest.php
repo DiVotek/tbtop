@@ -251,6 +251,36 @@ it('DisplayValueBlock is accessible via S::displayValue', function () {
 });
 
 // ---------------------------------------------------------------------------
+// DisplayValueBlock::multiline() — audit 5.25
+// ---------------------------------------------------------------------------
+
+it('DisplayValueBlock multiline() serializes options.multiline=true', function () {
+    $json = encodeDisplay(DisplayValueBlock::make("key: value\nother: value2")->multiline());
+
+    expect($json['options']['multiline'])->toBeTrue()
+        ->and($json['options']['value'])->toBe("key: value\nother: value2");
+});
+
+it('DisplayValueBlock omits multiline from options when not called', function () {
+    $json = encodeDisplay(DisplayValueBlock::make('hello'));
+
+    expect(array_key_exists('multiline', $json['options']))->toBeFalse();
+});
+
+it('DisplayValueBlock multiline(false) omits the option (explicit no-op)', function () {
+    $json = encodeDisplay(DisplayValueBlock::make('hello')->multiline(false));
+
+    expect(array_key_exists('multiline', $json['options']))->toBeFalse();
+});
+
+it('DisplayValueBlock multiline() combines with field()', function () {
+    $json = encodeDisplay(DisplayValueBlock::make(null)->field('payload')->multiline());
+
+    expect($json['options']['multiline'])->toBeTrue()
+        ->and($json['options']['field'])->toBe('payload');
+});
+
+// ---------------------------------------------------------------------------
 // DisplayImageBlock
 // ---------------------------------------------------------------------------
 

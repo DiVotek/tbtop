@@ -45,3 +45,37 @@ describe("DisplayValueBlock icon kind", () => {
 		expect(icon?.getAttribute("class")).toContain("text-success");
 	});
 });
+
+/**
+ * Audit 5.25: DisplayValueBlock rendered a plain value in a bare <span>,
+ * with no whitespace-pre-line — a multiline string (e.g. an Inbox payload
+ * baked as "key: value\nkey: value") collapsed onto one line. options.multiline
+ * (set via the PHP DSL's ->multiline()) opts a block into pre-line rendering.
+ */
+describe("DisplayValueBlock multiline", () => {
+	test("multiline:true renders newlines with whitespace-pre-line", () => {
+		const { container } = render(
+			<DisplayValueBlock
+				options={{ value: "key: value\nother: value2", multiline: true }}
+				meta={{}}
+				ctx={ctx}
+				renderChild={() => null}
+			/>,
+		);
+		const span = container.querySelector("span.whitespace-pre-line");
+		expect(span).not.toBeNull();
+		expect(span?.textContent).toBe("key: value\nother: value2");
+	});
+
+	test("without multiline, no whitespace-pre-line class is applied (no regression)", () => {
+		const { container } = render(
+			<DisplayValueBlock
+				options={{ value: "single line" }}
+				meta={{}}
+				ctx={ctx}
+				renderChild={() => null}
+			/>,
+		);
+		expect(container.querySelector("span.whitespace-pre-line")).toBeNull();
+	});
+});

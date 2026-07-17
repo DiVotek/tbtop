@@ -368,7 +368,8 @@
 											"message": { "type": "string" },
 											"duration": { "type": "integer" }
 										}
-									}
+									},
+									"multiline": { "type": "boolean" }
 								}
 							}
 						}
@@ -1010,6 +1011,15 @@
 							"kind": { "const": "haltModal" },
 							"message": { "type": "string" },
 							"level": { "enum": ["info", "success", "error", "warning"] }
+						},
+						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind", "text"],
+						"properties": {
+							"kind": { "const": "copyToClipboard" },
+							"text": { "type": "string" }
 						},
 						"additionalProperties": false
 					}

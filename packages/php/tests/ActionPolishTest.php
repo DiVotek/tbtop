@@ -110,6 +110,19 @@ it('haltModal: accepts a custom kind', function (): void {
 });
 
 // ---------------------------------------------------------------------------
+// copyToClipboard effect — contract
+// ---------------------------------------------------------------------------
+
+it('copyToClipboard: contract test validates against the effects schema', function (): void {
+    $effects = Effects::make()->copyToClipboard('https://example.com/preview?sig=abc');
+
+    validateAgainstSchema(json_decode(json_encode($effects)), '#/$defs/effects');
+
+    $json = json_decode(json_encode($effects), true);
+    expect($json[0])->toBe(['kind' => 'copyToClipboard', 'text' => 'https://example.com/preview?sig=abc']);
+});
+
+// ---------------------------------------------------------------------------
 // DisplayValueBlock::field() — mutual exclusion with baked kinds
 // ---------------------------------------------------------------------------
 
@@ -130,6 +143,12 @@ it('DisplayValueBlock: field() serializes the field name without a value', funct
 
     expect($json['options']['field'])->toBe('title')
         ->and($json['options'])->not->toHaveKey('kind');
+});
+
+it('DisplayValueBlock: multiline() contract test validates against the node schema', function (): void {
+    $block = DisplayValueBlock::make("line one\nline two")->multiline();
+
+    validateAgainstSchema(json_decode(json_encode($block)), '#/$defs/node');
 });
 
 // ---------------------------------------------------------------------------

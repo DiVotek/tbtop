@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import type { ClientActionContext, ModalController } from "../structure/types";
 import { executeEffects } from "./effects";
@@ -91,5 +91,70 @@ describe("executeEffects: redirect", () => {
 
 		expect(routerVisit).not.toHaveBeenCalled();
 		expect(consumeServerRedirect()).toBe(false);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// copyToClipboard — cms's preview-link modal needs a "Copy" button; this is
+// the reusable client half (PHP: Effects::copyToClipboard, tested separately
+// in ActionPolishTest.php).
+// ---------------------------------------------------------------------------
+
+describe("executeEffects: copyToClipboard", () => {
+	const originalClipboard = Object.getOwnPropertyDescriptor(globalThis.navigator, "clipboard");
+
+	afterEach(() => {
+		if (originalClipboard) {
+			Object.defineProperty(globalThis.navigator, "clipboard", originalClipboard);
+		}
+	});
+
+	function stubClipboard(writeText: (text: string) => Promise<void>): void {
+		Object.defineProperty(globalThis.navigator, "clipboard", {
+			value: { writeText },
+			configurable: true,
+		});
+	}
+
+	test("writes effect.text via navigator.clipboard.writeText and notifies success", async () => {
+		const writeText = mock((_text: string) => Promise.resolve());
+		stubClipboard(writeText);
+		const notify = mock(() => {});
+
+		executeEffects([{ kind: "copyToClipboard", text: "https://example.com/preview?sig=abc" }], {
+			...fakeCtx({ notify }),
+			t: (key: string) => (key === "field.copyable.copied" ? "Copied" : key),
+		});
+		// the handler awaits the clipboard write internally; flush microtasks
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(writeText).toHaveBeenCalledWith("https://example.com/preview?sig=abc");
+		expect(notify).toHaveBeenCalledWith({ kind: "success", message: "Copied" });
+	});
+
+	test("falls back to the default message when no translate function is supplied", async () => {
+		const writeText = mock((_text: string) => Promise.resolve());
+		stubClipboard(writeText);
+		const notify = mock(() => {});
+
+		executeEffects([{ kind: "copyToClipboard", text: "abc" }], fakeCtx({ notify }));
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(notify).toHaveBeenCalledWith({ kind: "success", message: "Copied" });
+	});
+
+	test("does not notify when the effect has no text", async () => {
+		const writeText = mock((_text: string) => Promise.resolve());
+		stubClipboard(writeText);
+		const notify = mock(() => {});
+
+		executeEffects([{ kind: "copyToClipboard" }], fakeCtx({ notify }));
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(writeText).not.toHaveBeenCalled();
+		expect(notify).not.toHaveBeenCalled();
 	});
 });
