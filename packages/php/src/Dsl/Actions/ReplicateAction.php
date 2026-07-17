@@ -25,11 +25,11 @@ final class ReplicateAction
     public static function make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder
     {
         return RecordAction::server($s, $name, $using, self::tail())
-            ->label('Replicate');
+            ->label(__('tbtop-admin::admin.action.replicate'));
     }
 
     private static function tail(): Effects
     {
-        return Effects::make()->notify('Record replicated')->refreshTable();
+        return Effects::make()->notify(__('tbtop-admin::admin.replicate.notify.success'))->refreshTable();
     }
 }

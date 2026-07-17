@@ -225,6 +225,7 @@ function TableBody(props: TableBodyProps) {
 						visibleColumns={visibleColumns}
 						onToggleColumn={toggleColumn}
 						onChangeParams={props.onChangeParams}
+						searchValue={props.queryParams.search}
 						searchPlaceholder={props.searchPlaceholder}
 						deferFilters={props.deferFilters}
 						filtersFormColumns={props.filtersFormColumns}

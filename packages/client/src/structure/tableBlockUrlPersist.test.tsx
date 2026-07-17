@@ -208,6 +208,58 @@ describe("TableBlock URL persist: mount seeds state from URL", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Scenario 3b (audit 5.19 regression): search input reflects the URL-seeded
+// value on mount. Scenario 3 above already proved the query itself picks up
+// the seeded search (server filters rows correctly) — but the input stayed
+// empty, so a reloaded page showed a narrowed list with no visible reason.
+// ---------------------------------------------------------------------------
+
+describe("TableBlock URL persist: search input reflects URL-seeded value on mount", () => {
+	let originalReplaceState: typeof window.history.replaceState;
+
+	beforeEach(() => {
+		originalReplaceState = window.history.replaceState.bind(window.history);
+	});
+
+	afterEach(() => {
+		window.history.replaceState = originalReplaceState;
+		originalReplaceState(null, "", "http://localhost/");
+	});
+
+	test("TableBlock: search input is pre-filled with the seeded search term, not empty", async () => {
+		const sp = new URLSearchParams();
+		sp.set("t[posts][search]", "seeded term");
+		originalReplaceState(null, "", `/?${sp.toString()}`);
+
+		const node = materializeTable("posts");
+		const Wrap = wrapForStructureFetch(
+			() => new Response(JSON.stringify({ data: [{ id: "1", title: "Alpha" }] })),
+		);
+
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+
+		const searchInput = (await findByTestId("table-search-input")) as HTMLInputElement;
+		expect(searchInput.value).toBe("seeded term");
+	});
+
+	test("TableBlock: search input is empty when the URL carries no search param (no regression)", async () => {
+		originalReplaceState(null, "", "/");
+
+		const node = materializeTable("posts");
+		const Wrap = wrapForStructureFetch(
+			() => new Response(JSON.stringify({ data: [{ id: "1", title: "Alpha" }] })),
+		);
+
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+
+		const searchInput = (await findByTestId("table-search-input")) as HTMLInputElement;
+		expect(searchInput.value).toBe("");
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Scenario 4b: filter control shows selected value when seeded from URL
 // ---------------------------------------------------------------------------
 

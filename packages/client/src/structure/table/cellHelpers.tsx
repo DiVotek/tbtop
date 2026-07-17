@@ -7,7 +7,7 @@ import { cn } from "../../lib/cn";
 import { Badge } from "../../ui/badge";
 import { colorShapeClass } from "../colorShape";
 import { imageShapeClass } from "../imageShape";
-import type { TableColumn } from "../types";
+import type { TableColumn, TableColumnIconMapEntry } from "../types";
 import { resolveColorClasses } from "./colorRegistry";
 import { resolveIcon } from "./iconRegistry";
 
@@ -65,12 +65,28 @@ export function IconMapCell({ value, col }: IconCellProps): ReactNode {
 		// Unknown value — render as text fallback
 		return <span>{str || "—"}</span>;
 	}
-	const Icon = resolveIcon(entry.icon);
-	const classes = resolveColorClasses(entry.color);
+	const { icon, color } = normalizeIconMapEntry(entry);
+	const Icon = resolveIcon(icon);
+	const classes = resolveColorClasses(color);
 	if (!Icon) {
 		return <span className={classes.icon}>{str}</span>;
 	}
 	return <Icon className={cn("size-4", classes.icon)} aria-hidden aria-label={str} />;
+}
+
+/**
+ * An iconMap entry is either an icon name string (shorthand for
+ * { icon: name }) or the full { icon, color? } object — Column::iconMap()
+ * and DisplayValueBlock::icon() (PHP) both document this either shape.
+ */
+function normalizeIconMapEntry(entry: TableColumnIconMapEntry): {
+	icon: string;
+	color?: string;
+} {
+	if (typeof entry === "string") {
+		return { icon: entry };
+	}
+	return entry;
 }
 
 // ─── Image cell ───────────────────────────────────────────────────────────────

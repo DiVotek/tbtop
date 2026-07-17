@@ -23,10 +23,17 @@ export interface TableColumnBooleanOptions {
 	falseColor?: string;
 }
 
-export interface TableColumnIconMapEntry {
+export interface TableColumnIconMapEntryObject {
 	icon: string;
 	color?: string;
 }
+
+/**
+ * A bare string is shorthand for { icon: <string> } — Column::iconMap() and
+ * DisplayValueBlock::icon() (PHP) both document `array{icon, color?}|string`
+ * per entry; IconMapCell normalizes either shape.
+ */
+export type TableColumnIconMapEntry = TableColumnIconMapEntryObject | string;
 
 export interface TableColumnLinkOptions {
 	external?: boolean;

@@ -23,6 +23,8 @@ interface TableToolbarProps {
 	visibleColumns: Set<string>;
 	onToggleColumn: (name: string) => void;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
+	/** Seeds the search input on mount — hydrated from the URL-persisted query param. */
+	searchValue?: string;
 	searchPlaceholder?: string;
 	/** Require an explicit Apply action before filter changes narrow the query. */
 	deferFilters?: boolean;
@@ -103,6 +105,7 @@ export function TableToolbar(props: TableToolbarProps) {
 			{hasSearch && (
 				<Input
 					type="search"
+					defaultValue={props.searchValue}
 					placeholder={props.searchPlaceholder ?? t("table.search.placeholder")}
 					className="w-full sm:max-w-xs"
 					data-testid="table-search-input"
