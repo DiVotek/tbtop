@@ -79,15 +79,10 @@ describe("ResponsiveDialog", () => {
 		expect(getByText("Always dialog")).toBeTruthy();
 	});
 
-	// Regression: without slide-in-from-top-[48%] the modal only animates along
-	// the x axis (slides in from the left edge instead of popping from center).
-	// Both slide-in-from-left-1/2 AND slide-in-from-top-[48%] must be present:
-	//   - slide-in-from-left-1/2 sets --tw-enter-translate-x: -50%
-	//   - slide-in-from-top-[48%] sets --tw-enter-translate-y: -48%
-	// Together they make the animation keyframe start at (center-50%, center-48%),
-	// matching the translate-x(-50%) translate-y(-50%) final position → the modal
-	// appears to pop in from the center rather than sliding in from the left edge.
-	test("desktop dialog content carries the centering animation class set", () => {
+	// Directional animation transforms compose with Tailwind 4's independent
+	// centering translate, making the dialog enter from above and left. Centered
+	// dialogs should remain centered while fading and scaling into place.
+	test("desktop dialog content uses centered fade and scale animation", () => {
 		const { baseElement } = render(
 			<ResponsiveDialog open={true} onlyDialog={true}>
 				<ResponsiveDialogContent>
@@ -100,14 +95,14 @@ describe("ResponsiveDialog", () => {
 		// Positioning: fixed centering via left/top + negative translate pair
 		expect(cls).toContain("left-1/2");
 		expect(cls).toContain("top-1/2");
-		// Static translate must be present for the animation origin to resolve correctly
+		// Static translate positions the dialog; animation must not add movement.
 		expect(cls).toMatch(/translate-x-\[-50%\]|-translate-x-1\/2/);
 		expect(cls).toMatch(/translate-y-\[-50%\]|-translate-y-1\/2/);
-		// Both slide-in classes required: left-1/2 alone causes left-edge entry
-		expect(cls).toContain("data-[state=open]:slide-in-from-left-1/2");
-		expect(cls).toContain("data-[state=open]:slide-in-from-top-[48%]");
-		// zoom-in for scale entrance
-		expect(cls).toContain("data-[state=open]:zoom-in-95");
+		expect(cls).not.toContain("slide-in-from");
+		expect(cls).not.toContain("slide-out-to");
+		expect(cls).toContain("data-[state=open]:zoom-in-[97%]");
+		expect(cls).toContain("data-[state=closed]:zoom-out-[98%]");
+		expect(cls).toContain("motion-reduce:animate-none");
 	});
 
 	test("ResponsiveDialog: media query flip does not crash and content remains present", async () => {
