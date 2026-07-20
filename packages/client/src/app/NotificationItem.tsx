@@ -110,7 +110,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete }: Notific
 				<XIcon className="size-4" aria-hidden />
 			</button>
 			{actions.length > 0 && (
-				<div className="flex flex-wrap gap-3 pb-3 pl-11 pr-4">
+				<div className="flex flex-wrap gap-3 pb-3 pl-15 pr-4">
 					{actions.map((action) => (
 						<button
 							key={`${action.label}:${action.url}`}
