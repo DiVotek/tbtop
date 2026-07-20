@@ -169,6 +169,56 @@ describe("TableCell: image kind", () => {
 		const img = container.querySelector("td img");
 		expect(img?.getAttribute("alt")).toBe("Avatar");
 	});
+
+	test("plain-string value still renders exactly as before (regression, no title attr)", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "/img/a.png" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("src")).toBe("/img/a.png");
+		expect(img?.hasAttribute("title")).toBe(false);
+	});
+
+	test("compound {url, title} value renders the title attribute", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: { url: "/img/a.png", title: "Red Civic" } }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("src")).toBe("/img/a.png");
+		expect(img?.getAttribute("title")).toBe("Red Civic");
+	});
+
+	test("alt falls back to title when col.alt is absent", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: { url: "/img/a.png", title: "Red Civic" } }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("alt")).toBe("Red Civic");
+	});
+
+	test("explicit col.alt wins over title", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: { url: "/img/a.png", title: "Red Civic" } }],
+			columns: [{ name: "cover", label: "Cover", kind: "image", alt: "Avatar" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("alt")).toBe("Avatar");
+	});
 });
 
 describe("TableCell: color kind", () => {

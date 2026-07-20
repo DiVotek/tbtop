@@ -211,6 +211,18 @@ it('Column: image()->alt() emits the alt string', function (): void {
     expect($json['alt'])->toBe('Avatar');
 });
 
+it('Column: image() titleFrom is omitted by default', function (): void {
+    $json = encodeColumn(Column::make('cover')->image());
+
+    expect(array_key_exists('titleFrom', $json))->toBeFalse();
+});
+
+it('Column: image()->titleFrom() emits the field name', function (): void {
+    $json = encodeColumn(Column::make('cover')->image()->titleFrom('car_name'));
+
+    expect($json['titleFrom'])->toBe('car_name');
+});
+
 // ---------------------------------------------------------------------------
 // Color column kind + shape variants
 // ---------------------------------------------------------------------------

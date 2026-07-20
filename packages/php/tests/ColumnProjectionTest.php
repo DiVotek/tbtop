@@ -227,6 +227,43 @@ it('ColumnProjection: link() closure returning null yields a null cell value', f
 });
 
 // ---------------------------------------------------------------------------
+// image() titleFrom() — per-row tooltip
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: image() without titleFrom stays a plain string (regression)', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->image()])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->title)->toBe('Post A');
+});
+
+it('ColumnProjection: image()->titleFrom() wraps the value with a resolved title', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->image()->titleFrom('status')])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->title)->toBe(['url' => 'Post A', 'title' => 'published']);
+});
+
+it('ColumnProjection: image()->titleFrom() with a missing field resolves title to null', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->image()->titleFrom('does_not_exist')])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->title)->toBe(['url' => 'Post A', 'title' => null]);
+});
+
+// ---------------------------------------------------------------------------
 // Per-column search (colSearch) allowlist
 // ---------------------------------------------------------------------------
 

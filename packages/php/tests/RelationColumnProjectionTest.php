@@ -72,3 +72,22 @@ it('ColumnProjection: link() resolves a per-row URL on the Eloquent model path',
 
     expect($result[0]['view'])->toBe('/admin/cars/'.$car->id);
 });
+
+// ---------------------------------------------------------------------------
+// image() titleFrom() dot-notation resolution on the Eloquent model path
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: image()->titleFrom() resolves a dotted relation field on the model path', function (): void {
+    $loc = LocationModel::create(['name' => 'Berlin']);
+    CarModel::create(['name' => 'A', 'location_id' => $loc->id]);
+
+    $table = (new TableBuilder('cars'))
+        ->columns([
+            Column::make('name')->image()->titleFrom('location.name'),
+        ])
+        ->query(fn () => CarModel::query());
+
+    $result = ColumnProjection::apply($table, CarModel::with('location')->get());
+
+    expect($result[0]['name'])->toBe(['url' => 'A', 'title' => 'Berlin']);
+});

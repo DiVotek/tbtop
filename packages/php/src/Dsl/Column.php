@@ -410,6 +410,14 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Per-row image tooltip resolved from another field. */
+    public function titleFrom(string $field): static
+    {
+        $this->kindMeta['titleFrom'] = $field;
+
+        return $this;
+    }
+
     // -------------------------------------------------------------------------
     // Editable-column fluent API
     // -------------------------------------------------------------------------

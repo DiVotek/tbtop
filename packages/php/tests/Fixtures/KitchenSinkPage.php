@@ -181,7 +181,7 @@ class KitchenSinkPage extends Page
                     Column::make('title')->label('Title')->kind('text')->individuallySearchable(),
                     'views' => 'Views',
                     Column::make('published_at')->time('H:i')->label('Published time'),
-                    Column::make('cover')->image()->circular()->alt('Avatar'),
+                    Column::make('cover')->image()->circular()->alt('Avatar')->titleFrom('title'),
                     Column::make('brand_color')->color()->rounded()->label('Color'),
                     Column::make('published')
                         ->label('Published')

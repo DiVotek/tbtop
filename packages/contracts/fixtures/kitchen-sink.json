@@ -1007,7 +1007,8 @@
                             "name": "cover",
                             "kind": "image",
                             "shape": "circular",
-                            "alt": "Avatar"
+                            "alt": "Avatar",
+                            "titleFrom": "title"
                         },
                         {
                             "name": "brand_color",

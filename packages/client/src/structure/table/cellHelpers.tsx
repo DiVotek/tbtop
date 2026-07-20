@@ -96,8 +96,27 @@ interface ImageCellProps {
 	col: TableColumn;
 }
 
+/**
+ * Image column value is a bare URL string, or a compound {url, title} shape
+ * when Column::titleFrom() is set — the title becomes the cell's tooltip and
+ * an alt-text fallback.
+ */
+function normalizeImageValue(value: unknown): { url: string; title?: string } {
+	if (typeof value === "string") {
+		return { url: value };
+	}
+	if (value && typeof value === "object" && "url" in value) {
+		const { url, title } = value as { url: unknown; title?: unknown };
+		return {
+			url: typeof url === "string" ? url : "",
+			title: typeof title === "string" && title !== "" ? title : undefined,
+		};
+	}
+	return { url: "" };
+}
+
 export function ImageCell({ value, col }: ImageCellProps): ReactNode {
-	const url = typeof value === "string" ? value : "";
+	const { url, title } = normalizeImageValue(value);
 	if (!url) {
 		return <span data-testid="image-cell" />;
 	}
@@ -105,8 +124,9 @@ export function ImageCell({ value, col }: ImageCellProps): ReactNode {
 		<span data-testid="image-cell">
 			<img
 				src={url}
-				alt={col.alt ?? ""}
+				alt={col.alt ?? title ?? ""}
 				className={cn("h-10 w-10 object-cover", imageShapeClass(col.shape))}
+				{...(title ? { title } : {})}
 			/>
 		</span>
 	);
