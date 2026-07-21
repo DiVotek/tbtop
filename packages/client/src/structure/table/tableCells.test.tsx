@@ -169,6 +169,49 @@ describe("TableCell: image kind", () => {
 		const img = container.querySelector("td img");
 		expect(img?.getAttribute("alt")).toBe("Avatar");
 	});
+
+	test("plain-string value still renders exactly as before (regression, no title attr)", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "/img/a.png" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("src")).toBe("/img/a.png");
+		expect(img?.hasAttribute("title")).toBe(false);
+	});
+
+	test("row _tooltips value falls back into the img alt when col.alt is absent", async () => {
+		const node = s.table({
+			query: async () => [
+				{ id: "1", cover: "/img/a.png", _tooltips: { cover: "Red Civic" } },
+			],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("src")).toBe("/img/a.png");
+		expect(img?.getAttribute("alt")).toBe("Red Civic");
+		expect(img?.hasAttribute("title")).toBe(false);
+	});
+
+	test("explicit col.alt wins over the row tooltip", async () => {
+		const node = s.table({
+			query: async () => [
+				{ id: "1", cover: "/img/a.png", _tooltips: { cover: "Red Civic" } },
+			],
+			columns: [{ name: "cover", label: "Cover", kind: "image", alt: "Avatar" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		expect(img?.getAttribute("alt")).toBe("Avatar");
+	});
 });
 
 describe("TableCell: color kind", () => {
@@ -259,7 +302,7 @@ describe("TableCell: column display properties", () => {
 		expect(td).toBeTruthy();
 	});
 
-	test("column with tooltip sets title attribute on th", async () => {
+	test("column with tooltip renders a Radix tooltip trigger in the th (no native title)", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", score: 99 }],
 			columns: [{ name: "score", label: "Score", tooltip: "Higher is better" }],
@@ -267,8 +310,9 @@ describe("TableCell: column display properties", () => {
 		const Wrap = wrap(() => new Response("{}"));
 		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
 		await findByTestId("table-block");
-		const th = container.querySelector('th[title="Higher is better"]');
-		expect(th).toBeTruthy();
+		const th = container.querySelector("th");
+		expect(th?.querySelector('[data-slot="tooltip-trigger"]')).toBeTruthy();
+		expect(th?.hasAttribute("title")).toBe(false);
 	});
 
 	test("emphasized column wraps the cell text in a primary link-style span", async () => {
@@ -340,6 +384,45 @@ describe("TableCell: column display properties", () => {
 		);
 		expect(headers).not.toContain("Secret");
 		expect(headers).toContain("Title");
+	});
+});
+
+describe("TableCell: per-row tooltip", () => {
+	test("static col.tooltip renders a Radix tooltip trigger in the td (no native title)", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", name: "About us" }],
+			columns: [{ name: "name", label: "Title", tooltip: "A static tip" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.querySelector('[data-slot="tooltip-trigger"]')).toBeTruthy();
+		expect(td?.hasAttribute("title")).toBe(false);
+	});
+
+	test("row _tooltips value wins over the static col.tooltip", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", name: "About us", _tooltips: { name: "Per-row tip" } }],
+			columns: [{ name: "name", label: "Title", tooltip: "A static tip" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const trigger = container.querySelector('td [data-slot="tooltip-trigger"]');
+		expect(trigger).toBeTruthy();
+	});
+
+	test("no tooltip anywhere renders no trigger wrapper (regression)", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", name: "About us" }],
+			columns: [{ name: "name", label: "Title" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.querySelector('[data-slot="tooltip-trigger"]')).toBeNull();
 	});
 });
 

@@ -227,6 +227,57 @@ it('ColumnProjection: link() closure returning null yields a null cell value', f
 });
 
 // ---------------------------------------------------------------------------
+// tooltip(Closure) — per-row tooltip meta
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: tooltip(Closure) attaches a resolved _tooltips map', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('title')->kind('text'),
+            Column::make('status')->kind('text')->tooltip(fn ($row) => "Status: {$row->status}"),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->_tooltips)->toBe(['status' => 'Status: published']);
+});
+
+it('ColumnProjection: no closure tooltip means no _tooltips property on the row', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->kind('text')])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_tooltips'))->toBeFalse();
+});
+
+it('ColumnProjection: a resolver returning null omits that column from _tooltips', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->kind('text')->tooltip(fn () => null)])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_tooltips'))->toBeFalse();
+});
+
+it('ColumnProjection: a static string tooltip alone does not attach _tooltips', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->kind('text')->tooltip('Static tip')])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_tooltips'))->toBeFalse();
+});
+
+// ---------------------------------------------------------------------------
 // Per-column search (colSearch) allowlist
 // ---------------------------------------------------------------------------
 

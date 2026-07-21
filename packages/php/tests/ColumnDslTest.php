@@ -87,6 +87,11 @@ it('Column: tooltip emits tooltip string', function (): void {
     expect($json['tooltip'])->toBe('Total views');
 });
 
+it('Column: tooltip(Closure) does not emit a tooltip key', function (): void {
+    $json = encodeColumn(Column::make('views')->tooltip(fn ($row) => $row->title));
+    expect(array_key_exists('tooltip', $json))->toBeFalse();
+});
+
 it('Column: translatable emits translatable:true', function (): void {
     $json = encodeColumn(Column::make('title')->translatable());
     expect($json['translatable'])->toBeTrue();
