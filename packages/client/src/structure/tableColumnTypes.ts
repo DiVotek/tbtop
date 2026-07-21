@@ -74,8 +74,6 @@ export interface TableColumn<TRow = unknown> {
 	iconMap?: Record<string, TableColumnIconMapEntry>;
 	shape?: "square" | "circular" | "rounded";
 	alt?: string;
-	/** Field to resolve a per-row image tooltip from — Column::titleFrom() (image kind only). */
-	titleFrom?: string;
 	link?: TableColumnLinkOptions;
 	editable?: {
 		as: "boolean" | "text" | "select";

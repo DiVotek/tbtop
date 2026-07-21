@@ -94,29 +94,16 @@ function normalizeIconMapEntry(entry: TableColumnIconMapEntry): {
 interface ImageCellProps {
 	value: unknown;
 	col: TableColumn;
+	/** Resolved row/static tooltip — used as the alt-text fallback when col.alt is absent. */
+	tooltip?: string;
 }
 
-/**
- * Image column value is a bare URL string, or a compound {url, title} shape
- * when Column::titleFrom() is set — the title becomes the cell's tooltip and
- * an alt-text fallback.
- */
-function normalizeImageValue(value: unknown): { url: string; title?: string } {
-	if (typeof value === "string") {
-		return { url: value };
-	}
-	if (value && typeof value === "object" && "url" in value) {
-		const { url, title } = value as { url: unknown; title?: unknown };
-		return {
-			url: typeof url === "string" ? url : "",
-			title: typeof title === "string" && title !== "" ? title : undefined,
-		};
-	}
-	return { url: "" };
+function normalizeImageUrl(value: unknown): string {
+	return typeof value === "string" ? value : "";
 }
 
-export function ImageCell({ value, col }: ImageCellProps): ReactNode {
-	const { url, title } = normalizeImageValue(value);
+export function ImageCell({ value, col, tooltip }: ImageCellProps): ReactNode {
+	const url = normalizeImageUrl(value);
 	if (!url) {
 		return <span data-testid="image-cell" />;
 	}
@@ -124,9 +111,8 @@ export function ImageCell({ value, col }: ImageCellProps): ReactNode {
 		<span data-testid="image-cell">
 			<img
 				src={url}
-				alt={col.alt ?? title ?? ""}
+				alt={col.alt ?? tooltip ?? ""}
 				className={cn("h-10 w-10 object-cover", imageShapeClass(col.shape))}
-				{...(title ? { title } : {})}
 			/>
 		</span>
 	);

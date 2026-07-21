@@ -695,7 +695,6 @@
 					"iconMap": { "type": "object" },
 					"shape": { "type": "string", "enum": ["square", "circular", "rounded"] },
 					"alt": { "type": "string" },
-					"titleFrom": { "type": "string" },
 					"link": {
 						"type": "object",
 						"properties": {

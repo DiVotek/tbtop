@@ -74,20 +74,20 @@ it('ColumnProjection: link() resolves a per-row URL on the Eloquent model path',
 });
 
 // ---------------------------------------------------------------------------
-// image() titleFrom() dot-notation resolution on the Eloquent model path
+// tooltip(Closure) using a relation on the Eloquent model path
 // ---------------------------------------------------------------------------
 
-it('ColumnProjection: image()->titleFrom() resolves a dotted relation field on the model path', function (): void {
+it('ColumnProjection: tooltip(Closure) using a relation resolves into _tooltips on the model path', function (): void {
     $loc = LocationModel::create(['name' => 'Berlin']);
     CarModel::create(['name' => 'A', 'location_id' => $loc->id]);
 
     $table = (new TableBuilder('cars'))
         ->columns([
-            Column::make('name')->image()->titleFrom('location.name'),
+            Column::make('name')->kind('text')->tooltip(fn ($car) => $car->location->name),
         ])
         ->query(fn () => CarModel::query());
 
     $result = ColumnProjection::apply($table, CarModel::with('location')->get());
 
-    expect($result[0]['name'])->toBe(['url' => 'A', 'title' => 'Berlin']);
+    expect($result[0]['_tooltips'])->toBe(['name' => 'Berlin']);
 });

@@ -37,10 +37,37 @@ final class ColumnProjection
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
+            self::attachTooltips($projected, $row, $columns);
             $out[] = $projected;
         }
 
         return $out;
+    }
+
+    /**
+     * Per-row meta: for each visible column with a closure tooltip, resolve it
+     * against the original row and collect non-empty scalars under a flat
+     * `_tooltips` map keyed by (possibly dotted) column name. Omitted entirely
+     * when nothing resolves.
+     *
+     * @param  list<Column>  $columns
+     */
+    private static function attachTooltips(mixed &$projected, mixed $row, array $columns): void
+    {
+        $tooltips = [];
+        foreach ($columns as $col) {
+            $resolver = $col->tooltipResolver();
+            if ($resolver === null) {
+                continue;
+            }
+            $value = $resolver($row);
+            if (is_scalar($value) && $value !== '') {
+                $tooltips[$col->name] = (string) $value;
+            }
+        }
+        if ($tooltips !== []) {
+            data_set($projected, '_tooltips', $tooltips);
+        }
     }
 
     /**
@@ -85,8 +112,7 @@ final class ColumnProjection
             $source = $col->isTranslatable()
                 ? self::rawAttribute($row, $name)
                 : data_get($out, $name);
-            $value = self::computeValue($col, $source);
-            $out[$name] = self::wrapImageValue($col, $value, $out);
+            $out[$name] = self::computeValue($col, $source);
         }
 
         return $out;
@@ -107,7 +133,6 @@ final class ColumnProjection
             }
             $raw = data_get($row, $name);
             $value = self::computeValue($col, $raw);
-            $value = self::wrapImageValue($col, $value, $row);
             if ($value !== $raw) {
                 data_set($row, $name, $value);
             }
@@ -128,27 +153,6 @@ final class ColumnProjection
         }
 
         return self::applyKindFormat($col, $value);
-    }
-
-    /**
-     * Image columns with titleFrom() emit a compound {url, title} shape instead
-     * of a bare string, so the client can render a per-row tooltip.
-     */
-    private static function wrapImageValue(Column $col, mixed $value, mixed $source): mixed
-    {
-        $titleFrom = $col->getKindMeta()['titleFrom'] ?? null;
-        if ($col->getKind() !== 'image' || ! is_string($titleFrom) || $titleFrom === '') {
-            return $value;
-        }
-
-        return ['url' => $value, 'title' => self::resolveTitle($source, $titleFrom)];
-    }
-
-    private static function resolveTitle(mixed $source, string $titleFrom): ?string
-    {
-        $title = data_get($source, $titleFrom);
-
-        return is_scalar($title) ? (string) $title : null;
     }
 
     /** Pre-accessor, pre-cast value: the stored JSON map for Spatie + array-cast. */

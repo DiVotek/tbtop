@@ -49,6 +49,9 @@ final class Column implements JsonSerializable
 
     private ?string $tooltip = null;
 
+    /** Server-only: per-row tooltip resolver — never serialized. Receives the row, returns a scalar or null. */
+    private ?Closure $tooltipResolver = null;
+
     /** Renders the cell text as an emphasized primary-colored link-style label. */
     private ?bool $emphasized = null;
 
@@ -202,11 +205,27 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    public function tooltip(string $tooltip): static
+    /**
+     * String → static tooltip, serialized as-is. Closure → per-row resolver,
+     * run server-side in ColumnProjection and never serialized (mirrors
+     * link()'s linkResolver pattern).
+     */
+    public function tooltip(string|Closure $tooltip): static
     {
+        if ($tooltip instanceof Closure) {
+            $this->tooltipResolver = $tooltip;
+
+            return $this;
+        }
         $this->tooltip = $tooltip;
 
         return $this;
+    }
+
+    /** Server-only: per-row tooltip resolver, or null when tooltip() wasn't called with a closure. */
+    public function tooltipResolver(): ?Closure
+    {
+        return $this->tooltipResolver;
     }
 
     public function translatable(bool $value = true): static
@@ -406,14 +425,6 @@ final class Column implements JsonSerializable
     public function alt(string $alt): static
     {
         $this->kindMeta['alt'] = $alt;
-
-        return $this;
-    }
-
-    /** Per-row image tooltip resolved from another field. */
-    public function titleFrom(string $field): static
-    {
-        $this->kindMeta['titleFrom'] = $field;
 
         return $this;
     }
