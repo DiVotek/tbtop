@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { ClientProvider } from "../data/client";
 import { I18nProvider } from "../i18n/i18n";
@@ -29,6 +29,18 @@ describe("NotificationsBell", () => {
 	test("caps the badge at 99+", async () => {
 		const { getByTestId } = render(<NotificationsBell />, { wrapper: wrap(150) });
 		await waitFor(() => expect(getByTestId("notifications-badge").textContent).toBe("99+"));
+	});
+
+	test("opens an edge-flush, full-height slide-over without floating insets", async () => {
+		const { getByTestId } = render(<NotificationsBell />, { wrapper: wrap(0) });
+		await waitFor(() => expect(getByTestId("notifications-trigger")).toBeTruthy());
+		fireEvent.click(getByTestId("notifications-trigger"));
+		await waitFor(() => expect(getByTestId("notifications-popover")).toBeTruthy());
+		const classes = getByTestId("notifications-popover").className;
+		expect(classes).toContain("inset-y-0");
+		expect(classes).toContain("right-0");
+		expect(classes).not.toContain("right-2");
+		expect(classes).not.toContain("top-2");
 	});
 
 	test("hides the badge when nothing is unread", async () => {
