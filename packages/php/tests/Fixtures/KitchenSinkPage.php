@@ -303,7 +303,7 @@ class KitchenSinkPage extends Page
                 $s->localeSwitcher(),
                 $s->notifications(),
                 $s->userMenu(),
-            ]),
+            ], ['gap' => 2, 'class' => 'items-center']),
             $s->flex([
                 $s->unsavedIndicator(),
                 $s->unsavedIndicator('Custom label'),

@@ -1472,6 +1472,8 @@
             {
                 "kind": "row",
                 "options": {
+                    "gap": 2,
+                    "class": "items-center",
                     "children": [
                         {
                             "kind": "logo",
