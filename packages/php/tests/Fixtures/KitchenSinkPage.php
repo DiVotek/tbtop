@@ -99,7 +99,7 @@ class KitchenSinkPage extends Page
                     $s->otp('auth_code')->label('Code')->length(6)->rules('digits:6'),
                     $s->textarea('body')->label('Body')
                         ->helperText('Supports Markdown.')->tooltip('Write the post body here.'),
-                    $s->number('rating')->rules('integer|min:0|max:5')->columnStart(2),
+                    $s->number('rating')->step(0.01)->rules('integer|min:0|max:5')->columnStart(2),
                     $s->boolean('published'),
                     $s->radio('priority')->label('Priority')->inline()->options([
                         ['value' => 'low', 'label' => 'Low', 'description' => 'No rush'],
