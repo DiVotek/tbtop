@@ -333,6 +333,20 @@
 					}
 				},
 				{
+					"if": { "properties": { "kind": { "const": "number" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"step": {
+										"anyOf": [{ "type": "number" }, { "const": "any" }]
+									}
+								}
+							}
+						}
+					}
+				},
+				{
 					"if": { "properties": { "kind": { "const": "displayValue" } } },
 					"then": {
 						"properties": {
