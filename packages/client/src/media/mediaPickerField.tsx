@@ -395,14 +395,23 @@ interface MediaPickerModalProps {
 	onConfirm: (items: MediaItem[]) => void;
 }
 
-function MediaPickerModal({
-	open,
+// A closed picker must fire zero requests: useMediaItems/useMediaFolders live
+// in a separate component that only mounts while open, instead of the modal
+// body always mounting and merely hiding its dialog chrome.
+function MediaPickerModal({ open, onClose, ...contentProps }: MediaPickerModalProps): ReactNode {
+	if (!open) {
+		return null;
+	}
+	return <MediaPickerModalContent onClose={onClose} {...contentProps} />;
+}
+
+function MediaPickerModalContent({
 	multiple,
 	accept,
 	onClose,
 	onSelect,
 	onConfirm,
-}: MediaPickerModalProps): ReactNode {
+}: Omit<MediaPickerModalProps, "open">): ReactNode {
 	const t = useTranslation();
 	const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 	const [selectedItems, setSelectedItems] = useState<MediaItem[]>([]);
@@ -466,7 +475,7 @@ function MediaPickerModal({
 
 	return (
 		<ModalShell
-			open={open}
+			open
 			onOpenChange={(v) => !v && handleClose()}
 			title={multiple ? t("media.picker.title_multiple") : t("media.picker.title")}
 			size="full"
