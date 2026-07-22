@@ -464,8 +464,10 @@
 										"additionalProperties": false
 									},
 									"variant": { "type": "string", "enum": ["card", "plain"] },
-									"class": { "type": "string" }
-								}
+									"class": { "type": "string" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}

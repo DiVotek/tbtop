@@ -265,6 +265,8 @@ final class S
      */
     public function section(array $opts, array $children): Node
     {
+        self::assertKnownSectionKeys($opts);
+
         if (isset($opts['columns'])) {
             ColumnsValidator::validate($opts['columns'], 'section columns');
         }
@@ -279,6 +281,34 @@ final class S
         }
 
         return self::layout('section', $children, $opts);
+    }
+
+    /**
+     * Section-specific option keys, plus every key `Meta::split` pulls into
+     * node meta (id/hidden/disabled/hiddenIf/disabledIf) — both are valid
+     * `section()` input.
+     *
+     * @param  array<string, mixed>  $opts
+     */
+    private static function assertKnownSectionKeys(array $opts): void
+    {
+        $allowed = [
+            'title', 'description', 'icon', 'aside', 'collapsible', 'collapsed',
+            'columns', 'action', 'variant', 'class',
+            ...Meta::keys(),
+        ];
+
+        foreach (array_keys($opts) as $key) {
+            if (in_array($key, $allowed, true)) {
+                continue;
+            }
+
+            $suggestion = $key === 'label' ? " Did you mean 'title'?" : '';
+
+            throw new InvalidArgumentException(
+                "Unknown section option \"{$key}\".{$suggestion} Allowed: ".implode(', ', $allowed).'.'
+            );
+        }
     }
 
     private static function normalizeSectionVariant(mixed $variant): string
