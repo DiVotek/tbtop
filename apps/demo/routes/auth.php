@@ -56,6 +56,14 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 
+    // Admin-prefixed alias: the panel's profile dropdown posts to
+    // `${routesBase}/logout` (see ProfileDropdown.tsx), never the bare path.
+    // Redirects back into the admin bundle (destroyAdmin), unlike the bare
+    // route above which redirects to '/' — the admin SPA can only resolve
+    // 'admin/page', not the marketing 'welcome' page.
+    Route::post('admin/logout', [AuthenticatedSessionController::class, 'destroyAdmin'])
+        ->name('admin.logout');
+
     Route::post('two-factor/setup', [TwoFactorController::class, 'setup'])
         ->name('two-factor.setup');
 
