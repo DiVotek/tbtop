@@ -7,6 +7,14 @@ final class Meta
     private const KEYS = ['id', 'hidden', 'disabled', 'hiddenIf', 'disabledIf'];
 
     /**
+     * @return list<string>
+     */
+    public static function keys(): array
+    {
+        return self::KEYS;
+    }
+
+    /**
      * Mirrors the client grammar: id/hidden/disabled live in meta.
      *
      * @param  array<string, mixed>  $input
