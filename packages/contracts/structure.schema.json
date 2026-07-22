@@ -116,8 +116,10 @@
 								"required": ["label"],
 								"properties": {
 									"label": { "type": "string" },
-									"collapsed": { "type": "boolean" }
-								}
+									"collapsed": { "type": "boolean" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}
@@ -449,8 +451,10 @@
 								"properties": {
 									"cols": { "$ref": "#/$defs/columnsSpec" },
 									"gap": { "type": "integer", "minimum": 0, "maximum": 12 },
-									"class": { "type": "string" }
-								}
+									"class": { "type": "string" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}
@@ -492,8 +496,12 @@
 						"properties": {
 							"options": {
 								"properties": {
-									"variant": { "type": "string", "enum": ["grid"] }
-								}
+									"variant": { "type": "string", "enum": ["grid"] },
+									"gap": { "type": "integer", "minimum": 0, "maximum": 12 },
+									"class": { "type": "string" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}

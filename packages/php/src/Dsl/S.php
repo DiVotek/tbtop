@@ -160,12 +160,16 @@ final class S
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
     public function stack(array $children, array $opts = []): Node
     {
+        self::assertKnownKeys('stack', $opts, ['class', 'gap', ...Meta::keys()]);
+
         return self::layout('stack', $children, $opts);
     }
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
     public function row(array $children, array $opts = []): Node
     {
+        self::assertKnownKeys('row', $opts, ['class', 'gap', ...Meta::keys()]);
+
         return self::layout('row', $children, $opts);
     }
 
@@ -237,6 +241,8 @@ final class S
      */
     public function grid(array $opts, array $children): Node
     {
+        self::assertKnownKeys('grid', $opts, ['cols', 'gap', 'class', ...Meta::keys()]);
+
         if (isset($opts['cols'])) {
             ColumnsValidator::validate($opts['cols'], 'grid cols');
         }
@@ -265,7 +271,11 @@ final class S
      */
     public function section(array $opts, array $children): Node
     {
-        self::assertKnownSectionKeys($opts);
+        self::assertKnownKeys('section', $opts, [
+            'title', 'description', 'icon', 'aside', 'collapsible', 'collapsed',
+            'columns', 'action', 'variant', 'class',
+            ...Meta::keys(),
+        ], static fn (string $key): string => $key === 'label' ? " Did you mean 'title'?" : '');
 
         if (isset($opts['columns'])) {
             ColumnsValidator::validate($opts['columns'], 'section columns');
@@ -284,29 +294,26 @@ final class S
     }
 
     /**
-     * Section-specific option keys, plus every key `Meta::split` pulls into
-     * node meta (id/hidden/disabled/hiddenIf/disabledIf) — both are valid
-     * `section()` input.
+     * Rejects any $opts key not in $allowed, naming the offending key and
+     * listing the allowed set. $allowed should include every builder-specific
+     * key plus every key `Meta::split` pulls into node meta (Meta::keys()) —
+     * both are valid input to a layout builder.
      *
      * @param  array<string, mixed>  $opts
+     * @param  list<string>  $allowed
+     * @param  (callable(string): string)|null  $suggest  Optional per-key hint appended to the error message.
      */
-    private static function assertKnownSectionKeys(array $opts): void
+    private static function assertKnownKeys(string $context, array $opts, array $allowed, ?callable $suggest = null): void
     {
-        $allowed = [
-            'title', 'description', 'icon', 'aside', 'collapsible', 'collapsed',
-            'columns', 'action', 'variant', 'class',
-            ...Meta::keys(),
-        ];
-
         foreach (array_keys($opts) as $key) {
             if (in_array($key, $allowed, true)) {
                 continue;
             }
 
-            $suggestion = $key === 'label' ? " Did you mean 'title'?" : '';
+            $suggestion = $suggest !== null ? $suggest($key) : '';
 
             throw new InvalidArgumentException(
-                "Unknown section option \"{$key}\".{$suggestion} Allowed: ".implode(', ', $allowed).'.'
+                "Unknown {$context} option \"{$key}\".{$suggestion} Allowed: ".implode(', ', $allowed).'.'
             );
         }
     }
@@ -352,6 +359,8 @@ final class S
      */
     public function collapsible(array $opts, array $children): Node
     {
+        self::assertKnownKeys('collapsible', $opts, ['label', 'collapsed', ...Meta::keys()]);
+
         $opts = array_merge(['collapsed' => false], $opts);
 
         return self::layout('collapsible', $children, $opts);
@@ -366,6 +375,8 @@ final class S
      */
     public function aside(array $children, array $opts = []): Node
     {
+        self::assertKnownKeys('aside', $opts, ['class', ...Meta::keys()]);
+
         return self::layout('aside', $children, $opts);
     }
 
