@@ -1,4 +1,4 @@
-import { router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Toaster, toast } from "sonner";
 import { AdminLayout } from "../app/AdminLayout";
@@ -92,9 +92,7 @@ export function AdminPage() {
 	const widthToken = tbtop?.appearance?.maxWidth;
 	const maxWidth = (widthToken && MAX_WIDTH_CLASS[widthToken]) || "max-w-5xl";
 	// Center-layout pages (auth screens) own their heading inside the content —
-	// the admin page-header chrome (breadcrumbs/h1/subtitle/actions) would
-	// duplicate it above the card. The title prop stays in the page contract
-	// (nothing here renders <Head>, so it has no other visible output).
+	// the admin page-header chrome (breadcrumbs/h1/subtitle/actions) would duplicate it.
 	const showPageHeader = page.props.layout !== "center";
 
 	return (
@@ -105,6 +103,7 @@ export function AdminPage() {
 						config={{ locales: contentLocales, defaultLocale: defaultContentLocale }}
 					>
 						<PageSubtitleProvider>
+							<Head title={title} />
 							<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
 								{showPageHeader && breadcrumbs && (
 									<Breadcrumbs items={breadcrumbs} />
