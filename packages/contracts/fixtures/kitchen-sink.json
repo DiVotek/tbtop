@@ -350,6 +350,7 @@
                                     {
                                         "kind": "number",
                                         "options": {
+                                            "step": 0.01,
                                             "colStart": 2,
                                             "constraints": {
                                                 "integer": true,
