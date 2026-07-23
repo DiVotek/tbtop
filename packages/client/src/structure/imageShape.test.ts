@@ -13,4 +13,8 @@ describe("imageShapeClass", () => {
 	test("'circular' maps to rounded-full", () => {
 		expect(imageShapeClass("circular")).toBe("rounded-full");
 	});
+
+	test("'rounded' maps to rounded-lg", () => {
+		expect(imageShapeClass("rounded")).toBe("rounded-lg");
+	});
 });
