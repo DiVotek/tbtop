@@ -12,6 +12,7 @@ use Tbtop\Admin\Tests\MediaHttpTestCase;
 use Tbtop\Admin\Tests\NotificationsHttpTestCase;
 use Tbtop\Admin\Tests\PageLayoutHttpTestCase;
 use Tbtop\Admin\Tests\PanelsHttpTestCase;
+use Tbtop\Admin\Tests\RouteCacheSerializationTestCase;
 use Tbtop\Admin\Tests\RunsMigrationsTestCase;
 use Tbtop\Admin\Tests\TableTabsHttpTestCase;
 
@@ -23,6 +24,7 @@ uses(RunsMigrationsTestCase::class)->in('PackageMigrationsTest.php');
 uses(PanelsHttpTestCase::class)->in('PanelsHttpTest.php');
 uses(NotificationsHttpTestCase::class)->in('NotificationsHttpTest.php');
 uses(HeaderActionsHttpTestCase::class)->in('HeaderActionsHttpTest.php');
+uses(RouteCacheSerializationTestCase::class)->in('RouteCacheSerializationTest.php');
 
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\CurrentPanel;
