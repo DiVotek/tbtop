@@ -200,3 +200,37 @@ it('Editable: withExists() synthetic attribute on the query does not break save'
     expect($response->json('effects'))->toContain(['kind' => 'refreshTable', 'table' => 'ecposts_with_synthetic']);
     expect(EcPost::find($post->id)->title)->toBe('Updated Title');
 });
+
+// ---------------------------------------------------------------------------
+// onSave must still be able to READ synthetic attributes off the resolved
+// record — a clean withExists() alias and a listener-stamped flag alike.
+// ---------------------------------------------------------------------------
+
+it('Editable: onSave can read both a clean withExists() alias and a listener-stamped flag', function (): void {
+    $post = EcPost::where('title', 'First')->first();
+
+    $response = $this->postJson(
+        '/admin/editable-posts/cells/ecposts_with_synthetic/note',
+        ['payload' => ['id' => $post->id, 'value' => 'unused']],
+    );
+
+    $response->assertOk();
+    expect($response->json('effects.0.message'))->toBe('has_comments=false is_returning=true');
+});
+
+// ---------------------------------------------------------------------------
+// A real column normalized by a retrieved() listener must still persist on
+// inline-save of a DIFFERENT column — the fix must not swallow legitimate
+// dirty state along with the synthetic flag it neutralizes.
+// ---------------------------------------------------------------------------
+
+it('Editable: a real column changed by a retrieved() listener still persists on save', function (): void {
+    $post = EcPost::where('title', 'First')->first();
+
+    $this->postJson(
+        '/admin/editable-posts/cells/ecposts_with_synthetic/title',
+        ['payload' => ['id' => $post->id, 'value' => 'Updated Title']],
+    )->assertOk();
+
+    expect(EcPost::find($post->id)->note)->toBe('stamped-by-listener');
+});

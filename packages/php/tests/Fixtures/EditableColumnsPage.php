@@ -99,8 +99,11 @@ class EditableColumnsPage extends Page
                 ->query(fn () => EcPost::query()->where('published', true))
                 ->toNode(),
             // Synthetic-attribute table: query adds a withExists() aggregate
-            // alias. Reproduces "resolve -> save writes a synthetic attribute
-            // as if it were a real column" (see EditableColumnController).
+            // alias, and the model's retrieved() listener both stamps a
+            // non-column flag and normalizes a real column. Reproduces
+            // "resolve -> save writes a synthetic attribute as if it were a
+            // real column" and "a legitimate listener-driven column change
+            // gets swallowed" (see EditableColumnController).
             $s->table('ecposts_with_synthetic')
                 ->columns([
                     Column::make('title')
@@ -112,6 +115,20 @@ class EditableColumnsPage extends Page
                             $record->save();
 
                             return Effects::make()->refreshTable('ecposts_with_synthetic');
+                        }),
+                    // Reads back the resolved record's aliases without
+                    // changing anything, so the response proves what onSave
+                    // could see: the clean withExists() alias and the
+                    // listener-stamped flag, both with their real values.
+                    Column::make('note')
+                        ->label('Note')
+                        ->textInput()
+                        ->onSave(function (mixed $record, mixed $value): Effects {
+                            return Effects::make()->notify(sprintf(
+                                'has_comments=%s is_returning=%s',
+                                $record->has_comments ? 'true' : 'false',
+                                $record->is_returning ? 'true' : 'false',
+                            ));
                         }),
                 ])
                 ->query(fn () => EcPostWithSynthetic::query()->withExists(['comments as has_comments']))

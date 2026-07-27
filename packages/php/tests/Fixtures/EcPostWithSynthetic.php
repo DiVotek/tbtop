@@ -3,12 +3,15 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 /**
- * Same table as EcPost, but every hydrated instance gets a non-column
- * attribute stamped on it via the `retrieved` model event — the pattern a
- * real app uses to annotate rows with a computed/derived flag (e.g.
- * "is_returning"). Reproduces the editable-column save bug: the synthetic
- * attribute becomes dirty as soon as any real column changes, and
- * Eloquent tries to write it as a column on save().
+ * Same table as EcPost, but every hydrated instance is annotated by a
+ * `retrieved` model event — the pattern a real app uses to enrich rows on
+ * fetch. The listener does two things real listeners do:
+ *
+ *  - stamps a non-column flag ("is_returning"), which becomes dirty the
+ *    instant it's set (unlike a clean withExists() alias) and would break
+ *    save() if the controller didn't neutralize it;
+ *  - normalizes a REAL column ("note"), which is a legitimate dirty change
+ *    that inline-save must still persist.
  */
 class EcPostWithSynthetic extends EcPost
 {
@@ -16,6 +19,7 @@ class EcPostWithSynthetic extends EcPost
     {
         static::retrieved(function (self $model): void {
             $model->setAttribute('is_returning', true);
+            $model->setAttribute('note', 'stamped-by-listener');
         });
     }
 }

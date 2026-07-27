@@ -113,28 +113,35 @@ final class EditableColumnController
 
         $record = (clone $builder)->whereKey($id)->firstOrFail();
 
-        return $this->stripSyntheticAttributes($record);
+        return $this->quietSyntheticDirtiness($record);
     }
 
     /**
-     * The query closure may attach synthetic attributes (withExists()
-     * aggregates, a `retrieved` listener stamping a computed flag, etc.).
-     * Those live in the attribute bag alongside real columns, so once any
-     * genuine column changes and the record is saved, Eloquent tries to
-     * write them too — and the table has no such column. Drop anything
-     * that isn't a real column before the onSave closure can touch it.
+     * A query closure or a model event (retrieved(), an accessor, etc.) can
+     * leave non-column attributes on the resolved record — a withExists()
+     * alias, a computed flag stamped after hydration. Reading those in the
+     * onSave closure is legitimate and must keep working; a clean alias is
+     * never dirty by itself (its value matches what was just SELECTed), so
+     * it never reaches save(). The only real threat is a synthetic attribute
+     * that became dirty *after* hydration (e.g. a retrieved() listener
+     * calling setAttribute()) — Eloquent would try to write it as a column.
+     * Re-sync just that attribute's "original" so save() stops treating it
+     * as changed, without touching any real column's dirty state.
      */
-    private function stripSyntheticAttributes(Model $record): Model
+    private function quietSyntheticDirtiness(Model $record): Model
     {
+        $dirty = array_keys($record->getDirty());
+        if ($dirty === []) {
+            return $record;
+        }
+
         $columns = Schema::connection($record->getConnectionName())
             ->getColumnListing($record->getTable());
 
-        $synthetic = array_diff(array_keys($record->getAttributes()), $columns);
-        foreach ($synthetic as $key) {
-            unset($record->{$key});
+        $syntheticDirty = array_diff($dirty, $columns);
+        if ($syntheticDirty !== []) {
+            $record->syncOriginalAttributes(array_values($syntheticDirty));
         }
-
-        $record->syncOriginal();
 
         return $record;
     }
