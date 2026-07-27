@@ -3,8 +3,10 @@
 namespace Tbtop\Admin\Http;
 
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
@@ -109,7 +111,32 @@ final class EditableColumnController
             abort(422, 'Missing record id.');
         }
 
-        return (clone $builder)->whereKey($id)->firstOrFail();
+        $record = (clone $builder)->whereKey($id)->firstOrFail();
+
+        return $this->stripSyntheticAttributes($record);
+    }
+
+    /**
+     * The query closure may attach synthetic attributes (withExists()
+     * aggregates, a `retrieved` listener stamping a computed flag, etc.).
+     * Those live in the attribute bag alongside real columns, so once any
+     * genuine column changes and the record is saved, Eloquent tries to
+     * write them too — and the table has no such column. Drop anything
+     * that isn't a real column before the onSave closure can touch it.
+     */
+    private function stripSyntheticAttributes(Model $record): Model
+    {
+        $columns = Schema::connection($record->getConnectionName())
+            ->getColumnListing($record->getTable());
+
+        $synthetic = array_diff(array_keys($record->getAttributes()), $columns);
+        foreach ($synthetic as $key) {
+            unset($record->{$key});
+        }
+
+        $record->syncOriginal();
+
+        return $record;
     }
 
     private function runSave(

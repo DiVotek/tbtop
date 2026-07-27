@@ -14,6 +14,10 @@ beforeEach(function (): void {
         $table->string('note')->default('');
         $table->string('status')->default('draft');
     });
+    Schema::create('ec_comments', function ($table): void {
+        $table->id();
+        $table->foreignId('ec_post_id');
+    });
     EcPost::create(['title' => 'First',  'published' => false, 'note' => 'hi', 'status' => 'draft']);
     EcPost::create(['title' => 'Second', 'published' => true,  'note' => 'ok', 'status' => 'draft']);
 });
@@ -178,4 +182,21 @@ it('Editable: id outside query scope (extra where clause) returns 404', function
         '/admin/editable-posts/cells/ecposts_published/title',
         ['payload' => ['id' => $unpublished->id, 'value' => 'Updated']],
     )->assertNotFound();
+});
+
+// ---------------------------------------------------------------------------
+// Synthetic (non-column) attribute on the resolved record → must not break save
+// ---------------------------------------------------------------------------
+
+it('Editable: withExists() synthetic attribute on the query does not break save', function (): void {
+    $post = EcPost::where('title', 'First')->first();
+
+    $response = $this->postJson(
+        '/admin/editable-posts/cells/ecposts_with_synthetic/title',
+        ['payload' => ['id' => $post->id, 'value' => 'Updated Title']],
+    );
+
+    $response->assertOk();
+    expect($response->json('effects'))->toContain(['kind' => 'refreshTable', 'table' => 'ecposts_with_synthetic']);
+    expect(EcPost::find($post->id)->title)->toBe('Updated Title');
 });

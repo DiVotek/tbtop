@@ -98,6 +98,24 @@ class EditableColumnsPage extends Page
                 ])
                 ->query(fn () => EcPost::query()->where('published', true))
                 ->toNode(),
+            // Synthetic-attribute table: query adds a withExists() aggregate
+            // alias. Reproduces "resolve -> save writes a synthetic attribute
+            // as if it were a real column" (see EditableColumnController).
+            $s->table('ecposts_with_synthetic')
+                ->columns([
+                    Column::make('title')
+                        ->label('Title')
+                        ->textInput()
+                        ->rules('required|max:200')
+                        ->onSave(function (mixed $record, mixed $value): Effects {
+                            $record->title = $value;
+                            $record->save();
+
+                            return Effects::make()->refreshTable('ecposts_with_synthetic');
+                        }),
+                ])
+                ->query(fn () => EcPostWithSynthetic::query()->withExists(['comments as has_comments']))
+                ->toNode(),
         ]);
     }
 }
