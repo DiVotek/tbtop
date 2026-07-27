@@ -263,6 +263,14 @@ it('Stat: description/delta Closures resolve in the serialized Node', function (
         ->and($json['options']['delta'])->toBe(['text' => '+8%', 'direction' => 'up']);
 });
 
+it('Stat: description() with an invalid literal color still throws eagerly at call time', function (): void {
+    Stat::make('MRR')->value(1)->description('All time', 'bogus');
+})->throws(InvalidArgumentException::class, 'Invalid description color "bogus"');
+
+it('Stat: description(Closure) color resolving to an invalid value throws lazily when the Node is read', function (): void {
+    Stat::make('MRR')->value(1)->description('All time', fn (): string => 'bogus')->toNode();
+})->throws(InvalidArgumentException::class, 'Invalid description color "bogus"');
+
 it('Stat: color(Closure) resolves in the serialized Node', function (): void {
     $json = encodeResolved(Stat::make('Revenue')->value(1)->color(fn (): string => 'brand'));
 

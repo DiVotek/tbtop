@@ -231,7 +231,7 @@ final class Stat implements JsonSerializable
             $options['description'] = $this->resolveOpt($this->description);
         }
         if ($this->descriptionColor !== null) {
-            $options['descriptionColor'] = $this->resolveOpt($this->descriptionColor);
+            $options['descriptionColor'] = $this->resolvedDescriptionColor();
         }
         if ($this->trend !== null) {
             $options['trend'] = $this->resolvedTrend();
@@ -267,6 +267,11 @@ final class Stat implements JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->toNode()->jsonSerialize();
+    }
+
+    private function resolvedDescriptionColor(): string
+    {
+        return self::normalizeSemanticColor($this->resolveOpt($this->descriptionColor));
     }
 
     private function resolvedTrend(): string
