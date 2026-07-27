@@ -19,6 +19,7 @@ mock.module("@inertiajs/react", () => ({
 	...inertiaReact,
 	usePage: () => ({ props: currentProps, url: "/admin/posts", flash: {} }),
 	router: { post: mock(() => {}), on: mock(() => () => {}) },
+	Head: () => null,
 }));
 
 // Import after mock.module so the mock is in effect.

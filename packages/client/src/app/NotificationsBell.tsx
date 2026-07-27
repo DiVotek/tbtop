@@ -64,7 +64,7 @@ export function NotificationsBell() {
 			</ResponsiveDialogTrigger>
 			<ResponsiveDialogContent
 				showCloseButton={false}
-				className="ml-auto flex h-full w-[min(24rem,100vw)] flex-col p-0"
+				className="inset-y-0 right-0 flex h-full w-[min(24rem,100vw)] flex-col border-l p-0"
 				data-testid="notifications-popover"
 			>
 				<NotificationsPanel

@@ -94,10 +94,16 @@ function normalizeIconMapEntry(entry: TableColumnIconMapEntry): {
 interface ImageCellProps {
 	value: unknown;
 	col: TableColumn;
+	/** Resolved row/static tooltip — used as the alt-text fallback when col.alt is absent. */
+	tooltip?: string;
 }
 
-export function ImageCell({ value, col }: ImageCellProps): ReactNode {
-	const url = typeof value === "string" ? value : "";
+function normalizeImageUrl(value: unknown): string {
+	return typeof value === "string" ? value : "";
+}
+
+export function ImageCell({ value, col, tooltip }: ImageCellProps): ReactNode {
+	const url = normalizeImageUrl(value);
 	if (!url) {
 		return <span data-testid="image-cell" />;
 	}
@@ -105,7 +111,7 @@ export function ImageCell({ value, col }: ImageCellProps): ReactNode {
 		<span data-testid="image-cell">
 			<img
 				src={url}
-				alt={col.alt ?? ""}
+				alt={col.alt ?? tooltip ?? ""}
 				className={cn("h-10 w-10 object-cover", imageShapeClass(col.shape))}
 			/>
 		</span>

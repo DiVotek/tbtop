@@ -79,7 +79,10 @@
 											"icon": { "type": "string" }
 										}
 									},
-									"headerActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+									"headerActions": {
+										"type": "array",
+										"items": { "$ref": "#/$defs/node" }
+									},
 									"embedded": { "type": "boolean" },
 									"toolbar": { "type": "boolean" },
 									"searchInput": { "type": "boolean" },
@@ -88,7 +91,10 @@
 									"recordUrlNewTab": { "type": "boolean" },
 									"deferFilters": { "type": "boolean" },
 									"filtersFormColumns": { "type": "integer" },
-									"filtersFormWidth": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+									"filtersFormWidth": {
+										"type": "string",
+										"enum": ["sm", "md", "lg", "full"]
+									},
 									"groups": {
 										"type": "object",
 										"required": ["column"],
@@ -110,8 +116,10 @@
 								"required": ["label"],
 								"properties": {
 									"label": { "type": "string" },
-									"collapsed": { "type": "boolean" }
-								}
+									"collapsed": { "type": "boolean" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}
@@ -327,6 +335,20 @@
 					}
 				},
 				{
+					"if": { "properties": { "kind": { "const": "number" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"step": {
+										"anyOf": [{ "type": "number" }, { "const": "any" }]
+									}
+								}
+							}
+						}
+					}
+				},
+				{
 					"if": { "properties": { "kind": { "const": "displayValue" } } },
 					"then": {
 						"properties": {
@@ -429,8 +451,10 @@
 								"properties": {
 									"cols": { "$ref": "#/$defs/columnsSpec" },
 									"gap": { "type": "integer", "minimum": 0, "maximum": 12 },
-									"class": { "type": "string" }
-								}
+									"class": { "type": "string" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}
@@ -458,8 +482,10 @@
 										"additionalProperties": false
 									},
 									"variant": { "type": "string", "enum": ["card", "plain"] },
-									"class": { "type": "string" }
-								}
+									"class": { "type": "string" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}
@@ -470,8 +496,12 @@
 						"properties": {
 							"options": {
 								"properties": {
-									"variant": { "type": "string", "enum": ["grid"] }
-								}
+									"variant": { "type": "string", "enum": ["grid"] },
+									"gap": { "type": "integer", "minimum": 0, "maximum": 12 },
+									"class": { "type": "string" },
+									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
 							}
 						}
 					}
@@ -512,13 +542,19 @@
 										"required": ["text", "direction"],
 										"properties": {
 											"text": { "type": "string" },
-											"direction": { "type": "string", "enum": ["up", "down", "flat"] }
+											"direction": {
+												"type": "string",
+												"enum": ["up", "down", "flat"]
+											}
 										},
 										"additionalProperties": false
 									},
 									"color": { "type": "string" },
 									"sparkline": { "type": "array", "items": { "type": "number" } },
-									"sparklinePosition": { "type": "string", "enum": ["inline", "bottom"] },
+									"sparklinePosition": {
+										"type": "string",
+										"enum": ["inline", "bottom"]
+									},
 									"sparklineColor": {
 										"type": "string",
 										"enum": ["success", "warning", "danger", "primary"]
@@ -868,7 +904,22 @@
 						"title": { "type": "string" },
 						"description": { "type": "string" },
 						"body": { "$ref": "#/$defs/node" },
-						"size": { "type": "string", "enum": ["sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "full"] },
+						"size": {
+							"type": "string",
+							"enum": [
+								"sm",
+								"md",
+								"lg",
+								"xl",
+								"2xl",
+								"3xl",
+								"4xl",
+								"5xl",
+								"6xl",
+								"7xl",
+								"full"
+							]
+						},
 						"slideOver": { "type": "boolean" },
 						"query": { "type": "boolean" },
 						"queryNeeds": {

@@ -171,9 +171,12 @@ foreach (app(PanelRegistry::class)->all() as $panel) {
 
                     // Panel root (the logo link target) 302s to the panel's
                     // home page under the same auth stack as its pages.
+                    // Capture the URL string, not $panel: route:cache serializes
+                    // this closure, and panel configs may hold closures.
                     $home = $panelHomePath($panel);
                     if ($home !== null) {
-                        Route::get('/', static fn () => redirect('/'.trim($panel->getPrefix(), '/').'/'.$home));
+                        $homeUrl = '/'.trim($panel->getPrefix(), '/').'/'.$home;
+                        Route::get('/', static fn () => redirect($homeUrl));
                     }
                 }
 

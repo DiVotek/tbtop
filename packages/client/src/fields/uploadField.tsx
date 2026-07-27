@@ -112,7 +112,7 @@ function UploadPreview({ value, onRemove }: PreviewProps) {
 	const filename = basename(value.path);
 	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
 	return (
-		<div className="flex items-center gap-3 rounded-md border p-2">
+		<div className="flex min-h-24 items-center gap-3 rounded-md border p-2">
 			{isImg ? (
 				<img src={value.url} alt={filename} className="h-12 w-12 rounded object-cover" />
 			) : (
@@ -157,7 +157,7 @@ export function UploadPicker({
 		<div className="space-y-2">
 			<label
 				htmlFor={id}
-				className="flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed text-sm text-muted-foreground hover:border-foreground"
+				className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed text-sm text-muted-foreground hover:border-foreground"
 			>
 				<UploadIcon className="h-5 w-5" aria-hidden />
 				<span>{busy ? t("field.upload.uploading") : t("field.upload.prompt")}</span>

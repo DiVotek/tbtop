@@ -294,6 +294,71 @@ describe("MediaPickerForm: variant preview", () => {
 	});
 });
 
+// ─── Form: closed picker performs zero network requests ───────────────────────
+
+describe("MediaPickerForm: closed picker fetch gating", () => {
+	test("rendering with the picker closed fires no /media requests", () => {
+		const requestedUrls: string[] = [];
+		const handler: FetchHandler = (req) => {
+			requestedUrls.push(req.url);
+			return new Response("[]");
+		};
+		const Wrap = wrap(handler);
+		render(
+			<Wrap>
+				<MediaPickerForm
+					name="cover"
+					value={null}
+					onChange={() => {}}
+					options={{ multiple: false }}
+				/>
+			</Wrap>,
+		);
+		const mediaRequests = requestedUrls.filter((url) => url.includes("/media"));
+		expect(mediaRequests).toEqual([]);
+	});
+
+	test("opening the picker fetches folders and items via the apiBase-prefixed client", async () => {
+		const user = userEvent.setup({ delay: null });
+		const requestedUrls: string[] = [];
+		const handler: FetchHandler = (req) => {
+			requestedUrls.push(req.url);
+			if (req.url.includes("/media/folders")) {
+				return new Response("[]");
+			}
+			return mediaListResponse([]);
+		};
+		const client = createAdminClient({ baseUrl: "http://test", fetch: makeTestFetch(handler) });
+		function Wrap({ children }: { children: ReactNode }) {
+			return (
+				<ClientProvider client={client} apiBase="/admin/api">
+					{children}
+				</ClientProvider>
+			);
+		}
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="cover"
+					value={null}
+					onChange={() => {}}
+					options={{ multiple: false }}
+				/>
+			</Wrap>,
+		);
+		await act(async () => {
+			await user.click(getByTestId("media-picker-choose-cover"));
+		});
+		await findByTestId("media-picker-modal");
+
+		await waitFor(() => expect(requestedUrls.some((url) => url.includes("/media"))).toBe(true));
+		const mediaRequests = requestedUrls.filter((url) => url.includes("/media"));
+		for (const url of mediaRequests) {
+			expect(url).toContain("/admin/api/media");
+		}
+	});
+});
+
 // ─── Form: choose button opens picker ─────────────────────────────────────────
 
 describe("MediaPickerForm: picker modal opens", () => {

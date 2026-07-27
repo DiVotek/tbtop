@@ -3,7 +3,9 @@
  * cycling (asc → desc → clear), aria-sort, and a sort glyph.
  */
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { TableColumn } from "../types";
 import { resolveIcon } from "./iconRegistry";
 
@@ -66,9 +68,8 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 			style={widthStyle}
 			onClick={col.sortable ? handleClick : undefined}
 			aria-sort={resolveAriaSort()}
-			title={col.tooltip}
 		>
-			<span className="inline-flex items-center gap-1">
+			<HeaderTooltip tooltip={col.tooltip}>
 				{HeadingIcon && col.icon?.position !== "right" && (
 					<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
 				)}
@@ -77,8 +78,21 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 					<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
 				)}
 				{col.sortable && <SortIndicator active={isActive} dir={dir} />}
-			</span>
+			</HeaderTooltip>
 		</th>
+	);
+}
+
+function HeaderTooltip({ tooltip, children }: { tooltip?: string; children: ReactNode }) {
+	const label = <span className="inline-flex items-center gap-1">{children}</span>;
+	if (!tooltip) {
+		return label;
+	}
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>{label}</TooltipTrigger>
+			<TooltipContent>{tooltip}</TooltipContent>
+		</Tooltip>
 	);
 }
 

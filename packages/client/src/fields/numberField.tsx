@@ -4,6 +4,7 @@ import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps"
 
 interface NumberOptions {
 	placeholder?: string;
+	step?: number | "any";
 }
 
 export function NumberCell({ value }: FieldCellProps<number>) {
@@ -27,6 +28,7 @@ export function NumberForm({
 			onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
 			disabled={disabled}
 			placeholder={options?.placeholder}
+			step={options?.step}
 		/>
 	);
 }

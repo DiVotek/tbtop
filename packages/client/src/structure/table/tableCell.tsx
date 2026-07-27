@@ -7,6 +7,7 @@ import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { CopyButton } from "../../ui/copyButton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { TableColumn } from "../types";
 import {
 	BadgeCell,
@@ -31,6 +32,30 @@ function rowColAlignClass(align: TableColumn["align"]): string {
 	return "";
 }
 
+/** Non-empty string per-row tooltip resolved server-side into `row._tooltips[col.name]`. */
+function readRowTooltip(row: Record<string, unknown>, col: TableColumn): string | undefined {
+	const tooltips = row._tooltips;
+	if (!tooltips || typeof tooltips !== "object") {
+		return undefined;
+	}
+	const value = (tooltips as Record<string, unknown>)[col.name];
+	return typeof value === "string" && value !== "" ? value : undefined;
+}
+
+function CellTooltip({ tooltip, children }: { tooltip?: string; children: ReactNode }) {
+	if (!tooltip) {
+		return <>{children}</>;
+	}
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<span>{children}</span>
+			</TooltipTrigger>
+			<TooltipContent>{tooltip}</TooltipContent>
+		</Tooltip>
+	);
+}
+
 export function RowDataCell({
 	col,
 	row,
@@ -42,7 +67,8 @@ export function RowDataCell({
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
-	const rendered = renderCell(col, row, saveCell);
+	const tooltip = readRowTooltip(row, col) ?? col.tooltip;
+	const rendered = renderCell({ col, row, tooltip, saveCell });
 	// Text-style flags: emphasized = primary link-style label (pairs with
 	// rowClick), muted = small secondary metadata, uppercase = code-like values.
 	const textClass = cn(
@@ -51,29 +77,32 @@ export function RowDataCell({
 		col.uppercase && "uppercase tracking-wide",
 	);
 	const content = textClass ? <span className={textClass}>{rendered}</span> : rendered;
+	const withTooltip = <CellTooltip tooltip={tooltip}>{content}</CellTooltip>;
 	return (
 		<td
 			className={cn("px-3 py-2", alignClass, wrapClass)}
 			style={col.width ? { width: col.width } : undefined}
-			title={col.tooltip}
 		>
 			{col.copyable ? (
 				<span className="inline-flex items-center gap-1">
-					{content}
+					{withTooltip}
 					<CopyButton value={String(row[col.name] ?? "")} copyable={col.copyable} />
 				</span>
 			) : (
-				content
+				withTooltip
 			)}
 		</td>
 	);
 }
 
-function renderCell(
-	col: TableColumn,
-	row: Record<string, unknown>,
-	saveCell?: (args: SaveCellArgs) => Promise<unknown>,
-): ReactNode {
+interface RenderCellArgs {
+	col: TableColumn;
+	row: Record<string, unknown>;
+	tooltip: string | undefined;
+	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+}
+
+function renderCell({ col, row, tooltip, saveCell }: RenderCellArgs): ReactNode {
 	if (col.render) {
 		return col.render(row);
 	}
@@ -96,7 +125,7 @@ function renderCell(
 		return <IconMapCell value={row[col.name]} col={col} />;
 	}
 	if (col.kind === "image") {
-		return <ImageCell value={row[col.name]} col={col} />;
+		return <ImageCell value={row[col.name]} col={col} tooltip={tooltip} />;
 	}
 	if (col.kind === "color") {
 		return <ColorCell value={row[col.name]} col={col} />;

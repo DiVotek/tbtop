@@ -42,6 +42,42 @@ it('section with an invalid variant throws', function (): void {
 })->throws(InvalidArgumentException::class);
 
 // ---------------------------------------------------------------------------
+// section unknown option keys
+// ---------------------------------------------------------------------------
+
+it('section with an unknown option key throws', function (): void {
+    (new S)->section(['title' => 'X', 'bogus' => 'nope'], []);
+})->throws(InvalidArgumentException::class, 'Unknown section option "bogus"');
+
+it('section with label instead of title throws a did-you-mean hint', function (): void {
+    (new S)->section(['label' => 'X'], []);
+})->throws(InvalidArgumentException::class, "Did you mean 'title'?");
+
+it('section accepts every whitelisted option key', function (): void {
+    $s = new S;
+    $json = encodeVariantNode($s->section([
+        'title' => 'X',
+        'description' => 'desc',
+        'icon' => 'star',
+        'aside' => $s->displayText('note'),
+        'collapsible' => true,
+        'collapsed' => false,
+        'columns' => 2,
+        'action' => ['label' => 'Open', 'url' => '/x'],
+        'variant' => 'card',
+        'class' => 'shadow-lg',
+        'id' => 'my-section',
+        'hidden' => false,
+        'disabled' => false,
+        'hiddenIf' => ['field' => 'a', 'op' => 'eq', 'value' => 'b'],
+        'disabledIf' => ['field' => 'a', 'op' => 'eq', 'value' => 'b'],
+    ], []));
+
+    expect($json['options']['title'])->toBe('X')
+        ->and($json['meta']['id'])->toBe('my-section');
+});
+
+// ---------------------------------------------------------------------------
 // actionsRow grid variant
 // ---------------------------------------------------------------------------
 

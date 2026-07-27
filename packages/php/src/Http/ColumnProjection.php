@@ -37,10 +37,37 @@ final class ColumnProjection
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
+            self::attachTooltips($projected, $row, $columns);
             $out[] = $projected;
         }
 
         return $out;
+    }
+
+    /**
+     * Per-row meta: for each visible column with a closure tooltip, resolve it
+     * against the original row and collect non-empty scalars under a flat
+     * `_tooltips` map keyed by (possibly dotted) column name. Omitted entirely
+     * when nothing resolves.
+     *
+     * @param  list<Column>  $columns
+     */
+    private static function attachTooltips(mixed &$projected, mixed $row, array $columns): void
+    {
+        $tooltips = [];
+        foreach ($columns as $col) {
+            $resolver = $col->tooltipResolver();
+            if ($resolver === null) {
+                continue;
+            }
+            $value = $resolver($row);
+            if (is_scalar($value) && $value !== '') {
+                $tooltips[$col->name] = (string) $value;
+            }
+        }
+        if ($tooltips !== []) {
+            data_set($projected, '_tooltips', $tooltips);
+        }
     }
 
     /**

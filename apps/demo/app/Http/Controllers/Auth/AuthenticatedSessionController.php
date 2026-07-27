@@ -44,11 +44,23 @@ class AuthenticatedSessionController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
+        $this->terminateSession($request);
+
+        return redirect('/');
+    }
+
+    public function destroyAdmin(Request $request): RedirectResponse
+    {
+        $this->terminateSession($request);
+
+        return redirect()->route('tbtop.admin.login-page');
+    }
+
+    private function terminateSession(Request $request): void
+    {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect('/');
     }
 }

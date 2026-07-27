@@ -35,13 +35,12 @@ it('hides trashed rows on Active, shows them on Trashed, and restores back', fun
         ->assertDontSee('Trashed Post');
 
     // Trashed tab surfaces the soft-deleted row.
-    $page->click('@tab-Trashed')
+    $page->click('@table-tab-trashed')
         ->assertSee('Trashed Post')
         ->assertNoJavaScriptErrors();
 
-    // Restore moves it back; it leaves the Trashed tab.
-    $page->click('@row-actions-trigger')
-        ->click('@action-restore')
+    // Restore moves it back; row actions render inline (no overflow menu).
+    $page->click('@action-restore')
         ->assertDontSee('Trashed Post')
         ->assertNoJavaScriptErrors();
 });

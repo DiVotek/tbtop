@@ -23,11 +23,9 @@ it('shows the Publication action only on published posts and opens a prefilled m
 
     $page = visit('/admin/posts');
 
-    // Three visible row actions (edit, editPublication, delete) exceed the inline
-    // max, so they collapse into the overflow menu — open it to reach the action.
-    $page->assertVisible('@row-actions-trigger')
-        ->click('@row-actions-trigger')
-        ->click('@action-editPublication')
+    // Row actions render inline (no implicit overflow collapse) — click the
+    // action's own testid directly.
+    $page->click('@action-editPublication')
         ->assertVisible('@modal-editPublication')
         ->assertVisible('@form-block')
         ->assertNoJavaScriptErrors();
