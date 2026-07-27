@@ -2,7 +2,9 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 
 /**
  * Static display text block.
@@ -11,7 +13,9 @@ use JsonSerializable;
  */
 final class TextBlock implements JsonSerializable
 {
-    private string $variantValue = 'body';
+    use ResolvesClosures;
+
+    private string|Closure $variantValue = 'body';
 
     private function __construct(private readonly string $content) {}
 
@@ -20,8 +24,8 @@ final class TextBlock implements JsonSerializable
         return new self($content);
     }
 
-    /** @param  'heading'|'subheading'|'body'|'muted'  $variant */
-    public function variant(string $variant): self
+    /** @param  'heading'|'subheading'|'body'|'muted'|(Closure(): ('heading'|'subheading'|'body'|'muted'))  $variant */
+    public function variant(string|Closure $variant): self
     {
         $clone = clone $this;
         $clone->variantValue = $variant;
@@ -32,7 +36,7 @@ final class TextBlock implements JsonSerializable
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
-        $options = ['content' => $this->content, 'variant' => $this->variantValue];
+        $options = ['content' => $this->content, 'variant' => $this->resolveOpt($this->variantValue)];
 
         return (new Node('displayText', $options))->jsonSerialize();
     }

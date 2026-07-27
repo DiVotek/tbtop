@@ -2,20 +2,25 @@
 
 namespace Tbtop\Admin\Dsl\Concerns;
 
+use Closure;
+
 trait HasIcon
 {
-    /** @var array{name: string, position: string}|null */
+    use ResolvesClosures;
+
+    /** @var array{name: string|Closure, position: string|Closure}|null */
     protected ?array $iconDef = null;
 
     private const ICON_POSITIONS = ['left', 'right'];
 
-    /** @param  string  $position  One of self::ICON_POSITIONS ('left'|'right') */
-    public function icon(string $name, string $position = 'left'): static
+    /**
+     * @param  string|(Closure(): string)  $name
+     * @param  string|(Closure(): string)  $position  One of self::ICON_POSITIONS ('left'|'right')
+     */
+    public function icon(string|Closure $name, string|Closure $position = 'left'): static
     {
-        if (! in_array($position, self::ICON_POSITIONS, true)) {
-            throw new \InvalidArgumentException(
-                "Invalid icon position \"{$position}\". Allowed: ".implode(', ', self::ICON_POSITIONS).'.'
-            );
+        if (! $position instanceof Closure) {
+            $this->assertValidPosition($position);
         }
 
         $this->iconDef = ['name' => $name, 'position' => $position];
@@ -26,6 +31,25 @@ trait HasIcon
     /** @return array<string, mixed> */
     protected function iconOption(): array
     {
-        return $this->iconDef !== null ? ['icon' => $this->iconDef] : [];
+        if ($this->iconDef === null) {
+            return [];
+        }
+
+        $position = $this->resolveOpt($this->iconDef['position']);
+        $this->assertValidPosition($position);
+
+        return ['icon' => [
+            'name' => $this->resolveOpt($this->iconDef['name']),
+            'position' => $position,
+        ]];
+    }
+
+    private function assertValidPosition(string $position): void
+    {
+        if (! in_array($position, self::ICON_POSITIONS, true)) {
+            throw new \InvalidArgumentException(
+                "Invalid icon position \"{$position}\". Allowed: ".implode(', ', self::ICON_POSITIONS).'.'
+            );
+        }
     }
 }

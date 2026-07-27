@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
 use Tbtop\Admin\Dsl\Concerns\HasTooltip;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -18,6 +19,7 @@ final class Stat implements JsonSerializable
 {
     use HasIcon;
     use HasTooltip;
+    use ResolvesClosures;
     use WithMeta;
 
     private const SPARKLINE_POSITIONS = ['inline', 'bottom'];
@@ -28,26 +30,25 @@ final class Stat implements JsonSerializable
 
     private mixed $value = null;
 
-    private ?string $description = null;
+    private string|Closure|null $description = null;
 
-    private ?string $descriptionColor = null;
+    private string|Closure|null $descriptionColor = null;
 
-    /** @var 'up'|'down'|null */
-    private ?string $trend = null;
+    private string|Closure|null $trend = null;
 
-    /** @var array{text: string, direction: string}|null */
+    /** @var array{text: string|Closure, direction: string|Closure}|null */
     private ?array $delta = null;
 
-    private Color|string|null $color = null;
+    private Color|string|Closure|null $color = null;
 
-    private ?string $sparklineColor = null;
+    private string|Closure|null $sparklineColor = null;
 
     /** @var list<int|float>|null */
     private ?array $sparkline = null;
 
     private string $sparklinePosition = 'inline';
 
-    private ?int $pollSeconds = null;
+    private int|Closure|null $pollSeconds = null;
 
     public function __construct(
         private readonly string $label,
@@ -58,6 +59,7 @@ final class Stat implements JsonSerializable
         return new self($label);
     }
 
+    /** @param  mixed|(Closure(): mixed)  $value */
     public function value(mixed $value): self
     {
         $this->value = $value;
@@ -66,47 +68,62 @@ final class Stat implements JsonSerializable
     }
 
     /**
-     * @param  string|null  $color  One of self::SEMANTIC_COLORS ('success'|'warning'|'danger'),
-     *                              or null (default) for the current muted text.
+     * @param  string|(Closure(): string)|null  $description
+     * @param  string|(Closure(): string)|null  $color  One of self::SEMANTIC_COLORS ('success'|'warning'|'danger'),
+     *                                                  or null (default) for the current muted text.
      */
-    public function description(?string $description, ?string $color = null): self
+    public function description(string|Closure|null $description, string|Closure|null $color = null): self
     {
         $this->description = $description;
         if ($color !== null) {
-            $this->descriptionColor = self::normalizeSemanticColor($color);
+            $this->descriptionColor = $color instanceof Closure ? $color : self::normalizeSemanticColor($color);
         }
 
         return $this;
     }
 
     /**
-     * @param  'up'|'down'|'flat'  $direction
+     * @param  string|(Closure(): string)  $text
+     * @param  'up'|'down'|'flat'|(Closure(): string)  $direction
      */
-    public function delta(string $text, string $direction): self
+    public function delta(string|Closure $text, string|Closure $direction): self
     {
         $this->delta = ['text' => $text, 'direction' => $direction];
 
         return $this;
     }
 
-    public function color(Color|string $color): self
+    /** @param  Color|string|(Closure(): (Color|string))  $color */
+    public function color(Color|string|Closure $color): self
     {
         $this->color = $color;
 
         return $this;
     }
 
-    /** Small trend arrow rendered after the description, inheriting its color. */
-    public function trend(string $direction): self
+    /**
+     * Small trend arrow rendered after the description, inheriting its color.
+     * A Closure is validated at resolution time (toNode()), not here.
+     *
+     * @param  string|(Closure(): string)  $direction
+     */
+    public function trend(string|Closure $direction): self
+    {
+        if (! $direction instanceof Closure) {
+            self::assertValidTrend($direction);
+        }
+        $this->trend = $direction;
+
+        return $this;
+    }
+
+    private static function assertValidTrend(string $direction): void
     {
         if (! in_array($direction, ['up', 'down'], true)) {
             throw new InvalidArgumentException(
                 "Invalid trend direction \"{$direction}\". Allowed: up, down."
             );
         }
-        $this->trend = $direction;
-
-        return $this;
     }
 
     /**
@@ -128,8 +145,22 @@ final class Stat implements JsonSerializable
         return $this;
     }
 
-    /** @param  string  $color  One of success|warning|danger|primary. Default: current chart color. */
-    public function sparklineColor(string $color): self
+    /**
+     * A Closure is validated at resolution time (toNode()), not here.
+     *
+     * @param  string|(Closure(): string)  $color  One of success|warning|danger|primary. Default: current chart color.
+     */
+    public function sparklineColor(string|Closure $color): self
+    {
+        if (! $color instanceof Closure) {
+            self::assertValidSparklineColor($color);
+        }
+        $this->sparklineColor = $color;
+
+        return $this;
+    }
+
+    private static function assertValidSparklineColor(string $color): void
     {
         $allowed = [...self::SEMANTIC_COLORS, 'primary'];
         if (! in_array($color, $allowed, true)) {
@@ -137,9 +168,6 @@ final class Stat implements JsonSerializable
                 "Invalid sparkline color \"{$color}\". Allowed: ".implode(', ', $allowed).'.'
             );
         }
-        $this->sparklineColor = $color;
-
-        return $this;
     }
 
     /**
@@ -147,17 +175,26 @@ final class Stat implements JsonSerializable
      * minimum). The value closure is re-invoked on every poll tick instead of
      * once at page render. Stamps options.source so the client knows to fetch
      * from the page data endpoint, keyed by this stat's label.
+     *
+     * @param  int|(Closure(): int)  $seconds
      */
-    public function poll(int $seconds): self
+    public function poll(int|Closure $seconds): self
+    {
+        if (! $seconds instanceof Closure) {
+            self::assertValidPollSeconds($seconds);
+        }
+        $this->pollSeconds = $seconds;
+
+        return $this;
+    }
+
+    private static function assertValidPollSeconds(int $seconds): void
     {
         if ($seconds < self::MIN_POLL_SECONDS) {
             throw new InvalidArgumentException(
                 'Stat poll interval must be at least '.self::MIN_POLL_SECONDS.' seconds.'
             );
         }
-        $this->pollSeconds = $seconds;
-
-        return $this;
     }
 
     /**
@@ -174,10 +211,9 @@ final class Stat implements JsonSerializable
         }
 
         return function (): array {
-            $resolved = $this->value instanceof Closure ? ($this->value)() : $this->value;
-            $out = ['value' => $resolved];
+            $out = ['value' => $this->resolveOpt($this->value)];
             if ($this->description !== null) {
-                $out['description'] = $this->description;
+                $out['description'] = $this->resolveOpt($this->description);
             }
             if ($this->sparkline !== null) {
                 $out['sparkline'] = $this->sparkline;
@@ -189,26 +225,26 @@ final class Stat implements JsonSerializable
 
     public function toNode(): Node
     {
-        $resolved = $this->value instanceof Closure ? ($this->value)() : $this->value;
-
-        $options = ['label' => $this->label, 'value' => $resolved];
+        $options = ['label' => $this->label, 'value' => $this->resolveOpt($this->value)];
 
         if ($this->description !== null) {
-            $options['description'] = $this->description;
+            $options['description'] = $this->resolveOpt($this->description);
         }
         if ($this->descriptionColor !== null) {
-            $options['descriptionColor'] = $this->descriptionColor;
+            $options['descriptionColor'] = $this->resolveOpt($this->descriptionColor);
         }
         if ($this->trend !== null) {
-            $options['trend'] = $this->trend;
+            $options['trend'] = $this->resolvedTrend();
         }
         if ($this->delta !== null) {
-            $options['delta'] = $this->delta;
+            $options['delta'] = [
+                'text' => $this->resolveOpt($this->delta['text']),
+                'direction' => $this->resolveOpt($this->delta['direction']),
+            ];
         }
         if ($this->color !== null) {
-            $options['color'] = $this->color instanceof Color
-                ? $this->color->value
-                : $this->color;
+            $color = $this->resolveOpt($this->color);
+            $options['color'] = $color instanceof Color ? $color->value : $color;
         }
         if ($this->sparkline !== null) {
             $options['sparkline'] = $this->sparkline;
@@ -217,20 +253,44 @@ final class Stat implements JsonSerializable
             }
         }
         if ($this->sparklineColor !== null) {
-            $options['sparklineColor'] = $this->sparklineColor;
+            $options['sparklineColor'] = $this->resolvedSparklineColor();
         }
         if ($this->pollSeconds !== null) {
-            $options['poll'] = $this->pollSeconds;
+            $options['poll'] = $this->resolvedPollSeconds();
             $options['source'] = $this->label;
         }
 
-        return new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->metaBag);
+        return new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->resolvedMeta());
     }
 
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return $this->toNode()->jsonSerialize();
+    }
+
+    private function resolvedTrend(): string
+    {
+        $trend = $this->resolveOpt($this->trend);
+        self::assertValidTrend($trend);
+
+        return $trend;
+    }
+
+    private function resolvedSparklineColor(): string
+    {
+        $color = $this->resolveOpt($this->sparklineColor);
+        self::assertValidSparklineColor($color);
+
+        return $color;
+    }
+
+    private function resolvedPollSeconds(): int
+    {
+        $seconds = $this->resolveOpt($this->pollSeconds);
+        self::assertValidPollSeconds($seconds);
+
+        return $seconds;
     }
 
     private static function normalizeSemanticColor(string $color): string

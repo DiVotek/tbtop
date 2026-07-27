@@ -57,6 +57,20 @@ it('TextBlock is accessible via S::displayText', function () {
         ->and($json['options']['content'])->toBe('Via DSL');
 });
 
+it('TextBlock resolves a Closure variant in the serialized options', function () {
+    $json = encodeDisplay(TextBlock::make('Title')->variant(fn (): string => 'heading'));
+
+    expect($json['options']['variant'])->toBe('heading');
+});
+
+it('TextBlock: a Closure variant survives clone-on-write', function () {
+    $block = TextBlock::make('Title')->variant(fn (): string => 'heading');
+    $clone = $block->variant(fn (): string => 'muted');
+
+    expect(encodeDisplay($block)['options']['variant'])->toBe('heading')
+        ->and(encodeDisplay($clone)['options']['variant'])->toBe('muted');
+});
+
 // ---------------------------------------------------------------------------
 // HtmlBlock
 // ---------------------------------------------------------------------------
@@ -131,6 +145,25 @@ it('AlertBlock is accessible via S::displayAlert', function () {
     expect($json['kind'])->toBe('displayAlert')
         ->and($json['options']['color'])->toBe('warning')
         ->and($json['options']['title'])->toBe('Note');
+});
+
+it('AlertBlock resolves a Closure title and Closure color in the serialized options', function () {
+    $json = encodeDisplay(
+        AlertBlock::make('Body')
+            ->title(fn (): string => 'Heads up')
+            ->color(fn (): Color => Color::Danger),
+    );
+
+    expect($json['options']['title'])->toBe('Heads up')
+        ->and($json['options']['color'])->toBe('danger');
+});
+
+it('AlertBlock: a Closure title survives clone-on-write', function () {
+    $block = AlertBlock::make('Body')->title(fn (): string => 'Original');
+    $clone = $block->color('danger');
+
+    expect(encodeDisplay($block)['options']['title'])->toBe('Original')
+        ->and(encodeDisplay($clone)['options']['title'])->toBe('Original');
 });
 
 // ---------------------------------------------------------------------------
@@ -336,6 +369,25 @@ it('DisplayImageBlock square()->circular() is last-wins (circular)', function ()
     $json = encodeDisplay(DisplayImageBlock::make('/img/a.png')->square()->circular());
 
     expect($json['options']['shape'])->toBe('circular');
+});
+
+it('DisplayImageBlock resolves Closure alt and caption in the serialized options', function () {
+    $json = encodeDisplay(
+        DisplayImageBlock::make('/img/a.png')
+            ->alt(fn (): string => 'A')
+            ->caption(fn (): string => 'Figure 1'),
+    );
+
+    expect($json['options']['alt'])->toBe('A')
+        ->and($json['options']['caption'])->toBe('Figure 1');
+});
+
+it('DisplayImageBlock: a Closure alt survives clone-on-write', function () {
+    $block = DisplayImageBlock::make('/img/a.png')->alt(fn (): string => 'Original');
+    $clone = $block->caption('Figure 1');
+
+    expect(encodeDisplay($block)['options']['alt'])->toBe('Original')
+        ->and(encodeDisplay($clone)['options']['alt'])->toBe('Original');
 });
 
 // ---------------------------------------------------------------------------

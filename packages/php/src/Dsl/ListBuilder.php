@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use InvalidArgumentException;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -13,6 +14,7 @@ use Tbtop\Admin\Dsl\Concerns\WithMeta;
  */
 final class ListBuilder implements JsonSerializable
 {
+    use ResolvesClosures;
     use WithMeta;
 
     private const COLORS = ['success', 'warning', 'danger', 'muted'];
@@ -40,10 +42,10 @@ final class ListBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
-        $items = $this->itemsClosure !== null ? ($this->itemsClosure)() : [];
+        $items = $this->resolveOpt($this->itemsClosure) ?? [];
         $items = array_map(self::normalizeItem(...), $items);
 
-        return new Node('list', ['items' => $items], $this->name, $this->metaBag);
+        return new Node('list', ['items' => $items], $this->name, $this->resolvedMeta());
     }
 
     /** @return array<string, mixed> */

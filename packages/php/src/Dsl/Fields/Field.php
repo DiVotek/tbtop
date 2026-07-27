@@ -8,6 +8,7 @@ use Tbtop\Admin\Dsl\ColumnsValidator;
 use Tbtop\Admin\Dsl\Concerns\CollectsRules;
 use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\OptionList;
@@ -24,7 +25,11 @@ abstract class Field implements JsonSerializable
     use CollectsRules;
     use HasCopyable;
     use HasGenericRules;
+    use ResolvesClosures;
     use WithMeta;
+
+    /** Opt keys whose value may be a zero-arity Closure, resolved on read. */
+    protected const RESOLVABLE = ['label', 'default', 'helperText', 'tooltip'];
 
     /** @var array<string, mixed> */
     protected array $opts = [];
@@ -50,19 +55,28 @@ abstract class Field implements JsonSerializable
         return new static($name);
     }
 
-    public function label(string $label): static
+    /** @param  string|(Closure(): string)  $label */
+    public function label(string|Closure $label): static
     {
         return $this->set('label', $label);
     }
 
-    /** Muted hint text rendered below the input, above any validation error. */
-    public function helperText(string $text): static
+    /**
+     * Muted hint text rendered below the input, above any validation error.
+     *
+     * @param  string|(Closure(): string)  $text
+     */
+    public function helperText(string|Closure $text): static
     {
         return $this->set('helperText', $text);
     }
 
-    /** Tooltip text shown in an info-icon popover next to the field label. */
-    public function tooltip(string $text): static
+    /**
+     * Tooltip text shown in an info-icon popover next to the field label.
+     *
+     * @param  string|(Closure(): string)  $text
+     */
+    public function tooltip(string|Closure $text): static
     {
         return $this->set('tooltip', $text);
     }
@@ -126,6 +140,7 @@ abstract class Field implements JsonSerializable
         return $this->localeRules;
     }
 
+    /** @param  mixed|(Closure(): mixed)  $value */
     public function default(mixed $value): static
     {
         return $this->set('default', $value);
@@ -152,6 +167,19 @@ abstract class Field implements JsonSerializable
         $this->opts[$key] = $value;
 
         return $this;
+    }
+
+    /** @return array<string, mixed> */
+    protected function resolvedOpts(): array
+    {
+        $opts = $this->opts;
+        foreach (static::RESOLVABLE as $key) {
+            if (array_key_exists($key, $opts)) {
+                $opts[$key] = $this->resolveOpt($opts[$key]);
+            }
+        }
+
+        return $opts;
     }
 
     /**
@@ -189,12 +217,12 @@ abstract class Field implements JsonSerializable
 
     public function defaultValue(): mixed
     {
-        return $this->opts['default'] ?? null;
+        return $this->resolveOpt($this->opts['default'] ?? null);
     }
 
     public function labelText(): ?string
     {
-        return $this->opts['label'] ?? null;
+        return $this->resolveOpt($this->opts['label'] ?? null);
     }
 
     /** @return list<mixed> */
@@ -207,7 +235,7 @@ abstract class Field implements JsonSerializable
 
     public function toNode(): Node
     {
-        $options = [...$this->opts, ...$this->copyableOption()];
+        $options = [...$this->resolvedOpts(), ...$this->copyableOption()];
         $constraints = ConstraintMap::toConstraints($this->ruleList);
         if ($constraints !== []) {
             $options['constraints'] = $constraints;
@@ -216,7 +244,7 @@ abstract class Field implements JsonSerializable
             $options['translatable'] = true;
         }
 
-        return new Node($this->kind(), $options, $this->name, $this->metaBag);
+        return new Node($this->kind(), $options, $this->name, $this->resolvedMeta());
     }
 
     /** @return array<string, mixed> */

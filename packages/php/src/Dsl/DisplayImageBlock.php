@@ -2,7 +2,9 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 
 /**
  * Read-only full-size image or file-download link.
@@ -15,9 +17,11 @@ use JsonSerializable;
  */
 final class DisplayImageBlock implements JsonSerializable
 {
-    private ?string $altValue = null;
+    use ResolvesClosures;
 
-    private ?string $captionValue = null;
+    private string|Closure|null $altValue = null;
+
+    private string|Closure|null $captionValue = null;
 
     private bool $asLinkValue = false;
 
@@ -30,7 +34,8 @@ final class DisplayImageBlock implements JsonSerializable
         return new self($src);
     }
 
-    public function alt(string $alt): self
+    /** @param  string|(Closure(): string)  $alt */
+    public function alt(string|Closure $alt): self
     {
         $clone = clone $this;
         $clone->altValue = $alt;
@@ -38,7 +43,8 @@ final class DisplayImageBlock implements JsonSerializable
         return $clone;
     }
 
-    public function caption(string $caption): self
+    /** @param  string|(Closure(): string)  $caption */
+    public function caption(string|Closure $caption): self
     {
         $clone = clone $this;
         $clone->captionValue = $caption;
@@ -77,11 +83,13 @@ final class DisplayImageBlock implements JsonSerializable
     public function jsonSerialize(): array
     {
         $options = ['src' => $this->src];
-        if ($this->altValue !== null) {
-            $options['alt'] = $this->altValue;
+        $alt = $this->resolveOpt($this->altValue);
+        if ($alt !== null) {
+            $options['alt'] = $alt;
         }
-        if ($this->captionValue !== null) {
-            $options['caption'] = $this->captionValue;
+        $caption = $this->resolveOpt($this->captionValue);
+        if ($caption !== null) {
+            $options['caption'] = $caption;
         }
         if ($this->asLinkValue) {
             $options['asLink'] = true;

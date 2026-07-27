@@ -4,11 +4,13 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use Illuminate\Support\Facades\Gate;
+use InvalidArgumentException;
 use JsonSerializable;
 use LogicException;
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Concerns\HasTooltip;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -20,7 +22,11 @@ final class ActionBuilder implements JsonSerializable
     use HasIcon;
     use HasServerQuery;
     use HasTooltip;
+    use ResolvesClosures;
     use WithMeta;
+
+    /** Opt keys whose value may be a zero-arity Closure, resolved on read. */
+    private const RESOLVABLE = ['label', 'color', 'badge', 'size'];
 
     /** @var array<string, mixed> */
     private array $opts = [];
@@ -42,6 +48,10 @@ final class ActionBuilder implements JsonSerializable
 
     private mixed $authorizeArg = null;
 
+    private string|Closure|null $confirmTitle = null;
+
+    private string|Closure|null $confirmDescription = null;
+
     private const MODAL_SIZES = [
         'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full',
     ];
@@ -50,24 +60,30 @@ final class ActionBuilder implements JsonSerializable
 
     public function __construct(public readonly string $name) {}
 
-    public function label(string $label): self
+    /** @param  string|(Closure(): string)  $label */
+    public function label(string|Closure $label): self
     {
         $this->opts['label'] = $label;
 
         return $this;
     }
 
-    public function color(string $color): self
+    /** @param  string|(Closure(): string)  $color */
+    public function color(string|Closure $color): self
     {
         $this->opts['color'] = $color;
 
         return $this;
     }
 
-    /** Count badge after the label. Pass a Color for the badge tint. */
-    public function badge(string|int $count, ?Color $color = null): self
+    /**
+     * Count badge after the label. Pass a Color for the badge tint.
+     *
+     * @param  string|int|(Closure(): (string|int))  $count
+     */
+    public function badge(string|int|Closure $count, ?Color $color = null): self
     {
-        $this->opts['badge'] = (string) $count;
+        $this->opts['badge'] = $count instanceof Closure ? $count : (string) $count;
         if ($color !== null) {
             $this->opts['badgeColor'] = $color->value;
         }
@@ -105,12 +121,14 @@ final class ActionBuilder implements JsonSerializable
         return $this->setSpec(['type' => 'server', 'needs' => $needs]);
     }
 
-    public function confirm(string $title, ?string $description = null): self
+    /**
+     * @param  string|(Closure(): string)  $title
+     * @param  string|(Closure(): string)|null  $description
+     */
+    public function confirm(string|Closure $title, string|Closure|null $description = null): self
     {
-        $this->opts['confirm'] = array_filter([
-            'title' => $title,
-            'description' => $description,
-        ]);
+        $this->confirmTitle = $title;
+        $this->confirmDescription = $description;
 
         return $this;
     }
@@ -133,7 +151,7 @@ final class ActionBuilder implements JsonSerializable
     public function modalWidth(string $width): self
     {
         if (! in_array($width, self::MODAL_SIZES, true)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "Invalid modal width \"{$width}\". Allowed: ".implode(', ', self::MODAL_SIZES).'.'
             );
         }
@@ -190,20 +208,28 @@ final class ActionBuilder implements JsonSerializable
     }
 
     /**
-     * Set the trigger button size.
+     * Set the trigger button size. A Closure is validated at resolution time
+     * (toNode()), not here.
      *
-     * @param  string  $size  One of self::BUTTON_SIZES ('sm'|'md'|'lg')
+     * @param  string|(Closure(): string)  $size  One of self::BUTTON_SIZES ('sm'|'md'|'lg')
      */
-    public function size(string $size): self
+    public function size(string|Closure $size): self
     {
-        if (! in_array($size, self::BUTTON_SIZES, true)) {
-            throw new \InvalidArgumentException(
-                "Invalid button size \"{$size}\". Allowed: ".implode(', ', self::BUTTON_SIZES).'.'
-            );
+        if (! $size instanceof Closure) {
+            self::assertValidButtonSize($size);
         }
         $this->opts['size'] = $size;
 
         return $this;
+    }
+
+    private static function assertValidButtonSize(string $size): void
+    {
+        if (! in_array($size, self::BUTTON_SIZES, true)) {
+            throw new InvalidArgumentException(
+                "Invalid button size \"{$size}\". Allowed: ".implode(', ', self::BUTTON_SIZES).'.'
+            );
+        }
     }
 
     /** Render the trigger as an outlined button. */
@@ -286,13 +312,47 @@ final class ActionBuilder implements JsonSerializable
             $spec = [...$spec, 'query' => true, 'queryNeeds' => $this->queryNeeds];
         }
 
-        return new Node('action', [...$this->opts, ...$this->iconOption(), ...$this->tooltipOption(), 'spec' => $spec], $this->name, $this->metaBag);
+        $options = [...$this->resolvedOpts(), ...$this->resolvedConfirm(), ...$this->iconOption(), ...$this->tooltipOption(), 'spec' => $spec];
+
+        return new Node('action', $options, $this->name, $this->resolvedMeta());
     }
 
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return $this->toNode()->jsonSerialize();
+    }
+
+    /** @return array<string, mixed> */
+    private function resolvedOpts(): array
+    {
+        $opts = $this->opts;
+        foreach (self::RESOLVABLE as $key) {
+            if (array_key_exists($key, $opts)) {
+                $opts[$key] = $this->resolveOpt($opts[$key]);
+            }
+        }
+        if (array_key_exists('badge', $opts)) {
+            $opts['badge'] = (string) $opts['badge'];
+        }
+        if (array_key_exists('size', $opts)) {
+            self::assertValidButtonSize($opts['size']);
+        }
+
+        return $opts;
+    }
+
+    /** @return array{confirm?: array<string, string>} */
+    private function resolvedConfirm(): array
+    {
+        if ($this->confirmTitle === null) {
+            return [];
+        }
+
+        return ['confirm' => array_filter([
+            'title' => $this->resolveOpt($this->confirmTitle),
+            'description' => $this->resolveOpt($this->confirmDescription),
+        ])];
     }
 
     /** @param  array<string, mixed>  $spec */
