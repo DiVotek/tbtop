@@ -3,8 +3,10 @@
 namespace Tbtop\Admin\Http;
 
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
@@ -109,7 +111,39 @@ final class EditableColumnController
             abort(422, 'Missing record id.');
         }
 
-        return (clone $builder)->whereKey($id)->firstOrFail();
+        $record = (clone $builder)->whereKey($id)->firstOrFail();
+
+        return $this->quietSyntheticDirtiness($record);
+    }
+
+    /**
+     * A query closure or a model event (retrieved(), an accessor, etc.) can
+     * leave non-column attributes on the resolved record — a withExists()
+     * alias, a computed flag stamped after hydration. Reading those in the
+     * onSave closure is legitimate and must keep working; a clean alias is
+     * never dirty by itself (its value matches what was just SELECTed), so
+     * it never reaches save(). The only real threat is a synthetic attribute
+     * that became dirty *after* hydration (e.g. a retrieved() listener
+     * calling setAttribute()) — Eloquent would try to write it as a column.
+     * Re-sync just that attribute's "original" so save() stops treating it
+     * as changed, without touching any real column's dirty state.
+     */
+    private function quietSyntheticDirtiness(Model $record): Model
+    {
+        $dirty = array_keys($record->getDirty());
+        if ($dirty === []) {
+            return $record;
+        }
+
+        $columns = Schema::connection($record->getConnectionName())
+            ->getColumnListing($record->getTable());
+
+        $syntheticDirty = array_diff($dirty, $columns);
+        if ($syntheticDirty !== []) {
+            $record->syncOriginalAttributes(array_values($syntheticDirty));
+        }
+
+        return $record;
     }
 
     private function runSave(
