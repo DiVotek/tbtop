@@ -102,16 +102,6 @@ admin entry). Browser e2e for walking-skeleton flows lives here.
 
 **Run only tests for what you changed.** CI runs the full suite.
 
-## Orb screenshots
-
-For a user-requested visual artifact, use `agent-browser` directly; do not run Pest unless the
-user also asked for verification. Run `amp orb services ensure`, read the demo port from
-`.amp/portals/.service-ports`, and open `http://127.0.0.1:<port>` from inside the orb. Log in
-with `admin@admin.com` / `password`, wait for network idle, expected page text, and chart
-animations, then save the full-page PNG under `.amp/in/artifacts/` and close the browser.
-Never share the loopback URL; share the portal URL from `.amp/portals/demo.json` when needed.
-Correctness checks still use the project `smoke` skill and Pest browser suite.
-
 ## Stack
 
 - **PHP 8.4+**, Laravel 11/12/13, Inertia v3, Pest 4, larastan, Pint.
