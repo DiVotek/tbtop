@@ -11,4 +11,7 @@ mkdir -p "$demo/database" "$demo/bootstrap/cache" \
     "$demo/storage/framework/testing" "$demo/storage/framework/views" "$demo/storage/logs"
 touch "$demo/database/database.sqlite"
 
-echo "Orb resumed: PHP/Composer, Bun, and demo SQLite state are ready"
+echo "Ensuring the demo portal is running"
+(cd "$repo_root" && amp orb services ensure)
+
+echo "Orb resumed: PHP/Composer, Bun, demo SQLite state, and portal are ready"

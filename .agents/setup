@@ -118,6 +118,9 @@ if ! find "$HOME/.cache/ms-playwright" -type f -path '*/chrome-linux*/chrome' -p
     (cd "$demo" && bunx playwright install --with-deps chromium)
 fi
 
+echo "==> Starting the demo portal"
+(cd "$repo_root" && amp orb services ensure)
+
 echo "==> Orb setup complete"
 php -v | head -n 1
 composer --version
