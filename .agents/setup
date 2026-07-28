@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export DEBIAN_FRONTEND=noninteractive
+
+install_php() {
+    if command -v php >/dev/null \
+        && [[ "$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')" == "8.4" ]] \
+        && php -r 'foreach (["bcmath", "curl", "dom", "gd", "intl", "mbstring", "pdo_sqlite", "simplexml", "xml", "zip"] as $extension) { if (!extension_loaded($extension)) { exit(1); } }'; then
+        return
+    fi
+
+    echo "==> Installing PHP 8.4 and required extensions"
+    sudo apt-get update
+    sudo apt-get install -y apt-transport-https ca-certificates curl git gnupg unzip
+
+    sudo install -d -m 0755 /usr/share/keyrings
+    curl -fsSL https://packages.sury.org/php/apt.gpg \
+        | sudo gpg --dearmor --yes -o /usr/share/keyrings/deb.sury.org-php.gpg
+    echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ bookworm main" \
+        | sudo tee /etc/apt/sources.list.d/php.list >/dev/null
+
+    sudo apt-get update
+    sudo apt-get install -y \
+        php8.4-bcmath \
+        php8.4-cli \
+        php8.4-curl \
+        php8.4-gd \
+        php8.4-intl \
+        php8.4-mbstring \
+        php8.4-sqlite3 \
+        php8.4-xml \
+        php8.4-zip
+    sudo update-alternatives --set php /usr/bin/php8.4
+}
+
+install_composer() {
+    if command -v composer >/dev/null; then
+        return
+    fi
+
+    echo "==> Installing Composer"
+    local installer expected actual
+    installer="$(mktemp)"
+    expected="$(curl -fsSL https://composer.github.io/installer.sig)"
+    curl -fsSL https://getcomposer.org/installer -o "$installer"
+    actual="$(php -r "echo hash_file('sha384', '$installer');")"
+    if [[ "$actual" != "$expected" ]]; then
+        rm -f "$installer"
+        echo "Composer installer signature mismatch" >&2
+        exit 1
+    fi
+    sudo php "$installer" --quiet --install-dir=/usr/local/bin --filename=composer
+    rm -f "$installer"
+}
+
+install_bun() {
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+
+    if ! command -v bun >/dev/null || [[ "$(bun --version)" != "1.3.14" ]]; then
+        echo "==> Installing Bun 1.3.14"
+        curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.14"
+    fi
+
+    local marker="# tbtop orb Bun"
+    if ! grep -Fqx "$marker" "$HOME/.bash_profile" 2>/dev/null; then
+        cat >> "$HOME/.bash_profile" <<'EOF'
+
+# tbtop orb Bun
+export BUN_INSTALL="$HOME/.bun"
+case ":$PATH:" in
+    *":$BUN_INSTALL/bin:"*) ;;
+    *) export PATH="$BUN_INSTALL/bin:$PATH" ;;
+esac
+EOF
+    fi
+}
+
+install_php
+install_composer
+install_bun
+
+echo "==> Installing Bun dependencies"
+(cd "$repo_root" && bun install --frozen-lockfile)
+(cd "$repo_root/packages/client" && bun install --frozen-lockfile)
+(cd "$repo_root/apps/demo" && bun install --frozen-lockfile)
+
+echo "==> Installing Composer dependencies"
+rm -f "$repo_root/packages/php/composer.lock"
+(cd "$repo_root/packages/php" && composer install --no-interaction --prefer-dist)
+
+demo="$repo_root/apps/demo"
+if [[ ! -f "$demo/.env" ]]; then
+    cp -- "$demo/.env.example" "$demo/.env"
+fi
+mkdir -p "$demo/database" "$demo/bootstrap/cache" \
+    "$demo/storage/framework/cache" "$demo/storage/framework/sessions" \
+    "$demo/storage/framework/testing" "$demo/storage/framework/views" "$demo/storage/logs"
+touch "$demo/database/database.sqlite"
+
+(cd "$demo" && composer install --no-interaction --prefer-dist)
+
+if grep -q '^APP_KEY=$' "$demo/.env"; then
+    echo "==> Generating the demo application key"
+    (cd "$demo" && php artisan key:generate --ansi)
+fi
+
+echo "==> Preparing the demo database and storage"
+(cd "$demo" && php artisan migrate --force --ansi && php artisan db:seed --force --ansi)
+if [[ ! -e "$demo/public/storage" ]]; then
+    (cd "$demo" && php artisan storage:link --ansi)
+fi
+
+if ! find "$HOME/.cache/ms-playwright" -type f -path '*/chrome-linux*/chrome' -print -quit 2>/dev/null | grep -q .; then
+    echo "==> Installing Chromium for browser smoke tests"
+    (cd "$demo" && bunx playwright install --with-deps chromium)
+fi
+
+echo "==> Orb setup complete"
+php -v | head -n 1
+composer --version
+bun --version
