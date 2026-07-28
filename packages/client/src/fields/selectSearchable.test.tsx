@@ -10,6 +10,21 @@ const CHOICES = [
 ];
 
 describe("Select field — static searchable", () => {
+	test("selected value replaces the empty placeholder and keeps the shared control height", () => {
+		const { getByTestId } = render(
+			<SelectForm
+				name="fruit"
+				value="banana"
+				onChange={() => {}}
+				options={{ options: CHOICES, searchable: true }}
+			/>,
+		);
+		const input = getByTestId("select-search-fruit") as HTMLInputElement;
+		expect(input.placeholder).toBe("");
+		expect(input.className).toContain("h-9");
+		expect(getByTestId("select-label-fruit").className).toContain("truncate");
+	});
+
 	test("Select searchable: filter input appears when searchable is true", async () => {
 		const { container } = render(
 			<SelectForm

@@ -1,8 +1,11 @@
 import { useRef, useState } from "react";
+import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
+import { cn } from "../lib/cn";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
+import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
@@ -189,6 +192,7 @@ function SearchableStaticSelect({
 	resolvedLabels,
 }: StaticSelectProps) {
 	const t = useTranslation();
+	const density = useDensity();
 	const choices = options?.options ?? [];
 	const [search, setSearch] = useState("");
 	const [open, setOpen] = useState(false);
@@ -233,10 +237,10 @@ function SearchableStaticSelect({
 			data-testid={`select-${name}`}
 			onKeyDown={handleKeyDown}
 		>
-			<input
+			<Input
 				type="text"
 				data-testid={`select-search-${name}`}
-				placeholder={t("field.select.placeholder")}
+				placeholder={showLabel ? "" : t("field.select.placeholder")}
 				value={search}
 				onClick={handleOpen}
 				onFocus={handleOpen}
@@ -249,14 +253,16 @@ function SearchableStaticSelect({
 					}
 				}}
 				disabled={disabled}
-				className="w-full rounded border border-input bg-background px-3 py-2 text-sm"
 			/>
 			{showLabel && (
-				// Selected label as normal text — sits over the empty input, not gray placeholder.
+				// Selected label replaces the empty input's placeholder and stays on one line.
 				<span
 					data-testid={`select-label-${name}`}
 					onClick={handleOpen}
-					className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-sm text-foreground"
+					className={cn(
+						"pointer-events-none absolute inset-y-0 left-0 right-0 flex min-w-0 items-center truncate px-3 text-base text-foreground md:text-sm",
+						density === "compact" && "md:text-xs",
+					)}
 				>
 					{currentLabel}
 				</span>
