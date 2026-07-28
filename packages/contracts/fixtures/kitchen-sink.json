@@ -991,7 +991,8 @@
                             "name": "title",
                             "label": "Title",
                             "kind": "text",
-                            "columnSearchable": true
+                            "columnSearchable": true,
+                            "noWrap": true
                         },
                         {
                             "name": "views",

@@ -32,6 +32,7 @@ it('Column: defaults are omitted from wire (sparse serialization)', function ():
         ->and($json)->not->toHaveKey('hiddenByDefault')
         ->and($json)->not->toHaveKey('align')
         ->and($json)->not->toHaveKey('wrap')
+        ->and($json)->not->toHaveKey('noWrap')
         ->and($json)->not->toHaveKey('translatable');
 });
 
@@ -80,6 +81,16 @@ it('Column: wrap emits wrap:true', function (): void {
 it('Column: truncate emits wrap:false', function (): void {
     $json = encodeColumn(Column::make('body')->truncate());
     expect($json['wrap'])->toBeFalse();
+});
+
+it('Column: noWrap emits noWrap:true', function (): void {
+    $json = encodeColumn(Column::make('reference')->noWrap());
+    expect($json['noWrap'])->toBeTrue();
+});
+
+it('Column: noWrap(false) omits noWrap from wire', function (): void {
+    $json = encodeColumn(Column::make('reference')->noWrap(false));
+    expect($json)->not->toHaveKey('noWrap');
 });
 
 it('Column: tooltip emits tooltip string', function (): void {

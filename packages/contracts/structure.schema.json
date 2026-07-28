@@ -686,6 +686,7 @@
 					"icon": { "$ref": "#/$defs/icon" },
 					"width": { "type": "string" },
 					"wrap": { "type": "boolean" },
+					"noWrap": { "type": "boolean" },
 					"tooltip": { "type": "string" },
 					"emphasized": { "type": "boolean" },
 					"muted": { "type": "boolean" },
