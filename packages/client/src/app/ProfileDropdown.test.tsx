@@ -56,6 +56,11 @@ describe("ProfileDropdown", () => {
 	test("ProfileDropdown: clicking trigger opens the menu", async () => {
 		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -66,6 +71,11 @@ describe("ProfileDropdown", () => {
 		// under the admin prefix, so the default must follow routesBase.
 		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -82,6 +92,11 @@ describe("ProfileDropdown", () => {
 				<ProfileDropdown user={{ name: "Alice" }} />,
 			);
 			await act(async () => {
+				fireEvent.pointerDown(getByTestId("profile-trigger"), {
+					bubbles: true,
+					cancelable: true,
+					isPrimary: true,
+				});
 				fireEvent.click(getByTestId("profile-trigger"));
 			});
 			await findByTestId("profile-menu");
@@ -99,6 +114,11 @@ describe("ProfileDropdown", () => {
 			<ProfileDropdown user={{ name: "Alice" }} logoutPath="/admin/logout" />,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -118,6 +138,11 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -137,6 +162,11 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -147,20 +177,25 @@ describe("ProfileDropdown", () => {
 	});
 
 	test("ProfileDropdown: hides locale section when only one language configured", async () => {
-		const { getByTestId, findByTestId, container } = render(
+		const { getByTestId, findByTestId } = render(
 			<I18nProvider defaultLang="en" languages={{ en: async () => ({}) }}>
 				<ProfileDropdown user={{ name: "Alice" }} />
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
-		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
+		expect(document.body.querySelector('[data-testid^="locale-option-"]')).toBeNull();
 	});
 
 	test("ProfileDropdown: showLocales=false hides the language section despite multiple locales", async () => {
-		const { getByTestId, findByTestId, container } = render(
+		const { getByTestId, findByTestId } = render(
 			<I18nProvider
 				defaultLang="en"
 				languages={{ en: async () => ({}), uk: async () => ({}) }}
@@ -169,16 +204,21 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
-		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
+		expect(document.body.querySelector('[data-testid^="locale-option-"]')).toBeNull();
 	});
 
 	test("ProfileDropdown: language section heading shows translated label, not raw key", async () => {
 		// nav.language was missing from defaultMessages so t() fell back to the
 		// key itself, rendering "nav.language" as a visible string in the UI.
-		const { getByTestId, findByTestId, container } = render(
+		const { getByTestId, findByTestId } = render(
 			<I18nProvider
 				defaultLang="en"
 				languages={{ en: async () => ({}), uk: async () => ({}) }}
@@ -187,11 +227,17 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
-		// The heading must NOT contain the raw key "nav.language"
-		expect(container.textContent).not.toContain("nav.language");
+		// The heading must NOT contain the raw key "nav.language". Assert against
+		// document.body: the menu renders in a portal, outside `container`.
+		expect(document.body.textContent).not.toContain("nav.language");
 	});
 	function renderInChrome(
 		chrome: Partial<ChromeData>,
@@ -217,6 +263,11 @@ describe("ProfileDropdown", () => {
 			userMenuItems: [{ label: "API Tokens", href: "/admin/api-tokens" }],
 		});
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		const item = await findByTestId("user-menu-item-/admin/api-tokens");
@@ -230,6 +281,11 @@ describe("ProfileDropdown", () => {
 			userMenuItems: [{ label: "API Tokens", href: "/admin/api-tokens" }],
 		});
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		fireEvent.click(await findByTestId("user-menu-item-/admin/api-tokens"));
@@ -241,6 +297,11 @@ describe("ProfileDropdown", () => {
 	test("ProfileDropdown: omits the custom-items section when userMenuItems is empty", async () => {
 		const { getByTestId, findByTestId, queryByTestId } = renderInChrome({});
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
