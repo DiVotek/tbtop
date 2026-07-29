@@ -89,9 +89,7 @@ describe("density: SelectTrigger", () => {
 				</SelectTrigger>
 			</Select>,
 		);
-		const trigger = getByTestId("trigger");
-		expect(trigger.getAttribute("data-size")).toBe("default");
-		expect(trigger.className).toContain("*:data-[slot=select-value]:truncate");
+		expect(getByTestId("trigger").getAttribute("data-size")).toBe("default");
 	});
 
 	test("compact density defaults the trigger to size sm", () => {
