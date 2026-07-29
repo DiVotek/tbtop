@@ -56,6 +56,11 @@ describe("ProfileDropdown", () => {
 	test("ProfileDropdown: clicking trigger opens the menu", async () => {
 		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -66,6 +71,11 @@ describe("ProfileDropdown", () => {
 		// under the admin prefix, so the default must follow routesBase.
 		const { getByTestId, findByTestId } = render(<ProfileDropdown user={{ name: "Alice" }} />);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -82,6 +92,11 @@ describe("ProfileDropdown", () => {
 				<ProfileDropdown user={{ name: "Alice" }} />,
 			);
 			await act(async () => {
+				fireEvent.pointerDown(getByTestId("profile-trigger"), {
+					bubbles: true,
+					cancelable: true,
+					isPrimary: true,
+				});
 				fireEvent.click(getByTestId("profile-trigger"));
 			});
 			await findByTestId("profile-menu");
@@ -99,6 +114,11 @@ describe("ProfileDropdown", () => {
 			<ProfileDropdown user={{ name: "Alice" }} logoutPath="/admin/logout" />,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -118,6 +138,11 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -137,6 +162,11 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -153,6 +183,11 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -169,6 +204,11 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -187,6 +227,11 @@ describe("ProfileDropdown", () => {
 			</I18nProvider>,
 		);
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
@@ -217,6 +262,11 @@ describe("ProfileDropdown", () => {
 			userMenuItems: [{ label: "API Tokens", href: "/admin/api-tokens" }],
 		});
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		const item = await findByTestId("user-menu-item-/admin/api-tokens");
@@ -230,6 +280,11 @@ describe("ProfileDropdown", () => {
 			userMenuItems: [{ label: "API Tokens", href: "/admin/api-tokens" }],
 		});
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		fireEvent.click(await findByTestId("user-menu-item-/admin/api-tokens"));
@@ -241,6 +296,11 @@ describe("ProfileDropdown", () => {
 	test("ProfileDropdown: omits the custom-items section when userMenuItems is empty", async () => {
 		const { getByTestId, findByTestId, queryByTestId } = renderInChrome({});
 		await act(async () => {
+			fireEvent.pointerDown(getByTestId("profile-trigger"), {
+				bubbles: true,
+				cancelable: true,
+				isPrimary: true,
+			});
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
