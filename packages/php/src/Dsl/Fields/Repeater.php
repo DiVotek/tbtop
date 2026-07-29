@@ -30,6 +30,13 @@ final class Repeater extends Field
         return $this->set('defaultItems', $count);
     }
 
+    public function defaultItemCount(): int
+    {
+        $count = $this->opts['defaultItems'] ?? 0;
+
+        return is_int($count) ? $count : 0;
+    }
+
     /**
      * Render each row collapsed to a one-line summary; click to expand the
      * edit form. Off by default — existing repeaters stay fully expanded.

@@ -56,10 +56,17 @@ final class FormBuilder implements JsonSerializable
         return $this->onSubmit;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Defaults seed before normalize, so a scalar default on a translatable
+     * field is expanded into a locale map like any other value.
+     *
+     * @return array<string, mixed>
+     */
     public function recordData(): array
     {
-        return TranslatableRecord::normalize($this->record, $this->children);
+        $seeded = RecordDefaults::apply($this->record, $this->children);
+
+        return TranslatableRecord::normalize($seeded, $this->children);
     }
 
     /** Laravel validation rules collected from descendant fields. @return array<string, list<string>> */
