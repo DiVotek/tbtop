@@ -177,7 +177,7 @@ describe("ProfileDropdown", () => {
 	});
 
 	test("ProfileDropdown: hides locale section when only one language configured", async () => {
-		const { getByTestId, findByTestId, container } = render(
+		const { getByTestId, findByTestId } = render(
 			<I18nProvider defaultLang="en" languages={{ en: async () => ({}) }}>
 				<ProfileDropdown user={{ name: "Alice" }} />
 			</I18nProvider>,
@@ -191,11 +191,11 @@ describe("ProfileDropdown", () => {
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
-		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
+		expect(document.body.querySelector('[data-testid^="locale-option-"]')).toBeNull();
 	});
 
 	test("ProfileDropdown: showLocales=false hides the language section despite multiple locales", async () => {
-		const { getByTestId, findByTestId, container } = render(
+		const { getByTestId, findByTestId } = render(
 			<I18nProvider
 				defaultLang="en"
 				languages={{ en: async () => ({}), uk: async () => ({}) }}
@@ -212,13 +212,13 @@ describe("ProfileDropdown", () => {
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
-		expect(container.querySelector('[data-testid^="locale-option-"]')).toBeNull();
+		expect(document.body.querySelector('[data-testid^="locale-option-"]')).toBeNull();
 	});
 
 	test("ProfileDropdown: language section heading shows translated label, not raw key", async () => {
 		// nav.language was missing from defaultMessages so t() fell back to the
 		// key itself, rendering "nav.language" as a visible string in the UI.
-		const { getByTestId, findByTestId, container } = render(
+		const { getByTestId, findByTestId } = render(
 			<I18nProvider
 				defaultLang="en"
 				languages={{ en: async () => ({}), uk: async () => ({}) }}
@@ -235,8 +235,9 @@ describe("ProfileDropdown", () => {
 			fireEvent.click(getByTestId("profile-trigger"));
 		});
 		await findByTestId("profile-menu");
-		// The heading must NOT contain the raw key "nav.language"
-		expect(container.textContent).not.toContain("nav.language");
+		// The heading must NOT contain the raw key "nav.language". Assert against
+		// document.body: the menu renders in a portal, outside `container`.
+		expect(document.body.textContent).not.toContain("nav.language");
 	});
 	function renderInChrome(
 		chrome: Partial<ChromeData>,
