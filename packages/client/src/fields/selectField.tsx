@@ -129,6 +129,7 @@ function StaticSingleSelect({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
 	resolvedLabels,
 }: StaticSelectProps) {
@@ -147,6 +148,7 @@ function StaticSingleSelect({
 			<SelectTrigger
 				id={fieldId({ id, name })}
 				onBlur={onBlur}
+				aria-invalid={invalid || undefined}
 				data-testid={`select-${name}`}
 				className="w-full"
 			>
@@ -188,6 +190,7 @@ function SearchableStaticSelect({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
 	resolvedLabels,
 }: StaticSelectProps) {
@@ -253,6 +256,7 @@ function SearchableStaticSelect({
 					}
 				}}
 				disabled={disabled}
+				aria-invalid={invalid || undefined}
 			/>
 			{showLabel && (
 				// Selected label replaces the empty input's placeholder and stays on one line.

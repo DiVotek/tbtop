@@ -281,6 +281,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 							revalidateField(ctrl, name, t);
 						},
 						disabled,
+						invalid: fieldError !== undefined,
 					},
 				},
 				children: undefined,

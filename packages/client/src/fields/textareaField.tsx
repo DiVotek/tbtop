@@ -19,6 +19,7 @@ export function TextareaForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
 }: FieldFormProps<string, TextareaOptionsBag>) {
 	const className = options?.autoresize ? undefined : "field-sizing-fixed";
@@ -33,6 +34,7 @@ export function TextareaForm({
 			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
 			onBlur={onBlur}
 			disabled={disabled}
+			aria-invalid={invalid || undefined}
 		/>
 	);
 }

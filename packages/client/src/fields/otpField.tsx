@@ -23,6 +23,7 @@ export function OtpForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
 }: FieldFormProps<string, OtpOptionsBag>) {
 	const t = useTranslation();
@@ -43,7 +44,9 @@ export function OtpForm({
 		>
 			<InputOTPGroup>
 				{Array.from({ length }, (_, i) => (
-					<InputOTPSlot key={i} index={i} />
+					// The real input is visually hidden, so the error state has to land
+					// on the slots the user actually sees.
+					<InputOTPSlot key={i} index={i} aria-invalid={invalid || undefined} />
 				))}
 			</InputOTPGroup>
 		</InputOTP>
