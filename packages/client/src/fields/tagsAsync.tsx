@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
+import { cn } from "../lib/cn";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
+import { inputCompactFontClass, inputFontClass } from "../ui/input";
 import { useMultiResolvedLabels } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { type FieldFormProps, fieldId } from "./fieldProps";
@@ -10,6 +13,7 @@ import { Chips, type TagsOptionsBag } from "./tagsShared";
 
 export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 	const t = useTranslation();
+	const density = useDensity();
 	const opts = props.options ?? {};
 	const ctx = useClientActionContext();
 	const [search, setSearch] = useState("");
@@ -36,11 +40,16 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 	}
 	return (
 		<fieldset
-			className="flex flex-col gap-2 rounded border border-input bg-background p-2"
+			className="flex w-full flex-col gap-2 rounded-md border border-input bg-background px-2 py-1"
 			data-testid={`tags-${props.name}`}
 			onBlur={props.onBlur}
 		>
-			<div className="flex flex-wrap gap-2">
+			<div
+				className={cn(
+					"flex min-h-9 flex-wrap items-center gap-1",
+					density === "compact" && "min-h-8",
+				)}
+			>
 				<Chips
 					name={props.name}
 					value={visible}
@@ -48,15 +57,19 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 					labelFor={(v) => resolved.labels[v] ?? v}
 					disabled={props.disabled}
 				/>
+				<input
+					id={fieldId({ id: props.id, name: props.name })}
+					value={search}
+					disabled={props.disabled}
+					onChange={(e) => setSearch(e.target.value)}
+					className={cn(
+						"min-w-[120px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground",
+						inputFontClass,
+						density === "compact" && inputCompactFontClass,
+					)}
+					placeholder={t("field.search.placeholder")}
+				/>
 			</div>
-			<input
-				id={fieldId({ id: props.id, name: props.name })}
-				value={search}
-				disabled={props.disabled}
-				onChange={(e) => setSearch(e.target.value)}
-				className="bg-transparent text-sm outline-none"
-				placeholder={t("field.search.placeholder")}
-			/>
 			{searchState.kind === "loading" ? (
 				(opts.loading ?? <FormSkeleton />)
 			) : (
@@ -95,7 +108,7 @@ function AsyncSuggestions({ rows, opts, current, onPick, disabled }: Suggestions
 						aria-selected={selected}
 						disabled={selected || disabled}
 						onClick={() => onPick(v)}
-						className="rounded border border-input bg-background px-2 py-1 text-xs disabled:opacity-50"
+						className="rounded-md border border-input bg-background px-2 py-1 text-xs disabled:opacity-50"
 					>
 						{lbl}
 					</button>

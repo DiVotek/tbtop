@@ -1,5 +1,8 @@
 import { Combobox } from "@base-ui/react/combobox";
 import { useState } from "react";
+import { useDensity } from "../app/densityContext";
+import { cn } from "../lib/cn";
+import { inputCompactFontClass, inputFontClass } from "../ui/input";
 import { fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import type { SelectCreateConfig } from "./selectShared";
@@ -45,6 +48,7 @@ export function MultiComboboxShell({
 	children,
 }: MultiShellProps) {
 	const displayValues = visibleValues ?? value;
+	const density = useDensity();
 	const [query, setQuery] = useState("");
 	const [createOpen, setCreateOpen] = useState(false);
 
@@ -87,7 +91,10 @@ export function MultiComboboxShell({
 				<Combobox.Chips
 					data-testid={`select-${name}`}
 					onBlur={onBlur}
-					className="flex min-h-9 w-full flex-wrap items-center gap-1 rounded border border-input bg-background px-2 py-1"
+					className={cn(
+						"flex min-h-9 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-2 py-1",
+						density === "compact" && "min-h-8",
+					)}
 				>
 					{displayValues.map((v) => (
 						<Combobox.Chip
@@ -108,14 +115,18 @@ export function MultiComboboxShell({
 						id={fieldId({ id, name })}
 						value={query}
 						onChange={(e) => handleQueryChange(e.target.value)}
-						className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+						className={cn(
+							"min-w-[120px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground",
+							inputFontClass,
+							density === "compact" && inputCompactFontClass,
+						)}
 						placeholder={displayValues.length === 0 ? "Select…" : ""}
 					/>
 				</Combobox.Chips>
 
 				<Combobox.Portal>
 					<Combobox.Positioner className="z-50" sideOffset={4}>
-						<Combobox.Popup className="w-[var(--anchor-width)] rounded border border-input bg-background shadow-md">
+						<Combobox.Popup className="w-[var(--anchor-width)] rounded-md border border-input bg-background shadow-md">
 							<Combobox.List className="max-h-60 overflow-y-auto p-1">
 								<Combobox.Empty className="px-2 py-1.5 text-muted-foreground text-sm">
 									{showCreate ? null : "No options"}

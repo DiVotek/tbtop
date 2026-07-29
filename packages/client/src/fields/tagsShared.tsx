@@ -27,7 +27,7 @@ export function Chips({ name, value, onRemove, labelFor, disabled }: ChipsInput)
 				<span
 					key={v}
 					data-testid={`chip-${name}-${v}`}
-					className="flex items-center gap-1 rounded border border-input bg-muted px-2 py-1 text-xs"
+					className="flex items-center gap-1 rounded border border-primary bg-primary px-2 py-0.5 text-primary-foreground text-xs"
 				>
 					{labelFor(v)}
 					<button
@@ -35,7 +35,7 @@ export function Chips({ name, value, onRemove, labelFor, disabled }: ChipsInput)
 						aria-label={`Remove ${labelFor(v)}`}
 						onClick={() => onRemove(v)}
 						disabled={disabled}
-						className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+						className="text-primary-foreground hover:text-foreground disabled:opacity-50"
 					>
 						×
 					</button>

@@ -3,9 +3,12 @@ import type * as React from "react";
 import { useDensity } from "../app/densityContext";
 import { cn } from "../lib/cn";
 
-// Text metrics an overlay must copy to sit flush on top of an Input.
-const inputTextClass = "px-3 text-base md:text-sm";
-const inputCompactTextClass = "md:text-xs";
+// text-base below md keeps iOS Safari from zooming the viewport on focus, so
+// any control holding a text cursor must carry these instead of a bare text-sm.
+const inputFontClass = "text-base md:text-sm";
+const inputCompactFontClass = "md:text-xs";
+// Adds the horizontal padding an overlay needs to sit flush on top of an Input.
+const inputTextClass = `px-3 ${inputFontClass}`;
 
 function Input({ className, type, ref, ...props }: React.ComponentProps<"input">) {
 	const density = useDensity();
@@ -19,7 +22,7 @@ function Input({ className, type, ref, ...props }: React.ComponentProps<"input">
 				inputTextClass,
 				"focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
 				"aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-				density === "compact" && cn("h-8", inputCompactTextClass),
+				density === "compact" && cn("h-8", inputCompactFontClass),
 				className,
 			)}
 			{...props}
@@ -27,4 +30,4 @@ function Input({ className, type, ref, ...props }: React.ComponentProps<"input">
 	);
 }
 
-export { Input, inputCompactTextClass, inputTextClass };
+export { Input, inputCompactFontClass, inputFontClass, inputTextClass };
