@@ -178,7 +178,7 @@ class KitchenSinkPage extends Page
             ]),
             $s->table('posts')
                 ->columns([
-                    Column::make('title')->label('Title')->kind('text')->individuallySearchable(),
+                    Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap(),
                     'views' => 'Views',
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),

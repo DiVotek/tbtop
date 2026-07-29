@@ -58,6 +58,8 @@ export interface TableColumn<TRow = unknown> {
 	icon?: TableColumnIcon;
 	width?: string;
 	wrap?: boolean;
+	/** Keeps the complete cell content on one line without truncating it. */
+	noWrap?: boolean;
 	tooltip?: string;
 	/** Emphasized primary link-style cell text (e.g. a title column driving rowClick). */
 	emphasized?: boolean;
