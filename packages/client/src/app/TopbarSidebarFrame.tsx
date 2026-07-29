@@ -2,6 +2,7 @@ import { PanelLeftIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
+import { Button } from "../ui/button";
 import { LogoBlock } from "./chromeBlocks";
 import { OrientationProvider } from "./chromeContext";
 import { useDensity } from "./densityContext";
@@ -29,16 +30,17 @@ export function TopbarSidebarFrame({
 	return (
 		<div className="flex min-h-screen flex-col bg-background text-foreground">
 			<header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
-				<button
-					type="button"
-					className="hidden size-9 items-center justify-center rounded-md hover:bg-accent lg:inline-flex"
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					className="hidden lg:inline-flex"
 					data-testid="sidebar-collapse"
 					aria-label={t("nav.open_sidebar")}
 					aria-pressed={collapsed}
 					onClick={() => setCollapsed((prev) => !prev)}
 				>
-					<PanelLeftIcon className="size-4" aria-hidden />
-				</button>
+					<PanelLeftIcon aria-hidden />
+				</Button>
 				<SidebarDrawer sidebar={sidebar} />
 				<LogoBlock />
 				<div className="ml-auto flex items-center gap-2">{header}</div>

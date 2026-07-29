@@ -1,6 +1,7 @@
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { Button } from "../ui/button";
 import { useChromeData } from "./chromeContext";
 import { applyTheme, nextTheme, readThemeCookie, type Theme, writeThemeCookie } from "./theme";
 
@@ -36,15 +37,15 @@ export function ThemeToggle() {
 	}
 
 	return (
-		<button
-			type="button"
+		<Button
+			variant="ghost"
+			size="icon-sm"
 			aria-label={t("nav.theme")}
-			className="flex size-8 items-center justify-center rounded-md hover:bg-accent"
 			data-testid="theme-toggle"
 			data-theme-mode={theme}
 			onClick={cycle}
 		>
 			{ICONS[theme]}
-		</button>
+		</Button>
 	);
 }

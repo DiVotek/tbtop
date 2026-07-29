@@ -70,16 +70,40 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 			aria-sort={resolveAriaSort()}
 		>
 			<HeaderTooltip tooltip={col.tooltip}>
-				{HeadingIcon && col.icon?.position !== "right" && (
-					<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
-				)}
-				{col.label ?? col.name}
-				{HeadingIcon && col.icon?.position === "right" && (
-					<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
-				)}
-				{col.sortable && <SortIndicator active={isActive} dir={dir} />}
+				<SortTrigger sortable={col.sortable}>
+					{HeadingIcon && col.icon?.position !== "right" && (
+						<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
+					)}
+					{col.label ?? col.name}
+					{HeadingIcon && col.icon?.position === "right" && (
+						<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
+					)}
+					{col.sortable && <SortIndicator active={isActive} dir={dir} />}
+				</SortTrigger>
 			</HeaderTooltip>
 		</th>
+	);
+}
+
+/**
+ * A sortable column needs a real focusable element, otherwise it is reachable
+ * only by mouse. Non-sortable headers stay plain text — a button there would be
+ * an empty tab stop.
+ */
+function SortTrigger({ sortable, children }: { sortable?: boolean; children: ReactNode }) {
+	if (!sortable) {
+		return <>{children}</>;
+	}
+	return (
+		<button
+			type="button"
+			// The <th> owns activation so the whole cell stays clickable, and a click
+			// here bubbles up to it. This element exists to be a tab stop: it adds
+			// the keyboard path without a second handler that would sort twice.
+			className="inline-flex items-center gap-1 rounded-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+		>
+			{children}
+		</button>
 	);
 }
 

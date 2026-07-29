@@ -1,7 +1,7 @@
 /**
  * Click-sort: asc → desc → clear, aria-sort, sortable vs non-sortable headers.
  */
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { renderNode } from "../../render/structureRenderer";
 import { s } from "../structure";
@@ -22,6 +22,16 @@ function makeSortableTable() {
 }
 
 describe("TableSort: sortable header", () => {
+	// The table persists sort state to the URL, so without this a test that sorts
+	// leaks its state into the next one.
+	let originalHref: string;
+	beforeEach(() => {
+		originalHref = window.location.href;
+	});
+	afterEach(() => {
+		window.history.replaceState(null, "", originalHref);
+	});
+
 	test("sortable header has aria-sort='none' initially", async () => {
 		const node = makeSortableTable();
 		const Wrap = wrap(() => new Response("{}"));
@@ -88,6 +98,39 @@ describe("TableSort: sortable header", () => {
 			// After clear, last sort in captured params should be undefined
 			const afterClear = capturedSorts[capturedSorts.length - 1];
 			expect(afterClear).toBeUndefined();
+		});
+	});
+
+	test("a sortable header sorts from the keyboard", async () => {
+		const capturedSorts: Array<string | undefined> = [];
+		const node = s.table({
+			name: "posts",
+			query: async (ctx) => {
+				capturedSorts.push(ctx.table?.queryParams.sort);
+				return [{ id: "1", title: "Alpha" }];
+			},
+			columns: [{ name: "title", label: "Title", sortable: true }],
+		} as Parameters<typeof s.table>[0]);
+
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+
+		// Keyboard users reach the sort control by tabbing, so it must be a real
+		// focusable element rather than a click handler on the <th>.
+		const trigger = container.querySelector<HTMLElement>("thead th button");
+		expect(trigger).not.toBeNull();
+
+		// A focused button activates on Enter/Space, which the browser delivers as a
+		// click — that is exactly the path a <th> click handler alone cannot offer.
+		await act(async () => {
+			trigger?.focus();
+			expect(document.activeElement).toBe(trigger);
+			fireEvent.click(document.activeElement as HTMLElement);
+		});
+
+		await waitFor(() => {
+			expect(capturedSorts.some((s) => s === "title:asc")).toBe(true);
 		});
 	});
 
