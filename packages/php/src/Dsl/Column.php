@@ -193,9 +193,12 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    // wrap/truncate/noWrap are three mutually exclusive line-break modes sharing
+    // two wire keys, so each setter clears the others: the last call wins.
     public function wrap(): static
     {
         $this->wrap = true;
+        $this->noWrap = null;
 
         return $this;
     }
@@ -203,6 +206,7 @@ final class Column implements JsonSerializable
     public function truncate(): static
     {
         $this->wrap = false;
+        $this->noWrap = null;
 
         return $this;
     }
@@ -210,6 +214,9 @@ final class Column implements JsonSerializable
     public function noWrap(bool $value = true): static
     {
         $this->noWrap = $value;
+        if ($value) {
+            $this->wrap = null;
+        }
 
         return $this;
     }

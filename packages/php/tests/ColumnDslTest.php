@@ -93,6 +93,24 @@ it('Column: noWrap(false) omits noWrap from wire', function (): void {
     expect($json)->not->toHaveKey('noWrap');
 });
 
+it('Column: noWrap after truncate wins, dropping wrap from wire', function (): void {
+    $json = encodeColumn(Column::make('reference')->truncate()->noWrap());
+    expect($json['noWrap'])->toBeTrue()
+        ->and($json)->not->toHaveKey('wrap');
+});
+
+it('Column: truncate after noWrap wins, dropping noWrap from wire', function (): void {
+    $json = encodeColumn(Column::make('reference')->noWrap()->truncate());
+    expect($json['wrap'])->toBeFalse()
+        ->and($json)->not->toHaveKey('noWrap');
+});
+
+it('Column: wrap after noWrap wins, dropping noWrap from wire', function (): void {
+    $json = encodeColumn(Column::make('reference')->noWrap()->wrap());
+    expect($json['wrap'])->toBeTrue()
+        ->and($json)->not->toHaveKey('noWrap');
+});
+
 it('Column: tooltip emits tooltip string', function (): void {
     $json = encodeColumn(Column::make('views')->tooltip('Total views'));
     expect($json['tooltip'])->toBe('Total views');
