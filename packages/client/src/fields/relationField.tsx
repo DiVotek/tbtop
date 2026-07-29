@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
@@ -18,6 +19,19 @@ import { coerceSelectValue } from "./selectShared";
 export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyConfig {
 	searchable?: boolean;
 	labelKey?: string;
+}
+
+interface ReadyLabels {
+	kind: "ready";
+	labels: Record<string, string>;
+}
+
+/** Identity doubles as the "never resolved yet" marker. */
+const EMPTY_LABELS: ReadyLabels = { kind: "ready", labels: {} };
+
+interface SeenLabel {
+	label: string;
+	depsKey: string;
 }
 
 export function RelationCell({ value }: FieldCellProps<unknown>) {
@@ -65,15 +79,32 @@ export function RelationForm({
 	const dep = useFieldDependencies({ config: opts, value: current, onChange });
 	const isResolveGated = dep.hasDeps && !dep.ready;
 	const boundOpts = dep.hasDeps ? bindDeps(opts, dep.deps) : opts;
+	// Rows the dropdown listed already carry their labels; feeding them back
+	// stops a selection from re-resolving a label we just displayed. Each entry
+	// records the deps it was seen under, so new deps never reuse an old label.
+	const seenLabels = useRef<Record<string, SeenLabel>>({});
+	const knownLabels: Record<string, string> = {};
+	for (const [rowValue, seen] of Object.entries(seenLabels.current)) {
+		if (seen.depsKey === dep.depsKey) {
+			knownLabels[rowValue] = seen.label;
+		}
+	}
 	const resolved = useSingleResolvedLabel({
 		ctx,
 		fieldName: name,
 		value: isResolveGated ? null : current,
 		opts: boundOpts,
 		refetchKey: dep.depsKey,
+		knownLabels,
 	});
+	const lastReady = useRef<ReadyLabels>(EMPTY_LABELS);
+	if (resolved.kind === "ready") {
+		lastReady.current = resolved;
+	}
 
-	if (resolved.kind === "loading") {
+	// Only the very first resolve has nothing to show. A re-resolve keeps the
+	// control mounted, so changing the value never flickers into a skeleton.
+	if (resolved.kind === "loading" && lastReady.current === EMPTY_LABELS) {
 		return <FormSkeleton />;
 	}
 
@@ -86,8 +117,11 @@ export function RelationForm({
 			onBlur={onBlur}
 			disabled={disabled || dep.disabledByParent}
 			options={boundOpts}
-			resolved={resolved}
+			resolved={lastReady.current}
 			dep={dep}
+			onRowLabel={(rowValue, label) => {
+				seenLabels.current[rowValue] = { label, depsKey: dep.depsKey };
+			}}
 		/>
 	);
 }
@@ -109,8 +143,9 @@ interface RelationSelectInnerProps {
 	onBlur?: () => void;
 	disabled?: boolean;
 	options: RelationOptionsBag;
-	resolved: { kind: "ready"; labels: Record<string, string> };
+	resolved: ReadyLabels;
 	dep: DependencyState;
+	onRowLabel: (value: string, label: string) => void;
 }
 
 function RelationSelectInner({
@@ -123,6 +158,7 @@ function RelationSelectInner({
 	options,
 	resolved,
 	dep,
+	onRowLabel,
 }: RelationSelectInnerProps) {
 	const t = useTranslation();
 	const ctx = useClientActionContext();
@@ -161,6 +197,7 @@ function RelationSelectInner({
 				{rows.map((row) => {
 					const v = String(options.optionValue?.(row) ?? "");
 					const lbl = String(options.optionLabel?.(row) ?? v);
+					onRowLabel(v, lbl);
 					return (
 						<SelectItem key={v} value={v}>
 							{lbl}
