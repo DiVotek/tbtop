@@ -13,5 +13,11 @@ class AuthorModel extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'title'];
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return ['title' => 'array'];
+    }
 }

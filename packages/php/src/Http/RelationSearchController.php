@@ -9,6 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Dsl\Fields\Relation;
+use Tbtop\Admin\I18n\LocaleService;
+use Tbtop\Admin\I18n\TranslatableValue;
 
 /**
  * POST {page-path}/relation-search/{tbtopField}
@@ -57,13 +59,8 @@ final class RelationSearchController
             return response()->json(['option' => null]);
         }
 
-        $labelKey = $field->getLabelKey();
-
         return response()->json([
-            'option' => [
-                'value' => (string) $model->getKey(),
-                'label' => (string) $model->{$labelKey},
-            ],
+            'option' => self::toOption($model, $field->getLabelKey()),
         ]);
     }
 
@@ -75,17 +72,57 @@ final class RelationSearchController
         $labelKey = $field->getLabelKey();
 
         if ($search !== '') {
-            $builder = $builder->where($labelKey, 'like', '%'.$search.'%');
+            $builder = $builder->where(
+                self::searchColumn($builder, $labelKey),
+                'like',
+                '%'.$search.'%',
+            );
         }
 
         $rows = $builder->limit(self::RESULT_CAP)->get();
 
-        $options = $rows->map(fn ($model) => [
-            'value' => (string) $model->getKey(),
-            'label' => (string) $model->{$labelKey},
-        ])->values()->all();
+        $options = $rows->map(fn ($model) => self::toOption($model, $labelKey))
+            ->values()
+            ->all();
 
         return response()->json(['options' => $options]);
+    }
+
+    /**
+     * A translatable column stores a locale map, so LIKE against the whole JSON
+     * text matches locale keys and misses non-ASCII values (stored escaped).
+     * Searching the default locale's JSON path compares the decoded value.
+     *
+     * @param  Builder<Model>  $builder
+     */
+    private static function searchColumn(Builder $builder, string $labelKey): string
+    {
+        if (! self::isTranslatable($builder->getModel(), $labelKey)) {
+            return $labelKey;
+        }
+
+        return $labelKey.'->'.LocaleService::defaultContentLocale();
+    }
+
+    private static function isTranslatable(Model $model, string $labelKey): bool
+    {
+        $translatable = $model->translatable ?? null;
+        if (is_array($translatable) && in_array($labelKey, $translatable, true)) {
+            return true;
+        }
+
+        return in_array($model->getCasts()[$labelKey] ?? null, ['array', 'json'], true);
+    }
+
+    /** @return array{value: string, label: string} */
+    private static function toOption(Model $model, string $labelKey): array
+    {
+        $label = TranslatableValue::pick($model->getRawOriginal($labelKey) ?? $model->{$labelKey});
+
+        return [
+            'value' => (string) $model->getKey(),
+            'label' => is_scalar($label) ? (string) $label : '',
+        ];
     }
 
     /**

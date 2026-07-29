@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Tbtop\Admin\Tests\Fixtures\AuthorModel;
 use Tbtop\Admin\Tests\RelationSearchHttpTestCase;
 
@@ -110,4 +111,78 @@ it('Relation search: dependent resolve-by-value honors the parent scope', functi
         ['value' => '1', 'deps' => ['author_id' => '2']],
     );
     $miss->assertOk()->assertExactJson(['option' => null]);
+});
+
+it('Relation search: resolve formats a translatable labelKey in the default content locale', function (): void {
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    AuthorModel::create(['name' => 'Iryna', 'title' => ['en' => 'Editor', 'uk' => 'Редактор']]);
+
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/translated_id',
+        ['value' => '4'],
+    );
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => '4', 'label' => 'Editor']]);
+});
+
+it('Relation search: search formats a translatable labelKey in the default content locale', function (): void {
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    AuthorModel::create(['name' => 'Iryna', 'title' => ['en' => 'Editor', 'uk' => 'Редактор']]);
+
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/translated_id',
+        ['search' => 'Edit'],
+    );
+
+    $response->assertOk();
+    $options = $response->json('options');
+    expect($options)->toHaveCount(1);
+    expect($options[0])->toMatchArray(['value' => '4', 'label' => 'Editor']);
+});
+
+it('Relation search: translatable search matches a non-ASCII locale value', function (): void {
+    config([
+        'tbtop-admin.content_locales' => ['uk', 'en'],
+        'tbtop-admin.default_content_locale' => 'uk',
+    ]);
+    AuthorModel::create(['name' => 'Iryna', 'title' => ['en' => 'Editor', 'uk' => 'Редактор']]);
+
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/translated_id',
+        ['search' => 'Редак'],
+    );
+
+    $response->assertOk();
+    $options = $response->json('options');
+    expect($options)->toHaveCount(1);
+    expect($options[0])->toMatchArray(['value' => '4', 'label' => 'Редактор']);
+});
+
+it('Relation search: translatable label falls back to another locale when the default is empty', function (): void {
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    AuthorModel::create(['name' => 'Iryna', 'title' => ['en' => null, 'uk' => 'Редактор']]);
+
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/translated_id',
+        ['value' => '4'],
+    );
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => '4', 'label' => 'Редактор']]);
+});
+
+it('Relation search: a JSON-encoded scalar label renders without its quotes', function (): void {
+    // Rows written before a column became translatable hold an encoded scalar
+    // ('"Editor"'), not a locale map — the raw value must still decode.
+    AuthorModel::create(['name' => 'Iryna']);
+    DB::table('authors')->where('name', 'Iryna')->update(['title' => '"Editor"']);
+
+    $response = $this->postJson(
+        '/admin/relation-search-page/relation-search/translated_id',
+        ['value' => '4'],
+    );
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => '4', 'label' => 'Editor']]);
 });

@@ -15,6 +15,7 @@ class RelationSearchHttpTestCase extends TestCase
         Schema::create('authors', function ($table): void {
             $table->id();
             $table->string('name');
+            $table->json('title')->nullable();
         });
     }
 

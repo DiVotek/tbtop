@@ -5,7 +5,7 @@ namespace Tbtop\Admin\Http;
 use Illuminate\Database\Eloquent\Model;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\TableBuilder;
-use Tbtop\Admin\I18n\LocaleService;
+use Tbtop\Admin\I18n\TranslatableValue;
 
 /**
  * Applies per-column server-side projections to a result set.
@@ -145,7 +145,7 @@ final class ColumnProjection
     private static function computeValue(Column $col, mixed $value): mixed
     {
         if ($col->isTranslatable()) {
-            $value = self::pickLocale($value);
+            $value = TranslatableValue::pick($value);
         }
         $fmt = $col->getFormatUsing();
         if ($fmt !== null) {
@@ -164,39 +164,5 @@ final class ColumnProjection
     private static function applyKindFormat(Column $col, mixed $value): mixed
     {
         return KindFormat::apply($col->getKind() ?? '', $col->getKindMeta(), $value);
-    }
-
-    private static function pickLocale(mixed $raw): mixed
-    {
-        $map = self::asLocaleMap($raw);
-        if ($map === null) {
-            return $raw;
-        }
-        $default = LocaleService::defaultContentLocale();
-        $value = $map[$default] ?? null;
-        if ($value !== null && $value !== '') {
-            return $value;
-        }
-        foreach ($map as $candidate) {
-            if ($candidate !== null && $candidate !== '') {
-                return $candidate;
-            }
-        }
-
-        return null;
-    }
-
-    /** @return array<string, mixed>|null */
-    private static function asLocaleMap(mixed $raw): ?array
-    {
-        if (is_string($raw) && str_starts_with($raw, '{')) {
-            $decoded = json_decode($raw, true);
-            $raw = is_array($decoded) ? $decoded : $raw;
-        }
-        if (! is_array($raw) || array_is_list($raw)) {
-            return null;
-        }
-
-        return $raw;
     }
 }
