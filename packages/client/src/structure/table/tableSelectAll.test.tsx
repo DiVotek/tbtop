@@ -42,7 +42,7 @@ describe("TableSelectAll", () => {
 		await waitFor(async () => {
 			for (const id of ["a", "b", "c"]) {
 				const cb = await findByTestId(`table-select-${id}`);
-				expect((cb as HTMLInputElement).checked).toBe(true);
+				expect(cb.getAttribute("aria-checked")).toBe("true");
 			}
 		});
 	});
@@ -63,7 +63,7 @@ describe("TableSelectAll", () => {
 		await waitFor(async () => {
 			for (const id of ["a", "b", "c"]) {
 				const cb = await findByTestId(`table-select-${id}`);
-				expect((cb as HTMLInputElement).checked).toBe(false);
+				expect(cb.getAttribute("aria-checked")).toBe("false");
 			}
 		});
 	});
