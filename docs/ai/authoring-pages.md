@@ -407,6 +407,7 @@ Instantiate with `Column::make(string $name)`.
 | `width` | `width(string $width): static` | CSS width string |
 | `wrap` | `wrap(): static` | Wrap long values |
 | `truncate` | `truncate(): static` | Truncate long values (default behavior) |
+| `noWrap` | `noWrap(bool $value = true): static` | Keep the complete cell value on one line without truncating it |
 | `tooltip` | `tooltip(string $tooltip): static` | Hover tooltip |
 | `translatable` | `translatable(bool $value = true): static` | Mark as a translatable column |
 | `formatUsing` | `formatUsing(Closure $fn): static` | Custom server-side cell formatter |
@@ -439,7 +440,8 @@ Column::make('published_at')
 
 Column::make('published_time')
     ->time('H:i')
-    ->label('Published time'),
+    ->label('Published time')
+    ->noWrap(),
 ```
 
 #### `individuallySearchable()` — per-column search

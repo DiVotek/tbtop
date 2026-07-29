@@ -47,6 +47,8 @@ final class Column implements JsonSerializable
     /** null = not set, true = wrap, false = truncate */
     private ?bool $wrap = null;
 
+    private ?bool $noWrap = null;
+
     private ?string $tooltip = null;
 
     /** Server-only: per-row tooltip resolver — never serialized. Receives the row, returns a scalar or null. */
@@ -191,9 +193,12 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    // wrap/truncate/noWrap are three mutually exclusive line-break modes sharing
+    // two wire keys, so each setter clears the others: the last call wins.
     public function wrap(): static
     {
         $this->wrap = true;
+        $this->noWrap = null;
 
         return $this;
     }
@@ -201,6 +206,17 @@ final class Column implements JsonSerializable
     public function truncate(): static
     {
         $this->wrap = false;
+        $this->noWrap = null;
+
+        return $this;
+    }
+
+    public function noWrap(bool $value = true): static
+    {
+        $this->noWrap = $value;
+        if ($value) {
+            $this->wrap = null;
+        }
 
         return $this;
     }
@@ -615,6 +631,9 @@ final class Column implements JsonSerializable
         }
         if ($this->wrap !== null) {
             $out['wrap'] = $this->wrap;
+        }
+        if ($this->noWrap === true) {
+            $out['noWrap'] = true;
         }
         if ($this->tooltip !== null) {
             $out['tooltip'] = $this->tooltip;

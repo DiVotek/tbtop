@@ -66,7 +66,10 @@ export function RowDataCell({
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 }) {
 	const alignClass = rowColAlignClass(col.align);
-	const wrapClass = col.wrap === false ? "truncate max-w-0" : "";
+	const wrapClass = cn(
+		col.wrap === false && "truncate max-w-0",
+		col.noWrap && "whitespace-nowrap",
+	);
 	const tooltip = readRowTooltip(row, col) ?? col.tooltip;
 	const rendered = renderCell({ col, row, tooltip, saveCell });
 	// Text-style flags: emphasized = primary link-style label (pairs with

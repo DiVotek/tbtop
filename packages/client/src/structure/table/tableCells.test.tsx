@@ -302,6 +302,32 @@ describe("TableCell: column display properties", () => {
 		expect(td).toBeTruthy();
 	});
 
+	test("noWrap column keeps complete cell content on one line without truncating", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", reference: "A long reference value" }],
+			columns: [{ name: "reference", label: "Reference", noWrap: true }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.className).toContain("whitespace-nowrap");
+		expect(td?.className).not.toContain("truncate");
+	});
+
+	test("column content keeps its existing wrapping behavior by default", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", reference: "A long reference value" }],
+			columns: [{ name: "reference", label: "Reference" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.className).not.toContain("whitespace-nowrap");
+		expect(td?.className).not.toContain("truncate");
+	});
+
 	test("column with tooltip renders a Radix tooltip trigger in the th (no native title)", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", score: 99 }],

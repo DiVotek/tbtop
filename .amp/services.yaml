@@ -1,0 +1,9 @@
+services:
+  demo:
+    command: >-
+      cd apps/demo &&
+      bun run build &&
+      APP_URL="$PUBLIC_URL" php artisan serve --no-reload --host=0.0.0.0 --port="$PORT"
+    portal:
+      title: Tabletop Demo
+      description: "Seeded login: admin@admin.com / password"
