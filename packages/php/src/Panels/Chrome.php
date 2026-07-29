@@ -19,10 +19,11 @@ use Tbtop\Admin\Dsl\S;
  */
 class Chrome
 {
-    /** Topbar content. The shell right-aligns it. */
+    /** Topbar content. The shell right-aligns it; align: center keeps items of
+     * differing heights on one axis instead of stretching to the tallest. */
     public function header(S $s): ?Node
     {
-        return $s->row($this->headerItems($s));
+        return $s->flex($this->headerItems($s), align: 'center');
     }
 
     /** Sidebar content: logo on top, nav groups below. */

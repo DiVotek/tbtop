@@ -19,7 +19,8 @@ it('serializes the default chrome: logo + navMenu sidebar, userMenu header, no f
 
     expect($chrome['sidebar']->kind)->toBe('stack')
         ->and(childKinds($chrome['sidebar']))->toBe(['logo', 'navMenu'])
-        ->and($chrome['header']->kind)->toBe('row')
+        ->and($chrome['header']->kind)->toBe('flex')
+        ->and($chrome['header']->options->align)->toBe('center')
         ->and(childKinds($chrome['header']))->toBe(['userMenu'])
         ->and($chrome['footer'])->toBeNull();
 });

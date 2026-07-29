@@ -63,8 +63,8 @@ export function ProfileDropdown({
 				className="flex h-8 items-center gap-1.5 rounded-full border bg-background pl-1.5 pr-3 text-sm outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
 				data-testid="profile-trigger"
 			>
-				<span className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-					{initials || <UserIcon className="size-4" />}
+				<span className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-medium">
+					{initials || <UserIcon className="size-3" />}
 				</span>
 				<span data-testid="profile-name">{displayName}</span>
 			</DropdownMenuTrigger>
