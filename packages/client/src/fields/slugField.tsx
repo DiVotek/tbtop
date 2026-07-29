@@ -2,6 +2,7 @@ import { Wand2, X } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { useNearestFormController } from "../structure/formContext";
+import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
 import { slugify } from "./slugify";
@@ -120,12 +121,12 @@ export function SlugForm({
 	return (
 		<div data-field={name} className="flex flex-col gap-2">
 			<div className="flex items-center gap-2">
-				<input
+				<Input
 					type="text"
 					value={currentSlug}
 					readOnly
 					disabled={disabled}
-					className="flex-1 rounded border border-input bg-muted/50 px-3 py-1.5 text-sm font-mono text-muted-foreground"
+					className="flex-1 bg-muted/50 font-mono text-muted-foreground"
 				/>
 				<IconButton
 					label={t("field.slug.clear")}
