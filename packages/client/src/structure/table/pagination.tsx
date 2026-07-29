@@ -39,16 +39,19 @@ export function TablePagination({
 
 	return (
 		<div
-			className="flex items-center justify-between gap-4 px-1 py-2 text-sm text-muted-foreground"
+			className="grid grid-cols-2 items-center gap-3 px-1 py-2 text-sm text-muted-foreground sm:flex sm:justify-between sm:gap-4"
 			data-testid="table-pagination"
 		>
 			{/* Record range counter */}
-			<span data-testid="pagination-range">
+			<span className="whitespace-nowrap" data-testid="pagination-range">
 				{total > 0 ? `${from}–${to} ${t("table.pagination.of")} ${total}` : "0"}
 			</span>
 
 			{/* Page buttons */}
-			<div className="flex items-center gap-1" data-testid="pagination-pages">
+			<div
+				className="order-first col-span-2 flex items-center justify-center gap-1 sm:order-none"
+				data-testid="pagination-pages"
+			>
 				<Button
 					variant="outline"
 					size="icon-sm"
@@ -91,7 +94,7 @@ export function TablePagination({
 			</div>
 
 			{/* Per-page selector */}
-			<div className="flex items-center gap-2">
+			<div className="flex items-center justify-self-end gap-2 whitespace-nowrap">
 				<span>{t("table.pagination.per_page")}</span>
 				<Select
 					value={String(perPage)}
