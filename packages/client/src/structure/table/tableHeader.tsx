@@ -100,7 +100,7 @@ function SortTrigger({ sortable, children }: { sortable?: boolean; children: Rea
 			// The <th> owns activation so the whole cell stays clickable, and a click
 			// here bubbles up to it. This element exists to be a tab stop: it adds
 			// the keyboard path without a second handler that would sort twice.
-			className="inline-flex items-center gap-1 rounded-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+			className="inline-flex items-center gap-1 rounded-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
 		>
 			{children}
 		</button>

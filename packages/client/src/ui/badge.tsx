@@ -5,7 +5,7 @@ import type * as React from "react";
 import { cn } from "../lib/cn";
 
 const badgeVariants = cva(
-	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
+	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
 	{
 		variants: {
 			variant: {
@@ -18,9 +18,16 @@ const badgeVariants = cva(
 				ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
 				link: "text-primary underline-offset-4 [a&]:hover:underline",
 			},
+			size: {
+				default: "",
+				// Digits in a 16px circle: text-xs (12px) overflows it, and the
+				// Tailwind type scale stops there.
+				counter: "h-4 min-w-4 px-1 text-[10px] leading-none tabular-nums",
+			},
 		},
 		defaultVariants: {
 			variant: "default",
+			size: "default",
 		},
 	},
 );
@@ -28,6 +35,7 @@ const badgeVariants = cva(
 function Badge({
 	className,
 	variant = "default",
+	size = "default",
 	asChild = false,
 	...props
 }: React.ComponentProps<"span"> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
@@ -37,7 +45,8 @@ function Badge({
 		<Comp
 			data-slot="badge"
 			data-variant={variant}
-			className={cn(badgeVariants({ variant }), className)}
+			data-size={size}
+			className={cn(badgeVariants({ variant, size }), className)}
 			{...props}
 		/>
 	);

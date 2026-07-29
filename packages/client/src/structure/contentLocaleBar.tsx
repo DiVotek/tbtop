@@ -42,7 +42,8 @@ function LocaleTab({ locale, errorCount }: { locale: string; errorCount: number 
 			{errorCount > 0 && (
 				<Badge
 					variant="destructive"
-					className="ml-1 h-4 min-w-4 rounded-full px-1 text-[10px]"
+					size="counter"
+					className="ml-1"
 					data-testid={`locale-error-badge-${locale}`}
 				>
 					{errorCount}

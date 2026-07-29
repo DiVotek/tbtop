@@ -187,17 +187,20 @@ function TabTrigger({ index, tab, errorCount }: TabTriggerProps) {
 			{tab.label}
 			{tab.icon?.position === "right" && icon}
 			{tab.badge !== undefined && (
-				<span
-					className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
+				<Badge
+					size="counter"
+					variant="secondary"
+					className="ml-1 bg-muted-foreground/15"
 					data-testid={`tab-badge-${tab.label}`}
 				>
 					{tab.badge}
-				</span>
+				</Badge>
 			)}
 			{errorCount > 0 && (
 				<Badge
 					variant="destructive"
-					className="ml-1 h-4 min-w-4 rounded-full px-1 text-[10px]"
+					size="counter"
+					className="ml-1"
 					data-testid={`tab-error-badge-${tab.label}`}
 				>
 					{errorCount}

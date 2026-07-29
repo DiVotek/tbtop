@@ -11,7 +11,9 @@ function ToggleGroup({
 		<ToggleGroupPrimitive.Root
 			data-slot="toggle-group"
 			className={cn(
-				"inline-flex items-center rounded-md border border-input shadow-xs",
+				// w-fit: inline-flex blockifies inside a flex parent, where the
+				// default stretch would otherwise widen the group to the column.
+				"inline-flex w-fit items-center rounded-md border border-input shadow-xs",
 				className,
 			)}
 			{...props}
@@ -27,7 +29,7 @@ function ToggleGroupItem({
 		<ToggleGroupPrimitive.Item
 			data-slot="toggle-group-item"
 			className={cn(
-				"inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium transition-colors outline-none first:rounded-l-[5px] last:rounded-r-[5px] hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground [&:not(:first-child)]:border-l [&:not(:first-child)]:border-input",
+				"inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium transition-colors outline-none first:rounded-l-sm last:rounded-r-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground [&:not(:first-child)]:border-l [&:not(:first-child)]:border-input",
 				className,
 			)}
 			{...props}
