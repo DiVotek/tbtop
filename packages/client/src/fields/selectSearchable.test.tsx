@@ -10,6 +10,20 @@ const CHOICES = [
 ];
 
 describe("Select field — static searchable", () => {
+	test("a selected value hides the placeholder so the two never show at once", () => {
+		const { getByTestId } = render(
+			<SelectForm
+				name="fruit"
+				value="banana"
+				onChange={() => {}}
+				options={{ options: CHOICES, searchable: true }}
+			/>,
+		);
+		const input = getByTestId("select-search-fruit") as HTMLInputElement;
+		expect(input.placeholder).toBe("");
+		expect(getByTestId("select-label-fruit").textContent).toBe("Banana");
+	});
+
 	test("Select searchable: filter input appears when searchable is true", async () => {
 		const { container } = render(
 			<SelectForm
