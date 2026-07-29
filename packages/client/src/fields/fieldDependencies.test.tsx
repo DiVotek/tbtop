@@ -290,4 +290,28 @@ describe("RelationForm dependencies", () => {
 		await waitFor(() => expect(loadedDeps.at(-1)).toEqual({ country_id: "9" }));
 		expect((cap.ctrls.at(-1) as FormController).data.city_id).toBe("2");
 	});
+
+	test("keepValue keeps the control mounted while the new label resolves", async () => {
+		const gate = Promise.withResolvers<Row>();
+		let loads = 0;
+		const opts: RelationOptionsBag = {
+			query: mock(async () => ROWS),
+			onLoad: mock(async (ctx: unknown, value: string) => {
+				loads += 1;
+				return loads === 1 ? onLoad(ctx, value) : gate.promise;
+			}),
+			optionLabel,
+			optionValue,
+			dependsOn: ["country_id"],
+			keepValue: true,
+		};
+		const { cap, container } = renderRelation(opts, { country_id: "5", city_id: "2" });
+
+		await waitFor(() => expect(container.textContent).toContain("Lviv"));
+		act(() => (cap.ctrls.at(-1) as FormController).set("country_id", "9"));
+
+		await waitFor(() => expect(loads).toBe(2));
+		expect(container.querySelector('[data-testid="relation-city_id"]')).not.toBeNull();
+		act(() => gate.resolve(ROWS[1] as Row));
+	});
 });

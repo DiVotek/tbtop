@@ -23,6 +23,11 @@ export interface AsyncMultiOptionsBag {
 	optionValue?: (row: unknown) => string;
 }
 
+interface LabelCache {
+	key: number | string;
+	labels: Record<string, string>;
+}
+
 type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: Record<string, string> };
 
 const ID_SEPARATOR = "";
@@ -33,14 +38,33 @@ export interface SingleResolveArgs {
 	value: string | null;
 	opts: AsyncSingleOptionsBag;
 	refetchKey?: number | string;
+	/** Labels the caller already holds (e.g. rows from query()); never re-resolved. */
+	knownLabels?: Record<string, string>;
 }
 
+/**
+ * Labels accumulate across value changes so re-selecting a row the dropdown
+ * already listed doesn't blank the control. The cache belongs to one
+ * refetchKey: new deps can map the same id to a different row.
+ */
+function useLabelCache(refetchKey: number | string, state: ResolvedState): { current: LabelCache } {
+	const cacheRef = useRef<LabelCache>({ key: refetchKey, labels: {} });
+	if (cacheRef.current.key !== refetchKey) {
+		cacheRef.current = { key: refetchKey, labels: {} };
+	} else if (state.kind === "ready") {
+		cacheRef.current.labels = state.labels;
+	}
+	return cacheRef;
+}
+
+// oxlint-disable-next-line max-lines-per-function -- hook: effect + refs can't split without breaking hook rules
 export function useSingleResolvedLabel({
 	ctx,
 	fieldName,
 	value,
 	opts,
 	refetchKey = 0,
+	knownLabels,
 }: SingleResolveArgs): ResolvedState {
 	const warnedRef = useRef(false);
 	const ctxRef = useRef(ctx);
@@ -51,39 +75,42 @@ export function useSingleResolvedLabel({
 	const [state, setState] = useState<ResolvedState>(() =>
 		id === "" ? { kind: "ready", labels: {} } : { kind: "loading" },
 	);
+	const cacheRef = useLabelCache(refetchKey, state);
+	const knownRef = useRef(knownLabels);
+	knownRef.current = knownLabels;
 
 	useEffect(() => {
-		if (id === "") {
-			setState({ kind: "ready", labels: {} });
+		const cached = cacheRef.current.labels;
+		const known = { ...knownRef.current, ...cached };
+		if (id === "" || known[id] !== undefined) {
+			setState({ kind: "ready", labels: known });
 			return;
 		}
-		const { onLoad, optionLabel, optionValue } = optsRef.current;
+		const { onLoad } = optsRef.current;
 		if (!onLoad) {
 			warnMissingOnLoad(warnedRef, fieldName);
-			setState({ kind: "ready", labels: {} });
+			setState({ kind: "ready", labels: cached });
 			return;
 		}
 		let cancelled = false;
 		setState({ kind: "loading" });
 		onLoad(ctxRef.current, id).then(
 			(row) => {
-				if (cancelled) {
-					return;
+				if (!cancelled) {
+					const labels = mergeLabel({ cached, id, row, opts: optsRef.current });
+					setState({ kind: "ready", labels });
 				}
-				const v = optionValue ? String(optionValue(row)) : id;
-				const lbl = optionLabel ? optionLabel(row) : v;
-				setState({ kind: "ready", labels: { [v]: lbl } });
 			},
 			() => {
 				if (!cancelled) {
-					setState({ kind: "ready", labels: {} });
+					setState({ kind: "ready", labels: cached });
 				}
 			},
 		);
 		return () => {
 			cancelled = true;
 		};
-	}, [id, fieldName, refetchKey]);
+	}, [id, fieldName, refetchKey, cacheRef]);
 	return state;
 }
 
@@ -146,6 +173,18 @@ export function useMultiResolvedLabels({
 		};
 	}, [idsKey, fieldName]);
 	return state;
+}
+
+interface MergeLabelArgs {
+	cached: Record<string, string>;
+	id: string;
+	row: unknown;
+	opts: AsyncSingleOptionsBag;
+}
+
+function mergeLabel({ cached, id, row, opts }: MergeLabelArgs): Record<string, string> {
+	const value = opts.optionValue ? String(opts.optionValue(row)) : id;
+	return { ...cached, [value]: opts.optionLabel ? opts.optionLabel(row) : value };
 }
 
 function warnMissingOnLoad(warnedRef: { current: boolean }, fieldName: string): void {
