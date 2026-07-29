@@ -33,7 +33,10 @@ export function TopbarSidebarFrame({
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					className="hidden lg:inline-flex"
+					// max-lg:hidden, not `hidden lg:inline-flex`: the latter collides with
+					// Button's own `inline-flex` in tailwind-merge and drops it, leaving
+					// the icon uncentred.
+					className="max-lg:hidden"
 					data-testid="sidebar-collapse"
 					aria-label={t("nav.open_sidebar")}
 					aria-pressed={collapsed}
