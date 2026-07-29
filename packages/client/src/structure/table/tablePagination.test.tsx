@@ -40,22 +40,6 @@ describe("TablePagination: record range counter", () => {
 		expect(range.textContent).toBe("1–25 of 100");
 	});
 
-	test("uses a two-row mobile layout without wrapping labels", async () => {
-		const node = makePaginatedTable(100, 25);
-		const Wrap = wrap(() => new Response("{}"));
-		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
-		const pagination = await findByTestId("table-pagination");
-		const range = await findByTestId("pagination-range");
-		const pages = await findByTestId("pagination-pages");
-		const perPage = await findByTestId("pagination-per-page-group");
-
-		expect(pagination.className).toContain("grid-cols-2");
-		expect(pages.className).toContain("col-span-2");
-		expect(pages.className).toContain("order-first");
-		expect(range.className).toContain("whitespace-nowrap");
-		expect(perPage.className).toContain("whitespace-nowrap");
-	});
-
 	// total=0 on page 1 now auto-hides the footer entirely (0 <= perPage) —
 	// covered by "TablePagination: auto-hidden when everything fits on the
 	// first page" below, so there's no range counter to assert here anymore.

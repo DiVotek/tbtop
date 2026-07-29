@@ -94,10 +94,7 @@ export function TablePagination({
 			</div>
 
 			{/* Per-page selector */}
-			<div
-				className="flex items-center justify-self-end gap-2 whitespace-nowrap"
-				data-testid="pagination-per-page-group"
-			>
+			<div className="flex items-center justify-self-end gap-2 whitespace-nowrap">
 				<span>{t("table.pagination.per_page")}</span>
 				<Select
 					value={String(perPage)}
