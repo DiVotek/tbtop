@@ -258,8 +258,8 @@ describe("Table integration", () => {
 			fireEvent.click(refetch);
 		});
 		// Fresh rows swapped in; the new row's checkbox is unselected.
-		const swapped = (await findByTestId("table-select-b")) as HTMLInputElement;
-		expect(swapped.checked).toBe(false);
+		const swapped = await findByTestId("table-select-b");
+		expect(swapped.getAttribute("aria-checked")).toBe("false");
 	});
 
 	test("Table action setQuery merges params and refresh does not change params", async () => {

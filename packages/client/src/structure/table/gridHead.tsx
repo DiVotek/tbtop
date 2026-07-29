@@ -4,6 +4,7 @@
  * the trailing row-actions slot.
  */
 import { useTranslation } from "../../i18n/i18n";
+import { Checkbox } from "../../ui/checkbox";
 import type { TableColumn } from "../types";
 import { ColumnSearchInput } from "./columnSearchInput";
 import { SortableHeader } from "./tableHeader";
@@ -33,16 +34,10 @@ export function TableHead(props: TableHeadProps) {
 				{props.showReorderColumn && <th className="w-8 px-2 py-2" aria-hidden="true" />}
 				{props.hasBulk && (
 					<th className="w-8 px-3 py-2">
-						<input
-							type="checkbox"
-							className="size-4 cursor-pointer accent-primary"
-							checked={props.allSelected}
-							ref={(el) => {
-								if (el) {
-									el.indeterminate = props.someSelected;
-								}
-							}}
-							onChange={(e) => props.onSelectAll(e.target.checked)}
+						<Checkbox
+							className="cursor-pointer"
+							checked={props.someSelected ? "indeterminate" : props.allSelected}
+							onCheckedChange={(next) => props.onSelectAll(next === true)}
 							aria-label={t("table.select_all")}
 							data-testid="table-select-all"
 						/>

@@ -6,6 +6,7 @@ import { router } from "@inertiajs/react";
 import type { CSSProperties, ReactNode } from "react";
 import { useRef, useState } from "react";
 import { cn } from "../../lib/cn";
+import { Checkbox } from "../../ui/checkbox";
 import { isExternalUrl } from "../actionBlock";
 import { useClientActionContext } from "../actionContext";
 import { ActionModal } from "../modalActionBlock";
@@ -119,11 +120,10 @@ export function TableRow(props: TableRowProps) {
 				{props.leadingCell}
 				{props.hasBulk && (
 					<td className="px-3 py-2">
-						<input
-							type="checkbox"
-							className="size-4 cursor-pointer accent-primary"
+						<Checkbox
+							className="cursor-pointer"
 							checked={props.selected}
-							onChange={() => id && props.onToggle(id)}
+							onCheckedChange={() => id && props.onToggle(id)}
 							data-testid={id ? `table-select-${id}` : undefined}
 						/>
 					</td>
