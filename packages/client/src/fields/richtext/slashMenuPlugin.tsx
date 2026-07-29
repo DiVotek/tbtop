@@ -7,6 +7,7 @@ import { $getSelection, $isRangeSelection, TextNode } from "lexical";
 import { Code, Heading1, Heading2, Heading3, List, ListOrdered, Quote } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { cn } from "../../lib/cn";
 
 interface SlashCommand {
 	label: string;
@@ -16,10 +17,6 @@ interface SlashCommand {
 }
 
 const ICON_SIZE = 16;
-
-function cn(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(" ");
-}
 
 function caretPosition(editorRoot: HTMLElement | null): { top: number; left: number } | null {
 	const nativeSelection = window.getSelection();

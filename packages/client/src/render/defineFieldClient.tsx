@@ -55,6 +55,7 @@ function formPropsFrom<P>(props: RenderProps<P>): FieldFormProps<P> {
 		onChange: binding.onChange,
 		onBlur: binding.onBlur,
 		disabled: binding.disabled,
+		invalid: binding.invalid,
 		options: props.options as unknown as Record<string, unknown>,
 	};
 }

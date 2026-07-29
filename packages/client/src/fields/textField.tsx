@@ -23,6 +23,7 @@ export function TextForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
 }: FieldFormProps<string, TextOptions>) {
 	const inputId = fieldId({ id, name });
@@ -41,6 +42,7 @@ export function TextForm({
 			onChange={onChange}
 			onBlur={onBlur}
 			disabled={disabled}
+			aria-invalid={invalid || undefined}
 			className={inputClass}
 			placeholder={placeholder}
 		/>
@@ -52,6 +54,7 @@ export function TextForm({
 			onChange={(e) => onChange(e.target.value)}
 			onBlur={onBlur}
 			disabled={disabled}
+			aria-invalid={invalid || undefined}
 			className={inputClass}
 			placeholder={placeholder}
 		/>

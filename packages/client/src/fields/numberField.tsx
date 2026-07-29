@@ -17,6 +17,7 @@ export function NumberForm({
 	value,
 	onChange,
 	disabled,
+	invalid,
 	options,
 }: FieldFormProps<number, NumberOptions>) {
 	return (
@@ -27,6 +28,7 @@ export function NumberForm({
 			defaultValue={typeof value === "number" ? String(value) : ""}
 			onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
 			disabled={disabled}
+			aria-invalid={invalid || undefined}
 			placeholder={options?.placeholder}
 			step={options?.step}
 		/>

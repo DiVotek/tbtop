@@ -5,6 +5,9 @@ export interface FieldFormProps<P = unknown, TOptions = Record<string, unknown>>
 	onChange: (next: P | null) => void;
 	onBlur?: () => void;
 	disabled?: boolean;
+	/** Spread onto the control as `aria-invalid` — the shared primitives style their
+	 * error state off it, otherwise the message shows but the control looks valid. */
+	invalid?: boolean;
 	options?: TOptions;
 }
 

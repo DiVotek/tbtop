@@ -3,6 +3,7 @@ import { MinusIcon } from "lucide-react";
 import { type ComponentProps, useContext } from "react";
 
 import { cn } from "../lib/cn";
+import { inputFontClass } from "./input";
 
 function InputOTP({
 	className,
@@ -16,7 +17,7 @@ function InputOTP({
 				"flex items-center gap-2 has-disabled:opacity-50",
 				containerClassName,
 			)}
-			className={cn("disabled:cursor-not-allowed", className)}
+			className={cn("disabled:cursor-not-allowed", inputFontClass, className)}
 			{...props}
 		/>
 	);

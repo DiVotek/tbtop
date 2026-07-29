@@ -133,4 +133,34 @@ describe("field helperText with validation error", () => {
 		const errorEl = await findByTestId("field-error-title");
 		expect(errorEl.textContent).toBe("Too long.");
 	});
+
+	test("marks the control aria-invalid so the primitive can render its error state", async () => {
+		const node = s.form({ query: async () => ({ title: "abc" }) }, [
+			fieldNode("text", "title", { label: "Title" }),
+			s.action({
+				name: "save",
+				handler: async () => {
+					const err = new Error("validation") as Error & {
+						fields: Record<string, string>;
+					};
+					err.fields = { title: "Too long." };
+					throw err;
+				},
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await findByTestId("action-save");
+		const input = container.querySelector('input[name="title"]');
+		expect(input).not.toBeNull();
+		expect(input?.getAttribute("aria-invalid")).toBeNull();
+
+		await act(async () => {
+			fireEvent.click(await findByTestId("action-save"));
+		});
+
+		await findByTestId("field-error-title");
+		expect(input?.getAttribute("aria-invalid")).toBe("true");
+	});
 });

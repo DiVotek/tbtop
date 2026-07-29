@@ -41,12 +41,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "../../i18n/i18n";
+import { cn } from "../../lib/cn";
 
 const ICON_SIZE = 18;
-
-function cn(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(" ");
-}
 
 interface ToolbarButtonProps {
 	onClick: () => void;

@@ -23,6 +23,7 @@ export function PasswordForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
 }: FieldFormProps<string, PasswordOptionsBag>) {
 	const t = useTranslation();
@@ -42,6 +43,7 @@ export function PasswordForm({
 				onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
 				onBlur={onBlur}
 				disabled={disabled}
+				aria-invalid={invalid || undefined}
 				className="pr-9"
 			/>
 			<button
