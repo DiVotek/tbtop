@@ -2,6 +2,7 @@ import { router } from "@inertiajs/react";
 import { MenuIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { Button } from "../ui/button";
 import { ResponsiveDialog, ResponsiveDialogContent } from "../ui/revola";
 
 interface SidebarDrawerProps {
@@ -28,15 +29,16 @@ export function SidebarDrawer({ sidebar }: SidebarDrawerProps) {
 
 	return (
 		<>
-			<button
-				type="button"
-				className="-ml-1 mr-auto inline-flex items-center justify-center rounded-md p-2 hover:bg-accent lg:hidden"
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				className="-ml-1 mr-auto lg:hidden"
 				data-testid="sidebar-trigger"
 				aria-label={t("nav.open_sidebar")}
 				onClick={() => setOpen(true)}
 			>
-				<MenuIcon className="size-5" />
-			</button>
+				<MenuIcon />
+			</Button>
 			<ResponsiveDialog onlyDrawer direction="left" open={open} onOpenChange={setOpen}>
 				<ResponsiveDialogContent className="flex flex-col gap-4 overflow-y-auto rounded-lg border p-4">
 					{sidebar}

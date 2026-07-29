@@ -45,7 +45,7 @@ export function SortableRow(props: SortableRowProps) {
 		<td className="w-8 px-2 py-2">
 			<button
 				type="button"
-				className="flex cursor-grab touch-none items-center text-muted-foreground active:cursor-grabbing"
+				className="flex cursor-grab touch-none items-center rounded-sm text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing"
 				aria-label={t("table.reorder_handle", "Reorder row")}
 				data-testid={`reorder-handle-${id}`}
 				{...attributes}

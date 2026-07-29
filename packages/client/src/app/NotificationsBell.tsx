@@ -2,6 +2,7 @@ import { BellIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import {
 	ResponsiveDialog,
 	ResponsiveDialogClose,
@@ -43,13 +44,14 @@ export function NotificationsBell() {
 			}}
 		>
 			<ResponsiveDialogTrigger asChild>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="icon-sm"
 					aria-label={ariaLabel}
-					className="relative flex size-8 items-center justify-center rounded-md hover:bg-accent"
+					className="relative"
 					data-testid="notifications-trigger"
 				>
-					<BellIcon className="size-4" aria-hidden />
+					<BellIcon aria-hidden />
 					{unreadCount > 0 && (
 						<Badge
 							variant="destructive"
@@ -60,7 +62,7 @@ export function NotificationsBell() {
 							{unreadCount > 99 ? "99+" : unreadCount}
 						</Badge>
 					)}
-				</button>
+				</Button>
 			</ResponsiveDialogTrigger>
 			<ResponsiveDialogContent
 				showCloseButton={false}
