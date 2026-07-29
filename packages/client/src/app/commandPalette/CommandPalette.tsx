@@ -99,7 +99,7 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 					onKeyDown={onKeyDown}
 					placeholder={data.placeholder ?? DEFAULT_PLACEHOLDER}
 					aria-label={data.placeholder ?? DEFAULT_PLACEHOLDER}
-					className="w-full border-b bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
+					className="w-full border-b bg-transparent px-4 py-3 text-base outline-none placeholder:text-muted-foreground md:text-sm"
 					data-testid="command-palette-input"
 				/>
 				<ul className="max-h-80 overflow-y-auto p-1">

@@ -1,5 +1,8 @@
 import { type KeyboardEvent, useState } from "react";
+import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
+import { cn } from "../lib/cn";
+import { inputCompactFontClass, inputFontClass } from "../ui/input";
 import { type FieldFormProps, fieldId } from "./fieldProps";
 import { Chips, type TagsOptionsBag } from "./tagsShared";
 
@@ -12,6 +15,7 @@ export function OpenTagsForm({
 	disabled,
 }: FieldFormProps<string[], TagsOptionsBag>) {
 	const t = useTranslation();
+	const density = useDensity();
 	const current = Array.isArray(value) ? value : [];
 	const [input, setInput] = useState("");
 	function commit(): void {
@@ -38,7 +42,10 @@ export function OpenTagsForm({
 	}
 	return (
 		<div
-			className="flex flex-wrap items-center gap-2 rounded border border-input bg-background px-2 py-1"
+			className={cn(
+				"flex min-h-9 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-2 py-1",
+				density === "compact" && "min-h-8",
+			)}
 			data-testid={`tags-${name}`}
 		>
 			<Chips
@@ -55,7 +62,11 @@ export function OpenTagsForm({
 				onChange={(e) => setInput(e.target.value)}
 				onKeyDown={onKeyDown}
 				onBlur={onInputBlur}
-				className="flex-1 bg-transparent text-sm outline-none"
+				className={cn(
+					"min-w-[120px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground",
+					inputFontClass,
+					density === "compact" && inputCompactFontClass,
+				)}
 				placeholder={t("field.tags.placeholder")}
 			/>
 		</div>

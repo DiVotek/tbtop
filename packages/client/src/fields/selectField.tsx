@@ -5,7 +5,7 @@ import { cn } from "../lib/cn";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
-import { Input, inputCompactTextClass, inputTextClass } from "../ui/input";
+import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
@@ -262,7 +262,7 @@ function SearchableStaticSelect({
 					className={cn(
 						"pointer-events-none absolute inset-y-0 right-0 left-0 flex min-w-0 items-center truncate text-foreground",
 						inputTextClass,
-						density === "compact" && inputCompactTextClass,
+						density === "compact" && inputCompactFontClass,
 					)}
 				>
 					{currentLabel}
