@@ -24,6 +24,10 @@ class RelationSearchPage extends Page
                     ->labelKey('name')
                     ->searchable()
                     ->query(fn () => AuthorModel::query()),
+                $s->relation('translated_id')
+                    ->labelKey('title')
+                    ->searchable()
+                    ->query(fn () => AuthorModel::query()),
                 $s->relation('dependent_id')
                     ->labelKey('name')
                     ->dependsOn('author_id')
