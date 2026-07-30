@@ -8,6 +8,7 @@ import { useTranslation } from "../../i18n/i18n";
 import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
+import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { ModalShell, type ModalSize } from "../../ui/modal-shell";
 import type { StructureNode } from "../types";
@@ -42,12 +43,9 @@ function FilterBadge({ count }: { count: number }) {
 		return null;
 	}
 	return (
-		<span
-			className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] text-primary-foreground"
-			data-testid="filter-badge"
-		>
+		<Badge size="counter" className="ml-1" data-testid="filter-badge">
 			{count}
-		</span>
+		</Badge>
 	);
 }
 

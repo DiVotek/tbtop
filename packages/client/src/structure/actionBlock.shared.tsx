@@ -116,7 +116,8 @@ export function ActionLabel({ opts }: { opts: ActionOptionsBag }) {
 	const badge = opts.badge ? (
 		<Badge
 			variant={opts.badgeColor === "danger" ? "destructive" : "default"}
-			className="absolute -top-1.5 -right-1.5 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"
+			size="counter"
+			className="absolute -top-1.5 -right-1.5"
 			data-testid="action-badge"
 		>
 			{opts.badge}

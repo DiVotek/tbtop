@@ -1,11 +1,11 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../lib/cn";
 
 // Inlined shadcn Alert primitive — no external dep needed for this simple component.
 
 const alertVariants = cva(
-	"relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+	"flex w-full gap-3 rounded-lg border px-4 py-3 text-sm [&>svg]:mt-0.5 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-current",
 	{
 		variants: {
 			variant: {
@@ -33,10 +33,18 @@ export type { AlertVariant };
 
 export interface AlertProps
 	extends HTMLAttributes<HTMLDivElement>,
-		VariantProps<typeof alertVariants> {}
+		VariantProps<typeof alertVariants> {
+	/** Optional leading icon, laid out beside the text rather than over it. */
+	icon?: ReactNode;
+}
 
-export function Alert({ className, variant, ...props }: AlertProps) {
-	return <div role="alert" className={cn(alertVariants({ variant }), className)} {...props} />;
+export function Alert({ className, variant, icon, children, ...props }: AlertProps) {
+	return (
+		<div role="alert" className={cn(alertVariants({ variant }), className)} {...props}>
+			{icon}
+			<div className="min-w-0 flex-1">{children}</div>
+		</div>
+	);
 }
 
 export interface AlertTitleProps extends HTMLAttributes<HTMLParagraphElement> {}

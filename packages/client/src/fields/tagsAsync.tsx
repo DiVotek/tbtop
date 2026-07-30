@@ -63,7 +63,7 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 					disabled={props.disabled}
 					onChange={(e) => setSearch(e.target.value)}
 					className={cn(
-						"min-w-[120px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground",
+						"min-w-32 flex-1 bg-transparent outline-none placeholder:text-muted-foreground",
 						inputFontClass,
 						density === "compact" && inputCompactFontClass,
 					)}

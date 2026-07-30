@@ -2,6 +2,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { useDebounce } from "../../lib/useDebounce";
+import { Badge } from "../../ui/badge";
 import { Input } from "../../ui/input";
 import type { ModalSize } from "../../ui/modal-shell";
 import { NodeIcon } from "../../ui/node-icon";
@@ -168,12 +169,14 @@ export function TableTabBar({ tabs, activeTab, tabCounts, onSelect }: TableTabBa
 							{tab.label}
 							{tab.icon?.position === "right" && icon}
 							{tab.count && tabCounts?.[tab.name] !== undefined && (
-								<span
-									className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] tabular-nums"
+								<Badge
+									size="counter"
+									variant="secondary"
+									className="ml-1 bg-muted-foreground/15"
 									data-testid={`table-tab-count-${tab.name}`}
 								>
 									{tabCounts[tab.name]}
-								</span>
+								</Badge>
 							)}
 						</>
 					);

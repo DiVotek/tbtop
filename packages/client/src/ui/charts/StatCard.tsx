@@ -46,12 +46,13 @@ const DELTA_COLORS: Record<DeltaDirection, string> = {
 	flat: "text-muted-foreground",
 };
 
-// Concrete values — recharts needs a paintable color, not a class name.
+// recharts needs a paintable color, not a class name. The hex fallbacks matter:
+// an undefined var() in `stroke` renders nothing rather than a default color.
 const SPARKLINE_COLORS: Record<SparklineColorToken, string> = {
-	success: "#10b981", // emerald-500
-	warning: "#f59e0b", // amber-500
-	danger: "#ef4444", // red-500
-	primary: "var(--primary)",
+	success: "var(--chart-success, #10b981)",
+	warning: "var(--chart-warning, #f59e0b)",
+	danger: "var(--chart-danger, #ef4444)",
+	primary: "var(--primary, #2463eb)",
 };
 
 const BOTTOM_SPARKLINE_HEIGHT = 32;

@@ -284,13 +284,22 @@ describe("StatCard", () => {
 
 describe("resolveSparklineColor", () => {
 	test("maps semantic tokens to paintable colors", () => {
-		expect(resolveSparklineColor("success", "fallback")).toBe("#10b981");
-		expect(resolveSparklineColor("warning", "fallback")).toBe("#f59e0b");
-		expect(resolveSparklineColor("danger", "fallback")).toBe("#ef4444");
-		expect(resolveSparklineColor("primary", "fallback")).toBe("var(--primary)");
+		expect(resolveSparklineColor("success", "fallback")).toBe("var(--chart-success, #10b981)");
+		expect(resolveSparklineColor("warning", "fallback")).toBe("var(--chart-warning, #f59e0b)");
+		expect(resolveSparklineColor("danger", "fallback")).toBe("var(--chart-danger, #ef4444)");
+		expect(resolveSparklineColor("primary", "fallback")).toBe("var(--primary, #2463eb)");
 	});
 
 	test("keeps the chart default when no token is given", () => {
 		expect(resolveSparklineColor(undefined, "var(--chart-1)")).toBe("var(--chart-1)");
+	});
+
+	// An undefined var() in an SVG stroke paints nothing, so every token needs a literal.
+	test("every token carries a literal fallback", () => {
+		for (const token of ["success", "warning", "danger", "primary"] as const) {
+			expect(resolveSparklineColor(token, undefined)).toMatch(
+				/^var\(--[\w-]+, #[0-9a-f]{6}\)$/,
+			);
+		}
 	});
 });

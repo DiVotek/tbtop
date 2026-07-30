@@ -56,7 +56,8 @@ export function NotificationsBell() {
 						<Badge
 							variant="destructive"
 							aria-hidden
-							className="absolute -top-1 -right-1 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"
+							size="counter"
+							className="absolute -top-1 -right-1"
 							data-testid="notifications-badge"
 						>
 							{unreadCount > 99 ? "99+" : unreadCount}
