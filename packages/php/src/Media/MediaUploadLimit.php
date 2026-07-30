@@ -8,7 +8,11 @@ final class MediaUploadLimit
 
     public static function kilobytes(): int
     {
-        return (int) config('tbtop-admin.media.max_size', self::DEFAULT_KILOBYTES);
+        // config() only falls back when the key is absent. A published config
+        // using env() with no value yields null, which would cast to max:0.
+        $configured = config('tbtop-admin.media.max_size');
+
+        return (int) ($configured === null || $configured === '' ? self::DEFAULT_KILOBYTES : $configured);
     }
 
     public static function bytes(): int
