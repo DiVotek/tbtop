@@ -1,4 +1,5 @@
 import "../css/app.css";
+import "@tbtop/inertia-admin/styles.css";
 
 import { createInertiaApp } from "@inertiajs/react";
 import { defineFieldClient, Input, registerBlock, registerIcon } from "@tbtop/inertia-admin";
