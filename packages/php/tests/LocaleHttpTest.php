@@ -1,5 +1,7 @@
 <?php
 
+use Tbtop\Admin\Pages\MediaLibraryPage;
+
 it('locale endpoint writes the session and redirects back', function () {
     $response = $this->from('/admin/posts/1/edit')
         ->post('/admin/locale', ['locale' => 'en']);
@@ -59,4 +61,15 @@ it('localizes validation messages from the session locale on submit', function (
 
     $errors = session('errors')->get('title');
     expect($errors[0])->toContain('обов’язкове');
+});
+
+it('localizes the media library page without translating its stable navigation group key', function () {
+    app()->setLocale('uk');
+
+    $page = new MediaLibraryPage;
+    $nav = $page::nav();
+
+    expect($page->title())->toBe('Медіатека')
+        ->and($nav['label'])->toBe('Медіатека')
+        ->and($nav['group'])->toBe('Content');
 });

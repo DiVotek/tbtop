@@ -19,12 +19,16 @@ class MediaLibraryPage extends Page
 
     public function title(): string
     {
-        return 'Media Library';
+        return (string) __('tbtop-admin::admin.media.library.title');
     }
 
     public static function nav(): ?array
     {
-        return ['group' => 'Content', 'label' => 'Media Library', 'order' => 10];
+        return [
+            'group' => 'Content',
+            'label' => (string) __('tbtop-admin::admin.media.library.title'),
+            'order' => 10,
+        ];
     }
 
     public function view(S $s): Node

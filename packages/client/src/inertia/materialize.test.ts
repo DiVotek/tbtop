@@ -332,12 +332,32 @@ describe("materialize actions", () => {
 		);
 		const modal = opts(out).modal as {
 			title: string;
-			body: { options: { children: { options: { handler: unknown } }[] } };
+			body: { options: { children: { options: { handler: unknown; label: string } }[] } };
 		};
 		expect(modal.title).toBe("Really?");
 		expect(opts(out).handler).toBeUndefined();
 		const confirmButton = modal.body.options.children[0];
+		expect(confirmButton?.options.label).toBe("Delete");
 		expect(typeof confirmButton?.options.handler).toBe("function");
+	});
+
+	it("translates the fallback label for an unlabeled confirm button", () => {
+		const out = materialize(
+			node(
+				"action",
+				{
+					confirm: { title: "Really?" },
+					spec: { type: "server", needs: [] },
+				},
+				"delete",
+			),
+			{ ...BASE, t: (key) => `translated:${key}` },
+		);
+		const modal = opts(out).modal as {
+			body: { options: { children: { options: { label: string } }[] } };
+		};
+
+		expect(modal.body.options.children[0]?.options.label).toBe("translated:action.confirm");
 	});
 });
 

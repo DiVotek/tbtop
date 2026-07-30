@@ -5,7 +5,8 @@ import { renderAsyncError } from "../structure/renderAsyncError";
 import { useMultiResolvedLabels } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import type { FieldFormProps } from "./fieldProps";
-import { ComboboxOption, MultiComboboxShell, matchesQuery } from "./selectMultiShell";
+import { ComboboxOption, matchesQuery } from "./selectMultiOption";
+import { MultiComboboxShell } from "./selectMultiShell";
 import type {
 	SelectCreateConfig,
 	SelectMultiOptionsBag,
