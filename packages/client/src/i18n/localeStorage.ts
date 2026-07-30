@@ -1,4 +1,6 @@
-const LOCALE_KEY = "tbtop:locale";
+import { storageKey } from "../app/storageKey";
+
+const LOCALE_KEY = storageKey("locale");
 
 export function readStoredLocale(): string | undefined {
 	if (typeof window === "undefined") {

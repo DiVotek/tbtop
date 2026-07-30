@@ -1,5 +1,6 @@
 <?php
 
+use Tbtop\Admin\Dsl\RelationSearchLimit;
 use Tbtop\Admin\Media\MediaUploadLimit;
 
 return [
@@ -15,6 +16,13 @@ return [
 
     // Default content locale used for field validation rules.
     'default_content_locale' => 'en',
+
+    // Relation field configuration.
+    'relation' => [
+        // Rows returned by the relation-search endpoint. Fields override this
+        // with ->searchLimit(); non-positive values fall back to the default.
+        'search_cap' => RelationSearchLimit::DEFAULT_RESULTS,
+    ],
 
     // Media manager configuration. Global on purpose: media storage is
     // shared across panels (per-panel media scoping is tenancy — out of scope).

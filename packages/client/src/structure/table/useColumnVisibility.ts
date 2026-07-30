@@ -3,6 +3,7 @@
  * localStorage under a table-name-derived key. Extracted from tableBlock.tsx.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { storageKey } from "../../app/storageKey";
 import type { TableColumn } from "../types";
 
 export interface ColumnVisibility {
@@ -11,31 +12,31 @@ export interface ColumnVisibility {
 }
 
 export function useColumnVisibility(columns: TableColumn[], tableName: string): ColumnVisibility {
-	// Key by table name; fall back to a col-join for unnamed tables to preserve
-	// backward compat with existing persisted state + tests.
-	const storageKey = tableName
-		? `tbtop.table.${tableName}.columns`
-		: `tbtop.table.${columns.map((c) => c.name).join("-")}.columns`;
+	// Key by table name; unnamed tables fall back to a col-join so their state
+	// stays distinct from other tables on the page.
+	const key = tableName
+		? storageKey("table", tableName, "columns")
+		: storageKey("table", columns.map((c) => c.name).join("-"), "columns");
 
 	// Default visibility: hide columns flagged hiddenByDefault.
 	const defaultVisible = useMemo(
 		() => new Set(columns.filter((c) => c.hiddenByDefault !== true).map((c) => c.name)),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[storageKey],
+		[key],
 	);
 
 	const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultVisible);
 
 	useEffect(() => {
 		try {
-			const stored = localStorage.getItem(storageKey);
+			const stored = localStorage.getItem(key);
 			if (stored) {
 				setVisibleColumns(new Set(JSON.parse(stored) as string[]));
 			}
 		} catch {
 			// ignore storage errors
 		}
-	}, [storageKey]);
+	}, [key]);
 
 	const toggleColumn = useCallback(
 		(name: string) => {
@@ -47,14 +48,14 @@ export function useColumnVisibility(columns: TableColumn[], tableName: string): 
 					next.add(name);
 				}
 				try {
-					localStorage.setItem(storageKey, JSON.stringify([...next]));
+					localStorage.setItem(key, JSON.stringify([...next]));
 				} catch {
 					// ignore storage errors
 				}
 				return next;
 			});
 		},
-		[storageKey],
+		[key],
 	);
 
 	return { visibleColumns, toggleColumn };

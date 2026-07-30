@@ -23,8 +23,6 @@ final class RelationSearchController
 {
     use AuthorizesPage;
 
-    private const RESULT_CAP = 50;
-
     public function __invoke(Request $request): JsonResponse
     {
         $this->authorizePageGate($request);
@@ -79,7 +77,7 @@ final class RelationSearchController
             );
         }
 
-        $rows = $builder->limit(self::RESULT_CAP)->get();
+        $rows = $builder->limit($field->getSearchLimit())->get();
 
         $options = $rows->map(fn ($model) => self::toOption($model, $labelKey))
             ->values()

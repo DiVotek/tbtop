@@ -297,11 +297,11 @@ describe("MediaGrid: view toggle", () => {
 	}
 
 	beforeEach(() => {
-		window.localStorage.removeItem("tbtop.media.view");
+		window.localStorage.removeItem("tbtop:media.view");
 	});
 
 	afterEach(() => {
-		window.localStorage.removeItem("tbtop.media.view");
+		window.localStorage.removeItem("tbtop:media.view");
 	});
 
 	test("clicking the list toggle switches grid → list and persists to localStorage", async () => {
@@ -317,12 +317,12 @@ describe("MediaGrid: view toggle", () => {
 
 		expect(getByTestId("media-list")).toBeTruthy();
 		expect(queryByTestId("media-card-img1")).toBeNull();
-		expect(window.localStorage.getItem("tbtop.media.view")).toBe("list");
+		expect(window.localStorage.getItem("tbtop:media.view")).toBe("list");
 		expect(getByTestId("media-view-list").getAttribute("aria-pressed")).toBe("true");
 	});
 
 	test("restores list view from localStorage on mount", () => {
-		window.localStorage.setItem("tbtop.media.view", "list");
+		window.localStorage.setItem("tbtop:media.view", "list");
 		const { getByTestId, queryByTestId } = renderGrid();
 		expect(getByTestId("media-list")).toBeTruthy();
 		expect(queryByTestId("media-card-img1")).toBeNull();

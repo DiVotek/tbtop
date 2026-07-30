@@ -111,7 +111,7 @@ describe("Table: column visibility", () => {
 		});
 		await waitFor(() => expect(getTableHeaders(container)).not.toContain("Views"));
 
-		const key = "tbtop.table.title-views.columns";
+		const key = "tbtop:table.title-views.columns";
 		const stored = localStorage.getItem(key);
 		expect(stored).not.toBeNull();
 		const parsed = JSON.parse(stored ?? "[]") as string[];
@@ -121,7 +121,7 @@ describe("Table: column visibility", () => {
 
 	test("TableColumnVisibility: restores columns from localStorage on remount", async () => {
 		const tableId = "title-views";
-		localStorage.setItem(`tbtop.table.${tableId}.columns`, JSON.stringify(["title"]));
+		localStorage.setItem(`tbtop:table.${tableId}.columns`, JSON.stringify(["title"]));
 
 		const node = s.table({
 			query: async () => [{ id: "1", title: "Hello", views: 42 }],
