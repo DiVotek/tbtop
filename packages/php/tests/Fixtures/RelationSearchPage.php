@@ -28,6 +28,11 @@ class RelationSearchPage extends Page
                     ->labelKey('title')
                     ->searchable()
                     ->query(fn () => AuthorModel::query()),
+                $s->relation('capped_id')
+                    ->labelKey('name')
+                    ->searchable()
+                    ->searchLimit(2)
+                    ->query(fn () => AuthorModel::query()),
                 $s->relation('dependent_id')
                     ->labelKey('name')
                     ->dependsOn('author_id')

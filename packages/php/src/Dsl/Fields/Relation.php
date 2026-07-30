@@ -5,12 +5,16 @@ namespace Tbtop\Admin\Dsl\Fields;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasDependencies;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\RelationSearchLimit;
 
 final class Relation extends Field
 {
     use HasDatabaseRules;
     use HasDependencies;
     use HasServerQuery;
+
+    /** Server-only — never serialized to the wire. */
+    private ?int $searchLimit = null;
 
     protected function kind(): string
     {
@@ -32,5 +36,18 @@ final class Relation extends Field
     public function getLabelKey(): string
     {
         return (string) ($this->opts['labelKey'] ?? 'name');
+    }
+
+    /** Caps how many rows the search endpoint returns. Server-only — never serialized. */
+    public function searchLimit(int $max): static
+    {
+        $this->searchLimit = $max;
+
+        return $this;
+    }
+
+    public function getSearchLimit(): int
+    {
+        return RelationSearchLimit::resolve($this->searchLimit);
     }
 }

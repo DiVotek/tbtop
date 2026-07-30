@@ -84,11 +84,11 @@ const LOADED = {
 const params = { folder: null, search: "", page: 1, perPage: 24 };
 
 beforeEach(() => {
-	window.localStorage.removeItem("tbtop.media.view");
+	window.localStorage.removeItem("tbtop:media.view");
 });
 
 afterEach(() => {
-	window.localStorage.removeItem("tbtop.media.view");
+	window.localStorage.removeItem("tbtop:media.view");
 });
 
 describe("MediaGrid: upload progress", () => {

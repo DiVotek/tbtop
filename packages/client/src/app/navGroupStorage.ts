@@ -1,4 +1,6 @@
-const NAV_COLLAPSE_KEY = "tbtop:nav-collapsed";
+import { storageKey } from "./storageKey";
+
+const NAV_COLLAPSE_KEY = storageKey("nav-collapsed");
 
 /**
  * Per-group collapse state, keyed by the group's stable key. Best-effort:

@@ -3,10 +3,11 @@
  * localStorage. Guarded for SSR / restricted-storage environments.
  */
 import { useCallback, useState } from "react";
+import { storageKey } from "../app/storageKey";
 
 export type MediaViewMode = "grid" | "list";
 
-const STORAGE_KEY = "tbtop.media.view";
+const STORAGE_KEY = storageKey("media", "view");
 
 function readStored(): MediaViewMode {
 	try {
