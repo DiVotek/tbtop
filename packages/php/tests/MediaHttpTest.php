@@ -3,6 +3,7 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Media\MediaUploadLimit;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\Models\MediaFolder;
 
@@ -248,10 +249,43 @@ it('upload rejects disallowed mime type', function () {
 });
 
 it('upload rejects oversized file', function () {
-    // max_size in KB → 10240 KB = 10 MB; create a file larger than that
-    $file = UploadedFile::fake()->create('huge.png', 11000, 'image/png');
+    $file = UploadedFile::fake()->create(
+        'huge.png',
+        MediaUploadLimit::DEFAULT_KILOBYTES + 1,
+        'image/png',
+    );
 
     $this->postJson('/admin/api/media/upload', ['file' => $file])->assertStatus(422);
+});
+
+it('applies the configured media size ceiling to every ingestion path', function () {
+    config()->set('tbtop-admin.media.max_size', 1);
+
+    $oversized = UploadedFile::fake()->create('huge.png', 2, 'image/png');
+    $this->postJson('/admin/api/media/upload', ['file' => $oversized])->assertStatus(422);
+
+    $media = Media::create(mediaRow());
+    $replacement = UploadedFile::fake()->create('replacement.png', 2, 'image/png');
+    $this->postJson("/admin/api/media/{$media->id}/replace", ['file' => $replacement])
+        ->assertStatus(422);
+
+    $png = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    ).str_repeat("\0", 2048);
+    Http::fake(['*' => Http::response($png, 200, ['Content-Type' => 'image/png'])]);
+
+    $this->postJson('/admin/api/media/import-url', [
+        'url' => 'https://8.8.8.8/huge.png',
+    ])->assertStatus(422);
+});
+
+it('uses the package media size default when published config omits it', function () {
+    $mediaConfig = (array) config('tbtop-admin.media');
+    unset($mediaConfig['max_size']);
+    config()->set('tbtop-admin.media', $mediaConfig);
+
+    expect(MediaUploadLimit::kilobytes())->toBe(MediaUploadLimit::DEFAULT_KILOBYTES)
+        ->and(MediaUploadLimit::bytes())->toBe(MediaUploadLimit::DEFAULT_KILOBYTES * 1024);
 });
 
 // ---- POST /admin/api/media/import-url ----

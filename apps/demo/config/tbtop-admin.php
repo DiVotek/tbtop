@@ -1,6 +1,7 @@
 <?php
 
 use App\Admin\AdminPanel;
+use Tbtop\Admin\Media\MediaUploadLimit;
 
 return [
     // Registered panels. Prefix, guard, middleware, pages, UI locales and
@@ -30,13 +31,13 @@ return [
             'audio/*',
             'video/*',
         ],
-        'max_size' => 10240,
+        // Laravel validation kilobytes; shared by uploads, replacements, and URL imports.
+        'max_size' => MediaUploadLimit::DEFAULT_KILOBYTES,
         'profiles' => [
             'thumb' => [320, 320],
         ],
         'url_import' => [
             'timeout' => 30,
-            'max_size' => 10240,
         ],
     ],
 ];
