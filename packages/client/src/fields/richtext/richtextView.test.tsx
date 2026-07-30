@@ -18,4 +18,11 @@ describe("RichtextView", () => {
 			expect(container.textContent).toContain('say "hi" \\ bye');
 		});
 	});
+
+	it("keeps plain text that merely starts with an angle bracket", async () => {
+		const { container } = render(<RichtextView state="<3 <not html> stays" />);
+		await waitFor(() => {
+			expect(container.textContent).toContain("<3 <not html> stays");
+		});
+	});
 });

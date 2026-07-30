@@ -33,9 +33,8 @@ const SAFE_SCHEMES: Record<string, true> = {
 	"tel:": true,
 };
 
-// The URL lands in the serialized document and later in an <a href>, so
-// javascript:/data:-style schemes must never get through. Scheme-less values
-// (relative paths, anchors, bare domains) are fine.
+// UX gate, not the security boundary: LinkNode.sanitizeUrl re-checks every href
+// at render time. Scheme-less values (paths, anchors, bare domains) are fine.
 function isSafeUrl(value: string): boolean {
 	const scheme = /^[a-z][a-z0-9+.-]*:/i.exec(value)?.[0];
 	return scheme === undefined || SAFE_SCHEMES[scheme.toLowerCase()] === true;

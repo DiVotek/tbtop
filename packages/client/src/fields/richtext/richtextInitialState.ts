@@ -4,9 +4,9 @@ import { $getRoot, $insertNodes } from "lexical";
 
 type InitialEditorState = string | ((editor: LexicalEditor) => void) | undefined;
 
-// Values that predate the Lexical editor arrive as strings: either raw HTML
-// (rendered as markup) or plain text (wrapped in a single paragraph).
-const looksLikeHtml = (value: string): boolean => /^\s*</.test(value);
+// Legacy values arrive as raw HTML or plain text. Requiring a real opening tag
+// keeps prose like "<3" out of the parser, which would swallow it as a tag.
+const looksLikeHtml = (value: string): boolean => /^\s*<[a-z][a-z0-9]*[\s/>]/i.test(value);
 
 function htmlInitializer(html: string): (editor: LexicalEditor) => void {
 	return (editor) => {
