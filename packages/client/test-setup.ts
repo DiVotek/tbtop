@@ -1,6 +1,12 @@
 import { afterEach } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { cleanup } from "@testing-library/react";
+// Bun 1.3.14 links the circular @lexical/* ESM graph non-deterministically:
+// without the core initialized first, @lexical/react imports can hit a TDZ
+// ("Cannot access 'HISTORY_MERGE_TAG' before initialization"). Importing the
+// core here pins the init order for every test file. It is SSR-safe, so
+// running before the happy-dom registration below is fine.
+import "lexical";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
 afterEach(() => cleanup());
