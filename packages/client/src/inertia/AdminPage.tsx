@@ -152,10 +152,16 @@ function AdminShell({ children }: { children: ReactNode }) {
 	const prefix = tbtop?.prefix ?? "";
 	const apiBase = tbtop?.apiBase ?? "";
 	const locale = tbtop?.locale ?? "en";
-	const locales = tbtop?.locales ?? [locale];
-	const messages = tbtop?.messages ?? {};
-	const pluginMessages: Record<string, Record<string, string>> = { [locale]: messages };
-	const languages = Object.fromEntries(locales.map((code) => [code, async () => ({})]));
+	// Stable identities: both feed I18nProvider's hydration effect deps, and the
+	// `??` fallbacks below would otherwise allocate fresh values every render.
+	const pluginMessages = useMemo<Record<string, Record<string, string>>>(
+		() => ({ [locale]: tbtop?.messages ?? {} }),
+		[locale, tbtop?.messages],
+	);
+	const languages = useMemo(() => {
+		const codes = tbtop?.locales ?? [locale];
+		return Object.fromEntries(codes.map((code) => [code, async () => ({})]));
+	}, [locale, tbtop?.locales]);
 
 	// Round-trip: session stores the locale, redirect back
 	// delivers fresh tbtop.messages in shared props.

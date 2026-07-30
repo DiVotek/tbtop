@@ -410,3 +410,35 @@ test("translateValidationMessage respects the active locale's override", () => {
 	expect(translateValidationMessage(ukT, "validation.required")).toBe("Обов'язкове поле");
 	expect(translateValidationMessage(ukT, "validation.min:3")).toBe("Мінімум 3");
 });
+
+// Consumers list `t` in memo deps that rebuild data-fetching closures, so an
+// identity flip on mount refetches every table, chart and form on the page.
+test("keeps the translate identity stable when hydration resolves the same messages", async () => {
+	const seen: Array<(key: string) => string> = [];
+
+	function IdentityProbe() {
+		const t = useTranslation();
+		seen.push(t);
+		return <span data-testid="out">{t("action.confirm")}</span>;
+	}
+
+	const { container } = render(
+		<I18nProvider
+			locale="en"
+			defaultLang="en"
+			languages={{ en: async () => ({}) }}
+			pluginMessages={{ en: { "action.confirm": "Confirm" } }}
+		>
+			<IdentityProbe />
+		</I18nProvider>,
+	);
+
+	await waitFor(() => {
+		expect(container.textContent).toBe("Confirm");
+	});
+	// Let the hydration effect settle before comparing identities.
+	await act(async () => {
+		await Promise.resolve();
+	});
+	expect(new Set(seen).size).toBe(1);
+});

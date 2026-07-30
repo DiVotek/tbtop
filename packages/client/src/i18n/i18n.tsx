@@ -93,7 +93,7 @@ export function I18nProvider({
 			pluginMessages,
 			onResolved: (next) => {
 				if (!cancelled) {
-					setResolved(next);
+					setResolved((prev) => (sameMessages(prev, next) ? prev : next));
 				}
 			},
 		});
@@ -194,6 +194,16 @@ function pickInitialLocale(available: string[], fallbackLang: string): string {
 		return fallbackLang;
 	}
 	return available[0] ?? fallbackLang;
+}
+
+// Hydration always allocates fresh objects, so identity alone would mark every
+// mount as a change and rebuild consumers' memoized query closures.
+function sameMessages(a: ResolvedMessages, b: ResolvedMessages): boolean {
+	const sameBag = (x: Messages, y: Messages) => {
+		const keys = Object.keys(x);
+		return keys.length === Object.keys(y).length && keys.every((key) => x[key] === y[key]);
+	};
+	return sameBag(a.active, b.active) && sameBag(a.fallback, b.fallback);
 }
 
 async function hydrateMessages({

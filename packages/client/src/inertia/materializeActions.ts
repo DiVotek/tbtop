@@ -87,7 +87,7 @@ function handlerBag({ base, node, spec, ctx, confirm }: HandlerBagInput): Bag {
 	const consumesForm = spec.type === "submit" || (spec.needs ?? []).includes("form");
 	const bag = { ...base, consumesForm };
 	if (confirm) {
-		return { ...bag, modal: confirmModal(bag, confirm, handler, ctx.t) };
+		return { ...bag, modal: confirmModal({ base: bag, confirm, handler }, ctx.t) };
 	}
 	return spec.type === "submit" ? { ...bag, handler, isSubmit: true } : { ...bag, handler };
 }

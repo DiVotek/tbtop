@@ -9,13 +9,14 @@ export interface ConfirmSpec {
 	description?: string;
 }
 
+export interface ConfirmModalInput {
+	base: Bag;
+	confirm: ConfirmSpec;
+	handler: Handler;
+}
+
 /** A server action with `confirm` renders as a modal with confirm/cancel. */
-export function confirmModal(
-	base: Bag,
-	confirm: ConfirmSpec,
-	handler: Handler,
-	t?: Translate,
-): Bag {
+export function confirmModal({ base, confirm, handler }: ConfirmModalInput, t?: Translate): Bag {
 	const confirmedHandler: Handler = async (ctx) => {
 		await handler(ctx);
 		ctx.modal?.close();
