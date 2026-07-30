@@ -1,6 +1,7 @@
 import type { FormDataConvertible } from "@inertiajs/core";
 import { router } from "@inertiajs/react";
 import { unwrapData } from "../data/envelope";
+import type { Translate } from "../i18n/i18n";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import { type ConfirmSpec, confirmModal } from "./confirmModal";
 import { getCustomAction } from "./customActions";
@@ -15,6 +16,7 @@ interface ActionMaterializeCtx {
 	formName?: string;
 	formNode?: StructureNode;
 	materializeNode: (node: StructureNode) => StructureNode;
+	t?: Translate;
 }
 
 interface ActionSpec {
@@ -85,7 +87,7 @@ function handlerBag({ base, node, spec, ctx, confirm }: HandlerBagInput): Bag {
 	const consumesForm = spec.type === "submit" || (spec.needs ?? []).includes("form");
 	const bag = { ...base, consumesForm };
 	if (confirm) {
-		return { ...bag, modal: confirmModal(bag, confirm, handler) };
+		return { ...bag, modal: confirmModal(bag, confirm, handler, ctx.t) };
 	}
 	return spec.type === "submit" ? { ...bag, handler, isSubmit: true } : { ...bag, handler };
 }

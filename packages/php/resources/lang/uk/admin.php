@@ -141,7 +141,14 @@ return [
         'title' => 'Tabletop',
         'language' => 'Мова',
     ],
+    'palette' => [
+        'title' => 'Палітра команд',
+        'description' => 'Пошук і перехід до сторінки або команди',
+        'placeholder' => 'Пошук…',
+        'no_results' => 'Нічого не знайдено',
+    ],
     'media' => [
+        'library' => ['title' => 'Медіатека'],
         'upload_success' => 'Файл завантажено',
         'import_success' => 'Файл імпортовано',
         'update_success' => 'Оновлено',
@@ -221,7 +228,13 @@ return [
             'placeholder' => 'ID пов\'язаного запису',
             'items' => '{count} елементів',
         ],
-        'select' => ['placeholder' => '—'],
+        'select' => [
+            'placeholder' => '—',
+            'multi_placeholder' => 'Виберіть…',
+            'no_options' => 'Немає варіантів',
+            'remove' => 'Видалити {label}',
+            'create_option' => 'Створити «{query}»',
+        ],
         'slug' => [
             'clear' => 'Очистити',
             'generate' => 'Згенерувати',

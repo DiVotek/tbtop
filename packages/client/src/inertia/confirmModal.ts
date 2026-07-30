@@ -1,3 +1,4 @@
+import { defaultMessages, type Translate } from "../i18n/i18n";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 
 type Bag = Record<string, unknown>;
@@ -9,7 +10,12 @@ export interface ConfirmSpec {
 }
 
 /** A server action with `confirm` renders as a modal with confirm/cancel. */
-export function confirmModal(base: Bag, confirm: ConfirmSpec, handler: Handler): Bag {
+export function confirmModal(
+	base: Bag,
+	confirm: ConfirmSpec,
+	handler: Handler,
+	t?: Translate,
+): Bag {
 	const confirmedHandler: Handler = async (ctx) => {
 		await handler(ctx);
 		ctx.modal?.close();
@@ -17,11 +23,11 @@ export function confirmModal(base: Bag, confirm: ConfirmSpec, handler: Handler):
 	return {
 		title: confirm.title,
 		description: confirm.description,
-		body: confirmBody(base, confirmedHandler),
+		body: confirmBody(base, confirmedHandler, t),
 	};
 }
 
-function confirmBody(base: Bag, confirmedHandler: Handler): StructureNode {
+function confirmBody(base: Bag, confirmedHandler: Handler, t?: Translate): StructureNode {
 	return {
 		kind: "row",
 		options: {
@@ -31,7 +37,10 @@ function confirmBody(base: Bag, confirmedHandler: Handler): StructureNode {
 					name: "confirm",
 					options: {
 						name: "confirm",
-						label: (base.label as string | undefined) ?? "Confirm",
+						label:
+							(base.label as string | undefined) ??
+							t?.("action.confirm") ??
+							defaultMessages["action.confirm"],
 						color: base.color ?? "danger",
 						handler: confirmedHandler,
 						consumesForm: base.consumesForm,

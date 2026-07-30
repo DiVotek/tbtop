@@ -1,3 +1,4 @@
+import type { Translate } from "../i18n/i18n";
 import type {
 	ActionConfig,
 	ClientActionContext,
@@ -21,6 +22,7 @@ type Bag = Record<string, unknown>;
 export interface MaterializeInput {
 	basePath: string;
 	data: Record<string, Bag>;
+	t?: Translate;
 }
 
 interface WalkCtx extends MaterializeInput {
@@ -120,6 +122,7 @@ function actionOptions(node: StructureNode, ctx: WalkCtx): Bag {
 		formName: ctx.formName,
 		formNode: ctx.formNode,
 		materializeNode: (child) => walk(child, ctx),
+		t: ctx.t,
 	});
 }
 

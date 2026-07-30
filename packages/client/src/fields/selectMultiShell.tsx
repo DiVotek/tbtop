@@ -1,6 +1,7 @@
 import { Combobox } from "@base-ui/react/combobox";
 import { useState } from "react";
 import { useDensity } from "../app/densityContext";
+import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { inputCompactFontClass, inputFontClass } from "../ui/input";
 import { fieldId } from "./fieldProps";
@@ -49,6 +50,7 @@ export function MultiComboboxShell({
 }: MultiShellProps) {
 	const displayValues = visibleValues ?? value;
 	const density = useDensity();
+	const t = useTranslation();
 	const [query, setQuery] = useState("");
 	const [createOpen, setCreateOpen] = useState(false);
 
@@ -104,7 +106,10 @@ export function MultiComboboxShell({
 						>
 							<span>{getLabel(v)}</span>
 							<Combobox.ChipRemove
-								aria-label={`Remove ${getLabel(v)}`}
+								aria-label={t("field.select.remove").replace(
+									"{label}",
+									getLabel(v),
+								)}
 								className="text-primary-foreground hover:text-foreground"
 							>
 								×
@@ -120,7 +125,9 @@ export function MultiComboboxShell({
 							inputFontClass,
 							density === "compact" && inputCompactFontClass,
 						)}
-						placeholder={displayValues.length === 0 ? "Select…" : ""}
+						placeholder={
+							displayValues.length === 0 ? t("field.select.multi_placeholder") : ""
+						}
 					/>
 				</Combobox.Chips>
 
@@ -129,7 +136,7 @@ export function MultiComboboxShell({
 						<Combobox.Popup className="w-[var(--anchor-width)] rounded-md border border-input bg-background shadow-md">
 							<Combobox.List className="max-h-60 overflow-y-auto p-1">
 								<Combobox.Empty className="px-2 py-1.5 text-muted-foreground text-sm">
-									{showCreate ? null : "No options"}
+									{showCreate ? null : t("field.select.no_options")}
 								</Combobox.Empty>
 								{optionNodes}
 								{showCreate && (
@@ -146,7 +153,10 @@ export function MultiComboboxShell({
 										}}
 										tabIndex={0}
 									>
-										Create &ldquo;{trimmedQuery}&rdquo;
+										{t("field.select.create_option").replace(
+											"{query}",
+											trimmedQuery,
+										)}
 									</div>
 								)}
 							</Combobox.List>

@@ -8,7 +8,7 @@ import { CenterLayout } from "../app/CenterLayout";
 import { PageParamsProvider } from "../app/pageParams";
 import { ClientProvider } from "../data/client";
 import { setRoutesBase } from "../data/entityRoutes";
-import { I18nProvider } from "../i18n/i18n";
+import { I18nProvider, useTranslation } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
 import { ActionBlock } from "../structure/actionBlock";
@@ -54,6 +54,7 @@ interface AdminPageProps {
  */
 export function AdminPage() {
 	const page = usePage<AdminPageProps>();
+	const t = useTranslation();
 	const { structure, data, params, title, subtitle, headerActions, breadcrumbs, tbtop, auth } =
 		page.props;
 	ensureBuiltinsRegistered();
@@ -64,12 +65,12 @@ export function AdminPage() {
 
 	const basePath = pageBasePath(page.url);
 	const node = useMemo(
-		() => materialize(structure, { basePath, data: data ?? {} }),
-		[structure, basePath, data],
+		() => materialize(structure, { basePath, data: data ?? {}, t }),
+		[structure, basePath, data, t],
 	);
 	const headerActionBags = useMemo(
-		() => materializeActionList(headerActions ?? [], { basePath, data: data ?? {} }),
-		[headerActions, basePath, data],
+		() => materializeActionList(headerActions ?? [], { basePath, data: data ?? {}, t }),
+		[headerActions, basePath, data, t],
 	);
 
 	// Native Inertia flash: the adapter delivers a fresh object per response,

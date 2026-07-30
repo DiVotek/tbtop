@@ -1,5 +1,6 @@
 import { usePage } from "@inertiajs/react";
 import { type ReactNode, useMemo } from "react";
+import { useTranslation } from "../i18n/i18n";
 import { materialize } from "../inertia/materialize";
 import { renderNode } from "../render/structureRenderer";
 import type { StructureNode } from "../structure/types";
@@ -179,9 +180,10 @@ function renderArea(tree: StructureNode | null | undefined, fallback: ReactNode)
 }
 
 function ChromeTree({ tree }: { tree: StructureNode }) {
+	const t = useTranslation();
 	// Chrome trees are page-independent: server actions are rejected at
 	// serialization time, so no page basePath or data bag is needed here.
-	const node = useMemo(() => materialize(tree, { basePath: "", data: {} }), [tree]);
+	const node = useMemo(() => materialize(tree, { basePath: "", data: {}, t }), [tree, t]);
 	return <>{renderNode(node)}</>;
 }
 

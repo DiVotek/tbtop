@@ -141,7 +141,14 @@ return [
         'title' => 'Tabletop',
         'language' => 'Language',
     ],
+    'palette' => [
+        'title' => 'Command palette',
+        'description' => 'Search and jump to a page or command',
+        'placeholder' => 'Search…',
+        'no_results' => 'No results',
+    ],
     'media' => [
+        'library' => ['title' => 'Media Library'],
         'upload_success' => 'File uploaded',
         'import_success' => 'File imported',
         'update_success' => 'Updated',
@@ -221,7 +228,13 @@ return [
             'placeholder' => 'Related record id',
             'items' => '{count} items',
         ],
-        'select' => ['placeholder' => '—'],
+        'select' => [
+            'placeholder' => '—',
+            'multi_placeholder' => 'Select…',
+            'no_options' => 'No options',
+            'remove' => 'Remove {label}',
+            'create_option' => 'Create “{query}”',
+        ],
         'slug' => [
             'clear' => 'Clear',
             'generate' => 'Generate',

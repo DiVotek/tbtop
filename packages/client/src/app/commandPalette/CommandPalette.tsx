@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../i18n/i18n";
 import { cn } from "../../lib/cn";
 import { parseKeybinding, registerKeybinding } from "../../structure/keybinding";
 import { NodeIcon } from "../../ui/node-icon";
@@ -12,8 +13,6 @@ import type { NavGroup } from "../chromeContext";
 import { buildPaletteItems, filterPaletteItems } from "./paletteItems";
 import type { CommandPaletteData } from "./types";
 
-const DEFAULT_PLACEHOLDER = "Search…";
-
 interface CommandPaletteProps {
 	nav: NavGroup[];
 	data: CommandPaletteData;
@@ -21,6 +20,7 @@ interface CommandPaletteProps {
 
 /** ⌘K overlay: search and jump to nav destinations + custom commands. */
 export function CommandPalette({ nav, data }: CommandPaletteProps) {
+	const t = useTranslation();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const [selected, setSelected] = useState(0);
@@ -86,9 +86,11 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 				className="flex flex-col gap-0 overflow-hidden p-0"
 				data-testid="command-palette"
 			>
-				<ResponsiveDialogTitle className="sr-only">Command palette</ResponsiveDialogTitle>
+				<ResponsiveDialogTitle className="sr-only">
+					{t("palette.title")}
+				</ResponsiveDialogTitle>
 				<ResponsiveDialogDescription className="sr-only">
-					Search and jump to a page or command
+					{t("palette.description")}
 				</ResponsiveDialogDescription>
 				<input
 					// biome-ignore lint/a11y/noAutofocus: a command palette focuses its input on open by design
@@ -97,15 +99,15 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 					value={query}
 					onChange={(event) => setQuery(event.target.value)}
 					onKeyDown={onKeyDown}
-					placeholder={data.placeholder ?? DEFAULT_PLACEHOLDER}
-					aria-label={data.placeholder ?? DEFAULT_PLACEHOLDER}
+					placeholder={data.placeholder ?? t("palette.placeholder")}
+					aria-label={data.placeholder ?? t("palette.placeholder")}
 					className="w-full border-b bg-transparent px-4 py-3 text-base outline-none placeholder:text-muted-foreground md:text-sm"
 					data-testid="command-palette-input"
 				/>
 				<ul className="max-h-80 overflow-y-auto p-1">
 					{filtered.length === 0 ? (
 						<li className="px-3 py-6 text-center text-sm text-muted-foreground">
-							No results
+							{t("palette.no_results")}
 						</li>
 					) : (
 						filtered.map((item, index) => (
