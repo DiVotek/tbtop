@@ -139,6 +139,24 @@ describe("Toolbar link dialog", () => {
 		expect(link && textOf(link)).toBe("Hello world");
 	});
 
+	test("a javascript: URL cannot be applied", async () => {
+		const user = userEvent.setup();
+		const box: StateBox = { current: null };
+		const { container } = renderEditor("Hello world", (state) => {
+			box.current = state;
+		});
+
+		await user.click(within(container).getByRole("button", { name: "Link" }));
+		const dialog = within(container.ownerDocument.body);
+		await user.type(await waitFor(() => dialog.getByLabelText("URL")), "javascript:alert(1)");
+		const apply = dialog.getByTestId("link-dialog-apply");
+		expect(apply.hasAttribute("disabled")).toBe(true);
+		await user.click(apply);
+
+		await waitFor(() => expect(box.current).not.toBeNull());
+		expect(box.current && findLinkNode(rootOf(box.current))).toBeNull();
+	});
+
 	test("remove-link dispatches null and strips the link node", async () => {
 		const user = userEvent.setup();
 		const box: StateBox = { current: null };

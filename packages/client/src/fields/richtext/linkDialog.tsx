@@ -26,6 +26,21 @@ interface LinkDialogProps {
 	onClose: () => void;
 }
 
+const SAFE_SCHEMES: Record<string, true> = {
+	"http:": true,
+	"https:": true,
+	"mailto:": true,
+	"tel:": true,
+};
+
+// The URL lands in the serialized document and later in an <a href>, so
+// javascript:/data:-style schemes must never get through. Scheme-less values
+// (relative paths, anchors, bare domains) are fine.
+function isSafeUrl(value: string): boolean {
+	const scheme = /^[a-z][a-z0-9+.-]*:/i.exec(value)?.[0];
+	return scheme === undefined || SAFE_SCHEMES[scheme.toLowerCase()] === true;
+}
+
 // Replaces window.prompt("Enter URL") with a revola ResponsiveDialog:
 // URL input, Apply/Cancel, and Remove-link (only when editing).
 export function LinkDialog({ editor, request, onClose }: LinkDialogProps) {
@@ -50,12 +65,14 @@ export function LinkDialog({ editor, request, onClose }: LinkDialogProps) {
 		onClose();
 	};
 
+	const trimmedUrl = url.trim();
+	const canApply = trimmedUrl.length > 0 && isSafeUrl(trimmedUrl);
+
 	const handleApply = () => {
-		const trimmed = url.trim();
-		if (!trimmed) {
+		if (!canApply) {
 			return;
 		}
-		applyLink(trimmed);
+		applyLink(trimmedUrl);
 	};
 
 	return (
@@ -94,7 +111,7 @@ export function LinkDialog({ editor, request, onClose }: LinkDialogProps) {
 					<Button
 						type="button"
 						onClick={handleApply}
-						disabled={url.trim().length === 0}
+						disabled={!canApply}
 						data-testid="link-dialog-apply"
 					>
 						{t("field.richtext.link_apply")}

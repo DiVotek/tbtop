@@ -289,9 +289,10 @@
 	font-style: italic;
 }
 
-/* Lexical's CodeNode renders a bare `<code data-language>`, not `<pre><code>` —
-   the data-language attribute is what distinguishes a code block from inline code. */
-.tabletop-editor code[data-language] {
+/* Lexical's CodeNode renders a bare `<code>`, not `<pre><code>`. Block vs
+   inline is carried by the RICHTEXT_THEME classes (richtextConfig.ts) — the
+   data-language attribute only appears via the markdown ``` shortcut. */
+.tabletop-editor-code {
 	display: block;
 	background: var(--color-muted);
 	padding: 0.75rem 1rem;
@@ -303,7 +304,7 @@
 	line-height: 1.5;
 }
 
-.tabletop-editor code:not([data-language]) {
+.tabletop-editor-code-inline {
 	background: var(--color-muted);
 	padding: 0.125rem 0.25rem;
 	border-radius: var(--radius-sm, 0.25rem);

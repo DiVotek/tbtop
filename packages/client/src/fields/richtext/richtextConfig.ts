@@ -25,13 +25,16 @@ export const RICHTEXT_THEME = {
 	heading: { h1: "", h2: "", h3: "" },
 	list: { ul: "", ol: "", listitem: "" },
 	quote: "",
-	code: "",
+	// CodeNode renders a bare `<code>`; only these theme classes distinguish a
+	// code block from inline code formatting (data-language is set solely by
+	// the markdown ``` shortcut, so it cannot be the discriminator).
+	code: "tabletop-editor-code",
 	link: "",
 	text: {
 		bold: "font-bold",
 		italic: "italic",
 		underline: "underline",
 		strikethrough: "line-through",
-		code: "",
+		code: "tabletop-editor-code-inline",
 	},
 };

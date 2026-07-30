@@ -1,5 +1,7 @@
-import "../css/app.css";
+// Package styles first: its :root token defaults must lose the cascade to the
+// app's own theme in app.css.
 import "@tbtop/inertia-admin/styles.css";
+import "../css/app.css";
 
 import { createInertiaApp } from "@inertiajs/react";
 import { defineFieldClient, Input, registerBlock, registerIcon } from "@tbtop/inertia-admin";

@@ -10,7 +10,8 @@ interface ToolbarButtonProps {
 }
 
 // Shared icon-button recipe for every toolbar control, built on the shared
-// Button. aria-pressed mirrors the active/formatting state for assistive tech.
+// Button. aria-pressed mirrors the active/formatting state for assistive tech;
+// plain actions (undo/redo) pass no `active` and stay unmarked toggles-free.
 export function ToolbarButton({ onClick, active, label, disabled, children }: ToolbarButtonProps) {
 	return (
 		<Button
@@ -21,7 +22,7 @@ export function ToolbarButton({ onClick, active, label, disabled, children }: To
 			disabled={disabled}
 			title={label}
 			aria-label={label}
-			aria-pressed={active ?? false}
+			aria-pressed={active}
 			data-active={active ? "" : undefined}
 			className="text-muted-foreground [&_svg]:size-[18px] data-[active]:bg-muted data-[active]:text-foreground"
 		>
