@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Media\MediaResource;
+use Tbtop\Admin\Media\MediaUploadLimit;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\SvgSanitizer;
 
@@ -16,11 +17,10 @@ final class MediaReplaceController
         $media = Media::findOrFail($id);
 
         $config = $this->mediaConfig();
-        $maxKb = (int) ($config['max_size'] ?? 10240);
         $accept = (array) ($config['accept'] ?? []);
 
         $request->validate([
-            'file' => "required|file|max:{$maxKb}",
+            'file' => 'required|file|max:'.MediaUploadLimit::kilobytes(),
         ]);
 
         /** @var UploadedFile $file */

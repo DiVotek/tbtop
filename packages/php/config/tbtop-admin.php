@@ -1,5 +1,7 @@
 <?php
 
+use Tbtop\Admin\Media\MediaUploadLimit;
+
 return [
     // Registered panels (list of class-strings extending Panels\Panel).
     // Per-panel settings (prefix, guard, middleware, pages, UI locales,
@@ -38,8 +40,9 @@ return [
             'video/*',
         ],
 
-        // Maximum upload size in KB.
-        'max_size' => 10240,
+        // Maximum media size in Laravel validation kilobytes (10 MiB by default).
+        // Form Upload fields have a separate, per-field limit expressed in bytes.
+        'max_size' => MediaUploadLimit::DEFAULT_KILOBYTES,
 
         // Conversion profiles: name => [maxWidth, maxHeight].
         // Files are scaled to fit inside the given box (aspect-ratio preserved).
@@ -50,7 +53,6 @@ return [
         // URL import settings.
         'url_import' => [
             'timeout' => 30,
-            'max_size' => 10240,
         ],
     ],
 ];

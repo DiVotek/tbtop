@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Tests;
 
 use Illuminate\Foundation\Auth\User as AuthUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tbtop\Admin\Media\MediaUploadLimit;
 use Tbtop\Admin\Tests\Fixtures\Panels\MediaPanel;
 
 class MediaHttpTestCase extends TestCase
@@ -30,9 +31,9 @@ class MediaHttpTestCase extends TestCase
         $app['config']->set('tbtop-admin.media', [
             'disk' => 'public',
             'accept' => ['image/*'],
-            'max_size' => 10240,
+            'max_size' => MediaUploadLimit::DEFAULT_KILOBYTES,
             'profiles' => ['thumb' => [128, 128]],
-            'url_import' => ['timeout' => 5, 'max_size' => 1024],
+            'url_import' => ['timeout' => 5],
         ]);
     }
 

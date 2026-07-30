@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Tbtop\Admin\Media\MediaResource;
+use Tbtop\Admin\Media\MediaUploadLimit;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\SsrfGuard;
 use Tbtop\Admin\Media\SvgSanitizer;
@@ -30,7 +31,7 @@ final class MediaImportController
 
         $config = $this->importConfig();
         $timeout = (int) ($config['timeout'] ?? 30);
-        $maxBytes = (int) ($config['max_size'] ?? 10240) * 1024;
+        $maxBytes = MediaUploadLimit::bytes();
 
         $accept = (array) (config('tbtop-admin.media.accept') ?? []);
 

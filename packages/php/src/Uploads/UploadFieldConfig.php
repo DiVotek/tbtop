@@ -10,6 +10,8 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  */
 final class UploadFieldConfig
 {
+    // Form-field limits use bytes because the value is also compared with
+    // browser File.size. The media library has its own, larger shared limit.
     private const DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
 
     /**
