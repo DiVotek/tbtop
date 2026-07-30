@@ -48,6 +48,7 @@
 		"@dnd-kit/utilities": "^3.2.2",
 		"@inertiajs/react": "^3.3.1",
 		"@lexical/code": "^0.44.0",
+		"@lexical/html": "^0.44.0",
 		"@lexical/link": "^0.44.0",
 		"@lexical/list": "^0.44.0",
 		"@lexical/markdown": "^0.44.0",
