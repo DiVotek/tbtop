@@ -105,7 +105,7 @@ export function RichtextEditor({
 
 	return (
 		<LexicalComposer initialConfig={initialConfig}>
-			<div className="relative rounded-md border">
+			<div className="relative rounded-md border transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
 				<Toolbar />
 				<div className="relative">
 					<RichTextPlugin
