@@ -12,6 +12,7 @@ import type { EditorState, SerializedEditorState } from "lexical";
 import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { RICHTEXT_NODES, RICHTEXT_THEME } from "./richtextConfig";
+import { resolveInitialEditorState } from "./richtextInitialState";
 import { SlashMenuPlugin } from "./slashMenuPlugin";
 import { Toolbar } from "./toolbar";
 
@@ -23,51 +24,6 @@ interface RichtextEditorProps {
 }
 
 const DEBOUNCE_MS = 300;
-
-// Resolve a stored Lexical state (or legacy plain string) into the JSON string
-// LexicalComposer's `editorState` expects. Shared by the read-only view.
-export function resolveInitialEditorState(
-	value: SerializedEditorState | string | null,
-): string | undefined {
-	if (!value) {
-		return undefined;
-	}
-	// Plain string: wrap as a single paragraph node so the editor shows the
-	// text instead of crashing on legacy data.
-	if (typeof value === "string") {
-		const escaped = value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
-		return JSON.stringify({
-			root: {
-				children: [
-					{
-						children: [
-							{
-								detail: 0,
-								format: 0,
-								mode: "normal",
-								style: "",
-								text: escaped,
-								type: "text",
-								version: 1,
-							},
-						],
-						direction: "ltr",
-						format: "",
-						indent: 0,
-						type: "paragraph",
-						version: 1,
-					},
-				],
-				direction: "ltr",
-				format: "",
-				indent: 0,
-				type: "root",
-				version: 1,
-			},
-		});
-	}
-	return JSON.stringify(value);
-}
 
 export function RichtextEditor({
 	initialState,
@@ -105,7 +61,7 @@ export function RichtextEditor({
 
 	return (
 		<LexicalComposer initialConfig={initialConfig}>
-			<div className="relative rounded-md border">
+			<div className="relative rounded-md border transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
 				<Toolbar />
 				<div className="relative">
 					<RichTextPlugin

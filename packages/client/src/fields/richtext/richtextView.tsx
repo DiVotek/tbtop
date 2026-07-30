@@ -3,8 +3,8 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { SerializedEditorState } from "lexical";
-import { resolveInitialEditorState } from "./editor";
 import { RICHTEXT_NODES, RICHTEXT_THEME } from "./richtextConfig";
+import { resolveInitialEditorState } from "./richtextInitialState";
 
 interface RichtextViewProps {
 	state: SerializedEditorState | string;
