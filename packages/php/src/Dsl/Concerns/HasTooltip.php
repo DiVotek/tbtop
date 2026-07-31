@@ -2,11 +2,16 @@
 
 namespace Tbtop\Admin\Dsl\Concerns;
 
+use Closure;
+
 trait HasTooltip
 {
-    protected ?string $tooltipText = null;
+    use ResolvesClosures;
 
-    public function tooltip(string $text): static
+    protected string|Closure|null $tooltipText = null;
+
+    /** @param  string|(Closure(): string)  $text */
+    public function tooltip(string|Closure $text): static
     {
         $this->tooltipText = $text;
 
@@ -16,6 +21,6 @@ trait HasTooltip
     /** @return array<string, mixed> */
     protected function tooltipOption(): array
     {
-        return $this->tooltipText !== null ? ['tooltip' => $this->tooltipText] : [];
+        return $this->tooltipText !== null ? ['tooltip' => $this->resolveOpt($this->tooltipText)] : [];
     }
 }

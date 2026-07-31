@@ -2,6 +2,8 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
+
 /**
  * Media-library picker field.
  *
@@ -10,6 +12,8 @@ namespace Tbtop\Admin\Dsl\Fields;
  */
 final class MediaPicker extends Field
 {
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'variant'];
+
     protected function kind(): string
     {
         return 'media';
@@ -35,11 +39,11 @@ final class MediaPicker extends Field
      * Visual variant of the picker. Applies to single-select only —
      * ->multiple() always renders preview chips regardless of variant.
      *
-     * @param  'inline'|'preview'  $variant  'inline' (default) — Choose button plus a
-     *                                       read-only filename display; 'preview' — a
-     *                                       clickable large-preview block.
+     * @param  'inline'|'preview'|(Closure(): ('inline'|'preview'))  $variant  'inline' (default) — Choose button plus a
+     *                                                                         read-only filename display; 'preview' — a
+     *                                                                         clickable large-preview block.
      */
-    public function variant(string $variant): static
+    public function variant(string|Closure $variant): static
     {
         return $this->set('variant', $variant);
     }

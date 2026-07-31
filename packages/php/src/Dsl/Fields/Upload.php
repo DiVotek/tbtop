@@ -11,6 +11,11 @@ final class Upload extends Field
 {
     use HasMultiple;
 
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'maxFiles'];
+
+    /** Opt keys nested under `image` whose value may be a zero-arity Closure. */
+    private const IMAGE_RESOLVABLE = ['convertTo', 'quality'];
+
     /** Server-side override for how an uploaded file is stored/persisted. */
     private ?Closure $saveClosure = null;
 
@@ -74,20 +79,28 @@ final class Upload extends Field
         return $this->set('maxSize', $bytes);
     }
 
-    /** Convert the stored image to this format ('webp'|'jpeg'|'png'). */
-    public function convertTo(string $format): static
+    /**
+     * Convert the stored image to this format ('webp'|'jpeg'|'png').
+     *
+     * @param  string|(Closure(): string)  $format
+     */
+    public function convertTo(string|Closure $format): static
     {
         return $this->setImage('convertTo', $format);
     }
 
-    /** Encoder quality (1-100) for the converted image. */
-    public function quality(int $q): static
+    /**
+     * Encoder quality (1-100) for the converted image.
+     *
+     * @param  int|(Closure(): int)  $q
+     */
+    public function quality(int|Closure $q): static
     {
         return $this->setImage('quality', $q);
     }
 
-    /** Maximum number of files when multiple is enabled. */
-    public function maxFiles(int $max): static
+    /** @param  int|(Closure(): int)  $max */
+    public function maxFiles(int|Closure $max): static
     {
         return $this->set('maxFiles', $max);
     }
@@ -105,5 +118,20 @@ final class Upload extends Field
         $image[$key] = $value;
 
         return $this->set('image', $image);
+    }
+
+    /** @return array<string, mixed> */
+    protected function resolvedOpts(): array
+    {
+        $opts = parent::resolvedOpts();
+        if (isset($opts['image']) && is_array($opts['image'])) {
+            foreach (self::IMAGE_RESOLVABLE as $key) {
+                if (array_key_exists($key, $opts['image'])) {
+                    $opts['image'][$key] = $this->resolveOpt($opts['image'][$key]);
+                }
+            }
+        }
+
+        return $opts;
     }
 }

@@ -2,8 +2,12 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
+
 final class Repeater extends Field
 {
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'maxItems', 'minItems', 'defaultItems'];
+
     protected function kind(): string
     {
         return 'repeater';
@@ -15,17 +19,20 @@ final class Repeater extends Field
         return $this->set('fields', $fields);
     }
 
-    public function maxItems(int $max): static
+    /** @param  int|(Closure(): int)  $max */
+    public function maxItems(int|Closure $max): static
     {
         return $this->set('maxItems', $max);
     }
 
-    public function minItems(int $min): static
+    /** @param  int|(Closure(): int)  $min */
+    public function minItems(int|Closure $min): static
     {
         return $this->set('minItems', $min);
     }
 
-    public function defaultItems(int $count): static
+    /** @param  int|(Closure(): int)  $count */
+    public function defaultItems(int|Closure $count): static
     {
         return $this->set('defaultItems', $count);
     }
