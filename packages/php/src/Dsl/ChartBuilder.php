@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Fields\Field;
 
@@ -16,6 +17,7 @@ use Tbtop\Admin\Dsl\Fields\Field;
 final class ChartBuilder implements JsonSerializable
 {
     use HasServerQuery;
+    use HasWhen;
     use WithMeta;
 
     private const MIN_POLL_SECONDS = 5;
@@ -84,7 +86,8 @@ final class ChartBuilder implements JsonSerializable
             $options['params'] = array_map(fn (Field $f) => $f->toNode(), $this->paramFields);
         }
 
-        return new Node("chart:{$this->type}", [...$options, 'type' => $this->type], $this->name, $meta);
+        return (new Node("chart:{$this->type}", [...$options, 'type' => $this->type], $this->name, $meta))
+            ->when($this->isIncluded());
     }
 
     /** @return array<string, mixed> */

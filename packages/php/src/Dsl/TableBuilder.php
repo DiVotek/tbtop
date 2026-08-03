@@ -8,6 +8,7 @@ use JsonSerializable;
 use Tbtop\Admin\Dsl\Actions\ForceDeleteAction;
 use Tbtop\Admin\Dsl\Actions\RestoreAction;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Fields\Field;
 
 /**
@@ -18,6 +19,7 @@ use Tbtop\Admin\Dsl\Fields\Field;
 final class TableBuilder implements JsonSerializable
 {
     use HasServerQuery;
+    use HasWhen;
 
     private const FILTERS_FORM_WIDTHS = ['sm', 'md', 'lg', 'full'];
 
@@ -550,11 +552,13 @@ final class TableBuilder implements JsonSerializable
         // Pagination always present on wire
         $opts['pagination'] = $this->paginationSpec();
 
-        return new Node('table', [
+        // The verdict rides onto the Node: a table is usually placed as
+        // ->toNode(), and the container filters Nodes, not builders.
+        return (new Node('table', [
             ...$opts,
             'name' => $this->name,
             'columns' => $columns,
-        ], $this->name);
+        ], $this->name))->when($this->isIncluded());
     }
 
     /** @return array<string, mixed> */

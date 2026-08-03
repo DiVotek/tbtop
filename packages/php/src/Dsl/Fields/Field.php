@@ -8,6 +8,7 @@ use Tbtop\Admin\Dsl\ColumnsValidator;
 use Tbtop\Admin\Dsl\Concerns\CollectsRules;
 use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\OptionList;
@@ -25,6 +26,7 @@ abstract class Field implements JsonSerializable
     use CollectsRules;
     use HasCopyable;
     use HasGenericRules;
+    use HasWhen;
     use WithMeta;
 
     /** @var array<string, mixed> */
@@ -237,7 +239,8 @@ abstract class Field implements JsonSerializable
             $options['translatable'] = true;
         }
 
-        return new Node($this->kind(), $options, $this->name, $this->metaBag);
+        return (new Node($this->kind(), $options, $this->name, $this->metaBag))
+            ->when($this->isIncluded());
     }
 
     /** @return array<string, mixed> */

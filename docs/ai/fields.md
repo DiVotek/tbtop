@@ -33,6 +33,7 @@ Every field class extends `Field.php`. These methods are available on every fiel
 | `set` | `set(string $key, mixed $value): static` | Escape hatch — writes an arbitrary option key to the wire node |
 | `meta` | `meta(string $key, mixed $value): static` | Writes to the meta bag (client-side, not serialized in `opts`) |
 | `filterUsing` | `filterUsing(callable $fn): static` | Server-only filter closure `fn($query, $value) => $query`; never sent to the wire |
+| `when` | `when(bool\|Closure $condition): static` | Conditional **existence** (server-evaluated): a `when(false)` field never reaches the wire and its endpoints (upload, select-options/create, relation-search) return 404. Contrast `hiddenIf`, which ships the field and hides it client-side |
 | `hiddenIf` | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Hides the field when a condition is met (client-evaluated) |
 | `disabledIf` | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Disables the field when a condition is met (client-evaluated) |
 | `columnSpan` | `columnSpan(int\|array $span): static` | Grid column span inside a `grid`/`section(columns: ...)` parent: int (1-8) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8) |

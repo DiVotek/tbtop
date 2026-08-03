@@ -21,7 +21,7 @@ final class FormSubmitController
         $resolved = ResolvedPage::fromRequest($request);
         $form = $resolved->s->collectedForms()[$tbtopForm] ?? null;
         $handler = $form?->submitHandler();
-        if ($form === null || $handler === null) {
+        if ($form === null || $handler === null || ! $form->isIncluded()) {
             throw new NotFoundHttpException("Form \"{$tbtopForm}\" is not submittable on this page.");
         }
 

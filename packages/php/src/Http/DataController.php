@@ -20,7 +20,7 @@ final class DataController
         $resolved = ResolvedPage::fromRequest($request);
 
         $chart = $resolved->s->collectedCharts()[$name] ?? null;
-        if ($chart !== null) {
+        if ($chart !== null && $chart->isIncluded()) {
             return $this->chartResponse($chart, $request);
         }
 
