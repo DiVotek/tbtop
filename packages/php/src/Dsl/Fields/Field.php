@@ -217,7 +217,7 @@ abstract class Field implements JsonSerializable
         if (! is_array($fields) || $fields === []) {
             return [];
         }
-        $fields = array_values($fields);
+        $fields = S::normalizeChildren(array_values($fields));
 
         return $this->translatableFlag === true ? S::cascadeTranslatable($fields) : $fields;
     }

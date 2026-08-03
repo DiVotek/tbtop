@@ -463,8 +463,8 @@ final class TableBuilder implements JsonSerializable
     public function translatableColumns(): array
     {
         $names = [];
-        foreach ($this->columnObjects as $col) {
-            if ($col->isVisible() && $col->isTranslatable()) {
+        foreach ($this->visibleColumns() as $col) {
+            if ($col->isTranslatable()) {
                 $names[] = $col->name;
             }
         }
@@ -531,21 +531,20 @@ final class TableBuilder implements JsonSerializable
         $opts = $this->opts;
         foreach (['rowActions', 'headerActions', 'bulkActions'] as $key) {
             if (isset($opts[$key])) {
-                $opts[$key] = ActionBuilder::filterAuthorized($opts[$key]);
+                $opts[$key] = S::normalizeChildren($opts[$key]);
             }
         }
         if ($this->filterFields !== []) {
-            $opts['filters'] = array_map(fn (Field $f) => $f->toNode(), $this->filterFields);
+            $opts['filters'] = array_map(fn (Field $f) => $f->toNode(), S::normalizeChildren($this->filterFields));
             $opts['filtersIn'] = $this->filtersIn ?? 'modal';
         }
         if ($this->tabObjects !== []) {
             $opts['tabs'] = array_map(fn (Tab $t) => $t->toWire(), $this->tabObjects);
         }
 
-        // Only serialize visible columns
         $columns = array_map(
             fn (Column $c) => $c->jsonSerialize(),
-            $this->visibleColumns(),
+            S::normalizeChildren($this->visibleColumns()),
         );
 
         // Pagination always present on wire

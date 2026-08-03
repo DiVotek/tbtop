@@ -25,10 +25,7 @@ final class ColumnProjection
      */
     public static function apply(TableBuilder $table, iterable $rows): array
     {
-        $columns = array_filter(
-            $table->allColumns(),
-            fn (Column $c) => $c->isVisible(),
-        );
+        $columns = $table->visibleColumns();
         $recordUrl = $table->recordUrlResolver();
 
         $out = [];

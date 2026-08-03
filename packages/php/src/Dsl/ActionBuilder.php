@@ -121,7 +121,7 @@ final class ActionBuilder implements JsonSerializable
             'type' => 'modal',
             'title' => $title,
             'description' => $description,
-            'body' => $body,
+            'body' => S::normalizeChild($body),
         ]));
     }
 
@@ -152,8 +152,9 @@ final class ActionBuilder implements JsonSerializable
 
     /**
      * Server-side Gate check. A failing check omits the action from the wire
-     * entirely (mirrors Filament's Gate::allows() auto-hide) — callers MUST
-     * filter with isAuthorized() at every collection point before toNode().
+     * entirely (mirrors Filament's Gate::allows() auto-hide) — S::normalizeChildren()
+     * applies it at every collection point. Cosmetic only: the endpoint stays
+     * reachable, so ActionController re-checks isAuthorized() authoritatively.
      */
     public function authorize(string $ability, mixed $arg = null): self
     {
@@ -171,22 +172,6 @@ final class ActionBuilder implements JsonSerializable
         }
 
         return Gate::allows($this->authorizeAbility, $this->authorizeArg);
-    }
-
-    /**
-     * Drop unauthorized actions from a mixed list before it reaches the wire.
-     * Non-ActionBuilder items (Node, e.g. actionGroup/dropdown) pass through —
-     * they filter their own children when built.
-     *
-     * @param  list<mixed>  $actions
-     * @return list<mixed>
-     */
-    public static function filterAuthorized(array $actions): array
-    {
-        return array_values(array_filter(
-            $actions,
-            static fn (mixed $a): bool => ! ($a instanceof self) || $a->isAuthorized(),
-        ));
     }
 
     /**

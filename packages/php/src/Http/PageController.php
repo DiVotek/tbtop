@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\BreadcrumbsBuilder;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Uploads\UploadFieldUrl;
@@ -46,7 +47,7 @@ final class PageController
             $props['subtitle'] = $resolved->page->subtitle();
         }
 
-        $headerActions = ActionBuilder::filterAuthorized($resolved->page->headerActions($resolved->s));
+        $headerActions = S::normalizeChildren($resolved->page->headerActions($resolved->s));
         if ($headerActions !== []) {
             $props['headerActions'] = array_map(
                 fn (ActionBuilder|Node $action) => $action instanceof ActionBuilder ? $action->toNode() : $action,

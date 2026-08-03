@@ -55,7 +55,7 @@ final class RecordAction
         $children = $node->options['children'] ?? [];
         $children[] = $s->actionsRow($actions);
 
-        return new Node('form', [...$node->options, 'children' => $children], $node->name, $node->meta);
+        return new Node('form', [...$node->options, 'children' => S::normalizeChildren($children)], $node->name, $node->meta);
     }
 
     /**
