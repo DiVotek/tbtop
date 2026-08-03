@@ -479,17 +479,14 @@ failure, drops the action from the wire entirely — it mirrors Filament's `Gate
 auto-hide rather than disabling the button. Check `isAuthorized(): bool` to inspect the
 result directly.
 
-**Every collection point that accepts a mixed action list filters unauthorized actions for
-you** before `toNode()`/serialization, via `ActionBuilder::filterAuthorized()`:
+**Filtering happens in the `Node` constructor**, so every node gets it however it was built —
+an `S` layout factory, a builder's `toNode()`, or a hand-written `new Node('customBlock',
+['children' => [...]])`. Put actions in a node's `children` or `fields` and unauthorized ones
+never reach the wire. `TableBuilder` covers its own keys (`columns`, `filters`, `rowActions`,
+`headerActions`, `bulkActions`) the same way.
 
-- `S::actionsRow(array $actions)`
-- `S::actionGroup(string $label, array $actions, ?string $as = null)` (dropdowns)
-- `TableBuilder::toNode()` — `rowActions`, `headerActions`, and `bulkActions`, including the
-  `restoreSelected`/`forceDeleteSelected` actions `->softDeletes()` appends
-
-A hand-rolled loop over actions (not going through one of the above) does **not** get this
-filtering — call `ActionBuilder::filterAuthorized($actions)` yourself, or check
-`isAuthorized()` per action.
+You do not need to filter anything yourself. If you assemble actions outside any node — a
+plain array you serialize by hand — check `isAuthorized()` per action.
 
 This is defense in depth, not the only line: `ActionController` and `ActionDataController`
 re-check `isAuthorized()` at dispatch time and throw a 404 (not a 403) for an unauthorized
