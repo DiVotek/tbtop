@@ -47,7 +47,7 @@ export type {
 	RenderContext,
 	RenderProps,
 } from "./render/blockRegistry";
-export { getBlockDescriptor, registerBlock } from "./render/blockRegistry";
+export { clearBlockRegistry, getBlockDescriptor, registerBlock } from "./render/blockRegistry";
 export { defineBlock } from "./render/defineBlock";
 export type { FieldClientDescriptor } from "./render/defineFieldClient";
 export { defineFieldClient } from "./render/defineFieldClient";
@@ -103,6 +103,8 @@ export type {
 } from "./structure/types";
 export type { AlertProps, AlertVariant } from "./ui/alert";
 export { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+export type { ButtonProps } from "./ui/button";
+export { Button } from "./ui/button";
 export type { StatDescriptor } from "./ui/charts";
 export { StatBlock, StatCard } from "./ui/charts";
 export { Input } from "./ui/input";
