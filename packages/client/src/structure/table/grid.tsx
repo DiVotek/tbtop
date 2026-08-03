@@ -228,12 +228,13 @@ function renderGroupedRows(
 	props: TableGridProps,
 	colSpan: number,
 ): ReactNode {
-	const column = props.groups?.column;
-	if (!column) {
+	const columnName = props.groups?.column;
+	const column = props.columns.find((c) => c.name === columnName);
+	if (!columnName || !column) {
 		return rows.map((row) => renderRow(row, props, false));
 	}
-	return partitionRowGroups(rows, column).flatMap((group, i) => [
-		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} />,
+	return partitionRowGroups(rows, columnName).flatMap((group, i) => [
+		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} column={column} />,
 		...group.rows.map((row) => renderRow(row, props, false)),
 	]);
 }
