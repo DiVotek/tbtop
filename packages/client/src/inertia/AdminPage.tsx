@@ -13,7 +13,10 @@ import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
 import { ActionBlock } from "../structure/actionBlock";
 import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
-import { PageContentErrorBoundary } from "../structure/pageContentErrorBoundary";
+import {
+	PageContentErrorBoundary,
+	PageContentErrorPanel,
+} from "../structure/pageContentErrorBoundary";
 import { PageSubtitleProvider, usePageSubtitle } from "../structure/pageSubtitleContext";
 import type { ActionConfig, AuthUser, StructureNode } from "../structure/types";
 import { type BreadcrumbItem, Breadcrumbs } from "./Breadcrumbs";
@@ -64,12 +67,20 @@ export function AdminPage() {
 	const apiBase = tbtop?.apiBase ?? "";
 
 	const basePath = pageBasePath(page.url);
+	// materialize runs in AdminPage's own render, so a throw there would escape
+	// PageContentErrorBoundary (a boundary only catches its descendants) and
+	// white-screen the whole app. Catching here routes it to the same panel.
+	// Content and header actions are caught independently: a malformed header
+	// action must not hide healthy page content, and vice versa.
 	const node = useMemo(
-		() => materialize(structure, { basePath, data: data ?? {}, t }),
+		() => attempt(() => materialize(structure, { basePath, data: data ?? {}, t })),
 		[structure, basePath, data, t],
 	);
 	const headerActionBags = useMemo(
-		() => materializeActionList(headerActions ?? [], { basePath, data: data ?? {}, t }),
+		() =>
+			attempt(() =>
+				materializeActionList(headerActions ?? [], { basePath, data: data ?? {}, t }),
+			),
 		[headerActions, basePath, data, t],
 	);
 
@@ -117,11 +128,22 @@ export function AdminPage() {
 											</h1>
 											<PageSubtitle staticSubtitle={subtitle} />
 										</div>
-										<PageHeaderActions actions={headerActionBags} />
+										{headerActionBags.ok ? (
+											<PageHeaderActions actions={headerActionBags.value} />
+										) : (
+											<PageContentErrorPanel
+												error={headerActionBags.error}
+												t={t}
+											/>
+										)}
 									</div>
 								)}
 								<PageContentErrorBoundary>
-									{renderNode(node)}
+									{node.ok ? (
+										renderNode(node.value)
+									) : (
+										<PageContentErrorPanel error={node.error} t={t} />
+									)}
 								</PageContentErrorBoundary>
 							</div>
 						</PageSubtitleProvider>
@@ -187,6 +209,22 @@ function AdminShell({ children }: { children: ReactNode }) {
 			</ClientProvider>
 		</I18nProvider>
 	);
+}
+
+type Attempt<T> = { ok: true; value: T } | { ok: false; error: Error };
+
+/**
+ * Runs a materialize pass, converting a throw into an error result. Logs with
+ * the stack: the on-screen message alone would otherwise be the only trace.
+ */
+function attempt<T>(run: () => T): Attempt<T> {
+	try {
+		return { ok: true, value: run() };
+	} catch (cause) {
+		const error = cause instanceof Error ? cause : new Error(String(cause));
+		console.error("[tabletop] failed to materialize page structure", error);
+		return { ok: false, error };
+	}
 }
 
 function notifyToast(kind: string | undefined, message: string): void {

@@ -173,3 +173,94 @@ describe("AdminPage: page content error boundary", () => {
 		expect(getByText("invalid SelectItem: value cannot be empty")).toBeTruthy();
 	});
 });
+
+/**
+ * materialize() runs inside AdminPage's own render, so a throw there escapes
+ * PageContentErrorBoundary (which only catches descendants) and used to blank
+ * the whole app. A table node with null options throws eagerly in
+ * materializeTable; an action node with no options throws in
+ * materializeActionOptions.
+ */
+describe("AdminPage: materialize failures", () => {
+	const originalError = console.error;
+	beforeEach(() => {
+		console.error = () => {};
+	});
+	afterEach(() => {
+		console.error = originalError;
+	});
+
+	test("a throwing materialize shows the error panel instead of a white screen", () => {
+		currentProps = {
+			...BASE_PROPS,
+			structure: { kind: "table", name: "posts", meta: {}, options: null },
+		};
+		const { getByRole, getByTestId } = render(<AdminPage />);
+		expect(getByRole("heading", { level: 1 }).textContent).toBe("Posts");
+		expect(getByTestId("page-content-error-boundary")).toBeTruthy();
+		expect(getByTestId("page-content-error-reload")).toBeTruthy();
+	});
+
+	test("logs the failure so the stack survives past the on-screen message", () => {
+		const logged: unknown[] = [];
+		console.error = (...args: unknown[]) => {
+			logged.push(...args);
+		};
+		currentProps = {
+			...BASE_PROPS,
+			structure: { kind: "table", name: "posts", meta: {}, options: null },
+		};
+		render(<AdminPage />);
+		expect(logged.some((arg) => arg instanceof Error)).toBe(true);
+	});
+
+	test("a failing header action keeps page content rendering", () => {
+		registerBlock({
+			kind: "healthy",
+			behavior: "leaf",
+			render: () => <div data-testid="healthy-content">Content survived</div>,
+		});
+		currentProps = {
+			...BASE_PROPS,
+			structure: { kind: "healthy", meta: {}, options: {} },
+			headerActions: [{ kind: "action", name: "broken", meta: {} }],
+		};
+		const { getByTestId, queryByTestId } = render(<AdminPage />);
+		expect(getByTestId("healthy-content")).toBeTruthy();
+		expect(queryByTestId("page-header-actions")).toBeNull();
+		expect(queryByTestId("page-content-error-boundary")).toBeTruthy();
+	});
+
+	test("failing page content keeps healthy header actions rendering", () => {
+		currentProps = {
+			...BASE_PROPS,
+			structure: { kind: "table", name: "posts", meta: {}, options: null },
+			headerActions: [
+				{
+					kind: "action",
+					name: "create",
+					options: {
+						label: "New item",
+						spec: { type: "visit", href: "/admin/posts/create" },
+					},
+					meta: {},
+				},
+			],
+		};
+		const { getByTestId, getByText } = render(<AdminPage />);
+		expect(getByTestId("page-header-actions")).toBeTruthy();
+		expect(getByText("New item")).toBeTruthy();
+		expect(getByTestId("page-content-error-boundary")).toBeTruthy();
+	});
+
+	test("page-content-error-boundary stays the only error-screen testid", () => {
+		currentProps = {
+			...BASE_PROPS,
+			structure: { kind: "table", name: "posts", meta: {}, options: null },
+			headerActions: [{ kind: "action", name: "broken", meta: {} }],
+		};
+		const { container, getAllByTestId } = render(<AdminPage />);
+		expect(getAllByTestId("page-content-error-boundary")).toHaveLength(2);
+		expect(container.querySelectorAll('[data-testid$="-error"]')).toHaveLength(0);
+	});
+});
