@@ -1,17 +1,20 @@
 import type { SerializedEditorState } from "lexical";
-import { lazy, Suspense } from "react";
+import { lazy, type ReactNode, Suspense } from "react";
 
 // Lazily import the Lexical view so the heavy editor bundle stays out of the
 // static graph — mirrors richtextFormLazy. Renders nothing until resolved.
 const LazyView = lazy(() => import("./richtextView").then((m) => ({ default: m.RichtextView })));
 
-interface RichtextViewLazyProps {
+const defaultFallback = <div className="h-20 rounded-md bg-muted animate-pulse" />;
+
+export interface RichtextViewLazyProps {
 	state: SerializedEditorState | string;
+	fallback?: ReactNode;
 }
 
-export function RichtextViewLazy({ state }: RichtextViewLazyProps) {
+export function RichtextViewLazy({ state, fallback = defaultFallback }: RichtextViewLazyProps) {
 	return (
-		<Suspense fallback={<div className="h-20 rounded-md bg-muted animate-pulse" />}>
+		<Suspense fallback={fallback}>
 			<LazyView state={state} />
 		</Suspense>
 	);
