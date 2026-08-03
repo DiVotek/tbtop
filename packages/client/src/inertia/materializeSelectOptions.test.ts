@@ -42,8 +42,19 @@ type LoadFn = (
 	deps?: Record<string, string>,
 ) => Promise<unknown>;
 
+type MultiLoadFn = (
+	ctx: ClientActionContext,
+	values: string[],
+	deps?: Record<string, string>,
+) => Promise<unknown>;
+
 function selectOpts(async: boolean): Record<string, unknown> {
 	return materialize(node("select", { label: "Author", async }, "author_id"), BASE)
+		.options as Record<string, unknown>;
+}
+
+function multiSelectOpts(): Record<string, unknown> {
+	return materialize(node("select", { label: "Tags", async: true, multiple: true }, "tags"), BASE)
 		.options as Record<string, unknown>;
 }
 
@@ -86,6 +97,51 @@ describe("Materialize: select-options endpoint", () => {
 		const attempt = (opts.onLoad as LoadFn)(ctxPosting({ option: null }, []), "999");
 
 		expect(attempt).rejects.toThrow("not found");
+	});
+
+	// useMultiResolvedLabels hands onLoad the whole id list and expects a list of
+	// rows back; the single-value bag posted {value: ids} and parsed one row,
+	// which left a multiple() select stuck on its loading skeleton.
+	it("Materialize: an async multiple select resolves its stored list through onLoad", async () => {
+		const calls: PostCall[] = [];
+		const opts = multiSelectOpts();
+
+		const rows = await (opts.onLoad as MultiLoadFn)(
+			ctxPosting(
+				{
+					options: [
+						{ value: "t1", label: "Laravel" },
+						{ value: "t2", label: "React" },
+					],
+				},
+				calls,
+			),
+			["t1", "t2"],
+		);
+
+		expect(calls).toEqual([
+			{
+				url: "/admin/posts/select-options/tags",
+				body: { values: ["t1", "t2"], deps: undefined },
+			},
+		]);
+		expect(rows).toEqual([
+			{ value: "t1", label: "Laravel" },
+			{ value: "t2", label: "React" },
+		]);
+	});
+
+	it("Materialize: an async multiple select still searches through query", async () => {
+		const calls: PostCall[] = [];
+		const opts = multiSelectOpts();
+
+		const rows = await (opts.query as QueryFn)(
+			ctxPosting({ options: [{ value: "t2", label: "React" }] }, calls),
+			"rea",
+		);
+
+		expect(calls[0]?.body).toEqual({ search: "rea", deps: undefined });
+		expect(rows).toEqual([{ value: "t2", label: "React" }]);
 	});
 
 	// A static select must keep rendering from its wire `options` array; injecting

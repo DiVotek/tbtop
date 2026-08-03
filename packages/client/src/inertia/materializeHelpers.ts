@@ -41,6 +41,16 @@ function readOption(response: unknown): OptionRow {
 	return toOptionRow(response.option);
 }
 
+/** Search half of an async options bag — identical for single and multiple. */
+function asyncSearchBag(endpoint: string): Bag {
+	return {
+		query: (actionCtx: ClientActionContext, search: string, deps?: Record<string, string>) =>
+			actionCtx.client.post(endpoint, { search, deps }).then(readOptions),
+		optionLabel: (row: unknown) => toOptionRow(row).label,
+		optionValue: (row: unknown) => toOptionRow(row).value,
+	};
+}
+
 /**
  * query/onLoad/optionLabel/optionValue bound to an endpoint that answers
  * {search, deps} with {options} and {value, deps} with {option}. Both
@@ -48,12 +58,22 @@ function readOption(response: unknown): OptionRow {
  */
 function asyncOptionsBag(endpoint: string): Bag {
 	return {
-		query: (actionCtx: ClientActionContext, search: string, deps?: Record<string, string>) =>
-			actionCtx.client.post(endpoint, { search, deps }).then(readOptions),
+		...asyncSearchBag(endpoint),
 		onLoad: (actionCtx: ClientActionContext, value: string, deps?: Record<string, string>) =>
 			actionCtx.client.post(endpoint, { value, deps }).then(readOption),
-		optionLabel: (row: unknown) => toOptionRow(row).label,
-		optionValue: (row: unknown) => toOptionRow(row).value,
+	};
+}
+
+/**
+ * A multiple() select resolves every stored value in one request: onLoad takes
+ * the whole id list and gets a list back, which is why the endpoint reads
+ * `values` rather than overloading `value` with an array.
+ */
+function asyncMultiOptionsBag(endpoint: string): Bag {
+	return {
+		...asyncSearchBag(endpoint),
+		onLoad: (actionCtx: ClientActionContext, values: string[], deps?: Record<string, string>) =>
+			actionCtx.client.post(endpoint, { values, deps }).then(readOptions),
 	};
 }
 
@@ -75,7 +95,9 @@ export function selectOptionsEndpoint(node: StructureNode, basePath: string, opt
 	if (opts.async !== true) {
 		return opts;
 	}
-	return { ...opts, ...asyncOptionsBag(`${basePath}/select-options/${node.name as string}`) };
+	const endpoint = `${basePath}/select-options/${node.name as string}`;
+	const bag = opts.multiple === true ? asyncMultiOptionsBag(endpoint) : asyncOptionsBag(endpoint);
+	return { ...opts, ...bag };
 }
 
 // ---------------------------------------------------------------------------

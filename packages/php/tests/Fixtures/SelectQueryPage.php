@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Tests\Fixtures;
 
+use Illuminate\Support\Collection;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -62,6 +63,26 @@ class SelectQueryPage extends Page
                     ->query(fn (array $deps, string $search): array => [
                         ['value' => 'red', 'label' => 'Red'],
                     ]),
+                // Collection source: what User::pluck('name', 'id') hands back.
+                $s->select('author')
+                    ->label('Author')
+                    ->query(fn (array $deps, string $search): Collection => collect([
+                        '1' => 'Alice',
+                        '2' => 'Bob',
+                    ])),
+                // multiple() + query(): resolves its stored list via the values mode.
+                $s->select('tags')
+                    ->label('Tags')
+                    ->multiple()
+                    ->query(fn (array $deps, string $search): array => [
+                        ['value' => 't1', 'label' => 'Laravel'],
+                        ['value' => 't2', 'label' => 'React'],
+                    ])
+                    ->resolveUsing(fn (string $value): ?string => match ($value) {
+                        't1' => 'Laravel',
+                        't2' => 'React',
+                        default => null,
+                    }),
                 $s->select('status')->label('Status')->options([['value' => 'a', 'label' => 'A']]),
             ])->onSubmit(fn () => null),
         ]);

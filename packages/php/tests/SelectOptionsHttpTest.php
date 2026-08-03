@@ -61,6 +61,17 @@ it('Select options: an undeclared dep key is dropped before the closure sees it'
     expect(SelectQueryPage::$calls)->toBe([['deps' => [], 'search' => '']]);
 });
 
+// query() documents User::pluck('name', 'id') as a source, and pluck() returns a
+// Collection — an array-only guard drops it and serves an empty list in silence.
+it('Select options: a Collection source is emitted as value/label rows', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/author', ['search' => '']);
+
+    $response->assertOk()->assertExactJson(['options' => [
+        ['value' => '1', 'label' => 'Alice'],
+        ['value' => '2', 'label' => 'Bob'],
+    ]]);
+});
+
 // ---------------------------------------------------------------------------
 // Resolve mode
 // ---------------------------------------------------------------------------
@@ -87,6 +98,45 @@ it('Select options: an unresolvable value is echoed back as its own label', func
 
     $response->assertOk()
         ->assertExactJson(['option' => ['value' => 'blue', 'label' => 'blue']]);
+});
+
+it('Select options: a Collection source resolves a stored label', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/author', ['value' => '2']);
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => '2', 'label' => 'Bob']]);
+});
+
+// ---------------------------------------------------------------------------
+// Resolve-many mode (multiple() selects)
+// ---------------------------------------------------------------------------
+
+it('Select options: values resolves a whole stored list into options', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/tags', [
+        'values' => ['t2', 't1'],
+    ]);
+
+    $response->assertOk()->assertExactJson(['options' => [
+        ['value' => 't2', 'label' => 'React'],
+        ['value' => 't1', 'label' => 'Laravel'],
+    ]]);
+});
+
+it('Select options: an unresolvable value in the list is echoed back as its own label', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/tags', [
+        'values' => ['t1', 'gone'],
+    ]);
+
+    $response->assertOk()->assertExactJson(['options' => [
+        ['value' => 't1', 'label' => 'Laravel'],
+        ['value' => 'gone', 'label' => 'gone'],
+    ]]);
+});
+
+it('Select options: an empty values list resolves to no options', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/tags', ['values' => []]);
+
+    $response->assertOk()->assertExactJson(['options' => []]);
 });
 
 // ---------------------------------------------------------------------------

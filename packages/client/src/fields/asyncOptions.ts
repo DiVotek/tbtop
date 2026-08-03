@@ -1,26 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClientActionContext } from "../structure/types";
 
-export interface AsyncSingleOptionsBag {
-	query?: (
-		ctx: ClientActionContext,
-		search: string,
-		deps?: Record<string, string>,
-	) => Promise<unknown[]>;
-	onLoad?: (
-		ctx: ClientActionContext,
-		value: string,
-		deps?: Record<string, string>,
-	) => Promise<unknown>;
+/** Every async options endpoint takes deps alongside its primary argument. */
+type OptionsFetch<TArg, TResult> = (
+	ctx: ClientActionContext,
+	arg: TArg,
+	deps?: Record<string, string>,
+) => Promise<TResult>;
+
+interface AsyncOptionsBase {
+	query?: OptionsFetch<string, unknown[]>;
 	optionLabel?: (row: unknown) => string;
 	optionValue?: (row: unknown) => string;
 }
 
-export interface AsyncMultiOptionsBag {
-	query?: (ctx: ClientActionContext, search: string) => Promise<unknown[]>;
-	onLoad?: (ctx: ClientActionContext, values: string[]) => Promise<unknown[]>;
-	optionLabel?: (row: unknown) => string;
-	optionValue?: (row: unknown) => string;
+export interface AsyncSingleOptionsBag extends AsyncOptionsBase {
+	onLoad?: OptionsFetch<string, unknown>;
+}
+
+/** onLoad resolves the whole stored list in one call, so it answers with rows. */
+export interface AsyncMultiOptionsBag extends AsyncOptionsBase {
+	onLoad?: OptionsFetch<string[], unknown[]>;
 }
 
 interface LabelCache {

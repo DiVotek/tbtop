@@ -3,17 +3,24 @@
 namespace Tbtop\Admin\Http;
 
 use Closure;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Traversable;
 
 /**
  * POST {page-path}/select-options/{tbtopField}
  *
- * Two modes, distinguished by request body:
- *   search mode  — body: {search: string}  → {options: [{value, label}]}
- *   resolve mode — body: {value: string}   → {option: {value, label}|null}
+ * Three modes, distinguished by request body:
+ *   search mode — body: {search: string}     → {options: [{value, label}]}
+ *   resolve one — body: {value: string}      → {option: {value, label}|null}
+ *   resolve many — body: {values: string[]}  → {options: [{value, label}]}
+ *
+ * `values` is a separate key rather than a `value` that also accepts an array:
+ * the two answer with different shapes, and branching on the input's runtime
+ * type is what made a multiple() select hang instead of erroring.
  *
  * Unlike relation-search this never touches Eloquent: the field's query()
  * closure owns the source, the filtering, and the result cap.
@@ -37,6 +44,10 @@ final class SelectOptionsController
         }
 
         $deps = DependencyPayload::read($request, $field->dependsOnFields());
+
+        if ($request->has('values')) {
+            return $this->resolveByValues($request, $field, $deps);
+        }
 
         if ($request->has('value')) {
             return $this->resolveByValue($request, $field, $deps);
@@ -66,11 +77,43 @@ final class SelectOptionsController
     private function resolveByValue(Request $request, Select $field, array $deps): JsonResponse
     {
         $value = (string) $request->input('value', '');
-        $label = self::labelFromMap(self::callQuery($field, $deps, ''), $value)
+        $rows = self::callQuery($field, $deps, '');
+
+        return response()->json(['option' => self::resolveOne($field, $rows, $value)]);
+    }
+
+    /**
+     * A multiple() select resolves its whole stored list in one round trip, so
+     * the closure runs once rather than per value.
+     *
+     * @param  array<string, string>  $deps
+     */
+    private function resolveByValues(Request $request, Select $field, array $deps): JsonResponse
+    {
+        $values = $request->input('values');
+        $rows = self::callQuery($field, $deps, '');
+
+        $options = [];
+        foreach (is_array($values) ? $values : [] as $value) {
+            if (is_scalar($value)) {
+                $options[] = self::resolveOne($field, $rows, (string) $value);
+            }
+        }
+
+        return response()->json(['options' => $options]);
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $rows
+     * @return array{value: string, label: string}
+     */
+    private static function resolveOne(Select $field, array $rows, string $value): array
+    {
+        $label = self::labelFromMap($rows, $value)
             ?? self::labelFromResolver($field, $value)
             ?? $value;
 
-        return response()->json(['option' => ['value' => $value, 'label' => $label]]);
+        return ['value' => $value, 'label' => $label];
     }
 
     /**
@@ -84,7 +127,23 @@ final class SelectOptionsController
         // findQueryableSelect guarantees a query closure.
         assert($closure instanceof Closure);
 
-        $rows = $closure($deps, $search);
+        return self::toRows($closure($deps, $search));
+    }
+
+    /**
+     * pluck() is the documented way to express an option source, and it hands
+     * back a Collection — so anything array-shaped is unwrapped before the
+     * array guard, which stays as the fallback for genuinely unusable returns.
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function toRows(mixed $rows): array
+    {
+        if ($rows instanceof Arrayable) {
+            $rows = $rows->toArray();
+        } elseif ($rows instanceof Traversable) {
+            $rows = iterator_to_array($rows);
+        }
 
         return is_array($rows) ? $rows : [];
     }
