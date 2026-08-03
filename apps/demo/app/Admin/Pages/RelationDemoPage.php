@@ -10,9 +10,10 @@ use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
 
 /**
- * Showcases the two server-driven async option sources side by side:
- * relation() searching users through relation-search, and select()->query()
- * serving a plain PHP array through select-options — no database involved.
+ * Showcases the server-driven async option sources side by side: relation()
+ * searching users through relation-search, then select()->query() through
+ * select-options — once over a plain PHP array with no database involved, and
+ * once multiple() over pluck() to resolve a whole stored list in one request.
  * Kept on its own page so the post form's select-with-create demo stays intact.
  */
 class RelationDemoPage extends Page
@@ -85,6 +86,24 @@ class RelationDemoPage extends Page
                 ->record(['timezone' => 'Europe/Kyiv'])
                 ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
                     ->notify('Selected timezone: '.((string) ($ctx->form['timezone'] ?? '—')))),
+
+            $s->displayText('Async multiple select over pluck()')->variant('heading'),
+            $s->form('selectMultiQueryDemo', [
+                // pluck() hands back a Collection, and a multiple() select resolves
+                // its whole stored list in one request — both are covered here.
+                $s->select('authors')->label('Authors')->multiple()
+                    ->query(fn (array $deps, string $search) => User::query()
+                        ->when($search !== '', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                        ->limit(10)
+                        ->pluck('name', 'id'))
+                    ->rules('nullable|array'),
+                $s->actionsRow([
+                    $s->action('saveAuthors')->label('Save')->color('primary')->submit(),
+                ]),
+            ])
+                ->record(['authors' => ['1', '2']])
+                ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
+                    ->notify('Selected authors: '.implode(', ', (array) ($ctx->form['authors'] ?? [])))),
         ]);
     }
 }
