@@ -9,6 +9,7 @@ import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
+import { type DependencyState, useFieldDependencies } from "./fieldDependencies";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
@@ -299,7 +300,18 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
 	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
-	const resolved = useSingleResolvedLabel({ ctx, fieldName: props.name, value, opts });
+	const dep = useFieldDependencies({ config: opts, value, onChange: props.onChange });
+	const boundOpts = dep.hasDeps ? bindDeps(opts, dep.deps) : opts;
+	// Resolving a label under stale deps would show a value the new parent no
+	// longer offers, so the request waits until every parent has a value.
+	const isResolveGated = dep.hasDeps && !dep.ready;
+	const resolved = useSingleResolvedLabel({
+		ctx,
+		fieldName: props.name,
+		value: isResolveGated ? null : value,
+		opts: boundOpts,
+		refetchKey: dep.depsKey,
+	});
 	const [refetchKey, setRefetchKey] = useState(0);
 
 	if (resolved.kind === "loading") {
@@ -312,14 +324,34 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 			resolvedLabels={resolved.labels}
 			onCreated={() => setRefetchKey((k) => k + 1)}
 		>
-			<AsyncSingleSelectInner {...props} resolved={resolved} refetchKey={refetchKey} />
+			<AsyncSingleSelectInner
+				{...props}
+				options={boundOpts}
+				disabled={props.disabled || dep.disabledByParent}
+				resolved={resolved}
+				refetchKey={refetchKey}
+				dep={dep}
+			/>
 		</WithCreateAffordance>
 	);
+}
+
+function bindDeps(
+	opts: SelectSingleOptionsBag,
+	deps: Record<string, string>,
+): SelectSingleOptionsBag {
+	const { query, onLoad } = opts;
+	return {
+		...opts,
+		query: query ? (ctx, search) => query(ctx, search, deps) : undefined,
+		onLoad: onLoad ? (ctx, value) => onLoad(ctx, value, deps) : undefined,
+	};
 }
 
 interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
 	resolved: { kind: "ready"; labels: Record<string, string> };
 	refetchKey: number;
+	dep: DependencyState;
 }
 
 function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
@@ -327,11 +359,12 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
 	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
+	const gated = props.dep.hasDeps && !props.dep.ready;
 	const search = useAsyncSearch({
 		ctx,
-		query: opts.query,
+		query: gated ? undefined : opts.query,
 		search: "",
-		refetchKey: props.refetchKey,
+		refetchKey: `${props.refetchKey}:${props.dep.depsKey}`,
 	});
 
 	if (search.kind === "loading") {
@@ -340,6 +373,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 	if (search.kind === "error") {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
+	const rows: unknown[] = gated ? [] : search.rows;
 	const display = value === null ? undefined : (props.resolved.labels[value] ?? value);
 	return (
 		<Select
@@ -356,7 +390,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 				<SelectValue placeholder={t("field.select.placeholder")}>{display}</SelectValue>
 			</SelectTrigger>
 			<SelectContent>
-				{search.rows.map((row) => {
+				{rows.map((row) => {
 					const v = String(opts.optionValue?.(row) ?? "");
 					const lbl = opts.optionLabel?.(row) ?? v;
 					return (

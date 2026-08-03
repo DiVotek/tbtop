@@ -736,6 +736,21 @@ final class S
     }
 
     /**
+     * Find a Select field with a query closure by name, walking all registered forms.
+     */
+    public function findQueryableSelect(string $fieldName): ?Select
+    {
+        foreach ($this->forms as $form) {
+            $found = $form->findQueryableSelect($fieldName);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Find a Relation field with a query closure by name, walking all registered forms.
      */
     public function findRelationField(string $fieldName): ?Relation

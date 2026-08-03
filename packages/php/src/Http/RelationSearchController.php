@@ -37,7 +37,7 @@ final class RelationSearchController
             );
         }
 
-        $deps = self::readDeps($request, $field->dependsOnFields());
+        $deps = DependencyPayload::read($request, $field->dependsOnFields());
 
         if ($request->has('value')) {
             return $this->resolveByValue($request, $field, $deps);
@@ -138,28 +138,5 @@ final class RelationSearchController
         assert($builder instanceof Builder);
 
         return $builder;
-    }
-
-    /**
-     * @param  list<string>  $allowedFields
-     * @return array<string, string>
-     */
-    private static function readDeps(Request $request, array $allowedFields): array
-    {
-        $deps = $request->input('deps', []);
-        if (! is_array($deps) || $allowedFields === []) {
-            return [];
-        }
-
-        $allowed = array_flip($allowedFields);
-        $out = [];
-        foreach ($deps as $key => $value) {
-            if (! is_string($key) || ! array_key_exists($key, $allowed) || ! is_scalar($value)) {
-                continue;
-            }
-            $out[$key] = (string) $value;
-        }
-
-        return $out;
     }
 }

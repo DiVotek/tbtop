@@ -6,46 +6,76 @@ import type { FieldConstraints } from "./constraints";
 type Bag = Record<string, unknown>;
 
 // ---------------------------------------------------------------------------
-// Relation field materialization
+// Async option endpoints (relation-search, select-options)
 // ---------------------------------------------------------------------------
 
-interface RelationRow {
+interface OptionRow {
 	value: string;
 	label: string;
+}
+
+function toOptionRow(raw: unknown): OptionRow {
+	if (raw === null || typeof raw !== "object" || !("value" in raw)) {
+		throw new Error("malformed option row");
+	}
+	const value = String(raw.value);
+	const label = "label" in raw && raw.label !== null ? String(raw.label) : value;
+	return { value, label };
+}
+
+function readOptions(response: unknown): OptionRow[] {
+	if (response === null || typeof response !== "object" || !("options" in response)) {
+		throw new Error("malformed options response");
+	}
+	const { options } = response;
+	return Array.isArray(options) ? options.map(toOptionRow) : [];
+}
+
+function readOption(response: unknown): OptionRow {
+	if (response === null || typeof response !== "object" || !("option" in response)) {
+		throw new Error("malformed option response");
+	}
+	if (response.option === null) {
+		throw new Error("not found");
+	}
+	return toOptionRow(response.option);
+}
+
+/**
+ * query/onLoad/optionLabel/optionValue bound to an endpoint that answers
+ * {search, deps} with {options} and {value, deps} with {option}. Both
+ * relation-search and select-options speak exactly this protocol.
+ */
+function asyncOptionsBag(endpoint: string): Bag {
+	return {
+		query: (actionCtx: ClientActionContext, search: string, deps?: Record<string, string>) =>
+			actionCtx.client.post(endpoint, { search, deps }).then(readOptions),
+		onLoad: (actionCtx: ClientActionContext, value: string, deps?: Record<string, string>) =>
+			actionCtx.client.post(endpoint, { value, deps }).then(readOption),
+		optionLabel: (row: unknown) => toOptionRow(row).label,
+		optionValue: (row: unknown) => toOptionRow(row).value,
+	};
 }
 
 export function materializeRelation(node: StructureNode, basePath: string): StructureNode {
 	const opts = node.options as Bag;
 	const fieldName = node.name as string;
-	const endpoint = `${basePath}/relation-search/${fieldName}`;
 	return {
 		...node,
-		options: {
-			...opts,
-			query: (
-				actionCtx: ClientActionContext,
-				search: string,
-				deps?: Record<string, string>,
-			) =>
-				actionCtx.client
-					.post(endpoint, { search, deps })
-					.then((r) => (r as { options: RelationRow[] }).options),
-			onLoad: (
-				actionCtx: ClientActionContext,
-				value: string,
-				deps?: Record<string, string>,
-			) =>
-				actionCtx.client.post(endpoint, { value, deps }).then((r) => {
-					const opt = (r as { option: RelationRow | null }).option;
-					if (opt === null) {
-						throw new Error("not found");
-					}
-					return opt;
-				}),
-			optionLabel: (row: unknown) => (row as RelationRow).label,
-			optionValue: (row: unknown) => (row as RelationRow).value,
-		},
+		options: { ...opts, ...asyncOptionsBag(`${basePath}/relation-search/${fieldName}`) },
 	};
+}
+
+/**
+ * The select-options endpoint exists for every select, but only a field whose
+ * PHP builder got a query() closure answers it — so the async bag is injected
+ * solely when the server set `async`. The closure itself never crosses the wire.
+ */
+export function selectOptionsEndpoint(node: StructureNode, basePath: string, opts: Bag): Bag {
+	if (opts.async !== true) {
+		return opts;
+	}
+	return { ...opts, ...asyncOptionsBag(`${basePath}/select-options/${node.name as string}`) };
 }
 
 // ---------------------------------------------------------------------------

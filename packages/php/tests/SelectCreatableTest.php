@@ -31,6 +31,33 @@ it('Select: creatable serializes create.fields onto the wire; closure is absent'
         ->and($json['options']['create'])->not->toHaveKey('closure');
 });
 
+it('Select: query() never reaches the wire — only the async flag does', function () {
+    $field = Select::make('author_id')
+        ->query(fn (array $deps, string $search): array => [['value' => '1', 'label' => 'Alice']]);
+
+    $json = selectEncode($field);
+
+    expect($json['options'])->not->toHaveKey('query')
+        ->and($json['options']['async'])->toBeTrue();
+});
+
+it('Select: resolveUsing() never reaches the wire', function () {
+    $field = Select::make('author_id')
+        ->query(fn (array $deps, string $search): array => [])
+        ->resolveUsing(fn (string $value): ?string => 'Alice');
+
+    $json = selectEncode($field);
+
+    expect($json['options'])->not->toHaveKey('resolveUsing')
+        ->and($json['options'])->not->toHaveKey('resolve');
+});
+
+it('Select: a select without query() carries no async flag', function () {
+    $json = selectEncode(Select::make('status')->options([['value' => 'a', 'label' => 'A']]));
+
+    expect($json['options'])->not->toHaveKey('async');
+});
+
 it('Select: creatable exposes the using closure via creatableClosure() for server use', function () {
     $captured = null;
     $field = Select::make('author_id')

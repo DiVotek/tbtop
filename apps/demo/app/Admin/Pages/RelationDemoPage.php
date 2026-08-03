@@ -10,12 +10,21 @@ use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
 
 /**
- * Showcases the server-driven async relation field: type-ahead search over
- * users by name, resolved through the relation-search endpoint. Kept on its
- * own page so the post form's select-with-create author demo stays intact.
+ * Showcases the two server-driven async option sources side by side:
+ * relation() searching users through relation-search, and select()->query()
+ * serving a plain PHP array through select-options — no database involved.
+ * Kept on its own page so the post form's select-with-create demo stays intact.
  */
 class RelationDemoPage extends Page
 {
+    /** Deliberately not a table: query() exists for sources Eloquent cannot reach. */
+    private const TIMEZONES = [
+        'Europe/Kyiv' => 'Kyiv (UTC+2)',
+        'Europe/Berlin' => 'Berlin (UTC+1)',
+        'America/New_York' => 'New York (UTC-5)',
+        'Asia/Tokyo' => 'Tokyo (UTC+9)',
+    ];
+
     public static function path(): string
     {
         return 'relation-demo';
@@ -48,6 +57,34 @@ class RelationDemoPage extends Page
                 ->record(['author_id' => null])
                 ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
                     ->notify('Selected author id: '.((string) ($ctx->form['author_id'] ?? '—')))),
+
+            $s->displayText('Async select over a non-database source')->variant('heading'),
+            $s->form('selectQueryDemo', [
+                // Filtering and the result cap belong to the closure — nothing
+                // trims on its behalf. Returning a value => label map also lets
+                // a stored value resolve its label with no resolveUsing().
+                $s->select('timezone')->label('Timezone')
+                    ->query(function (array $deps, string $search): array {
+                        if ($search === '') {
+                            return self::TIMEZONES;
+                        }
+
+                        return array_filter(
+                            self::TIMEZONES,
+                            fn (string $label): bool => str_contains(
+                                mb_strtolower($label),
+                                mb_strtolower($search),
+                            ),
+                        );
+                    })
+                    ->rules('nullable|string'),
+                $s->actionsRow([
+                    $s->action('saveTimezone')->label('Save')->color('primary')->submit(),
+                ]),
+            ])
+                ->record(['timezone' => 'Europe/Kyiv'])
+                ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
+                    ->notify('Selected timezone: '.((string) ($ctx->form['timezone'] ?? '—')))),
         ]);
     }
 }

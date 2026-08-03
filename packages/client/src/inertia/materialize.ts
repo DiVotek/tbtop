@@ -14,6 +14,7 @@ import {
 	materializeRelation,
 	materializeStat,
 	materializeUpload,
+	selectOptionsEndpoint,
 } from "./materializeHelpers";
 import { actionBags, materializeTable } from "./materializeTable";
 
@@ -175,7 +176,8 @@ function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
 }
 
 function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {
-	const opts = walkChildren(node.options as Bag, ctx);
+	const walked = walkChildren(node.options as Bag, ctx);
+	const opts = selectOptionsEndpoint(node, ctx.basePath, walked);
 	const create = opts.create as Bag | undefined;
 	if (!create) {
 		return { ...node, options: opts };
