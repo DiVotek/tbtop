@@ -388,7 +388,7 @@ final class S
      */
     public function actionGroup(string $label, array $actions, ?string $as = null): Node
     {
-        $opts = ['label' => $label, 'children' => ActionBuilder::filterAuthorized($actions)];
+        $opts = ['label' => $label, 'children' => $actions];
         if ($as !== null) {
             $opts['as'] = $as;
         }
@@ -405,6 +405,27 @@ final class S
     public function dropdown(string $label, array $actions): Node
     {
         return $this->actionGroup($label, $actions, 'dropdown');
+    }
+
+    /**
+     * The pass for child lists Node cannot recognise on its own: the
+     * table-specific keys (columns, filters, rowActions/headerActions/
+     * bulkActions) and anything not yet inside a node's options. Plain
+     * 'children'/'fields' need no call here — Node filters those in its
+     * constructor, so every node is covered however it was built.
+     *
+     * @param  list<mixed>  $children
+     * @return list<mixed>
+     */
+    public static function normalizeChildren(array $children): array
+    {
+        return ChildInclusion::filter($children);
+    }
+
+    /** Single-value counterpart of normalizeChildren(): null when excluded. */
+    public static function normalizeChild(mixed $child): mixed
+    {
+        return ChildInclusion::includes($child) ? $child : null;
     }
 
     /**
@@ -541,7 +562,13 @@ final class S
                 throw new InvalidArgumentException("Tab \"{$tab['label']}\" cannot combine 'body' with 'children'/'columns'.");
             }
 
-            return $tab['body'];
+            // The schema requires tabs[].body and the client dereferences it
+            // unconditionally, so an excluded body becomes an empty container
+            // rather than null. The tab stays: a vanished tab reads as a DSL
+            // mistake, an empty one reads as the permission it is.
+            return ChildInclusion::includes($tab['body'])
+                ? $tab['body']
+                : (new self)->stack([]);
         }
         if (! isset($tab['children'])) {
             throw new InvalidArgumentException("Tab \"{$tab['label']}\" needs either 'body' or 'children'.");
@@ -667,7 +694,7 @@ final class S
      */
     public function actionsRow(array $actions, array $opts = []): Node
     {
-        $options = ['children' => ActionBuilder::filterAuthorized($actions)];
+        $options = ['children' => $actions];
         if (isset($opts['variant'])) {
             $options['variant'] = self::normalizeRowVariant($opts['variant']);
         }

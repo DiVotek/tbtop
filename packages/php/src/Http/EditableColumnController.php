@@ -35,7 +35,7 @@ final class EditableColumnController
             abort(404, "Table \"{$tableName}\" not found on this page.");
         }
 
-        $col = $this->findEditableColumn($table->allColumns(), $columnName);
+        $col = $this->findEditableColumn($table->visibleColumns(), $columnName);
         if ($col === null) {
             abort(404, "Column \"{$columnName}\" is not editable on table \"{$tableName}\".");
         }
@@ -54,15 +54,16 @@ final class EditableColumnController
     }
 
     /**
-     * Server-invisible columns (hidden() / visible(false)) are never editable,
-     * even when reachable by name — the visibility closure is an authz gate.
+     * $columns must already be the visible set: server-invisible columns
+     * (hidden() / visible(false)) are never editable, even when reachable by
+     * name — the visibility closure is an authz gate.
      *
      * @param  list<Column>  $columns
      */
     private function findEditableColumn(array $columns, string $name): ?Column
     {
         foreach ($columns as $col) {
-            if ($col->name === $name && $col->isEditable() && $col->isVisible()) {
+            if ($col->name === $name && $col->isEditable()) {
                 return $col;
             }
         }

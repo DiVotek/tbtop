@@ -8,6 +8,7 @@ use Tbtop\Admin\Dsl\Concerns\HasDependencies;
 use Tbtop\Admin\Dsl\Concerns\HasMultiple;
 use Tbtop\Admin\Dsl\Concerns\HasOptions;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\S;
 
 final class Select extends Field
 {
@@ -96,11 +97,10 @@ final class Select extends Field
         $this->creatableFieldList = $fields;
 
         // Serialize only the field nodes — closure stays server-side.
-        $fieldNodes = array_map(
+        $this->opts['create'] = ['fields' => array_map(
             fn (Field $f) => $f->toNode(),
-            $fields,
-        );
-        $this->opts['create'] = ['fields' => $fieldNodes];
+            S::normalizeChildren($fields),
+        )];
 
         return $this;
     }
