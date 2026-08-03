@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasCopyable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Http\KindFormat;
 
 /**
@@ -16,6 +17,7 @@ use Tbtop\Admin\Http\KindFormat;
 final class DisplayValueBlock implements JsonSerializable
 {
     use HasCopyable;
+    use HasWhen;
 
     private ?string $kind = null;
 

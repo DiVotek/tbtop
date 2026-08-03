@@ -31,7 +31,25 @@ class WhenEndpointsPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
-            $s->form('hidden', [$s->text('name')])
+            // The field endpoints resolve a field by name across every
+            // registered form, so an excluded form has to carry one of each
+            // kind: a plain text field alone would let a walk that ignores the
+            // form's own verdict pass unnoticed.
+            $s->form('hidden', [
+                $s->text('name')->required()->default('form_level_secret'),
+                $s->upload('form_hidden_upload'),
+                $s->select('form_hidden_pick')
+                    ->query(fn (array $deps, string $search): array => ['1' => 'A']),
+                $s->select('form_hidden_new')
+                    ->creatable(
+                        fields: [$s->text('title')->required()],
+                        using: fn (array $validated): array => ['value' => '1', 'label' => $validated['title']],
+                    ),
+                $s->relation('form_hidden_rel')
+                    ->labelKey('name')
+                    ->searchable()
+                    ->query(fn () => AuthorModel::query()),
+            ])
                 ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()->notify('saved'))
                 ->when(false),
             $s->form('shown', [

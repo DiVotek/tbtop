@@ -109,6 +109,33 @@ it('still serves the relation-search endpoint of a visible relation field', func
 });
 
 // ---------------------------------------------------------------------------
+// A when(false) FORM takes its field endpoints down with it
+// ---------------------------------------------------------------------------
+// The find-by-name walks descend into every registered form. A form excluded
+// as a whole is still registered — the builder lands in S::$forms at
+// construction — so without its own verdict gating the descent, the fields
+// inside it keep serving. That is the leak when when() is keyed on a role:
+// the query runs for a user who was never shown the form.
+
+it('404s a field endpoint inside a when(false) form', function (string $path, array $payload): void {
+    $this->postJson("/admin/when-endpoints/{$path}", $payload)->assertNotFound();
+})->with([
+    'upload' => ['uploads/form_hidden_upload', []],
+    'select options' => ['select-options/form_hidden_pick', ['search' => '']],
+    'select create' => ['select-create/form_hidden_new', ['title' => 'X']],
+    'relation search' => ['relation-search/form_hidden_rel', ['search' => '']],
+]);
+
+it('omits the record of a when(false) form from the page props', function (): void {
+    $body = $this->get('/admin/when-endpoints', ['X-Inertia' => 'true'])
+        ->assertOk()
+        ->getContent();
+
+    expect($body)->not->toContain('form_level_secret')
+        ->and($body)->not->toContain('form_hidden_upload');
+});
+
+// ---------------------------------------------------------------------------
 // The condition is re-read per request
 // ---------------------------------------------------------------------------
 // ResolvedPage rebuilds the page on every request, so the guard must consult

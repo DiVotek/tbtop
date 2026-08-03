@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 
 /**
  * Alert display block.
@@ -11,6 +12,8 @@ use JsonSerializable;
  */
 final class AlertBlock implements JsonSerializable
 {
+    use HasWhen;
+
     private ?string $titleValue = null;
 
     private string $colorValue = 'info';

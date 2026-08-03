@@ -752,14 +752,9 @@ final class S
      */
     public function findCreatableSelect(string $fieldName): ?Select
     {
-        foreach ($this->forms as $form) {
-            $found = $form->findCreatableSelect($fieldName);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-
-        return null;
+        return $this->searchIncludedForms(
+            static fn (FormBuilder $form): ?Select => $form->findCreatableSelect($fieldName),
+        );
     }
 
     /**
@@ -767,14 +762,9 @@ final class S
      */
     public function findQueryableSelect(string $fieldName): ?Select
     {
-        foreach ($this->forms as $form) {
-            $found = $form->findQueryableSelect($fieldName);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-
-        return null;
+        return $this->searchIncludedForms(
+            static fn (FormBuilder $form): ?Select => $form->findQueryableSelect($fieldName),
+        );
     }
 
     /**
@@ -782,14 +772,9 @@ final class S
      */
     public function findRelationField(string $fieldName): ?Relation
     {
-        foreach ($this->forms as $form) {
-            $found = $form->findRelationField($fieldName);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-
-        return null;
+        return $this->searchIncludedForms(
+            static fn (FormBuilder $form): ?Relation => $form->findRelationField($fieldName),
+        );
     }
 
     /**
@@ -797,8 +782,30 @@ final class S
      */
     public function findUploadField(string $fieldName): ?Upload
     {
+        return $this->searchIncludedForms(
+            static fn (FormBuilder $form): ?Upload => $form->findUploadField($fieldName),
+        );
+    }
+
+    /**
+     * First non-null hit across the forms that exist. Forms register at
+     * construction time, before any serialization decision, so a when(false)
+     * form is still in $this->forms — its own verdict has to gate the descent
+     * or the field endpoints (upload, select options/create, relation search)
+     * keep serving data for a form the user never received.
+     *
+     * @template TField of Field
+     *
+     * @param  callable(FormBuilder): ?TField  $search
+     * @return TField|null
+     */
+    private function searchIncludedForms(callable $search): ?Field
+    {
         foreach ($this->forms as $form) {
-            $found = $form->findUploadField($fieldName);
+            if (! $form->isIncluded()) {
+                continue;
+            }
+            $found = $search($form);
             if ($found !== null) {
                 return $found;
             }

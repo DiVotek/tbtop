@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 
 /**
  * Read-only render of a stored Lexical SerializedEditorState.
@@ -14,6 +15,8 @@ use JsonSerializable;
  */
 final class DisplayRichtextBlock implements JsonSerializable
 {
+    use HasWhen;
+
     /** @param  array<string, mixed>  $state */
     private function __construct(private readonly array $state) {}
 

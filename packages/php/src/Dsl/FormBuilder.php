@@ -67,21 +67,40 @@ final class FormBuilder implements JsonSerializable
      */
     public function recordData(): array
     {
-        $seeded = RecordDefaults::apply($this->record, $this->children);
+        $children = $this->includedChildren();
+        $seeded = RecordDefaults::apply($this->record, $children);
 
-        return TranslatableRecord::normalize($seeded, $this->children);
+        return TranslatableRecord::normalize($seeded, $children);
     }
 
     /** Laravel validation rules collected from descendant fields. @return array<string, list<string>> */
     public function collectRules(): array
     {
-        return RuleWalker::collect($this->children);
+        return RuleWalker::collect($this->includedChildren());
     }
 
     /** Validator attribute labels (->label()) keyed like collectRules(). @return array<string, string> */
     public function collectAttributes(): array
     {
-        return RuleWalker::collectAttributes($this->children);
+        return RuleWalker::collectAttributes($this->includedChildren());
+    }
+
+    /**
+     * The children that exist, for the walkers that read the list directly
+     * instead of going through toNode(). An excluded field must not contribute
+     * a rule (the client never renders the key, so a `required` on it makes the
+     * form unsubmittable) nor a ->default() (recordData() ships into page props,
+     * leaking a value the author hid).
+     *
+     * Only the top level needs filtering: everything below descends through
+     * Node::nestedChildren() or Field::childFields(), both of which already
+     * carry the verdict, and an excluded container is dropped whole here.
+     *
+     * @return list<mixed>
+     */
+    private function includedChildren(): array
+    {
+        return ChildInclusion::filter($this->children);
     }
 
     /**

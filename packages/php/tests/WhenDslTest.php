@@ -127,6 +127,109 @@ it('drops a when(false) layout container whole, with its children', function () 
 });
 
 // ---------------------------------------------------------------------------
+// An excluded field contributes neither a rule nor a default
+// ---------------------------------------------------------------------------
+// collectRules() / collectAttributes() / recordData() read the form's raw child
+// list rather than going through toNode(), so they used to see nodes the wire
+// never carried. Two consequences: a `required` rule on a key the client never
+// renders makes the form unsubmittable, and a ->default() on a hidden field
+// ships to the browser through the page props.
+
+it('collects no rule for a when(false) field', function () {
+    $s = new S;
+
+    $form = $s->form('f', [
+        $s->text('visible')->required(),
+        $s->text('gone')->required()->when(false),
+    ]);
+
+    expect(array_keys($form->collectRules()))->toBe(['visible']);
+});
+
+it('collects no validator attribute for a when(false) field', function () {
+    $s = new S;
+
+    $form = $s->form('f', [
+        $s->text('visible')->label('Visible'),
+        $s->text('gone')->label('Gone')->when(false),
+    ]);
+
+    expect($form->collectAttributes())->toBe(['visible' => 'Visible']);
+});
+
+it('seeds no default from a when(false) field', function () {
+    $s = new S;
+
+    $form = $s->form('f', [
+        $s->text('visible')->default('shown'),
+        $s->text('secret')->default('hidden')->when(false),
+    ]);
+
+    expect($form->recordData())->toBe(['visible' => 'shown']);
+});
+
+it('drops the rules and defaults of every field under a when(false) container', function () {
+    $s = new S;
+
+    $form = $s->form('f', [
+        $s->section(['title' => 'Secret'], [
+            $s->text('deep')->required()->default('leak'),
+        ])->when(false),
+        $s->text('kept'),
+    ]);
+
+    expect(array_keys($form->collectRules()))->toBe(['kept'])
+        ->and($form->recordData())->toBe([]);
+});
+
+it('does not normalize a when(false) translatable field into a locale map', function () {
+    $s = new S;
+
+    $form = $s->form('f', [$s->text('gone')->translatable()->when(false)])
+        ->record(['gone' => 'plain']);
+
+    expect($form->recordData())->toBe(['gone' => 'plain']);
+});
+
+// ---------------------------------------------------------------------------
+// Display blocks carry the verdict too
+// ---------------------------------------------------------------------------
+// They are neither Field nor Node — standalone classes serializing to an array
+// — so they needed HasWhen of their own before a heading or an alert could be
+// hidden by role.
+
+it('drops a when(false) display block from a container', function (string $factory) {
+    $s = new S;
+
+    $block = match ($factory) {
+        'displayText' => $s->displayText('secret-content'),
+        'displayAlert' => $s->displayAlert('secret-content'),
+        'displayHtml' => $s->displayHtml('secret-content'),
+        'displayValue' => $s->displayValue('secret-content'),
+        'markdown' => $s->markdown('secret-content'),
+        'displayImage' => $s->displayImage('secret-content'),
+        'displayKeyValue' => $s->displayKeyValue(['k' => 'secret-content']),
+        'displayRichtext' => $s->displayRichtext(['root' => 'secret-content']),
+    };
+
+    $node = $s->stack([$block->when(false), $s->text('kept')]);
+
+    expect(json_encode($node))->not->toContain('secret-content')
+        ->and(array_column(encodeWhen($node)['options']['children'], 'name'))->toBe(['kept']);
+})->with([
+    'displayText', 'displayAlert', 'displayHtml', 'displayValue',
+    'markdown', 'displayImage', 'displayKeyValue', 'displayRichtext',
+]);
+
+it('keeps a display block whose when() came before its other setters', function () {
+    $s = new S;
+
+    $node = $s->stack([$s->displayText('gone')->when(false)->variant('heading')]);
+
+    expect(encodeWhen($node)['options']['children'])->toBe([]);
+});
+
+// ---------------------------------------------------------------------------
 // The closure form, and the promise that when(true) changes nothing
 // ---------------------------------------------------------------------------
 

@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 
 /**
  * Read-only full-size image or file-download link.
@@ -15,6 +16,8 @@ use JsonSerializable;
  */
 final class DisplayImageBlock implements JsonSerializable
 {
+    use HasWhen;
+
     private ?string $altValue = null;
 
     private ?string $captionValue = null;

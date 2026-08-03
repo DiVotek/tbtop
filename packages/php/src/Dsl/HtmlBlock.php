@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 
 /**
  * Raw HTML display block.
@@ -13,6 +14,8 @@ use JsonSerializable;
  */
 final class HtmlBlock implements JsonSerializable
 {
+    use HasWhen;
+
     private function __construct(private readonly string $rawHtml) {}
 
     public static function make(string $rawHtml): self
