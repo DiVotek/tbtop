@@ -30,6 +30,20 @@ interface LabelCache {
 
 type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: Record<string, string> };
 
+export interface ReadyLabels {
+	kind: "ready";
+	labels: Record<string, string>;
+}
+
+/** Identity doubles as the "never resolved yet" marker. */
+export const EMPTY_LABELS: ReadyLabels = { kind: "ready", labels: {} };
+
+/** A label the dropdown already showed, tagged with the deps it was seen under. */
+export interface SeenLabel {
+	label: string;
+	depsKey: string;
+}
+
 const ID_SEPARATOR = "";
 
 export interface SingleResolveArgs {

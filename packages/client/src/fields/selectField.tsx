@@ -7,7 +7,12 @@ import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useSingleResolvedLabel } from "./asyncOptions";
+import {
+	EMPTY_LABELS,
+	type ReadyLabels,
+	type SeenLabel,
+	useSingleResolvedLabel,
+} from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { type DependencyState, useFieldDependencies } from "./fieldDependencies";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
@@ -305,32 +310,55 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 	// Resolving a label under stale deps would show a value the new parent no
 	// longer offers, so the request waits until every parent has a value.
 	const isResolveGated = dep.hasDeps && !dep.ready;
+	// Rows the dropdown listed already carry their labels; feeding them back
+	// stops a selection from re-resolving a label we just displayed. Each entry
+	// records the deps it was seen under, so new deps never reuse an old label.
+	const seenLabels = useRef<Record<string, SeenLabel>>({});
+	const knownLabels: Record<string, string> = {};
+	for (const [rowValue, seen] of Object.entries(seenLabels.current)) {
+		if (seen.depsKey === dep.depsKey) {
+			knownLabels[rowValue] = seen.label;
+		}
+	}
 	const resolved = useSingleResolvedLabel({
 		ctx,
 		fieldName: props.name,
 		value: isResolveGated ? null : value,
 		opts: boundOpts,
 		refetchKey: dep.depsKey,
+		knownLabels,
 	});
 	const [refetchKey, setRefetchKey] = useState(0);
+	const lastReady = useRef<ReadyLabels>(EMPTY_LABELS);
+	if (resolved.kind === "ready") {
+		lastReady.current = resolved;
+	}
 
-	if (resolved.kind === "loading") {
+	// Only the very first resolve has nothing to show. A re-resolve keeps the
+	// previous labels on screen so the control does not blink through a skeleton.
+	if (resolved.kind === "loading" && lastReady.current === EMPTY_LABELS) {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
+	const ready = resolved.kind === "ready" ? resolved : lastReady.current;
 
 	return (
 		<WithCreateAffordance
 			{...props}
-			resolvedLabels={resolved.labels}
+			resolvedLabels={ready.labels}
 			onCreated={() => setRefetchKey((k) => k + 1)}
 		>
 			<AsyncSingleSelectInner
 				{...props}
 				options={boundOpts}
 				disabled={props.disabled || dep.disabledByParent}
-				resolved={resolved}
+				resolved={ready}
 				refetchKey={refetchKey}
 				dep={dep}
+				onRowsSeen={(rows) => {
+					for (const [rowValue, label] of Object.entries(rows)) {
+						seenLabels.current[rowValue] = { label, depsKey: dep.depsKey };
+					}
+				}}
 			/>
 		</WithCreateAffordance>
 	);
@@ -352,6 +380,8 @@ interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, Se
 	resolved: { kind: "ready"; labels: Record<string, string> };
 	refetchKey: number;
 	dep: DependencyState;
+	/** Reports the labels this dropdown listed so a selection need not re-resolve them. */
+	onRowsSeen: (rows: Record<string, string>) => void;
 }
 
 function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
@@ -374,6 +404,12 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
 	const rows: unknown[] = gated ? [] : search.rows;
+	const listed: Record<string, string> = {};
+	for (const row of rows) {
+		const v = String(opts.optionValue?.(row) ?? "");
+		listed[v] = opts.optionLabel?.(row) ?? v;
+	}
+	props.onRowsSeen(listed);
 	const display = value === null ? undefined : (props.resolved.labels[value] ?? value);
 	return (
 		<Select
@@ -390,15 +426,11 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 				<SelectValue placeholder={t("field.select.placeholder")}>{display}</SelectValue>
 			</SelectTrigger>
 			<SelectContent>
-				{rows.map((row) => {
-					const v = String(opts.optionValue?.(row) ?? "");
-					const lbl = opts.optionLabel?.(row) ?? v;
-					return (
-						<SelectItem key={v} value={v}>
-							{lbl}
-						</SelectItem>
-					);
-				})}
+				{Object.entries(listed).map(([v, lbl]) => (
+					<SelectItem key={v} value={v}>
+						{lbl}
+					</SelectItem>
+				))}
 			</SelectContent>
 		</Select>
 	);

@@ -199,6 +199,49 @@ describe("Select field — async mode", () => {
 		expect(onLoad).toHaveBeenCalledWith(expect.anything(), "42");
 	});
 
+	test("Select async does not re-resolve a label the dropdown already listed", async () => {
+		// Rule: selecting a row the dropdown just showed reuses its label. Re-resolving
+		// it round-trips to the server and blanks the control through a skeleton.
+		// (The popup is portalled and not interactable in happy-dom, so the selection
+		// is driven the way the form does it — by re-rendering with the new value.)
+		const onLoad = mock(
+			async (_c: unknown, value: string): Promise<UserRow> => ({
+				id: value,
+				name: `Resolved ${value}`,
+			}),
+		);
+		const query = mock(async (): Promise<UserRow[]> => [{ id: "7", name: "Dave" }]);
+		const opts = {
+			query,
+			onLoad,
+			optionLabel: (r: unknown) => (r as UserRow).name,
+			optionValue: (r: unknown) => (r as UserRow).id,
+		};
+		const Wrap = wrap(NO_RESP);
+		const { container, rerender } = render(
+			<Wrap>
+				<SelectForm name="authorId" value={null} onChange={() => {}} options={opts} />
+			</Wrap>,
+		);
+		await waitFor(() => {
+			expect(container.querySelector('[data-slot="select-trigger"]')).not.toBeNull();
+		});
+
+		rerender(
+			<Wrap>
+				<SelectForm name="authorId" value="7" onChange={() => {}} options={opts} />
+			</Wrap>,
+		);
+
+		await waitFor(() => {
+			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
+				"Dave",
+			);
+		});
+		expect(onLoad).not.toHaveBeenCalled();
+		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
+	});
+
 	test("Select async resolves the label for an int value", async () => {
 		const onLoad = mock(
 			async (_c: unknown, value: string): Promise<UserRow> => ({
