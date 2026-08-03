@@ -26,37 +26,48 @@ class ErrorBoundaryBase extends Component<BoundaryProps, BoundaryState> {
 		return { error };
 	}
 
-	handleReload = (): void => {
-		window.location.reload();
-	};
-
 	override render(): ReactNode {
 		const { error } = this.state;
 		if (!error) {
 			return this.props.children;
 		}
-		const { t } = this.props;
-		return (
-			<div
-				className="rounded-lg border border-destructive/50 bg-destructive/5 p-6"
-				data-testid="page-content-error-boundary"
-			>
-				<h2 className="text-base font-semibold text-destructive">
-					{t("state.error", "Something went wrong")}
-				</h2>
-				<p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
-				<Button
-					variant="outline"
-					size="sm"
-					className="mt-4"
-					onClick={this.handleReload}
-					data-testid="page-content-error-reload"
-				>
-					{t("state.reload", "Reload")}
-				</Button>
-			</div>
-		);
+		return <PageContentErrorPanel error={error} t={this.props.t} />;
 	}
+}
+
+/**
+ * The page-content error screen. Shared by the boundary (render-time crashes)
+ * and by AdminPage (materialize-time throws, which happen in AdminPage's own
+ * render and so pass the boundary by). `page-content-error-boundary` is the
+ * single testid for this screen regardless of which path produced it.
+ */
+export function PageContentErrorPanel({
+	error,
+	t,
+}: {
+	error: Error;
+	t: (key: string, fallback?: string) => string;
+}) {
+	return (
+		<div
+			className="rounded-lg border border-destructive/50 bg-destructive/5 p-6"
+			data-testid="page-content-error-boundary"
+		>
+			<h2 className="text-base font-semibold text-destructive">
+				{t("state.error", "Something went wrong")}
+			</h2>
+			<p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+			<Button
+				variant="outline"
+				size="sm"
+				className="mt-4"
+				onClick={() => window.location.reload()}
+				data-testid="page-content-error-reload"
+			>
+				{t("state.reload", "Reload")}
+			</Button>
+		</div>
+	);
 }
 
 /** Functional wrapper so the class boundary can still read i18n via the hook. */

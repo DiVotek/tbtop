@@ -11,6 +11,7 @@ use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\OptionList;
+use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Validation\ConstraintMap;
 
 /**
@@ -110,9 +111,15 @@ abstract class Field implements JsonSerializable
         return $this;
     }
 
+    /**
+     * True only for a leaf whose own value is a locale map. A container (a
+     * repeater — the only kind carrying `fields`) has no value of its own to
+     * translate: ->translatable() on it means "cascade to my sub-fields", so it
+     * validates and serializes as a plain field while its children go per-locale.
+     */
     public function isTranslatableField(): bool
     {
-        return $this->translatableFlag === true;
+        return $this->translatableFlag === true && $this->childFields() === [];
     }
 
     public function isTranslatableOptedOut(): bool
@@ -197,12 +204,22 @@ abstract class Field implements JsonSerializable
         return $this->opts['label'] ?? null;
     }
 
-    /** @return list<mixed> */
+    /**
+     * Sub-fields of a container field, with a pending ->translatable() cascade
+     * applied. Resolved on read rather than in translatable() so the two calls
+     * commute — ->translatable()->fields([…]) and the reverse agree.
+     *
+     * @return list<mixed>
+     */
     public function childFields(): array
     {
         $fields = $this->opts['fields'] ?? [];
+        if (! is_array($fields) || $fields === []) {
+            return [];
+        }
+        $fields = array_values($fields);
 
-        return is_array($fields) ? array_values($fields) : [];
+        return $this->translatableFlag === true ? S::cascadeTranslatable($fields) : $fields;
     }
 
     public function toNode(): Node
@@ -212,7 +229,11 @@ abstract class Field implements JsonSerializable
         if ($constraints !== []) {
             $options['constraints'] = $constraints;
         }
-        if ($this->translatableFlag === true) {
+        $children = $this->childFields();
+        if ($children !== []) {
+            $options['fields'] = $children;
+        }
+        if ($this->isTranslatableField()) {
             $options['translatable'] = true;
         }
 

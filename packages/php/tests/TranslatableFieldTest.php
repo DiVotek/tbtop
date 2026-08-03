@@ -169,3 +169,146 @@ it('translatable subfield inside a repeater emits per-locale validator attribute
     expect($attributes['items.*.label.en'])->toBe('Label (en)')
         ->and($attributes['items.*.label.uk'])->toBe('Label (uk)');
 });
+
+it('translatable() on a repeater cascades to sub-fields instead of making the repeater a locale map', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->fields([
+            $s->text('label')->required(),
+        ])->translatable(),
+    ]);
+
+    $rules = $form->collectRules();
+
+    expect($rules)->not->toHaveKey('items.en')
+        ->and($rules)->not->toHaveKey('items.uk')
+        ->and($rules['items'])->toBe(['nullable'])
+        ->and($rules['items.*.label'])->toBe(['nullable', 'array'])
+        ->and($rules['items.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.label.uk'])->toBe(['nullable']);
+});
+
+it('the repeater cascade does not depend on translatable() and fields() call order', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->translatable()->fields([
+            $s->text('label')->required(),
+        ]),
+    ]);
+
+    $rules = $form->collectRules();
+
+    expect($rules)->not->toHaveKey('items.en')
+        ->and($rules['items.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.label.uk'])->toBe(['nullable']);
+});
+
+it('section cascade reaches sub-fields of a repeater among its children', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->section(['title' => 'Main'], [
+            $s->repeater('items')->fields([
+                $s->text('label')->required(),
+            ]),
+        ])->translatable(),
+    ]);
+
+    $rules = $form->collectRules();
+
+    expect($rules)->not->toHaveKey('items.en')
+        ->and($rules['items.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.label.uk'])->toBe(['nullable']);
+});
+
+it('translatable() on an outer repeater cascades through a nested repeater', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->fields([
+            $s->text('label')->required(),
+            $s->repeater('children')->fields([
+                $s->text('label')->required(),
+            ]),
+        ])->translatable(),
+    ]);
+
+    $rules = $form->collectRules();
+
+    expect($rules)->not->toHaveKey('items.en')
+        ->and($rules)->not->toHaveKey('items.*.children.en')
+        ->and($rules['items.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.label.uk'])->toBe(['nullable'])
+        ->and($rules['items.*.children.*.label.en'])->toBe(['required'])
+        ->and($rules['items.*.children.*.label.uk'])->toBe(['nullable']);
+});
+
+it('translatable() on a repeater emits per-locale attributes for sub-fields, not for the repeater', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->label('Items')->fields([
+            $s->text('label')->label('Label')->required(),
+        ])->translatable(),
+    ]);
+
+    $attributes = $form->collectAttributes();
+
+    expect($attributes)->not->toHaveKey('items.en')
+        ->and($attributes['items'])->toBe('Items')
+        ->and($attributes['items.*.label.en'])->toBe('Label (en)')
+        ->and($attributes['items.*.label.uk'])->toBe('Label (uk)');
+});
+
+it('reading a record keeps a translatable repeater value as a row list, not a locale map', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    $form = $s->form('menu', [
+        $s->repeater('items')->fields([
+            $s->text('label'),
+        ])->translatable(),
+    ])->record(['items' => [['label' => ['en' => 'Home', 'uk' => 'Головна']]]]);
+
+    expect($form->recordData()['items'])
+        ->toBe([['label' => ['en' => 'Home', 'uk' => 'Головна']]]);
+});
+
+it('reading a record does not wrap a translatable repeater scalar into a locale map', function () {
+    $s = new S;
+    config(['tbtop-admin.content_locales' => ['en', 'uk']]);
+    config(['tbtop-admin.default_content_locale' => 'en']);
+
+    // A column holding a not-yet-decoded scalar must not be mistaken for a
+    // translatable leaf just because the repeater carries the cascade flag.
+    $form = $s->form('menu', [
+        $s->repeater('items')->fields([
+            $s->text('label'),
+        ])->translatable(),
+    ])->record(['items' => 'legacy']);
+
+    expect($form->recordData()['items'])->toBe('legacy');
+});
+
+it('a translatable repeater does not advertise itself as a translatable field on the wire', function () {
+    $s = new S;
+    $json = encodeTranslatable(
+        $s->repeater('items')->fields([$s->text('label')])->translatable()
+    );
+
+    expect($json['options'])->not->toHaveKey('translatable')
+        ->and($json['options']['fields'][0]['options']['translatable'])->toBeTrue();
+});
