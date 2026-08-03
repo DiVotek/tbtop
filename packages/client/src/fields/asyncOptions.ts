@@ -1,26 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClientActionContext } from "../structure/types";
 
-export interface AsyncSingleOptionsBag {
-	query?: (
-		ctx: ClientActionContext,
-		search: string,
-		deps?: Record<string, string>,
-	) => Promise<unknown[]>;
-	onLoad?: (
-		ctx: ClientActionContext,
-		value: string,
-		deps?: Record<string, string>,
-	) => Promise<unknown>;
+/** Every async options endpoint takes deps alongside its primary argument. */
+type OptionsFetch<TArg, TResult> = (
+	ctx: ClientActionContext,
+	arg: TArg,
+	deps?: Record<string, string>,
+) => Promise<TResult>;
+
+interface AsyncOptionsBase {
+	query?: OptionsFetch<string, unknown[]>;
 	optionLabel?: (row: unknown) => string;
 	optionValue?: (row: unknown) => string;
 }
 
-export interface AsyncMultiOptionsBag {
-	query?: (ctx: ClientActionContext, search: string) => Promise<unknown[]>;
-	onLoad?: (ctx: ClientActionContext, values: string[]) => Promise<unknown[]>;
-	optionLabel?: (row: unknown) => string;
-	optionValue?: (row: unknown) => string;
+export interface AsyncSingleOptionsBag extends AsyncOptionsBase {
+	onLoad?: OptionsFetch<string, unknown>;
+}
+
+/** onLoad resolves the whole stored list in one call, so it answers with rows. */
+export interface AsyncMultiOptionsBag extends AsyncOptionsBase {
+	onLoad?: OptionsFetch<string[], unknown[]>;
 }
 
 interface LabelCache {
@@ -29,6 +29,20 @@ interface LabelCache {
 }
 
 type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: Record<string, string> };
+
+export interface ReadyLabels {
+	kind: "ready";
+	labels: Record<string, string>;
+}
+
+/** Identity doubles as the "never resolved yet" marker. */
+export const EMPTY_LABELS: ReadyLabels = { kind: "ready", labels: {} };
+
+/** A label the dropdown already showed, tagged with the deps it was seen under. */
+export interface SeenLabel {
+	label: string;
+	depsKey: string;
+}
 
 const ID_SEPARATOR = "";
 

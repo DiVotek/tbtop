@@ -4,8 +4,8 @@ import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import type { AsyncSingleOptionsBag } from "./asyncOptions";
-import { useSingleResolvedLabel } from "./asyncOptions";
+import type { AsyncSingleOptionsBag, ReadyLabels, SeenLabel } from "./asyncOptions";
+import { EMPTY_LABELS, useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { nullableCell } from "./cellHelpers";
 import {
@@ -19,19 +19,6 @@ import { coerceSelectValue } from "./selectShared";
 export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyConfig {
 	searchable?: boolean;
 	labelKey?: string;
-}
-
-interface ReadyLabels {
-	kind: "ready";
-	labels: Record<string, string>;
-}
-
-/** Identity doubles as the "never resolved yet" marker. */
-const EMPTY_LABELS: ReadyLabels = { kind: "ready", labels: {} };
-
-interface SeenLabel {
-	label: string;
-	depsKey: string;
 }
 
 export function RelationCell({ value }: FieldCellProps<unknown>) {

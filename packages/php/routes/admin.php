@@ -20,6 +20,7 @@ use Tbtop\Admin\Http\NotificationsController;
 use Tbtop\Admin\Http\PageController;
 use Tbtop\Admin\Http\RelationSearchController;
 use Tbtop\Admin\Http\SelectCreateController;
+use Tbtop\Admin\Http\SelectOptionsController;
 use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Http\TableController;
@@ -59,6 +60,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/select-create/{tbtopField}", SelectCreateController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.selectCreate');
+        Route::post("{$path}/select-options/{tbtopField}", SelectOptionsController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.selectOptions');
         Route::post("{$path}/relation-search/{tbtopField}", RelationSearchController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.relationSearch');

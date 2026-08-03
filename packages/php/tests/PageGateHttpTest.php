@@ -114,6 +114,24 @@ it('PageGate: gated select-create endpoint returns 200 when gate allows', functi
 });
 
 // ---------------------------------------------------------------------------
+// Gate check: select-options endpoint
+// ---------------------------------------------------------------------------
+
+it('PageGate: gated select-options endpoint returns 403 when gate denies', function (): void {
+    Gate::define('view-gated-endpoints', fn (?object $user) => false);
+
+    $this->postJson('/admin/gated-endpoints/select-options/tag_id', ['search' => ''])
+        ->assertForbidden();
+});
+
+it('PageGate: gated select-options endpoint returns 200 when gate allows', function (): void {
+    Gate::define('view-gated-endpoints', fn (?object $user) => true);
+
+    $this->postJson('/admin/gated-endpoints/select-options/tag_id', ['search' => ''])
+        ->assertOk();
+});
+
+// ---------------------------------------------------------------------------
 // Gate check: editable cell endpoint
 // ---------------------------------------------------------------------------
 

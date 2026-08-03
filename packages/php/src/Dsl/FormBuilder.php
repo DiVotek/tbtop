@@ -91,6 +91,15 @@ final class FormBuilder implements JsonSerializable
     }
 
     /**
+     * Find a Select field with a query closure by name, walking nested children.
+     * Returns null when not found.
+     */
+    public function findQueryableSelect(string $name): ?Select
+    {
+        return self::searchQueryableSelect($this->children, $name);
+    }
+
+    /**
      * Find a Relation field with a query closure by name, walking nested children.
      * Returns null when not found.
      */
@@ -138,6 +147,19 @@ final class FormBuilder implements JsonSerializable
             static fn (Field $f): bool => $f instanceof Select
                 && $f->name === $name
                 && $f->creatableClosure() !== null,
+        );
+
+        return $found instanceof Select ? $found : null;
+    }
+
+    /** @param  list<mixed>  $children */
+    private static function searchQueryableSelect(array $children, string $name): ?Select
+    {
+        $found = self::searchField(
+            $children,
+            static fn (Field $f): bool => $f instanceof Select
+                && $f->name === $name
+                && $f->queryClosure() !== null,
         );
 
         return $found instanceof Select ? $found : null;

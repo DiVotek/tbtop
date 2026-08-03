@@ -4,14 +4,21 @@ namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
+use Tbtop\Admin\Dsl\Concerns\HasDependencies;
 use Tbtop\Admin\Dsl\Concerns\HasMultiple;
 use Tbtop\Admin\Dsl\Concerns\HasOptions;
+use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 
 final class Select extends Field
 {
     use HasDatabaseRules;
+    use HasDependencies;
     use HasMultiple;
     use HasOptions;
+    use HasServerQuery;
+
+    /** Server-only closure resolving a stored value back to its label. */
+    private ?Closure $resolveUsing = null;
 
     /** Server-only closure for creating a new option on the fly. */
     private ?Closure $creatableUsing = null;
@@ -29,10 +36,49 @@ final class Select extends Field
         return $this->set('searchable', $value);
     }
 
-    /** Provide an Eloquent query for dynamic options. */
-    public function query(callable $callback): static
+    /**
+     * Dynamic option source, served from the select-options endpoint. Any source
+     * works — a database, a config array, an enum, an external API.
+     *
+     * $fn: fn(array $deps, string $search): array
+     *   $deps   — current values of the fields named in dependsOn(), or [].
+     *   $search — the user's current search text, '' when the list first opens.
+     *
+     * Return either a list of ['value' => ..., 'label' => ...] rows, or an
+     * associative value => label map (e.g. User::pluck('name', 'id')).
+     *
+     * Applying $search and capping the result count are the closure's
+     * responsibility — nothing filters or truncates on its behalf.
+     *
+     * A stored value's label is resolved from the associative map when the
+     * closure returns one and the value is present; otherwise from
+     * resolveUsing(); otherwise the raw value is displayed.
+     */
+    public function query(callable $fn): static
     {
-        return $this->set('query', $callback);
+        $this->queryClosure = Closure::fromCallable($fn);
+
+        // The closure stays server-side; the wire only says "fetch me from the
+        // select-options endpoint", which is what the client dispatches on.
+        return $this->set('async', true);
+    }
+
+    /**
+     * Resolve a stored value back to its display label when query() cannot.
+     *
+     * $fn: fn(string $value): ?string — null when the value no longer exists.
+     */
+    public function resolveUsing(callable $fn): static
+    {
+        $this->resolveUsing = Closure::fromCallable($fn);
+
+        return $this;
+    }
+
+    /** Returns the label resolver for server-side use (never sent to the wire). */
+    public function resolveClosure(): ?Closure
+    {
+        return $this->resolveUsing;
     }
 
     /**

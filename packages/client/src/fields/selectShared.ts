@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { StructureNode } from "../structure/types";
 import type { AsyncMultiOptionsBag, AsyncSingleOptionsBag } from "./asyncOptions";
+import type { DependencyConfig } from "./fieldDependencies";
 
 export interface StaticOption {
 	value: string;
@@ -25,7 +26,10 @@ interface CommonSelectBag {
 	error?: ReactNode | ((err: Error) => ReactNode);
 }
 
-export interface SelectSingleOptionsBag extends CommonSelectBag, AsyncSingleOptionsBag {}
+export interface SelectSingleOptionsBag
+	extends CommonSelectBag,
+		AsyncSingleOptionsBag,
+		DependencyConfig {}
 
 export interface SelectMultiOptionsBag extends CommonSelectBag, AsyncMultiOptionsBag {}
 

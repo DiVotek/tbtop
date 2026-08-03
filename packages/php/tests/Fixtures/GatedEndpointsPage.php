@@ -12,7 +12,8 @@ use Tbtop\Admin\Pages\Page;
 
 /**
  * Fixture page used by PageGateHttpTest.
- * All page-scoped endpoints (form, action, table, data, select-create) hang off it.
+ * All page-scoped endpoints (form, action, table, data, select-create,
+ * select-options) hang off it.
  * The gate 'view-gated-endpoints' controls access.
  */
 class GatedEndpointsPage extends Page
@@ -43,6 +44,9 @@ class GatedEndpointsPage extends Page
                             return ['value' => '1', 'label' => $validated['title']];
                         },
                     ),
+                $s->select('tag_id')
+                    ->label('Tag')
+                    ->query(fn (array $deps, string $search): array => ['1' => 'Gated']),
             ])->onSubmit(function (ActionCtx $ctx): Effects {
                 static::$submitted = $ctx->form;
 
