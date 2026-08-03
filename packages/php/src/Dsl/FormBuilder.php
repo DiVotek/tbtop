@@ -246,7 +246,7 @@ final class FormBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
-        $options = ['name' => $this->name, 'children' => S::normalizeChildren($this->children)];
+        $options = ['name' => $this->name, 'children' => $this->children];
 
         if ($this->guardUnsaved !== null) {
             $options['guardUnsaved'] = $this->guardUnsaved;

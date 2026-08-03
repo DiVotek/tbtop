@@ -7,16 +7,45 @@ use stdClass;
 
 final class Node implements JsonSerializable
 {
+    /** Option keys holding a plain list of children, whatever the node's kind. */
+    private const CHILD_LIST_KEYS = ['children', 'fields'];
+
+    /** @var array<string, mixed> */
+    public readonly array $options;
+
     /**
+     * Children are filtered here rather than in the S factories because this
+     * constructor is the one place every node passes through: a factory, a
+     * builder's toNode(), or a hand-written `new Node($kind, [...])` — which is
+     * how consumers author a custom block. Filtering upstream would miss the
+     * last one.
+     *
      * @param  array<string, mixed>  $options
      * @param  array<string, mixed>  $meta
      */
     public function __construct(
         public readonly string $kind,
-        public readonly array $options = [],
+        array $options = [],
         public readonly ?string $name = null,
         public readonly array $meta = [],
-    ) {}
+    ) {
+        $this->options = self::filterChildLists($options);
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
+    private static function filterChildLists(array $options): array
+    {
+        foreach (self::CHILD_LIST_KEYS as $key) {
+            if (is_array($options[$key] ?? null)) {
+                $options[$key] = ChildInclusion::filter(array_values($options[$key]));
+            }
+        }
+
+        return $options;
+    }
 
     /**
      * Cascade translatable flag onto all descendant Fields.

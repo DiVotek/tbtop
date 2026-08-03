@@ -207,7 +207,7 @@ final class S
             FlexValidator::variant($variant);
         }
 
-        $opts = ['direction' => $direction, 'children' => self::normalizeChildren($children)];
+        $opts = ['direction' => $direction, 'children' => $children];
         if ($justify !== null) {
             $opts['justify'] = $justify;
         }
@@ -388,7 +388,7 @@ final class S
      */
     public function actionGroup(string $label, array $actions, ?string $as = null): Node
     {
-        $opts = ['label' => $label, 'children' => self::normalizeChildren($actions)];
+        $opts = ['label' => $label, 'children' => $actions];
         if ($as !== null) {
             $opts['as'] = $as;
         }
@@ -408,32 +408,24 @@ final class S
     }
 
     /**
-     * The one pass every raw child list runs through before it becomes node
-     * options. Every collection point — layout children, form children, tab
-     * bodies, repeater fields, table columns/filters/actions, modal bodies —
-     * calls this, so a rule about which children reach the wire is written
-     * once. Today the only rule is the Gate check behind ->authorize().
-     *
-     * Non-list values (a single tab body, a modal body) go through
-     * normalizeChild() instead.
+     * The pass for child lists Node cannot recognise on its own: the
+     * table-specific keys (columns, filters, rowActions/headerActions/
+     * bulkActions) and anything not yet inside a node's options. Plain
+     * 'children'/'fields' need no call here — Node filters those in its
+     * constructor, so every node is covered however it was built.
      *
      * @param  list<mixed>  $children
      * @return list<mixed>
      */
     public static function normalizeChildren(array $children): array
     {
-        return array_values(array_filter($children, self::isChildIncluded(...)));
+        return ChildInclusion::filter($children);
     }
 
     /** Single-value counterpart of normalizeChildren(): null when excluded. */
     public static function normalizeChild(mixed $child): mixed
     {
-        return self::isChildIncluded($child) ? $child : null;
-    }
-
-    private static function isChildIncluded(mixed $child): bool
-    {
-        return ! ($child instanceof ActionBuilder) || $child->isAuthorized();
+        return ChildInclusion::includes($child) ? $child : null;
     }
 
     /**
@@ -570,7 +562,13 @@ final class S
                 throw new InvalidArgumentException("Tab \"{$tab['label']}\" cannot combine 'body' with 'children'/'columns'.");
             }
 
-            return self::normalizeChild($tab['body']);
+            // The schema requires tabs[].body and the client dereferences it
+            // unconditionally, so an excluded body becomes an empty container
+            // rather than null. The tab stays: a vanished tab reads as a DSL
+            // mistake, an empty one reads as the permission it is.
+            return ChildInclusion::includes($tab['body'])
+                ? $tab['body']
+                : (new self)->stack([]);
         }
         if (! isset($tab['children'])) {
             throw new InvalidArgumentException("Tab \"{$tab['label']}\" needs either 'body' or 'children'.");
@@ -696,7 +694,7 @@ final class S
      */
     public function actionsRow(array $actions, array $opts = []): Node
     {
-        $options = ['children' => self::normalizeChildren($actions)];
+        $options = ['children' => $actions];
         if (isset($opts['variant'])) {
             $options['variant'] = self::normalizeRowVariant($opts['variant']);
         }
@@ -818,7 +816,7 @@ final class S
     {
         [$options, $meta] = Meta::split($opts);
 
-        return new Node($kind, [...$options, 'children' => self::normalizeChildren($children)], null, $meta);
+        return new Node($kind, [...$options, 'children' => $children], null, $meta);
     }
 
     /**

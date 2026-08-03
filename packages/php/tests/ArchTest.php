@@ -10,17 +10,16 @@ arch('it will not use debugging functions')
 // ---------------------------------------------------------------------------
 // One pass for collecting children
 // ---------------------------------------------------------------------------
-// Deciding which children reach the wire lives in S::normalizeChildren() alone.
-// A second implementation is how the pass splintered before: every collection
+// Deciding which children reach the wire lives in ChildInclusion alone. A
+// second implementation is how the pass splintered before: every collection
 // point (layout children, form children, table columns/filters/actions, modal
-// bodies) had to remember the rule, and several forgot. These two tests fail
-// the moment a new inline re-implementation appears.
+// bodies) had to remember the rule, and several forgot.
 
-it('keeps the authorization filter out of every source file but S', function () {
+it('keeps the authorization predicate in one source file', function () {
     $offenders = [];
     foreach (sourceFiles() as $path) {
         $source = (string) file_get_contents($path);
-        if (str_contains($source, 'isAuthorized()') && basename($path) !== 'S.php') {
+        if (str_contains($source, 'isAuthorized()') && basename($path) !== 'ChildInclusion.php') {
             $offenders[] = substr($path, strpos($path, '/src/') + 1);
         }
     }
@@ -34,23 +33,13 @@ it('keeps the authorization filter out of every source file but S', function () 
     ]);
 });
 
-it('routes every raw child list through the one collection pass', function () {
-    $offenders = [];
-    foreach (sourceFiles() as $path) {
-        $source = (string) file_get_contents($path);
-        foreach (childKeyAssignments($source) as $statement) {
-            if (! str_contains($statement, 'normalizeChildren')) {
-                $offenders[] = substr($path, strpos($path, '/src/') + 1).': '.trim($statement);
-            }
-        }
-    }
+// The guard that makes the test above non-vacuous: the pass has to run where
+// every node is built, not only in the S factories that remember to call it.
+// `new Node($kind, [...])` is how a consumer authors a custom block.
+it('filters children inside the Node constructor', function () {
+    $constructor = (string) file_get_contents(dirname(__DIR__).'/src/Dsl/Node.php');
 
-    expect($offenders)->toBe([]);
-});
-
-it('applies the collection pass to a raw list rather than a built node', function () {
-    expect(method_exists(S::class, 'normalizeChildren'))->toBeTrue()
-        ->and(method_exists(Node::class, 'withFilteredChildren'))->toBeFalse();
+    expect($constructor)->toContain('ChildInclusion::filter');
 });
 
 /** @return list<string> Absolute paths of every PHP file under src/. */
@@ -68,35 +57,4 @@ function sourceFiles(): array
     sort($files);
 
     return $files;
-}
-
-/**
- * Lines writing a child list into a node option bag under one of the wire's
- * "child" keys. Literal values (`=> []`, `=> true`) are option defaults, not
- * collection points. Everything else is a list heading for the wire and must
- * name normalizeChildren().
- *
- * @return list<string>
- */
-function childKeyAssignments(string $source): array
-{
-    $keys = ['children', 'fields', 'rowActions', 'headerActions', 'bulkActions', 'filters'];
-    $pattern = "/'(".implode('|', $keys).")'\s*=>\s*([^,\]]+)/";
-
-    $out = [];
-    // Statements, not lines: a collection point may wrap the pass across lines.
-    foreach (explode(';', $source) as $statement) {
-        if (preg_match_all($pattern, $statement, $matches, PREG_SET_ORDER) === 0) {
-            continue;
-        }
-        foreach ($matches as [, , $value]) {
-            if (preg_match('/^(\[\]|true|false)$/', trim($value)) !== 1) {
-                $out[] = preg_replace('/\s+/', ' ', $statement) ?? $statement;
-
-                break;
-            }
-        }
-    }
-
-    return $out;
 }

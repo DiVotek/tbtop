@@ -152,9 +152,11 @@ final class ActionBuilder implements JsonSerializable
 
     /**
      * Server-side Gate check. A failing check omits the action from the wire
-     * entirely (mirrors Filament's Gate::allows() auto-hide) — S::normalizeChildren()
-     * applies it at every collection point. Cosmetic only: the endpoint stays
-     * reachable, so ActionController re-checks isAuthorized() authoritatively.
+     * entirely (mirrors Filament's Gate::allows() auto-hide) — ChildInclusion
+     * applies it, from the Node constructor for 'children'/'fields' and from
+     * S::normalizeChildren() for the table-specific keys. Cosmetic only: the
+     * endpoint stays reachable, so ActionController re-checks isAuthorized()
+     * authoritatively.
      */
     public function authorize(string $ability, mixed $arg = null): self
     {
