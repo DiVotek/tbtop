@@ -1,20 +1,6 @@
-import { Input, useClient } from "@tbtop/inertia-admin";
+import { Button, Input, useClient } from "@tbtop/inertia-admin";
 import type { RenderProps } from "@tbtop/inertia-admin";
 import { useState } from "react";
-
-// Local button — the package does not re-export its <Button>; this keeps the
-// demo block self-contained without widening the package's public surface.
-function Button({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-	return (
-		<button
-			type="button"
-			className="rounded bg-primary px-4 py-2 text-primary-foreground text-sm disabled:opacity-50"
-			{...props}
-		>
-			{children}
-		</button>
-	);
-}
 
 interface TwoFactorOptions {
 	setupUrl: string;
@@ -97,7 +83,7 @@ export function TwoFactorSetupBlock({ options }: RenderProps<TwoFactorOptions>) 
 				Add an extra layer of security with an authenticator app.
 			</p>
 			{error ? <p className="text-destructive text-sm">{error}</p> : null}
-			<Button onClick={begin} disabled={busy}>
+			<Button type="button" onClick={begin} disabled={busy}>
 				{busy ? "Starting…" : "Enable two-factor"}
 			</Button>
 		</div>
@@ -134,7 +120,7 @@ function ScanStep({ setup, code, busy, error, onCode, onConfirm }: ScanProps) {
 				onChange={(e) => onCode(e.target.value)}
 			/>
 			{error ? <p className="text-destructive text-sm">{error}</p> : null}
-			<Button onClick={onConfirm} disabled={busy || code.length === 0}>
+			<Button type="button" onClick={onConfirm} disabled={busy || code.length === 0}>
 				{busy ? "Verifying…" : "Confirm"}
 			</Button>
 		</div>
