@@ -22,6 +22,11 @@ export { collection, item, single } from "./data/entityRoutes";
 export type { Envelope, TabletopError } from "./data/envelope";
 export { isTabletopError } from "./data/envelope";
 export type { UploadRow } from "./data/upload";
+// Richtext is exported only through its lazy wrappers: Lexical is a ~270KB chunk
+// kept out of the static graph, and a direct re-export would pull it into every
+// consumer's main bundle. The wrappers already carry lazy() + Suspense.
+export { RichtextFormLazy } from "./fields/richtext/richtextFormLazy";
+export { RichtextViewLazy } from "./fields/richtext/richtextViewLazy";
 export type {
 	I18nState,
 	LocaleLoader,
@@ -101,12 +106,92 @@ export type {
 	TablePaginationOptions,
 	TableTab,
 } from "./structure/types";
+// Public UI surface. Principle: `ui/` holds presentational primitives and is
+// public; `structure/` and `fields/` interpret StructureNode and stay internal.
+// Access to a component is not the right to rewrite it — exposing composites
+// costs nothing beyond ordinary semver.
+// Stability: component props and variant names follow semver; the internal
+// Tailwind class strings do not. The package's `styles.css` must be imported
+// for these primitives to render correctly.
 export type { AlertProps, AlertVariant } from "./ui/alert";
 export { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+export { Badge, badgeVariants } from "./ui/badge";
 export type { ButtonProps } from "./ui/button";
-export { Button } from "./ui/button";
+export { Button, buttonVariants } from "./ui/button";
+export {
+	Card,
+	CardAction,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "./ui/card";
 export type { StatDescriptor } from "./ui/charts";
 export { StatBlock, StatCard } from "./ui/charts";
-export { Input } from "./ui/input";
+export { Checkbox } from "./ui/checkbox";
+export { CopyButton } from "./ui/copyButton";
+export {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuPortal,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+export { Input, inputCompactFontClass, inputFontClass, inputTextClass } from "./ui/input";
+export { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "./ui/inputOtp";
+export { Label } from "./ui/label";
 export type { ConfirmDialogProps, ModalShellProps, ModalSize } from "./ui/modal-shell";
 export { ConfirmDialog, ModalShell } from "./ui/modal-shell";
+export type { IconDef } from "./ui/node-icon";
+export { NodeIcon } from "./ui/node-icon";
+export {
+	Popover,
+	PopoverAnchor,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger,
+} from "./ui/popover";
+export { Progress } from "./ui/progress";
+export { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+export type { ResponsiveDialogProps } from "./ui/revola";
+export {
+	ResponsiveDialog,
+	ResponsiveDialogClose,
+	ResponsiveDialogContent,
+	ResponsiveDialogDescription,
+	ResponsiveDialogFooter,
+	ResponsiveDialogHeader,
+	ResponsiveDialogTitle,
+	ResponsiveDialogTrigger,
+} from "./ui/revola";
+export {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectScrollDownButton,
+	SelectScrollUpButton,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue,
+} from "./ui/select";
+export { Slider } from "./ui/slider";
+export { ReloadOverlay, Spinner } from "./ui/spinner";
+export { Switch } from "./ui/switch";
+export { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants } from "./ui/tabs";
+export { Textarea } from "./ui/textarea";
+export { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
