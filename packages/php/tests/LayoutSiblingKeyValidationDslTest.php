@@ -7,6 +7,50 @@ function encodeSiblingNode(mixed $node): array
     return json_decode(json_encode($node), true);
 }
 
+/** @param  array<string, mixed>  $opts */
+function siblingLayoutWithOptions(S $s, string $kind, array $opts): mixed
+{
+    $children = [$s->displayText('x')];
+
+    return match ($kind) {
+        'stack' => $s->stack($children, $opts),
+        'row' => $s->row($children, $opts),
+        'grid' => $s->grid(['cols' => 2, ...$opts], $children),
+        'section' => $s->section(['title' => 'X', ...$opts], $children),
+        'aside' => $s->aside($children, $opts),
+        'collapsible' => $s->collapsible(['label' => 'X', ...$opts], $children),
+    };
+}
+
+it('preserves the CMS responsive stack column span', function (): void {
+    $s = new S;
+    $json = encodeSiblingNode($s->stack(
+        [$s->displayText('x')],
+        ['colSpan' => ['sm' => 1, 'lg' => 2]],
+    ));
+
+    expect($json['options']['colSpan'])->toBe(['sm' => 1, 'lg' => 2]);
+});
+
+it('preserves column placement on option-array layout builders', function (string $kind): void {
+    $json = encodeSiblingNode(siblingLayoutWithOptions(new S, $kind, [
+        'colSpan' => ['sm' => 1, 'lg' => 2],
+        'colStart' => ['md' => 2, 'xl' => 3],
+    ]));
+
+    expect($json['options']['colSpan'])->toBe(['sm' => 1, 'lg' => 2])
+        ->and($json['options']['colStart'])->toBe(['md' => 2, 'xl' => 3]);
+})->with(['stack', 'row', 'grid', 'section', 'aside', 'collapsible']);
+
+it('rejects invalid layout column placement', function (string $key, mixed $value, string $message): void {
+    expect(fn () => (new S)->stack([], [$key => $value]))
+        ->toThrow(InvalidArgumentException::class, $message);
+})->with([
+    ['colSpan', 9, 'Invalid colSpan 9. Must be between 1 and 8.'],
+    ['colStart', ['mobile' => 1], 'Invalid colStart breakpoint "mobile"'],
+    ['colSpan', ['sm' => '2'], 'Invalid colSpan.sm: must be an integer.'],
+]);
+
 // ---------------------------------------------------------------------------
 // stack() unknown option keys
 // ---------------------------------------------------------------------------
@@ -21,6 +65,8 @@ it('stack accepts every whitelisted option key', function (): void {
     $json = encodeSiblingNode($s->stack([$s->displayText('x')], [
         'class' => 'shadow-lg',
         'gap' => 4,
+        'colSpan' => 2,
+        'colStart' => ['lg' => 2],
         'id' => 'my-stack',
         'hidden' => false,
         'disabled' => false,
@@ -47,6 +93,8 @@ it('row accepts every whitelisted option key', function (): void {
     $json = encodeSiblingNode($s->row([$s->displayText('x')], [
         'class' => 'shadow-lg',
         'gap' => 4,
+        'colSpan' => 2,
+        'colStart' => ['lg' => 2],
         'id' => 'my-row',
         'hidden' => false,
         'disabled' => false,
@@ -72,6 +120,8 @@ it('aside accepts every whitelisted option key', function (): void {
     $s = new S;
     $json = encodeSiblingNode($s->aside([$s->displayText('x')], [
         'class' => 'shadow-lg',
+        'colSpan' => 2,
+        'colStart' => ['lg' => 2],
         'id' => 'my-aside',
         'hidden' => false,
         'disabled' => false,
@@ -98,6 +148,8 @@ it('grid accepts every whitelisted option key', function (): void {
         'cols' => 2,
         'gap' => 4,
         'class' => 'shadow-lg',
+        'colSpan' => 2,
+        'colStart' => ['lg' => 2],
         'id' => 'my-grid',
         'hidden' => false,
         'disabled' => false,
@@ -123,6 +175,8 @@ it('collapsible accepts every whitelisted option key', function (): void {
     $json = encodeSiblingNode($s->collapsible([
         'label' => 'Advanced options',
         'collapsed' => true,
+        'colSpan' => 2,
+        'colStart' => ['lg' => 2],
         'id' => 'my-collapsible',
         'hidden' => false,
         'disabled' => false,
