@@ -223,11 +223,12 @@ final class SelectOptionsController
     }
 
     /**
-     * Keys beyond value/label ride along untouched so a field kind can carry
-     * its own option payload (a gallery needs a preview url, for instance).
+     * Allowlisted on purpose: a query() row is often a whole model, and anything
+     * beyond the option's own keys would be published to every user who can open
+     * the select.
      *
      * @param  array<array-key, mixed>  $row
-     * @return array{value: string, label: string}|null
+     * @return array{value: string, label: string, display?: mixed}|null
      */
     private static function rowOption(array $row): ?array
     {
@@ -237,10 +238,11 @@ final class SelectOptionsController
         }
         $label = $row['label'] ?? $value;
 
-        return array_merge($row, [
+        return [
             'value' => (string) $value,
             'label' => is_scalar($label) ? (string) $label : (string) $value,
-        ]);
+            ...is_array($row['display'] ?? null) ? ['display' => $row['display']] : [],
+        ];
     }
 
     /** @return array{value: string, label: string}|null */

@@ -99,6 +99,19 @@ class SelectQueryPage extends Page
                     ->resolveUsing(fn (string $value): string|array|null => $value === '12'
                         ? ['label' => 'Toyota Camry', 'display' => ['image' => 'https://cdn.test/12.jpg']]
                         : null),
+                // Eloquent-backed sources hand whole models to the closure, so
+                // rows routinely carry attributes an option must not publish.
+                $s->select('owner')
+                    ->label('Owner')
+                    ->query(fn (array $deps, string $search): array => [
+                        [
+                            'value' => 7,
+                            'label' => 'Alice',
+                            'email' => 'alice@example.test',
+                            'password_hash' => 'SECRET',
+                            'display' => ['image' => 'https://cdn.test/7.jpg'],
+                        ],
+                    ]),
                 $s->select('status')->label('Status')->options([['value' => 'a', 'label' => 'A']]),
             ])->onSubmit(fn () => null),
         ]);

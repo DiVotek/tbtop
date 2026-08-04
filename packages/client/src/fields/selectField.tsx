@@ -169,12 +169,12 @@ function StaticSingleSelect({
 			</SelectTrigger>
 			<SelectContent>
 				{isUnlisted && created && (
-					<SelectItem key={current} value={current}>
+					<SelectItem key={current} value={current} textValue={created.label}>
 						<SelectOptionContent option={created} />
 					</SelectItem>
 				)}
 				{choices.map((opt) => (
-					<SelectItem key={opt.value} value={opt.value}>
+					<SelectItem key={opt.value} value={opt.value} textValue={opt.label}>
 						<SelectOptionContent option={opt} />
 					</SelectItem>
 				))}
@@ -442,7 +442,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 			</SelectTrigger>
 			<SelectContent>
 				{Object.entries(listed).map(([v, option]) => (
-					<SelectItem key={v} value={v}>
+					<SelectItem key={v} value={v} textValue={option.label}>
 						<SelectOptionContent option={option} />
 					</SelectItem>
 				))}

@@ -133,6 +133,20 @@ it('Select options: resolveUsing may answer with an option array carrying displa
     ]]);
 });
 
+// A query() row is whatever the author's source handed back — often a whole
+// model. Only the option's own keys may reach the browser.
+it('Select options: a row publishes only value, label and display', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/owner', ['search' => '']);
+
+    $response->assertOk()->assertExactJson(['options' => [
+        [
+            'value' => '7',
+            'label' => 'Alice',
+            'display' => ['image' => 'https://cdn.test/7.jpg'],
+        ],
+    ]]);
+});
+
 // PHP casts a numeric-string key to int, so $rows["0"] on a list source is its
 // first element — a stored id must never inherit a positional neighbour's name.
 it('Select options: a numeric value never resolves to a row at that list position', function (): void {

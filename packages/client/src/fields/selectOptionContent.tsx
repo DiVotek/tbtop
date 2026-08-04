@@ -31,25 +31,21 @@ export function SelectOptionContent({ option, surface = "list" }: SelectOptionCo
 	if (!display) {
 		return <span className="truncate">{label}</span>;
 	}
-	// Radix reads an item's whole text content for its accessible name and
-	// keyboard typeahead, so the visual half is hidden from it and `label` is
-	// contributed separately as the option's text.
+	// Callers keep `label` as the option's text: Radix items take textValue, and
+	// the chip/searchable surfaces read option.label directly.
 	return (
-		<>
-			<span className="sr-only">{label}</span>
-			<span aria-hidden className="flex min-w-0 items-center gap-2">
-				{/* html wins outright — image and subtitle are ignored beside it. */}
-				{display.html !== undefined ? (
-					<span
-						className={cn("min-w-0", HTML_BOX[surface])}
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: DSL-authored content, not user input
-						dangerouslySetInnerHTML={{ __html: display.html }}
-					/>
-				) : (
-					<RichLabel label={label} display={display} surface={surface} />
-				)}
-			</span>
-		</>
+		<span className="flex min-w-0 items-center gap-2">
+			{/* html wins outright — image and subtitle are ignored beside it. */}
+			{display.html !== undefined ? (
+				<span
+					className={cn("min-w-0", HTML_BOX[surface])}
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: DSL-authored content, not user input
+					dangerouslySetInnerHTML={{ __html: display.html }}
+				/>
+			) : (
+				<RichLabel label={label} display={display} surface={surface} />
+			)}
+		</span>
 	);
 }
 
