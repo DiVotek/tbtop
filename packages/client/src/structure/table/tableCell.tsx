@@ -1,23 +1,14 @@
 /**
  * RowDataCell + renderCell — one <td> and its render chain:
- * custom → editable → kind badge/boolean/icon → field → string.
+ * custom → editable → row-scoped kinds (image/link) → formatColumnValue.
  */
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
-import { getBlockDescriptor } from "../../render/blockRegistry";
-import { renderDescriptor } from "../../render/renderDescriptor";
 import { CopyButton } from "../../ui/copyButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { TableColumn } from "../types";
-import {
-	BadgeCell,
-	BooleanIconCell,
-	ColorCell,
-	IconMapCell,
-	ImageCell,
-	LinkCell,
-	TimeCell,
-} from "./cellHelpers";
+import { ImageCell, LinkCell } from "./cellHelpers";
+import { formatColumnValue } from "./columnValueFormat";
 import { EditableCell } from "./editableCell";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -118,46 +109,11 @@ function renderCell({ col, row, tooltip, saveCell }: RenderCellArgs): ReactNode 
 			/>
 		);
 	}
-	if (col.kind === "badge") {
-		return <BadgeCell value={row[col.name]} col={col} />;
-	}
-	if (col.kind === "boolean") {
-		return <BooleanIconCell value={row[col.name]} col={col} />;
-	}
-	if (col.kind === "icon") {
-		return <IconMapCell value={row[col.name]} col={col} />;
-	}
 	if (col.kind === "image") {
 		return <ImageCell value={row[col.name]} col={col} tooltip={tooltip} />;
-	}
-	if (col.kind === "color") {
-		return <ColorCell value={row[col.name]} col={col} />;
-	}
-	if (col.kind === "time") {
-		return <TimeCell value={row[col.name]} />;
 	}
 	if (col.kind === "link") {
 		return <LinkCell value={row[col.name]} col={col} />;
 	}
-	// Server already formatted the value with an explicit format — render it
-	// as-is. Reparsing "09.07.2026" via new Date() would misread it (US order)
-	// and re-localize, discarding the format the page author chose.
-	if ((col.kind === "date" || col.kind === "datetime") && col.format) {
-		return String(row[col.name] ?? "");
-	}
-	const descriptor = col.kind ? getBlockDescriptor(col.kind) : undefined;
-	if (descriptor?.behavior === "field") {
-		return renderDescriptor(descriptor, {
-			kind: col.kind ?? "",
-			options: { name: col.name },
-			meta: {},
-			ctx: {
-				surface: "cell",
-				binding: { name: col.name, value: row[col.name], onChange: () => {} },
-			},
-			children: undefined,
-			renderChild: () => null,
-		});
-	}
-	return String(row[col.name] ?? "");
+	return formatColumnValue(col, row[col.name]);
 }

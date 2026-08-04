@@ -16,6 +16,7 @@ import { TableGrid } from "./grid";
 const Wrap = wrapForStructure(() => new Response("{}"));
 
 const COLUMNS: TableColumn[] = [{ name: "title", label: "Title" }];
+const GROUPABLE_COLUMNS: TableColumn[] = [...COLUMNS, { name: "status", label: "Status" }];
 const ROWS = [
 	{ id: "1", title: "a" },
 	{ id: "2", title: "b" },
@@ -28,6 +29,7 @@ interface Overrides {
 	emptyState?: TableEmptyState;
 	recordUrl?: boolean;
 	groups?: TableGroupsConfig;
+	columns?: TableColumn[];
 }
 
 function renderGrid(over: Overrides = {}) {
@@ -35,7 +37,7 @@ function renderGrid(over: Overrides = {}) {
 		<Wrap>
 			<TableGrid
 				rows={over.rows ?? ROWS}
-				columns={COLUMNS}
+				columns={over.columns ?? COLUMNS}
 				rowActions={[]}
 				selectedIds={[]}
 				onToggle={() => {}}
@@ -136,24 +138,42 @@ describe("TableGrid row grouping", () => {
 	];
 
 	test("renders a group header before each contiguous run when groups is set", () => {
-		const { getAllByText, queryAllByText } = renderGrid({
+		const { container } = renderGrid({
 			rows: GROUPED_ROWS,
 			groups: { column: "status" },
+			columns: GROUPABLE_COLUMNS,
 		});
-		expect(getAllByText("draft")).toHaveLength(1);
-		expect(queryAllByText("published")).toHaveLength(1);
+		const headerRows = container.querySelectorAll("tr.bg-muted\\/50");
+		expect(headerRows).toHaveLength(2);
+		expect(headerRows[0]?.textContent).toContain("draft");
+		expect(headerRows[1]?.textContent).toContain("published");
+	});
+
+	// groups() only requires a matching defaultSort, so column visibility or
+	// hiddenByDefault can drop the grouped column from the columns TableGrid gets.
+	test("renders group headers when the grouped column is not among the displayed columns", () => {
+		const { container } = renderGrid({
+			rows: GROUPED_ROWS,
+			groups: { column: "status" },
+			columns: COLUMNS,
+		});
+		const headerRows = container.querySelectorAll("tr.bg-muted\\/50");
+		expect(headerRows).toHaveLength(2);
+		expect(headerRows[0]?.textContent).toContain("draft");
+		expect(headerRows[1]?.textContent).toContain("published");
 	});
 
 	test("skips grouping entirely while reorder is active, even with groups set", () => {
-		const { queryAllByText } = renderGrid({
+		const { container } = renderGrid({
 			rows: GROUPED_ROWS,
 			groups: { column: "status" },
+			columns: GROUPABLE_COLUMNS,
 			reorderColumn: "position",
 			reorderEnabled: true,
 		});
-		// Group header rows never render; only cell content ("draft"/"published"
-		// as row values, not header labels) would otherwise show as one node.
-		expect(queryAllByText("draft")).toHaveLength(0);
-		expect(queryAllByText("published")).toHaveLength(0);
+		// GroupHeaderRow is the only <tr> styled bg-muted/50 — its absence proves
+		// no group header rendered, regardless of "draft"/"published" also
+		// appearing as ordinary per-row cell text now that status is a column.
+		expect(container.querySelectorAll("tr.bg-muted\\/50")).toHaveLength(0);
 	});
 });
