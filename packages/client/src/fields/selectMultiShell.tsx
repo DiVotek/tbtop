@@ -4,9 +4,11 @@ import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { inputCompactFontClass, inputFontClass } from "../ui/input";
+import type { OptionMap } from "./asyncOptions";
 import { fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
-import type { SelectCreateConfig } from "./selectShared";
+import { SelectOptionContent } from "./selectOptionContent";
+import type { SelectCreateConfig, StaticOption } from "./selectShared";
 
 export interface MultiShellRenderResult {
 	exactMatch: boolean;
@@ -23,10 +25,10 @@ export interface MultiShellProps {
 	onBlur?: () => void;
 	disabled?: boolean;
 	create: SelectCreateConfig | undefined;
-	/** Resolves a display label for a selected value. */
-	getLabel: (v: string) => string;
+	/** Resolves the option behind a selected value. */
+	getOption: (v: string) => StaticOption;
 	/** Async only — mutable map stashed for label-on-create. */
-	resolvedLabels?: Record<string, string>;
+	resolvedLabels?: OptionMap;
 	/** Async only — fired after a successful create so the list can refetch. */
 	onCreated?: () => void;
 	onQueryChange?: (q: string) => void;
@@ -42,7 +44,7 @@ export function MultiComboboxShell({
 	onBlur,
 	disabled,
 	create,
-	getLabel,
+	getOption,
 	resolvedLabels,
 	onCreated,
 	onQueryChange,
@@ -70,7 +72,7 @@ export function MultiComboboxShell({
 
 	function handleCreateSuccess(newValue: string, label: string): void {
 		if (resolvedLabels) {
-			resolvedLabels[newValue] = label;
+			resolvedLabels[newValue] = { value: newValue, label };
 		}
 		if (!value.includes(newValue)) {
 			onChange([...value, newValue]);
@@ -104,11 +106,13 @@ export function MultiComboboxShell({
 							data-testid={`chip-${v}`}
 							className="flex items-center gap-1 rounded border border-primary bg-primary px-2 py-0.5 text-primary-foreground text-xs"
 						>
-							<span>{getLabel(v)}</span>
+							<SelectOptionContent option={getOption(v)} surface="inline" />
 							<Combobox.ChipRemove
+								// Always the plain label: markup would land in the
+								// accessible name verbatim.
 								aria-label={t("field.select.remove").replace(
 									"{label}",
-									getLabel(v),
+									getOption(v).label,
 								)}
 								className="text-primary-foreground hover:text-foreground"
 							>

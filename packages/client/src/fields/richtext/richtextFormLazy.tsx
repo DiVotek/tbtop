@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, type ReactNode, Suspense } from "react";
 import type { FieldFormProps } from "../fieldProps";
 import type { RichtextValue } from "./richtextCell";
 
@@ -7,13 +7,19 @@ import type { RichtextValue } from "./richtextCell";
 // tests that never render richtext are not affected.
 const LazyForm = lazy(() => import("./richtextField").then((m) => ({ default: m.RichtextForm })));
 
+const defaultFallback = <div className="h-40 rounded-md border bg-muted animate-pulse" />;
+
 interface RichtextOptionsBag {
 	placeholder?: string;
 }
 
-export function RichtextFormLazy(props: FieldFormProps<RichtextValue, RichtextOptionsBag>) {
+export interface RichtextFormLazyProps extends FieldFormProps<RichtextValue, RichtextOptionsBag> {
+	fallback?: ReactNode;
+}
+
+export function RichtextFormLazy({ fallback = defaultFallback, ...props }: RichtextFormLazyProps) {
 	return (
-		<Suspense fallback={<div className="h-40 rounded-md border bg-muted animate-pulse" />}>
+		<Suspense fallback={fallback}>
 			<LazyForm {...props} />
 		</Suspense>
 	);

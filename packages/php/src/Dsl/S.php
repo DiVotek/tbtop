@@ -160,7 +160,8 @@ final class S
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
     public function stack(array $children, array $opts = []): Node
     {
-        self::assertKnownKeys('stack', $opts, ['class', 'gap', ...Meta::keys()]);
+        self::assertKnownKeys('stack', $opts, ['class', 'gap', 'colSpan', 'colStart', ...Meta::keys()]);
+        self::validateColumnPlacement($opts);
 
         return self::layout('stack', $children, $opts);
     }
@@ -168,7 +169,8 @@ final class S
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
     public function row(array $children, array $opts = []): Node
     {
-        self::assertKnownKeys('row', $opts, ['class', 'gap', ...Meta::keys()]);
+        self::assertKnownKeys('row', $opts, ['class', 'gap', 'colSpan', 'colStart', ...Meta::keys()]);
+        self::validateColumnPlacement($opts);
 
         return self::layout('row', $children, $opts);
     }
@@ -236,12 +238,13 @@ final class S
      * `gap` (0-12, default 4) reuses the flex gap-N scale. `class` merges
      * extra Tailwind classes onto the root element.
      *
-     * @param  array{cols?: int|array<string, int>, gap?: int, class?: string}  $opts
+     * @param  array{cols?: int|array<string, int>, gap?: int, class?: string, colSpan?: int|array<string, int>, colStart?: int|array<string, int>}  $opts
      * @param  list<mixed>  $children
      */
     public function grid(array $opts, array $children): Node
     {
-        self::assertKnownKeys('grid', $opts, ['cols', 'gap', 'class', ...Meta::keys()]);
+        self::assertKnownKeys('grid', $opts, ['cols', 'gap', 'class', 'colSpan', 'colStart', ...Meta::keys()]);
+        self::validateColumnPlacement($opts);
 
         if (isset($opts['cols'])) {
             ColumnsValidator::validate($opts['cols'], 'grid cols');
@@ -273,9 +276,10 @@ final class S
     {
         self::assertKnownKeys('section', $opts, [
             'title', 'description', 'icon', 'aside', 'collapsible', 'collapsed',
-            'columns', 'action', 'variant', 'class',
+            'columns', 'action', 'variant', 'class', 'colSpan', 'colStart',
             ...Meta::keys(),
         ], static fn (string $key): string => $key === 'label' ? " Did you mean 'title'?" : '');
+        self::validateColumnPlacement($opts);
 
         if (isset($opts['columns'])) {
             ColumnsValidator::validate($opts['columns'], 'section columns');
@@ -359,7 +363,8 @@ final class S
      */
     public function collapsible(array $opts, array $children): Node
     {
-        self::assertKnownKeys('collapsible', $opts, ['label', 'collapsed', ...Meta::keys()]);
+        self::assertKnownKeys('collapsible', $opts, ['label', 'collapsed', 'colSpan', 'colStart', ...Meta::keys()]);
+        self::validateColumnPlacement($opts);
 
         $opts = array_merge(['collapsed' => false], $opts);
 
@@ -371,11 +376,12 @@ final class S
      * $opts supports 'class' (extra Tailwind classes merged onto the root element).
      *
      * @param  list<mixed>  $children
-     * @param  array{class?: string}  $opts
+     * @param  array{class?: string, colSpan?: int|array<string, int>, colStart?: int|array<string, int>}  $opts
      */
     public function aside(array $children, array $opts = []): Node
     {
-        self::assertKnownKeys('aside', $opts, ['class', ...Meta::keys()]);
+        self::assertKnownKeys('aside', $opts, ['class', 'colSpan', 'colStart', ...Meta::keys()]);
+        self::validateColumnPlacement($opts);
 
         return self::layout('aside', $children, $opts);
     }
@@ -810,6 +816,16 @@ final class S
     // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------
+
+    /** @param  array<string, mixed>  $opts */
+    private static function validateColumnPlacement(array $opts): void
+    {
+        foreach (['colSpan', 'colStart'] as $key) {
+            if (isset($opts[$key])) {
+                ColumnsValidator::validate($opts[$key], $key);
+            }
+        }
+    }
 
     /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
     private static function layout(string $kind, array $children, array $opts): Node

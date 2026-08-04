@@ -4,7 +4,7 @@ import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import type { AsyncSingleOptionsBag, ReadyLabels, SeenLabel } from "./asyncOptions";
+import type { AsyncSingleOptionsBag, OptionMap, ReadyLabels, SeenLabel } from "./asyncOptions";
 import { EMPTY_LABELS, useSingleResolvedLabel } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { nullableCell } from "./cellHelpers";
@@ -70,10 +70,10 @@ export function RelationForm({
 	// stops a selection from re-resolving a label we just displayed. Each entry
 	// records the deps it was seen under, so new deps never reuse an old label.
 	const seenLabels = useRef<Record<string, SeenLabel>>({});
-	const knownLabels: Record<string, string> = {};
+	const knownLabels: OptionMap = {};
 	for (const [rowValue, seen] of Object.entries(seenLabels.current)) {
 		if (seen.depsKey === dep.depsKey) {
-			knownLabels[rowValue] = seen.label;
+			knownLabels[rowValue] = seen.option;
 		}
 	}
 	const resolved = useSingleResolvedLabel({
@@ -107,7 +107,10 @@ export function RelationForm({
 			resolved={lastReady.current}
 			dep={dep}
 			onRowLabel={(rowValue, label) => {
-				seenLabels.current[rowValue] = { label, depsKey: dep.depsKey };
+				seenLabels.current[rowValue] = {
+					option: { value: rowValue, label },
+					depsKey: dep.depsKey,
+				};
 			}}
 		/>
 	);
@@ -164,7 +167,7 @@ function RelationSelectInner({
 	}
 
 	const rows: unknown[] = gated ? [] : search.rows;
-	const display = value === null ? undefined : (resolved.labels[value] ?? value);
+	const display = value === null ? undefined : (resolved.labels[value]?.label ?? value);
 
 	return (
 		<Select
