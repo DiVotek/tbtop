@@ -228,12 +228,15 @@ function renderGroupedRows(
 	props: TableGridProps,
 	colSpan: number,
 ): ReactNode {
-	const column = props.groups?.column;
-	if (!column) {
+	const columnName = props.groups?.column;
+	if (!columnName) {
 		return rows.map((row) => renderRow(row, props, false));
 	}
-	return partitionRowGroups(rows, column).flatMap((group, i) => [
-		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} />,
+	// The grouped column may be hidden or never displayed — fall back to a bare
+	// column so the header still renders, as plain text.
+	const column = props.columns.find((c) => c.name === columnName) ?? { name: columnName };
+	return partitionRowGroups(rows, columnName).flatMap((group, i) => [
+		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} column={column} />,
 		...group.rows.map((row) => renderRow(row, props, false)),
 	]);
 }
