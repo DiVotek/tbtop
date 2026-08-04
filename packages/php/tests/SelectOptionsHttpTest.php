@@ -108,6 +108,65 @@ it('Select options: a Collection source resolves a stored label', function (): v
 });
 
 // ---------------------------------------------------------------------------
+// Rich options (display)
+// ---------------------------------------------------------------------------
+
+it('Select options: search keeps display alongside value and label', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/car', ['search' => '']);
+
+    $response->assertOk()->assertExactJson(['options' => [
+        [
+            'value' => '12',
+            'label' => 'Toyota Camry',
+            'display' => ['image' => 'https://cdn.test/12.jpg', 'subtitle' => 'Sedan · black'],
+        ],
+    ]]);
+});
+
+it('Select options: resolveUsing may answer with an option array carrying display', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/car', ['value' => '12']);
+
+    $response->assertOk()->assertExactJson(['option' => [
+        'label' => 'Toyota Camry',
+        'display' => ['image' => 'https://cdn.test/12.jpg'],
+        'value' => '12',
+    ]]);
+});
+
+// A query() row is whatever the author's source handed back — often a whole
+// model. Only the option's own keys may reach the browser.
+it('Select options: a row publishes only value, label and display', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/owner', ['search' => '']);
+
+    $response->assertOk()->assertExactJson(['options' => [
+        [
+            'value' => '7',
+            'label' => 'Alice',
+            'display' => ['image' => 'https://cdn.test/7.jpg'],
+        ],
+    ]]);
+});
+
+// PHP casts a numeric-string key to int, so $rows["0"] on a list source is its
+// first element — a stored id must never inherit a positional neighbour's name.
+it('Select options: a numeric value never resolves to a row at that list position', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/car', ['value' => '0']);
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => '0', 'label' => '0']]);
+});
+
+it('Select options: a resolveUsing string still resolves as a plain option', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/city', [
+        'value' => 'par',
+        'deps' => ['country' => 'fr'],
+    ]);
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => 'par', 'label' => 'Paris']]);
+});
+
+// ---------------------------------------------------------------------------
 // Resolve-many mode (multiple() selects)
 // ---------------------------------------------------------------------------
 

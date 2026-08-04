@@ -54,7 +54,7 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 					name={props.name}
 					value={visible}
 					onRemove={remove}
-					labelFor={(v) => resolved.labels[v] ?? v}
+					labelFor={(v) => resolved.labels[v]?.label ?? v}
 					disabled={props.disabled}
 				/>
 				<input

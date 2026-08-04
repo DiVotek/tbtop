@@ -3,9 +3,24 @@ import type { StructureNode } from "../structure/types";
 import type { AsyncMultiOptionsBag, AsyncSingleOptionsBag } from "./asyncOptions";
 import type { DependencyConfig } from "./fieldDependencies";
 
+/**
+ * `html` wins: when present it renders alone and image/subtitle are ignored.
+ * It is injected verbatim and never sanitized — compose it from trusted data.
+ */
+export interface OptionDisplay {
+	image?: string;
+	subtitle?: string;
+	html?: string;
+}
+
+/**
+ * `label` is the option's text identity, not its looks: it feeds the chip's
+ * aria-label, Radix typeahead, and searchable() filtering. `html` reaches none.
+ */
 export interface StaticOption {
 	value: string;
 	label: string;
+	display?: OptionDisplay;
 }
 
 export interface SelectCreateConfig {

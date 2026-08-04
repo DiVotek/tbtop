@@ -3,6 +3,8 @@
  * a column's value and renders a full-width header before each run.
  */
 import type { ReactNode } from "react";
+import type { TableColumn } from "../types";
+import { formatColumnValue } from "./columnValueFormat";
 
 export interface RowGroup {
 	value: unknown;
@@ -30,10 +32,12 @@ export function partitionRowGroups(rows: Record<string, unknown>[], column: stri
 interface GroupHeaderRowProps {
 	value: unknown;
 	colSpan: number;
+	/** The grouped column's config — reused so the header matches the cell's own formatting. */
+	column: TableColumn;
 }
 
-export function GroupHeaderRow({ value, colSpan }: GroupHeaderRowProps): ReactNode {
-	const label = value == null || value === "" ? "—" : String(value);
+export function GroupHeaderRow({ value, colSpan, column }: GroupHeaderRowProps): ReactNode {
+	const label = value == null || value === "" ? "—" : formatColumnValue(column, value);
 	return (
 		<tr className="bg-muted/50">
 			<td colSpan={colSpan} className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
