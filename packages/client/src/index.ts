@@ -25,7 +25,9 @@ export type { UploadRow } from "./data/upload";
 // Richtext is exported only through its lazy wrappers: Lexical is a ~270KB chunk
 // kept out of the static graph, and a direct re-export would pull it into every
 // consumer's main bundle. The wrappers already carry lazy() + Suspense.
+export type { RichtextFormLazyProps } from "./fields/richtext/richtextFormLazy";
 export { RichtextFormLazy } from "./fields/richtext/richtextFormLazy";
+export type { RichtextViewLazyProps } from "./fields/richtext/richtextViewLazy";
 export { RichtextViewLazy } from "./fields/richtext/richtextViewLazy";
 export type {
 	I18nState,
