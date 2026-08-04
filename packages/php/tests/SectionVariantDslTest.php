@@ -66,6 +66,8 @@ it('section accepts every whitelisted option key', function (): void {
         'action' => ['label' => 'Open', 'url' => '/x'],
         'variant' => 'card',
         'class' => 'shadow-lg',
+        'colSpan' => 2,
+        'colStart' => ['lg' => 2],
         'id' => 'my-section',
         'hidden' => false,
         'disabled' => false,
