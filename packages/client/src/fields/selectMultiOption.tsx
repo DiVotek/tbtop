@@ -1,17 +1,18 @@
 import { Combobox } from "@base-ui/react/combobox";
+import { SelectOptionContent } from "./selectOptionContent";
+import type { StaticOption } from "./selectShared";
 
 interface ComboboxOptionProps {
-	value: string;
-	label: string;
+	option: StaticOption;
 }
 
-export function ComboboxOption({ value, label }: ComboboxOptionProps) {
+export function ComboboxOption({ option }: ComboboxOptionProps) {
 	return (
 		<Combobox.Item
-			value={value}
+			value={option.value}
 			className="cursor-pointer rounded px-2 py-1.5 text-sm data-[highlighted]:bg-accent data-[selected]:font-medium"
 		>
-			{label}
+			<SelectOptionContent option={option} />
 		</Combobox.Item>
 	);
 }

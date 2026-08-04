@@ -1,5 +1,6 @@
 import type { QueryParams } from "../data/client";
 import { unwrapData } from "../data/envelope";
+import type { OptionDisplay, StaticOption } from "../fields/selectShared";
 import type { ClientActionContext, ListQueryParams, StructureNode } from "../structure/types";
 import type { FieldConstraints } from "./constraints";
 
@@ -9,10 +10,7 @@ type Bag = Record<string, unknown>;
 // Async option endpoints (relation-search, select-options)
 // ---------------------------------------------------------------------------
 
-interface OptionRow {
-	value: string;
-	label: string;
-}
+type OptionRow = StaticOption;
 
 function toOptionRow(raw: unknown): OptionRow {
 	if (raw === null || typeof raw !== "object" || !("value" in raw)) {
@@ -20,7 +18,27 @@ function toOptionRow(raw: unknown): OptionRow {
 	}
 	const value = String(raw.value);
 	const label = "label" in raw && raw.label !== null ? String(raw.label) : value;
-	return { value, label };
+	const display = "display" in raw ? toOptionDisplay(raw.display) : undefined;
+	return display ? { value, label, display } : { value, label };
+}
+
+/** An unusable shape degrades to a plain option rather than throwing. */
+function toOptionDisplay(raw: unknown): OptionDisplay | undefined {
+	if (raw === null || typeof raw !== "object") {
+		return undefined;
+	}
+	const display: OptionDisplay = {
+		image: readString(raw, "image"),
+		subtitle: readString(raw, "subtitle"),
+		html: readString(raw, "html"),
+	};
+	const isEmpty = Object.values(display).every((v) => v === undefined);
+	return isEmpty ? undefined : display;
+}
+
+function readString(raw: object, key: string): string | undefined {
+	const value = (raw as Record<string, unknown>)[key];
+	return typeof value === "string" ? value : undefined;
 }
 
 function readOptions(response: unknown): OptionRow[] {
@@ -48,6 +66,9 @@ function asyncSearchBag(endpoint: string): Bag {
 			actionCtx.client.post(endpoint, { search, deps }).then(readOptions),
 		optionLabel: (row: unknown) => toOptionRow(row).label,
 		optionValue: (row: unknown) => toOptionRow(row).value,
+		// Carries display alongside the label. Separate from optionLabel so
+		// relation and tags keep their string contract.
+		optionRow: (row: unknown) => toOptionRow(row),
 	};
 }
 
