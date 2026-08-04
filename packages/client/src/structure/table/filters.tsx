@@ -64,21 +64,21 @@ export function InlineFilters({
 		? (FORM_COLS_CLASS[formColumns] ?? FORM_COLS_CLASS[1])
 		: undefined;
 	return (
-		<div className="flex items-center gap-2 flex-wrap" data-testid="table-filters-inline">
+		<div className="flex items-end gap-2 flex-wrap" data-testid="table-filters-inline">
 			<div
 				className={
-					gridClass ? cn("grid gap-2", gridClass) : "flex items-center gap-2 flex-wrap"
+					gridClass ? cn("grid gap-2", gridClass) : "flex items-end gap-2 flex-wrap"
 				}
 			>
 				{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
 			</div>
 			{deferred && (
-				<Button size="sm" onClick={onApply} data-testid="table-filters-apply">
+				<Button onClick={onApply} data-testid="table-filters-apply">
 					{t("table.filters.apply")}
 				</Button>
 			)}
 			{activeCount > 0 && (
-				<Button variant="ghost" size="sm" onClick={onReset}>
+				<Button variant="ghost" onClick={onReset}>
 					{t("table.filters.reset")}
 					<FilterBadge count={activeCount} />
 				</Button>
@@ -115,7 +115,6 @@ export function ModalFilters({
 		<>
 			<Button
 				variant="outline"
-				size="sm"
 				data-testid="table-filters-trigger"
 				onClick={() => setOpen(true)}
 			>
@@ -170,21 +169,23 @@ export function renderFilterField(
 					{(options as { label?: string }).label}
 				</label>
 			)}
-			{renderDescriptor(descriptor, {
-				kind: node.kind,
-				options,
-				meta: node.meta,
-				ctx: {
-					surface: "form",
-					binding: {
-						name,
-						value,
-						onChange: (next) => onFilterChange(name, next),
+			<div className="flex min-h-9 items-end">
+				{renderDescriptor(descriptor, {
+					kind: node.kind,
+					options,
+					meta: node.meta,
+					ctx: {
+						surface: "form",
+						binding: {
+							name,
+							value,
+							onChange: (next) => onFilterChange(name, next),
+						},
 					},
-				},
-				children: undefined,
-				renderChild: () => null,
-			})}
+					children: undefined,
+					renderChild: () => null,
+				})}
+			</div>
 		</div>
 	);
 }

@@ -26,7 +26,7 @@ export function ColumnVisibilityDropdown({
 		<div data-testid="column-visibility">
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="outline" size="sm" data-testid="column-visibility-trigger">
+					<Button variant="outline" data-testid="column-visibility-trigger">
 						<Columns3 className="size-4" aria-hidden />
 						{t("table.columns.label")}
 					</Button>
