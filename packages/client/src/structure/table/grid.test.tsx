@@ -149,6 +149,20 @@ describe("TableGrid row grouping", () => {
 		expect(headerRows[1]?.textContent).toContain("published");
 	});
 
+	// groups() only requires a matching defaultSort, so column visibility or
+	// hiddenByDefault can drop the grouped column from the columns TableGrid gets.
+	test("renders group headers when the grouped column is not among the displayed columns", () => {
+		const { container } = renderGrid({
+			rows: GROUPED_ROWS,
+			groups: { column: "status" },
+			columns: COLUMNS,
+		});
+		const headerRows = container.querySelectorAll("tr.bg-muted\\/50");
+		expect(headerRows).toHaveLength(2);
+		expect(headerRows[0]?.textContent).toContain("draft");
+		expect(headerRows[1]?.textContent).toContain("published");
+	});
+
 	test("skips grouping entirely while reorder is active, even with groups set", () => {
 		const { container } = renderGrid({
 			rows: GROUPED_ROWS,

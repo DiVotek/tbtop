@@ -229,10 +229,12 @@ function renderGroupedRows(
 	colSpan: number,
 ): ReactNode {
 	const columnName = props.groups?.column;
-	const column = props.columns.find((c) => c.name === columnName);
-	if (!columnName || !column) {
+	if (!columnName) {
 		return rows.map((row) => renderRow(row, props, false));
 	}
+	// The grouped column may be hidden or never displayed — fall back to a bare
+	// column so the header still renders, as plain text.
+	const column = props.columns.find((c) => c.name === columnName) ?? { name: columnName };
 	return partitionRowGroups(rows, columnName).flatMap((group, i) => [
 		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} column={column} />,
 		...group.rows.map((row) => renderRow(row, props, false)),
