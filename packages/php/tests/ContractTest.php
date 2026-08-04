@@ -52,19 +52,6 @@ it('kitchen-sink serialization matches the committed fixture snapshot', function
     expect($current."\n")->toBe((string) file_get_contents(FIXTURE_PATH));
 });
 
-// The whole point of display being a union: an option cannot ask for both our
-// layout and the author's markup, so no runtime "html wins" rule is needed.
-it('an option display carrying both image and html is rejected by the grammar', function () {
-    $validator = new Validator;
-    $schema = json_decode((string) file_get_contents(SCHEMA_PATH));
-    $validator->resolver()?->registerRaw($schema);
-
-    $conflicting = json_decode(json_encode(['image' => 'a.jpg', 'html' => '<b>x</b>']));
-    $result = $validator->validate($conflicting, $schema->{'$id'}.'#/$defs/optionDisplay');
-
-    expect($result->isValid())->toBeFalse();
-});
-
 it('default chrome serialization conforms to the chrome contract', function () {
     $chrome = ChromeSerializer::forPanel(panelWithPages([]));
 

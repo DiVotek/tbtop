@@ -22,6 +22,37 @@ const RICH_CHOICES = [
 	},
 ];
 
+// Rule: html wins. Passing it beside image/subtitle is legal and renders the
+// markup alone — a developer typo must degrade, never error or double-render.
+describe("Select rich options — html precedence", () => {
+	test("html renders alone when image and subtitle are also present", () => {
+		const { getByTestId } = render(
+			<SelectForm
+				name="plan"
+				value="both"
+				onChange={() => {}}
+				options={{
+					options: [
+						{
+							value: "both",
+							label: "Pro",
+							display: {
+								image: "https://cdn.test/x.jpg",
+								subtitle: "should not render",
+								html: "<b>Markup</b>",
+							},
+						},
+					],
+				}}
+			/>,
+		);
+		const trigger = getByTestId("select-plan");
+		expect(trigger.querySelector("img")).toBeNull();
+		expect(trigger.textContent).not.toContain("should not render");
+		expect(trigger.querySelector("b")?.textContent).toBe("Markup");
+	});
+});
+
 // Rule: searchable() filters on label only. Markup is layout, not text — a
 // query matching a tag name or an html-only word must not surface the option.
 describe("Select rich options — search", () => {

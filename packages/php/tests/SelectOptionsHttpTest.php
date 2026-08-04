@@ -133,6 +133,15 @@ it('Select options: resolveUsing may answer with an option array carrying displa
     ]]);
 });
 
+// PHP casts a numeric-string key to int, so $rows["0"] on a list source is its
+// first element — a stored id must never inherit a positional neighbour's name.
+it('Select options: a numeric value never resolves to a row at that list position', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/car', ['value' => '0']);
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => '0', 'label' => '0']]);
+});
+
 it('Select options: a resolveUsing string still resolves as a plain option', function (): void {
     $response = $this->postJson('/admin/select-query-page/select-options/city', [
         'value' => 'par',

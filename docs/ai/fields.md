@@ -465,7 +465,8 @@ to allow more than one selection (rendered as chips).
 The rungs above decide **where options come from**. `display` decides **how one looks**. It is
 optional, and a plain `{value, label}` option keeps rendering exactly as before.
 
-`display` is a union — an option uses our layout **or** the author's markup, never both:
+`display` carries `image`, `subtitle` and `html`. Set `html` and it renders alone — `image` and
+`subtitle` are ignored beside it, no error:
 
 ```php
 $s->select('car_id')->searchable()->options([
@@ -487,6 +488,8 @@ $s->select('car_id')->searchable()->options([
 
 Rules worth knowing:
 
+- **`html` wins.** Passing it alongside `image`/`subtitle` is not an error — the markup renders
+  and the rest is ignored. Nothing on the wire rejects the combination.
 - **`label` is always required**, including with `html`. It is the option's *text identity*:
   `searchable()` filters on it, the multi-select chip uses it for `aria-label`, and the native
   select uses it for keyboard typeahead. Text that exists only inside `html` matches none of these.

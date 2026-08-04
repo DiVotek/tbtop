@@ -22,18 +22,18 @@ function toOptionRow(raw: unknown): OptionRow {
 	return display ? { value, label, display } : { value, label };
 }
 
-/** Unknown or conflicting shapes degrade to a plain option rather than throwing. */
+/** An unusable shape degrades to a plain option rather than throwing. */
 function toOptionDisplay(raw: unknown): OptionDisplay | undefined {
 	if (raw === null || typeof raw !== "object") {
 		return undefined;
 	}
-	const html = readString(raw, "html");
-	if (html !== undefined) {
-		return { html };
-	}
-	const image = readString(raw, "image");
-	const subtitle = readString(raw, "subtitle");
-	return image === undefined && subtitle === undefined ? undefined : { image, subtitle };
+	const display: OptionDisplay = {
+		image: readString(raw, "image"),
+		subtitle: readString(raw, "subtitle"),
+		html: readString(raw, "html"),
+	};
+	const isEmpty = Object.values(display).every((v) => v === undefined);
+	return isEmpty ? undefined : display;
 }
 
 function readString(raw: object, key: string): string | undefined {

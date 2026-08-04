@@ -3,8 +3,15 @@ import type { StructureNode } from "../structure/types";
 import type { AsyncMultiOptionsBag, AsyncSingleOptionsBag } from "./asyncOptions";
 import type { DependencyConfig } from "./fieldDependencies";
 
-/** `html` is injected verbatim and never sanitized — compose it from trusted data only. */
-export type OptionDisplay = { image?: string; subtitle?: string } | { html: string };
+/**
+ * `html` wins: when present it renders alone and image/subtitle are ignored.
+ * It is injected verbatim and never sanitized — compose it from trusted data.
+ */
+export interface OptionDisplay {
+	image?: string;
+	subtitle?: string;
+	html?: string;
+}
 
 /**
  * `label` is the option's text identity, not its looks: it feeds the chip's
@@ -14,10 +21,6 @@ export interface StaticOption {
 	value: string;
 	label: string;
 	display?: OptionDisplay;
-}
-
-export function isHtmlDisplay(display: OptionDisplay): display is { html: string } {
-	return "html" in display;
 }
 
 export interface SelectCreateConfig {

@@ -10,10 +10,11 @@ namespace Tbtop\Admin\Dsl\Concerns;
  * An option may also carry 'description' (muted helper text) and 'disabled'
  * (bool) — both pass through unchanged; only Radio's client renders them today.
  *
- * Select additionally reads 'display': either ['image' => url, 'subtitle' => text]
- * or ['html' => markup], never both. 'html' is rendered verbatim and is NOT
- * sanitized anywhere — escaping author-composed markup is the caller's job.
- * 'label' stays required either way: it feeds search, aria-labels and typeahead.
+ * Select additionally reads 'display': 'image' (url), 'subtitle' (muted second
+ * line) and 'html' (raw markup). 'html' wins — when present it renders alone and
+ * the other two are ignored. It is NOT sanitized anywhere; escaping
+ * author-composed markup is the caller's job. 'label' stays required either way:
+ * it feeds search, aria-labels and typeahead, and never reads from 'html'.
  *
  * Adopters get the Field base, which supplies set() + normalizeOptionValues().
  */

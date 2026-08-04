@@ -130,7 +130,13 @@ final class SelectOptionsController
             return ['label' => (string) $row];
         }
 
-        return is_array($row) ? self::readOption($row, $value) : null;
+        // PHP casts a numeric-string key to int, so $rows["1"] on a list source
+        // is its second element. Only a row that carries the value is a match.
+        if (! is_array($row) || (string) ($row['value'] ?? '') !== $value) {
+            return null;
+        }
+
+        return self::readOption($row, $value);
     }
 
     /** @return array{label: string, display?: mixed}|null */

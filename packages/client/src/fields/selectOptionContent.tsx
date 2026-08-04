@@ -1,5 +1,5 @@
 import { cn } from "../lib/cn";
-import { isHtmlDisplay, type StaticOption } from "./selectShared";
+import type { OptionDisplay, StaticOption } from "./selectShared";
 
 /**
  * `list` is the dropdown row; `inline` is the single-select trigger and the
@@ -38,7 +38,8 @@ export function SelectOptionContent({ option, surface = "list" }: SelectOptionCo
 		<>
 			<span className="sr-only">{label}</span>
 			<span aria-hidden className="flex min-w-0 items-center gap-2">
-				{isHtmlDisplay(display) ? (
+				{/* html wins outright — image and subtitle are ignored beside it. */}
+				{display.html !== undefined ? (
 					<span
 						className={cn("min-w-0", HTML_BOX[surface])}
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: DSL-authored content, not user input
@@ -54,7 +55,7 @@ export function SelectOptionContent({ option, surface = "list" }: SelectOptionCo
 
 interface RichLabelProps {
 	label: string;
-	display: { image?: string; subtitle?: string };
+	display: OptionDisplay;
 	surface: OptionSurface;
 }
 
