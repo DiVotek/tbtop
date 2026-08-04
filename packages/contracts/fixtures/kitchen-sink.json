@@ -517,6 +517,44 @@
                                         "name": "permissions"
                                     },
                                     {
+                                        "kind": "select",
+                                        "options": {
+                                            "searchable": true,
+                                            "options": [
+                                                {
+                                                    "value": "12",
+                                                    "label": "Toyota Camry",
+                                                    "display": {
+                                                        "image": "https://cdn.example.com/cars/12.jpg",
+                                                        "subtitle": "Sedan \u00b7 AA1234BB \u00b7 black"
+                                                    }
+                                                },
+                                                {
+                                                    "value": "13",
+                                                    "label": "No car"
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "car_id"
+                                    },
+                                    {
+                                        "kind": "select",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "pro",
+                                                    "label": "Pro \u2014 $49/mo",
+                                                    "display": {
+                                                        "html": "<b>Pro</b> <s>$99</s> $49/mo"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "plan"
+                                    },
+                                    {
                                         "kind": "text",
                                         "options": {
                                             "translatable": true

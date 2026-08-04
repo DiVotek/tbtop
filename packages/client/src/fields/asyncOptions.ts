@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClientActionContext } from "../structure/types";
+import type { StaticOption } from "./selectShared";
 
 /** Every async options endpoint takes deps alongside its primary argument. */
 type OptionsFetch<TArg, TResult> = (
@@ -12,6 +13,8 @@ interface AsyncOptionsBase {
 	query?: OptionsFetch<string, unknown[]>;
 	optionLabel?: (row: unknown) => string;
 	optionValue?: (row: unknown) => string;
+	/** Select-only: the whole option, so display survives the async path. */
+	optionRow?: (row: unknown) => StaticOption;
 }
 
 export interface AsyncSingleOptionsBag extends AsyncOptionsBase {
@@ -23,24 +26,27 @@ export interface AsyncMultiOptionsBag extends AsyncOptionsBase {
 	onLoad?: OptionsFetch<string[], unknown[]>;
 }
 
+/** Keyed by option value; carries the whole option so display survives resolution. */
+export type OptionMap = Record<string, StaticOption>;
+
 interface LabelCache {
 	key: number | string;
-	labels: Record<string, string>;
+	labels: OptionMap;
 }
 
-type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: Record<string, string> };
+type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: OptionMap };
 
 export interface ReadyLabels {
 	kind: "ready";
-	labels: Record<string, string>;
+	labels: OptionMap;
 }
 
 /** Identity doubles as the "never resolved yet" marker. */
 export const EMPTY_LABELS: ReadyLabels = { kind: "ready", labels: {} };
 
-/** A label the dropdown already showed, tagged with the deps it was seen under. */
+/** An option the dropdown already showed, tagged with the deps it was seen under. */
 export interface SeenLabel {
-	label: string;
+	option: StaticOption;
 	depsKey: string;
 }
 
@@ -52,8 +58,8 @@ export interface SingleResolveArgs {
 	value: string | null;
 	opts: AsyncSingleOptionsBag;
 	refetchKey?: number | string;
-	/** Labels the caller already holds (e.g. rows from query()); never re-resolved. */
-	knownLabels?: Record<string, string>;
+	/** Options the caller already holds (e.g. rows from query()); never re-resolved. */
+	knownLabels?: OptionMap;
 }
 
 /**
@@ -158,7 +164,7 @@ export function useMultiResolvedLabels({
 			setState({ kind: "ready", labels: {} });
 			return;
 		}
-		const { onLoad, optionLabel, optionValue } = optsRef.current;
+		const { onLoad } = optsRef.current;
 		if (!onLoad) {
 			warnMissingOnLoad(warnedRef, fieldName);
 			setState({ kind: "ready", labels: {} });
@@ -173,7 +179,7 @@ export function useMultiResolvedLabels({
 				}
 				setState({
 					kind: "ready",
-					labels: buildLabelMap(rows, optionValue, optionLabel),
+					labels: buildLabelMap(rows, optsRef.current),
 				});
 			},
 			() => {
@@ -190,15 +196,23 @@ export function useMultiResolvedLabels({
 }
 
 interface MergeLabelArgs {
-	cached: Record<string, string>;
+	cached: OptionMap;
 	id: string;
 	row: unknown;
 	opts: AsyncSingleOptionsBag;
 }
 
-function mergeLabel({ cached, id, row, opts }: MergeLabelArgs): Record<string, string> {
+function mergeLabel({ cached, id, row, opts }: MergeLabelArgs): OptionMap {
 	const value = opts.optionValue ? String(opts.optionValue(row)) : id;
-	return { ...cached, [value]: opts.optionLabel ? opts.optionLabel(row) : value };
+	return { ...cached, [value]: toOption(row, value, opts) };
+}
+
+/** optionRow carries display; optionLabel is the fallback for bags without it. */
+function toOption(row: unknown, value: string, opts: AsyncOptionsBase): StaticOption {
+	if (opts.optionRow) {
+		return opts.optionRow(row);
+	}
+	return { value, label: opts.optionLabel ? opts.optionLabel(row) : value };
 }
 
 function warnMissingOnLoad(warnedRef: { current: boolean }, fieldName: string): void {
@@ -211,18 +225,14 @@ function warnMissingOnLoad(warnedRef: { current: boolean }, fieldName: string): 
 	);
 }
 
-function buildLabelMap(
-	rows: unknown[],
-	optionValue: ((row: unknown) => string) | undefined,
-	optionLabel: ((row: unknown) => string) | undefined,
-): Record<string, string> {
-	const labels: Record<string, string> = {};
+function buildLabelMap(rows: unknown[], opts: AsyncOptionsBase): OptionMap {
+	const labels: OptionMap = {};
 	for (const row of rows) {
-		if (!optionValue) {
+		if (!opts.optionValue) {
 			continue;
 		}
-		const v = String(optionValue(row));
-		labels[v] = optionLabel ? optionLabel(row) : v;
+		const v = String(opts.optionValue(row));
+		labels[v] = toOption(row, v, opts);
 	}
 	return labels;
 }

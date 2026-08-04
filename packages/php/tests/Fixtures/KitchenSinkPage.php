@@ -123,6 +123,24 @@ class KitchenSinkPage extends Page
                             fields: [$s->text('name')->label('Permission name')->required()],
                             using: fn (array $v): array => ['value' => $v['name'], 'label' => $v['name']],
                         ),
+                    $s->select('car_id')->searchable()->options([
+                        [
+                            'value' => 12,
+                            'label' => 'Toyota Camry',
+                            'display' => [
+                                'image' => 'https://cdn.example.com/cars/12.jpg',
+                                'subtitle' => 'Sedan · AA1234BB · black',
+                            ],
+                        ],
+                        ['value' => 13, 'label' => 'No car'],
+                    ]),
+                    $s->select('plan')->options([
+                        [
+                            'value' => 'pro',
+                            'label' => 'Pro — $49/mo',
+                            'display' => ['html' => '<b>Pro</b> <s>$99</s> $49/mo'],
+                        ],
+                    ]),
                     $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
                     $s->richtext('content')->set('placeholder', 'Start typing…'),
