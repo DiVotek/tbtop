@@ -847,9 +847,28 @@
 					"value": { "type": "string" },
 					"label": { "type": "string" },
 					"description": { "type": "string" },
-					"disabled": { "type": "boolean" }
+					"disabled": { "type": "boolean" },
+					"display": { "$ref": "#/$defs/optionDisplay" }
 				}
 			}
+		},
+		"optionDisplay": {
+			"oneOf": [
+				{
+					"type": "object",
+					"properties": {
+						"image": { "type": "string" },
+						"subtitle": { "type": "string" }
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["html"],
+					"properties": { "html": { "type": "string" } },
+					"additionalProperties": false
+				}
+			]
 		},
 		"constraints": {
 			"type": "object",

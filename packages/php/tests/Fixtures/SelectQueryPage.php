@@ -83,6 +83,22 @@ class SelectQueryPage extends Page
                         't2' => 'React',
                         default => null,
                     }),
+                // Rich rows: display must survive both search and resolve.
+                $s->select('car')
+                    ->label('Car')
+                    ->query(fn (array $deps, string $search): array => [
+                        [
+                            'value' => 12,
+                            'label' => 'Toyota Camry',
+                            'display' => [
+                                'image' => 'https://cdn.test/12.jpg',
+                                'subtitle' => 'Sedan · black',
+                            ],
+                        ],
+                    ])
+                    ->resolveUsing(fn (string $value): string|array|null => $value === '12'
+                        ? ['label' => 'Toyota Camry', 'display' => ['image' => 'https://cdn.test/12.jpg']]
+                        : null),
                 $s->select('status')->label('Status')->options([['value' => 'a', 'label' => 'A']]),
             ])->onSubmit(fn () => null),
         ]);

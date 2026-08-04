@@ -119,7 +119,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |
 | **Radio** | `$s->radio('x')` / `Radio::make('x')` | `radio` | `options(list<{value, label, description?, disabled?}> $options)` — static option list, each option can carry its own `description` and `disabled`; `inline(bool $value = true)` — horizontal layout instead of the default stacked list; `boolean()` — shorthand for a 2-option Yes/No radio, no-op if `options()` was already called | No |
-| **Select** | `$s->select('x')` / `Select::make('x')` | `select` | `options(array)`, `searchable(bool)`, `query(callable)` (async), `creatable(array $fields, callable $using)`, `multiple(bool)` — multi-value selection rendered as a searchable combobox with chips; when `creatable()` is set and the typed query has no exact match a "Create" row appears inline | `query()` → async-select endpoint; `creatable()` → select-create endpoint. See [./wiring.md](./wiring.md) |
+| **Select** | `$s->select('x')` / `Select::make('x')` | `select` | `options(array)`, `searchable(bool)`, `query(callable)` (async), `creatable(array $fields, callable $using)`, `multiple(bool)` — multi-value selection rendered as a searchable combobox with chips; when `creatable()` is set and the typed query has no exact match a "Create" row appears inline. Each option may carry `display` — either `{image?, subtitle?}` or `{html}` — see [rich options](#rich-options-image-subtitle-html) | `query()` → async-select endpoint; `creatable()` → select-create endpoint. See [./wiring.md](./wiring.md) |
 | **Tags** | `$s->tags('x')` / `Tags::make('x')` | `tags` | none; multi-value string array | No |
 | **Colorpicker** | `$s->colorpicker('x')` / `Colorpicker::make('x')` | `colorpicker` | none | No |
 | **Key-value** | `$s->keyvalue('x')` / `Keyvalue::make('x')` | `keyvalue` | none; value shape: `Record<string, string>` | No |
@@ -459,6 +459,52 @@ $s->select('author_id')->label('Author')
 
 `->multiple()` (the `HasMultiple` trait) is orthogonal to these rungs — add it to any of them
 to allow more than one selection (rendered as chips).
+
+### Rich options (image, subtitle, html)
+
+The rungs above decide **where options come from**. `display` decides **how one looks**. It is
+optional, and a plain `{value, label}` option keeps rendering exactly as before.
+
+`display` is a union — an option uses our layout **or** the author's markup, never both:
+
+```php
+$s->select('car_id')->searchable()->options([
+    [
+        'value' => 12,
+        'label' => 'Toyota Camry',
+        'display' => [
+            'image' => $car->thumbUrl,          // preview, left of the text
+            'subtitle' => 'Sedan · AA1234BB',   // muted second line
+        ],
+    ],
+    [
+        'value' => 'pro',
+        'label' => 'Pro — $49/mo',
+        'display' => ['html' => '<b>Pro</b> <s>$99</s> $49/mo'],
+    ],
+]);
+```
+
+Rules worth knowing:
+
+- **`label` is always required**, including with `html`. It is the option's *text identity*:
+  `searchable()` filters on it, the multi-select chip uses it for `aria-label`, and the native
+  select uses it for keyboard typeahead. Text that exists only inside `html` matches none of these.
+- **Everywhere means everywhere.** The dropdown, the single-select trigger and the multi chip
+  all render the same option. Inline surfaces shrink the image and drop the subtitle so the
+  control's height never depends on option data; `html` is capped by an `overflow-hidden` box.
+- **Static and async are identical.** `query()` rows carry `display` unchanged. To keep it on a
+  stored value the dropdown never listed, return an option array from `resolveUsing()`:
+  ```php
+  ->resolveUsing(fn (string $value): string|array|null => $value === '12'
+      ? ['label' => 'Toyota Camry', 'display' => ['image' => $url]]
+      : null)
+  ```
+- **`html` is never sanitized** — not in the field, not on the server. Compose it from trusted
+  data and escape any interpolated value yourself.
+
+Not supported: `image`/`subtitle` on `Radio`, `CheckboxList` or `ToggleButtons` — those render
+`description` + `disabled` only.
 
 ---
 

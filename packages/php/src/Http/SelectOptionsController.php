@@ -14,9 +14,9 @@ use Traversable;
  * POST {page-path}/select-options/{tbtopField}
  *
  * Three modes, distinguished by request body:
- *   search mode — body: {search: string}     → {options: [{value, label}]}
- *   resolve one — body: {value: string}      → {option: {value, label}|null}
- *   resolve many — body: {values: string[]}  → {options: [{value, label}]}
+ *   search mode — body: {search: string}     → {options: [{value, label, display?}]}
+ *   resolve one — body: {value: string}      → {option: {value, label, display?}|null}
+ *   resolve many — body: {values: string[]}  → {options: [{value, label, display?}]}
  *
  * `values` is a separate key rather than a `value` that also accepts an array:
  * the two answer with different shapes, and branching on the input's runtime
@@ -109,11 +109,59 @@ final class SelectOptionsController
      */
     private static function resolveOne(Select $field, array $rows, string $value): array
     {
-        $label = self::labelFromMap($rows, $value)
-            ?? self::labelFromResolver($field, $value)
-            ?? $value;
+        $resolved = self::optionFromMap($rows, $value)
+            ?? self::optionFromResolver($field, $value)
+            ?? ['label' => $value];
 
-        return ['value' => $value, 'label' => $label];
+        return array_merge($resolved, ['value' => $value]);
+    }
+
+    /**
+     * Keyed lookup only: a list of row arrays is a search result the author
+     * already capped, so scanning it would silently miss any value past the cap.
+     *
+     * @param  array<array-key, mixed>  $rows
+     * @return array{label: string, display?: mixed}|null
+     */
+    private static function optionFromMap(array $rows, string $value): ?array
+    {
+        $row = $rows[$value] ?? null;
+        if (is_scalar($row)) {
+            return ['label' => (string) $row];
+        }
+
+        return is_array($row) ? self::readOption($row, $value) : null;
+    }
+
+    /** @return array{label: string, display?: mixed}|null */
+    private static function optionFromResolver(Select $field, string $value): ?array
+    {
+        $resolver = $field->resolveClosure();
+        if ($resolver === null) {
+            return null;
+        }
+
+        $resolved = $resolver($value);
+        if (is_scalar($resolved)) {
+            return ['label' => (string) $resolved];
+        }
+
+        return is_array($resolved) ? self::readOption($resolved, $value) : null;
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $row
+     * @return array{label: string, display?: mixed}
+     */
+    private static function readOption(array $row, string $fallback): array
+    {
+        $label = $row['label'] ?? $fallback;
+        $option = ['label' => is_scalar($label) ? (string) $label : $fallback];
+        if (isset($row['display']) && is_array($row['display'])) {
+            $option['display'] = $row['display'];
+        }
+
+        return $option;
     }
 
     /**
@@ -149,32 +197,6 @@ final class SelectOptionsController
     }
 
     /**
-     * Only an associative value => label map can answer a resolve; a list of row
-     * arrays is a search result the author already capped, so scanning it would
-     * silently miss any value past that cap.
-     *
-     * @param  array<array-key, mixed>  $rows
-     */
-    private static function labelFromMap(array $rows, string $value): ?string
-    {
-        $label = $rows[$value] ?? null;
-
-        return is_scalar($label) ? (string) $label : null;
-    }
-
-    private static function labelFromResolver(Select $field, string $value): ?string
-    {
-        $resolver = $field->resolveClosure();
-        if ($resolver === null) {
-            return null;
-        }
-
-        $label = $resolver($value);
-
-        return is_scalar($label) ? (string) $label : null;
-    }
-
-    /**
      * Accepts either a list of ['value' => ..., 'label' => ...] rows or an
      * associative value => label map, and emits the wire shape for both.
      *
@@ -195,6 +217,9 @@ final class SelectOptionsController
     }
 
     /**
+     * Keys beyond value/label ride along untouched so a field kind can carry
+     * its own option payload (a gallery needs a preview url, for instance).
+     *
      * @param  array<array-key, mixed>  $row
      * @return array{value: string, label: string}|null
      */
@@ -206,10 +231,10 @@ final class SelectOptionsController
         }
         $label = $row['label'] ?? $value;
 
-        return [
+        return array_merge($row, [
             'value' => (string) $value,
             'label' => is_scalar($label) ? (string) $label : (string) $value,
-        ];
+        ]);
     }
 
     /** @return array{value: string, label: string}|null */

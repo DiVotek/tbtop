@@ -9,6 +9,7 @@ import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import {
 	EMPTY_LABELS,
+	type OptionMap,
 	type ReadyLabels,
 	type SeenLabel,
 	useSingleResolvedLabel,
@@ -18,6 +19,7 @@ import { type DependencyState, useFieldDependencies } from "./fieldDependencies"
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
+import { SelectOptionContent } from "./selectOptionContent";
 import {
 	coerceSelectValue,
 	type SelectCreateConfig,
@@ -62,7 +64,7 @@ export function SelectForm(rawProps: FieldFormProps<SelectValueType, SelectOptio
 // ─── Create affordance wrapper ────────────────────────────────────────────────
 
 interface WithCreateProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
-	resolvedLabels?: Record<string, string>;
+	resolvedLabels?: OptionMap;
 	onCreated?: () => void;
 	children: React.ReactNode;
 }
@@ -83,7 +85,7 @@ function WithCreateAffordance({
 
 	function handleSuccess(value: string, label: string) {
 		if (resolvedLabels) {
-			resolvedLabels[value] = label;
+			resolvedLabels[value] = { value, label };
 		}
 		onChange(value);
 		onCreated?.();
@@ -116,7 +118,7 @@ function WithCreateAffordance({
 // ─── Static single select ─────────────────────────────────────────────────────
 
 function StaticSingleSelectWithCreate(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
-	const resolvedLabels = useRef<Record<string, string>>({}).current;
+	const resolvedLabels = useRef<OptionMap>({}).current;
 	return (
 		<WithCreateAffordance {...props} resolvedLabels={resolvedLabels}>
 			<StaticSingleSelect {...props} resolvedLabels={resolvedLabels} />
@@ -125,7 +127,7 @@ function StaticSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sel
 }
 
 interface StaticSelectProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
-	resolvedLabels?: Record<string, string>;
+	resolvedLabels?: OptionMap;
 }
 
 function StaticSingleSelect({
@@ -142,9 +144,10 @@ function StaticSingleSelect({
 	const t = useTranslation();
 	const choices = options?.options ?? [];
 	const current = asString(value);
-	const createdLabel = current ? resolvedLabels?.[current] : undefined;
+	const created = current ? resolvedLabels?.[current] : undefined;
 	// A created option isn't in `choices`; emit it so Radix can match + label it.
-	const isUnlisted = createdLabel !== undefined && !choices.some((o) => o.value === current);
+	const isUnlisted = created !== undefined && !choices.some((o) => o.value === current);
+	const selectedOption = choices.find((o) => o.value === current) ?? created;
 	return (
 		<Select
 			value={current}
@@ -158,17 +161,21 @@ function StaticSingleSelect({
 				data-testid={`select-${name}`}
 				className="w-full"
 			>
-				<SelectValue placeholder={t("field.select.placeholder")} />
+				<SelectValue placeholder={t("field.select.placeholder")}>
+					{selectedOption && (
+						<SelectOptionContent option={selectedOption} surface="inline" />
+					)}
+				</SelectValue>
 			</SelectTrigger>
 			<SelectContent>
-				{isUnlisted && (
+				{isUnlisted && created && (
 					<SelectItem key={current} value={current}>
-						{createdLabel}
+						<SelectOptionContent option={created} />
 					</SelectItem>
 				)}
 				{choices.map((opt) => (
 					<SelectItem key={opt.value} value={opt.value}>
-						{opt.label}
+						<SelectOptionContent option={opt} />
 					</SelectItem>
 				))}
 			</SelectContent>
@@ -181,7 +188,7 @@ function StaticSingleSelect({
 function SearchableStaticSelectWithCreate(
 	props: FieldFormProps<SelectValueType, SelectOptionsBag>,
 ) {
-	const resolvedLabels = useRef<Record<string, string>>({}).current;
+	const resolvedLabels = useRef<OptionMap>({}).current;
 	return (
 		<WithCreateAffordance {...props} resolvedLabels={resolvedLabels}>
 			<SearchableStaticSelect {...props} resolvedLabels={resolvedLabels} />
@@ -208,12 +215,14 @@ function SearchableStaticSelect({
 	const filtered = search
 		? choices.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
 		: choices;
-	const currentLabel =
-		typeof value === "string"
-			? (resolvedLabels?.[value] ?? choices.find((o) => o.value === value)?.label ?? value)
-			: "";
+	// An empty value is "nothing selected", not an option labelled "".
+	const selectedOption =
+		typeof value === "string" && value !== ""
+			? (choices.find((o) => o.value === value) ??
+				resolvedLabels?.[value] ?? { value, label: value })
+			: undefined;
 	// Show the selected label as normal-colored text, not gray placeholder text.
-	const showLabel = currentLabel !== "" && search === "";
+	const showLabel = selectedOption !== undefined && search === "";
 
 	function handleOpen(): void {
 		if (!disabled) {
@@ -264,7 +273,7 @@ function SearchableStaticSelect({
 				disabled={disabled}
 				aria-invalid={invalid || undefined}
 			/>
-			{showLabel && (
+			{showLabel && selectedOption && (
 				// Selected label replaces the empty input's placeholder and stays on one line.
 				<span
 					data-testid={`select-label-${name}`}
@@ -275,7 +284,7 @@ function SearchableStaticSelect({
 						density === "compact" && inputCompactFontClass,
 					)}
 				>
-					{currentLabel}
+					<SelectOptionContent option={selectedOption} surface="inline" />
 				</span>
 			)}
 			{open && (
@@ -290,7 +299,7 @@ function SearchableStaticSelect({
 							onClick={() => handleSelect(opt.value)}
 							className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
 						>
-							{opt.label}
+							<SelectOptionContent option={opt} />
 						</button>
 					))}
 				</div>
@@ -314,10 +323,10 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 	// stops a selection from re-resolving a label we just displayed. Each entry
 	// records the deps it was seen under, so new deps never reuse an old label.
 	const seenLabels = useRef<Record<string, SeenLabel>>({});
-	const knownLabels: Record<string, string> = {};
+	const knownLabels: OptionMap = {};
 	for (const [rowValue, seen] of Object.entries(seenLabels.current)) {
 		if (seen.depsKey === dep.depsKey) {
-			knownLabels[rowValue] = seen.label;
+			knownLabels[rowValue] = seen.option;
 		}
 	}
 	const resolved = useSingleResolvedLabel({
@@ -355,8 +364,8 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 				refetchKey={refetchKey}
 				dep={dep}
 				onRowsSeen={(rows) => {
-					for (const [rowValue, label] of Object.entries(rows)) {
-						seenLabels.current[rowValue] = { label, depsKey: dep.depsKey };
+					for (const [rowValue, option] of Object.entries(rows)) {
+						seenLabels.current[rowValue] = { option, depsKey: dep.depsKey };
 					}
 				}}
 			/>
@@ -377,11 +386,11 @@ function bindDeps(
 }
 
 interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
-	resolved: { kind: "ready"; labels: Record<string, string> };
+	resolved: { kind: "ready"; labels: OptionMap };
 	refetchKey: number;
 	dep: DependencyState;
-	/** Reports the labels this dropdown listed so a selection need not re-resolve them. */
-	onRowsSeen: (rows: Record<string, string>) => void;
+	/** Reports the options this dropdown listed so a selection need not re-resolve them. */
+	onRowsSeen: (rows: OptionMap) => void;
 }
 
 function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
@@ -404,13 +413,13 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
 	const rows: unknown[] = gated ? [] : search.rows;
-	const listed: Record<string, string> = {};
+	const listed: OptionMap = {};
 	for (const row of rows) {
 		const v = String(opts.optionValue?.(row) ?? "");
-		listed[v] = opts.optionLabel?.(row) ?? v;
+		listed[v] = opts.optionRow?.(row) ?? { value: v, label: opts.optionLabel?.(row) ?? v };
 	}
 	props.onRowsSeen(listed);
-	const display = value === null ? undefined : (props.resolved.labels[value] ?? value);
+	const selected = value === null ? undefined : props.resolved.labels[value];
 	return (
 		<Select
 			value={value ?? ""}
@@ -423,12 +432,18 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 				data-testid={`select-${props.name}`}
 				className="w-full"
 			>
-				<SelectValue placeholder={t("field.select.placeholder")}>{display}</SelectValue>
+				<SelectValue placeholder={t("field.select.placeholder")}>
+					{selected ? (
+						<SelectOptionContent option={selected} surface="inline" />
+					) : (
+						(value ?? undefined)
+					)}
+				</SelectValue>
 			</SelectTrigger>
 			<SelectContent>
-				{Object.entries(listed).map(([v, lbl]) => (
+				{Object.entries(listed).map(([v, option]) => (
 					<SelectItem key={v} value={v}>
-						{lbl}
+						<SelectOptionContent option={option} />
 					</SelectItem>
 				))}
 			</SelectContent>

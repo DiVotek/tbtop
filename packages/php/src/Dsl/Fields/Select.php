@@ -10,7 +10,7 @@ use Tbtop\Admin\Dsl\Concerns\HasOptions;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\S;
 
-final class Select extends Field
+class Select extends Field
 {
     use HasDatabaseRules;
     use HasDependencies;
@@ -67,7 +67,9 @@ final class Select extends Field
     /**
      * Resolve a stored value back to its display label when query() cannot.
      *
-     * $fn: fn(string $value): ?string — null when the value no longer exists.
+     * $fn: fn(string $value): string|array|null — null when the value no longer
+     * exists. Return an option array (['label' => ..., 'display' => [...]]) to
+     * keep image/subtitle/html on a value the dropdown never listed.
      */
     public function resolveUsing(callable $fn): static
     {

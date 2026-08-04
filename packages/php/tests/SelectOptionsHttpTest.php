@@ -108,6 +108,42 @@ it('Select options: a Collection source resolves a stored label', function (): v
 });
 
 // ---------------------------------------------------------------------------
+// Rich options (display)
+// ---------------------------------------------------------------------------
+
+it('Select options: search keeps display alongside value and label', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/car', ['search' => '']);
+
+    $response->assertOk()->assertExactJson(['options' => [
+        [
+            'value' => '12',
+            'label' => 'Toyota Camry',
+            'display' => ['image' => 'https://cdn.test/12.jpg', 'subtitle' => 'Sedan · black'],
+        ],
+    ]]);
+});
+
+it('Select options: resolveUsing may answer with an option array carrying display', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/car', ['value' => '12']);
+
+    $response->assertOk()->assertExactJson(['option' => [
+        'label' => 'Toyota Camry',
+        'display' => ['image' => 'https://cdn.test/12.jpg'],
+        'value' => '12',
+    ]]);
+});
+
+it('Select options: a resolveUsing string still resolves as a plain option', function (): void {
+    $response = $this->postJson('/admin/select-query-page/select-options/city', [
+        'value' => 'par',
+        'deps' => ['country' => 'fr'],
+    ]);
+
+    $response->assertOk()
+        ->assertExactJson(['option' => ['value' => 'par', 'label' => 'Paris']]);
+});
+
+// ---------------------------------------------------------------------------
 // Resolve-many mode (multiple() selects)
 // ---------------------------------------------------------------------------
 

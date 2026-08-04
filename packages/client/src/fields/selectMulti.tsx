@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
-import { useMultiResolvedLabels } from "./asyncOptions";
+import { type OptionMap, useMultiResolvedLabels } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import type { FieldFormProps } from "./fieldProps";
 import { ComboboxOption, matchesQuery } from "./selectMultiOption";
@@ -28,11 +28,11 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
 	const create = options?.create as SelectCreateConfig | undefined;
-	// Created options aren't in `choices`; stash their labels so chips show names, not ids.
-	const resolvedLabels = useRef<Record<string, string>>({}).current;
+	// Created options aren't in `choices`; stash them so chips show names, not ids.
+	const resolvedLabels = useRef<OptionMap>({}).current;
 
-	function staticGetLabel(v: string): string {
-		return resolvedLabels[v] ?? choices.find((o) => o.value === v)?.label ?? v;
+	function staticGetOption(v: string): StaticOption {
+		return choices.find((o) => o.value === v) ?? resolvedLabels[v] ?? { value: v, label: v };
 	}
 
 	return (
@@ -44,7 +44,7 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 			onBlur={onBlur}
 			disabled={disabled}
 			create={create}
-			getLabel={staticGetLabel}
+			getOption={staticGetOption}
 			resolvedLabels={resolvedLabels}
 		>
 			{(query) => {
@@ -53,9 +53,7 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 					exactMatch: filtered.some(
 						(o) => o.label.toLowerCase() === query.trim().toLowerCase(),
 					),
-					nodes: filtered.map((opt) => (
-						<ComboboxOption key={opt.value} value={opt.value} label={opt.label} />
-					)),
+					nodes: filtered.map((opt) => <ComboboxOption key={opt.value} option={opt} />),
 				};
 			}}
 		</MultiComboboxShell>
@@ -98,12 +96,14 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 		opts.onLoad !== undefined ? current.filter((v) => v in resolvedLabels) : current;
 
 	// During a query-driven refetch, show an empty list inside the popup.
-	const searchRows =
+	const searchRows: StaticOption[] =
 		search.kind === "ready"
-			? search.rows.map((row) => ({
-					value: String(opts.optionValue?.(row) ?? ""),
-					label: String(opts.optionLabel?.(row) ?? ""),
-				}))
+			? search.rows.map((row) => {
+					const value = String(opts.optionValue?.(row) ?? "");
+					return (
+						opts.optionRow?.(row) ?? { value, label: opts.optionLabel?.(row) ?? value }
+					);
+				})
 			: [];
 
 	return (
@@ -116,7 +116,7 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 			onBlur={props.onBlur}
 			disabled={props.disabled}
 			create={create}
-			getLabel={(v) => resolvedLabels[v] ?? v}
+			getOption={(v) => resolvedLabels[v] ?? { value: v, label: v }}
 			resolvedLabels={resolvedLabels}
 			onCreated={() => setRefetchKey((k) => k + 1)}
 			onQueryChange={setQuery}
@@ -125,9 +125,7 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 				exactMatch: searchRows.some(
 					(r) => r.label.toLowerCase() === query.trim().toLowerCase(),
 				),
-				nodes: searchRows.map((r) => (
-					<ComboboxOption key={r.value} value={r.value} label={r.label} />
-				)),
+				nodes: searchRows.map((r) => <ComboboxOption key={r.value} option={r} />),
 			})}
 		</MultiComboboxShell>
 	);
