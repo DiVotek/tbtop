@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 
 /**
  * Static display text block.
@@ -11,6 +12,8 @@ use JsonSerializable;
  */
 final class TextBlock implements JsonSerializable
 {
+    use HasWhen;
+
     private string $variantValue = 'body';
 
     private function __construct(private readonly string $content) {}

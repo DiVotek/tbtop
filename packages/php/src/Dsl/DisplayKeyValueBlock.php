@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use JsonSerializable;
 use stdClass;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 
 /**
  * Read-only <dl> map render of key/value pairs.
@@ -15,6 +16,8 @@ use stdClass;
  */
 final class DisplayKeyValueBlock implements JsonSerializable
 {
+    use HasWhen;
+
     /** @param  array<string, mixed>  $map */
     private function __construct(private readonly array $map) {}
 

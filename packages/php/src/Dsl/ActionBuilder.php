@@ -9,6 +9,7 @@ use LogicException;
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Concerns\HasTooltip;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -20,6 +21,7 @@ final class ActionBuilder implements JsonSerializable
     use HasIcon;
     use HasServerQuery;
     use HasTooltip;
+    use HasWhen;
     use WithMeta;
 
     /** @var array<string, mixed> */
@@ -273,7 +275,8 @@ final class ActionBuilder implements JsonSerializable
             $spec = [...$spec, 'query' => true, 'queryNeeds' => $this->queryNeeds];
         }
 
-        return new Node('action', [...$this->opts, ...$this->iconOption(), ...$this->tooltipOption(), 'spec' => $spec], $this->name, $this->metaBag);
+        return (new Node('action', [...$this->opts, ...$this->iconOption(), ...$this->tooltipOption(), 'spec' => $spec], $this->name, $this->metaBag))
+            ->when($this->isIncluded());
     }
 
     /** @return array<string, mixed> */

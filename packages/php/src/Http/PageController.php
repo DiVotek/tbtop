@@ -25,6 +25,12 @@ final class PageController
         $pageParams = ResolvedPage::routeParams($request);
         $data = [];
         foreach ($resolved->s->collectedForms() as $name => $form) {
+            // Forms register at construction, before any when() verdict — an
+            // excluded one is still here, and its record would ship to a
+            // browser that never receives the form.
+            if (! $form->isIncluded()) {
+                continue;
+            }
             $data[$name] = UploadFieldUrl::applyToRecord($form->recordData(), $form->uploadFields(), $pageRoute, $pageParams);
         }
 

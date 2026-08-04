@@ -24,7 +24,7 @@ final class ActionDataController
         $resolved = ResolvedPage::fromRequest($request);
         $action = $resolved->s->collectedActions()[$name] ?? null;
         $query = $action?->queryClosure();
-        if ($action === null || $query === null || ! $action->isAuthorized()) {
+        if ($action === null || $query === null || ! $action->isAuthorized() || ! $action->isIncluded()) {
             throw new NotFoundHttpException("Action \"{$name}\" has no data query on this page.");
         }
 

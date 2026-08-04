@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Closure;
 use JsonSerializable;
 use stdClass;
 
@@ -12,6 +13,13 @@ final class Node implements JsonSerializable
 
     /** @var array<string, mixed> */
     public readonly array $options;
+
+    /**
+     * Conditional existence. Node is immutable, so this cannot use the HasWhen
+     * trait — when() returns a new instance instead of mutating. ChildInclusion
+     * still reads it through isIncluded(), the same name the trait exposes.
+     */
+    private bool $included = true;
 
     /**
      * Children are filtered here rather than in the S factories because this
@@ -47,6 +55,20 @@ final class Node implements JsonSerializable
         return $options;
     }
 
+    /** Conditional existence — see the HasWhen trait for the builder counterpart. */
+    public function when(bool|Closure $condition): self
+    {
+        $clone = new self($this->kind, $this->options, $this->name, $this->meta);
+        $clone->included = $condition instanceof Closure ? (bool) $condition() : $condition;
+
+        return $clone;
+    }
+
+    public function isIncluded(): bool
+    {
+        return $this->included;
+    }
+
     /**
      * Cascade translatable flag onto all descendant Fields.
      * Returns a new Node with the cascade applied (immutable).
@@ -69,21 +91,35 @@ final class Node implements JsonSerializable
             }, $newOpts['tabs']);
         }
 
-        return new self($this->kind, $newOpts, $this->name, $this->meta);
+        $cascaded = new self($this->kind, $newOpts, $this->name, $this->meta);
+        $cascaded->included = $this->included;
+
+        return $cascaded;
     }
 
     /**
-     * Nested children of a container Node for tree-walkers: 'children'/'fields'
-     * directly, plus every tab body when this is a tabs() node. A tab's body is a
+     * Nested children of a container Node for tree-walkers: every child list
+     * key, plus every tab body when this is a tabs() node. A tab's body is a
      * single DSL value (Field|Node|TextBlock|...), not a list, so it is appended
      * as one more child rather than merged in.
+     *
+     * Both keys are walked, not the first one present: a node can carry
+     * 'children' and 'fields' at once (the schema allows it, and Field::set()
+     * reaches it), and stopping at 'children' made the 'fields' list invisible
+     * to every walker built on this — rule collection, defaults, translatable
+     * names. translatable() has always walked both; this now agrees with it.
      *
      * @return list<mixed>
      */
     public function nestedChildren(): array
     {
-        $nested = $this->options['children'] ?? $this->options['fields'] ?? [];
-        $out = is_array($nested) ? array_values($nested) : [];
+        $out = [];
+        foreach (self::CHILD_LIST_KEYS as $key) {
+            $nested = $this->options[$key] ?? null;
+            if (is_array($nested)) {
+                $out = [...$out, ...array_values($nested)];
+            }
+        }
 
         foreach ($this->options['tabs'] ?? [] as $tab) {
             if (is_array($tab) && isset($tab['body'])) {

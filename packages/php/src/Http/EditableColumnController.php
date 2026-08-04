@@ -31,7 +31,7 @@ final class EditableColumnController
         $resolved = ResolvedPage::fromRequest($request);
 
         $table = $resolved->s->collectedTables()[$tableName] ?? null;
-        if ($table === null) {
+        if ($table === null || ! $table->isIncluded()) {
             abort(404, "Table \"{$tableName}\" not found on this page.");
         }
 

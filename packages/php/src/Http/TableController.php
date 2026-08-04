@@ -18,7 +18,7 @@ final class TableController
         $resolved = ResolvedPage::fromRequest($request);
         $table = $resolved->s->collectedTables()[$name] ?? null;
         $query = $table?->queryClosure();
-        if ($table === null || $query === null) {
+        if ($table === null || $query === null || ! $table->isIncluded()) {
             throw new NotFoundHttpException("Table \"{$name}\" has no query on this page.");
         }
 

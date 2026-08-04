@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Closure;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Select;
@@ -12,6 +13,8 @@ use Tbtop\Admin\Panels\CurrentPanel;
 
 final class FormBuilder implements JsonSerializable
 {
+    use HasWhen;
+
     /** @var list<mixed> */
     private array $children = [];
 
@@ -64,21 +67,40 @@ final class FormBuilder implements JsonSerializable
      */
     public function recordData(): array
     {
-        $seeded = RecordDefaults::apply($this->record, $this->children);
+        $children = $this->includedChildren();
+        $seeded = RecordDefaults::apply($this->record, $children);
 
-        return TranslatableRecord::normalize($seeded, $this->children);
+        return TranslatableRecord::normalize($seeded, $children);
     }
 
     /** Laravel validation rules collected from descendant fields. @return array<string, list<string>> */
     public function collectRules(): array
     {
-        return RuleWalker::collect($this->children);
+        return RuleWalker::collect($this->includedChildren());
     }
 
     /** Validator attribute labels (->label()) keyed like collectRules(). @return array<string, string> */
     public function collectAttributes(): array
     {
-        return RuleWalker::collectAttributes($this->children);
+        return RuleWalker::collectAttributes($this->includedChildren());
+    }
+
+    /**
+     * The children that exist, for the walkers that read the list directly
+     * instead of going through toNode(). An excluded field must not contribute
+     * a rule (the client never renders the key, so a `required` on it makes the
+     * form unsubmittable) nor a ->default() (recordData() ships into page props,
+     * leaking a value the author hid).
+     *
+     * Only the top level needs filtering: everything below descends through
+     * Node::nestedChildren() or Field::childFields(), both of which already
+     * carry the verdict, and an excluded container is dropped whole here.
+     *
+     * @return list<mixed>
+     */
+    private function includedChildren(): array
+    {
+        return ChildInclusion::filter($this->children);
     }
 
     /**
@@ -182,12 +204,20 @@ final class FormBuilder implements JsonSerializable
      * Depth-first walk of form children, returning the first Field the
      * predicate accepts. Recurses into nested fields and Node containers.
      *
+     * Excluded subtrees are skipped whole: this walk is what the field
+     * endpoints (upload, select options/create, relation search) resolve a
+     * field by name through, so a when(false) field must be unreachable here
+     * or the endpoint stays live for a field that never reached the wire.
+     *
      * @param  list<mixed>  $children
      * @param  callable(Field): bool  $matches
      */
     private static function searchField(array $children, callable $matches): ?Field
     {
         foreach ($children as $child) {
+            if (! ChildInclusion::isConditionMet($child)) {
+                continue;
+            }
             if ($child instanceof Field && $matches($child)) {
                 return $child;
             }
@@ -215,6 +245,9 @@ final class FormBuilder implements JsonSerializable
     {
         $out = [];
         foreach ($children as $child) {
+            if (! ChildInclusion::isConditionMet($child)) {
+                continue;
+            }
             if ($child instanceof Field && $matches($child)) {
                 $out[] = $child;
             }
@@ -254,7 +287,7 @@ final class FormBuilder implements JsonSerializable
             $options['guardUnsaved'] = false;
         }
 
-        return new Node('form', $options, $this->name);
+        return (new Node('form', $options, $this->name))->when($this->isIncluded());
     }
 
     /** @return array<string, mixed> */

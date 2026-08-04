@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Illuminate\Support\Str;
 use JsonSerializable;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 
 /**
  * Markdown display block.
@@ -19,6 +20,8 @@ use JsonSerializable;
  */
 final class MarkdownBlock implements JsonSerializable
 {
+    use HasWhen;
+
     private bool $allowHtmlValue = false;
 
     private function __construct(private readonly string $markdown) {}
