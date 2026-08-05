@@ -10,7 +10,7 @@ import { BooleanForm } from "./booleanField";
 import { CheckboxForm } from "./checkboxField";
 import { CheckboxListForm } from "./checkboxListField";
 import { ColorpickerForm } from "./colorpickerField";
-import { DateForm, DateTimeForm, TimeForm } from "./dateField";
+import { DateForm, DateTimeForm } from "./dateField";
 import { KeyvalueForm } from "./keyvalueField";
 import { NumberForm } from "./numberField";
 import { PasswordForm } from "./passwordField";
@@ -22,6 +22,7 @@ import { SlugForm } from "./slugField";
 import { TagsForm } from "./tagsField";
 import { TextareaForm } from "./textareaField";
 import { TextForm } from "./textField";
+import { TimeForm } from "./timeField";
 import { ToggleButtonsForm } from "./toggleButtonsField";
 import { UploadForm } from "./uploadField";
 
@@ -80,8 +81,11 @@ describe("disabled threading: input-like fields", () => {
 		const { container } = render(
 			<TimeForm name="time" value={null} onChange={noop} disabled />,
 		);
-		const input = container.querySelector("input") as HTMLInputElement;
-		expect(input.disabled).toBe(true);
+		const triggers = container.querySelectorAll('button[role="combobox"]');
+		expect(triggers).toHaveLength(2);
+		expect(Array.from(triggers).every((trigger) => trigger.hasAttribute("disabled"))).toBe(
+			true,
+		);
 	});
 
 	test("SliderForm: slider root carries data-disabled when disabled=true", () => {

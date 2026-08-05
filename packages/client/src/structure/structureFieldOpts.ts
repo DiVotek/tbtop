@@ -62,6 +62,12 @@ export interface DatetimeOpts {
 	placeholder?: string;
 }
 
+export interface TimeOpts {
+	label?: string;
+	required?: boolean;
+	step?: number;
+}
+
 type ErrorSlot = ReactNode | ((err: Error) => ReactNode);
 
 export interface AsyncChoiceShared<TRow> {

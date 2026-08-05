@@ -52,20 +52,6 @@ export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormP
 	);
 }
 
-export function TimeForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
-	const time = toTimeString(value);
-	return (
-		<Input
-			id={fieldId({ id, name })}
-			name={name}
-			type="time"
-			defaultValue={time}
-			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
-			disabled={disabled}
-		/>
-	);
-}
-
 function toIsoDate(value: unknown): string {
 	if (value instanceof Date && !Number.isNaN(value.getTime())) {
 		return value.toISOString().slice(0, 10);
@@ -94,18 +80,6 @@ function localToIso(local: string): string | null {
 		return null;
 	}
 	return date.toISOString();
-}
-
-function toTimeString(value: unknown): string {
-	if (typeof value === "string" && /^\d{2}:\d{2}/.test(value)) {
-		return value.slice(0, 5);
-	}
-	const date = parseDate(value);
-	if (!date) {
-		return "";
-	}
-	const pad = (n: number) => String(n).padStart(2, "0");
-	return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function parseDate(value: unknown): Date | null {

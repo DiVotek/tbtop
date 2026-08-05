@@ -420,6 +420,15 @@
                                         "name": "publishedAt"
                                     },
                                     {
+                                        "kind": "time",
+                                        "options": {
+                                            "label": "Opening time",
+                                            "step": 15
+                                        },
+                                        "meta": {},
+                                        "name": "opensAt"
+                                    },
+                                    {
                                         "kind": "text",
                                         "options": {},
                                         "meta": {

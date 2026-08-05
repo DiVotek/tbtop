@@ -349,6 +349,18 @@
 					}
 				},
 				{
+					"if": { "properties": { "kind": { "const": "time" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"step": { "type": "integer", "minimum": 1, "maximum": 60 }
+								}
+							}
+						}
+					}
+				},
+				{
 					"if": { "properties": { "kind": { "const": "displayValue" } } },
 					"then": {
 						"properties": {

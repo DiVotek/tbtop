@@ -2,9 +2,9 @@
 
 > Back to [./README.md](./README.md)
 
-Check here before building any field. The inventory is **25 PHP builders** (each a
-1:1 wire `kind` → client component) plus **3 client-only kinds** (`time`, `json`,
-`unknown`) that have no PHP builder by design — **28 client kinds total**. The
+Check here before building any field. The inventory is **26 PHP builders** (each a
+1:1 wire `kind` → client component) plus **2 client-only kinds** (`json`, `unknown`)
+that have no PHP builder by design — **28 client kinds total**. The
 canonical 1:1 mapping lives in [Canonical field-kind inventory](#canonical-field-kind-inventory-php--client--schema)
 below; treat it as the source of truth and add to it (never fork it) when a kind lands.
 
@@ -116,6 +116,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)` (also `->set('min', ...)`, `->set('step', ...)` via base `set`) | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
+| **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `step(int $minutes)` — minute interval from 1 to 60; defaults to 1 | No |
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | none; value shape: `{from?: string, to?: string}` | No |
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |
@@ -143,6 +144,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | `number` | `fields/numberField.tsx` |
 | `date` | `fields/dateField.tsx` |
 | `datetime` | `fields/dateField.tsx` (DateTimeForm/DateTimeCell) |
+| `time` | `fields/timeField.tsx` |
 | `daterange` | `fields/daterangeField.tsx` |
 | `boolean` | `fields/booleanField.tsx` |
 | `checkbox` | `fields/checkboxField.tsx` |
@@ -169,7 +171,7 @@ are **zero** one-PHP-to-many-client cases — `select` is a single clean kind th
 at runtime (static / searchable / async / creatable / multi) inside `SelectForm`, not a
 family of kinds.
 
-**Counts:** 25 PHP builders → 25 wire kinds → 25 client kinds, **plus** 3 client-only kinds
+**Counts:** 26 PHP builders → 26 wire kinds → 26 client kinds, **plus** 2 client-only kinds
 (see below) = **28 client `defineFieldClient` registrations** total.
 
 The PHP side keeps two parallel lists that must agree: `S::BUILT_IN_KINDS` (the public
@@ -207,6 +209,7 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 | 23 | `CheckboxList` | `$s->checkboxlist('x')` | `checkboxlist` | `checkboxlist` | `fields/checkboxListField.tsx` |
 | 24 | `ToggleButtons` | `$s->togglebuttons('x')` | `togglebuttons` | `togglebuttons` | `fields/toggleButtonsField.tsx` |
 | 25 | `Slider` | `$s->slider('x')` | `slider` | `slider` | `fields/sliderField.tsx` |
+| 26 | `Time` | `$s->time('x')` | `time` | `time` | `fields/timeField.tsx` |
 <!-- M-90 and later: append new built-in kinds below this line, in BUILT_IN_KINDS order. -->
 
 > `inFilter` is the one factory that is a concrete method on `S`, not magic `__call`
@@ -214,14 +217,13 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 
 ### Client-only kinds (intentional asymmetry)
 
-These three wire kinds are registered on the client (`registerBuiltins.ts`) with **no PHP
+These two wire kinds are registered on the client (`registerBuiltins.ts`) with **no PHP
 builder** — deliberately. They are not drift to "fix" by adding a builder; a builder is a new
 field type and must go through the contract gate (schema + kitchen-sink + contract test) in
 its own change.
 
 | Wire `kind` | Client file | Why no PHP builder |
 |---|---|---|
-| `time` | `fields/dateField.tsx` (`TimeForm`, cell reuses `DateCell`) | The renderer exists ahead of a `Time` DSL builder. Until a builder lands, emit it from a consumer via `S::register('time', …)`. Adding the builder is a follow-up (contract-gated), not a doc fix. |
 | `json` | `fields/jsonField.tsx` | Escape-hatch renderer for raw JSON values. Intended to be bound per-app via `S::register('json', …)` against a consumer field class — no core builder by design. |
 | `unknown` | `fields/unknownField.tsx` | Render-time fallback for any `kind` the client does not recognize. It is the safety net, never something an author selects — so it has no builder and never will. |
 
@@ -232,8 +234,8 @@ for the kind so the DSL can author it, while the matching client renderer alread
 // In the consumer app (e.g. a service-provider boot), NOT in the package.
 use Tbtop\Admin\Dsl\S;
 
-S::register('time', \App\Admin\Fields\TimeField::class); // TimeField extends Tbtop\Admin\Dsl\Fields\Field
-// Authors can then write $s->time('opens_at') and the client's `time` renderer handles it.
+S::register('json', \App\Admin\Fields\JsonField::class); // JsonField extends Tbtop\Admin\Dsl\Fields\Field
+// Authors can then write $s->json('metadata') and the client's `json` renderer handles it.
 ```
 
 `S::register($kind, $fieldClass)` requires `$fieldClass` to extend
