@@ -1,16 +1,17 @@
-import { Clock3Icon, XIcon } from "lucide-react";
-import { Button } from "../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Input } from "../ui/input";
 import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 interface TimeOptions {
-	label?: string;
-	step?: number;
+	seconds?: boolean;
+	minuteStep?: number;
+	secondStep?: number;
 }
 
-export function TimeCell({ value }: FieldCellProps<string>) {
-	return nullableCell(value, (time) => <time dateTime={time}>{time.slice(0, 5)}</time>);
+export function TimeCell({ value, options }: FieldCellProps<string, TimeOptions>) {
+	return nullableCell(value, (time) => (
+		<time dateTime={time}>{toTimeString(time, options?.seconds)}</time>
+	));
 }
 
 export function TimeForm({
@@ -23,102 +24,56 @@ export function TimeForm({
 	invalid,
 	options,
 }: FieldFormProps<string, TimeOptions>) {
-	const time = toTimeString(value);
-	const hour = time.slice(0, 2);
-	const minute = time.slice(3, 5);
-	const minutes = minuteSlots(options?.step, minute);
-	const inputId = fieldId({ id, name });
-	const accessibleName = options?.label ?? name;
-
 	return (
-		<div className="flex items-center gap-2">
-			<input type="hidden" name={name} value={time} disabled={disabled} />
-			<Clock3Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-			<Select
-				value={hour}
-				onValueChange={(nextHour) => onChange(`${nextHour}:${minute || minutes[0]}`)}
-				disabled={disabled}
-			>
-				<SelectTrigger
-					id={inputId}
-					className="w-24"
-					aria-label={`${accessibleName} hour`}
-					aria-invalid={invalid || undefined}
-					onBlur={onBlur}
-				>
-					<SelectValue placeholder="Hour" />
-				</SelectTrigger>
-				<SelectContent>
-					{range(24).map((entry) => (
-						<SelectItem key={entry} value={entry}>
-							{entry}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-			<span className="text-muted-foreground" aria-hidden>
-				:
-			</span>
-			<Select
-				value={minute}
-				onValueChange={(nextMinute) => onChange(`${hour || "00"}:${nextMinute}`)}
-				disabled={disabled}
-			>
-				<SelectTrigger
-					id={`${inputId}-minute`}
-					className="w-24"
-					aria-label={`${accessibleName} minute`}
-					aria-invalid={invalid || undefined}
-					onBlur={onBlur}
-				>
-					<SelectValue placeholder="Minute" />
-				</SelectTrigger>
-				<SelectContent>
-					{minutes.map((entry) => (
-						<SelectItem key={entry} value={entry}>
-							{entry}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-			{time !== "" && (
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					onClick={() => onChange(null)}
-					disabled={disabled}
-					aria-label="Clear time"
-				>
-					<XIcon aria-hidden />
-				</Button>
-			)}
-		</div>
+		<Input
+			id={fieldId({ id, name })}
+			name={name}
+			type="time"
+			value={toTimeString(value, options?.seconds)}
+			step={inputStep(options)}
+			onChange={(event) => {
+				const next = event.currentTarget.value;
+				onChange(next === "" ? null : formatTime(next, options?.seconds === true));
+			}}
+			onBlur={onBlur}
+			disabled={disabled}
+			aria-invalid={invalid || undefined}
+			className="[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+		/>
 	);
 }
 
-function minuteSlots(stepOption: number | undefined, current: string): string[] {
-	const step =
-		Number.isInteger(stepOption) && stepOption && stepOption > 0 && stepOption <= 60
-			? stepOption
-			: 1;
-	const slots = range(Math.ceil(60 / step), step);
-	if (/^(?:[0-5]\d)$/.test(current) && !slots.includes(current)) {
-		slots.push(current);
-		slots.sort();
+function inputStep(options: TimeOptions | undefined): number {
+	if (options?.seconds) {
+		return validStep(options.secondStep, 59) ? options.secondStep : 1;
 	}
-	return slots;
+	return (validStep(options?.minuteStep, 60) ? options.minuteStep : 1) * 60;
 }
 
-function range(length: number, step = 1): string[] {
-	return Array.from({ length }, (_, index) => String(index * step).padStart(2, "0"));
+function validStep(value: number | undefined, maximum: number): value is number {
+	return Number.isInteger(value) && value !== undefined && value >= 1 && value <= maximum;
 }
 
-function toTimeString(value: unknown): string {
-	if (typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d/.test(value)) {
-		return value.slice(0, 5);
+function toTimeString(value: unknown, hasSeconds = false): string {
+	if (typeof value === "string") {
+		const match = value.match(/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?/);
+		if (match) {
+			return formatTime(match[0], hasSeconds);
+		}
 	}
-	if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+	const date = value instanceof Date ? value : new Date(typeof value === "string" ? value : "");
+	if (Number.isNaN(date.getTime())) {
 		return "";
 	}
-	return `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+	const time = [date.getHours(), date.getMinutes(), date.getSeconds()]
+		.map((part) => String(part).padStart(2, "0"))
+		.join(":");
+	return formatTime(time, hasSeconds);
+}
+
+function formatTime(time: string, hasSeconds: boolean): string {
+	if (!hasSeconds) {
+		return time.slice(0, 5);
+	}
+	return time.length >= 8 ? time.slice(0, 8) : `${time.slice(0, 5)}:00`;
 }

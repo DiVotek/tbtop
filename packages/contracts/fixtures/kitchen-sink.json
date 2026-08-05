@@ -423,10 +423,20 @@
                                         "kind": "time",
                                         "options": {
                                             "label": "Opening time",
-                                            "step": 15
+                                            "minuteStep": 15
                                         },
                                         "meta": {},
                                         "name": "opensAt"
+                                    },
+                                    {
+                                        "kind": "time",
+                                        "options": {
+                                            "label": "Closing time",
+                                            "seconds": true,
+                                            "secondStep": 5
+                                        },
+                                        "meta": {},
+                                        "name": "closesAt"
                                     },
                                     {
                                         "kind": "text",

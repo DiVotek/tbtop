@@ -116,7 +116,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)` (also `->set('min', ...)`, `->set('step', ...)` via base `set`) | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
-| **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `step(int $minutes)` — minute interval from 1 to 60; defaults to 1 | No |
+| **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS`; call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | none; value shape: `{from?: string, to?: string}` | No |
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |

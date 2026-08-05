@@ -65,7 +65,9 @@ export interface DatetimeOpts {
 export interface TimeOpts {
 	label?: string;
 	required?: boolean;
-	step?: number;
+	seconds?: boolean;
+	minuteStep?: number;
+	secondStep?: number;
 }
 
 type ErrorSlot = ReactNode | ((err: Error) => ReactNode);

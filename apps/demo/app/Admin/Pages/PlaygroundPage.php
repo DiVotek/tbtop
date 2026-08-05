@@ -27,7 +27,7 @@ class PlaygroundPage extends Page
             $s->form('profile', [
                 $s->text('name')->label('Name')->required()->rules('max:50'),
                 $s->text('email')->label('Email')->required()->rules('email'),
-                $s->time('available_from')->label('Available from')->step(15)->rules('date_format:H:i'),
+                $s->time('available_from')->label('Available from')->minuteStep(15)->rules('date_format:H:i'),
                 $s->select('roles')->label('Roles')->multiple()->options([
                     ['value' => 'admin', 'label' => 'Admin'],
                     ['value' => 'editor', 'label' => 'Editor'],

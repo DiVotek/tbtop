@@ -81,11 +81,8 @@ describe("disabled threading: input-like fields", () => {
 		const { container } = render(
 			<TimeForm name="time" value={null} onChange={noop} disabled />,
 		);
-		const triggers = container.querySelectorAll('button[role="combobox"]');
-		expect(triggers).toHaveLength(2);
-		expect(Array.from(triggers).every((trigger) => trigger.hasAttribute("disabled"))).toBe(
-			true,
-		);
+		const input = container.querySelector('input[type="time"]') as HTMLInputElement;
+		expect(input.disabled).toBe(true);
 	});
 
 	test("SliderForm: slider root carries data-disabled when disabled=true", () => {
