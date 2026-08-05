@@ -58,8 +58,11 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 		}
 	}
 
+	// `modal`: the popover portals out of the DOM, so inside the filters modal a
+	// day click would read as an interaction outside the dialog and dismiss it
+	// before the second click could land.
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={open} onOpenChange={setOpen} modal>
 			<PopoverTrigger asChild>
 				<Button
 					type="button"
