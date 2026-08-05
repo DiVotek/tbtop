@@ -129,6 +129,9 @@ export {
 	CardHeader,
 	CardTitle,
 } from "./ui/card";
+// Calendar is deliberately NOT exported here, unlike the rest of ui/: a static
+// re-export puts react-day-picker into the main entry's graph and undoes the
+// lazy() split in daterangeField. Same reason richtext ships only as wrappers.
 export type { StatDescriptor } from "./ui/charts";
 export { StatBlock, StatCard } from "./ui/charts";
 export { Checkbox } from "./ui/checkbox";
