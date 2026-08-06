@@ -27,6 +27,7 @@ use Tbtop\Admin\Dsl\Fields\Slug;
 use Tbtop\Admin\Dsl\Fields\Tags;
 use Tbtop\Admin\Dsl\Fields\Text;
 use Tbtop\Admin\Dsl\Fields\Textarea;
+use Tbtop\Admin\Dsl\Fields\Time;
 use Tbtop\Admin\Dsl\Fields\ToggleButtons;
 use Tbtop\Admin\Dsl\Fields\Upload;
 
@@ -40,6 +41,7 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  * @method Number number(string $name)
  * @method Date date(string $name)
  * @method Datetime datetime(string $name)
+ * @method Time time(string $name)
  * @method \Tbtop\Admin\Dsl\Fields\Boolean boolean(string $name)
  * @method Select select(string $name)
  * @method Radio radio(string $name)
@@ -71,7 +73,7 @@ final class S
         'text', 'textarea', 'password', 'otp', 'number', 'date', 'datetime', 'boolean',
         'select', 'radio', 'tags', 'in', 'checkbox', 'colorpicker', 'keyvalue',
         'slug', 'upload', 'media', 'relation', 'repeater', 'richtext', 'daterange',
-        'checkboxlist', 'togglebuttons', 'slider',
+        'checkboxlist', 'togglebuttons', 'slider', 'time',
     ];
 
     /** @var array<string, FormBuilder> */
@@ -877,6 +879,7 @@ final class S
                 'checkboxlist' => CheckboxList::class,
                 'togglebuttons' => ToggleButtons::class,
                 'slider' => Slider::class,
+                'time' => Time::class,
             ];
         }
 

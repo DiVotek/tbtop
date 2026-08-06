@@ -107,6 +107,8 @@ class KitchenSinkPage extends Page
                     ]),
                     $s->radio('archived')->label('Archived')->boolean(),
                     $s->date('publishedAt')->hiddenIf('published', '=', false),
+                    $s->time('opensAt')->label('Opening time')->minuteStep(15),
+                    $s->time('closesAt')->label('Closing time')->seconds()->secondStep(5),
                     $s->text('video_url')->hiddenIf('type', '!=', 'video'),
                     $s->text('caption')->disabledIf(
                         Cond::all(Cond::eq('status', 'archived'), Cond::empty('published_at'))
