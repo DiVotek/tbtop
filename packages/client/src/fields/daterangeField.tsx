@@ -58,6 +58,15 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 		}
 	}
 
+	// The native inputs this replaced cleared by emptying them; without this a
+	// form-rendered daterange has no way back to empty (the filter bar has Reset).
+	function handleClear(): void {
+		setDraft(undefined);
+		setPicking(false);
+		setOpen(false);
+		onChange({ from: null, to: null });
+	}
+
 	// `modal`: the popover portals out of the DOM, so inside the filters modal a
 	// day click would read as an interaction outside the dialog and dismiss it
 	// before the second click could land.
@@ -84,6 +93,20 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 				>
 					<LazyRangeCalendar selected={draft} onSelect={handleSelect} />
 				</Suspense>
+				{applied ? (
+					<div className="border-t p-2">
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="w-full"
+							data-testid="daterange-clear"
+							onClick={handleClear}
+						>
+							{t("field.daterange.clear")}
+						</Button>
+					</div>
+				) : null}
 			</PopoverContent>
 		</Popover>
 	);

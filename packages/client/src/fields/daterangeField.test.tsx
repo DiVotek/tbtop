@@ -93,6 +93,34 @@ describe("Daterange: emits only a complete range", () => {
 	});
 });
 
+describe("Daterange: clearing an applied range", () => {
+	test("clear emits empty bounds so a form can return to no range", async () => {
+		const { fn, calls } = makeOnChange();
+		const view = render(
+			<DaterangeForm
+				name="published_at"
+				value={{ from: "2026-03-10", to: "2026-03-20" }}
+				onChange={fn}
+			/>,
+		);
+		const user = userEvent.setup();
+		await user.click(view.getByTestId("daterange-trigger"));
+
+		await user.click(view.getByTestId("daterange-clear"));
+
+		expect(calls).toEqual([{ from: null, to: null }]);
+	});
+
+	test("no clear control when there is no range to clear", async () => {
+		const { fn } = makeOnChange();
+		const view = render(<DaterangeForm name="published_at" value={null} onChange={fn} />);
+		const user = userEvent.setup();
+		await user.click(view.getByTestId("daterange-trigger"));
+
+		expect(view.queryByTestId("daterange-clear")).toBeNull();
+	});
+});
+
 describe("Daterange: null/undefined conversion", () => {
 	test("an empty range still emits string bounds, never undefined", async () => {
 		const { fn, calls } = makeOnChange();
