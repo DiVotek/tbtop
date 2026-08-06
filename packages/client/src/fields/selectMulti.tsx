@@ -68,6 +68,8 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 	const [query, setQuery] = useState("");
 	const [refetchKey, setRefetchKey] = useState(0);
 	const search = useAsyncSearch({ ctx, query: opts.query, search: query, refetchKey });
+	/** Options this dropdown has listed, so a selection keeps its label. */
+	const seenRows = useRef<OptionMap>({});
 	// Track whether the shell has rendered at least once with ready search results.
 	// After initial render, query-driven refetches keep the shell mounted.
 	const hasRenderedRef = useRef(false);
@@ -87,13 +89,7 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 	// Shell is now rendering — mark it.
 	hasRenderedRef.current = true;
 
-	const resolvedLabels = resolved.kind === "ready" ? resolved.labels : {};
 	const create = opts.create as SelectCreateConfig | undefined;
-
-	// When onLoad is present, hide chips for values whose labels didn't resolve
-	// (partial onLoad results — preserves the original toggle-button behavior).
-	const visibleValues =
-		opts.onLoad !== undefined ? current.filter((v) => v in resolvedLabels) : current;
 
 	// During a query-driven refetch, show an empty list inside the popup.
 	const searchRows: StaticOption[] =
@@ -105,6 +101,20 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 					);
 				})
 			: [];
+	// A listed row carries its own label, so picking it needs no re-resolve.
+	// Without this a fresh pick is missing from onLoad's map and its chip vanishes.
+	for (const row of searchRows) {
+		seenRows.current[row.value] = row;
+	}
+	const resolvedLabels = {
+		...seenRows.current,
+		...(resolved.kind === "ready" ? resolved.labels : {}),
+	};
+
+	// A value with no label from either source stays hidden:
+	// a chip showing a raw id is worse than no chip.
+	const visibleValues =
+		opts.onLoad !== undefined ? current.filter((v) => v in resolvedLabels) : current;
 
 	return (
 		<MultiComboboxShell

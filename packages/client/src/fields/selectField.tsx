@@ -19,6 +19,7 @@ import { type DependencyState, useFieldDependencies } from "./fieldDependencies"
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
+import { ComboboxOption } from "./selectMultiOption";
 import { SelectOptionContent } from "./selectOptionContent";
 import {
 	coerceSelectValue,
@@ -28,6 +29,7 @@ import {
 	type SelectValueType,
 	type StaticOption,
 } from "./selectShared";
+import { SingleComboboxShell, type SingleListState } from "./selectSingleShell";
 
 export function SelectCell({ value, options }: FieldCellProps<SelectValueType, SelectOptionsBag>) {
 	const coerced = coerceSelectValue(value);
@@ -394,59 +396,67 @@ interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, Se
 }
 
 function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
-	const t = useTranslation();
 	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
 	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
 	const gated = props.dep.hasDeps && !props.dep.ready;
+	const [query, setQuery] = useState("");
 	const search = useAsyncSearch({
 		ctx,
 		query: gated ? undefined : opts.query,
-		search: "",
+		search: query,
 		refetchKey: `${props.refetchKey}:${props.dep.depsKey}`,
 	});
+	// Only the first load has nothing to show. Later refetches — typing, a
+	// selection resetting the query, a create — keep the control mounted so it
+	// never blinks through a skeleton and never drops the text being typed.
+	const hasRenderedRef = useRef(false);
 
-	if (search.kind === "loading") {
+	if (search.kind === "loading" && !hasRenderedRef.current) {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
-	if (search.kind === "error") {
+	// A failure before anything rendered has no control to fall back to.
+	// Afterwards the shell stays: unmounting it removes the input, and with it
+	// the only way to change the search and retry.
+	if (search.kind === "error" && !hasRenderedRef.current) {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
-	const rows: unknown[] = gated ? [] : search.rows;
+	hasRenderedRef.current = true;
+	const rows: unknown[] = gated || search.kind !== "ready" ? [] : search.rows;
 	const listed: OptionMap = {};
 	for (const row of rows) {
 		const v = String(opts.optionValue?.(row) ?? "");
 		listed[v] = opts.optionRow?.(row) ?? { value: v, label: opts.optionLabel?.(row) ?? v };
 	}
 	props.onRowsSeen(listed);
-	const selected = value === null ? undefined : props.resolved.labels[value];
+	// A pending refetch keeps the previous rows rather than blanking the list.
+	let listState: SingleListState = "rows";
+	if (search.kind === "error") {
+		listState = "failed";
+	} else if (search.kind === "ready" && Object.keys(listed).length === 0) {
+		listState = "empty";
+	}
+	// An empty string is "nothing selected", not an option labelled "".
+	const hasValue = value !== null && value !== "";
+	const selected = hasValue
+		? (props.resolved.labels[value] ?? { value, label: value })
+		: undefined;
 	return (
-		<Select
-			value={value ?? ""}
-			onValueChange={(next) => props.onChange(next === "" ? null : next)}
+		<SingleComboboxShell
+			id={props.id}
+			name={props.name}
+			value={value}
+			selected={selected}
+			onChange={props.onChange}
+			onBlur={props.onBlur}
 			disabled={props.disabled}
+			invalid={props.invalid}
+			onQueryChange={setQuery}
+			listState={listState}
 		>
-			<SelectTrigger
-				id={fieldId({ id: props.id, name: props.name })}
-				onBlur={props.onBlur}
-				data-testid={`select-${props.name}`}
-				className="w-full"
-			>
-				<SelectValue placeholder={t("field.select.placeholder")}>
-					{selected ? (
-						<SelectOptionContent option={selected} surface="inline" />
-					) : (
-						(value ?? undefined)
-					)}
-				</SelectValue>
-			</SelectTrigger>
-			<SelectContent>
-				{Object.entries(listed).map(([v, option]) => (
-					<SelectItem key={v} value={v} textValue={option.label}>
-						<SelectOptionContent option={option} />
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
+			{Object.entries(listed).map(([v, option]) => (
+				<ComboboxOption key={v} option={option} />
+			))}
+		</SingleComboboxShell>
 	);
 }

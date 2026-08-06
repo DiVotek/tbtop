@@ -232,6 +232,7 @@ return [
             'placeholder' => '—',
             'multi_placeholder' => 'Виберіть…',
             'no_options' => 'Немає варіантів',
+            'load_failed' => 'Не вдалося завантажити варіанти',
             'remove' => 'Видалити {label}',
             'create_option' => 'Створити «{query}»',
         ],

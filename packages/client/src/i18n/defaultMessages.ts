@@ -63,6 +63,7 @@ export const defaultMessages: Messages = {
 	"field.select.placeholder": "—",
 	"field.select.multi_placeholder": "Select…",
 	"field.select.no_options": "No options",
+	"field.select.load_failed": "Could not load options",
 	"field.select.remove": "Remove {label}",
 	"field.select.create_option": "Create “{query}”",
 	"field.slug.clear": "Clear",

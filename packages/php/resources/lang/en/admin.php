@@ -232,6 +232,7 @@ return [
             'placeholder' => '—',
             'multi_placeholder' => 'Select…',
             'no_options' => 'No options',
+            'load_failed' => 'Could not load options',
             'remove' => 'Remove {label}',
             'create_option' => 'Create “{query}”',
         ],
