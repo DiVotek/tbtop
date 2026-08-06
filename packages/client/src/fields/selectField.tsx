@@ -19,6 +19,7 @@ import { type DependencyState, useFieldDependencies } from "./fieldDependencies"
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
+import { ComboboxOption } from "./selectMultiOption";
 import { SelectOptionContent } from "./selectOptionContent";
 import {
 	coerceSelectValue,
@@ -28,6 +29,7 @@ import {
 	type SelectValueType,
 	type StaticOption,
 } from "./selectShared";
+import { SingleComboboxShell } from "./selectSingleShell";
 
 export function SelectCell({ value, options }: FieldCellProps<SelectValueType, SelectOptionsBag>) {
 	const coerced = coerceSelectValue(value);
@@ -394,59 +396,50 @@ interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, Se
 }
 
 function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
-	const t = useTranslation();
 	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
 	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
 	const gated = props.dep.hasDeps && !props.dep.ready;
+	const [query, setQuery] = useState("");
 	const search = useAsyncSearch({
 		ctx,
 		query: gated ? undefined : opts.query,
-		search: "",
+		search: query,
 		refetchKey: `${props.refetchKey}:${props.dep.depsKey}`,
 	});
 
-	if (search.kind === "loading") {
+	// A refetch keeps the control mounted: unmounting it mid-search would drop
+	// the input and with it the text being typed.
+	if (search.kind === "loading" && query === "") {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
 	if (search.kind === "error") {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
-	const rows: unknown[] = gated ? [] : search.rows;
+	const rows: unknown[] = gated || search.kind !== "ready" ? [] : search.rows;
 	const listed: OptionMap = {};
 	for (const row of rows) {
 		const v = String(opts.optionValue?.(row) ?? "");
 		listed[v] = opts.optionRow?.(row) ?? { value: v, label: opts.optionLabel?.(row) ?? v };
 	}
 	props.onRowsSeen(listed);
-	const selected = value === null ? undefined : props.resolved.labels[value];
+	const resolvedSelected = value === null ? undefined : props.resolved.labels[value];
+	const selected = resolvedSelected ?? (value === null ? undefined : { value, label: value });
 	return (
-		<Select
-			value={value ?? ""}
-			onValueChange={(next) => props.onChange(next === "" ? null : next)}
+		<SingleComboboxShell
+			id={props.id}
+			name={props.name}
+			value={value}
+			selected={selected}
+			onChange={props.onChange}
+			onBlur={props.onBlur}
 			disabled={props.disabled}
+			invalid={props.invalid}
+			onQueryChange={setQuery}
 		>
-			<SelectTrigger
-				id={fieldId({ id: props.id, name: props.name })}
-				onBlur={props.onBlur}
-				data-testid={`select-${props.name}`}
-				className="w-full"
-			>
-				<SelectValue placeholder={t("field.select.placeholder")}>
-					{selected ? (
-						<SelectOptionContent option={selected} surface="inline" />
-					) : (
-						(value ?? undefined)
-					)}
-				</SelectValue>
-			</SelectTrigger>
-			<SelectContent>
-				{Object.entries(listed).map(([v, option]) => (
-					<SelectItem key={v} value={v} textValue={option.label}>
-						<SelectOptionContent option={option} />
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
+			{Object.entries(listed).map(([v, option]) => (
+				<ComboboxOption key={v} option={option} />
+			))}
+		</SingleComboboxShell>
 	);
 }

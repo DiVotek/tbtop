@@ -8,6 +8,9 @@ type SearchState =
 
 type QueryFn = (ctx: ClientActionContext, search: string) => Promise<unknown[]>;
 
+// Swallows the pauses inside a typed word without the list reading as laggy.
+const SEARCH_DEBOUNCE_MS = 300;
+
 export interface AsyncSearchArgs {
 	ctx: ClientActionContext;
 	query: QueryFn | undefined;
@@ -22,6 +25,7 @@ export function useAsyncSearch({
 	search,
 	refetchKey = 0,
 }: AsyncSearchArgs): SearchState {
+	const debouncedSearch = useDebounced(search);
 	const ctxRef = useRef(ctx);
 	ctxRef.current = ctx;
 	const queryRef = useRef(query);
@@ -39,7 +43,7 @@ export function useAsyncSearch({
 		}
 		let cancelled = false;
 		setState({ kind: "loading" });
-		fn(ctxRef.current, search).then(
+		fn(ctxRef.current, debouncedSearch).then(
 			(rows) => {
 				if (!cancelled) {
 					setState({ kind: "ready", rows });
@@ -56,6 +60,22 @@ export function useAsyncSearch({
 		return () => {
 			cancelled = true;
 		};
-	}, [hasQuery, search, refetchKey]);
+	}, [hasQuery, debouncedSearch, refetchKey]);
 	return state;
+}
+
+/** Mount and empty-again pass through instantly; only typing is delayed. */
+function useDebounced(value: string): string {
+	const [debounced, setDebounced] = useState(value);
+	const isFirst = useRef(true);
+	useEffect(() => {
+		if (isFirst.current || value === "") {
+			isFirst.current = false;
+			setDebounced(value);
+			return;
+		}
+		const timer = setTimeout(() => setDebounced(value), SEARCH_DEBOUNCE_MS);
+		return () => clearTimeout(timer);
+	}, [value]);
+	return debounced;
 }

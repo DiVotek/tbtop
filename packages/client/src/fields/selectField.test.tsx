@@ -192,9 +192,9 @@ describe("Select field — async mode", () => {
 			</Wrap>,
 		);
 		await waitFor(() => {
-			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
-				"Carol",
-			);
+			expect(
+				container.querySelector('[data-testid="select-label-authorId"]')?.textContent,
+			).toContain("Carol");
 		});
 		expect(onLoad).toHaveBeenCalledWith(expect.anything(), "42");
 	});
@@ -224,7 +224,7 @@ describe("Select field — async mode", () => {
 			</Wrap>,
 		);
 		await waitFor(() => {
-			expect(container.querySelector('[data-slot="select-trigger"]')).not.toBeNull();
+			expect(container.querySelector('[data-testid="select-authorId"]')).not.toBeNull();
 		});
 
 		rerender(
@@ -234,9 +234,9 @@ describe("Select field — async mode", () => {
 		);
 
 		await waitFor(() => {
-			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
-				"Dave",
-			);
+			expect(
+				container.querySelector('[data-testid="select-label-authorId"]')?.textContent,
+			).toContain("Dave");
 		});
 		expect(onLoad).not.toHaveBeenCalled();
 		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
@@ -269,9 +269,9 @@ describe("Select field — async mode", () => {
 			</Wrap>,
 		);
 		await waitFor(() => {
-			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
-				"Carol",
-			);
+			expect(
+				container.querySelector('[data-testid="select-label-authorId"]')?.textContent,
+			).toContain("Carol");
 		});
 		expect(onLoad).toHaveBeenCalledWith(expect.anything(), "42");
 	});
@@ -394,16 +394,97 @@ describe("Select field — async mode", () => {
 				</Wrap>,
 			);
 			await waitFor(() => {
-				expect(container.querySelector('[data-slot="select-trigger"]')).not.toBeNull();
+				expect(container.querySelector('[data-testid="select-authorId"]')).not.toBeNull();
 			});
 			expect(warnSpy).toHaveBeenCalledTimes(1);
 			expect(String(warnSpy.mock.calls[0]?.[0])).toMatch(/authorId/);
-			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
-				"42",
-			);
+			expect(
+				container.querySelector('[data-testid="select-label-authorId"]')?.textContent,
+			).toContain("42");
 		} finally {
 			warnSpy.mockRestore();
 		}
+	});
+
+	test("Select async sends the typed text to the query", async () => {
+		// Rule: the search string reaches the endpoint, so rows past the server's
+		// page limit stay reachable. A hardcoded "" pins the list to page one.
+		const user = userEvent.setup();
+		const query = mock(
+			async (_c: unknown, _s: string): Promise<UserRow[]> => [{ id: "1", name: "Alice" }],
+		);
+		const Wrap = wrap(NO_RESP);
+		const { getByTestId } = render(
+			<Wrap>
+				<SelectForm
+					name="authorId"
+					value={null}
+					onChange={() => {}}
+					options={{
+						query,
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+					}}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => expect(query).toHaveBeenCalled());
+
+		await user.type(getByTestId("select-search-authorId"), "Bob");
+
+		await waitFor(() => {
+			expect(query.mock.calls.some((c) => c[1] === "Bob")).toBe(true);
+		});
+	});
+
+	test("Select async keeps the selected label while the search excludes it", async () => {
+		// Rule: onLoad resolves the label; a search result that omits the value
+		// must not blank it back to the raw id.
+		const user = userEvent.setup();
+		const onLoad = mock(
+			async (_c: unknown, value: string): Promise<UserRow> => ({
+				id: value,
+				name: "Carol",
+			}),
+		);
+		const query = mock(
+			async (_c: unknown, _s: string): Promise<UserRow[]> => [{ id: "9", name: "Zed" }],
+		);
+		const Wrap = wrap(NO_RESP);
+		const { container, getByTestId } = render(
+			<Wrap>
+				<SelectForm
+					name="authorId"
+					value="42"
+					onChange={() => {}}
+					options={{
+						query,
+						onLoad,
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+					}}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => {
+			expect(
+				container.querySelector('[data-testid="select-label-authorId"]')?.textContent,
+			).toContain("Carol");
+		});
+
+		await user.type(getByTestId("select-search-authorId"), "Zed");
+		await waitFor(() => {
+			expect(query.mock.calls.some((c) => c[1] === "Zed")).toBe(true);
+		});
+		// Backspace, not clear(): clear() sets .value directly and the controlled
+		// input never sees the event.
+		await user.type(getByTestId("select-search-authorId"), "{Backspace>3/}");
+
+		await waitFor(() => {
+			expect(
+				container.querySelector('[data-testid="select-label-authorId"]')?.textContent,
+			).toContain("Carol");
+		});
 	});
 
 	test("Select async custom loading override renders instead of default skeleton", () => {
