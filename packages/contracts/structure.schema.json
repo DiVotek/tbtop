@@ -349,6 +349,27 @@
 					}
 				},
 				{
+					"if": { "properties": { "kind": { "const": "time" } } },
+					"then": {
+						"properties": {
+							"options": {
+								"properties": {
+									"seconds": { "type": "boolean" },
+									"minuteStep": { "type": "integer", "minimum": 1, "maximum": 60 },
+									"secondStep": { "type": "integer", "minimum": 1, "maximum": 59 }
+								},
+								"allOf": [
+									{
+										"if": { "properties": { "seconds": { "const": true } }, "required": ["seconds"] },
+										"then": { "not": { "required": ["minuteStep"] } },
+										"else": { "not": { "required": ["secondStep"] } }
+									}
+								]
+							}
+						}
+					}
+				},
+				{
 					"if": { "properties": { "kind": { "const": "displayValue" } } },
 					"then": {
 						"properties": {

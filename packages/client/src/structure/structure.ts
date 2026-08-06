@@ -46,6 +46,7 @@ export type {
 	TagsOpts,
 	TextareaOpts,
 	TextOpts,
+	TimeOpts,
 	ToggleButtonsOpts,
 	UploadOpts,
 } from "./structureFieldOpts";
@@ -74,6 +75,7 @@ const builtins: Record<string, Builder> = {
 	number: makeField("number") as Builder,
 	date: makeField("date") as Builder,
 	datetime: makeField("datetime") as Builder,
+	time: makeField("time") as Builder,
 	boolean: makeField("boolean") as Builder,
 	select: makeField("select") as Builder,
 	radio: makeField("radio") as Builder,

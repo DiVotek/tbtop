@@ -77,6 +77,7 @@ export type {
 	StructureBuilder,
 	StructureBuilders,
 	StructureNode,
+	TimeOpts,
 } from "./structure/structure";
 export { makeField, registerStructureBuilder, s } from "./structure/structure";
 export { registerTableColor } from "./structure/table/colorRegistry";

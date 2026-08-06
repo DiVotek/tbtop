@@ -420,6 +420,25 @@
                                         "name": "publishedAt"
                                     },
                                     {
+                                        "kind": "time",
+                                        "options": {
+                                            "label": "Opening time",
+                                            "minuteStep": 15
+                                        },
+                                        "meta": {},
+                                        "name": "opensAt"
+                                    },
+                                    {
+                                        "kind": "time",
+                                        "options": {
+                                            "label": "Closing time",
+                                            "seconds": true,
+                                            "secondStep": 5
+                                        },
+                                        "meta": {},
+                                        "name": "closesAt"
+                                    },
+                                    {
                                         "kind": "text",
                                         "options": {},
                                         "meta": {

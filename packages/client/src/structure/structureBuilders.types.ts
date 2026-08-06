@@ -24,6 +24,7 @@ import type {
 	TagsOpts,
 	TextareaOpts,
 	TextOpts,
+	TimeOpts,
 	ToggleButtonsOpts,
 	UploadOpts,
 } from "./structureFieldOpts";
@@ -104,6 +105,7 @@ export interface StructureBuilders<TForm = unknown> {
 	number: (input: FieldInputFor<TForm, NumberOpts>) => StructureNode;
 	date: (input: FieldInputFor<TForm, DateOpts>) => StructureNode;
 	datetime: (input: FieldInputFor<TForm, DatetimeOpts>) => StructureNode;
+	time: (input: FieldInputFor<TForm, TimeOpts>) => StructureNode;
 	boolean: (input: FieldInputFor<TForm, { label?: string }>) => StructureNode;
 	select: <TRow = unknown>(input: FieldInputFor<TForm, SelectOpts<TRow>>) => StructureNode;
 	radio: (input: FieldInputFor<TForm, RadioOpts>) => StructureNode;
