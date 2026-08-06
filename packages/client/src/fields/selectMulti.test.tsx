@@ -558,3 +558,62 @@ describe("Select multi — id prop on input", () => {
 		expect(input?.id).toBe("tags");
 	});
 });
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+// Rule: "No options" shows only when there is nothing to render. Base UI's
+// Combobox.Empty reads its own collection, which stays empty because rows are
+// passed as children — so it announced an empty list over a populated one.
+
+describe("Select multi — empty state", () => {
+	test("hides the empty message while options match the query", async () => {
+		const user = userEvent.setup();
+		const Wrap = wrap(NO_RESP);
+		render(
+			<Wrap>
+				<SelectForm
+					name="tags"
+					value={[]}
+					onChange={() => {}}
+					options={{ options: CHOICES, multiple: true }}
+				/>
+			</Wrap>,
+		);
+
+		const input = document.querySelector(
+			'[data-testid="select-tags"] input',
+		) as HTMLInputElement;
+		await user.click(input);
+		await user.type(input, "Ali");
+
+		await waitFor(() => {
+			expect(document.querySelectorAll('[role="option"]').length).toBe(1);
+		});
+		expect(document.querySelector('[data-testid="select-empty-tags"]')).toBeNull();
+	});
+
+	test("shows the empty message when no option matches", async () => {
+		const user = userEvent.setup();
+		const Wrap = wrap(NO_RESP);
+		render(
+			<Wrap>
+				<SelectForm
+					name="tags"
+					value={[]}
+					onChange={() => {}}
+					options={{ options: CHOICES, multiple: true }}
+				/>
+			</Wrap>,
+		);
+
+		const input = document.querySelector(
+			'[data-testid="select-tags"] input',
+		) as HTMLInputElement;
+		await user.click(input);
+		await user.type(input, "zzz");
+
+		await waitFor(() => {
+			expect(document.querySelector('[data-testid="select-empty-tags"]')).not.toBeNull();
+		});
+		expect(document.querySelectorAll('[role="option"]').length).toBe(0);
+	});
+});
