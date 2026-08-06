@@ -76,6 +76,7 @@
 		"lexical": "^0.44.0",
 		"lucide-react": "^0.469.0",
 		"react-colorful": "^5",
+		"react-day-picker": "^9",
 		"react-hook-form": "^7.75.0",
 		"recharts": "^2.15.0",
 		"sonner": "^2.0.7",

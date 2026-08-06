@@ -91,6 +91,12 @@
 			}
 		},
 		{
+			"files": ["**/i18n/defaultMessages.ts"],
+			"rules": {
+				"max-lines": "off"
+			}
+		},
+		{
 			"files": ["apps/demo/resources/js/components/ui/**"],
 			"rules": {
 				"comment-budget/comment-budget": "off",

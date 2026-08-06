@@ -55,6 +55,8 @@ export const defaultMessages: Messages = {
 	"field.upload.noData": "Upload returned no data",
 	"field.upload.uploading": "Uploading…",
 	"field.upload.prompt": "Click or drop a file",
+	"field.daterange.placeholder": "Pick a date range",
+	"field.daterange.clear": "Clear",
 	"field.tags.placeholder": "Add tag…",
 	"field.search.placeholder": "Search…",
 	"field.relation.placeholder": "Related record id",
