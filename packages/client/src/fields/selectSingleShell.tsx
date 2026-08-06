@@ -20,6 +20,8 @@ export interface SingleShellProps {
 	disabled?: boolean;
 	invalid?: boolean;
 	onQueryChange: (q: string) => void;
+	/** False while rows are in flight, so an empty list is not reported as "no options". */
+	isEmpty: boolean;
 	children: React.ReactNode;
 }
 
@@ -33,6 +35,7 @@ export function SingleComboboxShell({
 	disabled,
 	invalid,
 	onQueryChange,
+	isEmpty,
 	children,
 }: SingleShellProps) {
 	const t = useTranslation();
@@ -50,7 +53,12 @@ export function SingleComboboxShell({
 		handleQueryChange("");
 	}
 
-	function handleOpenChange(next: boolean): void {
+	// Base UI closes the popup once the input empties. An empty
+	// query is a real state here: the server's first page.
+	function handleOpenChange(next: boolean, details: Combobox.Root.ChangeEventDetails): void {
+		if (!next && details.reason === "input-clear") {
+			return;
+		}
 		setOpen(next);
 		if (!next) {
 			handleQueryChange("");
@@ -73,6 +81,9 @@ export function SingleComboboxShell({
 			// Rows arrive already filtered by the server, often on columns the
 			// label never shows; re-filtering here would drop those matches.
 			filter={null}
+			// Committing a selection otherwise writes the raw value into the input.
+			// The overlay owns the display, so the input stays empty.
+			itemToStringLabel={() => ""}
 		>
 			<div className="relative" data-testid={`select-${name}`}>
 				<Combobox.Input
@@ -106,9 +117,16 @@ export function SingleComboboxShell({
 				<Combobox.Positioner className="z-50" sideOffset={4}>
 					<Combobox.Popup className="w-[var(--anchor-width)] rounded-md border border-input bg-background shadow-md">
 						<Combobox.List className="max-h-60 overflow-y-auto p-1">
-							<Combobox.Empty className="px-2 py-1.5 text-muted-foreground text-sm">
-								{t("field.select.no_options")}
-							</Combobox.Empty>
+							{/* Rows come from the server, so Combobox.Empty — which reads Base
+							    UI's own collection — would always consider the list empty. */}
+							{isEmpty && (
+								<div
+									data-testid={`select-empty-${name}`}
+									className="px-2 py-1.5 text-muted-foreground text-sm"
+								>
+									{t("field.select.no_options")}
+								</div>
+							)}
 							{children}
 						</Combobox.List>
 					</Combobox.Popup>

@@ -406,6 +406,47 @@ describe("Select field — async mode", () => {
 		}
 	});
 
+	test("Select async keeps the control mounted while a refetch is in flight", async () => {
+		// Rule: only the first load may show a skeleton. A later refetch that
+		// unmounts the control drops the input and the text being typed with it.
+		const user = userEvent.setup();
+		let resolveSecond: ((rows: UserRow[]) => void) | undefined;
+		let call = 0;
+		const query = mock(async (_c: unknown, _s: string): Promise<UserRow[]> => {
+			call += 1;
+			if (call === 1) {
+				return [{ id: "1", name: "Alice" }];
+			}
+			return new Promise<UserRow[]>((res) => {
+				resolveSecond = res;
+			});
+		});
+		const Wrap = wrap(NO_RESP);
+		const { container, getByTestId } = render(
+			<Wrap>
+				<SelectForm
+					name="authorId"
+					value={null}
+					onChange={() => {}}
+					options={{
+						query,
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+					}}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => expect(getByTestId("select-search-authorId")).toBeTruthy());
+
+		await user.type(getByTestId("select-search-authorId"), "Bo");
+		await waitFor(() => expect(query.mock.calls.length).toBeGreaterThan(1));
+
+		// The second query is still pending here — the input must survive it.
+		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
+		expect(container.querySelector('[data-testid="select-search-authorId"]')).not.toBeNull();
+		resolveSecond?.([]);
+	});
+
 	test("Select async sends the typed text to the query", async () => {
 		// Rule: the search string reaches the endpoint, so rows past the server's
 		// page limit stay reachable. A hardcoded "" pins the list to page one.

@@ -407,15 +407,18 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 		search: query,
 		refetchKey: `${props.refetchKey}:${props.dep.depsKey}`,
 	});
+	// Only the first load has nothing to show. Later refetches — typing, a
+	// selection resetting the query, a create — keep the control mounted so it
+	// never blinks through a skeleton and never drops the text being typed.
+	const hasRenderedRef = useRef(false);
 
-	// A refetch keeps the control mounted: unmounting it mid-search would drop
-	// the input and with it the text being typed.
-	if (search.kind === "loading" && query === "") {
+	if (search.kind === "loading" && !hasRenderedRef.current) {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
 	if (search.kind === "error") {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
+	hasRenderedRef.current = true;
 	const rows: unknown[] = gated || search.kind !== "ready" ? [] : search.rows;
 	const listed: OptionMap = {};
 	for (const row of rows) {
@@ -436,6 +439,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 			disabled={props.disabled}
 			invalid={props.invalid}
 			onQueryChange={setQuery}
+			isEmpty={search.kind === "ready" && Object.keys(listed).length === 0}
 		>
 			{Object.entries(listed).map(([v, option]) => (
 				<ComboboxOption key={v} option={option} />
