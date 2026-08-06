@@ -9,6 +9,8 @@ import { fieldId } from "./fieldProps";
 import { SelectOptionContent } from "./selectOptionContent";
 import type { StaticOption } from "./selectShared";
 
+export type SingleListState = "rows" | "empty" | "failed";
+
 export interface SingleShellProps {
 	id?: string;
 	name: string;
@@ -20,8 +22,11 @@ export interface SingleShellProps {
 	disabled?: boolean;
 	invalid?: boolean;
 	onQueryChange: (q: string) => void;
-	/** False while rows are in flight, so an empty list is not reported as "no options". */
-	isEmpty: boolean;
+	/**
+	 * "rows" while options are listed or still loading; the other states each
+	 * get their own notice so a failed lookup never reads as an empty result.
+	 */
+	listState: SingleListState;
 	children: React.ReactNode;
 }
 
@@ -35,7 +40,7 @@ export function SingleComboboxShell({
 	disabled,
 	invalid,
 	onQueryChange,
-	isEmpty,
+	listState,
 	children,
 }: SingleShellProps) {
 	const t = useTranslation();
@@ -119,12 +124,18 @@ export function SingleComboboxShell({
 						<Combobox.List className="max-h-60 overflow-y-auto p-1">
 							{/* Rows come from the server, so Combobox.Empty — which reads Base
 							    UI's own collection — would always consider the list empty. */}
-							{isEmpty && (
+							{listState !== "rows" && (
 								<div
-									data-testid={`select-empty-${name}`}
+									data-testid={
+										listState === "failed"
+											? `select-failed-${name}`
+											: `select-empty-${name}`
+									}
 									className="px-2 py-1.5 text-muted-foreground text-sm"
 								>
-									{t("field.select.no_options")}
+									{listState === "failed"
+										? t("field.select.load_failed")
+										: t("field.select.no_options")}
 								</div>
 							)}
 							{children}

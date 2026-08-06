@@ -447,6 +447,79 @@ describe("Select field — async mode", () => {
 		resolveSecond?.([]);
 	});
 
+	test("Select async survives a failed lookup and retries on the next keystroke", async () => {
+		// Rule: once the control has rendered, a rejected query keeps the input.
+		// Unmounting it removes the only way to change the search, so the field
+		// would stay broken until a page reload.
+		const user = userEvent.setup();
+		let call = 0;
+		const query = mock(async (_c: unknown, _s: string): Promise<UserRow[]> => {
+			call += 1;
+			if (call === 2) {
+				throw new Error("network hiccup");
+			}
+			return [{ id: "1", name: "Alice" }];
+		});
+		const Wrap = wrap(NO_RESP);
+		const { getByTestId } = render(
+			<Wrap>
+				<SelectForm
+					name="authorId"
+					value={null}
+					onChange={() => {}}
+					options={{
+						query,
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+					}}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => expect(getByTestId("select-search-authorId")).toBeTruthy());
+
+		await user.type(getByTestId("select-search-authorId"), "Bo");
+		await waitFor(() => expect(call).toBe(2));
+
+		// The input survives the failure, so typing can still drive a retry.
+		expect(getByTestId("select-search-authorId")).toBeTruthy();
+		await user.type(getByTestId("select-search-authorId"), "b");
+
+		await waitFor(() => expect(query.mock.calls.at(-1)?.[1]).toBe("Bob"));
+	});
+
+	test("Select async shows the placeholder for an empty stored value", async () => {
+		// Rule: "" is nothing selected, not an option labelled "". Treating it as a
+		// selection suppresses the placeholder and renders a blank overlay.
+		const query = mock(async (): Promise<UserRow[]> => []);
+		const Wrap = wrap(NO_RESP);
+		const emptyValue = "" as Parameters<typeof SelectForm>[0]["value"];
+		const { container } = render(
+			<Wrap>
+				<SelectForm
+					name="authorId"
+					value={emptyValue}
+					onChange={() => {}}
+					options={{
+						query,
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+					}}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => {
+			expect(
+				container.querySelector('[data-testid="select-search-authorId"]'),
+			).not.toBeNull();
+		});
+
+		const input = container.querySelector(
+			'[data-testid="select-search-authorId"]',
+		) as HTMLInputElement;
+		expect(input.getAttribute("placeholder")).toBe("—");
+		expect(container.querySelector('[data-testid="select-label-authorId"]')).toBeNull();
+	});
+
 	test("Select async sends the typed text to the query", async () => {
 		// Rule: the search string reaches the endpoint, so rows past the server's
 		// page limit stay reachable. A hardcoded "" pins the list to page one.

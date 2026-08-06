@@ -29,7 +29,7 @@ import {
 	type SelectValueType,
 	type StaticOption,
 } from "./selectShared";
-import { SingleComboboxShell } from "./selectSingleShell";
+import { SingleComboboxShell, type SingleListState } from "./selectSingleShell";
 
 export function SelectCell({ value, options }: FieldCellProps<SelectValueType, SelectOptionsBag>) {
 	const coerced = coerceSelectValue(value);
@@ -415,7 +415,10 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 	if (search.kind === "loading" && !hasRenderedRef.current) {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
-	if (search.kind === "error") {
+	// A failure before anything rendered has no control to fall back to.
+	// Afterwards the shell stays: unmounting it removes the input, and with it
+	// the only way to change the search and retry.
+	if (search.kind === "error" && !hasRenderedRef.current) {
 		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
 	}
 	hasRenderedRef.current = true;
@@ -426,8 +429,18 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 		listed[v] = opts.optionRow?.(row) ?? { value: v, label: opts.optionLabel?.(row) ?? v };
 	}
 	props.onRowsSeen(listed);
-	const resolvedSelected = value === null ? undefined : props.resolved.labels[value];
-	const selected = resolvedSelected ?? (value === null ? undefined : { value, label: value });
+	// A pending refetch keeps the previous rows rather than blanking the list.
+	let listState: SingleListState = "rows";
+	if (search.kind === "error") {
+		listState = "failed";
+	} else if (search.kind === "ready" && Object.keys(listed).length === 0) {
+		listState = "empty";
+	}
+	// An empty string is "nothing selected", not an option labelled "".
+	const hasValue = value !== null && value !== "";
+	const selected = hasValue
+		? (props.resolved.labels[value] ?? { value, label: value })
+		: undefined;
 	return (
 		<SingleComboboxShell
 			id={props.id}
@@ -439,7 +452,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 			disabled={props.disabled}
 			invalid={props.invalid}
 			onQueryChange={setQuery}
-			isEmpty={search.kind === "ready" && Object.keys(listed).length === 0}
+			listState={listState}
 		>
 			{Object.entries(listed).map(([v, option]) => (
 				<ComboboxOption key={v} option={option} />
