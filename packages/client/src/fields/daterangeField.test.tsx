@@ -69,6 +69,28 @@ describe("Daterange: emits only a complete range", () => {
 		expect(calls).toHaveLength(1);
 		expect(calls[0]).toEqual({ from: "2026-03-05", to: "2026-03-08" });
 	});
+
+	// day-picker merges the click into the applied range, so on these two sides
+	// the clicked day comes back as `to` and the stale `from` is the old start.
+	test("a first click after the applied end starts there, not at the old start", async () => {
+		const { fn, calls } = makeOnChange();
+		const { user, doc } = await openCalendar({ from: "2026-03-10", to: "2026-03-20" }, fn);
+
+		await user.click(dayButton(doc, "2026-03-25"));
+		await user.click(dayButton(doc, "2026-03-28"));
+
+		expect(calls).toEqual([{ from: "2026-03-25", to: "2026-03-28" }]);
+	});
+
+	test("a first click inside the applied range starts there", async () => {
+		const { fn, calls } = makeOnChange();
+		const { user, doc } = await openCalendar({ from: "2026-03-10", to: "2026-03-20" }, fn);
+
+		await user.click(dayButton(doc, "2026-03-15"));
+		await user.click(dayButton(doc, "2026-03-18"));
+
+		expect(calls).toEqual([{ from: "2026-03-15", to: "2026-03-18" }]);
+	});
 });
 
 describe("Daterange: null/undefined conversion", () => {

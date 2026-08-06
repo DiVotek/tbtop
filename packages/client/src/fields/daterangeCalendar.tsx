@@ -5,7 +5,9 @@ import { browserLocale, resolveWeekStart } from "./daterangeLocale";
 
 interface DaterangeCalendarProps {
 	selected: DateRange | undefined;
-	onSelect: (next: DateRange | undefined) => void;
+	// day-picker folds a click into the applied range, so `next` cannot say which
+	// day was clicked — `clicked` is its trigger date.
+	onSelect: (next: DateRange | undefined, clicked: Date) => void;
 }
 
 /**

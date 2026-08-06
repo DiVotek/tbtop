@@ -41,15 +41,15 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 		}
 	}, [open, value]);
 
-	function handleSelect(next: DateRange | undefined): void {
+	function handleSelect(next: DateRange | undefined, clicked: Date): void {
 		setDraft(next);
 		// With a range already applied, day-picker edits it rather than starting
-		// over: the first click comes back complete, pairing the new day with the
-		// old opposite bound. Emitting that would apply a range the user never
-		// picked, so the first click always opens a fresh selection.
+		// over: the first click comes back complete, pairing the clicked day with
+		// an old bound. Emitting that would apply a range the user never picked,
+		// so the first click always opens a fresh selection on the clicked day.
 		if (!picking) {
 			setPicking(true);
-			setDraft(next?.from ? { from: next.from, to: undefined } : undefined);
+			setDraft({ from: clicked, to: undefined });
 			return;
 		}
 		if (next?.from && next.to) {
