@@ -61,8 +61,11 @@ export function MultiComboboxShell({
 		onQueryChange?.(q);
 	}
 
+	// Keeping the text would leave the async list filtered by a search the user
+	// already acted on, so the next pick starts from the first page again.
 	function handleValueChange(next: string[] | null): void {
 		onChange(next ?? []);
+		handleQueryChange("");
 	}
 
 	const { nodes: optionNodes, exactMatch } = children(query);

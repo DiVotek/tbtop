@@ -385,6 +385,48 @@ describe("Select multi async — shell stays mounted during query refetch", () =
 		await waitFor(() => expect(container.querySelector("input")).not.toBeNull());
 		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
 	});
+
+	test("a value change clears the search so the next pick starts from page one", async () => {
+		// Rule: after committing a value the query resets and the list refetches
+		// unfiltered. Keeping the text strands the control on a stale result set.
+		const seen: string[] = [];
+		const query = mock(async (_c: unknown, s: string): Promise<UserRow[]> => {
+			seen.push(s);
+			return [{ id: "1", name: "Alice" }];
+		});
+		const user = userEvent.setup();
+		const Wrap = wrap(NO_RESP);
+		const { container } = render(
+			<Wrap>
+				<SelectForm
+					name="authorIds"
+					value={["1"]}
+					onChange={() => {}}
+					options={{
+						query,
+						onLoad: async (): Promise<UserRow[]> => [{ id: "1", name: "Alice" }],
+						optionLabel: (r) => (r as UserRow).name,
+						optionValue: (r) => (r as UserRow).id,
+						multiple: true,
+					}}
+				/>
+			</Wrap>,
+		);
+		await waitFor(() => expect(container.querySelector("input")).not.toBeNull());
+
+		await user.type(container.querySelector("input") as HTMLInputElement, "Bob");
+		await waitFor(() => expect(seen).toContain("Bob"));
+
+		// Removing a chip is a value change — it must reset the search too.
+		const removeBtn = container.querySelector(
+			'button[aria-label="Remove Alice"]',
+		) as HTMLElement;
+		await user.click(removeBtn);
+
+		await waitFor(() => {
+			expect((container.querySelector("input") as HTMLInputElement).value).toBe("");
+		});
+	});
 });
 
 // ─── FIX 4: onBlur fires on focus loss, not on option interaction ─────────────
