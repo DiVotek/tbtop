@@ -1,5 +1,5 @@
 import { Combobox } from "@base-ui/react/combobox";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
@@ -55,6 +55,7 @@ export function MultiComboboxShell({
 	const t = useTranslation();
 	const [query, setQuery] = useState("");
 	const [createOpen, setCreateOpen] = useState(false);
+	const chipsRef = useRef<HTMLDivElement>(null);
 
 	function handleQueryChange(q: string): void {
 		setQuery(q);
@@ -96,6 +97,7 @@ export function MultiComboboxShell({
 			>
 				{/* Root is a provider, not a DOM node — testid goes on Chips. */}
 				<Combobox.Chips
+					ref={chipsRef}
 					data-testid={`select-${name}`}
 					onBlur={onBlur}
 					className={cn(
@@ -139,7 +141,9 @@ export function MultiComboboxShell({
 				</Combobox.Chips>
 
 				<Combobox.Portal>
-					<Combobox.Positioner className="z-50" sideOffset={4}>
+					{/* Without this the popup anchors to the input, which the chips
+					    shrink as selections accumulate. */}
+					<Combobox.Positioner className="z-50" sideOffset={4} anchor={chipsRef}>
 						<Combobox.Popup className="w-[var(--anchor-width)] rounded-md border border-input bg-background shadow-md">
 							<Combobox.List className="max-h-60 overflow-y-auto p-1">
 								<Combobox.Empty className="px-2 py-1.5 text-muted-foreground text-sm">
