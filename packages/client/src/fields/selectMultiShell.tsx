@@ -1,5 +1,5 @@
 import { Combobox } from "@base-ui/react/combobox";
-import { useRef, useState } from "react";
+import { Children, useRef, useState } from "react";
 import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
@@ -73,6 +73,7 @@ export function MultiComboboxShell({
 
 	const trimmedQuery = query.trim();
 	const showCreate = create !== undefined && trimmedQuery.length > 0 && !exactMatch;
+	const isEmpty = Children.count(optionNodes) === 0;
 
 	function handleCreateSuccess(newValue: string, label: string): void {
 		if (resolvedLabels) {
@@ -146,9 +147,16 @@ export function MultiComboboxShell({
 					<Combobox.Positioner className="z-50" sideOffset={4} anchor={chipsRef}>
 						<Combobox.Popup className="w-[var(--anchor-width)] rounded-md border border-input bg-background shadow-md">
 							<Combobox.List className="max-h-60 overflow-y-auto p-1">
-								<Combobox.Empty className="px-2 py-1.5 text-muted-foreground text-sm">
-									{showCreate ? null : t("field.select.no_options")}
-								</Combobox.Empty>
+								{/* Rows arrive as children, so Combobox.Empty — which reads Base
+								    UI's own collection — would always consider the list empty. */}
+								{isEmpty && !showCreate && (
+									<div
+										data-testid={`select-empty-${name}`}
+										className="px-2 py-1.5 text-muted-foreground text-sm"
+									>
+										{t("field.select.no_options")}
+									</div>
+								)}
 								{optionNodes}
 								{showCreate && (
 									<div
