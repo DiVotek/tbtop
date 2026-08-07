@@ -21,6 +21,12 @@ describe("resolveWeekStart", () => {
 	test("a script subtag is not read as a region", () => {
 		expect(resolveWeekStart("zh-Hans")).toBe(1);
 	});
+
+	// Extensions trail the tag, so reading the last subtag would miss the region
+	// and silently fall back to Monday for a US user.
+	test("an extension subtag does not hide the region", () => {
+		expect(resolveWeekStart("en-US-u-ca-gregory")).toBe(0);
+	});
 });
 
 describe("intlFormatters", () => {
@@ -35,6 +41,17 @@ describe("intlFormatters", () => {
 		const day = intlFormatters("en").formatDay?.(new Date(2026, 0, 5));
 
 		expect(day).toBe("5");
+	});
+
+	// fa-IR defaults to the Persian calendar and th-TH to the Buddhist one, which
+	// would title the Gregorian day grid with a Persian month or the year 2569.
+	test.each([
+		["fa-IR", "مارس"],
+		["th-TH", "2026"],
+	])("%s captions the Gregorian month the grid shows", (locale, expected) => {
+		const caption = intlFormatters(locale).formatCaption?.(new Date(2026, 2, 15));
+
+		expect(caption).toContain(expected);
 	});
 
 	test("month and weekday names follow the locale", () => {

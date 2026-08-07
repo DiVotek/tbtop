@@ -66,9 +66,13 @@ function weekInfoFirstDay(locale: string | undefined): number | undefined {
  */
 export function intlFormatters(locale: string | undefined): Partial<Formatters> {
 	const tag = usableTag(locale);
-	const caption = new Intl.DateTimeFormat(tag, { month: "long", year: "numeric" });
-	const monthLong = new Intl.DateTimeFormat(tag, { month: "long" });
-	const weekdayShort = new Intl.DateTimeFormat(tag, { weekday: "short" });
+	// The day grid is Gregorian (built from Date), so the caption must be too:
+	// fa-IR defaults to the Persian calendar and th-TH to the Buddhist one,
+	// which would title a Gregorian month with a Persian month name.
+	const calendar = "gregory";
+	const caption = new Intl.DateTimeFormat(tag, { calendar, month: "long", year: "numeric" });
+	const monthLong = new Intl.DateTimeFormat(tag, { calendar, month: "long" });
+	const weekdayShort = new Intl.DateTimeFormat(tag, { calendar, weekday: "short" });
 	const dayNumeric = new Intl.NumberFormat(tag);
 	// A year is a 4-digit number, so the default grouping would render 2026 as
 	// "2,026" (or "2.026" in de). Day numbers never reach that width.
@@ -108,7 +112,9 @@ function regionOf(locale: string | undefined): string | undefined {
 	// "en-US" → "US". Intl.Locale also resolves "en" → "US" via likely subtags,
 	// which would wrongly make a bare "en" Sunday-first, so parse literally.
 	// The first subtag is always the language, so a lone "en" has no region.
+	// Take the first two-letter subtag rather than the last: extensions trail
+	// the tag ("en-US-u-ca-gregory") and a script subtag ("zh-Hans") is longer.
 	const [, ...subtags] = locale.split("-");
-	const region = subtags.at(-1);
-	return region && region.length === 2 ? region.toUpperCase() : undefined;
+	const region = subtags.find((subtag) => /^[A-Za-z]{2}$/.test(subtag));
+	return region ? region.toUpperCase() : undefined;
 }
