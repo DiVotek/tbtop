@@ -166,6 +166,7 @@ return [
             'download_failed' => 'Could not download the file from the given URL.',
             'file_too_large' => 'The file exceeds the maximum allowed size.',
             'mime_not_allowed' => 'This file type is not allowed.',
+            'svg_invalid' => 'This file is corrupted or is not a valid SVG.',
             'folder_not_empty' => 'The folder is not empty.',
         ],
         'folder' => [

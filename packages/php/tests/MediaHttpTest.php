@@ -216,6 +216,16 @@ it('upload sanitizes an html-disguised scriptful svg (mime-spoof bypass)', funct
         ->and($stored)->toContain('<rect');
 });
 
+it('upload rejects an unparseable svg with the svg_invalid message', function () {
+    $file = UploadedFile::fake()->createWithContent('broken.svg', '<svg not xml at all <<<');
+
+    $response = $this->postJson('/admin/api/media/upload', ['file' => $file]);
+
+    $response->assertStatus(422);
+    expect($response->json('message'))->toBe(__('tbtop-admin::admin.media.errors.svg_invalid'));
+    expect(Media::count())->toBe(0);
+});
+
 it('upload refuses a text/html file even when text/* is accepted', function () {
     $file = UploadedFile::fake()->createWithContent('page.html', '<html><body>hi</body></html>');
 
@@ -515,6 +525,19 @@ it('replace deletes old files and stores new upload', function () {
         ->and($response->json('name'))->toBe('new.png');
 
     Storage::disk('public')->assertMissing('tbtop-media/old.png');
+});
+
+it('replace rejects an unparseable svg and keeps the old file and media path intact', function () {
+    $media = Media::create(mediaRow(['path' => 'tbtop-media/old.svg', 'mime' => 'image/svg+xml']));
+    Storage::disk('public')->put('tbtop-media/old.svg', '<svg><rect /></svg>');
+
+    $file = UploadedFile::fake()->createWithContent('broken.svg', '<svg not xml at all <<<');
+
+    $response = $this->post("/admin/api/media/{$media->id}/replace", ['file' => $file]);
+
+    $response->assertStatus(422);
+    Storage::disk('public')->assertExists('tbtop-media/old.svg');
+    expect($media->refresh()->path)->toBe('tbtop-media/old.svg');
 });
 
 it('replace rejects disallowed mime', function () {

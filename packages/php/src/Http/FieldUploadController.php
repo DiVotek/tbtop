@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Uploads\UploadFieldConfig;
 use Tbtop\Admin\Uploads\UploadFieldUrl;
 use Tbtop\Admin\Uploads\UploadStorer;
@@ -46,7 +47,13 @@ final class FieldUploadController
         $saver = $field->saveClosure()
             ?? static fn (UploadedFile $f, UploadFieldConfig $c): array => UploadStorer::store($f, $c);
 
-        return response()->json(['data' => $this->signed($saver($file, $config), $config, $request, $fieldName)]);
+        try {
+            $envelope = $saver($file, $config);
+        } catch (SvgSanitizeException $e) {
+            abort(422, __('tbtop-admin::admin.media.errors.'.$e->reason));
+        }
+
+        return response()->json(['data' => $this->signed($envelope, $config, $request, $fieldName)]);
     }
 
     /**
