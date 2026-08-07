@@ -35,8 +35,24 @@ export interface RenderProps<TOptions> {
  * Binds a node to its page-scoped endpoints before render, the way built-in
  * kinds are wired inside materialize(). Third-party fields need this hook
  * because basePath exists only while materializing and never reaches render.
+ *
+ * Reserved kinds — `table`, `form`, `action`, `stat`, `select`, `relation`,
+ * `upload`, `chart:*` — are handled by materialize() before the registry is
+ * ever consulted, so a materialize hook registered under one is unreachable.
  */
 export type BlockMaterializer = (node: StructureNode, basePath: string) => StructureNode;
+
+// Kinds materialize()'s walk() intercepts by name before consulting the
+// registry — a materialize hook registered under one of these is dead code.
+const RESERVED_MATERIALIZE_KINDS: Record<string, true> = {
+	table: true,
+	form: true,
+	action: true,
+	stat: true,
+	select: true,
+	relation: true,
+	upload: true,
+};
 
 export interface BlockDescriptor<TKind extends string = string, TOptions = unknown> {
 	kind: TKind;
@@ -58,6 +74,19 @@ const warnedKinds = new Set<string>();
 export function registerBlock<TKind extends string, TOptions>(
 	descriptor: BlockDescriptor<TKind, TOptions>,
 ): BlockDescriptor<TKind, TOptions> {
+	const isReserved =
+		RESERVED_MATERIALIZE_KINDS[descriptor.kind] === true ||
+		descriptor.kind.startsWith("chart:");
+	if (
+		descriptor.materialize &&
+		isReserved &&
+		process.env.NODE_ENV !== "production" &&
+		markKindWarned(`materialize:${descriptor.kind}`)
+	) {
+		console.warn(
+			`@tbtop/admin: kind "${descriptor.kind}" is reserved — its materialize hook will never run.`,
+		);
+	}
 	registry.set(descriptor.kind, descriptor as unknown as ErasedBlock);
 	return descriptor;
 }

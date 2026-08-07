@@ -61,6 +61,28 @@ describe("materialize: registered third-party kinds", () => {
 		expect(opts(out)).toEqual({ label: "Plain" });
 	});
 
+	it("never invokes a materialize hook registered under a reserved kind", () => {
+		let called = false;
+		registerBlock({
+			kind: "table",
+			behavior: "container",
+			render: NOOP_RENDER,
+			materialize: (n) => {
+				called = true;
+				return n;
+			},
+		});
+
+		const out = materialize(node("table", { columns: [] }, "posts"), {
+			basePath: BASE_PATH,
+			data: {},
+		});
+
+		expect(called).toBe(false);
+		// The built-in table materializer ran instead, wiring its own query fn.
+		expect(typeof opts(out).query).toBe("function");
+	});
+
 	it("keeps compiling child conditions after the materializer runs", () => {
 		registerBlock({
 			kind: "galleryGroup",

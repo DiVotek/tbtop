@@ -1,5 +1,4 @@
 import type { Translate } from "../i18n/i18n";
-import { getBlockDescriptor } from "../render/blockRegistry";
 import type {
 	ActionConfig,
 	ClientActionContext,
@@ -12,11 +11,10 @@ import { materializeActionOptions } from "./materializeActions";
 import {
 	collectConstraints,
 	materializeChart,
-	materializeRelation,
 	materializeStat,
-	materializeUpload,
 	selectOptionsEndpoint,
 } from "./materializeHelpers";
+import { bindRegisteredKind, materializeNamedField } from "./materializeRegisteredKind";
 import { actionBags, materializeTable } from "./materializeTable";
 
 type Bag = Record<string, unknown>;
@@ -82,36 +80,6 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	}
 	const bound = bindRegisteredKind({ ...node, meta }, ctx.basePath);
 	return { ...bound, options: walkChildren(bound.options as Bag, ctx) };
-}
-
-// basePath-bound named fields (relation, upload); null when this node is neither.
-function materializeNamedField(
-	node: StructureNode,
-	meta: NodeMeta,
-	basePath: string,
-): StructureNode | null {
-	if (!node.name) {
-		return null;
-	}
-	if (node.kind === "relation") {
-		return materializeRelation({ ...node, meta }, basePath);
-	}
-	if (node.kind === "upload") {
-		return materializeUpload({ ...node, meta }, basePath);
-	}
-	return null;
-}
-
-/**
- * Lets a third-party kind bind its own page-scoped endpoints, the way built-in
- * kinds are wired above. Returns the node untouched when nothing is registered.
- */
-function bindRegisteredKind(node: StructureNode, basePath: string): StructureNode {
-	const registered = getBlockDescriptor(node.kind)?.materialize;
-	if (!registered) {
-		return node;
-	}
-	return registered(node, basePath);
 }
 
 /**
