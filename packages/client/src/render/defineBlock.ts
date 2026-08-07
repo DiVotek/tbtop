@@ -1,5 +1,10 @@
 import type { ComponentType } from "react";
-import { type BlockDescriptor, type RenderProps, registerBlock } from "./blockRegistry";
+import {
+	type BlockDescriptor,
+	type BlockMaterializer,
+	type RenderProps,
+	registerBlock,
+} from "./blockRegistry";
 
 export function defineBlock<TKind extends string, TOptions>(
 	kind: TKind,
@@ -8,6 +13,7 @@ export function defineBlock<TKind extends string, TOptions>(
 		render: ComponentType<RenderProps<TOptions>>;
 		defaultOptions?: Partial<TOptions>;
 		serialize?: (value: unknown, options: TOptions) => unknown;
+		materialize?: BlockMaterializer;
 	},
 ): BlockDescriptor<TKind, TOptions> {
 	return registerBlock<TKind, TOptions>({
@@ -16,5 +22,6 @@ export function defineBlock<TKind extends string, TOptions>(
 		render: descriptor.render,
 		defaultOptions: descriptor.defaultOptions,
 		serialize: descriptor.serialize,
+		materialize: descriptor.materialize,
 	});
 }

@@ -1,6 +1,11 @@
 import { type ComponentType, createElement } from "react";
 import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
-import type { BlockDescriptor, FieldBinding, RenderProps } from "./blockRegistry";
+import type {
+	BlockDescriptor,
+	BlockMaterializer,
+	FieldBinding,
+	RenderProps,
+} from "./blockRegistry";
 import { defineBlock } from "./defineBlock";
 
 export interface FieldClientDescriptor<P = unknown> {
@@ -8,6 +13,8 @@ export interface FieldClientDescriptor<P = unknown> {
 	cell: ComponentType<FieldCellProps<P>>;
 	defaultOptions?: P;
 	serialize?: (value: unknown, options: P) => unknown;
+	/** Binds page-scoped endpoints onto the node; see BlockMaterializer. */
+	materialize?: BlockMaterializer;
 }
 
 const NOOP_CHANGE = () => {};
@@ -22,6 +29,7 @@ export function defineFieldClient<T extends string, P>(
 		render: FieldRender,
 		defaultOptions: descriptor.defaultOptions as Partial<P> | undefined,
 		serialize: descriptor.serialize,
+		materialize: descriptor.materialize,
 	});
 }
 
