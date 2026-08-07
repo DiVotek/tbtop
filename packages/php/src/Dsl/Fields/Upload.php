@@ -25,6 +25,10 @@ final class Upload extends Field
      * shape `{path, url}`. Default stores to the configured disk. Never
      * serialized to the client.
      *
+     * Bypasses UploadStorer::store() entirely, so SVG sanitization is skipped —
+     * the mime-guard (accept + text/html rejection) still runs first, but a
+     * custom closure that stores SVGs must sanitize them itself.
+     *
      * @param  Closure(UploadedFile, UploadFieldConfig): array{path: string, url: string}  $fn
      */
     public function saveUsing(Closure $fn): static
