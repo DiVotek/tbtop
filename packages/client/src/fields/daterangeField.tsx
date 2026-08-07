@@ -1,9 +1,10 @@
 import { CalendarIcon } from "lucide-react";
 import { lazy, type ReactNode, Suspense, useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
-import { useTranslation } from "../i18n/i18n";
+import { useLocale, useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { usableTag } from "./daterangeLocale";
 import type { FieldFormProps } from "./fieldProps";
 
 export type DaterangeValue = { from?: string | null; to?: string | null } | null;
@@ -24,6 +25,7 @@ export interface DaterangeFormProps extends FieldFormProps<DaterangeValue> {
 
 export function DaterangeForm({ name, value, onChange, disabled, fallback }: DaterangeFormProps) {
 	const t = useTranslation();
+	const { locale } = useLocale();
 	const applied = toDateRange(value);
 	const [open, setOpen] = useState(false);
 	// A range is half-picked between the two clicks. Holding that locally lets
@@ -82,7 +84,7 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 					className="justify-start font-normal"
 				>
 					<CalendarIcon className="size-4" aria-hidden />
-					{formatRange(applied) || t("field.daterange.placeholder")}
+					{formatRange(applied, locale) || t("field.daterange.placeholder")}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-auto p-0" align="start">
@@ -148,9 +150,10 @@ function toIsoDay(date: Date): string {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-function formatRange(range: DateRange | undefined): string {
+function formatRange(range: DateRange | undefined, locale: string): string {
 	if (!range?.from || !range.to) {
 		return "";
 	}
-	return `${range.from.toLocaleDateString()} – ${range.to.toLocaleDateString()}`;
+	const tag = usableTag(locale);
+	return `${range.from.toLocaleDateString(tag)} – ${range.to.toLocaleDateString(tag)}`;
 }
