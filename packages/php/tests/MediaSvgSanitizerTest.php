@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Media\SvgSanitizer;
 
 beforeEach(function () {
@@ -52,12 +53,46 @@ it('leaves non-svg files untouched', function () {
     expect(Storage::disk('public')->get('tbtop-media/photo.png'))->toBe('raw-png-bytes');
 });
 
-it('overwrites unparseable svg with a safe empty svg', function () {
+it('rejects an unparseable text svg and removes it from disk', function () {
     Storage::disk('public')->put('tbtop-media/broken.svg', '<svg not xml at all <<<');
 
-    SvgSanitizer::sanitizeStored('public', 'tbtop-media/broken.svg', 'broken.svg');
+    expect(fn () => SvgSanitizer::sanitizeStored('public', 'tbtop-media/broken.svg', 'broken.svg'))
+        ->toThrow(SvgSanitizeException::class);
 
-    $result = (string) Storage::disk('public')->get('tbtop-media/broken.svg');
-    expect($result)->toContain('<svg')
-        ->and($result)->not->toContain('not xml at all');
+    Storage::disk('public')->assertMissing('tbtop-media/broken.svg');
+});
+
+it('leaves a png stored under a .svg name untouched', function () {
+    $png = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    );
+    Storage::disk('public')->put('tbtop-media/photo.svg', $png);
+
+    SvgSanitizer::sanitizeStored('public', 'tbtop-media/photo.svg', 'photo.svg');
+
+    expect(Storage::disk('public')->get('tbtop-media/photo.svg'))->toBe($png);
+});
+
+it('rejects an svg carrying a NUL byte that hides a script and removes it from disk', function () {
+    // The NUL is attacker-controlled: it defeats the plain-text `<svg` sniff in
+    // looksLikeSvg() while `sanitize()` still fails to parse the payload, so
+    // this must be refused rather than treated as an opaque binary passthrough.
+    $dirty = '<svg xmlns="http://www.w3.org/2000/svg"><!-- '."\x00"
+        .' --><script>alert(1)</script></svg>';
+    Storage::disk('public')->put('tbtop-media/nul.svg', $dirty);
+
+    expect(fn () => SvgSanitizer::sanitizeStored('public', 'tbtop-media/nul.svg', 'nul.svg'))
+        ->toThrow(SvgSanitizeException::class);
+
+    Storage::disk('public')->assertMissing('tbtop-media/nul.svg');
+});
+
+it('rejects a gzip-compressed svgz and removes it from disk', function () {
+    $gzipped = gzencode('<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>');
+    Storage::disk('public')->put('tbtop-media/icon.svgz', $gzipped);
+
+    expect(fn () => SvgSanitizer::sanitizeStored('public', 'tbtop-media/icon.svgz', 'icon.svgz'))
+        ->toThrow(SvgSanitizeException::class);
+
+    Storage::disk('public')->assertMissing('tbtop-media/icon.svgz');
 });
