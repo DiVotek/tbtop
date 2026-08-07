@@ -1,9 +1,12 @@
-/**
- * Week-start resolution for the calendar. The native <input type="date"> we
- * replaced took this from the OS for free; react-day-picker needs it passed in.
- */
+// The native <input type="date"> we replaced took locale and week start from
+// the OS for free; react-day-picker needs both passed in.
 
-/** Regions that start the week on Sunday. Everywhere else Monday (ISO 8601). */
+import type { Formatters } from "react-day-picker";
+
+/**
+ * Regions that start the week on Sunday. Only consulted when the runtime lacks
+ * Intl.Locale#getWeekInfo (Firefox before 137), which knows this exactly.
+ */
 const SUNDAY_FIRST_REGIONS: Record<string, true> = {
 	US: true,
 	CA: true,
@@ -21,11 +24,65 @@ const SUNDAY_FIRST_REGIONS: Record<string, true> = {
 	VE: true,
 };
 
-export type WeekStart = 0 | 1;
+export type WeekStart = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
+/** getWeekInfo counts Monday..Sunday as 1..7; DayPicker wants Sunday..Saturday as 0..6. */
 export function resolveWeekStart(locale: string | undefined): WeekStart {
+	const firstDay = weekInfoFirstDay(locale);
+	if (firstDay) {
+		return (firstDay % 7) as WeekStart;
+	}
 	const region = regionOf(locale);
 	return region && SUNDAY_FIRST_REGIONS[region] ? 0 : 1;
+}
+
+// Baseline 2024, but not yet in TypeScript's lib.dom — and absent in older
+// Firefox, which is why resolveWeekStart still keeps a region fallback.
+type WeekInfoLocale = Intl.Locale & { getWeekInfo?: () => { firstDay: number } };
+
+function weekInfoFirstDay(locale: string | undefined): number | undefined {
+	if (!locale) {
+		return undefined;
+	}
+	try {
+		return (new Intl.Locale(locale) as WeekInfoLocale).getWeekInfo?.().firstDay;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * DayPicker formats through date-fns tokens against its built-in en-US locale.
+ * Overriding these formatters routes every visible string through Intl instead,
+ * which covers every locale the runtime knows without shipping locale modules.
+ */
+export function intlFormatters(locale: string | undefined): Partial<Formatters> {
+	const tag = usableTag(locale);
+	const caption = new Intl.DateTimeFormat(tag, { month: "long", year: "numeric" });
+	const monthLong = new Intl.DateTimeFormat(tag, { month: "long" });
+	const weekdayShort = new Intl.DateTimeFormat(tag, { weekday: "short" });
+	const dayNumeric = new Intl.NumberFormat(tag);
+
+	return {
+		formatCaption: (month) => caption.format(month),
+		formatMonthDropdown: (month) => monthLong.format(month),
+		formatWeekdayName: (weekday) => weekdayShort.format(weekday),
+		formatDay: (day) => dayNumeric.format(day.getDate()),
+		formatYearDropdown: (year) => dayNumeric.format(year.getFullYear()),
+	};
+}
+
+/** Intl throws RangeError on a malformed tag; the locale comes from the server. */
+export function usableTag(locale: string | undefined): string {
+	if (!locale) {
+		return "en";
+	}
+	try {
+		Intl.DateTimeFormat.supportedLocalesOf(locale);
+		return locale;
+	} catch {
+		return "en";
+	}
 }
 
 /** Browser locale, or undefined outside a browser (tests, SSR). */
