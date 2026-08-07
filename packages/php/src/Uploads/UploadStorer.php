@@ -4,11 +4,12 @@ namespace Tbtop\Admin\Uploads;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Media\SvgSanitizer;
 use Throwable;
 
 /**
  * Persists one upload for a resolved field: store, optional format conversion,
- * visibility, returning the wire shape `{path, url}`.
+ * svg sanitization, visibility, returning the wire shape `{path, url}`.
  */
 final class UploadStorer
 {
@@ -23,6 +24,7 @@ final class UploadStorer
         $format = $config->image['convertTo'] ?? null;
         $quality = $config->image['quality'] ?? null;
         [$path] = self::convert($file, $path, $config, $format, $quality);
+        SvgSanitizer::sanitizeStored($config->disk, $path, $file->getClientOriginalName());
         self::applyVisibility($config->disk, $path, $config->visibility);
 
         return [

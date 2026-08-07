@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Uploads;
 
 use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Dsl\Fields\Upload;
+use Tbtop\Admin\Media\MimePolicy;
 
 /**
  * Resolved upload settings for one Upload field: inline DSL options only.
@@ -44,16 +45,10 @@ final class UploadFieldConfig
     /** Validates the upload mime against the accept allowlist (empty = allow all). */
     public function assertMime(UploadedFile $file): void
     {
-        if ($this->accept === []) {
-            return;
-        }
         $mime = (string) $file->getMimeType();
-        foreach ($this->accept as $pattern) {
-            if (fnmatch($pattern, $mime)) {
-                return;
-            }
+        if (! MimePolicy::allows($mime, $this->accept)) {
+            abort(422, "File type {$mime} is not allowed.");
         }
-        abort(422, "File type {$mime} is not allowed.");
     }
 
     /**
