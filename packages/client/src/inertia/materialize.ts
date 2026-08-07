@@ -1,4 +1,5 @@
 import type { Translate } from "../i18n/i18n";
+import { getBlockDescriptor } from "../render/blockRegistry";
 import type {
 	ActionConfig,
 	ClientActionContext,
@@ -79,7 +80,8 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	if (named) {
 		return named;
 	}
-	return { ...node, meta, options: walkChildren(node.options as Bag, ctx) };
+	const bound = bindRegisteredKind({ ...node, meta }, ctx.basePath);
+	return { ...bound, options: walkChildren(bound.options as Bag, ctx) };
 }
 
 // basePath-bound named fields (relation, upload); null when this node is neither.
@@ -98,6 +100,18 @@ function materializeNamedField(
 		return materializeUpload({ ...node, meta }, basePath);
 	}
 	return null;
+}
+
+/**
+ * Lets a third-party kind bind its own page-scoped endpoints, the way built-in
+ * kinds are wired above. Returns the node untouched when nothing is registered.
+ */
+function bindRegisteredKind(node: StructureNode, basePath: string): StructureNode {
+	const registered = getBlockDescriptor(node.kind)?.materialize;
+	if (!registered) {
+		return node;
+	}
+	return registered(node, basePath);
 }
 
 /**

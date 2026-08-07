@@ -31,12 +31,20 @@ export interface RenderProps<TOptions> {
 	renderChild: (node: StructureNode) => ReactNode;
 }
 
+/**
+ * Binds a node to its page-scoped endpoints before render, the way built-in
+ * kinds are wired inside materialize(). Third-party fields need this hook
+ * because basePath exists only while materializing and never reaches render.
+ */
+export type BlockMaterializer = (node: StructureNode, basePath: string) => StructureNode;
+
 export interface BlockDescriptor<TKind extends string = string, TOptions = unknown> {
 	kind: TKind;
 	behavior: BlockBehavior;
 	render: ComponentType<RenderProps<TOptions>>;
 	defaultOptions?: Partial<TOptions>;
 	serialize?: (value: unknown, options: TOptions) => unknown;
+	materialize?: BlockMaterializer;
 }
 
 // The heterogeneous store. `render` is contravariant in TOptions, so no

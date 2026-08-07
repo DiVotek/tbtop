@@ -22,6 +22,7 @@ export { collection, item, single } from "./data/entityRoutes";
 export type { Envelope, TabletopError } from "./data/envelope";
 export { isTabletopError } from "./data/envelope";
 export type { UploadRow } from "./data/upload";
+export type { FieldCellProps, FieldFormProps } from "./fields/fieldProps";
 // Richtext is exported only through its lazy wrappers: Lexical is a ~270KB chunk
 // kept out of the static graph, and a direct re-export would pull it into every
 // consumer's main bundle. The wrappers already carry lazy() + Suspense.
@@ -49,6 +50,7 @@ export type { MediaFolder, MediaItem } from "./media/types";
 export type {
 	BlockBehavior,
 	BlockDescriptor,
+	BlockMaterializer,
 	FieldBinding,
 	NodeMeta as BlockNodeMeta,
 	RenderContext,
