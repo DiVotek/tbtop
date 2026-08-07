@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\MediaUploadLimit;
+use Tbtop\Admin\Media\MimePolicy;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\SvgSanitizer;
 
@@ -67,24 +68,8 @@ final class MediaReplaceController
     /** @param list<string> $accept */
     private function assertMime(UploadedFile $file, array $accept): void
     {
-        $mime = (string) $file->getMimeType();
-
-        // text/html is active content (the SVG-as-html XSS vector). Refuse it
-        // even when the accept list allows text/* — it is never a media file.
-        if (str_starts_with($mime, 'text/html')) {
+        if (! MimePolicy::allows((string) $file->getMimeType(), $accept)) {
             abort(422, __('tbtop-admin::admin.media.errors.mime_not_allowed'));
         }
-
-        if ($accept === []) {
-            return;
-        }
-
-        foreach ($accept as $pattern) {
-            if (fnmatch((string) $pattern, $mime)) {
-                return;
-            }
-        }
-
-        abort(422, __('tbtop-admin::admin.media.errors.mime_not_allowed'));
     }
 }

@@ -58,9 +58,11 @@ return [
             'thumb' => [320, 320],
         ],
 
-        // URL import settings.
+        // URL import settings. Empty allowed_hosts accepts any non-blocked host;
+        // fnmatch patterns ('*.example.com') restrict imports to known sources.
         'url_import' => [
             'timeout' => 30,
+            'allowed_hosts' => [],
         ],
     ],
 ];

@@ -356,6 +356,47 @@ it('import-url reports mime_not_allowed on disallowed content-type', function ()
     $response->assertStatus(422);
 });
 
+it('import-url allows a host matching a non-empty allowed_hosts list', function () {
+    config()->set('tbtop-admin.media.url_import.allowed_hosts', ['example.com']);
+
+    $pngBlob = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    );
+    Http::fake(['*' => Http::response($pngBlob, 200, ['Content-Type' => 'image/png'])]);
+
+    $response = $this->postJson('/admin/api/media/import-url', [
+        'url' => 'https://example.com/photo.png',
+    ]);
+
+    $response->assertStatus(201);
+});
+
+it('import-url rejects a host not matching a non-empty allowed_hosts list', function () {
+    config()->set('tbtop-admin.media.url_import.allowed_hosts', ['example.com']);
+
+    $response = $this->postJson('/admin/api/media/import-url', [
+        'url' => 'https://8.8.8.8/photo.png',
+    ]);
+
+    $response->assertStatus(422);
+    expect($response->json('message'))->toContain('blocked');
+});
+
+it('import-url matches a mixed-case host against a lowercase allowed_hosts pattern', function () {
+    config()->set('tbtop-admin.media.url_import.allowed_hosts', ['example.com']);
+
+    $pngBlob = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    );
+    Http::fake(['*' => Http::response($pngBlob, 200, ['Content-Type' => 'image/png'])]);
+
+    $response = $this->postJson('/admin/api/media/import-url', [
+        'url' => 'https://EXAMPLE.COM/photo.png',
+    ]);
+
+    $response->assertStatus(201);
+});
+
 // ---- GET /admin/api/media/{id} ----
 
 it('returns a single media item by id', function () {
