@@ -32,7 +32,7 @@ final class UrlFetcher
 
         $maxBytes = MediaUploadLimit::bytes();
         $filename = self::filenameFromUrl($url);
-        $tmpPath = self::tempPath($filename);
+        $tmpPath = self::tempPath();
         $oversized = false;
 
         try {
@@ -75,7 +75,14 @@ final class UrlFetcher
     /** @param list<string> $accept */
     private static function verified(string $tmpPath, string $filename, int $maxBytes, array $accept): UploadedFile
     {
-        if (! is_file($tmpPath) || filesize($tmpPath) > $maxBytes) {
+        // A missing file after a successful response means the sink couldn't be
+        // written (permissions, full disk) — that's a download failure, not an
+        // oversize condition, so the two cases must not share a branch.
+        if (! is_file($tmpPath)) {
+            throw new UrlFetchException(UrlFetchException::DOWNLOAD_FAILED);
+        }
+
+        if (filesize($tmpPath) > $maxBytes) {
             @unlink($tmpPath);
             throw new UrlFetchException(UrlFetchException::FILE_TOO_LARGE);
         }
@@ -97,10 +104,10 @@ final class UrlFetcher
             return true;
         }
 
-        $host = (string) parse_url($url, PHP_URL_HOST);
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
 
         foreach ($allowed as $pattern) {
-            if (fnmatch((string) $pattern, $host)) {
+            if (fnmatch(strtolower((string) $pattern), $host)) {
                 return true;
             }
         }
@@ -113,17 +120,19 @@ final class UrlFetcher
         return (int) config('tbtop-admin.media.url_import.timeout', 30);
     }
 
-    /** tempnam() only reserves the name; the sink writes to a sibling path, so the placeholder is dropped. */
-    private static function tempPath(string $filename): string
+    /**
+     * tempnam()'s uniqueness only holds while the reserved file exists, so the
+     * sink writes directly into it instead of a derived sibling path — the
+     * placeholder is left on disk and removed by the caller's @unlink().
+     */
+    private static function tempPath(): string
     {
         $descriptor = tempnam(sys_get_temp_dir(), 'tbtop_media_');
         if ($descriptor === false) {
             throw new UrlFetchException(UrlFetchException::DOWNLOAD_FAILED);
         }
 
-        @unlink($descriptor);
-
-        return $descriptor.'_'.$filename;
+        return $descriptor;
     }
 
     private static function causedByOversize(Throwable $e): bool
