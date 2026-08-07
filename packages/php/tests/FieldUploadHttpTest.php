@@ -167,3 +167,25 @@ it('FieldUpload: a public upload is unchanged — /storage url, no signature', f
 
     expect($data['url'])->toContain('/storage')->not->toContain('signature=');
 });
+
+it('FieldUpload: strips scripts from a stored svg', function (): void {
+    $dirty = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">'
+        .'<script>alert(2)</script><rect width="10" height="10" /></svg>';
+
+    $data = $this->postJson('/admin/upload-field-page/uploads/avatar', [
+        'file' => UploadedFile::fake()->createWithContent('logo.svg', $dirty),
+    ])->assertOk()->json('data');
+
+    $stored = Storage::disk('public')->get($data['path']);
+    expect($stored)->not->toContain('<script')
+        ->and($stored)->not->toContain('onload')
+        ->and($stored)->not->toContain('alert')
+        ->and($stored)->toContain('<rect');
+});
+
+it('FieldUpload: refuses text/html even when the field accepts everything', function (): void {
+    $file = UploadedFile::fake()->createWithContent('page.html', '<html><body>hi</body></html>');
+
+    $this->postJson('/admin/upload-field-page/uploads/avatar', ['file' => $file])
+        ->assertStatus(422);
+});
