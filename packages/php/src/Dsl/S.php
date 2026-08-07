@@ -42,6 +42,7 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  * @method Date date(string $name)
  * @method Datetime datetime(string $name)
  * @method Time time(string $name)
+ * @method Daterange daterange(string $name)
  * @method \Tbtop\Admin\Dsl\Fields\Boolean boolean(string $name)
  * @method Select select(string $name)
  * @method Radio radio(string $name)
@@ -58,6 +59,9 @@ use Tbtop\Admin\Dsl\Fields\Upload;
  * @method CheckboxList checkboxlist(string $name)
  * @method ToggleButtons togglebuttons(string $name)
  * @method Slider slider(string $name)
+ *
+ * The `in` kind is deliberately absent above: it is filter-bar only and is
+ * reached through inFilter(), not __call.
  */
 final class S
 {
@@ -96,8 +100,11 @@ final class S
     // -------------------------------------------------------------------------
 
     /**
-     * Register (or override) a custom field kind.
-     * $fieldClass must extend Field.
+     * Register a custom field kind. $fieldClass must extend Field.
+     *
+     * A $kind colliding with a public S method (section, table, form, ...) is
+     * unreachable — PHP resolves the method before __call. Overriding a
+     * built-in kind works but is unsupported; don't rely on it.
      *
      * @param  class-string  $fieldClass
      */
@@ -661,6 +668,9 @@ final class S
     // -------------------------------------------------------------------------
     // Data builders
     // -------------------------------------------------------------------------
+    // Collectors are keyed by name: re-using a name replaces the earlier entry,
+    // and the server resolves handlers (onSubmit, action endpoints) from these
+    // maps. Keep names unique per page.
 
     /** @param  list<mixed>  $children */
     public function form(string $name, array $children): FormBuilder

@@ -39,3 +39,27 @@ it('FieldKindParity: every BUILT_IN_KINDS entry is registered in the kindMap', f
         expect(is_subclass_of($registered[$kind], Field::class))->toBeTrue();
     }
 });
+
+/**
+ * Scenario 3 — Discoverability: every built-in kind reachable through __call
+ * carries an @method line on S. Without one the call works at runtime but
+ * PHPStan reports an undefined method, and a consumer reads that as "the field
+ * does not exist" (this is what happened to `daterange`).
+ *
+ * `in` is excluded on purpose: it is filter-bar only and is reached through the
+ * typed inFilter(), so it is already visible to static analysis. If it ever
+ * becomes a form field, drop it from this list rather than annotating around it.
+ */
+it('FieldKindParity: every BUILT_IN_KINDS entry has an @method annotation on S', function () {
+    $filterBarOnly = ['in'];
+
+    $doc = (new ReflectionClass(S::class))->getDocComment();
+    expect($doc)->toBeString();
+
+    preg_match_all('/@method\s+\S+\s+(\w+)\(/', (string) $doc, $matches);
+    $annotated = $matches[1];
+
+    $expected = array_diff(S::BUILT_IN_KINDS, $filterBarOnly);
+
+    expect(array_values(array_diff($expected, $annotated)))->toBe([]);
+});
