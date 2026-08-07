@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nProvider } from "../i18n/i18n";
 import { DaterangeForm, type DaterangeValue, parseDay, toDateRange } from "./daterangeField";
 
 function makeOnChange() {
@@ -169,5 +170,66 @@ describe("Daterange: parseDay rejects unusable input", () => {
 		expect(parsed?.getFullYear()).toBe(2026);
 		expect(parsed?.getMonth()).toBe(2);
 		expect(parsed?.getDate()).toBe(5);
+	});
+});
+
+describe("Daterange: follows the admin locale", () => {
+	async function openIn(locale: string) {
+		const user = userEvent.setup();
+		const view = render(
+			<I18nProvider locale={locale} languages={{ [locale]: async () => ({}) }}>
+				<DaterangeForm
+					name="published_at"
+					value={{ from: "2026-03-10", to: "2026-03-20" }}
+					onChange={() => {}}
+				/>
+			</I18nProvider>,
+		);
+		await user.click(view.getByTestId("daterange-trigger"));
+		const doc = view.container.ownerDocument;
+		await waitFor(() => expect(doc.querySelector("[data-day]")).toBeTruthy());
+		return { doc, view };
+	}
+
+	test("month and weekday names render in the admin locale", async () => {
+		const { doc } = await openIn("uk");
+
+		await waitFor(() => expect(doc.body.textContent).toContain("березень"));
+		const weekdays = [...doc.querySelectorAll("th")].map((n) => n.textContent);
+		expect(weekdays.slice(0, 7)).toEqual(["пн", "вт", "ср", "чт", "пт", "сб", "нд"]);
+	});
+
+	test("the trigger formats the applied range in the admin locale", async () => {
+		const { view } = await openIn("uk");
+
+		await waitFor(() =>
+			expect(view.getByTestId("daterange-trigger").textContent).toContain("10.03.2026"),
+		);
+	});
+
+	// Intl covers locales react-day-picker ships no module for, so the calendar
+	// is not limited to a hand-maintained list.
+	test("a locale outside react-day-picker's own set still localizes", async () => {
+		const { doc } = await openIn("sw-KE");
+
+		await waitFor(() => expect(doc.body.textContent).toContain("Machi"));
+	});
+
+	test("a malformed locale tag renders rather than crashing", async () => {
+		const { doc } = await openIn("not a tag");
+
+		expect(doc.querySelectorAll("[data-day]").length).toBeGreaterThan(0);
+	});
+
+	test("en-US starts the week on Sunday", async () => {
+		const { doc } = await openIn("en-US");
+
+		expect([...doc.querySelectorAll("th")][0]?.textContent).toBe("Sun");
+	});
+
+	test("en-GB starts the week on Monday", async () => {
+		const { doc } = await openIn("en-GB");
+
+		expect([...doc.querySelectorAll("th")][0]?.textContent).toBe("Mon");
 	});
 });
