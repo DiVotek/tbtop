@@ -108,6 +108,31 @@ final class SvgSanitizer
             return true;
         }
 
-        return str_starts_with($content, 'BM');
+        return self::hasBmpHeader($content);
+    }
+
+    /**
+     * The two-byte `BM` prefix alone is not a signature: it's also the start
+     * of `BM<svg ...><script>...` for an attacker who wants an unparseable
+     * payload to fall into the raster passthrough above. A real BMP header
+     * has three more structural constraints this checks: the reserved
+     * fields are always zero, the pixel-data offset points inside the file,
+     * and the DIB header size is one of a small fixed set of known struct
+     * sizes. The file-size field at offset 2 is deliberately not checked
+     * here — GD writes an inaccurate value there even for genuine BMPs.
+     */
+    private static function hasBmpHeader(string $content): bool
+    {
+        if (! str_starts_with($content, 'BM') || strlen($content) < 18) {
+            return false;
+        }
+
+        $reserved = unpack('V', substr($content, 6, 4))[1];
+        $offset = unpack('V', substr($content, 10, 4))[1];
+        $dibHeaderSize = unpack('V', substr($content, 14, 4))[1];
+
+        return $reserved === 0
+            && $offset >= 14 && $offset <= strlen($content)
+            && in_array($dibHeaderSize, [12, 40, 52, 56, 64, 108, 124], true);
     }
 }

@@ -96,3 +96,34 @@ it('rejects a gzip-compressed svgz and removes it from disk', function () {
 
     Storage::disk('public')->assertMissing('tbtop-media/icon.svgz');
 });
+
+it('rejects a scriptful svg disguised behind a bare BM prefix and removes it from disk', function () {
+    // The two-byte "BM" prefix is also the start of an unparseable svg
+    // payload; a real BMP header check must not mistake this for raster
+    // passthrough or the script ships to the public disk untouched.
+    $dirty = 'BM<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
+    Storage::disk('public')->put('tbtop-media/fake-bmp.svg', $dirty);
+
+    expect(fn () => SvgSanitizer::sanitizeStored('public', 'tbtop-media/fake-bmp.svg', 'fake-bmp.svg'))
+        ->toThrow(SvgSanitizeException::class);
+
+    Storage::disk('public')->assertMissing('tbtop-media/fake-bmp.svg');
+});
+
+it('leaves a real bmp stored under a .svg name untouched', function () {
+    if (! function_exists('imagebmp')) {
+        $this->markTestSkipped('imagebmp() requires the GD extension.');
+    }
+
+    $image = imagecreatetruecolor(2, 2);
+    ob_start();
+    imagebmp($image);
+    $bmp = ob_get_clean();
+    imagedestroy($image);
+
+    Storage::disk('public')->put('tbtop-media/real.svg', $bmp);
+
+    SvgSanitizer::sanitizeStored('public', 'tbtop-media/real.svg', 'real.svg');
+
+    expect(Storage::disk('public')->get('tbtop-media/real.svg'))->toBe($bmp);
+});
