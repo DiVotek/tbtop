@@ -893,7 +893,8 @@
 					"required": ["type", "href"],
 					"properties": {
 						"type": { "const": "visit" },
-						"href": { "type": "string" }
+						"href": { "type": "string" },
+						"newTab": { "type": "boolean" }
 					},
 					"additionalProperties": false
 				},

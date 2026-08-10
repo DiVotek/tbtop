@@ -1487,6 +1487,19 @@
                         {
                             "kind": "action",
                             "options": {
+                                "label": "Preview",
+                                "spec": {
+                                    "type": "visit",
+                                    "href": "/admin/posts/preview",
+                                    "newTab": true
+                                }
+                            },
+                            "meta": {},
+                            "name": "preview"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
                                 "label": "Archive",
                                 "spec": {
                                     "type": "server",
