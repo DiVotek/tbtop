@@ -255,6 +255,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 	const tooltip = (options as { tooltip?: string }).tooltip;
 	const fieldId = node.meta.id ?? name;
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
+	const description = describedBy(fieldId, fieldError, helperText);
 
 	const control = isTranslatable
 		? renderTranslatableFieldNode({
@@ -264,6 +265,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 				name,
 				fieldId,
 				disabled,
+				describedBy: description,
 				formCtx,
 			})
 		: renderDescriptor(descriptor, {
@@ -282,6 +284,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 						},
 						disabled,
 						invalid: fieldError !== undefined,
+						describedBy: description,
 					},
 				},
 				children: undefined,
@@ -307,8 +310,10 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 					{control}
 					{labelNode}
 				</div>
-				{helperText && <FieldHelperText text={helperText} />}
-				{fieldError && <FieldError name={name} message={fieldError} />}
+				{helperText && <FieldHelperText id={helperTextId(fieldId)} text={helperText} />}
+				{fieldError && (
+					<FieldError id={fieldErrorId(fieldId)} name={name} message={fieldError} />
+				)}
 			</div>
 		);
 	}
@@ -317,10 +322,38 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 		<div className="flex flex-col gap-1.5" data-field-name={name}>
 			{labelNode}
 			{control}
-			{helperText && <FieldHelperText text={helperText} />}
-			{fieldError && <FieldError name={name} message={fieldError} />}
+			{helperText && <FieldHelperText id={helperTextId(fieldId)} text={helperText} />}
+			{fieldError && (
+				<FieldError id={fieldErrorId(fieldId)} name={name} message={fieldError} />
+			)}
 		</div>
 	);
+}
+
+function fieldErrorId(fieldId: string): string {
+	return `${fieldId}-error`;
+}
+
+function helperTextId(fieldId: string): string {
+	return `${fieldId}-helper`;
+}
+
+/**
+ * The `aria-describedby` value for a field: the error id when a validation
+ * error is present, the helper id when only helper text is present, both
+ * (error first — the more urgent) when present together, or undefined when
+ * neither exists (an empty attribute is worse than no attribute).
+ */
+function describedBy(
+	fieldId: string,
+	fieldError: string | undefined,
+	helperText: string | undefined,
+): string | undefined {
+	const ids = [
+		fieldError ? fieldErrorId(fieldId) : null,
+		helperText ? helperTextId(fieldId) : null,
+	].filter((id): id is string => id !== null);
+	return ids.length > 0 ? ids.join(" ") : undefined;
 }
 
 interface TranslatableFieldInput {
@@ -330,11 +363,12 @@ interface TranslatableFieldInput {
 	name: string;
 	fieldId: string;
 	disabled: boolean;
+	describedBy: string | undefined;
 	formCtx: FormRenderCtx;
 }
 
 function renderTranslatableFieldNode(input: TranslatableFieldInput): ReactNode {
-	const { descriptor, node, options, name, fieldId, disabled, formCtx } = input;
+	const { descriptor, node, options, name, fieldId, disabled, describedBy, formCtx } = input;
 	const { ctrl, locales } = formCtx;
 	// Strip name + translatable before forwarding to the wrapper — the wrapper
 	// derives per-locale names itself and must not see the parent field name.
@@ -358,6 +392,7 @@ function renderTranslatableFieldNode(input: TranslatableFieldInput): ReactNode {
 			ctrl.markTouched(name);
 		},
 		disabled,
+		describedBy,
 		locales,
 		renderChild: (child) => renderFormChild(child, formCtx),
 	});
@@ -386,17 +421,22 @@ export function revalidateField(ctrl: ControllerHandle, name: string, t: Transla
 }
 
 /** Exported for reuse by repeaterRow.tsx — sub-fields render the same error UI at any nesting depth. */
-export function FieldError({ name, message }: { name: string; message: string }) {
+export function FieldError({ id, name, message }: { id?: string; name: string; message: string }) {
 	return (
-		<p role="alert" className="text-sm text-destructive" data-testid={`field-error-${name}`}>
+		<p
+			id={id}
+			role="alert"
+			className="text-sm text-destructive"
+			data-testid={`field-error-${name}`}
+		>
 			{message}
 		</p>
 	);
 }
 
-function FieldHelperText({ text }: { text: string }) {
+function FieldHelperText({ id, text }: { id?: string; text: string }) {
 	return (
-		<p className="text-sm text-muted-foreground" data-testid="field-helper-text">
+		<p id={id} className="text-sm text-muted-foreground" data-testid="field-helper-text">
 			{text}
 		</p>
 	);

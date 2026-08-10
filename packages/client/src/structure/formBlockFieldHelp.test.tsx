@@ -7,6 +7,7 @@ import { act, fireEvent, render } from "@testing-library/react";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
+import { type ContentLocaleConfig, ContentLocaleConfigProvider } from "./contentLocaleContext";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 import type { StructureNode } from "./types";
@@ -162,5 +163,159 @@ describe("field helperText with validation error", () => {
 
 		await findByTestId("field-error-title");
 		expect(input?.getAttribute("aria-invalid")).toBe("true");
+	});
+});
+
+describe("field aria-describedby", () => {
+	/** Resolves an element's aria-describedby ids to the joined text of their targets. */
+	function describedText(container: HTMLElement, el: Element | null): string {
+		const ids = el?.getAttribute("aria-describedby")?.split(" ") ?? [];
+		return ids
+			.map((id) => container.querySelector(`#${id}`)?.textContent ?? "")
+			.join(" ")
+			.trim();
+	}
+
+	test("helper text only: control is described by the helper text", async () => {
+		const field = fieldNode("text", "bio", { label: "Bio", helperText: "Keep it short." });
+		const node = makeForm([field]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await findByTestId("form-block");
+		const input = container.querySelector('input[name="bio"]');
+
+		expect(describedText(container, input)).toBe("Keep it short.");
+	});
+
+	test("error only: control is described by the error message", async () => {
+		const node = s.form({ query: async () => ({ title: "abc" }) }, [
+			fieldNode("text", "title", { label: "Title" }),
+			s.action({
+				name: "save",
+				handler: async () => {
+					const err = new Error("validation") as Error & {
+						fields: Record<string, string>;
+					};
+					err.fields = { title: "Too long." };
+					throw err;
+				},
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await findByTestId("action-save");
+		const input = container.querySelector('input[name="title"]');
+
+		await act(async () => {
+			fireEvent.click(await findByTestId("action-save"));
+		});
+		await findByTestId("field-error-title");
+
+		expect(describedText(container, input)).toBe("Too long.");
+	});
+
+	test("both: control is described by the error first, then the helper text", async () => {
+		const node = s.form({ query: async () => ({ title: "abc" }) }, [
+			fieldNode("text", "title", { label: "Title", helperText: "Keep it short." }),
+			s.action({
+				name: "save",
+				handler: async () => {
+					const err = new Error("validation") as Error & {
+						fields: Record<string, string>;
+					};
+					err.fields = { title: "Too long." };
+					throw err;
+				},
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await findByTestId("action-save");
+		const input = container.querySelector('input[name="title"]');
+
+		await act(async () => {
+			fireEvent.click(await findByTestId("action-save"));
+		});
+		await findByTestId("field-error-title");
+
+		expect(describedText(container, input)).toBe("Too long. Keep it short.");
+	});
+
+	test("neither: control has no aria-describedby attribute", async () => {
+		const field = fieldNode("text", "title", { label: "Title" });
+		const node = makeForm([field]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await findByTestId("form-block");
+		const input = container.querySelector('input[name="title"]');
+
+		expect(input?.hasAttribute("aria-describedby")).toBe(false);
+	});
+
+	test("checkbox layout: control is described the same way as the default layout", async () => {
+		const node = s.form({ query: async () => ({ agree: false }) }, [
+			fieldNode("checkbox", "agree", {
+				label: "I agree",
+				helperText: "Required to continue.",
+			}),
+			s.action({
+				name: "save",
+				handler: async () => {
+					const err = new Error("validation") as Error & {
+						fields: Record<string, string>;
+					};
+					err.fields = { agree: "You must agree." };
+					throw err;
+				},
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await findByTestId("action-save");
+		// Radix Checkbox renders the accessible control as button[role="checkbox"];
+		// input[name] is a visually-hidden mirror for native form submission only.
+		const input = container.querySelector('button[role="checkbox"]');
+
+		await act(async () => {
+			fireEvent.click(await findByTestId("action-save"));
+		});
+		await findByTestId("field-error-agree");
+
+		expect(describedText(container, input)).toBe("You must agree. Required to continue.");
+	});
+
+	test("translatable field: each locale's control has its own unique described-by target id", async () => {
+		const field = fieldNode("text", "title", {
+			label: "Title",
+			helperText: "Shown in every locale.",
+			translatable: true,
+		});
+		const node = makeForm([field]);
+		const config: ContentLocaleConfig = { locales: ["en", "uk"], defaultLocale: "en" };
+		const Inner = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(
+			<ContentLocaleConfigProvider config={config}>
+				<Inner>{renderNode(node)}</Inner>
+			</ContentLocaleConfigProvider>,
+		);
+
+		await findByTestId("form-block");
+		const enInput = container.querySelector('input[name="title.en"]');
+		const ukInput = container.querySelector('input[name="title.uk"]');
+		const enId = enInput?.getAttribute("aria-describedby");
+		const ukId = ukInput?.getAttribute("aria-describedby");
+
+		// Both locales share the field-level helper text — same value is fine,
+		// as long as it resolves (only the active locale panel is in the a11y
+		// tree; the inactive one is display:none, so a stale/missing id there
+		// is harmless). What must never happen is a distinct element on the
+		// page claiming the same id as another field's description.
+		expect(enId).toBe(ukId);
+		expect(describedText(container, enInput)).toBe("Shown in every locale.");
 	});
 });

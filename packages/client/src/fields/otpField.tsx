@@ -24,6 +24,7 @@ export function OtpForm({
 	onBlur,
 	disabled,
 	invalid,
+	describedBy,
 	options,
 }: FieldFormProps<string, OtpOptionsBag>) {
 	const t = useTranslation();
@@ -41,6 +42,7 @@ export function OtpForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			aria-label={t("field.otp.label")}
+			aria-describedby={describedBy}
 		>
 			<InputOTPGroup>
 				{Array.from({ length }, (_, i) => (
