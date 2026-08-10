@@ -14,6 +14,9 @@ export interface FieldBinding {
 	onBlur?: () => void;
 	disabled?: boolean;
 	invalid?: boolean;
+	/** Spread onto the control as `aria-describedby` — points at the id(s) of the
+	 * error and/or helper text elements so a screen reader announces them. */
+	describedBy?: string;
 }
 
 export interface RenderContext {

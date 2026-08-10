@@ -22,6 +22,7 @@ export function TimeForm({
 	onBlur,
 	disabled,
 	invalid,
+	describedBy,
 	options,
 }: FieldFormProps<string, TimeOptions>) {
 	return (
@@ -38,6 +39,7 @@ export function TimeForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			aria-invalid={invalid || undefined}
+			aria-describedby={describedBy}
 			className="[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
 		/>
 	);

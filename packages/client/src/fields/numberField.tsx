@@ -18,6 +18,7 @@ export function NumberForm({
 	onChange,
 	disabled,
 	invalid,
+	describedBy,
 	options,
 }: FieldFormProps<number, NumberOptions>) {
 	return (
@@ -29,6 +30,7 @@ export function NumberForm({
 			onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
 			disabled={disabled}
 			aria-invalid={invalid || undefined}
+			aria-describedby={describedBy}
 			placeholder={options?.placeholder}
 			step={options?.step}
 		/>

@@ -8,6 +8,9 @@ export interface FieldFormProps<P = unknown, TOptions = Record<string, unknown>>
 	/** Spread onto the control as `aria-invalid` — the shared primitives style their
 	 * error state off it, otherwise the message shows but the control looks valid. */
 	invalid?: boolean;
+	/** Spread onto the control as `aria-describedby` — the id(s) of the error and/or
+	 * helper text so a screen reader announces why the field is invalid or what it expects. */
+	describedBy?: string;
 	options?: TOptions;
 }
 
