@@ -19,12 +19,15 @@ type JustifyValue = "start" | "center" | "end" | "between" | "around" | "evenly"
 type AlignValue = "start" | "center" | "end" | "stretch" | "baseline";
 
 interface StackOptions {
+	gap?: number;
 	class?: string;
 	[key: string]: unknown;
 }
 
 interface RowOptions {
 	variant?: "grid";
+	gap?: number;
+	class?: string;
 	[key: string]: unknown;
 }
 
@@ -82,21 +85,25 @@ const GAP: Record<number, string> = {
 	12: "gap-12",
 };
 
+function resolveGap(gap: number | undefined, defaultGap: string): string {
+	return gap != null ? (GAP[gap] ?? defaultGap) : defaultGap;
+}
+
 export function StackBlock({ options, children, renderChild }: RenderProps<StackOptions>) {
-	return (
-		<div className={cn("flex flex-col gap-4", options.class)}>
-			{mapChildren(children, renderChild)}
-		</div>
-	);
+	const className = cn("flex flex-col", resolveGap(options.gap, "gap-4"), options.class);
+	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
 export function RowBlock({ options, children, renderChild }: RenderProps<RowOptions>) {
 	if (options.variant === "grid") {
+		const className = cn(
+			"grid grid-cols-2",
+			resolveGap(options.gap, "gap-2"),
+			"sm:grid-cols-3 lg:grid-cols-4",
+			options.class,
+		);
 		return (
-			<div
-				className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
-				data-testid="row-grid"
-			>
+			<div className={className} data-testid="row-grid">
 				{(children ?? []).map((child, i) => (
 					<div
 						// biome-ignore lint/suspicious/noArrayIndexKey: structure nodes are positional
@@ -112,7 +119,8 @@ export function RowBlock({ options, children, renderChild }: RenderProps<RowOpti
 			</div>
 		);
 	}
-	return <div className="flex flex-row gap-2">{mapChildren(children, renderChild)}</div>;
+	const className = cn("flex flex-row", resolveGap(options.gap, "gap-2"), options.class);
+	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
 interface FlexBlockOptions {
