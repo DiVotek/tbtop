@@ -16,10 +16,19 @@
 #
 # IMPORTANT: this filename (release.yml) is registered as the npm trusted
 # publisher on npmjs.com. Renaming it breaks publishing until npmjs.com updates.
+#
+# Concurrency: only one release run at a time, and the second queues rather
+# than cancels. Cancelling mid-run is worse than waiting — a run killed
+# between "Publish to npm" and "Create and push tag" leaves a published npm
+# package with no tag, so Packagist never sees the release.
 name: Release
 
 on:
   workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write # push the tag + create the GitHub Release
@@ -34,6 +43,15 @@ jobs:
         working-directory: packages/client
     steps:
       - uses: actions/checkout@v4
+
+      - name: Require dispatch from main
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "::error::Release must be run from main, not $REF"
+            exit 1
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -64,12 +82,23 @@ jobs:
           echo "tag=v$v" >> "$GITHUB_OUTPUT"
           echo "resolved version $v"
 
+      # git ls-remote --exit-code returns 0 (ref matched), 2 (remote contacted,
+      # no match), or other nonzero codes for real failures (network, auth).
+      # Only 2 means "tag is free" — anything else must not be treated as such.
       - name: Fail if tag already exists
         env:
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>/dev/null; then
+            status=0
+          else
+            status=$?
+          fi
+          if [ "$status" -eq 0 ]; then
             echo "::error::$TAG already exists — bump the version in package.json first"
+            exit 1
+          elif [ "$status" -ne 2 ]; then
+            echo "::error::could not verify $TAG is free (git ls-remote exited $status)"
             exit 1
           fi
           echo "$TAG is free"
@@ -78,6 +107,28 @@ jobs:
       # OIDC is auto-detected; provenance is generated automatically.
       - name: Publish to npm
         run: npm publish
+
+      # Re-check right before tagging: the earlier check ran before npm publish,
+      # and a full publication sits in the gap between the two. This can't
+      # prevent a duplicate npm publish, but it stops a duplicate tag/release.
+      # Same exit-code handling as the early check — after publish is exactly
+      # where treating "couldn't verify" as "must be free" is most expensive.
+      - name: Fail if tag already exists (re-check)
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>/dev/null; then
+            status=0
+          else
+            status=$?
+          fi
+          if [ "$status" -eq 0 ]; then
+            echo "::error::$TAG already exists — npm published but the tag step was aborted to avoid a duplicate tag/release"
+            exit 1
+          elif [ "$status" -ne 2 ]; then
+            echo "::error::could not verify $TAG is still free (git ls-remote exited $status) — npm published, refusing to guess before tagging"
+            exit 1
+          fi
 
       # Pushing the tag lets Packagist publish the PHP package via its webhook.
       # Annotated tag needs a tagger identity — the runner has none by default.
