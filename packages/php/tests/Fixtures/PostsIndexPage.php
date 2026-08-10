@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Tests\Fixtures;
 
 use Illuminate\Support\Facades\DB;
+use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -20,6 +21,7 @@ class PostsIndexPage extends Page
             $s->table('posts')
                 ->columns(['title' => 'Title', 'views' => 'Views'])
                 ->searchable(['title'])
+                ->filters([Boolean::make('published')])
                 ->defaultSort('views', 'desc')
                 ->perPage(2)
                 ->query(fn () => DB::table('posts'))
