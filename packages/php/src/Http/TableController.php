@@ -16,9 +16,9 @@ final class TableController
 
         $name = (string) $request->route('tbtopTable');
         $resolved = ResolvedPage::fromRequest($request);
-        $table = $resolved->s->collectedTables()[$name] ?? null;
+        $table = $resolved->s->reachableTable($name);
         $query = $table?->queryClosure();
-        if ($table === null || $query === null || ! $table->isIncluded()) {
+        if ($query === null) {
             throw new NotFoundHttpException("Table \"{$name}\" has no query on this page.");
         }
 

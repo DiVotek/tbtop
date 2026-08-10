@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
 use Tbtop\Admin\Dsl\Concerns\HasTooltip;
+use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -18,6 +19,7 @@ final class Stat implements JsonSerializable
 {
     use HasIcon;
     use HasTooltip;
+    use HasWhen;
     use WithMeta;
 
     private const SPARKLINE_POSITIONS = ['inline', 'bottom'];
@@ -224,7 +226,8 @@ final class Stat implements JsonSerializable
             $options['source'] = $this->label;
         }
 
-        return new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->metaBag);
+        return (new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->metaBag))
+            ->when($this->isIncluded());
     }
 
     /** @return array<string, mixed> */
