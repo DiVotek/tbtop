@@ -6,6 +6,7 @@ use App\Admin\Pages\ApiTokensPage;
 use App\Admin\Pages\BrandsIndexPage;
 use App\Admin\Pages\DashboardPage;
 use App\Admin\Pages\DependentFieldsDemoPage;
+use App\Admin\Pages\LiveRegionDemoPage;
 use App\Admin\Pages\LoginPage;
 use App\Admin\Pages\LoginPreviewPage;
 use App\Admin\Pages\MediaEditPage;
@@ -70,6 +71,7 @@ class AdminPanel extends Panel
                 LoginPreviewPage::class,
                 RelationDemoPage::class,
                 DependentFieldsDemoPage::class,
+                LiveRegionDemoPage::class,
                 TwoFactorSetupPage::class,
                 LoginPage::class,
                 TwoFactorChallengePage::class,
