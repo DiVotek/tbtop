@@ -95,6 +95,50 @@ describe("UploadForm multi", () => {
 		expect(last[0]).toEqual(SAMPLE2);
 	});
 
+	test("disabled cannot remove an item", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
+		const { getAllByRole } = render(
+			<Wrap>
+				<UploadForm
+					name="files"
+					value={[SAMPLE, SAMPLE2]}
+					onChange={(v) => captured.push(v)}
+					disabled
+					options={{ multiple: true, upload: async () => uploadResponse() }}
+				/>
+			</Wrap>,
+		);
+		const removeButtons = getAllByRole("button", { name: /remove/i }) as HTMLButtonElement[];
+		expect(removeButtons.every((b) => b.disabled)).toBe(true);
+		await userEvent.click(removeButtons[0]!);
+		expect(captured).toHaveLength(0);
+	});
+
+	test("disabled cannot initiate a drag via the reorder handle", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="files"
+					value={[SAMPLE, SAMPLE2]}
+					onChange={() => {}}
+					disabled
+					options={{
+						multiple: true,
+						reorderable: true,
+						upload: async () => uploadResponse(),
+					}}
+				/>
+			</Wrap>,
+		);
+		const handles = Array.from(
+			container.querySelectorAll("[data-testid^='upload-drag-handle-']"),
+		) as HTMLButtonElement[];
+		expect(handles.length).toBe(2);
+		expect(handles.every((h) => h.disabled)).toBe(true);
+	});
+
 	test("reorderable renders drag handles", () => {
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const { container } = render(

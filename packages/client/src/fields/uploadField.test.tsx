@@ -111,6 +111,27 @@ describe("UploadForm", () => {
 		expect(captured.at(-1)).toBeNull();
 	});
 
+	test("Upload disabled with a value shows the preview but the remove control cannot clear it", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
+		const { getByRole, getByText } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={SAMPLE}
+					onChange={(v) => captured.push(v)}
+					disabled
+					options={{ upload: async () => uploadResponse() }}
+				/>
+			</Wrap>,
+		);
+		expect(getByText("pic.png")).toBeTruthy();
+		const removeButton = getByRole("button", { name: /remove/i }) as HTMLButtonElement;
+		expect(removeButton.disabled).toBe(true);
+		await userEvent.click(removeButton);
+		expect(captured).toHaveLength(0);
+	});
+
 	test("Upload uses the injected upload closure and emits preview data", async () => {
 		const seen: File[] = [];
 		const row = { path: "uploads/doc.png", url: "/uploads/doc.png" };

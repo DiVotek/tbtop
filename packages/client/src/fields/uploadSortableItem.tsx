@@ -8,6 +8,7 @@ import { basename, looksLikeImage, type UploadValue } from "./uploadUtils";
 
 interface ItemContentProps {
 	item: UploadValue;
+	disabled?: boolean;
 	onRemove: () => void;
 }
 
@@ -15,7 +16,7 @@ interface ItemProps extends ItemContentProps {
 	itemId: string;
 }
 
-function ItemContent({ item, onRemove }: ItemContentProps) {
+function ItemContent({ item, disabled, onRemove }: ItemContentProps) {
 	const t = useTranslation();
 	const filename = basename(item.path);
 	const isImg = item.url !== "" && looksLikeImage(item.url, item.path);
@@ -33,6 +34,7 @@ function ItemContent({ item, onRemove }: ItemContentProps) {
 				variant="ghost"
 				size="sm"
 				aria-label={t("field.upload.remove", "Remove")}
+				disabled={disabled}
 				onClick={onRemove}
 			>
 				<XIcon className="h-4 w-4" />
@@ -56,6 +58,7 @@ export function UploadSortableItem(props: ItemProps) {
 	const t = useTranslation();
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: props.itemId,
+		disabled: props.disabled,
 	});
 
 	const style: CSSProperties = {
@@ -73,9 +76,10 @@ export function UploadSortableItem(props: ItemProps) {
 		>
 			<button
 				type="button"
-				className="flex cursor-grab touch-none items-center text-muted-foreground active:cursor-grabbing"
+				className="flex cursor-grab touch-none items-center text-muted-foreground active:cursor-grabbing disabled:pointer-events-none disabled:opacity-50"
 				aria-label={t("field.upload.reorder", "Reorder")}
 				data-testid={`upload-drag-handle-${props.itemId}`}
+				disabled={props.disabled}
 				{...attributes}
 				{...listeners}
 			>
