@@ -481,3 +481,72 @@ test("FlexBlock variant:card + options.class: class is present alongside the car
 	expect(el.className).toContain("bg-card");
 	expect(el.className).toContain("extra-class");
 });
+
+// ---------------------------------------------------------------------------
+// StackBlock / RowBlock — gap and class must reach the DOM, not just FlexBlock/GridBlock
+// ---------------------------------------------------------------------------
+
+test("StackBlock with gap:6 renders gap-6 instead of the gap-4 default", () => {
+	const node = s.stack([textNode("a")], { gap: 6 });
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("gap-6");
+	expect(el.className).not.toContain("gap-4");
+});
+
+test("StackBlock without gap keeps the gap-4 default", () => {
+	const node = s.stack([textNode("a")]);
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("gap-4");
+});
+
+test("RowBlock (non-grid) with gap:6 renders gap-6 instead of the gap-2 default", () => {
+	const node = s.row([textNode("a")], { gap: 6 });
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("gap-6");
+	expect(el.className).not.toContain("gap-2");
+});
+
+test("RowBlock (non-grid) without gap keeps the gap-2 default", () => {
+	const node = s.row([textNode("a")]);
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("gap-2");
+});
+
+test("RowBlock (non-grid) merges options.class onto the root", () => {
+	const node = { kind: "row", options: { children: [], class: "custom-row" }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("flex-row");
+	expect(el.className).toContain("custom-row");
+});
+
+test("RowBlock variant:grid with gap:6 renders gap-6 instead of the gap-2 default", () => {
+	const node = s.row([textNode("a")], { variant: "grid", gap: 6 });
+	const { getByTestId } = render(renderNode(node));
+	const grid = getByTestId("row-grid");
+	expect(grid.className).toContain("gap-6");
+	expect(grid.className).not.toContain("gap-2");
+});
+
+test("RowBlock variant:grid without gap keeps the gap-2 default", () => {
+	const node = s.row([textNode("a")], { variant: "grid" });
+	const { getByTestId } = render(renderNode(node));
+	const grid = getByTestId("row-grid");
+	expect(grid.className).toContain("gap-2");
+});
+
+test("RowBlock variant:grid merges options.class onto the root alongside the grid classes", () => {
+	const node = {
+		kind: "row",
+		options: { children: [], variant: "grid", class: "custom-row-grid" },
+		meta: {},
+	} as never;
+	const { getByTestId } = render(renderNode(node));
+	const grid = getByTestId("row-grid");
+	expect(grid.className).toContain("grid-cols-2");
+	expect(grid.className).toContain("custom-row-grid");
+});
