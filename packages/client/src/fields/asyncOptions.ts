@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ClientActionContext } from "../structure/types";
 import type { StaticOption } from "./selectShared";
 
@@ -49,8 +49,6 @@ export interface SeenLabel {
 	option: StaticOption;
 	depsKey: string;
 }
-
-const ID_SEPARATOR = "";
 
 export interface SingleResolveArgs {
 	ctx: ClientActionContext;
@@ -153,13 +151,15 @@ export function useMultiResolvedLabels({
 	ctxRef.current = ctx;
 	const optsRef = useRef(opts);
 	optsRef.current = opts;
-	const idsKey = useMemo(() => (value ?? []).join(ID_SEPARATOR), [value]);
+	// A fresh array is a new identity every render, so the effect keys off this
+	// JSON string instead of `value` itself and re-parses it when the key changes.
+	const idsKey = JSON.stringify(value ?? []);
 	const [state, setState] = useState<ResolvedState>(() =>
-		idsKey === "" ? { kind: "ready", labels: {} } : { kind: "loading" },
+		idsKey === "[]" ? { kind: "ready", labels: {} } : { kind: "loading" },
 	);
 
 	useEffect(() => {
-		const ids = idsKey === "" ? [] : idsKey.split(ID_SEPARATOR);
+		const ids: string[] = JSON.parse(idsKey);
 		if (ids.length === 0) {
 			setState({ kind: "ready", labels: {} });
 			return;
