@@ -13,6 +13,9 @@ class PostEditPage extends Page
     /** @var array<string, mixed>|null Captured submit payload for assertions. */
     public static ?array $submitted = null;
 
+    /** @var array<string, string>|null Params the publish handler last saw. */
+    public static ?array $lastParams = null;
+
     public static function path(): string
     {
         return 'posts/{post}/edit';
@@ -39,9 +42,13 @@ class PostEditPage extends Page
                 ->label('Publish')
                 ->confirm('Publish this post?')
                 ->handle(
-                    fn (ActionCtx $ctx): Effects => Effects::make()
-                        ->notify("Published {$ctx->row['id']}")
-                        ->refreshTable(),
+                    function (ActionCtx $ctx): Effects {
+                        static::$lastParams = $ctx->params;
+
+                        return Effects::make()
+                            ->notify("Published {$ctx->row['id']}")
+                            ->refreshTable();
+                    },
                     needs: ['row'],
                 ),
             $s->action('open-list')->label('Back')->visit('/admin/posts'),

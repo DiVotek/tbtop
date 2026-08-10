@@ -39,6 +39,29 @@ final class ActionCtx
     }
 
     /**
+     * Replace the client-sent form with its validated counterpart. Null leaves
+     * the payload untouched — the action declared no form to validate against,
+     * so the handler validates it itself.
+     *
+     * @param  array<string, mixed>|null  $validated
+     */
+    public function withValidatedForm(?array $validated): self
+    {
+        if ($validated === null) {
+            return $this;
+        }
+
+        return new self(
+            request: $this->request,
+            user: $this->user,
+            form: $validated,
+            selection: $this->selection,
+            row: $this->row,
+            params: $this->params,
+        );
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      * @return array<int|string, mixed>
      */
