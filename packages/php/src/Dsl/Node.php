@@ -8,8 +8,12 @@ use stdClass;
 
 final class Node implements JsonSerializable
 {
-    /** Option keys holding a plain list of children, whatever the node's kind. */
-    private const CHILD_LIST_KEYS = ['children', 'fields'];
+    /**
+     * Option keys holding a plain list of children, whatever the node's kind.
+     * Public because Field walks the same keys — one list, so the two traversers
+     * cannot drift apart again.
+     */
+    public const CHILD_LIST_KEYS = ['children', 'fields'];
 
     /** @var array<string, mixed> */
     public readonly array $options;

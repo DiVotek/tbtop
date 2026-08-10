@@ -26,8 +26,15 @@ mock.module("@inertiajs/react", () => ({
 }));
 
 // Import after mock.module so the mock is in effect.
+import { useTranslation } from "../i18n/i18n";
+import { AdminPage } from "../inertia/AdminPage";
 import { AdminLayoutShell } from "./AdminLayout";
 import { CenterLayout } from "./CenterLayout";
+
+function TranslationProbe() {
+	const t = useTranslation();
+	return <span data-testid="translated">{t("action.save")}</span>;
+}
 
 // ---------------------------------------------------------------------------
 // CenterLayout unit tests
@@ -71,5 +78,31 @@ describe("AdminLayoutShell layout presence", () => {
 			</AdminLayoutShell>,
 		);
 		expect(getByTestId("admin-sidebar")).toBeTruthy();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// A center-layout page must resolve translations through the same provider
+// tree as a shell page. Regresses if a `center` early return ever renders
+// CenterLayout outside I18nProvider again.
+// ---------------------------------------------------------------------------
+
+describe("AdminPage.layout: provider parity between center and shell", () => {
+	test("a center-layout page resolves translations from the panel's messages", () => {
+		currentProps = {
+			layout: "center",
+			tbtop: { locale: "en", locales: ["en"], messages: { "action.save": "Enregistrer" } },
+		};
+		const { getByTestId } = render(AdminPage.layout(<TranslationProbe />));
+		expect(getByTestId("translated").textContent).toBe("Enregistrer");
+	});
+
+	test("a shell-layout page still resolves translations from the panel's messages", () => {
+		currentProps = {
+			layout: "admin",
+			tbtop: { locale: "en", locales: ["en"], messages: { "action.save": "Enregistrer" } },
+		};
+		const { getByTestId } = render(AdminPage.layout(<TranslationProbe />));
+		expect(getByTestId("translated").textContent).toBe("Enregistrer");
 	});
 });
