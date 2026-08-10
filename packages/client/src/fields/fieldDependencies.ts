@@ -15,7 +15,8 @@ export interface DependencyState {
 	disabledByParent: boolean;
 }
 
-function readDeps(
+/** Shared with liveRegionBlock so a region's deps payload matches a dependent field's. */
+export function readDeps(
 	parents: string[],
 	data: Record<string, unknown>,
 ): { deps: Record<string, string>; ready: boolean } {

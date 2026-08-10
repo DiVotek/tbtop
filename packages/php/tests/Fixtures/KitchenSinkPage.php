@@ -181,6 +181,11 @@ class KitchenSinkPage extends Page
                         ['value' => 'sms', 'label' => 'SMS'],
                     ])->multiple()->rules('array'),
                     $s->slider('score')->min(0)->max(10)->step(1)->rules('min:0|max:10'),
+                    $s->liveRegion('titlePreview')
+                        ->dependsOn('title')
+                        ->render(fn (array $deps, S $r) => [
+                            $r->displayText($deps['title'] ?? 'No title yet')->variant('muted'),
+                        ]),
                     $s->actionsRow([
                         $s->action('save')->label('Save')->color('primary')
                             ->keybinding('mod+s')->submit(),

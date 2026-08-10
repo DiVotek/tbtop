@@ -706,6 +706,16 @@ final class S
     }
 
     /**
+     * Server-rendered region that reloads when the declared form fields change.
+     * Must sit inside a form — its deps are that form's field values. See
+     * LiveRegionBuilder for the render-closure contract.
+     */
+    public function liveRegion(string $name): LiveRegionBuilder
+    {
+        return new LiveRegionBuilder($name);
+    }
+
+    /**
      * @param  list<ActionBuilder>  $actions
      * @param  array{variant?: 'grid'}  $opts  'grid' lays the actions out as a
      *                                         responsive card grid instead of an inline row.
@@ -803,6 +813,24 @@ final class S
         return $this->searchIncludedForms(
             static fn (FormBuilder $form): ?Upload => $form->findUploadField($fieldName),
         );
+    }
+
+    /**
+     * Find a liveRegion by name, walking all registered forms.
+     */
+    public function findLiveRegion(string $regionName): ?LiveRegionBuilder
+    {
+        foreach ($this->forms as $form) {
+            if (! $form->isIncluded()) {
+                continue;
+            }
+            $found = $form->findLiveRegion($regionName);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -40,8 +40,9 @@ export interface RenderProps<TOptions> {
  * because basePath exists only while materializing and never reaches render.
  *
  * Reserved kinds — `table`, `form`, `action`, `stat`, `select`, `relation`,
- * `upload`, `chart:*` — are handled by materialize() before the registry is
- * ever consulted, so a materialize hook registered under one is unreachable.
+ * `upload`, `liveRegion`, `chart:*` — are handled by materialize() before the
+ * registry is ever consulted, so a materialize hook registered under one is
+ * unreachable.
  */
 export type BlockMaterializer = (node: StructureNode, basePath: string) => StructureNode;
 
@@ -55,6 +56,7 @@ const RESERVED_MATERIALIZE_KINDS: Record<string, true> = {
 	select: true,
 	relation: true,
 	upload: true,
+	liveRegion: true,
 };
 
 export interface BlockDescriptor<TKind extends string = string, TOptions = unknown> {

@@ -131,6 +131,35 @@ final class FormBuilder implements JsonSerializable
     }
 
     /**
+     * Find a liveRegion by name, walking nested children. Same exclusion rule
+     * as searchField(): a when(false) subtree must not resolve here, or the
+     * live-region endpoint keeps serving content the user never received.
+     */
+    public function findLiveRegion(string $name): ?LiveRegionBuilder
+    {
+        return self::searchLiveRegion($this->children, $name);
+    }
+
+    /** @param  list<mixed>  $children */
+    private static function searchLiveRegion(array $children, string $name): ?LiveRegionBuilder
+    {
+        foreach ($children as $child) {
+            if (! ChildInclusion::isConditionMet($child)) {
+                continue;
+            }
+            if ($child instanceof LiveRegionBuilder && $child->name === $name) {
+                return $child;
+            }
+            $found = self::searchLiveRegion(self::nestedChildren($child), $name);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Find an Upload field by name, walking nested children.
      * Returns null when not found.
      */
@@ -279,6 +308,7 @@ final class FormBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
+        $this->seedLiveRegions();
         $options = ['name' => $this->name, 'children' => $this->children];
 
         if ($this->guardUnsaved !== null) {
@@ -288,6 +318,43 @@ final class FormBuilder implements JsonSerializable
         }
 
         return (new Node('form', $options, $this->name))->when($this->isIncluded());
+    }
+
+    /**
+     * Every included liveRegion's initial render uses this form's record
+     * values; toNode() runs before any child serializes, so seeding here
+     * covers every serialization path.
+     */
+    private function seedLiveRegions(): void
+    {
+        $regions = self::collectLiveRegions($this->includedChildren());
+        if ($regions === []) {
+            return;
+        }
+        $record = $this->recordData();
+        foreach ($regions as $region) {
+            $region->seedInitialDeps($record);
+        }
+    }
+
+    /**
+     * @param  list<mixed>  $children
+     * @return list<LiveRegionBuilder>
+     */
+    private static function collectLiveRegions(array $children): array
+    {
+        $out = [];
+        foreach ($children as $child) {
+            if (! ChildInclusion::isConditionMet($child)) {
+                continue;
+            }
+            if ($child instanceof LiveRegionBuilder) {
+                $out[] = $child;
+            }
+            $out = [...$out, ...self::collectLiveRegions(self::nestedChildren($child))];
+        }
+
+        return $out;
     }
 
     /** @return array<string, mixed> */
