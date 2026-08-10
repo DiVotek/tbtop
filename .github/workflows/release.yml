@@ -45,9 +45,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Require dispatch from main
+        env:
+          REF: ${{ github.ref }}
         run: |
-          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
-            echo "::error::Release must be run from main, not ${{ github.ref }}"
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "::error::Release must be run from main, not $REF"
             exit 1
           fi
 
