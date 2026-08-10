@@ -83,6 +83,7 @@ function UploadSingleForm({
 		return (
 			<UploadPreview
 				value={preview}
+				disabled={disabled}
 				onRemove={() => {
 					setError(null);
 					onChange(null);
@@ -105,10 +106,11 @@ function UploadSingleForm({
 
 interface PreviewProps {
 	value: UploadValue;
+	disabled?: boolean;
 	onRemove: () => void;
 }
 
-function UploadPreview({ value, onRemove }: PreviewProps) {
+function UploadPreview({ value, disabled, onRemove }: PreviewProps) {
 	const filename = basename(value.path);
 	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
 	return (
@@ -121,8 +123,9 @@ function UploadPreview({ value, onRemove }: PreviewProps) {
 			<span className="flex-1 truncate text-sm">{filename}</span>
 			<button
 				type="button"
-				className="rounded p-1 hover:bg-muted"
+				className="rounded p-1 hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
 				aria-label="Remove"
+				disabled={disabled}
 				onClick={onRemove}
 			>
 				<XIcon className="h-4 w-4" />
