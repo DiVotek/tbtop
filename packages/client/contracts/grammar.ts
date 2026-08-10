@@ -43,7 +43,7 @@ export type WireNode = z.infer<typeof nodeBase> & { options: Record<string, unkn
 const get = (node: WireNode, key: string): unknown => node.options[key];
 
 export const actionSpecSchema = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("visit"), href: z.string() }),
+	z.object({ type: z.literal("visit"), href: z.string(), newTab: z.boolean().optional() }),
 	z.object({ type: z.literal("submit"), form: z.string().optional() }),
 	z.object({
 		type: z.literal("server"),

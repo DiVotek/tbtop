@@ -7,13 +7,26 @@ import { materialize } from "../src/inertia/materialize";
 import { ensureBuiltinsRegistered } from "../src/render/registerBuiltins";
 import { renderNode } from "../src/render/structureRenderer";
 import type { StructureNode } from "../src/structure/types";
-import { structureNodeSchema } from "./grammar";
+import { actionSpecSchema, structureNodeSchema } from "./grammar";
 
 const fixture = kitchenSink as StructureNode;
 
 describe("wire grammar contract (client side)", () => {
 	it("the PHP-emitted kitchen-sink fixture passes the zod grammar", () => {
 		expect(() => structureNodeSchema.parse(fixture)).not.toThrow();
+	});
+
+	// zod strips unknown keys silently, so a stale grammar would drop newTab
+	// without failing the fixture parse above — the action would quietly
+	// regress to same-tab navigation with every gate still green.
+	it("a visit spec keeps newTab through the grammar", () => {
+		const parsed = actionSpecSchema.parse({
+			type: "visit",
+			href: "/admin/posts/preview",
+			newTab: true,
+		});
+
+		expect(parsed).toEqual({ type: "visit", href: "/admin/posts/preview", newTab: true });
 	});
 
 	it("the fixture materializes and renders without crashing", async () => {

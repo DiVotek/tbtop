@@ -312,6 +312,7 @@ class KitchenSinkPage extends Page
             ]),
             $s->actionGroup('Publish actions', [
                 $s->action('publish')->label('Publish')->visit('/admin/posts/publish'),
+                $s->action('preview')->label('Preview')->visit('/admin/posts/preview', newTab: true),
                 $s->action('archive')->label('Archive')
                     ->handle(fn () => Effects::make(), needs: ['row']),
             ]),
