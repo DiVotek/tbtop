@@ -1,5 +1,5 @@
 import { describe, expect, mock, spyOn, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "../structure/structure";
@@ -339,6 +339,97 @@ describe("Select field — async mode", () => {
 		);
 		await waitFor(() => expect(onLoad).toHaveBeenCalledTimes(1));
 		expect(onLoad).toHaveBeenCalledWith(expect.anything(), ["1", "2", "3"]);
+	});
+
+	test("Select async multi keeps resolved chips visible while the next load is in flight", async () => {
+		const gate = Promise.withResolvers<UserRow[]>();
+		let loads = 0;
+		const onLoad = mock(async (_c: unknown, values: string[]): Promise<UserRow[]> => {
+			loads += 1;
+			return loads === 1 ? values.map((id) => ({ id, name: `User ${id}` })) : gate.promise;
+		});
+		const query = mock(async (): Promise<UserRow[]> => []);
+		const Wrap = wrap(NO_RESP);
+		const bag = {
+			query,
+			onLoad,
+			optionLabel: (r: unknown) => (r as UserRow).name,
+			optionValue: (r: unknown) => (r as UserRow).id,
+			multiple: true as const,
+		};
+		const { container, rerender } = render(
+			<Wrap>
+				<SelectForm name="authorIds" value={["1", "2"]} onChange={() => {}} options={bag} />
+			</Wrap>,
+		);
+		await waitFor(() =>
+			expect(container.querySelector('[data-testid="chip-1"]')).not.toBeNull(),
+		);
+
+		rerender(
+			<Wrap>
+				<SelectForm
+					name="authorIds"
+					value={["1", "2", "3"]}
+					onChange={() => {}}
+					options={bag}
+				/>
+			</Wrap>,
+		);
+
+		await waitFor(() => expect(onLoad).toHaveBeenCalledTimes(2));
+		expect(container.querySelector('[data-testid="chip-1"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="chip-2"]')).not.toBeNull();
+
+		act(() =>
+			gate.resolve([
+				{ id: "1", name: "User 1" },
+				{ id: "2", name: "User 2" },
+				{ id: "3", name: "User 3" },
+			]),
+		);
+		await waitFor(() =>
+			expect(container.querySelector('[data-testid="chip-3"]')).not.toBeNull(),
+		);
+	});
+
+	test("Select async multi lets a fresh load overwrite a cached label", async () => {
+		let loads = 0;
+		const onLoad = mock(async (_c: unknown, values: string[]): Promise<UserRow[]> => {
+			loads += 1;
+			return values.map((id) => ({ id, name: loads === 1 ? `User ${id}` : `Renamed ${id}` }));
+		});
+		const query = mock(async (): Promise<UserRow[]> => []);
+		const Wrap = wrap(NO_RESP);
+		const bag = {
+			query,
+			onLoad,
+			optionLabel: (r: unknown) => (r as UserRow).name,
+			optionValue: (r: unknown) => (r as UserRow).id,
+			multiple: true as const,
+		};
+		const { container, rerender } = render(
+			<Wrap>
+				<SelectForm name="authorIds" value={["1"]} onChange={() => {}} options={bag} />
+			</Wrap>,
+		);
+		await waitFor(() =>
+			expect(container.querySelector('[data-testid="chip-1"]')?.textContent).toContain(
+				"User 1",
+			),
+		);
+
+		rerender(
+			<Wrap>
+				<SelectForm name="authorIds" value={["1", "2"]} onChange={() => {}} options={bag} />
+			</Wrap>,
+		);
+
+		await waitFor(() =>
+			expect(container.querySelector('[data-testid="chip-1"]')?.textContent).toContain(
+				"Renamed 1",
+			),
+		);
 	});
 
 	test("Select async multi onLoad returning partial rows hides unresolved values", async () => {
