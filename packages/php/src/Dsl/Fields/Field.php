@@ -211,17 +211,47 @@ abstract class Field implements JsonSerializable
      * applied. Resolved on read rather than in translatable() so the two calls
      * commute — ->translatable()->fields([…]) and the reverse agree.
      *
+     * Every child list key is walked, matching Node::nestedChildren(): set() is a
+     * documented escape hatch, so sub-fields can arrive under 'children' as well
+     * as 'fields'. Reading only 'fields' left those rules uncollected — the input
+     * rendered but was never validated.
+     *
      * @return list<mixed>
      */
     public function childFields(): array
     {
-        $fields = $this->opts['fields'] ?? [];
-        if (! is_array($fields) || $fields === []) {
-            return [];
+        $children = [];
+        foreach ($this->childFieldsByKey() as $list) {
+            $children = [...$children, ...$list];
         }
-        $fields = S::normalizeChildren(array_values($fields));
 
-        return $this->translatableFlag === true ? S::cascadeTranslatable($fields) : $fields;
+        return $children;
+    }
+
+    /**
+     * Sub-fields grouped by the option key they arrived under, so toNode() writes
+     * each list back where it came from instead of collapsing both into 'fields'.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private function childFieldsByKey(): array
+    {
+        $out = [];
+        foreach (Node::CHILD_LIST_KEYS as $key) {
+            $nested = $this->opts[$key] ?? null;
+            if (! is_array($nested) || $nested === []) {
+                continue;
+            }
+            $normalized = S::normalizeChildren(array_values($nested));
+            if ($normalized === []) {
+                continue;
+            }
+            $out[$key] = $this->translatableFlag === true
+                ? S::cascadeTranslatable($normalized)
+                : $normalized;
+        }
+
+        return $out;
     }
 
     public function toNode(): Node
@@ -231,9 +261,8 @@ abstract class Field implements JsonSerializable
         if ($constraints !== []) {
             $options['constraints'] = $constraints;
         }
-        $children = $this->childFields();
-        if ($children !== []) {
-            $options['fields'] = $children;
+        foreach ($this->childFieldsByKey() as $key => $children) {
+            $options[$key] = $children;
         }
         if ($this->isTranslatableField()) {
             $options['translatable'] = true;

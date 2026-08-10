@@ -58,3 +58,17 @@ it('collects attributes from fields nested in layout containers', function () {
 
     expect($form->collectAttributes())->toBe(['title' => 'Title']);
 });
+
+// Same asymmetry the rule walker had: labels were read from 'fields' only, so a
+// sub-field attached under 'children' reported its raw key in error messages.
+
+it('collects a sub-field label attached under the children key', function () {
+    $s = new S;
+    $form = $s->form('menu', [
+        $s->repeater('items')->set('children', [
+            $s->text('label')->label('Menu label'),
+        ]),
+    ]);
+
+    expect($form->collectAttributes())->toBe(['items.*.label' => 'Menu label']);
+});
