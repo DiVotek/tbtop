@@ -89,3 +89,18 @@ it('omits headerActions prop when the page declares none', function () {
 
     expect($response->json('props'))->not->toHaveKey('headerActions');
 });
+
+// Route params are server-derived and must win over anything the client sends
+// under payload.params — ActionCtx spreads them last for exactly this reason.
+it('lets route params override client-sent params of the same name', function () {
+    PostEditPage::$lastParams = null;
+
+    $this->postJson('/admin/posts/1/edit/actions/publish', [
+        'payload' => [
+            'row' => ['id' => 1],
+            'params' => ['post' => '999', 'extra' => 'kept'],
+        ],
+    ])->assertOk();
+
+    expect(PostEditPage::$lastParams)->toEqualCanonicalizing(['post' => '1', 'extra' => 'kept']);
+});

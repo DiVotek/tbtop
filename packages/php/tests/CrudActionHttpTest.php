@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Tests\CrudActionHttpTestCase;
 use Tbtop\Admin\Tests\Fixtures\CaPost;
+use Tbtop\Admin\Tests\Fixtures\CrudActionsPage;
 
 uses(CrudActionHttpTestCase::class);
 
@@ -154,4 +155,47 @@ it('EditAction cancel action returns only closeModal and mutates nothing', funct
     $response->assertOk();
     expect($response->json('effects'))->toBe([['kind' => 'closeModal']])
         ->and(CaPost::count())->toBe(2);
+});
+
+// ---------------------------------------------------------------------------
+// Action-endpoint validation — an action submits into the form it is nested in,
+// so that form's declared rules apply, the same way FormSubmitController applies
+// a page form's rules.
+// ---------------------------------------------------------------------------
+
+it('rejects an action submission missing a key its form declares required', function (): void {
+    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
+        'payload' => ['form' => []],
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('payload.form.title');
+    expect(CaPost::count())->toBe(2);
+});
+
+it('rejects an action submission violating a rule its form declares', function (): void {
+    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
+        'payload' => ['form' => ['title' => str_repeat('x', 201)]],
+    ]);
+
+    $response->assertStatus(422);
+    expect(CaPost::count())->toBe(2);
+});
+
+it('drops a form key no field on the action form declares', function (): void {
+    CrudActionsPage::$lastStoreForm = null;
+
+    $this->postJson('/admin/crud-actions/actions/createStore', [
+        'payload' => ['form' => ['title' => 'Third', 'isAdmin' => true]],
+    ])->assertOk();
+
+    expect(CrudActionsPage::$lastStoreForm)->toBe(['title' => 'Third']);
+});
+
+it('leaves the payload untouched for an action with no enclosing form', function (): void {
+    $response = $this->postJson('/admin/crud-actions/actions/editCancel', [
+        'payload' => ['form' => ['anything' => 'goes']],
+    ]);
+
+    $response->assertOk();
 });

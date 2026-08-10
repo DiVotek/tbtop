@@ -17,6 +17,9 @@ use Tbtop\Admin\Pages\Page;
  */
 class CrudActionsPage extends Page
 {
+    /** @var array<string, mixed>|null Form data the create handler last received. */
+    public static ?array $lastStoreForm = null;
+
     public static function path(): string
     {
         return 'crud-actions';
@@ -28,9 +31,12 @@ class CrudActionsPage extends Page
             CreateAction::make(
                 $s,
                 form: $s->form('createCaPost', [
-                    $s->text('title')->label('Title'),
+                    $s->text('title')->label('Title')->required()->rules('max:200'),
                 ]),
                 storeUsing: function (ActionCtx $ctx): void {
+                    // Recorded so a test can observe which keys survived
+                    // validation, not just the ones this handler consumes.
+                    self::$lastStoreForm = $ctx->form;
                     CaPost::create(['title' => $ctx->form['title'] ?? '']);
                 },
             ),
