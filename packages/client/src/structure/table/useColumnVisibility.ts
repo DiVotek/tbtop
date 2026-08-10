@@ -25,10 +25,18 @@ function resolveVisible(columns: TableColumn[], overrides: Record<string, boolea
 	return visible;
 }
 
+function isOverridesShape(value: unknown): value is Record<string, boolean> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function readOverrides(key: string): Record<string, boolean> {
 	try {
 		const stored = localStorage.getItem(key);
-		return stored ? (JSON.parse(stored) as Record<string, boolean>) : {};
+		if (!stored) {
+			return {};
+		}
+		const parsed: unknown = JSON.parse(stored);
+		return isOverridesShape(parsed) ? parsed : {};
 	} catch {
 		return {};
 	}

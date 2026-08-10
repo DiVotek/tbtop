@@ -4,6 +4,7 @@
  * - a stored explicit choice overrides the default
  * - a stored entry for a column that no longer exists is ignored
  * - two toggles fired before a rerender both take effect (no lost update)
+ * - a stored non-object value (e.g. JSON `null`) falls back to defaults, no crash
  */
 import { beforeEach, describe, expect, test } from "bun:test";
 import { act, render } from "@testing-library/react";
@@ -101,5 +102,15 @@ describe("useColumnVisibility", () => {
 		) as Record<string, boolean>;
 		expect(stored.author).toBe(false);
 		expect(stored.notes).toBe(true);
+	});
+
+	test("a stored non-object value falls back to the current default", () => {
+		localStorage.setItem("tbtop:table.books.columns.v2", "null");
+
+		const visible = renderVisibility(COLUMNS, "books");
+
+		expect(visible.has("title")).toBe(true);
+		expect(visible.has("author")).toBe(true);
+		expect(visible.has("notes")).toBe(false);
 	});
 });
