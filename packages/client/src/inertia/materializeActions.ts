@@ -92,9 +92,14 @@ function handlerBag({ base, node, spec, ctx, confirm }: HandlerBagInput): Bag {
 	return spec.type === "submit" ? { ...bag, handler, isSubmit: true } : { ...bag, handler };
 }
 
+/**
+ * Row values are consumer data (slugs, titles, ids from arbitrary tables), so
+ * a value containing '/', '?', '#', or '&' must not be able to reshape the
+ * template's own URL structure — encode it so it fills exactly one segment.
+ */
 function fillRowTemplate(template: string, ctx: ClientActionContext): string {
 	return template.replaceAll(/\{row\.([a-zA-Z0-9_]+)\}/g, (_, key: string) =>
-		String(ctx.row?.[key] ?? ""),
+		encodeURIComponent(String(ctx.row?.[key] ?? "")),
 	);
 }
 
