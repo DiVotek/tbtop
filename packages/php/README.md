@@ -1,69 +1,93 @@
-# Inertia admin builder - PHP DSL pages rendered by the @tbtop React client
+# tbtop/admin
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/tbtop/admin.svg?style=flat-square)](https://packagist.org/packages/tbtop/admin)
-[![GitHub Tests Action Status](https://github.com/spatie/package-tbtop-admin-laravel/actions/workflows/run-tests.yml/badge.svg)](https://github.com/tbtop/admin/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://github.com/spatie/package-tbtop-admin-laravel/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/tbtop/admin/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/tbtop/admin.svg?style=flat-square)](https://packagist.org/packages/tbtop/admin)
-<!--delete-->
----
-This repo can be used to scaffold a Laravel package. Follow these steps to get started:
 
-1. Press the "Use this template" button at the top of this repo to create a new repo with the contents of this tbtop-admin.
-2. Run "php ./configure.php" to run a script that will replace all placeholders throughout all the files.
-3. Have fun creating your package.
-4. If you need help creating a package, consider picking up our <a href="https://laravelpackage.training">Laravel Package Training</a> video course.
----
-<!--/delete-->
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+The PHP half of **Tabletop**, a Laravel admin builder. You compose admin pages
+with a fluent, Filament-shaped PHP DSL (the `S` builder); each page serializes
+to a JSON structure and ships as Inertia props. The companion npm package
+[`@tbtop/inertia-admin`](https://www.npmjs.com/package/@tbtop/inertia-admin)
+is the React client that interprets that JSON and renders it — **no Livewire**.
 
-## Support us
+Laravel owns everything backend: auth, validation, queues, migrations,
+notifications. The DSL owns page composition. The client owns rendering. Both
+packages release in lockstep from a single version, so install them together.
 
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/:package_name.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/:package_name)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+Full source, the reference demo app, and docs live at
+[github.com/DiVotek/tbtop](https://github.com/DiVotek/tbtop).
 
 ## Installation
 
-You can install the package via composer:
-
 ```bash
 composer require tbtop/admin
+npm install @tbtop/inertia-admin
 ```
 
-You can publish and run the migrations with:
+Publish the config file:
 
 ```bash
-php artisan vendor:publish --tag="admin-migrations"
-php artisan migrate
+php artisan vendor:publish --tag="tbtop-admin-config"
 ```
 
-You can publish the config file with:
+The package ships its own migrations (media library tables) and runs them
+automatically — no separate `migrate` step is required. If you need to
+customize them first, publish with `--tag="tbtop-admin-migrations"` before
+running `php artisan migrate`.
 
-```bash
-php artisan vendor:publish --tag="admin-config"
-```
+Register your admin panel and pages in `config/tbtop-admin.php` (see the
+`panels` key), then wire up the React entry point using
+`@tbtop/inertia-admin` on the client side.
 
-This is the contents of the published config file:
+## A page, in PHP
 
 ```php
-return [
-];
+class BrandsIndexPage extends Page
+{
+    public static function path(): string
+    {
+        return 'brands';
+    }
+
+    public static function nav(): ?array
+    {
+        return ['group' => 'Content', 'label' => 'Brands', 'order' => 2, 'icon' => 'star'];
+    }
+
+    public function view(S $s): Node
+    {
+        return $s->stack([
+            $s->table('brands')
+                ->columns([
+                    Column::make('name')->label('Name')->kind('text')->translatable()->searchable(),
+                    Column::make('slug')->label('Slug')->kind('text'),
+                    Column::make('website')->label('Website')->kind('text'),
+                ])
+                ->defaultSort('id', 'asc')
+                ->paginate(25, [10, 25, 50])
+                ->query(fn () => Brand::query())
+                ->toNode(),
+        ]);
+    }
+}
 ```
 
-Optionally, you can publish the views using
+Register the class in `config/tbtop-admin.php`, and its route, nav entry, and
+table/data endpoints are wired automatically. See
+[`apps/demo/app/Admin/Pages`](https://github.com/DiVotek/tbtop/tree/main/apps/demo/app/Admin/Pages)
+in the monorepo for larger, real examples (forms, actions, filters, uploads).
 
-```bash
-php artisan vendor:publish --tag="admin-views"
-```
+## Architecture boundary
 
-## Usage
+- **PHP DSL** (this package) composes pages: tables, forms, fields, actions,
+  layout — and serializes them to StructureNode JSON.
+- **Laravel** owns the backend: validation rules, queues, migrations, auth,
+  notifications. The DSL never reinvents these — it wires into them.
+- **React client** (`@tbtop/inertia-admin`) owns rendering: it interprets the
+  JSON and renders the ~20 field kinds, tables, forms, and layout blocks.
 
-```php
-$:variable = new Tbtop\Admin();
-echo $:variable->echoPhrase('Hello, VendorName!');
-```
+A JSON Schema (`packages/contracts/structure.schema.json` in the monorepo) is
+the wire contract both sides are tested against, so the DSL and the client
+never silently drift apart.
 
 ## Testing
 
@@ -71,22 +95,19 @@ echo $:variable->echoPhrase('Hello, VendorName!');
 composer test
 ```
 
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING.md](https://github.com/DiVotek/tbtop/blob/main/CONTRIBUTING.md)
+in the monorepo.
 
 ## Security Vulnerabilities
 
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+Please see [SECURITY.md](https://github.com/DiVotek/tbtop/blob/main/SECURITY.md)
+for how to report a vulnerability.
 
 ## Credits
 
-- [Max Boeko](https://github.com/:author_username)
-- [All Contributors](../../contributors)
+- [Max Boeko](https://github.com/DiVotek)
 
 ## License
 
