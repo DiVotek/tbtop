@@ -70,7 +70,9 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   `packages/php/src/Dsl/Fields/` first. Full lookup in `docs/ai/fields.md`.
 - **Layout/display:** stack, row, flex, grid, section, collapsible, aside, tabs,
   displayText/Html/Alert/Divider (headings are `displayText()->variant('heading')` — there is
-  no bare `heading`/`divider` method), markdown, actionGroup. In `S.php`.
+  no bare `heading`/`divider` method), markdown, actionGroup. In `S.php`. For content that
+  must re-render on form-field changes: `liveRegion(name)->dependsOn(...)->render(fn)` —
+  server re-renders display nodes per change, no custom client code.
 - **Table features:** sort, pagination, global search, per-field filters (modal/inline), row
   actions, bulk actions, row-click, column visibility, URL-state. In `TableBuilder.php`.
 - **Auth:** login, register, password reset, email verification, 2FA, passkeys, password

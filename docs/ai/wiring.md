@@ -68,6 +68,7 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
 | `POST` | `{page-path}/relation-search/{tbtopField}` | `{slug}.relationSearch` | `RelationSearchController` | JSON | search mode: `{options: [{value, label}]}` · resolve mode: `{option: {value, label}\|null}` |
+| `POST` | `{page-path}/live-region/{tbtopRegion}` | `{slug}.liveRegion` | `LiveRegionController` | JSON | `{nodes: Node[]}` — re-runs the region's render closure with `{deps}` filtered to its `dependsOn()` list |
 | `POST` | `{page-path}/uploads/{tbtopField}` | `{slug}.upload` | `FieldUploadController` | JSON | `{data: {path, url}}` |
 | `GET` | `{page-path}/uploads/{tbtopField}/view` | `{slug}.uploadView` | `FieldUploadViewController` | signed URL | streams private file |
 | `POST` | `{page-path}/cells/{tbtopTable}/{tbtopColumn}` | `{slug}.cell` | `EditableColumnController` | JSON | `{effects: Effect[]}` |
