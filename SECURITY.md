@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 If you believe you've found a security vulnerability in Tabletop, please
-report it privately by emailing **12crya34@gmail.com** rather than opening a
+report it privately by emailing **support@divotek.com** rather than opening a
 public issue. Include as much detail as you can (affected package and
 version, reproduction steps, potential impact) so it can be triaged quickly.
 

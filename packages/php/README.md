@@ -107,7 +107,7 @@ for how to report a vulnerability.
 
 ## Credits
 
-- [Max Boeko](https://github.com/DiVotek)
+- [Divotek](https://github.com/DiVotek)
 
 ## License
 
