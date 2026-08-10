@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
+use Tbtop\Admin\Dsl\Fields\Field;
 
 /**
  * Server-rendered region that re-renders when declared form fields change:
@@ -88,8 +89,31 @@ final class LiveRegionBuilder implements JsonSerializable
 
         $result = $closure($this->filterDeps($deps), new S);
         $nodes = is_array($result) ? array_values($result) : [$result];
+        $this->assertDisplayOnly($nodes);
 
         return ChildInclusion::filter($nodes);
+    }
+
+    /**
+     * The display-only contract, enforced: a field inside a region would mean
+     * a dynamic form schema (validation, dirty tracking, submitted names),
+     * which forms do not support. The kind set stays open — containers and
+     * custom display blocks pass; only form fields are rejected.
+     *
+     * @param  list<mixed>  $nodes
+     */
+    private function assertDisplayOnly(array $nodes): void
+    {
+        foreach ($nodes as $node) {
+            if ($node instanceof Field) {
+                throw new InvalidArgumentException(
+                    "liveRegion \"{$this->name}\" render() returned field \"{$node->name}\" — regions may contain display nodes only.",
+                );
+            }
+            if ($node instanceof Node) {
+                $this->assertDisplayOnly($node->nestedChildren());
+            }
+        }
     }
 
     public function toNode(): Node
