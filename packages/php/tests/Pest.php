@@ -26,6 +26,8 @@ uses(NotificationsHttpTestCase::class)->in('NotificationsHttpTest.php');
 uses(HeaderActionsHttpTestCase::class)->in('HeaderActionsHttpTest.php');
 uses(RouteCacheSerializationTestCase::class)->in('RouteCacheSerializationTest.php');
 
+use Opis\JsonSchema\Errors\ErrorFormatter;
+use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelConfig;
@@ -49,4 +51,20 @@ function panelWithChrome(?string $chrome): CurrentPanel
     }
 
     return new CurrentPanel($config);
+}
+
+const SCHEMA_PATH = __DIR__.'/../../contracts/structure.schema.json';
+
+/** Assert that serialized data conforms to the wire schema (or a $defs sub-schema via $pointer). */
+function validateAgainstSchema(mixed $data, string $pointer = ''): void
+{
+    $validator = new Validator;
+    $schema = json_decode((string) file_get_contents(SCHEMA_PATH));
+    $validator->resolver()?->registerRaw($schema);
+    $result = $validator->validate($data, $schema->{'$id'}.$pointer);
+    $error = $result->error();
+
+    expect($result->isValid())->toBeTrue(
+        $error ? json_encode((new ErrorFormatter)->format($error)) : '',
+    );
 }
