@@ -1,7 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import type { ClientActionContext } from "../structure/types";
-import { type AsyncMultiOptionsBag, useMultiResolvedLabels } from "./asyncOptions";
+import { useMultiResolvedLabels } from "./asyncMultiOptions";
+import type { AsyncMultiOptionsBag } from "./asyncOptions";
 
 const CTX = {} as ClientActionContext;
 

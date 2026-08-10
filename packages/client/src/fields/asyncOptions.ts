@@ -9,7 +9,7 @@ type OptionsFetch<TArg, TResult> = (
 	deps?: Record<string, string>,
 ) => Promise<TResult>;
 
-interface AsyncOptionsBase {
+export interface AsyncOptionsBase {
 	query?: OptionsFetch<string, unknown[]>;
 	optionLabel?: (row: unknown) => string;
 	optionValue?: (row: unknown) => string;
@@ -34,7 +34,7 @@ interface LabelCache {
 	labels: OptionMap;
 }
 
-type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: OptionMap };
+export type ResolvedState = { kind: "loading" } | { kind: "ready"; labels: OptionMap };
 
 export interface ReadyLabels {
 	kind: "ready";
@@ -132,69 +132,6 @@ export function useSingleResolvedLabel({
 	return state;
 }
 
-export interface MultiResolveArgs {
-	ctx: ClientActionContext;
-	fieldName: string;
-	value: string[] | null;
-	opts: AsyncMultiOptionsBag;
-}
-
-// oxlint-disable-next-line max-lines-per-function -- hook: effect + refs can't split without breaking hook rules
-export function useMultiResolvedLabels({
-	ctx,
-	fieldName,
-	value,
-	opts,
-}: MultiResolveArgs): ResolvedState {
-	const warnedRef = useRef(false);
-	const ctxRef = useRef(ctx);
-	ctxRef.current = ctx;
-	const optsRef = useRef(opts);
-	optsRef.current = opts;
-	// A fresh array is a new identity every render, so the effect keys off this
-	// JSON string instead of `value` itself and re-parses it when the key changes.
-	const idsKey = JSON.stringify(value ?? []);
-	const [state, setState] = useState<ResolvedState>(() =>
-		idsKey === "[]" ? { kind: "ready", labels: {} } : { kind: "loading" },
-	);
-
-	useEffect(() => {
-		const ids: string[] = JSON.parse(idsKey);
-		if (ids.length === 0) {
-			setState({ kind: "ready", labels: {} });
-			return;
-		}
-		const { onLoad } = optsRef.current;
-		if (!onLoad) {
-			warnMissingOnLoad(warnedRef, fieldName);
-			setState({ kind: "ready", labels: {} });
-			return;
-		}
-		let cancelled = false;
-		setState({ kind: "loading" });
-		onLoad(ctxRef.current, ids).then(
-			(rows) => {
-				if (cancelled) {
-					return;
-				}
-				setState({
-					kind: "ready",
-					labels: buildLabelMap(rows, optsRef.current),
-				});
-			},
-			() => {
-				if (!cancelled) {
-					setState({ kind: "ready", labels: {} });
-				}
-			},
-		);
-		return () => {
-			cancelled = true;
-		};
-	}, [idsKey, fieldName]);
-	return state;
-}
-
 interface MergeLabelArgs {
 	cached: OptionMap;
 	id: string;
@@ -215,7 +152,7 @@ function toOption(row: unknown, value: string, opts: AsyncOptionsBase): StaticOp
 	return { value, label: opts.optionLabel ? opts.optionLabel(row) : value };
 }
 
-function warnMissingOnLoad(warnedRef: { current: boolean }, fieldName: string): void {
+export function warnMissingOnLoad(warnedRef: { current: boolean }, fieldName: string): void {
 	if (warnedRef.current) {
 		return;
 	}
@@ -225,7 +162,7 @@ function warnMissingOnLoad(warnedRef: { current: boolean }, fieldName: string): 
 	);
 }
 
-function buildLabelMap(rows: unknown[], opts: AsyncOptionsBase): OptionMap {
+export function buildLabelMap(rows: unknown[], opts: AsyncOptionsBase): OptionMap {
 	const labels: OptionMap = {};
 	for (const row of rows) {
 		if (!opts.optionValue) {

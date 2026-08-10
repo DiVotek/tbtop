@@ -6,7 +6,7 @@ import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { inputCompactFontClass, inputFontClass } from "../ui/input";
-import { useMultiResolvedLabels } from "./asyncOptions";
+import { useMultiResolvedLabels } from "./asyncMultiOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { type FieldFormProps, fieldId } from "./fieldProps";
 import { Chips, type TagsOptionsBag } from "./tagsShared";
