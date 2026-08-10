@@ -114,11 +114,17 @@ export function UploadMultiForm({
 	);
 
 	const handleRemove = (index: number) => {
+		if (disabled) {
+			return;
+		}
 		const next = items.filter((_, i) => i !== index);
 		onChange(next.length > 0 ? next : null);
 	};
 
 	const handleDragEnd = (event: DragEndEvent) => {
+		if (disabled) {
+			return;
+		}
 		const { active, over } = event;
 		if (!over || active.id === over.id) {
 			return;
@@ -139,9 +145,21 @@ export function UploadMultiForm({
 		const iid = itemId(item, i);
 		const remove = () => handleRemove(i);
 		return reorderable ? (
-			<UploadSortableItem key={iid} item={item} itemId={iid} onRemove={remove} />
+			<UploadSortableItem
+				key={iid}
+				item={item}
+				itemId={iid}
+				disabled={disabled}
+				onRemove={remove}
+			/>
 		) : (
-			<UploadStaticItem key={iid} item={item} itemId={iid} onRemove={remove} />
+			<UploadStaticItem
+				key={iid}
+				item={item}
+				itemId={iid}
+				disabled={disabled}
+				onRemove={remove}
+			/>
 		);
 	});
 
