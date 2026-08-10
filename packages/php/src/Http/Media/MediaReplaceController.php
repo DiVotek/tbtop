@@ -9,6 +9,7 @@ use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\MediaUploadLimit;
 use Tbtop\Admin\Media\MimePolicy;
 use Tbtop\Admin\Media\Models\Media;
+use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Media\SvgSanitizer;
 
 final class MediaReplaceController
@@ -29,9 +30,6 @@ final class MediaReplaceController
 
         $this->assertMime($file, $accept);
 
-        // Delete old file and all conversions before writing the new one.
-        MediaResource::deleteFiles($media);
-
         $disk = (string) ($config['disk'] ?? 'public');
         $dir = 'tbtop-media';
         $path = $file->store($dir, $disk);
@@ -39,11 +37,22 @@ final class MediaReplaceController
             abort(500, 'Upload failed.');
         }
 
-        SvgSanitizer::sanitizeStored($disk, $path, $file->getClientOriginalName());
+        try {
+            SvgSanitizer::sanitizeStored($disk, $path, $file->getClientOriginalName());
+        } catch (SvgSanitizeException $e) {
+            abort(422, __('tbtop-admin::admin.media.errors.'.$e->reason));
+        }
 
         /** @var array<string, array{0: int, 1: int}> $profiles */
         $profiles = (array) ($config['profiles'] ?? []);
         $sizes = MediaResource::generateConversions($file, $path, $disk, $profiles);
+
+        // Old file and its conversions are removed only once the new upload
+        // has been stored and sanitized — deleting them earlier would leave
+        // $media->path pointing at nothing if sanitization then rejects the
+        // replacement. deleteFiles() reads $media->path, so this must run
+        // before update() overwrites it.
+        MediaResource::deleteFiles($media);
 
         $media->update([
             'name' => $file->getClientOriginalName(),

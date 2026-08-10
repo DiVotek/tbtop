@@ -20,6 +20,17 @@ final class SvgSanitizer
      * Sanitize an already-stored SVG in place. Runs after the file is written
      * to disk; overwrites the same path with the cleaned bytes. No-op when the
      * bytes are not SVG.
+     *
+     * Any parse failure is refused and the file deleted — there is no
+     * passthrough for content that merely resembles a known raster format.
+     * Three prior signature checks (missing NUL, bare `BM`, then the full set
+     * of PNG/JPEG/GIF/WebP/BMP magic bytes) were each defeated by a polyglot
+     * payload that matched the signature while still carrying a live
+     * `<script>`, because a parse failure cannot be told apart from a
+     * disguised attack by content sniffing alone. Refusing unconditionally is
+     * the only rule that has held.
+     *
+     * @throws SvgSanitizeException when the bytes look like SVG but fail to parse
      */
     public static function sanitizeStored(string $disk, string $path, ?string $originalName = null): void
     {
@@ -31,21 +42,22 @@ final class SvgSanitizer
         }
 
         $clean = (new Sanitizer)->sanitize($dirty);
-        if ($clean === false) {
-            // Unparseable SVG: never leave dangerous bytes on disk.
-            $storage->put($path, self::emptySvg());
+        if ($clean !== false) {
+            $storage->put($path, $clean);
 
             return;
         }
 
-        $storage->put($path, $clean);
+        $storage->delete($path);
+        throw new SvgSanitizeException(SvgSanitizeException::INVALID);
     }
 
     /**
      * SVG if a text payload carries an `<svg` root, or the stored/original
      * filename is an SVG extension — independent of the claimed mime. The NUL
      * check avoids treating a binary image that incidentally contains the
-     * bytes "<svg" as SVG (which would fail-parse and be emptied).
+     * bytes "<svg" as SVG; such a file still reaches sanitizeStored() through
+     * its extension and is rejected there if it fails to parse.
      */
     private static function looksLikeSvg(string $content, string $path, ?string $originalName): bool
     {
@@ -62,10 +74,5 @@ final class SvgSanitizer
         $ext = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
 
         return $ext === 'svg' || $ext === 'svgz';
-    }
-
-    private static function emptySvg(): string
-    {
-        return '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
     }
 }

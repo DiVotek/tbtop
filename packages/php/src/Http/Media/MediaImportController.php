@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\Models\Media;
+use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Media\SvgSanitizer;
 use Tbtop\Admin\Media\UrlFetcher;
 use Tbtop\Admin\Media\UrlFetchException;
@@ -45,7 +46,11 @@ final class MediaImportController
                 return $this->error422('media.errors.download_failed');
             }
 
-            SvgSanitizer::sanitizeStored($disk, $path, $filename);
+            try {
+                SvgSanitizer::sanitizeStored($disk, $path, $filename);
+            } catch (SvgSanitizeException $e) {
+                return $this->error422('media.errors.'.$e->reason);
+            }
 
             /** @var array<string, array{0: int, 1: int}> $profiles */
             $profiles = (array) ($config['profiles'] ?? []);

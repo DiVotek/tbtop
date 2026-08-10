@@ -183,6 +183,13 @@ it('FieldUpload: strips scripts from a stored svg', function (): void {
         ->and($stored)->toContain('<rect');
 });
 
+it('FieldUpload: an unparseable svg is refused with 422, not a 500', function (): void {
+    $file = UploadedFile::fake()->createWithContent('broken.svg', '<svg not xml at all <<<');
+
+    $this->postJson('/admin/upload-field-page/uploads/avatar', ['file' => $file])
+        ->assertStatus(422);
+});
+
 it('FieldUpload: refuses text/html even when the field accepts everything', function (): void {
     $file = UploadedFile::fake()->createWithContent('page.html', '<html><body>hi</body></html>');
 

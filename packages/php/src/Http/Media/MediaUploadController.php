@@ -9,6 +9,7 @@ use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\MediaUploadLimit;
 use Tbtop\Admin\Media\MimePolicy;
 use Tbtop\Admin\Media\Models\Media;
+use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Media\SvgSanitizer;
 
 final class MediaUploadController
@@ -35,7 +36,11 @@ final class MediaUploadController
             abort(500, 'Upload failed.');
         }
 
-        SvgSanitizer::sanitizeStored($disk, $path, $file->getClientOriginalName());
+        try {
+            SvgSanitizer::sanitizeStored($disk, $path, $file->getClientOriginalName());
+        } catch (SvgSanitizeException $e) {
+            abort(422, __('tbtop-admin::admin.media.errors.'.$e->reason));
+        }
 
         /** @var array<string, array{0: int, 1: int}> $profiles */
         $profiles = (array) ($config['profiles'] ?? []);
