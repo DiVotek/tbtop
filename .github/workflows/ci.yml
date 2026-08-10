@@ -89,6 +89,9 @@ jobs:
       - name: biome (format check)
         run: bun run format:check
 
+      - name: Composer require parity (root vs packages/php)
+        run: php scripts/check-composer-require-parity.php
+
       - name: pint (format check)
         run: |
           cd packages/php
