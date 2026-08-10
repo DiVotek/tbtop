@@ -56,4 +56,14 @@ describe("fillRowTemplate", () => {
 	test("a missing row key still substitutes an empty string", () => {
 		expect(resolveUrl("/posts/{row.slug}/edit", {})).toBe("/posts//edit");
 	});
+
+	test("a lone surrogate does not crash the url resolver", () => {
+		expect(() => resolveUrl("/posts/{row.slug}/edit", { slug: "\uD800" })).not.toThrow();
+	});
+
+	test("a valid surrogate pair is still encoded correctly", () => {
+		expect(resolveUrl("/posts/{row.slug}/edit", { slug: "a😀b" })).toBe(
+			"/posts/a%F0%9F%98%80b/edit",
+		);
+	});
 });
