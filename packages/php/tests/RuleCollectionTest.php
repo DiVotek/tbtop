@@ -73,3 +73,36 @@ it('accepts a regex: rule passed as an array element on a column', function () {
 
     expect($col->editRuleEntries())->toBe(['regex:/^[a-z]+$/']);
 });
+
+// set() is a documented escape hatch, so sub-fields reach a Field under either
+// child list key. Rules used to be collected from 'fields' only: input attached
+// under 'children' rendered but was never validated.
+
+it('collects sub-field rules attached under the children key', function () {
+    $s = new S;
+    $form = $s->form('menu', [
+        $s->repeater('items')->set('children', [
+            $s->text('label')->required(),
+        ]),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'items' => ['nullable'],
+        'items.*.label' => ['required'],
+    ]);
+});
+
+it('collects sub-field rules from both child list keys at once', function () {
+    $s = new S;
+    $form = $s->form('menu', [
+        $s->repeater('items')
+            ->fields([$s->text('from_fields')->required()])
+            ->set('children', [$s->text('from_children')->required()]),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'items' => ['nullable'],
+        'items.*.from_children' => ['required'],
+        'items.*.from_fields' => ['required'],
+    ]);
+});
