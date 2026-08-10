@@ -13,6 +13,7 @@ export function CheckboxForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 }: FieldFormProps<boolean>) {
 	return (
 		<Checkbox
@@ -22,6 +23,7 @@ export function CheckboxForm({
 			onCheckedChange={(next) => onChange(next === true)}
 			onBlur={onBlur}
 			disabled={disabled}
+			aria-describedby={describedBy}
 		/>
 	);
 }
