@@ -41,6 +41,8 @@ export interface RenderTranslatableFieldInput {
 	onChange: (next: unknown) => void;
 	onBlur?: () => void;
 	disabled: boolean;
+	/** aria-describedby value shared by every locale panel's control — see TranslatableWrapper. */
+	describedBy?: string;
 	locales: string[];
 	/** How to render a descriptor's declared children, if any (form-level only; repeater subfields have none). */
 	renderChild?: (child: StructureNode) => ReactNode;
@@ -63,6 +65,7 @@ export function renderTranslatableField(input: RenderTranslatableFieldInput): Re
 		onChange,
 		onBlur,
 		disabled,
+		describedBy,
 		locales,
 		renderChild,
 	} = input;
@@ -81,6 +84,7 @@ export function renderTranslatableField(input: RenderTranslatableFieldInput): Re
 		onChange,
 		onBlur,
 		options: innerOptions,
+		describedBy,
 		renderInner,
 		locales,
 	});
@@ -99,6 +103,8 @@ interface MakeInnerRendererInput {
  * descriptor's field component. Must not return a component type: a fresh
  * component identity per render makes React remount the input on every
  * keystroke, dropping focus. Caller strips name/translatable from options.
+ * `describedBy` flows in via each locale panel's own FieldFormProps (set by
+ * TranslatableWrapper), not this closure, so it stays per-locale-panel.
  */
 function makeInnerRenderer({
 	descriptor,
@@ -121,6 +127,7 @@ function makeInnerRenderer({
 					onChange: props.onChange,
 					onBlur: props.onBlur,
 					disabled,
+					describedBy: props.describedBy,
 				},
 			},
 			children: undefined,

@@ -13,6 +13,7 @@ interface MaskedInputProps {
 	className?: string;
 	placeholder?: string;
 	"aria-invalid"?: boolean;
+	"aria-describedby"?: string;
 }
 
 export function MaskedInput({ mask, value, onChange, ...rest }: MaskedInputProps) {
