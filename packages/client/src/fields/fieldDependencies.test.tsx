@@ -191,12 +191,12 @@ describe("RelationForm dependencies", () => {
 		const { container } = renderRelation(opts, { country_id: null, city_id: null });
 
 		await waitFor(() =>
-			expect(container.querySelector('[data-testid="relation-city_id"]')).not.toBeNull(),
+			expect(container.querySelector('[data-testid="select-search-city_id"]')).not.toBeNull(),
 		);
-		const button = container.querySelector(
-			'[data-testid="relation-city_id"]',
-		) as HTMLButtonElement;
-		expect(button.disabled).toBe(true);
+		const input = container.querySelector(
+			'[data-testid="select-search-city_id"]',
+		) as HTMLInputElement;
+		expect(input.disabled).toBe(true);
 		expect(query).not.toHaveBeenCalled();
 	});
 
@@ -258,12 +258,12 @@ describe("RelationForm dependencies", () => {
 		await waitFor(() => expect(query).toHaveBeenCalled());
 		act(() => (cap.ctrls.at(-1) as FormController).set("country_id", null));
 		await waitFor(() =>
-			expect(container.querySelector('[data-testid="relation-city_id"]')).not.toBeNull(),
+			expect(container.querySelector('[data-testid="select-search-city_id"]')).not.toBeNull(),
 		);
-		const button = container.querySelector(
-			'[data-testid="relation-city_id"]',
-		) as HTMLButtonElement;
-		expect(button.disabled).toBe(true);
+		const input = container.querySelector(
+			'[data-testid="select-search-city_id"]',
+		) as HTMLInputElement;
+		expect(input.disabled).toBe(true);
 		act(() => resolveRows(ROWS));
 	});
 
@@ -311,7 +311,7 @@ describe("RelationForm dependencies", () => {
 		act(() => (cap.ctrls.at(-1) as FormController).set("country_id", "9"));
 
 		await waitFor(() => expect(loads).toBe(2));
-		expect(container.querySelector('[data-testid="relation-city_id"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="select-search-city_id"]')).not.toBeNull();
 		act(() => gate.resolve(ROWS[1] as Row));
 	});
 });

@@ -32,7 +32,7 @@ function makeOpts(overrides: Record<string, unknown> = {}) {
 }
 
 describe("RelationForm", () => {
-	test("renders a select trigger after query resolves", async () => {
+	test("renders the combobox after query resolves", async () => {
 		const { container } = render(
 			<Wrap>
 				<RelationForm
@@ -45,7 +45,7 @@ describe("RelationForm", () => {
 		);
 
 		await waitFor(() => {
-			expect(container.querySelector('[data-testid="relation-author_id"]')).not.toBeNull();
+			expect(container.querySelector('[data-testid="select-author_id"]')).not.toBeNull();
 		});
 	});
 
@@ -65,11 +65,13 @@ describe("RelationForm", () => {
 		);
 
 		await waitFor(() =>
-			expect(container.querySelector('[data-testid="relation-author_id"]')).not.toBeNull(),
+			expect(
+				container.querySelector('[data-testid="select-search-author_id"]'),
+			).not.toBeNull(),
 		);
 
 		await user.click(
-			container.querySelector('[data-testid="relation-author_id"]') as HTMLElement,
+			container.querySelector('[data-testid="select-search-author_id"]') as HTMLElement,
 		);
 
 		await waitFor(() => {
@@ -100,9 +102,9 @@ describe("RelationForm", () => {
 			</Wrap>,
 		);
 
-		// Skeleton shown while onLoad is in-flight — trigger must be absent
+		// Skeleton shown while onLoad is in-flight — the control must be absent
 		await waitFor(() => {
-			expect(container.querySelector('[data-testid="relation-author_id"]')).toBeNull();
+			expect(container.querySelector('[data-testid="select-author_id"]')).toBeNull();
 		});
 
 		resolveOnLoad({ value: "1", label: "Alice Smith" });
@@ -123,11 +125,29 @@ describe("RelationForm", () => {
 			</Wrap>,
 		);
 		await waitFor(() => {
-			expect(container.querySelector('[data-slot="select-trigger"]')?.textContent).toContain(
-				"Alice Smith",
-			);
+			expect(
+				container.querySelector('[data-testid="select-label-author_id"]')?.textContent,
+			).toContain("Alice Smith");
 		});
 		expect(opts.onLoad).toHaveBeenCalledWith(expect.anything(), "1");
+	});
+
+	// The server owns the filtering — it searches columns the label never shows
+	// and caps the result set. A relation that never forwards the typed text
+	// leaves the user scrolling the first page with no way to reach the rest.
+	test("sends the typed text to the query", async () => {
+		const user = userEvent.setup();
+		const opts = makeOpts();
+		const { getByTestId } = render(
+			<Wrap>
+				<RelationForm name="author_id" value={null} onChange={() => {}} options={opts} />
+			</Wrap>,
+		);
+
+		await waitFor(() => expect(getByTestId("select-search-author_id")).toBeTruthy());
+		await user.type(getByTestId("select-search-author_id"), "Bob");
+
+		await waitFor(() => expect(opts.query).toHaveBeenCalledWith(expect.anything(), "Bob"));
 	});
 });
 
