@@ -142,16 +142,12 @@ final class TableQuery
         /** @var array<string, mixed> $filterValues */
         $filterValues = $raw;
         $fields = $table->filterFields();
-        if ($fields !== []) {
-            TableFilterApplier::apply($fields, $filterValues, $builder);
-        } else {
-            // Legacy: no declared filter fields — fall back to simple equality.
-            foreach ($filterValues as $field => $value) {
-                if ($value !== null && $value !== '') {
-                    $builder->where($field, $value);
-                }
-            }
+        if ($fields === []) {
+            // Security whitelist: a table with no declared filter fields ignores
+            // filter query params instead of querying arbitrary user-supplied columns.
+            return;
         }
+        TableFilterApplier::apply($fields, $filterValues, $builder);
     }
 
     private static function applySort(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void

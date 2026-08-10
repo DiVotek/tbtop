@@ -39,6 +39,14 @@ it('applies equality filters and explicit sort', function () {
     expect(array_column($rows, 'title'))->toBe(['Alpha', 'Gamma news']);
 });
 
+it('ignores filter params for undeclared columns instead of querying them', function () {
+    $response = $this->getJson('/admin/posts/tables/posts?filters[views]=999');
+
+    $response->assertOk();
+    expect($response->json('data.total'))->toBe(3)
+        ->and(array_column($response->json('data.data'), 'title'))->toBe(['Beta', 'Gamma news']);
+});
+
 it('serves chart data from the page data endpoint', function () {
     $response = $this->getJson('/admin/posts/data/byStatus');
 
