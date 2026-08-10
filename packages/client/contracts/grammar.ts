@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Wire grammar contract: what the PHP DSL is allowed to emit.
-// Source of truth for contracts/structure.schema.json (see generate.ts).
+// packages/contracts/structure.schema.json is the source of truth; this is a
+// hand-maintained partial mirror of it, not generated.
 // Unknown kinds pass the base shape — custom blocks stay possible.
 
 export const constraintsSchema = z
@@ -27,6 +28,12 @@ export const effectSchema = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("refreshTable"), table: z.string().optional() }),
 	z.object({ kind: z.literal("resetForm"), form: z.string().optional() }),
 	z.object({ kind: z.literal("closeModal") }),
+	z.object({
+		kind: z.literal("haltModal"),
+		message: z.string(),
+		level: z.enum(["info", "success", "error", "warning"]).optional(),
+	}),
+	z.object({ kind: z.literal("copyToClipboard"), text: z.string() }),
 ]);
 
 export const effectsSchema = z.array(effectSchema);
