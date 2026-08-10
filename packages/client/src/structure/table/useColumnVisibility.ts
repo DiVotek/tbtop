@@ -53,15 +53,18 @@ export function useColumnVisibility(columns: TableColumn[], tableName: string): 
 
 	const toggleColumn = useCallback(
 		(name: string) => {
-			const next = { ...overrides, [name]: !visibleColumns.has(name) };
-			setOverrides(next);
-			try {
-				localStorage.setItem(key, JSON.stringify(next));
-			} catch {
-				// ignore storage errors
-			}
+			setOverrides((prev) => {
+				const shown = resolveVisible(columns, prev).has(name);
+				const next = { ...prev, [name]: !shown };
+				try {
+					localStorage.setItem(key, JSON.stringify(next));
+				} catch {
+					// ignore storage errors
+				}
+				return next;
+			});
 		},
-		[key, overrides, visibleColumns],
+		[key, columns],
 	);
 
 	return { visibleColumns, toggleColumn };

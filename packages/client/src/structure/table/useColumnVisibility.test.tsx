@@ -3,21 +3,22 @@
  * - a column absent from stored overrides follows the current default (hiddenByDefault)
  * - a stored explicit choice overrides the default
  * - a stored entry for a column that no longer exists is ignored
+ * - two toggles fired before a rerender both take effect (no lost update)
  */
 import { beforeEach, describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import type { TableColumn } from "../types";
 import { useColumnVisibility } from "./useColumnVisibility";
 
 interface HarnessProps {
 	columns: TableColumn[];
 	tableName: string;
-	onReady: (visible: Set<string>) => void;
+	onReady: (visible: Set<string>, toggleColumn: (name: string) => void) => void;
 }
 
 function Harness({ columns, tableName, onReady }: HarnessProps) {
-	const { visibleColumns } = useColumnVisibility(columns, tableName);
-	onReady(visibleColumns);
+	const { visibleColumns, toggleColumn } = useColumnVisibility(columns, tableName);
+	onReady(visibleColumns, toggleColumn);
 	return null;
 }
 
@@ -71,5 +72,34 @@ describe("useColumnVisibility", () => {
 
 		expect(visible.has("title")).toBe(false);
 		expect([...visible].includes("retiredColumn")).toBe(false);
+	});
+
+	test("two toggles fired before a rerender both take effect", () => {
+		let visible = new Set<string>();
+		let toggle: (name: string) => void = () => {};
+		render(
+			<Harness
+				columns={COLUMNS}
+				tableName="books"
+				onReady={(v, t) => {
+					visible = v;
+					toggle = t;
+				}}
+			/>,
+		);
+
+		act(() => {
+			toggle("author");
+			toggle("notes");
+		});
+
+		expect(visible.has("author")).toBe(false);
+		expect(visible.has("notes")).toBe(true);
+
+		const stored = JSON.parse(
+			localStorage.getItem("tbtop:table.books.columns.v2") ?? "{}",
+		) as Record<string, boolean>;
+		expect(stored.author).toBe(false);
+		expect(stored.notes).toBe(true);
 	});
 });
