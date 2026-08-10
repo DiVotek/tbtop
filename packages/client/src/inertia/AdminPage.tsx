@@ -162,14 +162,6 @@ AdminPage.layout = (page: ReactNode) => <LayoutDispatcher>{page}</LayoutDispatch
 
 function LayoutDispatcher({ children }: { children: ReactNode }) {
 	const { props } = usePage<AdminPageProps>();
-	if (props.layout === "center") {
-		return <CenterLayout>{children}</CenterLayout>;
-	}
-	return <AdminShell>{children}</AdminShell>;
-}
-
-function AdminShell({ children }: { children: ReactNode }) {
-	const { props } = usePage<AdminPageProps>();
 	const tbtop = props.tbtop;
 	const prefix = tbtop?.prefix ?? "";
 	const apiBase = tbtop?.apiBase ?? "";
@@ -202,10 +194,14 @@ function AdminShell({ children }: { children: ReactNode }) {
 			pluginMessages={pluginMessages}
 			onLocaleChange={persistLocale}
 		>
-			{/* Chrome trees may carry action blocks; they resolve their client
-			    here, outside the page-level provider inside AdminPage. */}
+			{/* Chrome action blocks resolve their client here, outside AdminPage's
+			    own provider. Shared even for center (chrome-less) — one shape. */}
 			<ClientProvider apiBase={apiBase}>
-				<AdminLayout>{children}</AdminLayout>
+				{props.layout === "center" ? (
+					<CenterLayout>{children}</CenterLayout>
+				) : (
+					<AdminLayout>{children}</AdminLayout>
+				)}
 			</ClientProvider>
 		</I18nProvider>
 	);
