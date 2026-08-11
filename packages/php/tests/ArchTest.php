@@ -24,12 +24,12 @@ it('keeps the authorization predicate in one source file', function () {
         }
     }
 
-    // ActionBuilder declares isAuthorized(); the HTTP controllers re-check it
-    // authoritatively per request, which is the deliberate second gate.
+    // ActionBuilder declares isAuthorized(); S::reachableAction() re-checks it
+    // authoritatively per request, which is the deliberate second gate. The
+    // controllers reach it only through that lookup.
     expect($offenders)->toBe([
         'src/Dsl/ActionBuilder.php',
-        'src/Http/ActionController.php',
-        'src/Http/ActionDataController.php',
+        'src/Dsl/S.php',
     ]);
 });
 

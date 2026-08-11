@@ -22,9 +22,9 @@ final class ActionDataController
 
         $name = (string) $request->route('tbtopAction');
         $resolved = ResolvedPage::fromRequest($request);
-        $action = $resolved->s->collectedActions()[$name] ?? null;
+        $action = $resolved->s->reachableAction($name);
         $query = $action?->queryClosure();
-        if ($action === null || $query === null || ! $action->isAuthorized() || ! $action->isIncluded()) {
+        if ($query === null) {
             throw new NotFoundHttpException("Action \"{$name}\" has no data query on this page.");
         }
 

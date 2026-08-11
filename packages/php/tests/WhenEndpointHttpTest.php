@@ -74,6 +74,14 @@ it('still serves the chart data endpoint of a visible chart', function (): void 
     $this->getJson('/admin/when-endpoints/data/shown_chart')->assertOk();
 });
 
+it('404s the stat data endpoint of a when(false) stat', function (): void {
+    $this->getJson('/admin/when-endpoints/data/hidden_stat')->assertNotFound();
+});
+
+it('still serves the stat data endpoint of a visible stat', function (): void {
+    $this->getJson('/admin/when-endpoints/data/shown_stat')->assertOk();
+});
+
 it('404s the upload endpoint of a when(false) upload field', function (): void {
     $this->postJson('/admin/when-endpoints/uploads/hidden_upload', [])->assertNotFound();
 });
