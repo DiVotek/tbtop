@@ -15,6 +15,38 @@ export interface DependencyState {
 	disabledByParent: boolean;
 }
 
+function scalarToString(raw: unknown): string {
+	if (typeof raw === "number") {
+		return String(raw);
+	}
+	return typeof raw === "string" ? raw : "";
+}
+
+/**
+ * Resolves one declared dependency name against the form data.
+ *
+ * A translatable field holds a locale map ({en: "…", uk: "…"}), never a
+ * scalar, so a dependency on one is declared per locale — "title.en" — and
+ * read out of the map here. Without this, such a dependency would resolve to
+ * "" forever: the region's deps key would never change and it would never
+ * reload (and a dependent field would stay permanently disabled).
+ */
+function readOne(name: string, data: Record<string, unknown>): string {
+	const direct = scalarToString(data[name]);
+	if (direct !== "" || name in data) {
+		return direct;
+	}
+	const dot = name.indexOf(".");
+	if (dot <= 0) {
+		return "";
+	}
+	const parent = data[name.slice(0, dot)];
+	if (parent === null || typeof parent !== "object" || Array.isArray(parent)) {
+		return "";
+	}
+	return scalarToString((parent as Record<string, unknown>)[name.slice(dot + 1)]);
+}
+
 /** Shared with liveRegionBlock so a region's deps payload matches a dependent field's. */
 export function readDeps(
 	parents: string[],
@@ -23,13 +55,7 @@ export function readDeps(
 	const deps: Record<string, string> = {};
 	let ready = true;
 	for (const name of parents) {
-		const raw = data[name];
-		let v = "";
-		if (typeof raw === "number") {
-			v = String(raw);
-		} else if (typeof raw === "string") {
-			v = raw;
-		}
+		const v = readOne(name, data);
 		if (v === "") {
 			ready = false;
 		} else {
