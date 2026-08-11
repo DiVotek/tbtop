@@ -164,6 +164,26 @@ it('chart with poll conforms to the wire grammar schema', function () {
     validateAgainstSchema(json_decode(json_encode($chart)));
 });
 
+it('liveRegion ships dependsOn and record-seeded initial, never the closure', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->liveRegion('preview')
+            ->dependsOn('title')
+            ->render(fn (array $deps, S $r) => [
+                $r->displayText($deps['title'] ?? 'No title')->variant('muted'),
+            ]),
+    ])->record(['title' => 'Hello']);
+
+    $json = json_decode(json_encode($form));
+    validateAgainstSchema($json);
+
+    $region = $json->options->children[0];
+    expect($region->kind)->toBe('liveRegion')
+        ->and($region->name)->toBe('preview')
+        ->and($region->options->dependsOn)->toBe(['title'])
+        ->and($region->options->initial[0]->options->content)->toBe('Hello');
+});
+
 it('nested nav tree with a merged custom item conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)

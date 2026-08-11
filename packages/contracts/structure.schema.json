@@ -615,6 +615,22 @@
 							}
 						}
 					}
+				},
+				{
+					"if": { "properties": { "kind": { "const": "liveRegion" } } },
+					"then": {
+						"required": ["name"],
+						"properties": {
+							"options": {
+								"required": ["dependsOn", "initial"],
+								"properties": {
+									"dependsOn": { "type": "array", "items": { "type": "string" } },
+									"initial": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+								},
+								"additionalProperties": false
+							}
+						}
+					}
 				}
 			]
 		},

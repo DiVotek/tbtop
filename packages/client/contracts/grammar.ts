@@ -101,9 +101,20 @@ const KIND_CHECKS: Record<string, (node: WireNode, ctx: z.RefinementCtx) => void
 			ctx.addIssue({ code: "custom", message: "table needs options.columns [{name}]" });
 		}
 	},
+	liveRegion: (node, ctx) => {
+		if (!z.array(z.string()).safeParse(get(node, "dependsOn")).success) {
+			ctx.addIssue({
+				code: "custom",
+				message: "liveRegion needs options.dependsOn string[]",
+			});
+		}
+		if (!Array.isArray(get(node, "initial"))) {
+			ctx.addIssue({ code: "custom", message: "liveRegion needs options.initial nodes" });
+		}
+	},
 };
 
-const CONTAINER_KEYS = ["children", "fields", "rowActions", "bulkActions"] as const;
+const CONTAINER_KEYS = ["children", "fields", "rowActions", "bulkActions", "initial"] as const;
 
 export const structureNodeSchema: z.ZodTypeAny = nodeBase.superRefine((node, ctx) => {
 	const check = KIND_CHECKS[node.kind];

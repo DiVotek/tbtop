@@ -37,6 +37,7 @@ it('smokes admin page', function (string $path) {
     '/admin/posts/new',
     '/admin/brands',
     '/admin/relation-demo',
+    '/admin/live-region-demo',
     '/admin/upload-demo',
     '/admin/media',
     '/admin/media/new',

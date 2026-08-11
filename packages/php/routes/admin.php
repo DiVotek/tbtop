@@ -9,6 +9,7 @@ use Tbtop\Admin\Http\EditableColumnController;
 use Tbtop\Admin\Http\FieldUploadController;
 use Tbtop\Admin\Http\FieldUploadViewController;
 use Tbtop\Admin\Http\FormSubmitController;
+use Tbtop\Admin\Http\LiveRegionController;
 use Tbtop\Admin\Http\LocaleController;
 use Tbtop\Admin\Http\Media\MediaController;
 use Tbtop\Admin\Http\Media\MediaDownloadController;
@@ -63,6 +64,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/select-options/{tbtopField}", SelectOptionsController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.selectOptions');
+        Route::post("{$path}/live-region/{tbtopRegion}", LiveRegionController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.liveRegion');
         Route::post("{$path}/relation-search/{tbtopField}", RelationSearchController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.relationSearch');

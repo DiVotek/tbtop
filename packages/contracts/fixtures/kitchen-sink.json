@@ -789,6 +789,26 @@
                                         "name": "score"
                                     },
                                     {
+                                        "kind": "liveRegion",
+                                        "options": {
+                                            "dependsOn": [
+                                                "title"
+                                            ],
+                                            "initial": [
+                                                {
+                                                    "kind": "displayText",
+                                                    "options": {
+                                                        "content": "Hello",
+                                                        "variant": "muted"
+                                                    },
+                                                    "meta": {}
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "titlePreview"
+                                    },
+                                    {
                                         "kind": "row",
                                         "options": {
                                             "children": [

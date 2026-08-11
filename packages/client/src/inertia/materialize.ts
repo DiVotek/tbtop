@@ -14,6 +14,7 @@ import {
 	materializeStat,
 	selectOptionsEndpoint,
 } from "./materializeHelpers";
+import { materializeLiveRegion } from "./materializeLiveRegion";
 import { bindRegisteredKind, materializeNamedField } from "./materializeRegisteredKind";
 import { actionBags, materializeTable } from "./materializeTable";
 
@@ -51,6 +52,15 @@ export function materializeActionList(
 	return actionBags(nodes, (n) => walk(n, { ...input }));
 }
 
+// Leaf kinds whose only materialization is binding a page-scoped endpoint.
+const ENDPOINT_BOUND_KINDS: Record<
+	string,
+	(node: StructureNode, basePath: string) => StructureNode
+> = {
+	stat: materializeStat,
+	liveRegion: materializeLiveRegion,
+};
+
 function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const meta = compileMeta(node.meta);
 	if (node.kind === "action") {
@@ -68,8 +78,9 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	if (node.kind.startsWith("chart:")) {
 		return materializeChart({ ...node, meta }, ctx.basePath);
 	}
-	if (node.kind === "stat") {
-		return materializeStat({ ...node, meta }, ctx.basePath);
+	const endpointBound = ENDPOINT_BOUND_KINDS[node.kind];
+	if (endpointBound) {
+		return endpointBound({ ...node, meta }, ctx.basePath);
 	}
 	if (node.kind === "select" && node.name) {
 		return materializeSelect({ ...node, meta }, ctx);
