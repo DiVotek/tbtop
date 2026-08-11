@@ -30,8 +30,8 @@ final class EditableColumnController
         $columnName = (string) $request->route('tbtopColumn');
         $resolved = ResolvedPage::fromRequest($request);
 
-        $table = $resolved->s->collectedTables()[$tableName] ?? null;
-        if ($table === null || ! $table->isIncluded()) {
+        $table = $resolved->s->reachableTable($tableName);
+        if ($table === null) {
             abort(404, "Table \"{$tableName}\" not found on this page.");
         }
 
