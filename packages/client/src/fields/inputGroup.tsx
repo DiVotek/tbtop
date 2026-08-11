@@ -28,7 +28,7 @@ export function InputGroup({ children, options, disabled, invalid }: InputGroupP
 			className={cn(
 				"flex min-h-9 w-full min-w-0 items-stretch rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow]",
 				"focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50",
-				"data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50",
+				"data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50",
 				"data-[invalid=true]:border-destructive data-[invalid=true]:ring-destructive/20 dark:data-[invalid=true]:ring-destructive/40",
 				"dark:bg-input/30",
 			)}
