@@ -7,15 +7,9 @@ import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import {
-	EMPTY_LABELS,
-	type OptionMap,
-	type ReadyLabels,
-	type SeenLabel,
-	useSingleResolvedLabel,
-} from "./asyncOptions";
+import type { OptionMap } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
-import { type DependencyState, useFieldDependencies } from "./fieldDependencies";
+import type { DependencyState } from "./fieldDependencies";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
@@ -30,6 +24,7 @@ import {
 	type StaticOption,
 } from "./selectShared";
 import { SingleComboboxShell, type SingleListState } from "./selectSingleShell";
+import { useRemoteOptions } from "./useRemoteOptions";
 
 export function SelectCell({ value, options }: FieldCellProps<SelectValueType, SelectOptionsBag>) {
 	const coerced = coerceSelectValue(value);
@@ -314,77 +309,36 @@ function SearchableStaticSelect({
 
 function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const opts = (props.options ?? {}) as SelectSingleOptionsBag;
-	const ctx = useClientActionContext();
 	const value = typeof props.value === "string" ? props.value : null;
-	const dep = useFieldDependencies({ config: opts, value, onChange: props.onChange });
-	const boundOpts = dep.hasDeps ? bindDeps(opts, dep.deps) : opts;
-	// Resolving a label under stale deps would show a value the new parent no
-	// longer offers, so the request waits until every parent has a value.
-	const isResolveGated = dep.hasDeps && !dep.ready;
-	// Rows the dropdown listed already carry their labels; feeding them back
-	// stops a selection from re-resolving a label we just displayed. Each entry
-	// records the deps it was seen under, so new deps never reuse an old label.
-	const seenLabels = useRef<Record<string, SeenLabel>>({});
-	const knownLabels: OptionMap = {};
-	for (const [rowValue, seen] of Object.entries(seenLabels.current)) {
-		if (seen.depsKey === dep.depsKey) {
-			knownLabels[rowValue] = seen.option;
-		}
-	}
-	const resolved = useSingleResolvedLabel({
-		ctx,
-		fieldName: props.name,
-		value: isResolveGated ? null : value,
-		opts: boundOpts,
-		refetchKey: dep.depsKey,
-		knownLabels,
+	const remote = useRemoteOptions({
+		name: props.name,
+		value,
+		opts,
+		onChange: props.onChange,
 	});
 	const [refetchKey, setRefetchKey] = useState(0);
-	const lastReady = useRef<ReadyLabels>(EMPTY_LABELS);
-	if (resolved.kind === "ready") {
-		lastReady.current = resolved;
-	}
 
-	// Only the very first resolve has nothing to show. A re-resolve keeps the
-	// previous labels on screen so the control does not blink through a skeleton.
-	if (resolved.kind === "loading" && lastReady.current === EMPTY_LABELS) {
+	if (remote.isFirstLoad) {
 		return <>{opts.loading ?? <FormSkeleton />}</>;
 	}
-	const ready = resolved.kind === "ready" ? resolved : lastReady.current;
 
 	return (
 		<WithCreateAffordance
 			{...props}
-			resolvedLabels={ready.labels}
+			resolvedLabels={remote.labels}
 			onCreated={() => setRefetchKey((k) => k + 1)}
 		>
 			<AsyncSingleSelectInner
 				{...props}
-				options={boundOpts}
-				disabled={props.disabled || dep.disabledByParent}
-				resolved={ready}
+				options={remote.opts}
+				disabled={props.disabled || remote.dep.disabledByParent}
+				resolved={{ kind: "ready", labels: remote.labels }}
 				refetchKey={refetchKey}
-				dep={dep}
-				onRowsSeen={(rows) => {
-					for (const [rowValue, option] of Object.entries(rows)) {
-						seenLabels.current[rowValue] = { option, depsKey: dep.depsKey };
-					}
-				}}
+				dep={remote.dep}
+				onRowsSeen={remote.noteRowsSeen}
 			/>
 		</WithCreateAffordance>
 	);
-}
-
-function bindDeps(
-	opts: SelectSingleOptionsBag,
-	deps: Record<string, string>,
-): SelectSingleOptionsBag {
-	const { query, onLoad } = opts;
-	return {
-		...opts,
-		query: query ? (ctx, search) => query(ctx, search, deps) : undefined,
-		onLoad: onLoad ? (ctx, value) => onLoad(ctx, value, deps) : undefined,
-	};
 }
 
 interface AsyncSingleSelectInnerProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
