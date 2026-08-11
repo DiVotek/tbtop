@@ -6,12 +6,12 @@
         "laravel",
         "admin"
     ],
-    "homepage": "https://github.com/tbtop/admin",
+    "homepage": "https://github.com/DiVotek/tbtop",
     "license": "MIT",
     "authors": [
         {
-            "name": "Max Boeko",
-            "email": "12crya34@gmail.com",
+            "name": "Divotek",
+            "email": "support@divotek.com",
             "role": "Developer"
         }
     ],
