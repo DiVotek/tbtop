@@ -30,7 +30,7 @@ const ROWS: AuthorRow[] = [
 ];
 
 const Wrap = wrap(() => new Response("{}"));
-const TRIGGER = '[data-testid="relation-author_id"]';
+const TRIGGER = '[data-testid="select-search-author_id"]';
 
 interface ControlledRelationProps {
 	onLoad: (ctx: unknown, value: string) => Promise<unknown>;
@@ -67,7 +67,7 @@ function makeOnLoad() {
 async function selectSecondOption(container: HTMLElement, user: UserEvent) {
 	const trigger = container.querySelector(TRIGGER);
 	if (!(trigger instanceof HTMLElement)) {
-		throw new Error("relation trigger not rendered");
+		throw new Error("relation combobox input not rendered");
 	}
 	await user.click(trigger);
 	await waitFor(() => {

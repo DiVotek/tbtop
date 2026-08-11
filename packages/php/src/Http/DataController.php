@@ -19,14 +19,14 @@ final class DataController
         $name = (string) $request->route('tbtopData');
         $resolved = ResolvedPage::fromRequest($request);
 
-        $chart = $resolved->s->collectedCharts()[$name] ?? null;
-        if ($chart !== null && $chart->isIncluded()) {
+        $chart = $resolved->s->reachableChart($name);
+        if ($chart !== null) {
             return $this->chartResponse($chart, $request);
         }
 
-        $stat = $resolved->s->collectedStats()[$name] ?? null;
+        $stat = $resolved->s->reachableStat($name);
         $query = $stat?->queryClosure();
-        if ($stat !== null && $query !== null) {
+        if ($query !== null) {
             return response()->json(['data' => $query()]);
         }
 

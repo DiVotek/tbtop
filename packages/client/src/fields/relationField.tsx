@@ -1,20 +1,16 @@
-import { useRef } from "react";
-import { useTranslation } from "../i18n/i18n";
+import { useRef, useState } from "react";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import type { AsyncSingleOptionsBag, OptionMap, ReadyLabels, SeenLabel } from "./asyncOptions";
-import { EMPTY_LABELS, useSingleResolvedLabel } from "./asyncOptions";
+import type { AsyncSingleOptionsBag, OptionMap } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import { nullableCell } from "./cellHelpers";
-import {
-	type DependencyConfig,
-	type DependencyState,
-	useFieldDependencies,
-} from "./fieldDependencies";
-import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import type { DependencyConfig, DependencyState } from "./fieldDependencies";
+import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { ComboboxOption } from "./selectMultiOption";
 import { coerceSelectValue } from "./selectShared";
+import { SingleComboboxShell, type SingleListState } from "./selectSingleShell";
+import { useRemoteOptions } from "./useRemoteOptions";
 
 export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyConfig {
 	searchable?: boolean;
@@ -50,6 +46,10 @@ function relationObjectLabel(obj: object): string {
 	return JSON.stringify(obj);
 }
 
+/**
+ * A relation differs from an async single select only in which endpoint answers
+ * it, so it renders through the same combobox and shares the same protocol.
+ */
 export function RelationForm({
 	id,
 	name,
@@ -57,41 +57,19 @@ export function RelationForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
 }: FieldFormProps<string, RelationOptionsBag>) {
-	const ctx = useClientActionContext();
-	const opts = options ?? {};
 	const coerced = coerceSelectValue(value);
 	const current = typeof coerced === "string" ? coerced : null;
-	const dep = useFieldDependencies({ config: opts, value: current, onChange });
-	const isResolveGated = dep.hasDeps && !dep.ready;
-	const boundOpts = dep.hasDeps ? bindDeps(opts, dep.deps) : opts;
-	// Rows the dropdown listed already carry their labels; feeding them back
-	// stops a selection from re-resolving a label we just displayed. Each entry
-	// records the deps it was seen under, so new deps never reuse an old label.
-	const seenLabels = useRef<Record<string, SeenLabel>>({});
-	const knownLabels: OptionMap = {};
-	for (const [rowValue, seen] of Object.entries(seenLabels.current)) {
-		if (seen.depsKey === dep.depsKey) {
-			knownLabels[rowValue] = seen.option;
-		}
-	}
-	const resolved = useSingleResolvedLabel({
-		ctx,
-		fieldName: name,
-		value: isResolveGated ? null : current,
-		opts: boundOpts,
-		refetchKey: dep.depsKey,
-		knownLabels,
+	const remote = useRemoteOptions({
+		name,
+		value: current,
+		opts: options ?? {},
+		onChange,
 	});
-	const lastReady = useRef<ReadyLabels>(EMPTY_LABELS);
-	if (resolved.kind === "ready") {
-		lastReady.current = resolved;
-	}
 
-	// Only the very first resolve has nothing to show. A re-resolve keeps the
-	// control mounted, so changing the value never flickers into a skeleton.
-	if (resolved.kind === "loading" && lastReady.current === EMPTY_LABELS) {
+	if (remote.isFirstLoad) {
 		return <FormSkeleton />;
 	}
 
@@ -102,27 +80,15 @@ export function RelationForm({
 			value={current}
 			onChange={onChange}
 			onBlur={onBlur}
-			disabled={disabled || dep.disabledByParent}
-			options={boundOpts}
-			resolved={lastReady.current}
-			dep={dep}
-			onRowLabel={(rowValue, label) => {
-				seenLabels.current[rowValue] = {
-					option: { value: rowValue, label },
-					depsKey: dep.depsKey,
-				};
-			}}
+			disabled={disabled || remote.dep.disabledByParent}
+			invalid={invalid}
+			options={remote.opts}
+			labels={remote.labels}
+			dep={remote.dep}
+			isGated={remote.isGated}
+			onRowsSeen={remote.noteRowsSeen}
 		/>
 	);
-}
-
-function bindDeps(opts: RelationOptionsBag, deps: Record<string, string>): RelationOptionsBag {
-	const { query, onLoad } = opts;
-	return {
-		...opts,
-		query: query ? (ctx, search) => query(ctx, search, deps) : undefined,
-		onLoad: onLoad ? (ctx, value) => onLoad(ctx, value, deps) : undefined,
-	};
 }
 
 interface RelationSelectInnerProps {
@@ -132,10 +98,12 @@ interface RelationSelectInnerProps {
 	onChange: (next: string | null) => void;
 	onBlur?: () => void;
 	disabled?: boolean;
+	invalid?: boolean;
 	options: RelationOptionsBag;
-	resolved: ReadyLabels;
+	labels: OptionMap;
 	dep: DependencyState;
-	onRowLabel: (value: string, label: string) => void;
+	isGated: boolean;
+	onRowsSeen: (rows: OptionMap) => void;
 }
 
 function RelationSelectInner({
@@ -145,56 +113,75 @@ function RelationSelectInner({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	options,
-	resolved,
+	labels,
 	dep,
-	onRowLabel,
+	isGated,
+	onRowsSeen,
 }: RelationSelectInnerProps) {
-	const t = useTranslation();
 	const ctx = useClientActionContext();
-	const gated = dep.hasDeps && !dep.ready;
+	const [query, setQuery] = useState("");
 	const search = useAsyncSearch({
 		ctx,
-		query: gated ? undefined : options.query,
-		search: "",
+		query: isGated ? undefined : options.query,
+		search: query,
 		refetchKey: dep.depsKey,
 	});
-	if (search.kind === "loading") {
+	// Only the first load has nothing to show. Later refetches — typing, a
+	// selection resetting the query — keep the control mounted so it never
+	// blinks through a skeleton and never drops the text being typed.
+	const hasRenderedRef = useRef(false);
+
+	if (search.kind === "loading" && !hasRenderedRef.current) {
 		return <FormSkeleton />;
 	}
-	if (search.kind === "error") {
+	// A failure before anything rendered has no control to fall back to.
+	// Afterwards the shell stays: unmounting it removes the input, and with it
+	// the only way to change the search and retry.
+	if (search.kind === "error" && !hasRenderedRef.current) {
 		return <>{renderAsyncError(undefined, search.message, <FormSkeleton />)}</>;
 	}
+	hasRenderedRef.current = true;
 
-	const rows: unknown[] = gated ? [] : search.rows;
-	const display = value === null ? undefined : (resolved.labels[value]?.label ?? value);
+	const rows: unknown[] = isGated || search.kind !== "ready" ? [] : search.rows;
+	const listed: OptionMap = {};
+	for (const row of rows) {
+		const v = String(options.optionValue?.(row) ?? "");
+		listed[v] = options.optionRow?.(row) ?? {
+			value: v,
+			label: options.optionLabel?.(row) ?? v,
+		};
+	}
+	onRowsSeen(listed);
+
+	// A pending refetch keeps the previous rows rather than blanking the list.
+	let listState: SingleListState = "rows";
+	if (search.kind === "error") {
+		listState = "failed";
+	} else if (search.kind === "ready" && Object.keys(listed).length === 0) {
+		listState = "empty";
+	}
+	// An empty string is "nothing selected", not an option labelled "".
+	const hasValue = value !== null && value !== "";
+	const selected = hasValue ? (labels[value] ?? { value, label: value }) : undefined;
 
 	return (
-		<Select
-			value={value ?? ""}
-			onValueChange={(next) => onChange(next === "" ? null : next)}
+		<SingleComboboxShell
+			id={id}
+			name={name}
+			value={value}
+			selected={selected}
+			onChange={onChange}
+			onBlur={onBlur}
 			disabled={disabled}
+			invalid={invalid}
+			onQueryChange={setQuery}
+			listState={listState}
 		>
-			<SelectTrigger
-				id={fieldId({ id, name })}
-				onBlur={onBlur}
-				data-testid={`relation-${name}`}
-				className="w-full"
-			>
-				<SelectValue placeholder={t("field.select.placeholder")}>{display}</SelectValue>
-			</SelectTrigger>
-			<SelectContent>
-				{rows.map((row) => {
-					const v = String(options.optionValue?.(row) ?? "");
-					const lbl = String(options.optionLabel?.(row) ?? v);
-					onRowLabel(v, lbl);
-					return (
-						<SelectItem key={v} value={v}>
-							{lbl}
-						</SelectItem>
-					);
-				})}
-			</SelectContent>
-		</Select>
+			{Object.entries(listed).map(([v, option]) => (
+				<ComboboxOption key={v} option={option} />
+			))}
+		</SingleComboboxShell>
 	);
 }

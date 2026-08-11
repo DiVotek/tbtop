@@ -775,6 +775,59 @@ final class S
         return $this->stats;
     }
 
+    // -------------------------------------------------------------------------
+    // Endpoint resolution
+    // -------------------------------------------------------------------------
+
+    /**
+     * Builders register before any serialization decision, so a when(false)
+     * entity is still in the collector map — the verdict gates the lookup or
+     * its endpoint keeps serving what the user never received. Reachability
+     * only: which closure a given endpoint needs stays with its controller.
+     */
+    public function reachableTable(string $name): ?TableBuilder
+    {
+        return $this->reachable($this->tables[$name] ?? null);
+    }
+
+    public function reachableForm(string $name): ?FormBuilder
+    {
+        return $this->reachable($this->forms[$name] ?? null);
+    }
+
+    public function reachableChart(string $name): ?ChartBuilder
+    {
+        return $this->reachable($this->charts[$name] ?? null);
+    }
+
+    public function reachableStat(string $name): ?Stat
+    {
+        return $this->reachable($this->stats[$name] ?? null);
+    }
+
+    /** Actions add a second rule: ->authorize() against the Gate, as on the wire. */
+    public function reachableAction(string $name): ?ActionBuilder
+    {
+        $action = $this->reachable($this->actions[$name] ?? null);
+
+        return $action?->isAuthorized() === true ? $action : null;
+    }
+
+    /**
+     * @template TEntity of object
+     *
+     * @param  TEntity|null  $entity
+     * @return TEntity|null
+     */
+    private function reachable(?object $entity): ?object
+    {
+        if ($entity === null) {
+            return null;
+        }
+
+        return ChildInclusion::isConditionMet($entity) ? $entity : null;
+    }
+
     /**
      * Find a Select field with a creatable closure by name, walking all registered forms.
      */

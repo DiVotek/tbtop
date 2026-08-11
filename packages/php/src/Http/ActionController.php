@@ -18,9 +18,9 @@ final class ActionController
 
         $tbtopAction = (string) $request->route('tbtopAction');
         $resolved = ResolvedPage::fromRequest($request);
-        $action = $resolved->s->collectedActions()[$tbtopAction] ?? null;
+        $action = $resolved->s->reachableAction($tbtopAction);
         $handler = $action?->handler();
-        if ($action === null || $handler === null || ! $action->isAuthorized() || ! $action->isIncluded()) {
+        if ($handler === null) {
             throw new NotFoundHttpException("Action \"{$tbtopAction}\" has no server handler on this page.");
         }
 
@@ -46,7 +46,7 @@ final class ActionController
     private static function validatedForm(Request $request, ResolvedPage $resolved, string $actionName): ?array
     {
         $formName = ActionFormRules::enclosingFormName($resolved->tree, $actionName);
-        $form = $formName === null ? null : ($resolved->s->collectedForms()[$formName] ?? null);
+        $form = $formName === null ? null : $resolved->s->reachableForm($formName);
         if ($form === null) {
             return null;
         }
