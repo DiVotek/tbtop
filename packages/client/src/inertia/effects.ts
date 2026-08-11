@@ -65,7 +65,8 @@ function applyRedirect(effect: ServerEffect): void {
 		// accidental page leave — see navigationIntent.ts for why the
 		// unsaved-changes guard must not block it regardless of ordering.
 		markServerRedirect();
-		router.visit(effect.href);
+		const samePage = new URL(effect.href, location.origin).pathname === location.pathname;
+		router.visit(effect.href, { preserveState: samePage, preserveScroll: samePage });
 	}
 }
 

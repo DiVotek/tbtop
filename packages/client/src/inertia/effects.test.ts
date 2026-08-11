@@ -14,7 +14,7 @@ import { consumeServerRedirect } from "./navigationIntent";
 // the suite calls it on mount and would throw on undefined(). Spread the
 // real module and override only router (mirroring materialize.test.ts /
 // formUnsavedGuard.test.tsx) to avoid leaking a stub for Link/usePage/etc.
-const routerVisit = mock((_href: string) => {});
+const routerVisit = mock((_href: string, _options?: Record<string, unknown>) => {});
 mock.module("@inertiajs/react", () => ({
 	...inertiaReact,
 	router: { visit: routerVisit, post: mock(() => {}), on: mock(() => () => {}) },
@@ -69,18 +69,32 @@ describe("executeEffects: closeModal contrast", () => {
 });
 
 describe("executeEffects: redirect", () => {
-	test("marks the navigation as a server redirect before calling router.visit", () => {
+	test("preserves state and scroll for a redirect to the current pathname", () => {
 		// Consume any leftover flag from a previous test so this assertion
 		// only reflects what THIS redirect set.
 		consumeServerRedirect();
 
-		executeEffects([{ kind: "redirect", href: "/admin/posts" }], fakeCtx());
+		executeEffects([{ kind: "redirect", href: `${location.pathname}?saved=1` }], fakeCtx());
 
-		expect(routerVisit).toHaveBeenCalledWith("/admin/posts");
+		expect(routerVisit).toHaveBeenCalledWith(`${location.pathname}?saved=1`, {
+			preserveState: true,
+			preserveScroll: true,
+		});
 		// One-shot: the flag must be set (readable exactly once) after the
 		// redirect, so useUnsavedGuard's 'before' handler can skip its
 		// isDirty check for this navigation.
 		expect(consumeServerRedirect()).toBe(true);
+	});
+
+	test("does not preserve state or scroll for a redirect to another pathname", () => {
+		routerVisit.mockClear();
+
+		executeEffects([{ kind: "redirect", href: "/admin/posts" }], fakeCtx());
+
+		expect(routerVisit).toHaveBeenCalledWith("/admin/posts", {
+			preserveState: false,
+			preserveScroll: false,
+		});
 	});
 
 	test("does not mark a server redirect when the effect has no href", () => {

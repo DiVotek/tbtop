@@ -475,7 +475,10 @@ describe("Form unsaved guard — server-initiated redirect after save (real orde
 			(window as unknown as { __invokePostOnSuccess: () => void }).__invokePostOnSuccess();
 		});
 
-		expect(routerVisitMock).toHaveBeenCalledWith("/admin/posts");
+		expect(routerVisitMock).toHaveBeenCalledWith("/admin/posts", {
+			preserveState: false,
+			preserveScroll: false,
+		});
 		expect(queryByTestId("confirm-dialog-confirm")).toBeNull();
 	});
 });
