@@ -49,6 +49,35 @@ class PlaygroundPage extends Page
                 ->onSubmit(fn (ActionCtx $ctx): Effects => Effects::make()
                     ->notify("Saved {$ctx->form['name']}")),
             $s->displayDivider(),
+            $s->displayText('Input prefixes and suffixes')->variant('subheading'),
+            $s->form('affixes', [
+                $s->text('domain')->label('Domain')->prefix('https://')->suffix('.com'),
+                $s->number('monthly_price')->label('Monthly price')->prefix('$')->suffix('USD'),
+                $s->select('billing_cycle')->label('Billing cycle')->prefix('Every')->suffix('billing')
+                    ->options([
+                        ['value' => 'month', 'label' => 'Month'],
+                        ['value' => 'year', 'label' => 'Year'],
+                    ]),
+                $s->select('framework')->label('Searchable select')->searchable()->options([
+                    ['value' => 'laravel', 'label' => 'Laravel'],
+                    ['value' => 'symfony', 'label' => 'Symfony'],
+                ])->suffix(
+                    $s->action('framework_help')->label('Help')->size('sm')
+                        ->modal('Framework', $s->displayText('Choose the framework used by this project.'))
+                ),
+                $s->select('markets')->label('Multiple select')->multiple()->prefix('Markets')->options([
+                    ['value' => 'eu', 'label' => 'Europe'],
+                    ['value' => 'us', 'label' => 'United States'],
+                    ['value' => 'apac', 'label' => 'Asia Pacific'],
+                ]),
+            ])->record([
+                'domain' => 'tabletop',
+                'monthly_price' => 49,
+                'billing_cycle' => 'month',
+                'framework' => 'laravel',
+                'markets' => ['eu', 'us'],
+            ]),
+            $s->displayDivider(),
             $s->displayText('Copyable & input masks')->variant('subheading'),
             $s->form('contact', [
                 $s->text('phone')->label('Phone')

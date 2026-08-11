@@ -21,7 +21,7 @@ use Tbtop\Admin\Dsl\Node;
 final class ActionFormRules
 {
     /** Options that can carry a nested subtree beyond the plain child lists. */
-    private const NESTED_OPTION_KEYS = ['body', 'spec'];
+    private const NESTED_OPTION_KEYS = ['body', 'spec', 'prefix', 'suffix'];
 
     /**
      * Name of the form whose rules apply to $actionName, or null when none do.

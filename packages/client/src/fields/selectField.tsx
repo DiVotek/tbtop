@@ -11,6 +11,7 @@ import type { OptionMap } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
 import type { DependencyState } from "./fieldDependencies";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { InputGroup } from "./inputGroup";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
 import { ComboboxOption } from "./selectMultiOption";
@@ -47,7 +48,11 @@ export function SelectForm(rawProps: FieldFormProps<SelectValueType, SelectOptio
 	const props = { ...rawProps, value: coerceSelectValue(rawProps.value) };
 	const opts = props.options ?? {};
 	if (opts.multiple === true) {
-		return <SelectMultiForm {...props} />;
+		return (
+			<InputGroup options={opts} disabled={props.disabled} invalid={props.invalid}>
+				<SelectMultiForm {...props} />
+			</InputGroup>
+		);
 	}
 	if (opts.query) {
 		return <AsyncSingleSelectWithCreate {...props} />;
@@ -69,6 +74,8 @@ interface WithCreateProps extends FieldFormProps<SelectValueType, SelectOptionsB
 function WithCreateAffordance({
 	name,
 	onChange,
+	disabled,
+	invalid,
 	options,
 	resolvedLabels,
 	onCreated,
@@ -76,8 +83,13 @@ function WithCreateAffordance({
 }: WithCreateProps) {
 	const [open, setOpen] = useState(false);
 	const create = options?.create as SelectCreateConfig | undefined;
+	const control = (
+		<InputGroup options={options} disabled={disabled} invalid={invalid}>
+			{children}
+		</InputGroup>
+	);
 	if (!create) {
-		return <>{children}</>;
+		return control;
 	}
 
 	function handleSuccess(value: string, label: string) {
@@ -91,7 +103,7 @@ function WithCreateAffordance({
 
 	return (
 		<div className="flex flex-col gap-1">
-			{children}
+			{control}
 			<button
 				type="button"
 				data-testid={`select-create-${name}`}

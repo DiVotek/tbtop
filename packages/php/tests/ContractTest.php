@@ -91,6 +91,19 @@ it('copyable and mask options conform to the wire grammar schema', function () {
     );
 });
 
+it('field affixes conform to the wire grammar schema', function () {
+    $s = new S;
+    $form = $s->form('pricing', [
+        $s->text('domain')->prefix('https://')->suffix('.com'),
+        $s->number('price')->prefix('$')->suffix('USD'),
+        $s->select('currency')->options([
+            ['value' => 'usd', 'label' => 'US Dollar'],
+        ])->suffix($s->action('currency_help')->label('Help')->modal('Currency')),
+    ]);
+
+    validateAgainstSchema(json_decode(json_encode($form)));
+});
+
 it('table embedded option conforms to the wire grammar schema', function () {
     $s = new S;
     $table = $s->table('posts')

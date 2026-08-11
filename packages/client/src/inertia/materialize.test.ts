@@ -47,6 +47,25 @@ function fakeCtx(overrides: Partial<ClientActionContext> = {}): ClientActionCont
 const BASE = { basePath: "/admin/posts", data: {} };
 
 describe("materialize actions", () => {
+	it("materializes actions nested in field affixes with the enclosing form", () => {
+		const action = node("action", { spec: { type: "server", needs: ["form"] } }, "inspect");
+		const form = node(
+			"form",
+			{ children: [node("text", { suffix: action }, "title")] },
+			"post",
+		);
+		const out = materialize(form, BASE);
+		const field = (opts(out).children as StructureNode[])[0];
+		expect(field).toBeDefined();
+		if (!field) {
+			return;
+		}
+		const suffix = opts(field).suffix as StructureNode;
+
+		expect(typeof opts(suffix).handler).toBe("function");
+		expect(opts(suffix).consumesForm).toBe(true);
+	});
+
 	it("maps a visit spec to a url option", () => {
 		const out = materialize(
 			node("action", { label: "Back", spec: { type: "visit", href: "/admin" } }, "back"),

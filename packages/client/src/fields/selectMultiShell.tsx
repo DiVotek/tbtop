@@ -99,6 +99,7 @@ export function MultiComboboxShell({
 				{/* Root is a provider, not a DOM node — testid goes on Chips. */}
 				<Combobox.Chips
 					ref={chipsRef}
+					data-slot="select-multi-control"
 					data-testid={`select-${name}`}
 					onBlur={onBlur}
 					className={cn(

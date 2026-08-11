@@ -315,6 +315,22 @@
                                         "kind": "text",
                                         "options": {
                                             "label": "Title",
+                                            "prefix": {
+                                                "kind": "displayText",
+                                                "options": {
+                                                    "content": "Post",
+                                                    "variant": "body"
+                                                },
+                                                "meta": {}
+                                            },
+                                            "suffix": {
+                                                "kind": "displayText",
+                                                "options": {
+                                                    "content": "title",
+                                                    "variant": "body"
+                                                },
+                                                "meta": {}
+                                            },
                                             "required": true,
                                             "colSpan": {
                                                 "sm": 1,
@@ -350,6 +366,14 @@
                                     {
                                         "kind": "number",
                                         "options": {
+                                            "suffix": {
+                                                "kind": "displayText",
+                                                "options": {
+                                                    "content": "stars",
+                                                    "variant": "body"
+                                                },
+                                                "meta": {}
+                                            },
                                             "step": 0.01,
                                             "colStart": 2,
                                             "constraints": {
@@ -474,6 +498,14 @@
                                     {
                                         "kind": "select",
                                         "options": {
+                                            "prefix": {
+                                                "kind": "displayText",
+                                                "options": {
+                                                    "content": "Role",
+                                                    "variant": "body"
+                                                },
+                                                "meta": {}
+                                            },
                                             "options": [
                                                 {
                                                     "value": "admin",

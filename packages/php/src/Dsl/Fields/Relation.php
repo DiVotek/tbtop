@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Tbtop\Admin\Dsl\Concerns\HasAffixes;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasDependencies;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
@@ -9,6 +10,7 @@ use Tbtop\Admin\Dsl\RelationSearchLimit;
 
 final class Relation extends Field
 {
+    use HasAffixes;
     use HasDatabaseRules;
     use HasDependencies;
     use HasServerQuery;

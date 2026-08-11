@@ -95,11 +95,13 @@ class KitchenSinkPage extends Page
                 'aside' => $s->displayText('Fill every field to see full validation coverage.')->variant('muted'),
             ], [
                 $s->form('post', [
-                    $s->text('title')->label('Title')->required()->rules('max:200')->columnSpan(['sm' => 1, 'md' => 2]),
+                    $s->text('title')->label('Title')->prefix('Post')->suffix('title')
+                        ->required()->rules('max:200')->columnSpan(['sm' => 1, 'md' => 2]),
                     $s->otp('auth_code')->label('Code')->length(6)->rules('digits:6'),
                     $s->textarea('body')->label('Body')
                         ->helperText('Supports Markdown.')->tooltip('Write the post body here.'),
-                    $s->number('rating')->step(0.01)->rules('integer|min:0|max:5')->columnStart(2),
+                    $s->number('rating')->suffix('stars')->step(0.01)
+                        ->rules('integer|min:0|max:5')->columnStart(2),
                     $s->boolean('published'),
                     $s->radio('priority')->label('Priority')->inline()->options([
                         ['value' => 'low', 'label' => 'Low', 'description' => 'No rush'],
@@ -113,7 +115,7 @@ class KitchenSinkPage extends Page
                     $s->text('caption')->disabledIf(
                         Cond::all(Cond::eq('status', 'archived'), Cond::empty('published_at'))
                     ),
-                    $s->select('role')->set('options', [
+                    $s->select('role')->prefix('Role')->set('options', [
                         ['value' => 'admin', 'label' => 'Admin'],
                     ])->rules('in:admin,editor'),
                     $s->select('permissions')->options([

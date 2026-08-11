@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
+use Tbtop\Admin\Dsl\Concerns\HasAffixes;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasDependencies;
 use Tbtop\Admin\Dsl\Concerns\HasMultiple;
@@ -12,6 +13,7 @@ use Tbtop\Admin\Dsl\S;
 
 class Select extends Field
 {
+    use HasAffixes;
     use HasDatabaseRules;
     use HasDependencies;
     use HasMultiple;

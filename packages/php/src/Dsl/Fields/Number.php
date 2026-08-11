@@ -3,10 +3,12 @@
 namespace Tbtop\Admin\Dsl\Fields;
 
 use InvalidArgumentException;
+use Tbtop\Admin\Dsl\Concerns\HasAffixes;
 use Tbtop\Admin\Dsl\Concerns\HasNumericRules;
 
 final class Number extends Field
 {
+    use HasAffixes;
     use HasNumericRules;
 
     protected function kind(): string

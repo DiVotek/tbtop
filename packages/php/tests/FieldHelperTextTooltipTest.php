@@ -2,6 +2,7 @@
 
 use Tbtop\Admin\Dsl\Fields\Text;
 use Tbtop\Admin\Dsl\Fields\Textarea;
+use Tbtop\Admin\Dsl\S;
 
 function encodeHelpField(mixed $value): array  // renamed to avoid collision with CondFieldBuilderTest
 {
@@ -38,4 +39,17 @@ it('omits helperText and tooltip keys when neither is set', function () {
 
     expect($json['options'])->not->toHaveKey('helperText')
         ->and($json['options'])->not->toHaveKey('tooltip');
+});
+
+it('serializes string and DSL field affixes as display nodes', function () {
+    $s = new S;
+    $field = $s->text('price')
+        ->prefix('$')
+        ->suffix($s->action('currency_help')->label('Help')->modal('Currency'));
+    $json = encodeHelpField($field);
+
+    expect($json['options']['prefix']['kind'])->toBe('displayText')
+        ->and($json['options']['prefix']['options']['content'])->toBe('$')
+        ->and($json['options']['suffix']['kind'])->toBe('action')
+        ->and($json['options']['suffix']['name'])->toBe('currency_help');
 });

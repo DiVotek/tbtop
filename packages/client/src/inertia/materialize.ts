@@ -87,7 +87,7 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	}
 	const named = materializeNamedField(node, meta, ctx.basePath);
 	if (named) {
-		return named;
+		return { ...named, options: walkChildren(named.options as Bag, ctx) };
 	}
 	const bound = bindRegisteredKind({ ...node, meta }, ctx.basePath);
 	return { ...bound, options: walkChildren(bound.options as Bag, ctx) };
@@ -125,6 +125,12 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 	if (Array.isArray(next.children)) {
 		next.children = next.children.map((c) => walk(c as StructureNode, ctx));
 	}
+	if (isStructureNode(next.prefix)) {
+		next.prefix = walk(next.prefix, ctx);
+	}
+	if (isStructureNode(next.suffix)) {
+		next.suffix = walk(next.suffix, ctx);
+	}
 	if (Array.isArray(next.tabs)) {
 		next.tabs = next.tabs.map((tab) => {
 			const t = tab as { label: string; body: StructureNode };
@@ -150,6 +156,10 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 		}
 	}
 	return next;
+}
+
+function isStructureNode(value: unknown): value is StructureNode {
+	return value !== null && typeof value === "object" && typeof (value as Bag).kind === "string";
 }
 
 function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
