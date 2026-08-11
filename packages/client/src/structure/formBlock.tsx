@@ -473,7 +473,13 @@ function normalize(data: unknown): Bag {
 	return {};
 }
 
-/** Recursively checks whether any field node in the tree has translatable:true. */
+/**
+ * Recursively checks whether any field node in the tree has translatable:true.
+ * Walks the same containers the server-side translatable cascade does
+ * (Node::translatable(): children, fields, AND tabs[].body) — a form whose
+ * translatable fields all live inside a tabs block must still get its
+ * ContentLocaleBar.
+ */
 function detectTranslatableFields(children: StructureNode[]): boolean {
 	for (const node of children) {
 		const opts = node.options as Bag | undefined;
@@ -482,6 +488,10 @@ function detectTranslatableFields(children: StructureNode[]): boolean {
 		}
 		const nested = (opts?.children ?? opts?.fields) as StructureNode[] | undefined;
 		if (nested && detectTranslatableFields(nested)) {
+			return true;
+		}
+		const tabs = opts?.tabs as { body?: StructureNode }[] | undefined;
+		if (tabs?.some((tab) => tab.body && detectTranslatableFields([tab.body]))) {
 			return true;
 		}
 	}
