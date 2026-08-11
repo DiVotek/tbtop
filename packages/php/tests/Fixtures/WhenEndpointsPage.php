@@ -107,6 +107,10 @@ class WhenEndpointsPage extends Page
                 ->query(fn () => [['label' => 'A', 'value' => 1]])
                 ->toNode(),
 
+            // A stat reaches its data endpoint only through poll(), keyed by label.
+            $s->stat('hidden_stat')->value(fn (): int => 1)->poll(5)->when(false)->toNode(),
+            $s->stat('shown_stat')->value(fn (): int => 1)->poll(5)->toNode(),
+
             // Re-evaluated per request: the guard must consult the closure on
             // the endpoint call, not a decision cached when the page rendered.
             $s->action('toggled_action')
