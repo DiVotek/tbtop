@@ -104,6 +104,29 @@ describe("Translatable form integration", () => {
 		await waitFor(() => expect(queryByTestId("content-locale-bar")).not.toBeNull());
 	});
 
+	test("tab bar appears when the only translatable fields live inside a tabs block", async () => {
+		// The server-side translatable cascade walks tabs[].body
+		// (Node::translatable()), so a form like the cms page editor — every
+		// field inside General/SEO tabs — is a legitimate shape; detection
+		// must find those fields or the bar never renders and non-default
+		// locales become uneditable.
+		const Wrap = wrapWithLocales(["en", "uk"], "en");
+		const node = s.form({ query: async () => ({ title: { en: "Hello" } }) }, [
+			s.tabs([
+				s.tab(
+					"General",
+					s.stack([
+						s.text({ name: "title", translatable: true } as Parameters<
+							typeof s.text
+						>[0]),
+					]),
+				),
+			]),
+		]);
+		const { queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => expect(queryByTestId("content-locale-bar")).not.toBeNull());
+	});
+
 	// -----------------------------------------------------------------------
 	// AC-2: tab switching preserves values in both locales
 	// -----------------------------------------------------------------------
