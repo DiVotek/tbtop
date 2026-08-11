@@ -15,6 +15,9 @@ final class Node implements JsonSerializable
      */
     public const CHILD_LIST_KEYS = ['children', 'fields'];
 
+    /** Option keys holding one nested child. */
+    public const CHILD_KEYS = ['prefix', 'suffix'];
+
     /** @var array<string, mixed> */
     public readonly array $options;
 
@@ -53,6 +56,16 @@ final class Node implements JsonSerializable
         foreach (self::CHILD_LIST_KEYS as $key) {
             if (is_array($options[$key] ?? null)) {
                 $options[$key] = ChildInclusion::filter(array_values($options[$key]));
+            }
+        }
+        foreach (self::CHILD_KEYS as $key) {
+            if (array_key_exists($key, $options)) {
+                $child = S::normalizeChild($options[$key]);
+                if ($child === null) {
+                    unset($options[$key]);
+                } else {
+                    $options[$key] = $child;
+                }
             }
         }
 
@@ -122,6 +135,12 @@ final class Node implements JsonSerializable
             $nested = $this->options[$key] ?? null;
             if (is_array($nested)) {
                 $out = [...$out, ...array_values($nested)];
+            }
+        }
+
+        foreach (self::CHILD_KEYS as $key) {
+            if (($this->options[$key] ?? null) !== null) {
+                $out[] = $this->options[$key];
             }
         }
 

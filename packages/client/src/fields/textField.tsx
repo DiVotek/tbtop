@@ -4,9 +4,10 @@ import { CopyButton } from "../ui/copyButton";
 import { Input } from "../ui/input";
 import { nullableCell, TruncatedTextCell } from "./cellHelpers";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { type AffixOptions, InputGroup } from "./inputGroup";
 import { MaskedInput } from "./maskedInput";
 
-interface TextOptions {
+interface TextOptions extends AffixOptions {
 	mask?: string;
 	copyable?: CopyableConfig;
 	placeholder?: string;
@@ -63,10 +64,9 @@ export function TextForm({
 		/>
 	);
 
-	if (!copyable) {
-		return input;
-	}
-	return (
+	const control = !copyable ? (
+		input
+	) : (
 		<div className="relative">
 			{input}
 			<CopyButton
@@ -75,5 +75,11 @@ export function TextForm({
 				className="absolute right-2 top-1/2 -translate-y-1/2"
 			/>
 		</div>
+	);
+
+	return (
+		<InputGroup options={options} disabled={disabled} invalid={invalid}>
+			{control}
+		</InputGroup>
 	);
 }

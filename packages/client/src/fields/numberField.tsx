@@ -1,8 +1,9 @@
 import { Input } from "../ui/input";
 import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { type AffixOptions, InputGroup } from "./inputGroup";
 
-interface NumberOptions {
+interface NumberOptions extends AffixOptions {
 	placeholder?: string;
 	step?: number | "any";
 }
@@ -22,17 +23,19 @@ export function NumberForm({
 	options,
 }: FieldFormProps<number, NumberOptions>) {
 	return (
-		<Input
-			id={fieldId({ id, name })}
-			name={name}
-			type="number"
-			defaultValue={typeof value === "number" ? String(value) : ""}
-			onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-			disabled={disabled}
-			aria-invalid={invalid || undefined}
-			aria-describedby={describedBy}
-			placeholder={options?.placeholder}
-			step={options?.step}
-		/>
+		<InputGroup options={options} disabled={disabled} invalid={invalid}>
+			<Input
+				id={fieldId({ id, name })}
+				name={name}
+				type="number"
+				defaultValue={typeof value === "number" ? String(value) : ""}
+				onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+				disabled={disabled}
+				aria-invalid={invalid || undefined}
+				aria-describedby={describedBy}
+				placeholder={options?.placeholder}
+				step={options?.step}
+			/>
+		</InputGroup>
 	);
 }

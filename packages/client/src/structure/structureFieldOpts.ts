@@ -3,11 +3,16 @@
  * to keep that file within the 200-line limit.
  */
 import type { ReactNode } from "react";
-import type { ClientActionContext } from "./types";
+import type { ClientActionContext, StructureNode } from "./types";
 
 export type FieldName<TForm> = TForm extends object ? Extract<keyof TForm, string> : string;
 
-export interface TextOpts {
+interface AffixOpts {
+	prefix?: StructureNode;
+	suffix?: StructureNode;
+}
+
+export interface TextOpts extends AffixOpts {
 	label?: string;
 	required?: boolean;
 	maxLength?: number;
@@ -29,7 +34,7 @@ export interface PasswordOpts {
 	autoComplete?: "current-password" | "new-password" | "off";
 }
 
-export interface NumberOpts {
+export interface NumberOpts extends AffixOpts {
 	label?: string;
 	min?: number;
 	max?: number;
@@ -88,27 +93,27 @@ export interface AsyncChoiceMulti<TRow> extends AsyncChoiceShared<TRow> {
 	onLoad?: (ctx: ClientActionContext, values: string[]) => Promise<TRow[]>;
 }
 
-export interface SelectStaticSingleOpts {
+export interface SelectStaticSingleOpts extends AffixOpts {
 	label?: string;
 	required?: boolean;
 	options: ChoiceOption[];
 	multiple?: false;
 }
 
-export interface SelectStaticMultiOpts {
+export interface SelectStaticMultiOpts extends AffixOpts {
 	label?: string;
 	required?: boolean;
 	options: ChoiceOption[];
 	multiple: true;
 }
 
-export interface SelectAsyncSingleOpts<TRow> extends AsyncChoiceSingle<TRow> {
+export interface SelectAsyncSingleOpts<TRow> extends AsyncChoiceSingle<TRow>, AffixOpts {
 	label?: string;
 	required?: boolean;
 	multiple?: false;
 }
 
-export interface SelectAsyncMultiOpts<TRow> extends AsyncChoiceMulti<TRow> {
+export interface SelectAsyncMultiOpts<TRow> extends AsyncChoiceMulti<TRow>, AffixOpts {
 	label?: string;
 	required?: boolean;
 	multiple: true;

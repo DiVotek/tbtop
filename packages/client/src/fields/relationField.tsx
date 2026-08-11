@@ -7,12 +7,13 @@ import { useAsyncSearch } from "./asyncSearch";
 import { nullableCell } from "./cellHelpers";
 import type { DependencyConfig, DependencyState } from "./fieldDependencies";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { type AffixOptions, InputGroup } from "./inputGroup";
 import { ComboboxOption } from "./selectMultiOption";
 import { coerceSelectValue } from "./selectShared";
 import { SingleComboboxShell, type SingleListState } from "./selectSingleShell";
 import { useRemoteOptions } from "./useRemoteOptions";
 
-export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyConfig {
+export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyConfig, AffixOptions {
 	searchable?: boolean;
 	labelKey?: string;
 }
@@ -74,20 +75,26 @@ export function RelationForm({
 	}
 
 	return (
-		<RelationSelectInner
-			id={id}
-			name={name}
-			value={current}
-			onChange={onChange}
-			onBlur={onBlur}
+		<InputGroup
+			options={options}
 			disabled={disabled || remote.dep.disabledByParent}
 			invalid={invalid}
-			options={remote.opts}
-			labels={remote.labels}
-			dep={remote.dep}
-			isGated={remote.isGated}
-			onRowsSeen={remote.noteRowsSeen}
-		/>
+		>
+			<RelationSelectInner
+				id={id}
+				name={name}
+				value={current}
+				onChange={onChange}
+				onBlur={onBlur}
+				disabled={disabled || remote.dep.disabledByParent}
+				invalid={invalid}
+				options={remote.opts}
+				labels={remote.labels}
+				dep={remote.dep}
+				isGated={remote.isGated}
+				onRowsSeen={remote.noteRowsSeen}
+			/>
+		</InputGroup>
 	);
 }
 

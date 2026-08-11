@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { StructureNode } from "../structure/types";
 import type { AsyncMultiOptionsBag, AsyncSingleOptionsBag } from "./asyncOptions";
 import type { DependencyConfig } from "./fieldDependencies";
+import type { AffixOptions } from "./inputGroup";
 
 /**
  * `html` wins: when present it renders alone and image/subtitle are ignored.
@@ -32,7 +33,7 @@ export interface SelectCreateConfig {
 	) => Promise<{ value: string; label: string }>;
 }
 
-interface CommonSelectBag {
+interface CommonSelectBag extends AffixOptions {
 	options?: StaticOption[];
 	multiple?: boolean;
 	searchable?: boolean;

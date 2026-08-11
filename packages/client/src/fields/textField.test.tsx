@@ -66,6 +66,22 @@ test("Text placeholder reaches the rendered input", async () => {
 	expect(input?.getAttribute("placeholder")).toBe("Full name…");
 });
 
+test("Text affixes share one framed input group with the control", async () => {
+	const prefix = { kind: "displayText", options: { content: "https://" }, meta: {} };
+	const suffix = { kind: "displayText", options: { content: ".com" }, meta: {} };
+	const node = s.form({ query: async () => ({ domain: "tabletop" }) }, [
+		s.text({ name: "domain", prefix, suffix }),
+	]);
+	const Wrap = wrap(() => new Response("{}"));
+	const { container, getByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+	await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
+	const group = container.querySelector('[data-slot="input-group"]');
+
+	expect(group?.querySelector('input[name="domain"]')).toBeTruthy();
+	expect(getByText("https://")).toBeTruthy();
+	expect(getByText(".com")).toBeTruthy();
+});
+
 test("Text placeholder reaches the masked input", () => {
 	const { getByRole } = render(
 		<TextForm

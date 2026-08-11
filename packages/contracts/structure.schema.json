@@ -639,6 +639,8 @@
 			"properties": {
 				"children": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 				"fields": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+				"prefix": { "$ref": "#/$defs/node" },
+				"suffix": { "$ref": "#/$defs/node" },
 				"params": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 				"filters": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 				"rowActions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
