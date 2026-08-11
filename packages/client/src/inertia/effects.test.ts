@@ -69,7 +69,7 @@ describe("executeEffects: closeModal contrast", () => {
 });
 
 describe("executeEffects: redirect", () => {
-	test("preserves state and scroll for a redirect to the current pathname", () => {
+	test("preserves state and scroll only for a redirect to the current pathname", () => {
 		// Consume any leftover flag from a previous test so this assertion
 		// only reflects what THIS redirect set.
 		consumeServerRedirect();
@@ -84,9 +84,6 @@ describe("executeEffects: redirect", () => {
 		// redirect, so useUnsavedGuard's 'before' handler can skip its
 		// isDirty check for this navigation.
 		expect(consumeServerRedirect()).toBe(true);
-	});
-
-	test("does not preserve state or scroll for a redirect to another pathname", () => {
 		routerVisit.mockClear();
 
 		executeEffects([{ kind: "redirect", href: "/admin/posts" }], fakeCtx());
