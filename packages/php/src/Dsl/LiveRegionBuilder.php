@@ -137,6 +137,11 @@ final class LiveRegionBuilder implements JsonSerializable
      * Declared keys only, scalars cast to string — mirrors DependencyPayload
      * so the closure sees the same dep shape at build time and per request.
      *
+     * A translatable field's record value is a locale map, never a scalar, so
+     * a dependency on one is declared per locale ("title.en") and resolved
+     * through the map here — matching readDeps() on the client, which does
+     * the same for the live payload.
+     *
      * @param  array<string, mixed>  $bag
      * @return array<string, string>
      */
@@ -144,12 +149,30 @@ final class LiveRegionBuilder implements JsonSerializable
     {
         $out = [];
         foreach ($this->dependsOn as $field) {
-            $value = $bag[$field] ?? null;
+            $value = self::resolveDep($bag, $field);
             if (is_scalar($value)) {
                 $out[$field] = (string) $value;
             }
         }
 
         return $out;
+    }
+
+    /** @param  array<string, mixed>  $bag */
+    private static function resolveDep(array $bag, string $field): mixed
+    {
+        if (array_key_exists($field, $bag)) {
+            return $bag[$field];
+        }
+
+        $dot = strpos($field, '.');
+
+        if ($dot === false || $dot === 0) {
+            return null;
+        }
+
+        $parent = $bag[substr($field, 0, $dot)] ?? null;
+
+        return is_array($parent) ? ($parent[substr($field, $dot + 1)] ?? null) : null;
     }
 }

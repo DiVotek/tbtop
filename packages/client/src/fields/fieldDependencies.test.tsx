@@ -101,6 +101,44 @@ describe("useFieldDependencies", () => {
 		expect(s.disabledByParent).toBe(false);
 	});
 
+	test("a dotted dependency reads a translatable parent's locale entry", () => {
+		const cap = mountHook(
+			{ dependsOn: ["title.en"] },
+			{ title: { en: "", uk: "" }, preview: null },
+			"preview",
+		);
+		expect((cap.states.at(-1) as DependencyState).ready).toBe(false);
+
+		act(() => (cap.ctrls.at(-1) as FormController).set("title", { en: "Hello", uk: "" }));
+
+		const s = cap.states.at(-1) as DependencyState;
+		expect(s.ready).toBe(true);
+		expect(s.deps).toEqual({ "title.en": "Hello" });
+	});
+
+	test("locale entries of the same parent are independent dependencies", () => {
+		const cap = mountHook(
+			{ dependsOn: ["title.uk"] },
+			{ title: { en: "Hello", uk: "" }, preview: null },
+			"preview",
+		);
+		// The en entry being filled must not satisfy a uk dependency.
+		expect((cap.states.at(-1) as DependencyState).deps).toEqual({});
+
+		act(() => (cap.ctrls.at(-1) as FormController).set("title", { en: "Hello", uk: "Привіт" }));
+
+		expect((cap.states.at(-1) as DependencyState).deps).toEqual({ "title.uk": "Привіт" });
+	});
+
+	test("a literal dotted field name still wins over locale-map lookup", () => {
+		const cap = mountHook(
+			{ dependsOn: ["a.b"] },
+			{ "a.b": "literal", a: { b: "nested" }, preview: null },
+			"preview",
+		);
+		expect((cap.states.at(-1) as DependencyState).deps).toEqual({ "a.b": "literal" });
+	});
+
 	test("whenParentEmpty 'empty' → enabled even when parent unfilled", () => {
 		const { states } = mountHook(
 			{ dependsOn: ["country_id"], whenParentEmpty: "empty" },
