@@ -120,6 +120,9 @@ final class LiveRegionBuilder implements JsonSerializable
     {
         $options = [
             'dependsOn' => $this->dependsOn,
+            // Deps the initial content was rendered with — a late-mounting
+            // region compares against them to detect stale initial content.
+            'initialDeps' => (object) $this->initialDeps,
             'initial' => $this->renderWith($this->initialDeps),
         ];
 
@@ -136,6 +139,8 @@ final class LiveRegionBuilder implements JsonSerializable
     /**
      * Declared keys only, scalars cast to string — mirrors DependencyPayload
      * so the closure sees the same dep shape at build time and per request.
+     * Empty strings drop out: client readDeps() omits them, and keeping them
+     * would desync the seeded initialDeps from a mounting region's key.
      *
      * A translatable field's record value is a locale map, never a scalar, so
      * a dependency on one is declared per locale ("title.en") and resolved
@@ -150,7 +155,7 @@ final class LiveRegionBuilder implements JsonSerializable
         $out = [];
         foreach ($this->dependsOn as $field) {
             $value = self::resolveDep($bag, $field);
-            if (is_scalar($value)) {
+            if (is_scalar($value) && (string) $value !== '') {
                 $out[$field] = (string) $value;
             }
         }

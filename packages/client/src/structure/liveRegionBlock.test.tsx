@@ -14,7 +14,7 @@ function displayText(content: string): StructureNode {
 	return { kind: "displayText", options: { content, variant: "muted" }, meta: {} };
 }
 
-function pageStructure(): StructureNode {
+function pageStructure(regionOptions: Record<string, unknown> = {}): StructureNode {
 	return {
 		kind: "form",
 		name: "post",
@@ -25,7 +25,11 @@ function pageStructure(): StructureNode {
 				{
 					kind: "liveRegion",
 					name: "preview",
-					options: { dependsOn: ["title"], initial: [displayText("Initial: Hello")] },
+					options: {
+						dependsOn: ["title"],
+						initial: [displayText("Initial: Hello")],
+						...regionOptions,
+					},
 					meta: {},
 				},
 			],
@@ -48,8 +52,8 @@ function regionHandler(calls: RegionCall[]): FetchHandler {
 	};
 }
 
-function mountPage(calls: RegionCall[]) {
-	const materialized = materialize(pageStructure(), {
+function mountPage(calls: RegionCall[], regionOptions: Record<string, unknown> = {}) {
+	const materialized = materialize(pageStructure(regionOptions), {
 		basePath: "/admin/posts",
 		data: { post: { title: "Hello" } },
 	});
@@ -84,6 +88,24 @@ describe("LiveRegion integration", () => {
 		expect(last?.deps).toEqual({ title: "World" });
 	});
 
+	test("mount with initialDeps matching the form data does not fetch", async () => {
+		const calls: RegionCall[] = [];
+		const { findByText } = mountPage(calls, { initialDeps: { title: "Hello" } });
+
+		expect(await findByText("Initial: Hello")).toBeTruthy();
+		expect(calls.length).toBe(0);
+	});
+
+	test("late mount with diverged initialDeps fetches immediately with the current deps", async () => {
+		const calls: RegionCall[] = [];
+		const { findByText, queryByText } = mountPage(calls, { initialDeps: { title: "Stale" } });
+
+		expect(await findByText("Fresh: Hello")).toBeTruthy();
+		expect(queryByText("Initial: Hello")).toBeNull();
+		expect(calls.length).toBe(1);
+		expect(calls[0]?.deps).toEqual({ title: "Hello" });
+	});
+
 	test("clearing the watched field still reloads — empty deps are a legitimate state", async () => {
 		const user = userEvent.setup();
 		const calls: RegionCall[] = [];
@@ -97,5 +119,42 @@ describe("LiveRegion integration", () => {
 
 		expect(await findByText("Fresh: empty")).toBeTruthy();
 		await waitFor(() => expect(calls.at(-1)?.deps).toEqual({}));
+	});
+
+	test("an action inside fetched region content is materialized and posts to its endpoint", async () => {
+		const user = userEvent.setup();
+		const actionUrls: string[] = [];
+		const handler: FetchHandler = async (req) => {
+			if (req.url.includes("/actions/")) {
+				actionUrls.push(req.url);
+				return Response.json({ effects: [] });
+			}
+			return Response.json({
+				nodes: [
+					{
+						kind: "action",
+						name: "regen",
+						options: { label: "Regenerate", spec: { type: "server", needs: [] } },
+						meta: {},
+					},
+				],
+			});
+		};
+		const materialized = materialize(pageStructure(), {
+			basePath: "/admin/posts",
+			data: { post: { title: "Hello" } },
+		});
+		const Wrap = wrap(handler);
+		const { getByLabelText, findByRole, findByText } = render(
+			<Wrap>{renderNode(materialized)}</Wrap>,
+		);
+		await findByText("Initial: Hello");
+
+		await user.type(getByLabelText("Title"), "!");
+		const button = await findByRole("button", { name: "Regenerate" });
+		await user.click(button);
+
+		await waitFor(() => expect(actionUrls.length).toBe(1));
+		expect(actionUrls[0]).toContain("/admin/posts/actions/regen");
 	});
 });

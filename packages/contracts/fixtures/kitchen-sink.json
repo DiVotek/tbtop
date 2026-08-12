@@ -826,6 +826,9 @@
                                             "dependsOn": [
                                                 "title"
                                             ],
+                                            "initialDeps": {
+                                                "title": "Hello"
+                                            },
                                             "initial": [
                                                 {
                                                     "kind": "displayText",
