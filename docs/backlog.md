@@ -23,8 +23,35 @@
   `Field::tooltip()` (info icon near the label, Radix Tooltip). Wire: field options +
   schema + field chrome in `formBlock`.
 - Infolist / read-only detail view.
+- **Declarative autofill (`S::autofill`)** — third typed consumer of deps-driven
+  server-computed field data (after liveRegion → display nodes, disabledRanges → widget
+  params; here → field values): `autofill('car_defaults')->dependsOn('car_id')->fill(fn)`.
+  Invisible form node, endpoint binding like liveRegion. Overwrite policy: fill non-dirty
+  fields only (untouched saved values do update on dep change), `force()` overwrites
+  always. Until promoted, click-driven cases go through custom client handlers
+  (`ctx.form.set`).
+- **Collection deps for liveRegion** (`options.*.price` / whole-repeater deps) — lets a
+  region re-render from unsaved repeater rows with server-side logic as the single truth.
+  Wide contract change: deps payload widens from `Record<string, string>` to structured
+  values on both sides (`readDeps`, `DependencyPayload`, `filterDeps`, schema), needs
+  debounce (missing even for scalar text deps), costs a round-trip per row edit. Promote
+  when a consumer needs *server* rules over rows; pure client math is covered by
+  form-aware custom blocks (`useNearestFormController` export).
+- **Dynamic form schema (fields inside liveRegion)** — lift the display-only invariant so
+  region content may declare fields. Livewire-class feature: submit path must re-run
+  region closures with submitted deps to collect the real rules (validation is the
+  security boundary), form state needs appear/disappear semantics, region swap must
+  reconcile by field name instead of remounting. Park until a consumer need survives
+  contact with `hiddenIf` + deps-driven field data (which cover the known cases).
 
 ## Display / layout
+
+- **Named tabs with URL state** — opt-in `name` on tab entries + tabs-block node name;
+  named block seeds the active tab from `?tab[<block>]=<name>` and mirrors it via
+  `history.replaceState` (same pattern as table URL state). Names are explicit — never
+  derived from localized labels. Remaining value after 64f9dbf (same-page redirects
+  already preserve tab state): deep links and F5 survival. Promote on real deep-link
+  demand.
 
 - **`S::markdown($md)`** — server-side `Str::markdown()` (league/commonmark ships with
   Laravel) → emits the existing `displayHtml` wire node. Zero client code, zero schema
