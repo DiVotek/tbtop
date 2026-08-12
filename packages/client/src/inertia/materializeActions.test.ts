@@ -35,6 +35,51 @@ function resolveUrl(href: string, row: Record<string, unknown>): string {
 	return url({ row } as ClientActionContext);
 }
 
+function modalNode(spec: Record<string, unknown>): StructureNode {
+	return {
+		kind: "action",
+		name: "quickCreate",
+		meta: META,
+		options: { spec },
+	};
+}
+
+function materializeModal(spec: Record<string, unknown>): Record<string, unknown> {
+	const options = materializeActionOptions(modalNode(spec), {
+		basePath: "/admin",
+		materializeNode: (node) => node,
+	});
+	const modal = options.modal;
+	if (!modal || typeof modal !== "object") {
+		throw new TypeError("expected a materialized modal");
+	}
+	return modal as Record<string, unknown>;
+}
+
+describe("materializeModal", () => {
+	// Regression: the PHP DSL serializes slideOver() and modalWidth() into the
+	// wire spec, but the client dropped them during materialization — a
+	// slide-over action silently rendered as a centered dialog and a widened
+	// modal opened at the default size.
+	test("carries size and slideOver from the wire spec", () => {
+		const modal = materializeModal({
+			type: "modal",
+			title: "Quick create",
+			size: "2xl",
+			slideOver: true,
+		});
+		expect(modal.title).toBe("Quick create");
+		expect(modal.size).toBe("2xl");
+		expect(modal.slideOver).toBe(true);
+	});
+
+	test("leaves size and slideOver undefined when the spec omits them", () => {
+		const modal = materializeModal({ type: "modal", title: "Plain" });
+		expect(modal.size).toBeUndefined();
+		expect(modal.slideOver).toBeUndefined();
+	});
+});
+
 describe("fillRowTemplate", () => {
 	test("a slug containing '/' stays inside its own segment", () => {
 		expect(resolveUrl("/posts/{row.slug}/edit", { slug: "a/b" })).toBe("/posts/a%2Fb/edit");
