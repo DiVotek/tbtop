@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import { collectFieldNames, countTabErrors, firstTabIndexWithError } from "../structure/fieldNames";
-import { useNearestFormController } from "../structure/formContext";
+import { useNearestFormHandle } from "../structure/formContext";
 import type { StructureNode } from "../structure/structure";
 import { TriggerVariantProvider } from "../structure/triggerVariantContext";
 import { Badge } from "../ui/badge";
@@ -243,7 +243,7 @@ interface TabErrorAutoSwitchInput {
  * currently active tab is clean — otherwise a validation failure in a
  * hidden tab is invisible behind a generic "fix the highlighted fields"
  * toast. Outside a form (or a form with no fieldErrors/errorScrollTick,
- * e.g. a plain display-tabs layout) this is a no-op: useNearestFormController
+ * e.g. a plain display-tabs layout) this is a no-op: useNearestFormHandle
  * returns null and every count is 0.
  */
 function useTabErrorAutoSwitch({
@@ -251,7 +251,7 @@ function useTabErrorAutoSwitch({
 	active,
 	setActive,
 }: TabErrorAutoSwitchInput): number[] {
-	const ctrl = useNearestFormController();
+	const ctrl = useNearestFormHandle();
 	// A stable empty-object fallback: `ctrl?.fieldErrors ?? {}` would mint a
 	// fresh {} every render whenever ctrl is null, making the effect below
 	// see a "changed" dependency on every render instead of only on a real

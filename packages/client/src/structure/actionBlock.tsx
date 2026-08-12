@@ -14,7 +14,8 @@ import {
 	outlinedTintClass,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
-import { useNearestFormController } from "./formContext";
+import { useNearestFormHandle } from "./formContext";
+import type { FormControllerInternal } from "./formController";
 import { parseKeybinding, registerKeybinding } from "./keybinding";
 import { ModalActionBlock } from "./modalActionBlock";
 import { useNearestRow } from "./rowContext";
@@ -39,7 +40,7 @@ function PlainActionBlock({
 	disabled?: boolean;
 }) {
 	const ctx = useClientActionContext();
-	const formHandle = useNearestFormController();
+	const formHandle = useNearestFormHandle();
 	const row = useNearestRow();
 	const [pending, setPending] = useState(false);
 	const plain = useNearestTriggerVariant() === "plain";
@@ -151,7 +152,7 @@ function PlainActionBlock({
 interface RunInput {
 	handler: NonNullable<ActionOptions["handler"]>;
 	ctx: ClientActionContext;
-	formHandle: ReturnType<typeof useNearestFormController>;
+	formHandle: FormControllerInternal | null;
 	/** Run the form's pre-flight schema parse before the handler. */
 	preflight: boolean;
 }
@@ -198,10 +199,7 @@ function extractMessage(err: unknown): string {
 	return "Action failed";
 }
 
-function preFlightSchemaParse(
-	handle: NonNullable<ReturnType<typeof useNearestFormController>>,
-	t: Translate,
-): boolean {
+function preFlightSchemaParse(handle: FormControllerInternal, t: Translate): boolean {
 	if (!handle.schema) {
 		return true;
 	}
@@ -218,11 +216,7 @@ interface ZodLike {
 	issues?: { path: (string | number)[]; message: string }[];
 }
 
-function applyZodIssues(
-	err: unknown,
-	handle: NonNullable<ReturnType<typeof useNearestFormController>>,
-	t: Translate,
-): void {
+function applyZodIssues(err: unknown, handle: FormControllerInternal, t: Translate): void {
 	const issues = (err as ZodLike).issues;
 	if (!Array.isArray(issues)) {
 		return;
@@ -235,10 +229,7 @@ function applyZodIssues(
 	}
 }
 
-function tryApplyServerFieldErrors(
-	err: unknown,
-	handle: NonNullable<ReturnType<typeof useNearestFormController>>,
-): boolean {
+function tryApplyServerFieldErrors(err: unknown, handle: FormControllerInternal): boolean {
 	const fields = readFieldErrors(err);
 	if (!fields) {
 		return false;
