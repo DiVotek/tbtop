@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 /**
  * Declared keys only, scalars cast to string — the one dep shape every
  * record-seeded closure sees, at build time and per endpoint request.
+ * Booleans use "1"/"0" on both PHP and the client so false remains a value.
  * Empty strings drop out: client readDeps() omits them, and keeping them
  * would desync seeded initialDeps from the key a mounting region computes.
  *
@@ -25,8 +26,12 @@ final class DependencyFilter
         $out = [];
         foreach ($declared as $field) {
             $value = self::resolve($bag, $field);
-            if (is_scalar($value) && (string) $value !== '') {
-                $out[$field] = (string) $value;
+            if (! is_scalar($value)) {
+                continue;
+            }
+            $string = is_bool($value) ? ($value ? '1' : '0') : (string) $value;
+            if ($string !== '') {
+                $out[$field] = $string;
             }
         }
 

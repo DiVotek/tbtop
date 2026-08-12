@@ -102,6 +102,17 @@ describe("useFieldDependencies", () => {
 		expect(s.disabledByParent).toBe(false);
 	});
 
+	test("boolean parents use the same non-empty spelling for true and false", () => {
+		const cap = mountHook({ dependsOn: ["enabled"] }, { enabled: true, child: null }, "child");
+		expect((cap.states.at(-1) as DependencyState).deps).toEqual({ enabled: "1" });
+
+		act(() => (cap.ctrls.at(-1) as FormController).set("enabled", false));
+
+		const state = cap.states.at(-1) as DependencyState;
+		expect(state.deps).toEqual({ enabled: "0" });
+		expect(state.ready).toBe(true);
+	});
+
 	test("a dotted dependency reads a translatable parent's locale entry", () => {
 		const cap = mountHook(
 			{ dependsOn: ["title.en"] },
