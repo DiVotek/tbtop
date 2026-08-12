@@ -47,6 +47,7 @@ function DependentDaterange(props: DaterangeFormProps) {
 	const ctx = useClientActionContext();
 	const opts = props.options ?? {};
 	const dep = useFieldDependencies({
+		name: props.name,
 		config: opts,
 		value: props.value,
 		onChange: props.onChange,
