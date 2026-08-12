@@ -1,9 +1,19 @@
-import { describe, expect, mock, spyOn, test } from "bun:test";
-import { router } from "@inertiajs/react";
+import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import * as inertiaReact from "@inertiajs/react";
 import type { NavGroup } from "../chromeContext";
 import { definePaletteCommand } from "./handlers";
 import { buildPaletteItems, filterPaletteItems } from "./paletteItems";
 import type { CommandPaletteData } from "./types";
+
+// spyOn(router, "visit") breaks once any other file has mock.module'd
+// @inertiajs/react — that replacement is process-global and makes visit an
+// accessor property, which bun cannot spy on. Since file order is random,
+// so was the failure. Own the module here instead, mirroring effects.test.ts.
+const routerVisit = mock((_href: string) => {});
+mock.module("@inertiajs/react", () => ({
+	...inertiaReact,
+	router: { visit: routerVisit, post: mock(() => {}), on: mock(() => () => {}) },
+}));
 
 const NAV: NavGroup[] = [
 	{
@@ -20,6 +30,10 @@ const NAV: NavGroup[] = [
 		],
 	},
 ];
+
+beforeEach(() => {
+	routerVisit.mockClear();
+});
 
 describe("buildPaletteItems", () => {
 	test("flattens nav groups into runnable items", () => {
@@ -64,10 +78,8 @@ describe("buildPaletteItems", () => {
 	});
 
 	test("a nav item run navigates via the Inertia router", () => {
-		const visit = spyOn(router, "visit").mockImplementation(() => {});
 		buildPaletteItems(NAV, { hotkey: "mod+k" })[0]?.run();
-		expect(visit).toHaveBeenCalledWith("/admin");
-		visit.mockRestore();
+		expect(routerVisit).toHaveBeenCalledWith("/admin");
 	});
 
 	test("a handler command run invokes the registered client handler", () => {
