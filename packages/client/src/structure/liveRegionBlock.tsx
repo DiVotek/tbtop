@@ -8,6 +8,8 @@ import type { ClientActionContext, StructureNode } from "./types";
 
 export interface LiveRegionOptions {
 	dependsOn?: string[];
+	/** Deps the server rendered `initial` with — see the mount check below. */
+	initialDeps?: Record<string, string>;
 	initial?: StructureNode[];
 	/** Injected at materialize time — never on the wire. */
 	query?: (ctx: ClientActionContext, deps: Record<string, string>) => Promise<StructureNode[]>;
@@ -22,7 +24,8 @@ export interface LiveRegionOptions {
 export function LiveRegionBlock({ options, renderChild }: RenderProps<LiveRegionOptions>) {
 	const ctx = useClientActionContext();
 	const ctrl = useNearestFormController();
-	const { deps } = readDeps(options.dependsOn ?? [], ctrl?.data ?? {});
+	const dependsOn = options.dependsOn ?? [];
+	const { deps } = readDeps(dependsOn, ctrl?.data ?? {});
 	const depsKey = JSON.stringify(deps);
 
 	const [nodes, setNodes] = useState<StructureNode[]>(options.initial ?? []);
@@ -30,9 +33,14 @@ export function LiveRegionBlock({ options, renderChild }: RenderProps<LiveRegion
 	const [error, setError] = useState<string | null>(null);
 
 	const query = options.query;
-	// The initial content is server-rendered from the same deps, so the
-	// mount-time key must not trigger a fetch — only subsequent changes do.
-	const prevKeyRef = useRef(depsKey);
+	// The initial content was server-rendered with initialDeps. A region that
+	// mounts late (tab, collapsible) may see the form already ahead of them —
+	// seeding the ref with the *initial* key makes such a mount fetch at once.
+	// readDeps canonicalizes both sides (declared keys, empties dropped).
+	const initialKey = options.initialDeps
+		? JSON.stringify(readDeps(dependsOn, options.initialDeps).deps)
+		: depsKey;
+	const prevKeyRef = useRef(initialKey);
 	const latestKeyRef = useRef(depsKey);
 	const depsRef = useRef(deps);
 	depsRef.current = deps;
