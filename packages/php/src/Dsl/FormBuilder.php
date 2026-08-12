@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl;
 use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
+use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Select;
@@ -128,6 +129,22 @@ final class FormBuilder implements JsonSerializable
     public function findRelationField(string $name): ?Relation
     {
         return self::searchRelation($this->children, $name);
+    }
+
+    /**
+     * Find a Daterange field with a disabledRanges closure by name, walking nested children.
+     * Returns null when not found.
+     */
+    public function findDaterangeField(string $name): ?Daterange
+    {
+        $found = self::searchField(
+            $this->children,
+            static fn (Field $f): bool => $f instanceof Daterange
+                && $f->name === $name
+                && $f->disabledRangesClosure() !== null,
+        );
+
+        return $found instanceof Daterange ? $found : null;
     }
 
     /**
@@ -308,7 +325,7 @@ final class FormBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
-        $this->seedLiveRegions();
+        $this->seedRecordDependents();
         $options = ['name' => $this->name, 'children' => $this->children];
 
         if ($this->guardUnsaved !== null) {
@@ -321,20 +338,44 @@ final class FormBuilder implements JsonSerializable
     }
 
     /**
-     * Every included liveRegion's initial render uses this form's record
-     * values; toNode() runs before any child serializes, so seeding here
-     * covers every serialization path.
+     * Every included liveRegion's initial render and every disabledRanges()
+     * daterange's initial ranges use this form's record values; toNode() runs
+     * before any child serializes, so seeding here covers every serialization
+     * path.
      */
-    private function seedLiveRegions(): void
+    private function seedRecordDependents(): void
     {
-        $regions = self::collectLiveRegions($this->includedChildren());
-        if ($regions === []) {
+        $children = $this->includedChildren();
+        $regions = self::collectLiveRegions($children);
+        $dateranges = self::collectDaterangesWithRanges($children);
+        if ($regions === [] && $dateranges === []) {
             return;
         }
         $record = $this->recordData();
         foreach ($regions as $region) {
             $region->seedInitialDeps($record);
         }
+        foreach ($dateranges as $field) {
+            $field->seedInitialDeps($record);
+        }
+    }
+
+    /**
+     * @param  list<mixed>  $children
+     * @return list<Daterange>
+     */
+    private static function collectDaterangesWithRanges(array $children): array
+    {
+        $out = [];
+        $matches = static fn (Field $f): bool => $f instanceof Daterange
+            && $f->disabledRangesClosure() !== null;
+        foreach (self::collectFields($children, $matches) as $field) {
+            if ($field instanceof Daterange) {
+                $out[] = $field;
+            }
+        }
+
+        return $out;
     }
 
     /**

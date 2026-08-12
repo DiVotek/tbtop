@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\ActionDataController;
 use Tbtop\Admin\Http\DataController;
+use Tbtop\Admin\Http\DaterangeRangesController;
 use Tbtop\Admin\Http\EditableColumnController;
 use Tbtop\Admin\Http\FieldUploadController;
 use Tbtop\Admin\Http\FieldUploadViewController;
@@ -64,6 +65,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/select-options/{tbtopField}", SelectOptionsController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.selectOptions');
+        Route::post("{$path}/daterange-ranges/{tbtopField}", DaterangeRangesController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.daterangeRanges');
         Route::post("{$path}/live-region/{tbtopRegion}", LiveRegionController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.liveRegion');

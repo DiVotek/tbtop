@@ -74,7 +74,7 @@ final class LiveRegionBuilder implements JsonSerializable
      */
     public function seedInitialDeps(array $record): void
     {
-        $this->initialDeps = $this->filterDeps($record);
+        $this->initialDeps = DependencyFilter::filter($this->dependsOn, $record);
     }
 
     /**
@@ -90,7 +90,7 @@ final class LiveRegionBuilder implements JsonSerializable
             );
         }
 
-        $result = $closure($this->filterDeps($deps), new S);
+        $result = $closure(DependencyFilter::filter($this->dependsOn, $deps), new S);
         $nodes = is_array($result) ? array_values($result) : [$result];
         $this->assertDisplayOnly($nodes);
 
@@ -137,50 +137,5 @@ final class LiveRegionBuilder implements JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->toNode()->jsonSerialize();
-    }
-
-    /**
-     * Declared keys only, scalars cast to string — mirrors DependencyPayload
-     * so the closure sees the same dep shape at build time and per request.
-     * Empty strings drop out: client readDeps() omits them, and keeping them
-     * would desync the seeded initialDeps from a mounting region's key.
-     *
-     * A translatable field's record value is a locale map, never a scalar, so
-     * a dependency on one is declared per locale ("title.en") and resolved
-     * through the map here — matching readDeps() on the client, which does
-     * the same for the live payload.
-     *
-     * @param  array<string, mixed>  $bag
-     * @return array<string, string>
-     */
-    private function filterDeps(array $bag): array
-    {
-        $out = [];
-        foreach ($this->dependsOn as $field) {
-            $value = self::resolveDep($bag, $field);
-            if (is_scalar($value) && (string) $value !== '') {
-                $out[$field] = (string) $value;
-            }
-        }
-
-        return $out;
-    }
-
-    /** @param  array<string, mixed>  $bag */
-    private static function resolveDep(array $bag, string $field): mixed
-    {
-        if (array_key_exists($field, $bag)) {
-            return $bag[$field];
-        }
-
-        $dot = strpos($field, '.');
-
-        if ($dot === false || $dot === 0) {
-            return null;
-        }
-
-        $parent = $bag[substr($field, 0, $dot)] ?? null;
-
-        return is_array($parent) ? ($parent[substr($field, $dot + 1)] ?? null) : null;
     }
 }

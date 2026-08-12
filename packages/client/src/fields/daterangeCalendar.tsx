@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DateRange } from "react-day-picker";
+import type { DateRange, Matcher } from "react-day-picker";
 import { useLocale } from "../i18n/i18n";
 import { Calendar } from "../ui/calendar";
 import { browserLocale, intlFormatters, resolveWeekStart } from "./daterangeLocale";
@@ -9,13 +9,22 @@ interface DaterangeCalendarProps {
 	// day-picker folds a click into the applied range, so `next` cannot say which
 	// day was clicked — `clicked` is its trigger date.
 	onSelect: (next: DateRange | undefined, clicked: Date) => void;
+	disabled?: Matcher[];
+	startMonth?: Date;
+	endMonth?: Date;
 }
 
 /**
  * The popover body, loaded on demand. Two months side by side on desktop; one
  * below the sm breakpoint, where two would not fit.
  */
-export function DaterangeCalendar({ selected, onSelect }: DaterangeCalendarProps) {
+export function DaterangeCalendar({
+	selected,
+	onSelect,
+	disabled,
+	startMonth,
+	endMonth,
+}: DaterangeCalendarProps) {
 	const { locale } = useLocale();
 	const months = useMonthCount();
 	const formatters = useMemo(() => intlFormatters(locale), [locale]);
@@ -35,6 +44,9 @@ export function DaterangeCalendar({ selected, onSelect }: DaterangeCalendarProps
 			defaultMonth={selected?.from}
 			selected={selected}
 			onSelect={onSelect}
+			disabled={disabled}
+			startMonth={startMonth}
+			endMonth={endMonth}
 			autoFocus
 		/>
 	);

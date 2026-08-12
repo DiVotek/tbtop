@@ -1,29 +1,84 @@
 import { CalendarIcon } from "lucide-react";
-import { lazy, type ReactNode, Suspense, useEffect, useState } from "react";
+import { type ReactNode, Suspense, useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { useLocale, useTranslation } from "../i18n/i18n";
+import { useClientActionContext } from "../structure/actionContext";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { usableTag } from "./daterangeLocale";
+import { LazyRangeCalendar } from "./daterangeCalendarLazy";
+import {
+	type DisabledRange,
+	navClamp,
+	type QueryRanges,
+	rangeMatchers,
+	useDisabledRanges,
+} from "./daterangeDisabled";
+import { type DaterangeValue, formatRange, toDateRange, toIsoDay } from "./daterangeValue";
+import { useFieldDependencies } from "./fieldDependencies";
 import type { FieldFormProps } from "./fieldProps";
 
-export type DaterangeValue = { from?: string | null; to?: string | null } | null;
+export { parseDay } from "./daterangeDisabled";
+export { type DaterangeValue, toDateRange } from "./daterangeValue";
 
-// The calendar (react-day-picker plus its date-fns dependency) stays out of the
-// static graph: daterange also renders in the table filter bar, which nearly
-// every page has. Only the popover body is lazy — the trigger renders eagerly
-// so the filter bar keeps its height while the chunk loads.
-const LazyRangeCalendar = lazy(() =>
-	import("./daterangeCalendar").then((m) => ({ default: m.DaterangeCalendar })),
-);
+export interface DaterangeOptionsBag {
+	dependsOn?: string[];
+	keepValue?: boolean;
+	whenParentEmpty?: "disabled" | "empty";
+	disabledRanges?: DisabledRange[];
+	/** Injected at materialize time — never on the wire. */
+	queryRanges?: QueryRanges;
+}
 
-const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
-
-export interface DaterangeFormProps extends FieldFormProps<DaterangeValue> {
+export interface DaterangeFormProps extends FieldFormProps<DaterangeValue, DaterangeOptionsBag> {
 	fallback?: ReactNode;
 }
 
-export function DaterangeForm({ name, value, onChange, disabled, fallback }: DaterangeFormProps) {
+export function DaterangeForm(props: DaterangeFormProps) {
+	// The dependent path needs the action context (its hook throws without a
+	// provider), so it only mounts for a field that declared parents — a plain
+	// daterange keeps rendering anywhere, filter bars included.
+	if (props.options?.dependsOn?.length) {
+		return <DependentDaterange {...props} />;
+	}
+	return <DaterangeControl {...props} ranges={props.options?.disabledRanges ?? []} />;
+}
+
+function DependentDaterange(props: DaterangeFormProps) {
+	const ctx = useClientActionContext();
+	const opts = props.options ?? {};
+	const dep = useFieldDependencies({
+		config: opts,
+		value: props.value,
+		onChange: props.onChange,
+	});
+	const ranges = useDisabledRanges({
+		initial: opts.disabledRanges ?? [],
+		depsKey: dep.depsKey,
+		deps: dep.deps,
+		query: opts.queryRanges,
+		ctx,
+	});
+	return (
+		<DaterangeControl
+			{...props}
+			ranges={ranges}
+			disabled={props.disabled || dep.disabledByParent}
+		/>
+	);
+}
+
+interface DaterangeControlProps extends DaterangeFormProps {
+	ranges: DisabledRange[];
+}
+
+function DaterangeControl({
+	name,
+	value,
+	onChange,
+	disabled,
+	fallback,
+	ranges,
+}: DaterangeControlProps) {
 	const t = useTranslation();
 	const { locale } = useLocale();
 	const applied = toDateRange(value);
@@ -33,6 +88,8 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 	// value, which a table filter would otherwise refetch on.
 	const [draft, setDraft] = useState<DateRange | undefined>(applied);
 	const [picking, setPicking] = useState(false);
+	const disabledMatchers = useMemo(() => rangeMatchers(ranges), [ranges]);
+	const clamp = useMemo(() => navClamp(ranges), [ranges]);
 
 	// Reopening starts from the applied value so an abandoned half-pick does not
 	// survive to the next open.
@@ -93,7 +150,13 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 						fallback ?? <div className="h-72 w-72 animate-pulse rounded-md bg-muted" />
 					}
 				>
-					<LazyRangeCalendar selected={draft} onSelect={handleSelect} />
+					<LazyRangeCalendar
+						selected={draft}
+						onSelect={handleSelect}
+						disabled={disabledMatchers.length > 0 ? disabledMatchers : undefined}
+						startMonth={clamp.startMonth}
+						endMonth={clamp.endMonth}
+					/>
 				</Suspense>
 				{applied ? (
 					<div className="border-t p-2">
@@ -112,48 +175,4 @@ export function DaterangeForm({ name, value, onChange, disabled, fallback }: Dat
 			</PopoverContent>
 		</Popover>
 	);
-}
-
-/** The wire shape uses null for an empty bound; react-day-picker uses undefined. */
-export function toDateRange(value: DaterangeValue): DateRange | undefined {
-	const from = parseDay(value?.from);
-	const to = parseDay(value?.to);
-	if (!from && !to) {
-		return undefined;
-	}
-	return { from, to };
-}
-
-/**
- * Undefined rather than an Invalid Date: the value can arrive from the URL
- * (t[posts][created_at][from]=…) and a malformed one would break the render.
- * Checks the parsed parts back so an overflowing day like 2026-02-30 is
- * rejected instead of silently becoming 2026-03-02.
- */
-export function parseDay(value: string | null | undefined): Date | undefined {
-	if (!value || !ISO_DAY.test(value)) {
-		return undefined;
-	}
-	const year = Number(value.slice(0, 4));
-	const month = Number(value.slice(5, 7));
-	const day = Number(value.slice(8, 10));
-	const date = new Date(year, month - 1, day);
-	if (date.getMonth() !== month - 1 || date.getDate() !== day) {
-		return undefined;
-	}
-	return date;
-}
-
-/** Local calendar day, not toISOString() — that shifts across the UTC boundary. */
-function toIsoDay(date: Date): string {
-	const pad = (n: number) => String(n).padStart(2, "0");
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function formatRange(range: DateRange | undefined, locale: string): string {
-	if (!range?.from || !range.to) {
-		return "";
-	}
-	const tag = usableTag(locale);
-	return `${range.from.toLocaleDateString(tag)} – ${range.to.toLocaleDateString(tag)}`;
 }

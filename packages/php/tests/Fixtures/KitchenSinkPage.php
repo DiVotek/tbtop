@@ -109,6 +109,18 @@ class KitchenSinkPage extends Page
                     ]),
                     $s->radio('archived')->label('Archived')->boolean(),
                     $s->date('publishedAt')->hiddenIf('published', '=', false),
+                    $s->daterange('promo_window')->label('Promo window')
+                        ->dependsOn('title')
+                        ->disabledRanges(fn (array $deps): array => [
+                            ['from' => null, 'to' => '2026-01-31'],
+                            ['from' => '2026-06-10', 'to' => '2026-06-20'],
+                            // Record seeds title = 'Hello', so the serialized
+                            // open-end range must start on 2026-12-01.
+                            [
+                                'from' => ($deps['title'] ?? '') === 'Hello' ? '2026-12-01' : '2026-11-01',
+                                'to' => null,
+                            ],
+                        ]),
                     $s->time('opensAt')->label('Opening time')->minuteStep(15),
                     $s->time('closesAt')->label('Closing time')->seconds()->secondStep(5),
                     $s->text('video_url')->hiddenIf('type', '!=', 'video'),

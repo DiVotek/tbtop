@@ -849,6 +849,16 @@ final class S
     }
 
     /**
+     * Find a Daterange field with a disabledRanges closure by name, walking all registered forms.
+     */
+    public function findDaterangeField(string $fieldName): ?Daterange
+    {
+        return $this->searchIncludedForms(
+            static fn (FormBuilder $form): ?Daterange => $form->findDaterangeField($fieldName),
+        );
+    }
+
+    /**
      * Find a Relation field with a query closure by name, walking all registered forms.
      */
     public function findRelationField(string $fieldName): ?Relation
