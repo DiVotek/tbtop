@@ -20,6 +20,9 @@ use Tbtop\Admin\Dsl\Fields\Field;
  * form schema (validation, dirty tracking, names), which forms do not support.
  * hiddenIf() hides the region client-side without gating the endpoint; the
  * access boundary is when(), which the endpoint honours with a 404.
+ *
+ * Actions in the content must be deps-stable: handlers resolve by name at
+ * dispatch with *initial* deps, so vary visibility, never node existence.
  */
 final class LiveRegionBuilder implements JsonSerializable
 {
