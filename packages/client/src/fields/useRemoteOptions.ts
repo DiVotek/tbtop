@@ -50,7 +50,7 @@ export function useRemoteOptions<TBag extends AsyncSingleOptionsBag & Dependency
 	onChange,
 }: RemoteOptionsArgs<TBag>): RemoteOptionsState<TBag> {
 	const ctx = useClientActionContext();
-	const dep = useFieldDependencies({ config: opts, value, onChange });
+	const dep = useFieldDependencies({ name, config: opts, value, onChange });
 	const isGated = dep.hasDeps && !dep.ready;
 	const bound = dep.hasDeps ? bindDeps(opts, dep.deps) : opts;
 

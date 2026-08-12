@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNearestFormController } from "../structure/formContext";
+import { isEqual } from "../structure/formController";
 
 export interface DependencyConfig {
 	dependsOn?: string[];
@@ -83,22 +84,43 @@ interface ResetArgs {
 	hasDeps: boolean;
 	keep: boolean;
 	value: unknown;
+	initialKey: string;
+	initialValue: unknown;
 	onChange: (next: null) => void;
 }
 
-/** Clears this field when a watched parent changes; the clear cascades downstream. */
-function useDependentReset({ depsKey, hasDeps, keep, value, onChange }: ResetArgs): void {
+/**
+ * Clears this field when a watched parent changes; the clear cascades downstream.
+ *
+ * A field mounts before the record's values reach it, so the parent landing
+ * afterwards reads as a parent change and would wipe a saved value the user
+ * never touched. The record's own (parents, value) pair is never invalid, so a
+ * transition arriving at exactly that pair is hydration, not a change. Checking
+ * the value too matters: a key-only rule would also skip the reset when the user
+ * re-picks the original parent under a different child.
+ */
+function useDependentReset(args: ResetArgs): void {
+	const { depsKey, hasDeps, keep } = args;
 	const prevKeyRef = useRef(depsKey);
-	const onChangeRef = useRef(onChange);
-	onChangeRef.current = onChange;
-	const valueRef = useRef(value);
-	valueRef.current = value;
+	const onChangeRef = useRef(args.onChange);
+	onChangeRef.current = args.onChange;
+	const valueRef = useRef(args.value);
+	valueRef.current = args.value;
+	const initialKeyRef = useRef(args.initialKey);
+	initialKeyRef.current = args.initialKey;
+	const initialValueRef = useRef(args.initialValue);
+	initialValueRef.current = args.initialValue;
 	useEffect(() => {
 		if (!hasDeps || keep || prevKeyRef.current === depsKey) {
 			prevKeyRef.current = depsKey;
 			return;
 		}
 		prevKeyRef.current = depsKey;
+		const atInitial =
+			depsKey === initialKeyRef.current && isEqual(valueRef.current, initialValueRef.current);
+		if (atInitial) {
+			return;
+		}
 		if (hasValue(valueRef.current)) {
 			onChangeRef.current(null);
 		}
@@ -106,6 +128,7 @@ function useDependentReset({ depsKey, hasDeps, keep, value, onChange }: ResetArg
 }
 
 export interface UseFieldDependenciesArgs {
+	name: string;
 	config: DependencyConfig;
 	value: unknown;
 	onChange: (next: null) => void;
@@ -113,6 +136,7 @@ export interface UseFieldDependenciesArgs {
 
 /** Resolves parent values from the form controller, gates fetch, and cascades resets. */
 export function useFieldDependencies({
+	name,
 	config,
 	value,
 	onChange,
@@ -122,7 +146,16 @@ export function useFieldDependencies({
 	const hasDeps = parents.length > 0;
 	const { deps, ready } = readDeps(parents, ctrl?.data ?? {});
 	const depsKey = hasDeps ? JSON.stringify(deps) : "";
-	useDependentReset({ depsKey, hasDeps, keep: config.keepValue === true, value, onChange });
+	const initial = ctrl?.initial ?? {};
+	useDependentReset({
+		depsKey,
+		hasDeps,
+		keep: config.keepValue === true,
+		value,
+		initialKey: hasDeps ? JSON.stringify(readDeps(parents, initial).deps) : "",
+		initialValue: initial[name],
+		onChange,
+	});
 	const disabledByParent = hasDeps && !ready && config.whenParentEmpty !== "empty";
 	return { hasDeps, deps, depsKey, ready, disabledByParent };
 }

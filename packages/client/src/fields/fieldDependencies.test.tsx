@@ -63,6 +63,7 @@ function mountHook(
 	function Inner({ ctrl }: { ctrl: FormController }) {
 		cap.states.push(
 			useFieldDependencies({
+				name: childName,
 				config,
 				value: ctrl.data[childName],
 				onChange: (v) => ctrl.set(childName, v),
