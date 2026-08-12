@@ -1,8 +1,18 @@
-import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { router } from "@inertiajs/react";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import * as inertiaReact from "@inertiajs/react";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import type { NavGroup } from "../chromeContext";
 import { CommandPalette } from "./CommandPalette";
+
+// spyOn(router, "visit") breaks once any other file has mock.module'd
+// @inertiajs/react — that replacement is process-global and makes visit an
+// accessor property, which bun cannot spy on. Since file order is random,
+// so was the failure. Own the module here instead, mirroring effects.test.ts.
+const routerVisit = mock((_href: string) => {});
+mock.module("@inertiajs/react", () => ({
+	...inertiaReact,
+	router: { visit: routerVisit, post: mock(() => {}), on: mock(() => () => {}) },
+}));
 
 const NAV: NavGroup[] = [
 	{ key: "Overview", group: "Overview", items: [{ label: "Dashboard", href: "/admin" }] },
@@ -24,6 +34,10 @@ function openPalette() {
 
 afterEach(cleanup);
 
+beforeEach(() => {
+	routerVisit.mockClear();
+});
+
 describe("CommandPalette", () => {
 	test("the hotkey opens the palette and lists nav destinations", () => {
 		const { queryByTestId, getByTestId, getByText } = render(
@@ -36,14 +50,12 @@ describe("CommandPalette", () => {
 	});
 
 	test("arrow keys move the selection and Enter runs it", () => {
-		const visit = spyOn(router, "visit").mockImplementation(() => {});
 		const { getByTestId } = render(<CommandPalette nav={NAV} data={{ hotkey: "mod+k" }} />);
 		openPalette();
 		const input = getByTestId("command-palette-input");
 		fireEvent.keyDown(input, { key: "ArrowDown" });
 		fireEvent.keyDown(input, { key: "Enter" });
-		expect(visit).toHaveBeenCalledWith("/admin/posts");
-		visit.mockRestore();
+		expect(routerVisit).toHaveBeenCalledWith("/admin/posts");
 	});
 
 	test("closing without selecting resets the highlight for the next open", () => {
