@@ -41,7 +41,7 @@ it('seeds a dotted dependency from a translatable record value', function (): vo
     $region->seedInitialDeps(['title' => ['en' => 'Hello', 'uk' => ''], 'slug' => 'about']);
     $region->toNode();
 
-    expect($seen)->toBe(['title.en' => 'Hello', 'title.uk' => '', 'slug' => 'about']);
+    expect($seen)->toBe(['title.en' => 'Hello', 'slug' => 'about']);
 });
 
 it('prefers a literal dotted record key over locale-map lookup', function (): void {

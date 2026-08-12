@@ -58,7 +58,6 @@ const ENDPOINT_BOUND_KINDS: Record<
 	(node: StructureNode, basePath: string) => StructureNode
 > = {
 	stat: materializeStat,
-	liveRegion: materializeLiveRegion,
 };
 
 function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
@@ -77,6 +76,12 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	}
 	if (node.kind.startsWith("chart:")) {
 		return materializeChart({ ...node, meta }, ctx.basePath);
+	}
+	if (node.kind === "liveRegion") {
+		return materializeLiveRegion(
+			{ ...node, meta },
+			{ basePath: ctx.basePath, walk: (n) => walk(n, ctx) },
+		);
 	}
 	const endpointBound = ENDPOINT_BOUND_KINDS[node.kind];
 	if (endpointBound) {

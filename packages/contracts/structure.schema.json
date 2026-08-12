@@ -622,9 +622,10 @@
 						"required": ["name"],
 						"properties": {
 							"options": {
-								"required": ["dependsOn", "initial"],
+								"required": ["dependsOn", "initialDeps", "initial"],
 								"properties": {
 									"dependsOn": { "type": "array", "items": { "type": "string" } },
+									"initialDeps": { "type": "object", "additionalProperties": { "type": "string" } },
 									"initial": { "type": "array", "items": { "$ref": "#/$defs/node" } }
 								},
 								"additionalProperties": false
