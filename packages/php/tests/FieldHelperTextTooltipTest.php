@@ -53,3 +53,12 @@ it('serializes string and DSL field affixes as display nodes', function () {
         ->and($json['options']['suffix']['kind'])->toBe('action')
         ->and($json['options']['suffix']['name'])->toBe('currency_help');
 });
+
+it('rejects a field affix — RuleWalker would never collect its rules', function () {
+    Text::make('price')->suffix(Text::make('vat')->rules('required'));
+})->throws(InvalidArgumentException::class);
+
+it('rejects a field nested inside a container affix', function () {
+    $s = new S;
+    Text::make('price')->prefix($s->stack([Text::make('vat')]));
+})->throws(InvalidArgumentException::class);
