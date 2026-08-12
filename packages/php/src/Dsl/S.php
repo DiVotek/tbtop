@@ -537,15 +537,26 @@ final class S
     }
 
     /**
-     * @param  list<array{label: string, body?: mixed, children?: list<mixed>, columns?: int|array<string, int>, icon?: string|array{name: string, position?: string}, badge?: string|int}>  $tabs  Each entry needs 'body' XOR 'children' ('columns' only applies with 'children')
+     * @param  list<array{name?: string, label?: string, body?: mixed, children?: list<mixed>, columns?: int|array<string, int>, icon?: string|array{name: string, position?: string}, badge?: string|int}>  $tabs  Each entry needs 'body' XOR 'children' ('columns' only applies with 'children')
      * @param  array<string, mixed>  $opts
      */
     public function tabs(array $tabs, array $opts = []): Node
     {
         [$options, $meta] = Meta::split($opts);
-        $items = array_map(self::normalizeTab(...), $tabs);
+        $name = $options['name'] ?? null;
+        unset($options['name']);
+        if ($name !== null && (! is_string($name) || $name === '')) {
+            throw new InvalidArgumentException('Named tabs block needs a non-empty string name.');
+        }
+        $items = array_map(fn (array $tab) => self::normalizeTab($tab, $name !== null), $tabs);
+        if ($name !== null) {
+            $names = array_column($items, 'name');
+            if (count(array_unique($names)) !== count($names)) {
+                throw new InvalidArgumentException("Duplicate tab name on tabs block \"{$name}\".");
+            }
+        }
 
-        return new Node('tabs', [...$options, 'tabs' => $items], null, $meta);
+        return new Node('tabs', [...$options, 'tabs' => $items], $name, $meta);
     }
 
     /**
@@ -556,9 +567,26 @@ final class S
      * @param  array<string, mixed>  $tab
      * @return array<string, mixed>
      */
-    private static function normalizeTab(array $tab): array
+    private static function normalizeTab(array $tab, bool $needsName): array
     {
-        $out = ['label' => $tab['label'], 'body' => self::normalizeTabBody($tab)];
+        $name = $tab['name'] ?? null;
+        if ($name !== null && (! is_string($name) || $name === '')) {
+            throw new InvalidArgumentException('Tab name must be a non-empty string.');
+        }
+        if ($needsName && $name === null) {
+            throw new InvalidArgumentException('Every tab in a named tabs block needs a name.');
+        }
+        $label = $tab['label'] ?? $name;
+        if (! is_string($label) || $label === '') {
+            throw new InvalidArgumentException('Tab needs a label or name.');
+        }
+
+        $tab['label'] = $label;
+        $out = [
+            ...($name !== null ? ['name' => $name] : []),
+            'label' => $label,
+            'body' => self::normalizeTabBody($tab),
+        ];
         if (isset($tab['icon'])) {
             $out['icon'] = self::normalizeIcon($tab['icon']);
         }

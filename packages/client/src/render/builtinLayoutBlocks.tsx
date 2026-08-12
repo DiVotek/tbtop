@@ -10,6 +10,7 @@ import { type IconDef, NodeIcon } from "../ui/node-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
 import { mapChildren } from "./mapChildren";
+import { persistTabsValue, seedTabsValue } from "./tabsUrlState";
 
 // SectionBlock lives in its own module (variant dispatch grew it past this
 // file's budget); re-exported so existing importers keep working.
@@ -38,7 +39,8 @@ interface GridOptions {
 }
 
 interface TabsOptions {
-	tabs: { label: string; body: StructureNode; icon?: IconDef; badge?: string }[];
+	name?: string;
+	tabs: { name?: string; label: string; body: StructureNode; icon?: IconDef; badge?: string }[];
 }
 
 interface WidgetOptions {
@@ -156,10 +158,26 @@ export function GridBlock({ options, children, renderChild }: RenderProps<GridOp
 }
 
 export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
-	const { tabs } = options;
+	const { name, tabs } = options;
+	const values = tabs.map((tab, index) => tab.name ?? String(index));
+	const defaultValue = values[0] ?? "0";
+	const urlName = name && tabs.every((tab) => tab.name) ? name : undefined;
 	const tabFieldNames = useTabFieldNames(tabs);
-	const [active, setActive] = useState("0");
-	const errorCounts = useTabErrorAutoSwitch({ tabFieldNames, active, setActive });
+	const [active, setActive] = useState(() =>
+		urlName ? (seedTabsValue(urlName, values) ?? defaultValue) : defaultValue,
+	);
+	const activeIndex = Math.max(values.indexOf(active), 0);
+	const errorCounts = useTabErrorAutoSwitch({
+		tabFieldNames,
+		activeIndex,
+		setActiveIndex: (index) => setActive(values[index] ?? defaultValue),
+	});
+	const currentSearch = typeof window === "undefined" ? "" : window.location.search;
+	useEffect(() => {
+		if (urlName) {
+			persistTabsValue(urlName, active, defaultValue);
+		}
+	}, [urlName, active, defaultValue, currentSearch]);
 
 	if (tabs.length === 0) {
 		return null;
@@ -168,12 +186,21 @@ export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 		<Tabs value={active} onValueChange={setActive} data-testid="tabs">
 			<TabsList>
 				{tabs.map((tab, i) => (
-					<TabTrigger key={i} index={i} tab={tab} errorCount={errorCounts[i] ?? 0} />
+					<TabTrigger
+						key={tab.name ?? i}
+						value={values[i] ?? String(i)}
+						tab={tab}
+						errorCount={errorCounts[i] ?? 0}
+					/>
 				))}
 			</TabsList>
 			{tabs.map((tab, i) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: tab positions are stable
-				<TabsContent key={i} value={String(i)} data-testid={`tab-panel-${tab.label}`}>
+				<TabsContent
+					key={tab.name ?? i}
+					value={values[i] ?? String(i)}
+					data-testid={`tab-panel-${tab.label}`}
+				>
 					{renderChild(tab.body)}
 				</TabsContent>
 			))}
@@ -182,15 +209,15 @@ export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 }
 
 interface TabTriggerProps {
-	index: number;
+	value: string;
 	tab: TabsOptions["tabs"][number];
 	errorCount: number;
 }
 
-function TabTrigger({ index, tab, errorCount }: TabTriggerProps) {
+function TabTrigger({ value, tab, errorCount }: TabTriggerProps) {
 	const icon = <NodeIcon icon={tab.icon} className="size-4 shrink-0" />;
 	return (
-		<TabsTrigger value={String(index)} data-testid={`tab-${tab.label}`}>
+		<TabsTrigger value={value} data-testid={`tab-${tab.label}`}>
 			{tab.icon?.position !== "right" && icon}
 			{tab.label}
 			{tab.icon?.position === "right" && icon}
@@ -233,8 +260,8 @@ function useTabFieldNames(tabs: TabsOptions["tabs"]): string[][] {
 
 interface TabErrorAutoSwitchInput {
 	tabFieldNames: string[][];
-	active: string;
-	setActive: (value: string) => void;
+	activeIndex: number;
+	setActiveIndex: (index: number) => void;
 }
 
 /**
@@ -248,8 +275,8 @@ interface TabErrorAutoSwitchInput {
  */
 function useTabErrorAutoSwitch({
 	tabFieldNames,
-	active,
-	setActive,
+	activeIndex,
+	setActiveIndex,
 }: TabErrorAutoSwitchInput): number[] {
 	const ctrl = useNearestFormHandle();
 	// A stable empty-object fallback: `ctrl?.fieldErrors ?? {}` would mint a
@@ -266,19 +293,19 @@ function useTabErrorAutoSwitch({
 			return;
 		}
 		prevTickRef.current = errorScrollTick;
-		const activeHasError = countTabErrors(tabFieldNames[Number(active)] ?? [], fieldErrors) > 0;
+		const activeHasError = countTabErrors(tabFieldNames[activeIndex] ?? [], fieldErrors) > 0;
 		if (activeHasError) {
 			return;
 		}
 		const firstErrored = firstTabIndexWithError(tabFieldNames, fieldErrors);
 		if (firstErrored !== null) {
-			setActive(String(firstErrored));
+			setActiveIndex(firstErrored);
 		}
 		// fieldErrors changes on every keystroke (revalidateField), but the
 		// errorScrollTick guard above makes every one of those extra runs a
 		// no-op — only a genuinely new tick (once per submit attempt) reaches
 		// past it and can switch tabs.
-	}, [errorScrollTick, active, tabFieldNames, fieldErrors, setActive]);
+	}, [errorScrollTick, activeIndex, tabFieldNames, fieldErrors, setActiveIndex]);
 
 	return counts;
 }

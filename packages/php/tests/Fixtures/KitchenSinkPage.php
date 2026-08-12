@@ -208,13 +208,13 @@ class KitchenSinkPage extends Page
                 ])->record(['title' => 'Hello'])->onSubmit(fn () => Effects::make()),
             ]),
             $s->tabs([
-                ['label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3'],
-                ['label' => 'More', 'body' => $s->displayText('Second tab')->variant('muted')],
-                ['label' => 'Grid', 'children' => [
+                ['name' => 'main', 'label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3'],
+                ['name' => 'more', 'label' => 'More', 'body' => $s->displayText('Second tab')->variant('muted')],
+                ['name' => 'grid', 'label' => 'Grid', 'children' => [
                     $s->displayText('Left')->variant('body'),
                     $s->displayText('Right')->variant('body'),
                 ], 'columns' => 2],
-            ]),
+            ], ['name' => 'content']),
             $s->table('posts')
                 ->columns([
                     Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap(),

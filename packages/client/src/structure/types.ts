@@ -52,6 +52,7 @@ export interface StructureNode<TKind extends string = string, TOptions = unknown
 }
 
 export interface TabItem {
+	name?: string;
 	label: string;
 	body: StructureNode;
 	icon?: IconDef;

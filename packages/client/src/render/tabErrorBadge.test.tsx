@@ -77,6 +77,27 @@ describe("TabsBlock error badges", () => {
 		);
 	});
 
+	test("auto-switching named tabs mirrors the errored tab into the URL", async () => {
+		const originalHref = window.location.href;
+		window.history.replaceState(null, "", window.location.pathname);
+		const node = s.form({ query: async () => ({ name: "", email: "" }) }, [
+			s.tabs(
+				[
+					s.tab("General", s.stack([s.text({ name: "name" })]), { name: "general" }),
+					s.tab("Contact", s.stack([s.text({ name: "email" })]), { name: "contact" }),
+				],
+				{ name: "profile" },
+			),
+			throwingSaveAction({ email: "Email is required" }),
+		]);
+		const { findByTestId } = render(<Wrapper>{renderNode(node)}</Wrapper>);
+		const button = await findByTestId("action-save");
+
+		await act(async () => fireEvent.click(button));
+		await waitFor(() => expect(window.location.search).toContain("tab%5Bprofile%5D=contact"));
+		window.history.replaceState(null, "", originalHref);
+	});
+
 	test("does not switch tabs when the active tab already has the error", async () => {
 		const node = s.form({ query: async () => ({ name: "", email: "" }) }, [
 			s.tabs([

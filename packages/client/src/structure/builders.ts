@@ -60,15 +60,21 @@ export function buildSection(opts: Bag, children: StructureNode[]): StructureNod
 
 export function buildTabs(items: TabItem[], opts?: Bag): StructureNode {
 	const split = splitMeta(opts);
-	return { kind: "tabs", options: { ...split.options, tabs: items }, meta: split.meta };
+	const { name, ...options } = split.options;
+	return {
+		kind: "tabs",
+		...(typeof name === "string" ? { name } : {}),
+		options: { ...options, tabs: items },
+		meta: split.meta,
+	};
 }
 
 export function buildTab(
 	label: string,
 	body: StructureNode,
-	opts?: { icon?: string | IconDef; badge?: string | number },
+	opts?: { name?: string; icon?: string | IconDef; badge?: string | number },
 ): TabItem {
-	const tab: TabItem = { label, body };
+	const tab: TabItem = { ...(opts?.name ? { name: opts.name } : {}), label, body };
 	if (opts?.icon !== undefined) {
 		tab.icon =
 			typeof opts.icon === "string"

@@ -64,6 +64,18 @@ describe("structure layout builders", () => {
 		const body = s.text({ name: "x" });
 		expect(s.tab("First", body)).toEqual({ label: "First", body });
 	});
+
+	test("structure named tabs put the block name on the node and names on entries", () => {
+		const body = s.text({ name: "title" });
+		const node = s.tabs([s.tab("SEO", body, { name: "seo" })], { name: "post" });
+
+		expect(node).toEqual({
+			kind: "tabs",
+			name: "post",
+			options: { tabs: [{ name: "seo", label: "SEO", body }] },
+			meta: {},
+		});
+	});
 });
 
 describe("structure field builders", () => {
