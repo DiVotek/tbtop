@@ -1,20 +1,28 @@
 import { createContext, type ReactNode, useContext } from "react";
-import type { useFormController } from "./formController";
+import type { FormControllerInternal } from "./formController";
+import type { FormController } from "./types";
 
-type ControllerHandle = ReturnType<typeof useFormController>;
-
-const FormCtx = createContext<ControllerHandle | null>(null);
+const FormCtx = createContext<FormControllerInternal | null>(null);
 
 export function FormControllerProvider({
 	value,
 	children,
 }: {
-	value: ControllerHandle;
+	value: FormControllerInternal;
 	children: ReactNode;
 }) {
 	return <FormCtx.Provider value={value}>{children}</FormCtx.Provider>;
 }
 
-export function useNearestFormController(): ControllerHandle | null {
+/** Internal accessor: render machinery that needs error/touched plumbing. */
+export function useNearestFormHandle(): FormControllerInternal | null {
+	return useContext(FormCtx);
+}
+
+/**
+ * The nearest enclosing form, narrowed to the stable FormController surface.
+ * This is the public extension point for form-aware custom blocks.
+ */
+export function useNearestFormController(): FormController | null {
 	return useContext(FormCtx);
 }
