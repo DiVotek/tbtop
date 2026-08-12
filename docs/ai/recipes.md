@@ -624,6 +624,83 @@ metadata is matched by label the same way.
 
 ---
 
+## Recipe 10 — Form-aware custom block (live client-side computation)
+
+**What it covers:** live derived UI over *unsaved* form values — a price subtotal that
+updates as the manager edits repeater rows, a character counter, a computed preview —
+without a server round-trip per keystroke.
+
+**How it works here:** `useNearestFormController()` is exported from
+`@tbtop/inertia-admin`. A block registered via `registerBlock` and rendered inside a form
+subtree reads the live form state through it (`data`, `isDirty`, `set`, …). Server-known
+inputs for the formula (rates, tariffs) go into the block's options at page assembly.
+
+```tsx
+import { registerBlock, useNearestFormController } from "@tbtop/inertia-admin";
+
+function Subtotal({ options }: { options: { rate: number } }) {
+	const ctrl = useNearestFormController();
+	const rows = Array.isArray(ctrl?.data.options) ? ctrl.data.options : [];
+	const sum = rows.reduce((acc, r) => acc + Number((r as { price?: unknown }).price ?? 0), 0);
+	return <output>{sum + options.rate}</output>;
+}
+
+registerBlock<"app:subtotal", { rate: number }>({
+	kind: "app:subtotal",
+	behavior: "leaf",
+	render: Subtotal,
+});
+```
+
+```php
+$s->form('booking', [
+    $s->repeater('options')->fields([...]),
+    new Node('app:subtotal', ['rate' => $tariff->daily_rate]),
+]);
+```
+
+The preview is UX-only — the authoritative total is computed server-side on submit, same
+trust model as the client zod mirror. When the computation needs *server* rules over the
+rows, that is the "collection deps for liveRegion" backlog item, not this recipe.
+
+Verified by `packages/client/src/structure/formContext.test.tsx`.
+
+---
+
+## Recipe 11 — Action over unsaved form values (save + generate)
+
+**The trap:** an in-page action (e.g. *Generate contract*) resolves the record from route
+params — it runs against the last *saved* state. With a dirty form, the manager gets a
+document built from stale data, silently.
+
+**How it works here:** an action inside a form subtree may declare `needs: ['form']`. The
+client then sends the current (unsaved) form values as `payload.form`; the server validates
+them against the enclosing form's rules before the handler runs (`ActionController` mirrors
+`FormSubmitController`; invalid input surfaces as inline field errors, not a toast). The
+handler receives them via `$ctx->form`:
+
+```php
+$s->action('generateContract')
+    ->label('Generate contract')
+    ->handle(function (ActionCtx $ctx) {
+        $booking = Booking::findOrFail($ctx->params['id']);
+        $booking->update($ctx->form);          // persist first — the document
+        ContractPdf::generate($booking);       // must match screen AND database
+        return Effects::make()->notify('Contract generated');
+    }, needs: ['form']);
+```
+
+Two rules make this pattern sound:
+
+- **Persist before deriving.** Generating from fresh values without saving them would
+  produce a document that disagrees with the database — worse than the stale-data trap.
+  One click means "save, then generate".
+- **Placement matters.** `payload.form` is only validated and delivered for actions
+  *inside* the form's subtree (`ActionFormRules::enclosingFormName`). A header action
+  outside the form receives nothing.
+
+---
+
 ## Not yet expressible
 
 These Filament features do not compose today. Do NOT attempt to fake them with existing
