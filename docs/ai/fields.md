@@ -253,12 +253,14 @@ consumer add kinds without editing the package, which a closed enum would forbid
 `KitchenSinkPage` emitting a representative tree that PHP validates against the schema and the
 client renders (`ContractTest`) — coverage, not enumeration.
 
-### Reactive / cascading selects — unsupported
+### Reactive / cascading selects — `dependsOn()`
 
-A `select` whose options depend on another field's value (cascading / `dependsOn`) is **not
-supported**. `Select.php` has no `dependsOn`, and the client async path keys only on the typed
-search string — there is no field-dependency channel on the wire. Do not assume it works;
-filing a builder for it is a separate, contract-gated change.
+A `select` whose options depend on another field's value cascades via the `HasDependencies`
+concern: `dependsOn(string|array $fields)` declares the parent(s), and the async `query()`
+closure receives their current values as `$deps`. On a parent change the client refetches
+options and clears the dependent value (opt out with `keepValueOnParentChange()`); until the
+parent has a value the field is disabled, unless `whenParentEmpty('empty')` renders it
+enabled with an empty option set. Daterange shares the same concern for `disabledRanges()`.
 
 ---
 
