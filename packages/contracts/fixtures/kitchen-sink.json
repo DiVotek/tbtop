@@ -444,6 +444,31 @@
                                         "name": "publishedAt"
                                     },
                                     {
+                                        "kind": "daterange",
+                                        "options": {
+                                            "label": "Promo window",
+                                            "dependsOn": [
+                                                "title"
+                                            ],
+                                            "disabledRanges": [
+                                                {
+                                                    "from": null,
+                                                    "to": "2026-01-31"
+                                                },
+                                                {
+                                                    "from": "2026-06-10",
+                                                    "to": "2026-06-20"
+                                                },
+                                                {
+                                                    "from": "2026-12-01",
+                                                    "to": null
+                                                }
+                                            ]
+                                        },
+                                        "meta": {},
+                                        "name": "promo_window"
+                                    },
+                                    {
                                         "kind": "time",
                                         "options": {
                                             "label": "Opening time",

@@ -5,9 +5,11 @@
  */
 import { getBlockDescriptor } from "../render/blockRegistry";
 import type { NodeMeta, StructureNode } from "../structure/types";
+import { materializeDaterange } from "./materializeDaterange";
 import { materializeRelation, materializeUpload } from "./materializeHelpers";
 
-// basePath-bound named fields (relation, upload); null when this node is neither.
+// basePath-bound named fields (relation, upload, daterange); null when this
+// node is none of them.
 export function materializeNamedField(
 	node: StructureNode,
 	meta: NodeMeta,
@@ -21,6 +23,9 @@ export function materializeNamedField(
 	}
 	if (node.kind === "upload") {
 		return materializeUpload({ ...node, meta }, basePath);
+	}
+	if (node.kind === "daterange") {
+		return materializeDaterange({ ...node, meta }, basePath);
 	}
 	return null;
 }

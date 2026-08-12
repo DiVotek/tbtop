@@ -117,7 +117,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
 | **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS`; call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
-| **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | none; value shape: `{from?: string, to?: string}` | No |
+| **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | `disabledRanges(Closure $fn)` — server closure `fn (array $deps): array` returning a list of `['from' => ?string, 'to' => ?string]` ISO-day ranges (both ends inclusive-disabled; a null end makes the range open, i.e. min/max-date semantics); `dependsOn(string\|array $fields)` — parent field(s) whose changes refetch the ranges. Value shape: `{from?: string, to?: string}` | Only with `disabledRanges()` + `dependsOn()` → daterange-ranges endpoint |
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |
 | **Radio** | `$s->radio('x')` / `Radio::make('x')` | `radio` | `options(list<{value, label, description?, disabled?}> $options)` — static option list, each option can carry its own `description` and `disabled`; `inline(bool $value = true)` — horizontal layout instead of the default stacked list; `boolean()` — shorthand for a 2-option Yes/No radio, no-op if `options()` was already called | No |
@@ -253,18 +253,20 @@ consumer add kinds without editing the package, which a closed enum would forbid
 `KitchenSinkPage` emitting a representative tree that PHP validates against the schema and the
 client renders (`ContractTest`) — coverage, not enumeration.
 
-### Reactive / cascading selects — unsupported
+### Reactive / cascading selects — `dependsOn()`
 
-A `select` whose options depend on another field's value (cascading / `dependsOn`) is **not
-supported**. `Select.php` has no `dependsOn`, and the client async path keys only on the typed
-search string — there is no field-dependency channel on the wire. Do not assume it works;
-filing a builder for it is a separate, contract-gated change.
+A `select` whose options depend on another field's value cascades via the `HasDependencies`
+concern: `dependsOn(string|array $fields)` declares the parent(s), and the async `query()`
+closure receives their current values as `$deps`. On a parent change the client refetches
+options and clears the dependent value (opt out with `keepValueOnParentChange()`); until the
+parent has a value the field is disabled, unless `whenParentEmpty('empty')` renders it
+enabled with an empty option set. Daterange shares the same concern for `disabledRanges()`.
 
 ---
 
 ## Fields that need a server endpoint
 
-Three fields resolve data from the server at runtime rather than from static props.
+Four fields resolve data from the server at runtime rather than from static props.
 
 ### Relation — `relation-search` endpoint
 
@@ -317,6 +319,29 @@ When `query(callable)` is passed instead of `options(array)`, the select fetches
 options from the server on open/search rather than reading from static props.
 
 See [./wiring.md](./wiring.md) for the endpoint shape.
+
+### Daterange with `disabledRanges()` + `dependsOn()` — `daterange-ranges` endpoint
+
+`disabledRanges(Closure $fn)` computes the un-selectable day ranges server-side.
+The initial ranges serialize with the page (deps seeded from the form record); when a
+`dependsOn()` parent changes, the client POSTs `{deps}` to the daterange-ranges endpoint,
+which re-runs the closure and answers `{ranges}`. Without `dependsOn()` the serialized
+ranges are final and the endpoint is never called.
+
+```php
+$s->daterange('stay')->label('Stay')
+    ->dependsOn('room_id')
+    ->disabledRanges(fn (array $deps): array => Booking::query()
+        ->where('room_id', $deps['room_id'] ?? 0)
+        ->get(['starts_on', 'ends_on'])
+        ->map(fn ($b) => ['from' => $b->starts_on, 'to' => $b->ends_on])
+        ->all()),
+```
+
+An open end disables everything past the closed one: `['from' => null, 'to' => X]`
+disables every day up to and including X; `['from' => Y, 'to' => null]` disables Y and
+everything after. The client also clamps calendar navigation to the months an open
+end leaves reachable.
 
 ---
 
