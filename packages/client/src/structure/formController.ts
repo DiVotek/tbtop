@@ -8,7 +8,7 @@ interface UseFormControllerInput {
 	schema?: { parse: (input: unknown) => unknown };
 }
 
-interface FormControllerInternal extends FormController {
+export interface FormControllerInternal extends FormController {
 	touched: Set<string>;
 	fieldErrors: Record<string, string>;
 	schema: { parse: (input: unknown) => unknown } | undefined;

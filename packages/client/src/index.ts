@@ -75,6 +75,7 @@ export {
 } from "./structure/displayDividerBlock";
 export { DisplayHtmlBlock, displayHtmlBlockDescriptor } from "./structure/displayHtmlBlock";
 export { DisplayTextBlock, displayTextBlockDescriptor } from "./structure/displayTextBlock";
+export { useNearestFormController } from "./structure/formContext";
 export type {
 	StructureBuilder,
 	StructureBuilders,

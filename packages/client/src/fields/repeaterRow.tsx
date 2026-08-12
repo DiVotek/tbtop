@@ -3,7 +3,7 @@ import { getBlockDescriptor } from "../render/blockRegistry";
 import { renderDescriptor } from "../render/renderDescriptor";
 import { useActiveLocale, useContentLocaleConfig } from "../structure/contentLocaleContext";
 import { FieldError } from "../structure/formBlock";
-import { useNearestFormController } from "../structure/formContext";
+import { useNearestFormHandle } from "../structure/formContext";
 import { isNodeDisabled, isNodeHidden } from "../structure/meta";
 import type { StructureNode } from "../structure/structure";
 import type { ConditionContext } from "../structure/types";
@@ -32,7 +32,7 @@ interface RepeaterRowProps {
 }
 
 export function RepeaterRow(props: RepeaterRowProps) {
-	const ctrl = useNearestFormController();
+	const ctrl = useNearestFormHandle();
 	const rootData = ctrl?.data ?? {};
 	const fieldErrors = ctrl?.fieldErrors ?? {};
 	const { locales, defaultLocale } = useContentLocaleConfig();

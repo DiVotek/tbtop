@@ -5,7 +5,8 @@ import { useNavigate } from "../app/navigate";
 import { useParams } from "../app/pageParams";
 import { useClient } from "../data/client";
 import { useTranslation } from "../i18n/i18n";
-import { useNearestFormController } from "./formContext";
+import { useNearestFormHandle } from "./formContext";
+import type { FormControllerInternal } from "./formController";
 import { useNearestModal } from "./modalContext";
 import { useNearestRow } from "./rowContext";
 import { useNearestTableController } from "./tableContext";
@@ -21,7 +22,7 @@ export function useClientActionContext(): ClientActionContext {
 	const navigate = useNavigate();
 	const params = useParams();
 	const t = useTranslation();
-	const formHandle = useNearestFormController();
+	const formHandle = useNearestFormHandle();
 	const tableHandle = useNearestTableController();
 	const row = useNearestRow();
 	const modal = useNearestModal();
@@ -55,9 +56,7 @@ function toTableController(handle: TableController): TableController {
 	};
 }
 
-function toFormController(
-	handle: NonNullable<ReturnType<typeof useNearestFormController>>,
-): FormController {
+function toFormController(handle: FormControllerInternal): FormController {
 	return {
 		initial: handle.initial,
 		data: handle.data,
