@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { FormControllerProvider } from "../structure/formContext";
 import { useFormController } from "../structure/formController";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
@@ -16,18 +17,23 @@ function isDaterangeValue(raw: unknown): raw is DaterangeValue {
 
 function renderDaterange(opts: DaterangeOptionsBag, initial: Record<string, unknown>) {
 	const ctrls: FormController[] = [];
+	let setMounted: (mounted: boolean) => void = () => {};
 	function Harness() {
 		const ctrl = useFormController({ initial });
+		const [mounted, set] = useState(true);
+		setMounted = (next) => act(() => set(next));
 		ctrls.push(ctrl);
 		const raw = ctrl.data.stay;
 		return (
 			<FormControllerProvider value={ctrl}>
-				<DaterangeForm
-					name="stay"
-					value={isDaterangeValue(raw) ? raw : null}
-					onChange={(v) => ctrl.set("stay", v)}
-					options={opts}
-				/>
+				{mounted ? (
+					<DaterangeForm
+						name="stay"
+						value={isDaterangeValue(raw) ? raw : null}
+						onChange={(v) => ctrl.set("stay", v)}
+						options={opts}
+					/>
+				) : null}
 			</FormControllerProvider>
 		);
 	}
@@ -36,7 +42,7 @@ function renderDaterange(opts: DaterangeOptionsBag, initial: Record<string, unkn
 			<Harness />
 		</Wrap>,
 	);
-	return { ctrls, view, doc: view.container.ownerDocument };
+	return { ctrls, view, doc: view.container.ownerDocument, setMounted };
 }
 
 function dayButton(doc: Document, iso: string): HTMLButtonElement {
@@ -78,6 +84,42 @@ describe("Daterange: deps-driven disabled ranges", () => {
 		expect(dayButton(doc, "2026-03-25").disabled).toBe(false);
 		await user.click(dayButton(doc, "2026-03-15"));
 		expect((ctrls.at(-1) as FormController).data.stay).toEqual(applied);
+	});
+
+	test("a late mount refetches ranges when the parent changed while unmounted", async () => {
+		const queryRanges = mock(
+			async (_ctx: unknown, _deps: Record<string, string>): Promise<DisabledRange[]> => [
+				{ from: "2026-03-10", to: "2026-03-20" },
+			],
+		);
+		const { ctrls, setMounted } = renderDaterange(
+			{ dependsOn: ["season"], disabledRanges: [], queryRanges },
+			{ season: "summer", stay: null },
+		);
+
+		setMounted(false);
+		act(() => (ctrls.at(-1) as FormController).set("season", "winter"));
+		setMounted(true);
+
+		await waitFor(() => expect(queryRanges).toHaveBeenCalledTimes(1));
+		expect(queryRanges.mock.calls[0]?.[1]).toEqual({ season: "winter" });
+	});
+
+	test("returning to the initial parent refetches after another key loaded", async () => {
+		const queryRanges = mock(
+			async (_ctx: unknown, _deps: Record<string, string>): Promise<DisabledRange[]> => [],
+		);
+		const { ctrls } = renderDaterange(
+			{ dependsOn: ["season"], disabledRanges: [], queryRanges },
+			{ season: "summer", stay: null },
+		);
+
+		act(() => (ctrls.at(-1) as FormController).set("season", "winter"));
+		await waitFor(() => expect(queryRanges).toHaveBeenCalledTimes(1));
+		act(() => (ctrls.at(-1) as FormController).set("season", "summer"));
+
+		await waitFor(() => expect(queryRanges).toHaveBeenCalledTimes(2));
+		expect(queryRanges.mock.calls[1]?.[1]).toEqual({ season: "summer" });
 	});
 });
 

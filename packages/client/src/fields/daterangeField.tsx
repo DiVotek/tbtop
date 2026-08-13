@@ -55,6 +55,7 @@ function DependentDaterange(props: DaterangeFormProps) {
 	const ranges = useDisabledRanges({
 		initial: opts.disabledRanges ?? [],
 		depsKey: dep.depsKey,
+		initialDepsKey: dep.initialDepsKey,
 		deps: dep.deps,
 		query: opts.queryRanges,
 		ctx,

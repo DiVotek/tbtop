@@ -110,6 +110,7 @@ function startOfMonth(date: Date): Date {
 interface UseDisabledRangesArgs {
 	initial: DisabledRange[];
 	depsKey: string;
+	initialDepsKey: string;
 	deps: Record<string, string>;
 	query: QueryRanges | undefined;
 	ctx: ClientActionContext;
@@ -121,9 +122,11 @@ interface UseDisabledRangesArgs {
  * deps changes do; latest-wins on races (mirrors LiveRegionBlock).
  */
 export function useDisabledRanges(args: UseDisabledRangesArgs): DisabledRange[] {
-	const { depsKey, query } = args;
+	const { depsKey, initialDepsKey, query } = args;
 	const [ranges, setRanges] = useState(args.initial);
-	const prevKeyRef = useRef(depsKey);
+	const prevKeyRef = useRef(initialDepsKey);
+	const initialKeyRef = useRef(initialDepsKey);
+	const hasRefetchedRef = useRef(false);
 	const latestKeyRef = useRef(depsKey);
 	const depsRef = useRef(args.deps);
 	depsRef.current = args.deps;
@@ -131,14 +134,27 @@ export function useDisabledRanges(args: UseDisabledRangesArgs): DisabledRange[] 
 	ctxRef.current = args.ctx;
 
 	useEffect(() => {
-		if (!query || prevKeyRef.current === depsKey) {
+		latestKeyRef.current = depsKey;
+		if (!hasRefetchedRef.current && initialKeyRef.current !== initialDepsKey) {
+			initialKeyRef.current = initialDepsKey;
+			prevKeyRef.current = initialDepsKey;
+			setRanges(args.initial);
+		}
+		if (!query) {
+			return;
+		}
+		if (!hasRefetchedRef.current && depsKey === initialDepsKey) {
+			prevKeyRef.current = depsKey;
+			return;
+		}
+		if (prevKeyRef.current === depsKey) {
 			return;
 		}
 		prevKeyRef.current = depsKey;
-		latestKeyRef.current = depsKey;
 		query(ctxRef.current, depsRef.current).then(
 			(fresh) => {
 				if (latestKeyRef.current === depsKey) {
+					hasRefetchedRef.current = true;
 					setRanges(fresh);
 				}
 			},
@@ -147,7 +163,7 @@ export function useDisabledRanges(args: UseDisabledRangesArgs): DisabledRange[] 
 				// recoverable (PHP validation is the boundary), a broken picker is not.
 			},
 		);
-	}, [depsKey, query]);
+	}, [args.initial, depsKey, initialDepsKey, query]);
 
 	return ranges;
 }

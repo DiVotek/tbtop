@@ -12,11 +12,15 @@ export interface DependencyState {
 	hasDeps: boolean;
 	deps: Record<string, string>;
 	depsKey: string;
+	initialDepsKey: string;
 	ready: boolean;
 	disabledByParent: boolean;
 }
 
 function scalarToString(raw: unknown): string {
+	if (typeof raw === "boolean") {
+		return raw ? "1" : "0";
+	}
 	if (typeof raw === "number") {
 		return String(raw);
 	}
@@ -147,15 +151,16 @@ export function useFieldDependencies({
 	const { deps, ready } = readDeps(parents, ctrl?.data ?? {});
 	const depsKey = hasDeps ? JSON.stringify(deps) : "";
 	const initial = ctrl?.initial ?? {};
+	const initialDepsKey = hasDeps ? JSON.stringify(readDeps(parents, initial).deps) : "";
 	useDependentReset({
 		depsKey,
 		hasDeps,
 		keep: config.keepValue === true,
 		value,
-		initialKey: hasDeps ? JSON.stringify(readDeps(parents, initial).deps) : "",
+		initialKey: initialDepsKey,
 		initialValue: initial[name],
 		onChange,
 	});
 	const disabledByParent = hasDeps && !ready && config.whenParentEmpty !== "empty";
-	return { hasDeps, deps, depsKey, ready, disabledByParent };
+	return { hasDeps, deps, depsKey, initialDepsKey, ready, disabledByParent };
 }

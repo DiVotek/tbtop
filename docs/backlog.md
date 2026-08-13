@@ -30,20 +30,6 @@
   fields only (untouched saved values do update on dep change), `force()` overwrites
   always. Until promoted, click-driven cases go through custom client handlers
   (`ctx.form.set`).
-- **Boolean parents in deps keys desync PHP and the client** — `scalarToString`
-  (`fieldDependencies.ts`) collapses `true` to `""`, so a boolean parent is dropped from
-  the client key, while `DependencyFilter` (PHP) keeps it as `"1"`. Any server-seeded key
-  with a checkbox/boolean parent can therefore never equal the key a mounting client
-  computes, which breaks the late-mount comparison for liveRegion `initialDeps` and
-  `disabledRanges`. Fix is one mapping shared by both sides; pick the wire spelling first
-  (`"1"`/`"0"` vs `"true"`/`"false"`) since it changes emitted keys. Promote when a
-  consumer declares `dependsOn` on a boolean.
-- **`useDisabledRanges` re-shows stale ranges after a late mount** — a daterange inside a
-  tab or collapsible remounts with the ranges serialized at page load, without refetching
-  for the parents current at remount (`daterangeDisabled.ts`). Unlike a dependent field's
-  reset the recovery is non-destructive (an idempotent refetch), so the server-seeded
-  `initialDeps` treatment liveRegion already uses is the right medicine here — the
-  mechanism regions use, extended to this one field.
 - **Collection deps for liveRegion** (`options.*.price` / whole-repeater deps) — lets a
   region re-render from unsaved repeater rows with server-side logic as the single truth.
   Wide contract change: deps payload widens from `Record<string, string>` to structured
