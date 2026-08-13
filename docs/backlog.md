@@ -46,13 +46,6 @@
 
 ## Display / layout
 
-- **Named tabs with URL state** — opt-in `name` on tab entries + tabs-block node name;
-  named block seeds the active tab from `?tab[<block>]=<name>` and mirrors it via
-  `history.replaceState` (same pattern as table URL state). Names are explicit — never
-  derived from localized labels. Remaining value after 64f9dbf (same-page redirects
-  already preserve tab state): deep links and F5 survival. Promote on real deep-link
-  demand.
-
 - **`S::markdown($md)`** — server-side `Str::markdown()` (league/commonmark ships with
   Laravel) → emits the existing `displayHtml` wire node. Zero client code, zero schema
   change.

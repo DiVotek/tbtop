@@ -26,3 +26,41 @@ it('preserves an explicit form-tab icon position', function (): void {
 
     expect($node->options['tabs'][0]['icon'])->toBe(['name' => 'check', 'position' => 'right']);
 });
+
+it('serializes named tabs for stable URL state', function (): void {
+    $s = new S;
+    $node = $s->tabs([
+        ['name' => 'general', 'label' => 'General settings', 'body' => $s->displayText('General')],
+        ['name' => 'seo', 'body' => $s->displayText('SEO')],
+    ], ['name' => 'post']);
+
+    expect($node->name)->toBe('post')
+        ->and($node->options)->not->toHaveKey('name')
+        ->and($node->options['tabs'][0]['name'])->toBe('general')
+        ->and($node->options['tabs'][0]['label'])->toBe('General settings')
+        ->and($node->options['tabs'][1]['name'])->toBe('seo')
+        ->and($node->options['tabs'][1]['label'])->toBe('seo');
+});
+
+it('keeps unnamed tabs wire-compatible', function (): void {
+    $s = new S;
+    $encoded = $s->tabs([
+        ['label' => 'General', 'body' => $s->displayText('Body')],
+    ])->jsonSerialize();
+
+    expect($encoded)->not->toHaveKey('name')
+        ->and($encoded['options']['tabs'][0])->not->toHaveKey('name')
+        ->and($encoded['options']['tabs'][0]['label'])->toBe('General');
+});
+
+it('requires unique tab names throughout a named block', function (array $tabs): void {
+    (new S)->tabs($tabs, ['name' => 'post']);
+})->with([
+    'missing name' => [[
+        ['label' => 'General', 'body' => (new S)->displayText('General')],
+    ]],
+    'duplicate name' => [[
+        ['name' => 'general', 'body' => (new S)->displayText('General')],
+        ['name' => 'general', 'body' => (new S)->displayText('Other')],
+    ]],
+])->throws(InvalidArgumentException::class);

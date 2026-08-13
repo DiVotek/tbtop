@@ -915,6 +915,7 @@
                 "options": {
                     "tabs": [
                         {
+                            "name": "main",
                             "label": "Main",
                             "body": {
                                 "kind": "displayText",
@@ -931,6 +932,7 @@
                             "badge": "3"
                         },
                         {
+                            "name": "more",
                             "label": "More",
                             "body": {
                                 "kind": "displayText",
@@ -942,6 +944,7 @@
                             }
                         },
                         {
+                            "name": "grid",
                             "label": "Grid",
                             "body": {
                                 "kind": "grid",
@@ -971,7 +974,8 @@
                         }
                     ]
                 },
-                "meta": {}
+                "meta": {},
+                "name": "content"
             },
             {
                 "kind": "table",
