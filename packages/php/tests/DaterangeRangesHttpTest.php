@@ -20,6 +20,22 @@ it('Daterange ranges: the closure re-runs with the POSTed deps', function (): vo
     ]]);
 });
 
+it('Daterange ranges: boolean deps have stable non-empty spellings', function (): void {
+    $this->postJson('/admin/daterange-ranges-page/daterange-ranges/boolean-stay', [
+        'deps' => ['enabled' => true],
+    ])->assertOk()->assertExactJson(['ranges' => [[
+        'from' => '2026-08-01',
+        'to' => null,
+    ]]]);
+
+    $this->postJson('/admin/daterange-ranges-page/daterange-ranges/boolean-stay', [
+        'deps' => ['enabled' => false],
+    ])->assertOk()->assertExactJson(['ranges' => [[
+        'from' => '2026-09-01',
+        'to' => null,
+    ]]]);
+});
+
 it('Daterange ranges: a when(false) field returns 404', function (): void {
     $this->postJson('/admin/daterange-ranges-page/daterange-ranges/gone', ['deps' => []])
         ->assertNotFound();

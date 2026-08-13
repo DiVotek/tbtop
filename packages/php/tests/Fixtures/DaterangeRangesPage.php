@@ -27,6 +27,13 @@ class DaterangeRangesPage extends Page
                     ->disabledRanges(fn (array $deps): array => ($deps['season'] ?? '') === 'winter'
                         ? [['from' => null, 'to' => '2026-03-01']]
                         : [['from' => '2026-07-01', 'to' => '2026-07-15']]),
+                $s->boolean('enabled'),
+                $s->daterange('boolean-stay')
+                    ->dependsOn('enabled')
+                    ->disabledRanges(fn (array $deps): array => [[
+                        'from' => ($deps['enabled'] ?? '') === '1' ? '2026-08-01' : '2026-09-01',
+                        'to' => null,
+                    ]]),
                 $s->daterange('gone')
                     ->disabledRanges(fn (array $deps): array => [
                         ['from' => '2026-01-01', 'to' => null],
