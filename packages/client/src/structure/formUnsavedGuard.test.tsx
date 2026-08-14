@@ -1,10 +1,11 @@
 /**
  * Tests for the unsaved-changes guard behaviour in FormControllerBody.
  *
- * The guard is entirely in-app now: a dirty GET navigation is cancelled and
- * surfaced as a ConfirmDialog (confirm-dialog-confirm/cancel testids) instead
- * of window.confirm, and there is no beforeunload/native "leave site?" prompt
- * at all — tab-close protection was dropped by design (see useUnsavedGuard.ts).
+ * The guard covers two channels: a dirty GET Inertia navigation is cancelled
+ * and surfaced as a ConfirmDialog (confirm-dialog-confirm/cancel testids)
+ * instead of window.confirm; tab-close/refresh is covered separately via a
+ * native `beforeunload` listener (see useUnsavedGuard.ts) since there's no
+ * in-app hook for that channel.
  *
  * Test approach:
  *  - The guard is opt-in via `guardUnsaved` in form options (default true per global config).
@@ -350,6 +351,84 @@ describe("Form unsaved guard — Inertia navigation", () => {
 			secondAllowed = fireInertiaNavigation("get");
 		});
 		expect(secondAllowed).toBe(false);
+	});
+});
+
+// Helper: dispatch a real 'beforeunload' event on window and report whether
+// the guard's listener claimed it (preventDefault and/or the legacy
+// returnValue signal — browsers honor either to show the native prompt).
+function fireBeforeUnload(): { defaultPrevented: boolean; returnValue: string } {
+	const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
+	// Sentinel so a change to "" (the guard's returnValue assignment) is
+	// distinguishable from the dispatcher's own untouched default.
+	event.returnValue = "untouched";
+	window.dispatchEvent(event);
+	return { defaultPrevented: event.defaultPrevented, returnValue: event.returnValue };
+}
+
+describe("Form unsaved guard — tab close / refresh (beforeunload)", () => {
+	test("dirty form claims the beforeunload event so the browser shows its prompt", async () => {
+		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+			s.text({ name: "title" }),
+			s.action({
+				name: "edit",
+				handler: async (c) => c.form?.set("title", "Changed"),
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const editBtn = await findByTestId("action-edit");
+		await act(async () => {
+			fireEvent.click(editBtn);
+		});
+
+		const { defaultPrevented, returnValue } = fireBeforeUnload();
+		expect(defaultPrevented).toBe(true);
+		// Legacy Chrome signal — asserts the handler ran, not just that nothing
+		// else on the page touched the event.
+		expect(returnValue).toBe("");
+	});
+
+	test("clean form does not touch the beforeunload event", async () => {
+		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+			s.text({ name: "title" }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		render(<Wrap>{renderNode(node)}</Wrap>);
+		await waitFor(() => {}); // let query resolve
+
+		const { defaultPrevented, returnValue } = fireBeforeUnload();
+		expect(defaultPrevented).toBe(false);
+		expect(returnValue).toBe("untouched");
+	});
+
+	test("listener is removed once the form is saved back to clean", async () => {
+		const node = s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+			s.text({ name: "title" }),
+			s.action({
+				name: "edit",
+				handler: async (c) => c.form?.set("title", "Changed"),
+			}),
+			s.action({
+				name: "reset",
+				handler: async (c) => c.form?.set("title", "Hello"),
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const editBtn = await findByTestId("action-edit");
+		await act(async () => {
+			fireEvent.click(editBtn);
+		});
+		expect(fireBeforeUnload().defaultPrevented).toBe(true);
+
+		const resetBtn = await findByTestId("action-reset");
+		await act(async () => {
+			fireEvent.click(resetBtn);
+		});
+		expect(fireBeforeUnload().defaultPrevented).toBe(false);
 	});
 });
 

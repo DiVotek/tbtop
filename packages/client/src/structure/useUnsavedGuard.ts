@@ -47,16 +47,37 @@ export interface UnsavedGuardState {
 let leaveConfirmed = false;
 
 /**
- * Registers the unsaved-changes guard for Inertia client-side navigation when
- * `guardUnsaved` and `isDirty` are both true: cancels the visit and returns
- * it via `pending` so the caller can render an in-app confirm dialog (no
- * native window.confirm/beforeunload — those are jarring inside an admin
- * SPA and can't be styled or translated consistently with the rest of the UI).
+ * Tab-close/refresh/external-URL leg of the guard, split out to keep
+ * useUnsavedGuard itself focused on the Inertia-navigation leg. Only attached
+ * while there's something to lose: an Inertia visit never triggers
+ * beforeunload (the page isn't unloading, including confirmLeave's replay),
+ * so this can't double up with the in-app dialog.
+ */
+function useBeforeUnloadGuard(isDirty: boolean, guardUnsaved: boolean): void {
+	useEffect(() => {
+		if (!guardUnsaved || !isDirty) {
+			return;
+		}
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+	}, [isDirty, guardUnsaved]);
+}
+
+/**
+ * Registers the unsaved-changes guard for both navigation channels a form can
+ * lose edits through when `guardUnsaved` and `isDirty` are both true:
  *
- * Tab-close/refresh protection (beforeunload) is intentionally not covered:
- * there is no in-app dialog for that channel, and a native one is exactly
- * what this guard exists to avoid — the browser's own "leave site?" prompt
- * for that channel is out of scope by design, not an oversight.
+ *  - Inertia client-side GET navigation: cancelled and returned via `pending`
+ *    so the caller can render an in-app confirm dialog, styled and translated
+ *    like the rest of the UI.
+ *  - Tab close / refresh / external-URL navigation: the page unloads without
+ *    going through Inertia, so the only channel browsers expose is the
+ *    native `beforeunload` prompt — its wording isn't customizable (browsers
+ *    ignore any custom message), but it beats silently losing edits.
  */
 export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): UnsavedGuardState {
 	const [pending, setPending] = useState<PendingGuardVisit | null>(null);
@@ -103,6 +124,8 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): Unsave
 			return false;
 		});
 	}, [isDirty, guardUnsaved]);
+
+	useBeforeUnloadGuard(isDirty, guardUnsaved);
 
 	const confirmLeave = useCallback(() => {
 		const visit = pendingRef.current;
