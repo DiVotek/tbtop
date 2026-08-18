@@ -7,6 +7,7 @@ use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
 use Tbtop\Admin\Dsl\Actions\ReplicateAction;
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -28,45 +29,65 @@ class CrudActionsPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
-            CreateAction::make(
-                $s,
-                form: $s->form('createCaPost', [
-                    $s->text('title')->label('Title')->required()->rules('max:200'),
-                ]),
-                storeUsing: function (ActionCtx $ctx): void {
-                    // Recorded so a test can observe which keys survived
-                    // validation, not just the ones this handler consumes.
-                    self::$lastStoreForm = $ctx->form;
-                    CaPost::create(['title' => $ctx->form['title'] ?? '']);
-                },
-            ),
-            EditAction::make(
-                $s,
-                form: $s->form('editCaPost', [
-                    $s->text('title')->label('Title'),
-                    $s->boolean('published')->label('Published'),
-                ]),
-                loadUsing: fn (ActionCtx $ctx): array => CaPost::query()
-                    ->whereKey($ctx->row['id'] ?? null)
-                    ->firstOrFail()
-                    ->only(['title', 'published']),
-                saveUsing: function (ActionCtx $ctx): void {
-                    CaPost::whereKey($ctx->row['id'] ?? null)->update([
-                        'title' => $ctx->form['title'] ?? '',
-                        'published' => (bool) ($ctx->form['published'] ?? false),
-                    ]);
-                },
-            ),
-            DeleteAction::make($s, using: function (ActionCtx $ctx): void {
-                CaPost::whereKey($ctx->row['id'] ?? null)->delete();
-            }),
-            DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): void {
-                CaPost::whereKey($ctx->selection)->delete();
-            }),
-            ReplicateAction::make($s, using: function (ActionCtx $ctx): void {
-                CaPost::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()
-                    ->replicate()->save();
-            }),
+            $s->table('posts')
+                ->columns([Column::make('title')])
+                ->query(fn () => CaPost::query())
+                ->headerActions([
+                    CreateAction::make(
+                        $s,
+                        form: $s->form('createCaPost', [
+                            $s->text('title')->label('Title')->required()->rules('max:200'),
+                        ]),
+                        storeUsing: function (ActionCtx $ctx): void {
+                            // Recorded so a test can observe which keys survived
+                            // validation, not just the ones this handler consumes.
+                            self::$lastStoreForm = $ctx->form;
+                            CaPost::create(['title' => $ctx->form['title'] ?? '']);
+                        },
+                    ),
+                ])
+                ->rowActions([
+                    EditAction::make(
+                        $s,
+                        form: $s->form('editCaPost', [
+                            $s->text('title')->label('Title')->required(),
+                            $s->boolean('published')->label('Published'),
+                        ]),
+                        loadUsing: fn (ActionCtx $ctx): array => CaPost::query()
+                            ->whereKey($ctx->row['id'] ?? null)
+                            ->firstOrFail()
+                            ->only(['title', 'published']),
+                        saveUsing: function (ActionCtx $ctx): void {
+                            CaPost::whereKey($ctx->row['id'] ?? null)->update([
+                                'title' => $ctx->form['title'] ?? '',
+                                'published' => (bool) ($ctx->form['published'] ?? false),
+                            ]);
+                        },
+                    ),
+                    DeleteAction::make($s, using: function (ActionCtx $ctx): void {
+                        CaPost::whereKey($ctx->row['id'] ?? null)->delete();
+                    }),
+                    ReplicateAction::make($s, using: function (ActionCtx $ctx): void {
+                        CaPost::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()
+                            ->replicate()->save();
+                    }),
+                ])
+                ->bulkActions([
+                    CreateAction::make(
+                        $s,
+                        form: $s->form('bulkCreateCaPost', [
+                            $s->text('title')->label('Title')->required(),
+                        ]),
+                        storeUsing: function (ActionCtx $ctx): void {
+                            CaPost::create(['title' => $ctx->form['title'] ?? '']);
+                        },
+                        name: 'bulkCreate',
+                    ),
+                    DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): void {
+                        CaPost::whereKey($ctx->selection)->delete();
+                    }),
+                ])
+                ->toNode(),
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -14,10 +15,12 @@ use Tbtop\Admin\Pages\Page;
  */
 final class ResolvedPage
 {
+    /** @param  list<Node>  $headerActions */
     public function __construct(
         public readonly Page $page,
         public readonly S $s,
         public readonly Node $tree,
+        public readonly array $headerActions,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -32,16 +35,12 @@ final class ResolvedPage
         $s = new S;
         $tree = $page->view($s);
 
-        // Registration only: header actions with ->handle() are declared inside
-        // headerActions(), never inside view(). POST controllers (ActionController,
-        // FormSubmitController) resolve handlers from $s->collectedActions()/
-        // collectedForms(), which only fill up as a side effect of calling these
-        // closures. PageController's GET render calls headerActions($s) itself to
-        // serialize the prop — this second call only feeds the registry and is
-        // never re-serialized, so it can't double up the wire output.
-        $page->headerActions($s);
+        $headerActions = array_map(
+            fn (ActionBuilder|Node $action): Node => $action instanceof ActionBuilder ? $action->toNode() : $action,
+            S::normalizeChildren($page->headerActions($s)),
+        );
 
-        return new self($page, $s, $tree);
+        return new self($page, $s, $tree, $headerActions);
     }
 
     /** Route params excluding tbtop internals. @return array<string, string> */

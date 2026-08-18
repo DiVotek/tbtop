@@ -21,6 +21,9 @@ use Tbtop\Admin\Dsl\Node;
  */
 final class ActionFormRules
 {
+    /** Options that carry lists of table actions. */
+    private const ACTION_LIST_KEYS = ['headerActions', 'rowActions', 'bulkActions'];
+
     /** Options that can carry a nested subtree beyond the plain child lists. */
     private const NESTED_OPTION_KEYS = ['body', 'spec', 'prefix', 'suffix'];
 
@@ -32,9 +35,10 @@ final class ActionFormRules
      * in the same actions row as Save but declares no `needs: ['form']`, so
      * holding it to the form's rules would block closing the modal.
      */
-    public static function enclosingFormName(Node $tree, string $actionName): ?string
+    public static function enclosingFormName(Node $tree, string $actionName, iterable $additionalRoots = []): ?string
     {
-        return self::search($tree, $actionName, null);
+        return self::search($tree, $actionName, null)
+            ?? self::searchList($additionalRoots, $actionName, null);
     }
 
     private static function readsForm(Node $node): bool
@@ -79,6 +83,12 @@ final class ActionFormRules
     private static function searchBelow(Node $node, string $actionName, ?string $enclosing): ?string
     {
         foreach (Node::CHILD_LIST_KEYS as $key) {
+            $found = self::searchList($node->options[$key] ?? [], $actionName, $enclosing);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+        foreach (self::ACTION_LIST_KEYS as $key) {
             $found = self::searchList($node->options[$key] ?? [], $actionName, $enclosing);
             if ($found !== null) {
                 return $found;

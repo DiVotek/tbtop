@@ -51,7 +51,11 @@ final class ActionController
      */
     private static function validatedForm(Request $request, ResolvedPage $resolved, string $actionName, bool $gate): ?array
     {
-        $formName = ActionFormRules::enclosingFormName($resolved->tree, $actionName);
+        $formName = ActionFormRules::enclosingFormName(
+            $resolved->tree,
+            $actionName,
+            $resolved->headerActions,
+        );
         $form = $formName === null ? null : $resolved->s->reachableForm($formName);
         if ($form === null) {
             return null;
