@@ -54,7 +54,7 @@ final class ActionController
         $formName = ActionFormRules::enclosingFormName(
             $resolved->tree,
             $actionName,
-            $resolved->headerActions,
+            $resolved->headerActionSources,
         );
         $form = $formName === null ? null : $resolved->s->reachableForm($formName);
         if ($form === null) {

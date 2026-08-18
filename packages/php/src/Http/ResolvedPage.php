@@ -15,13 +15,28 @@ use Tbtop\Admin\Pages\Page;
  */
 final class ResolvedPage
 {
-    /** @param  list<Node>  $headerActions */
+    /** @param  list<ActionBuilder|Node>  $headerActionSources */
     public function __construct(
         public readonly Page $page,
         public readonly S $s,
         public readonly Node $tree,
-        public readonly array $headerActions,
+        public readonly array $headerActionSources,
     ) {}
+
+    /**
+     * Header actions as the wire needs them. Lazy on purpose: toNode() throws
+     * for combinations that are valid at runtime but unrenderable, and the
+     * POST/JSON paths resolve handlers by name without ever needing a node.
+     *
+     * @return list<Node>
+     */
+    public function headerActionNodes(): array
+    {
+        return array_map(
+            fn (ActionBuilder|Node $action): Node => $action instanceof ActionBuilder ? $action->toNode() : $action,
+            $this->headerActionSources,
+        );
+    }
 
     public static function fromRequest(Request $request): self
     {
@@ -35,12 +50,9 @@ final class ResolvedPage
         $s = new S;
         $tree = $page->view($s);
 
-        $headerActions = array_map(
-            fn (ActionBuilder|Node $action): Node => $action instanceof ActionBuilder ? $action->toNode() : $action,
-            S::normalizeChildren($page->headerActions($s)),
-        );
-
-        return new self($page, $s, $tree, $headerActions);
+        // Calling headerActions() is also what registers the handlers declared
+        // there: POST controllers resolve them from $s->collectedActions().
+        return new self($page, $s, $tree, S::normalizeChildren($page->headerActions($s)));
     }
 
     /** Route params excluding tbtop internals. @return array<string, string> */

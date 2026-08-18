@@ -50,8 +50,8 @@ final class PageController
             $props['subtitle'] = $resolved->page->subtitle();
         }
 
-        if ($resolved->headerActions !== []) {
-            $props['headerActions'] = $resolved->headerActions;
+        if ($resolved->headerActionSources !== []) {
+            $props['headerActions'] = $resolved->headerActionNodes();
         }
 
         if ($panel->breadcrumbs()) {
