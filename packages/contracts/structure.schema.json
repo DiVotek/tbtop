@@ -968,7 +968,8 @@
 						"needs": {
 							"type": "array",
 							"items": { "enum": ["form", "row", "selection"] }
-						}
+						},
+						"validate": { "const": false }
 					},
 					"additionalProperties": false
 				},
