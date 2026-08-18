@@ -12,13 +12,16 @@ export interface ServerEffect {
 		| "resetForm"
 		| "closeModal"
 		| "haltModal"
-		| "copyToClipboard";
+		| "copyToClipboard"
+		| "setFormData";
 	message?: string;
 	level?: NotificationConfig["kind"];
 	href?: string;
 	table?: string;
 	form?: string;
 	text?: string;
+	/** setFormData: field name → replacement value (arbitrary JSON). */
+	data?: Record<string, unknown>;
 }
 
 // "t" is optional: the native-Inertia-flash call site (AdminPage.tsx) builds
@@ -49,6 +52,7 @@ const EFFECT_HANDLERS: Record<
 	closeModal: (_effect, ctx) => ctx.modal?.close(),
 	haltModal: (effect, ctx) => ctx.modal?.halt?.(effect.message ?? "", effect.level),
 	copyToClipboard: (effect, ctx) => void applyCopyToClipboard(effect, ctx),
+	setFormData: applySetFormData,
 };
 
 function applyEffect(effect: ServerEffect, ctx: EffectContext): void {
@@ -87,6 +91,42 @@ async function applyCopyToClipboard(effect: ServerEffect, ctx: EffectContext): P
 		? ctx.t("field.copyable.copied")
 		: defaultMessages["field.copyable.copied"];
 	ctx.notify({ kind: "success", message: message ?? "Copied" });
+}
+
+/**
+ * Writes server-supplied values into the nearest form via `set`, never
+ * `initial` — the form must stay dirty so the user still sees unsaved state.
+ */
+function applySetFormData(effect: ServerEffect, ctx: EffectContext): void {
+	if (!ctx.form) {
+		console.warn("[tbtop] setFormData effect ignored: no enclosing form");
+		return;
+	}
+	// Snapshot the keys once: setFieldError is a queued state update, so
+	// ctx.form.fieldErrors does not change under this loop.
+	const errorKeys = Object.keys(ctx.form.fieldErrors);
+	for (const [field, value] of Object.entries(effect.data ?? {})) {
+		ctx.form.set(field, value);
+		clearErrorsUnder(field, errorKeys, ctx.form);
+	}
+}
+
+/**
+ * Clears the written key and everything nested under it: repeater errors live
+ * at dotted paths (`blocks.0.title`) and liftNestedErrors mirrors them onto
+ * the root, so a replaced value must drop both or stale errors survive.
+ */
+function clearErrorsUnder(
+	field: string,
+	errorKeys: string[],
+	form: NonNullable<EffectContext["form"]>,
+): void {
+	const prefix = `${field}.`;
+	for (const key of errorKeys) {
+		if (key === field || key.startsWith(prefix)) {
+			form.setFieldError(key, null);
+		}
+	}
 }
 
 function refreshTable(ctx: EffectContext): void {

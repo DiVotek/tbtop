@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
+import { act, renderHook } from "@testing-library/react";
+import { useFormController } from "../structure/formController";
 import type { ClientActionContext, ModalController } from "../structure/types";
 import { executeEffects } from "./effects";
 import { consumeServerRedirect } from "./navigationIntent";
@@ -167,5 +169,60 @@ describe("executeEffects: copyToClipboard", () => {
 
 		expect(writeText).not.toHaveBeenCalled();
 		expect(notify).not.toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// setFormData — a server action rewrites the still-mounted form's values
+// (e.g. a repeater gains a row). Driven through the real useFormController so
+// "the form becomes dirty" is an observed outcome, not a mock assertion.
+// ---------------------------------------------------------------------------
+
+describe("executeEffects: setFormData", () => {
+	function mountForm(initial: Record<string, unknown>) {
+		return renderHook(() => useFormController({ initial })).result;
+	}
+
+	test("writes every key into the form and leaves it dirty", () => {
+		const initial = { title: "Old", blocks: [{ title: "a" }] };
+		const form = mountForm(initial);
+		const blocks = [{ title: "rewritten" }, { title: "b" }, { title: "c" }];
+
+		act(() => {
+			executeEffects(
+				[{ kind: "setFormData", data: { title: "New", blocks } }],
+				fakeCtx({ form: form.current }),
+			);
+		});
+
+		expect(form.current.data).toEqual({ title: "New", blocks });
+		expect(form.current.isDirty).toBe(true);
+		// initial is the untouched baseline: mutating it would silently make
+		// the rewritten form look saved.
+		expect(form.current.initial).toEqual(initial);
+	});
+
+	test("clears errors on the written key and under it, leaving other fields' errors", () => {
+		const form = mountForm({ blocks: [], slug: "" });
+		act(() => {
+			form.current.setFieldError("blocks", "Required");
+			form.current.setFieldError("blocks.0.title", "Too short");
+			form.current.setFieldError("slug", "Taken");
+		});
+
+		act(() => {
+			executeEffects(
+				[{ kind: "setFormData", data: { blocks: [{ title: "ok" }] } }],
+				fakeCtx({ form: form.current }),
+			);
+		});
+
+		expect(form.current.fieldErrors).toEqual({ slug: "Taken" });
+	});
+
+	test("is a no-op (does not throw) when there is no enclosing form", () => {
+		expect(() =>
+			executeEffects([{ kind: "setFormData", data: { title: "x" } }], fakeCtx()),
+		).not.toThrow();
 	});
 });

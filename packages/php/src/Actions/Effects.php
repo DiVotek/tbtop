@@ -43,6 +43,17 @@ final class Effects implements JsonSerializable
         return $this->push(['kind' => 'closeModal']);
     }
 
+    /**
+     * Replaces each key's value in the nearest enclosing form, leaving it
+     * mounted and dirty. resetForm overwrites this — order setFormData last.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function setFormData(array $data): self
+    {
+        return $this->push(['kind' => 'setFormData', 'data' => $data]);
+    }
+
     /** Surfaces $message inside the still-open modal; does NOT close it. */
     public function haltModal(string $message, string $kind = 'error'): self
     {

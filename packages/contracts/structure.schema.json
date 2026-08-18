@@ -1149,6 +1149,15 @@
 							"text": { "type": "string" }
 						},
 						"additionalProperties": false
+					},
+					{
+						"type": "object",
+						"required": ["kind", "data"],
+						"properties": {
+							"kind": { "const": "setFormData" },
+							"data": { "type": "object" }
+						},
+						"additionalProperties": false
 					}
 				]
 			}
