@@ -63,6 +63,7 @@ function toFormController(handle: FormControllerInternal): FormController {
 		isDirty: handle.isDirty,
 		isValid: handle.isValid,
 		changedFields: handle.changedFields,
+		fieldErrors: handle.fieldErrors,
 		set: handle.set,
 		reset: handle.reset,
 		setFieldError: handle.setFieldError,

@@ -223,7 +223,10 @@ function serverHandler({ basePath, name, needs, formNode }: ServerHandlerInput):
 		// rejected the submission (e.g. a caught ValidationException) and the
 		// modal stays open — resetting here would erase what the user typed
 		// right before showing them the error banner, so skip it in that case.
-		if (needs.includes("form") && !effects.some((e) => e.kind === "haltModal")) {
+		// A setFormData effect is the action rewriting the still-open form, so
+		// the post-save reset would immediately discard what it just wrote.
+		const keepsForm = effects.some((e) => e.kind === "haltModal" || e.kind === "setFormData");
+		if (needs.includes("form") && !keepsForm) {
 			ctx.form?.reset();
 		}
 		executeEffects(effects, ctx);

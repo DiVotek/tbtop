@@ -65,6 +65,8 @@ export interface FormController {
 	isDirty: boolean;
 	isValid: boolean;
 	changedFields: string[];
+	/** Active field-level errors, keyed by field name (dotted for nested paths). */
+	fieldErrors: Record<string, string>;
 	set: (field: string, value: unknown) => void;
 	reset: () => void;
 	/**

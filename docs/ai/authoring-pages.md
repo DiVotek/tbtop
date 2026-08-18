@@ -50,7 +50,7 @@ other way around.
 
 **Mis-placement 2 — inventing a new effect to navigate.** *"I need the form to redirect
 after save, so I'll add a `goTo` effect to `Effects`."* **Wrong.** The effect set is
-**closed** (`notify/redirect/refreshTable/resetForm/closeModal/haltModal`). Redirect already exists —
+**closed** (`notify/redirect/refreshTable/resetForm/closeModal/haltModal/copyToClipboard/setFormData`). Redirect already exists —
 return `Effects::make()->redirect($url)`, or return a string from `onSubmit`. Adding an
 effect kind edits the package for something the contract already covers.
 
@@ -736,6 +736,31 @@ a named client-side handler, or let the server do a full Inertia redirect.
 | `resetForm` | `resetForm(?string $form = null): self` | Resets the named form to its `record` state; `null` resets the first/only form |
 | `closeModal` | `closeModal(): self` | Closes the currently open modal dialog |
 | `haltModal` | `haltModal(string $message, string $kind = 'error'): self` | Surfaces `$message` **inside the still-open modal** (e.g. a server-side validation failure) — does not close it, unlike every other effect that touches a modal |
+| `copyToClipboard` | `copyToClipboard(string $text): self` | Writes `$text` to the clipboard and toasts on success; a failed write stays silent |
+| `setFormData` | `setFormData(array $data): self` | Replaces each key's value in the **nearest enclosing form**, which stays mounted and **dirty** — no reload, no DB write. Requires the action to have received the form (`->needs('form')`) |
+
+### `setFormData` — server-computed values into the open form
+
+`setFormData` is for an action that recomputes part of a form the user is still
+editing (a price the server owns, a repeater the server expands). The keys are
+**top-level field names** and each value **replaces** the field wholesale:
+
+```php
+return Effects::make()
+    ->notify('Recalculated')
+    ->setFormData(['total' => 4200, 'lines' => $recomputedLines]);
+```
+
+Rules that bite:
+
+- **Top-level names only.** A dotted path (`'lines.0.price'`) is **not** a path into
+  the value — it is ignored with a console warning. Send the whole `lines` value.
+- **Order `setFormData` last.** `resetForm` after it overwrites the write; the effects
+  run in the order you push them.
+- **Do not combine it with `refreshTable` or `redirect`.** `refreshTable` without a
+  table controller falls back to a full `router.reload()`, and the refreshed props make
+  the form re-sync to its initial state — either one discards what `setFormData` just
+  wrote.
 
 ---
 

@@ -74,6 +74,33 @@ it('effects serialization conforms to the effects schema', function () {
     validateAgainstSchema(json_decode(json_encode($effects)), '#/$defs/effects');
 });
 
+it('setFormData serialization conforms to the effects schema', function () {
+    $effects = Effects::make()->setFormData([
+        'title' => 'Rewritten',
+        'blocks' => [
+            ['title' => 'first', 'body' => 'a'],
+            ['title' => 'second', 'body' => 'b'],
+        ],
+        'published' => true,
+        'reviewer' => null,
+    ]);
+
+    expect(json_decode(json_encode($effects), true))->toBe([[
+        'kind' => 'setFormData',
+        'data' => [
+            'title' => 'Rewritten',
+            'blocks' => [
+                ['title' => 'first', 'body' => 'a'],
+                ['title' => 'second', 'body' => 'b'],
+            ],
+            'published' => true,
+            'reviewer' => null,
+        ],
+    ]]);
+
+    validateAgainstSchema(json_decode(json_encode($effects)), '#/$defs/effects');
+});
+
 it('copyable and mask options conform to the wire grammar schema', function () {
     $s = new S;
 
