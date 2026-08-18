@@ -53,21 +53,27 @@ function tabBodies(value: unknown): StructureNode[] {
  * Counts fieldErrors entries that belong to a tab's field set. A repeater
  * path like "items.0.label" or a translatable "title.en" both belong to
  * the tab that declares "items"/"title" — match on the error key's root
- * segment (before the first dot), not just an exact name match.
+ * segment. Ignore a lifted root copy when its dotted source is also present.
  */
 export function countTabErrors(fieldNames: string[], fieldErrors: Record<string, string>): number {
 	if (fieldNames.length === 0) {
 		return 0;
 	}
 	const names = new Set(fieldNames);
+	const keys = Object.keys(fieldErrors);
+	const nestedRoots = new Set(keys.filter((key) => key.includes(".")).map(errorRoot));
 	let count = 0;
-	for (const key of Object.keys(fieldErrors)) {
-		const root = key.split(".")[0] ?? key;
-		if (names.has(root)) {
+	for (const key of keys) {
+		const root = errorRoot(key);
+		if (names.has(root) && (key !== root || !nestedRoots.has(root))) {
 			count++;
 		}
 	}
 	return count;
+}
+
+function errorRoot(key: string): string {
+	return key.split(".")[0] ?? key;
 }
 
 /** Index of the first tab (by field-name membership) that owns a fieldErrors key, or null. */
