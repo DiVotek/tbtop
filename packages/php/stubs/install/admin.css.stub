@@ -1,0 +1,15 @@
+/*
+ * Admin panel stylesheet.
+ *
+ * The client package ships a Tailwind *source* file, so this host pipeline is
+ * what actually compiles it. The @source lines below are what make Tailwind
+ * scan for class names authored outside the client's own TSX — the admin DSL
+ * writes classes from PHP (->class(), section `class` options), and Tailwind
+ * cannot see them otherwise. Without a matching @source those classes compile
+ * to nothing and the affected blocks render unstyled.
+ *
+ * Add one @source line per package or directory that authors admin classes.
+ */
+@import '@tbtop/inertia-admin/styles.css';
+
+@source '../../app/**/*.php';

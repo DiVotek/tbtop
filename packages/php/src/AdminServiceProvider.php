@@ -5,6 +5,7 @@ namespace Tbtop\Admin;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Tbtop\Admin\Commands\InstallCommand;
 use Tbtop\Admin\Commands\MakePageCommand;
 use Tbtop\Admin\I18n\LocaleService;
 use Tbtop\Admin\Navigation\NavBuilder;
@@ -27,7 +28,8 @@ class AdminServiceProvider extends PackageServiceProvider
             ->runsMigrations()
             ->hasRoute('admin')
             ->hasTranslations()
-            ->hasCommand(MakePageCommand::class);
+            ->hasCommand(MakePageCommand::class)
+            ->hasCommand(InstallCommand::class);
     }
 
     public function packageRegistered(): void
