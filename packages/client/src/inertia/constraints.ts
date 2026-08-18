@@ -26,12 +26,12 @@ export function compileConstraints(byField: Record<string, FieldConstraints>): {
 } {
 	return {
 		parse(input: unknown): unknown {
-			const data = (input ?? {}) as Record<string, unknown>;
 			const issues: Issue[] = [];
 			for (const [name, rules] of Object.entries(byField)) {
-				const message = checkField(data[name], rules);
+				const path = name.split(".");
+				const message = checkField(valueAtPath(input, path), rules);
 				if (message) {
-					issues.push({ path: [name], message });
+					issues.push({ path, message });
 				}
 			}
 			if (issues.length > 0) {
@@ -40,6 +40,17 @@ export function compileConstraints(byField: Record<string, FieldConstraints>): {
 			return input;
 		},
 	};
+}
+
+function valueAtPath(input: unknown, path: string[]): unknown {
+	let value = input;
+	for (const segment of path) {
+		if (value === null || typeof value !== "object") {
+			return undefined;
+		}
+		value = (value as Record<string, unknown>)[segment];
+	}
+	return value;
 }
 
 /**

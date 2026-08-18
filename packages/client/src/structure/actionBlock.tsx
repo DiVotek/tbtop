@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { type Translate, translateValidationMessage } from "../i18n/i18n";
+import { liftNestedErrors } from "../inertia/fieldErrors";
 import { cn } from "../lib/cn";
 import { Button } from "../ui/button";
 import {
@@ -221,12 +222,14 @@ function applyZodIssues(err: unknown, handle: FormControllerInternal, t: Transla
 	if (!Array.isArray(issues)) {
 		return;
 	}
+	const fields: Record<string, string> = {};
 	for (const issue of issues) {
-		const name = issue.path[0];
-		if (typeof name === "string") {
-			handle.setFieldError(name, translateValidationMessage(t, issue.message));
+		const name = issue.path.map(String).join(".");
+		if (name && fields[name] === undefined) {
+			fields[name] = translateValidationMessage(t, issue.message);
 		}
 	}
+	applyFieldErrors(liftNestedErrors(fields), handle);
 }
 
 function tryApplyServerFieldErrors(err: unknown, handle: FormControllerInternal): boolean {
@@ -234,10 +237,14 @@ function tryApplyServerFieldErrors(err: unknown, handle: FormControllerInternal)
 	if (!fields) {
 		return false;
 	}
+	applyFieldErrors(liftNestedErrors(fields), handle);
+	return true;
+}
+
+function applyFieldErrors(fields: Record<string, string>, handle: FormControllerInternal): void {
 	for (const [name, message] of Object.entries(fields)) {
 		handle.setFieldError(name, message);
 	}
-	return true;
 }
 
 function readFieldErrors(err: unknown): Record<string, string> | null {

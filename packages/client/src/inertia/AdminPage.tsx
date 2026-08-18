@@ -65,6 +65,8 @@ export function AdminPage() {
 		setRoutesBase(tbtop.prefix);
 	}
 	const apiBase = tbtop?.apiBase ?? "";
+	const contentLocales = tbtop?.contentLocales ?? ["en"];
+	const defaultContentLocale = tbtop?.defaultContentLocale ?? contentLocales[0] ?? "en";
 
 	const basePath = pageBasePath(page.url);
 	// materialize runs in AdminPage's own render, so a throw there would escape
@@ -73,15 +75,23 @@ export function AdminPage() {
 	// Content and header actions are caught independently: a malformed header
 	// action must not hide healthy page content, and vice versa.
 	const node = useMemo(
-		() => attempt(() => materialize(structure, { basePath, data: data ?? {}, t })),
-		[structure, basePath, data, t],
+		() =>
+			attempt(() =>
+				materialize(structure, { basePath, data: data ?? {}, defaultContentLocale, t }),
+			),
+		[structure, basePath, data, defaultContentLocale, t],
 	);
 	const headerActionBags = useMemo(
 		() =>
 			attempt(() =>
-				materializeActionList(headerActions ?? [], { basePath, data: data ?? {}, t }),
+				materializeActionList(headerActions ?? [], {
+					basePath,
+					data: data ?? {},
+					defaultContentLocale,
+					t,
+				}),
 			),
-		[headerActions, basePath, data, t],
+		[headerActions, basePath, data, defaultContentLocale, t],
 	);
 
 	// Native Inertia flash: the adapter delivers a fresh object per response,
@@ -97,8 +107,6 @@ export function AdminPage() {
 		}
 	}, [flash]);
 
-	const contentLocales = tbtop?.contentLocales ?? ["en"];
-	const defaultContentLocale = tbtop?.defaultContentLocale ?? contentLocales[0] ?? "en";
 	// Panel-configured content width (appearance.maxWidth); 5xl matches the
 	// pre-option behavior for panels that never set it.
 	const widthToken = tbtop?.appearance?.maxWidth;
