@@ -99,16 +99,35 @@ async function applyCopyToClipboard(effect: ServerEffect, ctx: EffectContext): P
  */
 function applySetFormData(effect: ServerEffect, ctx: EffectContext): void {
 	if (!ctx.form) {
-		console.warn("[tbtop] setFormData effect ignored: no enclosing form");
+		console.warn("[tbtop] setFormData: no enclosing form — effect ignored.");
 		return;
 	}
 	// Snapshot the keys once: setFieldError is a queued state update, so
 	// ctx.form.fieldErrors does not change under this loop.
 	const errorKeys = Object.keys(ctx.form.fieldErrors);
 	for (const [field, value] of Object.entries(effect.data ?? {})) {
+		if (!isTopLevelField(field)) {
+			continue;
+		}
 		ctx.form.set(field, value);
 		clearErrorsUnder(field, errorKeys, ctx.form);
 	}
+}
+
+/**
+ * `set` writes a literal key into the form bag, so a dotted path would add a
+ * junk top-level entry ("blocks.0.title") next to the real field rather than
+ * reaching into it — and that junk then serializes into the next submit.
+ * Dotted paths are the likely author mistake here because error keys use them.
+ */
+function isTopLevelField(field: string): boolean {
+	if (!field.includes(".")) {
+		return true;
+	}
+	console.warn(
+		`[tbtop] setFormData: key "${field}" is ignored — setFormData takes top-level field names, not dotted paths. Send the whole "${field.split(".")[0]}" value instead.`,
+	);
+	return false;
 }
 
 /**

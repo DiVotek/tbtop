@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, renderHook } from "@testing-library/react";
 import { useFormController } from "../structure/formController";
@@ -224,5 +224,38 @@ describe("executeEffects: setFormData", () => {
 		expect(() =>
 			executeEffects([{ kind: "setFormData", data: { title: "x" } }], fakeCtx()),
 		).not.toThrow();
+	});
+
+	test("skips a dotted key instead of adding it as a junk top-level field", () => {
+		// `set` writes the literal key, so 'blocks.0.title' would land beside
+		// `blocks` as its own entry and then serialize into the next submit.
+		const form = mountForm({ blocks: [{ title: "a" }] });
+		const warn = spyOn(console, "warn").mockImplementation(() => {});
+
+		act(() => {
+			executeEffects(
+				[{ kind: "setFormData", data: { "blocks.0.title": "z" } }],
+				fakeCtx({ form: form.current }),
+			);
+		});
+
+		expect(form.current.data).toEqual({ blocks: [{ title: "a" }] });
+		expect(warn.mock.calls[0]?.[0]).toContain("blocks.0.title");
+		warn.mockRestore();
+	});
+
+	test("still applies the valid keys alongside a skipped dotted one", () => {
+		const form = mountForm({ title: "Old", blocks: [] });
+		const warn = spyOn(console, "warn").mockImplementation(() => {});
+
+		act(() => {
+			executeEffects(
+				[{ kind: "setFormData", data: { "blocks.0.title": "z", title: "New" } }],
+				fakeCtx({ form: form.current }),
+			);
+		});
+
+		expect(form.current.data).toEqual({ title: "New", blocks: [] });
+		warn.mockRestore();
 	});
 });
