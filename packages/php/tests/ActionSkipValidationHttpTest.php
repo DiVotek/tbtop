@@ -31,8 +31,21 @@ it('runs a withoutValidation() handler while a required field is empty', functio
 
 it('still gates a normal form-consuming action on the same form', function (): void {
     runAction('save', ['title' => ''])->assertStatus(422)
-        ->assertJsonValidationErrors(['payload.form.title']);
+        ->assertJsonValidationErrors(['title']);
     expect(ActionSkipValidationPage::$capturedForm)->toBeNull();
+});
+
+it('evaluates sibling field rules within the action form', function (): void {
+    runAction('save', [
+        'title' => 'Valid',
+        'password' => 'secret',
+        'password_confirmation' => 'secret',
+    ])->assertOk();
+
+    expect(ActionSkipValidationPage::$capturedForm)->toMatchArray([
+        'password' => 'secret',
+        'password_confirmation' => 'secret',
+    ]);
 });
 
 it('drops undeclared keys even with the gate off', function (): void {

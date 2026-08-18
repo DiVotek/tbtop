@@ -45,6 +45,6 @@ it('validates a form nested in a page header action', function () {
     ]);
 
     $response->assertStatus(422)
-        ->assertJsonValidationErrors('payload.form.title');
+        ->assertJsonValidationErrors('title');
     expect(HeaderActionsPage::$created)->toBeFalse();
 });

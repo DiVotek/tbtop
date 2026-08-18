@@ -169,7 +169,7 @@ it('rejects an action submission missing a key its form declares required', func
     ]);
 
     $response->assertStatus(422)
-        ->assertJsonValidationErrors('payload.form.title');
+        ->assertJsonValidationErrors('title');
     expect(CaPost::count())->toBe(2);
 });
 
@@ -190,7 +190,7 @@ it('validates a form nested in a row action', function (): void {
     ]);
 
     $response->assertStatus(422)
-        ->assertJsonValidationErrors('payload.form.title');
+        ->assertJsonValidationErrors('title');
     expect($post->fresh()->title)->toBe('First');
 });
 
@@ -200,7 +200,7 @@ it('validates a form nested in a bulk action', function (): void {
     ]);
 
     $response->assertStatus(422)
-        ->assertJsonValidationErrors('payload.form.title');
+        ->assertJsonValidationErrors('title');
     expect(CaPost::count())->toBe(2);
 });
 
