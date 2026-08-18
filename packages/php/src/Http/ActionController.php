@@ -65,25 +65,23 @@ final class ActionController
             return null;
         }
 
-        $validated = $gate
-            ? $request->validate(
-                self::scopedToPayload($rules),
+        $input = $request->input('payload.form', []);
+        $input = is_array($input) ? $input : [];
+
+        return $gate
+            ? Validator::make(
+                $input,
+                $rules,
                 [],
-                self::scopedToPayload($form->collectAttributes()),
-            )
-            : self::declaredKeysOnly($request->all(), self::scopedToPayload($rules));
-
-        // validate() echoes the input's own shape back, so the data sits nested
-        // under the payload key the rules addressed it through.
-        $data = $validated['payload']['form'] ?? [];
-
-        return is_array($data) ? $data : [];
+                $form->collectAttributes(),
+            )->validate()
+            : self::declaredKeysOnly($input, $rules);
     }
 
     /**
      * The keys $rules declares, lifted out of $input without running the gate.
      *
-     * A rule key may carry wildcards (`payload.form.items.*.name`), so it is not
+     * A rule key may carry wildcards (`items.*.name`), so it is not
      * a literal path. Validator::getRules() expands those against the data being
      * validated, which is what makes each repeater row addressable — hence
      * building a validator and reading its rules back rather than walking
@@ -144,22 +142,5 @@ final class ActionController
         }
 
         return $containers;
-    }
-
-    /**
-     * Form rules are keyed by field name, but an action ships its form under
-     * `payload.form`, so every key needs that prefix to address the right input.
-     *
-     * @param  array<string, mixed>  $keyed
-     * @return array<string, mixed>
-     */
-    private static function scopedToPayload(array $keyed): array
-    {
-        $scoped = [];
-        foreach ($keyed as $key => $value) {
-            $scoped["payload.form.{$key}"] = $value;
-        }
-
-        return $scoped;
     }
 }

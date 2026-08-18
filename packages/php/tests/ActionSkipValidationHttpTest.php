@@ -31,7 +31,7 @@ it('runs a withoutValidation() handler while a required field is empty', functio
 
 it('still gates a normal form-consuming action on the same form', function (): void {
     runAction('save', ['title' => ''])->assertStatus(422)
-        ->assertJsonValidationErrors(['payload.form.title']);
+        ->assertJsonValidationErrors(['title']);
     expect(ActionSkipValidationPage::$capturedForm)->toBeNull();
 });
 
