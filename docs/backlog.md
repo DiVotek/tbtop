@@ -54,10 +54,12 @@
 
 ## Modal
 
-- Fix open animation — appears from the left; broken center positioning in revola classes.
+- ~~Fix open animation — appears from the left; broken center positioning in revola
+  classes.~~ Done: #106 dropped the directional slide-in/out utilities — the desktop
+  dialog fades and scales in from center (`enter` keyframes carry no translate).
+  DEMO-4 also wired `slideOver()`/`modalWidth()` through wire materialization
+  (they were serialized but dropped client-side).
 - Hide scrollbar on the scrollable body (shadcn dialog parity).
-- Expose `size` on `ActionBuilder::modal()` — client `ModalShell` already supports
-  `sm/md/lg/full`.
 - Sticky header/footer already exist (revola) — verify only.
 
 ## DX

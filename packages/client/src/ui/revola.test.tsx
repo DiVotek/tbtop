@@ -100,6 +100,11 @@ describe("ResponsiveDialog", () => {
 		expect(cls).toMatch(/translate-y-\[-50%\]|-translate-y-1\/2/);
 		expect(cls).not.toContain("slide-in-from");
 		expect(cls).not.toContain("slide-out-to");
+		// Entrance is a fade + scale from the center: no directional enter
+		// variables may leak in, and scale must grow from the content center.
+		expect(cls).toContain("origin-center");
+		expect(cls).toContain("data-[state=open]:animate-in");
+		expect(cls).toContain("data-[state=open]:fade-in-0");
 		expect(cls).toContain("data-[state=open]:zoom-in-[97%]");
 		expect(cls).toContain("data-[state=closed]:zoom-out-[98%]");
 		expect(cls).toContain("motion-reduce:animate-none");

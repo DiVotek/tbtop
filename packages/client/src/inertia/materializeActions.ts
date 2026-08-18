@@ -3,6 +3,7 @@ import { router } from "@inertiajs/react";
 import { unwrapData } from "../data/envelope";
 import type { Translate } from "../i18n/i18n";
 import type { ClientActionContext, StructureNode } from "../structure/types";
+import type { ModalSize } from "../ui/modal-shell";
 import { type ConfirmSpec, confirmModal } from "./confirmModal";
 import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects } from "./effects";
@@ -35,6 +36,9 @@ interface ActionSpec {
 	/** Modal backend data query: fetch on open, feed the body. */
 	query?: boolean;
 	queryNeeds?: string[];
+	size?: ModalSize;
+	/** Render as a right-anchored, edge-flush slide-over panel. */
+	slideOver?: boolean;
 }
 
 /**
@@ -250,6 +254,12 @@ function materializeModal(name: string, spec: ActionSpec, ctx: ActionMaterialize
 		description: spec.description,
 		body: spec.body ? ctx.materializeNode(spec.body) : undefined,
 	};
+	if (spec.size !== undefined) {
+		modal.size = spec.size;
+	}
+	if (spec.slideOver !== undefined) {
+		modal.slideOver = spec.slideOver;
+	}
 	if (spec.query) {
 		modal.query = modalDataQuery(ctx.basePath, name, spec.queryNeeds ?? ["row"]);
 	}
