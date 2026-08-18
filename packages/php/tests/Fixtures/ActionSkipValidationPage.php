@@ -35,6 +35,14 @@ class ActionSkipValidationPage extends Page
                     ->handle($this->capture(...), needs: ['form'])
                     ->withoutValidation(),
                 $s->action('save')->handle($this->capture(...), needs: ['form']),
+                // A table inside the form: its row action inherits the form the
+                // client already hands it, so the same rules must reach it here.
+                $s->table('rows')
+                    ->rowActions([
+                        $s->action('rowSave')->handle($this->capture(...), needs: ['form']),
+                    ])
+                    ->query(fn () => null)
+                    ->toNode(),
             ]),
         ]);
     }
