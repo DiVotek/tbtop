@@ -264,6 +264,21 @@ final class ActionBuilder implements JsonSerializable
         return $this->handler;
     }
 
+    /**
+     * Whether ->withoutValidation() actually lifts a form gate here — the same
+     * condition toNode() writes `validate: false` under.
+     *
+     * Read this instead of the serialized node: toNode() throws for several
+     * valid-at-runtime combinations (slideOver/modalWidth/query on a handler
+     * action), and the request path must not depend on a node it never needs.
+     */
+    public function skipsFormValidation(): bool
+    {
+        return $this->withoutValidation
+            && $this->spec !== null
+            && self::consumesForm($this->spec);
+    }
+
     public function toNode(): Node
     {
         if ($this->spec === null) {

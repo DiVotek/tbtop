@@ -4,6 +4,7 @@ use Illuminate\Testing\TestResponse;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Tests\ActionSkipValidationHttpTestCase;
 use Tbtop\Admin\Tests\Fixtures\ActionSkipValidationPage;
+use Tbtop\Admin\Tests\Fixtures\UnserializableActionPage;
 
 uses(ActionSkipValidationHttpTestCase::class);
 
@@ -54,6 +55,42 @@ it('keeps repeater rows with the gate off and drops undeclared sub-keys', functi
         ['name' => 'first'],
         ['name' => null],
     ]);
+});
+
+it('drops an undeclared container sibling and undeclared members of a declared one', function (): void {
+    runAction('addBlock', [
+        'items' => [['name' => 'first', 'junk' => 'nope']],
+        // Shares the `items` prefix but is a key in its own right — a container
+        // check keyed on prefixes rather than whole keys would let it through.
+        'itemsExtra' => ['smuggled' => true],
+    ])->assertOk();
+
+    expect(ActionSkipValidationPage::$capturedForm)->not->toHaveKey('itemsExtra')
+        ->and(ActionSkipValidationPage::$capturedForm['items'])->toBe([['name' => 'first']]);
+});
+
+it('treats a non-array payload.form as empty', function (mixed $form): void {
+    test()->postJson('/admin/action-skip-validation/actions/addBlock', [
+        'payload' => ['form' => $form],
+    ])->assertOk();
+
+    expect(ActionSkipValidationPage::$capturedForm)->toBe([]);
+})->with([
+    'scalar' => 'not-a-form',
+    'null' => null,
+    'list' => [[['a', 'b']]],
+]);
+
+it('runs a handler action whose node would refuse to serialize', function (): void {
+    // slideOver() on a non-modal action throws from toNode(). The request path
+    // must reach the handler without serializing anything.
+    UnserializableActionPage::$ran = false;
+
+    test()->postJson('/admin/unserializable-action/actions/slideOverHandler', [
+        'payload' => ['form' => ['title' => 'x']],
+    ])->assertOk();
+
+    expect(UnserializableActionPage::$ran)->toBeTrue();
 });
 
 it('serializes validate:false only when the action opted out of a form gate', function (): void {

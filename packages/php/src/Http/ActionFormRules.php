@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Http;
 
+use LogicException;
 use Tbtop\Admin\Dsl\Node;
 
 /**
@@ -49,7 +50,18 @@ final class ActionFormRules
         if (is_object($node) && ! $node instanceof Node && method_exists($node, 'toNode')) {
             // Builders sit in the tree unserialized — a form's children hold
             // ActionBuilder instances, not their nodes.
-            return self::search($node->toNode(), $actionName, $enclosing);
+            //
+            // toNode() rejects some authoring mistakes by throwing (slideOver()
+            // on a non-modal action, say). That belongs to the render path; here
+            // it would turn one bad sibling into a 500 for an unrelated action,
+            // so an unserializable branch is simply not searchable.
+            try {
+                $serialized = $node->toNode();
+            } catch (LogicException) {
+                return null;
+            }
+
+            return self::search($serialized, $actionName, $enclosing);
         }
         if (! $node instanceof Node) {
             return null;

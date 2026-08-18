@@ -26,7 +26,7 @@ final class ActionController
             throw new NotFoundHttpException("Action \"{$tbtopAction}\" has no server handler on this page.");
         }
 
-        $gate = ($action->toNode()->options['spec']['validate'] ?? true) !== false;
+        $gate = ! $action->skipsFormValidation();
         $ctx = ActionCtx::fromRequest($request, ResolvedPage::routeParams($request))
             ->withValidatedForm(self::validatedForm($request, $resolved, $tbtopAction, $gate));
 
@@ -93,6 +93,7 @@ final class ActionController
     private static function declaredKeysOnly(array $input, array $rules): array
     {
         $keys = array_keys(Validator::make($input, $rules)->getRules());
+        $containers = self::declaredContainers($keys);
 
         $picked = [];
         foreach ($keys as $key) {
@@ -103,7 +104,7 @@ final class ActionController
             // not copy its raw subtree — that would smuggle in the very
             // undeclared members its child keys exist to select. Its children
             // rebuild it; it only has to exist so an empty repeater survives.
-            if (! self::hasDeclaredDescendant($keys, $key)) {
+            if (! isset($containers[$key])) {
                 Arr::set($picked, $key, Arr::get($input, $key));
 
                 continue;
@@ -116,16 +117,29 @@ final class ActionController
         return $picked;
     }
 
-    /** @param  list<string>  $keys */
-    private static function hasDeclaredDescendant(array $keys, string $key): bool
+    /**
+     * Every declared key that is also an ancestor of another declared key.
+     *
+     * Collected in one pass: a repeater emits a key per row, so testing each
+     * key against the whole set would scale with the square of the row count —
+     * and row count is browser-supplied on this path.
+     *
+     * @param  list<string>  $keys
+     * @return array<string, true>
+     */
+    private static function declaredContainers(array $keys): array
     {
-        foreach ($keys as $other) {
-            if ($other !== $key && str_starts_with($other, $key.'.')) {
-                return true;
+        $containers = [];
+        foreach ($keys as $key) {
+            $pos = strrpos($key, '.');
+            while ($pos !== false) {
+                $key = substr($key, 0, $pos);
+                $containers[$key] = true;
+                $pos = strrpos($key, '.');
             }
         }
 
-        return false;
+        return $containers;
     }
 
     /**
