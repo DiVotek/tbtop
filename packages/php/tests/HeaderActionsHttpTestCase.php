@@ -12,6 +12,7 @@ class HeaderActionsHttpTestCase extends TestCase
     {
         parent::setUp();
         HeaderActionsPage::$refreshed = false;
+        HeaderActionsPage::$created = false;
         $this->actingAs(new AuthUser);
     }
 

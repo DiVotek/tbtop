@@ -93,6 +93,27 @@ it('runs a handler action whose node would refuse to serialize', function (): vo
     expect(UnserializableActionPage::$ran)->toBeTrue();
 });
 
+it('holds a row action inside a form to that form rules', function (): void {
+    // The enclosing form must survive the walk down into rowActions — the
+    // client hands that same form to the action, so the rules have to follow.
+    runAction('rowSave', ['title' => ''])->assertStatus(422);
+
+    runAction('rowSave', ['title' => 'ok'])->assertOk();
+    expect(ActionSkipValidationPage::$capturedForm)->toBe(['title' => 'ok']);
+});
+
+it('runs an action on a page whose header action would refuse to serialize', function (): void {
+    // The request path resolves handlers by name; serializing header actions
+    // there would let an unrenderable sibling 500 every POST on the page.
+    UnserializableActionPage::$headerRan = false;
+
+    test()->postJson('/admin/unserializable-action/actions/headerOk', [
+        'payload' => ['row' => ['id' => 1]],
+    ])->assertOk();
+
+    expect(UnserializableActionPage::$headerRan)->toBeTrue();
+});
+
 it('serializes validate:false only when the action opted out of a form gate', function (): void {
     $s = new S;
     $optedOut = $s->action('add')->handle(fn () => null, needs: ['form'])->withoutValidation();

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\ActionBuilder;
+use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -19,6 +20,8 @@ class HeaderActionsPage extends Page
 {
     /** @var bool Set true when the server-handled header action runs. */
     public static bool $refreshed = false;
+
+    public static bool $created = false;
 
     public static function path(): string
     {
@@ -37,6 +40,16 @@ class HeaderActionsPage extends Page
 
         return [
             $s->action('create')->label('New item')->visit('/admin/header-actions/create'),
+            CreateAction::make(
+                $s,
+                form: $s->form('createHeaderItem', [$s->text('title')->required()]),
+                storeUsing: function (): Effects {
+                    static::$created = true;
+
+                    return Effects::make();
+                },
+                name: 'modalCreate',
+            ),
             $s->action('export')->label('Export')->authorize('header-actions-export')->visit('/admin/header-actions/export'),
             $s->action('refresh')->label('Refresh')->handle(function (ActionCtx $ctx): Effects {
                 static::$refreshed = true;

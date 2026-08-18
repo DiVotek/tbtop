@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -14,11 +15,28 @@ use Tbtop\Admin\Pages\Page;
  */
 final class ResolvedPage
 {
+    /** @param  list<ActionBuilder|Node>  $headerActionSources */
     public function __construct(
         public readonly Page $page,
         public readonly S $s,
         public readonly Node $tree,
+        public readonly array $headerActionSources,
     ) {}
+
+    /**
+     * Header actions as the wire needs them. Lazy on purpose: toNode() throws
+     * for combinations that are valid at runtime but unrenderable, and the
+     * POST/JSON paths resolve handlers by name without ever needing a node.
+     *
+     * @return list<Node>
+     */
+    public function headerActionNodes(): array
+    {
+        return array_map(
+            fn (ActionBuilder|Node $action): Node => $action instanceof ActionBuilder ? $action->toNode() : $action,
+            $this->headerActionSources,
+        );
+    }
 
     public static function fromRequest(Request $request): self
     {
@@ -32,16 +50,9 @@ final class ResolvedPage
         $s = new S;
         $tree = $page->view($s);
 
-        // Registration only: header actions with ->handle() are declared inside
-        // headerActions(), never inside view(). POST controllers (ActionController,
-        // FormSubmitController) resolve handlers from $s->collectedActions()/
-        // collectedForms(), which only fill up as a side effect of calling these
-        // closures. PageController's GET render calls headerActions($s) itself to
-        // serialize the prop — this second call only feeds the registry and is
-        // never re-serialized, so it can't double up the wire output.
-        $page->headerActions($s);
-
-        return new self($page, $s, $tree);
+        // Calling headerActions() is also what registers the handlers declared
+        // there: POST controllers resolve them from $s->collectedActions().
+        return new self($page, $s, $tree, S::normalizeChildren($page->headerActions($s)));
     }
 
     /** Route params excluding tbtop internals. @return array<string, string> */

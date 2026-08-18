@@ -19,7 +19,12 @@ it('serializes built-in action labels/confirm in English by default', function (
     $response = $this->get('/admin/crud-actions', ['X-Inertia' => 'true']);
 
     $response->assertOk();
-    $children = collect($response->json('props.structure.options.children'))->keyBy('name');
+    $table = $response->json('props.structure.options.children.0.options');
+    $children = collect([
+        ...$table['headerActions'],
+        ...$table['rowActions'],
+        ...$table['bulkActions'],
+    ])->keyBy('name');
 
     expect($children['create']['options']['label'])->toBe('Create')
         ->and($children['create']['options']['spec']['title'])->toBe('Create record')
@@ -40,7 +45,12 @@ it('serializes built-in action labels/confirm in Ukrainian when the admin locale
     $response = $this->get('/admin/crud-actions', ['X-Inertia' => 'true']);
 
     $response->assertOk();
-    $children = collect($response->json('props.structure.options.children'))->keyBy('name');
+    $table = $response->json('props.structure.options.children.0.options');
+    $children = collect([
+        ...$table['headerActions'],
+        ...$table['rowActions'],
+        ...$table['bulkActions'],
+    ])->keyBy('name');
 
     expect($children['create']['options']['label'])->toBe('Створити')
         ->and($children['create']['options']['spec']['title'])->toBe('Створити запис')

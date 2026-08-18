@@ -10,7 +10,7 @@ it('serializes headerActions as a page prop alongside title/subtitle', function 
 
     expect($props['title'])->toBe('Header Actions Page')
         ->and($props['subtitle'])->toBe('Subtitle line')
-        ->and($props['headerActions'])->toHaveCount(2)
+        ->and($props['headerActions'])->toHaveCount(3)
         ->and($props['headerActions'][0]['name'])->toBe('create')
         ->and($props['headerActions'][0]['options']['spec'])
         ->toBe(['type' => 'visit', 'href' => '/admin/header-actions/create']);
@@ -37,4 +37,14 @@ it('runs a server-handled header action posted directly, without rendering the p
         ],
     ]);
     expect(HeaderActionsPage::$refreshed)->toBeTrue();
+});
+
+it('validates a form nested in a page header action', function () {
+    $response = $this->postJson('/admin/header-actions/actions/modalCreateStore', [
+        'payload' => ['form' => []],
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('payload.form.title');
+    expect(HeaderActionsPage::$created)->toBeFalse();
 });

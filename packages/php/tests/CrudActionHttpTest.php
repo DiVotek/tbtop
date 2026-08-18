@@ -182,6 +182,28 @@ it('rejects an action submission violating a rule its form declares', function (
     expect(CaPost::count())->toBe(2);
 });
 
+it('validates a form nested in a row action', function (): void {
+    $post = CaPost::where('title', 'First')->firstOrFail();
+
+    $response = $this->postJson('/admin/crud-actions/actions/editSave', [
+        'payload' => ['row' => ['id' => $post->id], 'form' => []],
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('payload.form.title');
+    expect($post->fresh()->title)->toBe('First');
+});
+
+it('validates a form nested in a bulk action', function (): void {
+    $response = $this->postJson('/admin/crud-actions/actions/bulkCreateStore', [
+        'payload' => ['form' => []],
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('payload.form.title');
+    expect(CaPost::count())->toBe(2);
+});
+
 it('drops a form key no field on the action form declares', function (): void {
     CrudActionsPage::$lastStoreForm = null;
 

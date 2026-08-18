@@ -20,6 +20,8 @@ class UnserializableActionPage extends Page
 {
     public static bool $ran = false;
 
+    public static bool $headerRan = false;
+
     public static function path(): string
     {
         return 'unserializable-action';
@@ -37,9 +39,30 @@ class UnserializableActionPage extends Page
         ]);
     }
 
+    /**
+     * The same refusal, one level out. Tests POST to the neighbour: an
+     * unrenderable sibling must not decide whether an unrelated action runs.
+     */
+    public function headerActions(S $s): array
+    {
+        return [
+            $s->action('headerSlideOver')
+                ->handle($this->run(...), needs: ['row'])
+                ->slideOver(),
+            $s->action('headerOk')->handle($this->runHeader(...), needs: ['row']),
+        ];
+    }
+
     private function run(ActionCtx $ctx): Effects
     {
         static::$ran = true;
+
+        return Effects::make()->notify('Ran');
+    }
+
+    private function runHeader(ActionCtx $ctx): Effects
+    {
+        static::$headerRan = true;
 
         return Effects::make()->notify('Ran');
     }
