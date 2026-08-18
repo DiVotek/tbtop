@@ -35,6 +35,19 @@ it('still gates a normal form-consuming action on the same form', function (): v
     expect(ActionSkipValidationPage::$capturedForm)->toBeNull();
 });
 
+it('evaluates sibling field rules within the action form', function (): void {
+    runAction('save', [
+        'title' => 'Valid',
+        'password' => 'secret',
+        'password_confirmation' => 'secret',
+    ])->assertOk();
+
+    expect(ActionSkipValidationPage::$capturedForm)->toMatchArray([
+        'password' => 'secret',
+        'password_confirmation' => 'secret',
+    ]);
+});
+
 it('drops undeclared keys even with the gate off', function (): void {
     runAction('addBlock', ['title' => '', 'extra' => 'smuggled'])->assertOk();
 
