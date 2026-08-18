@@ -60,8 +60,6 @@
   DEMO-4 also wired `slideOver()`/`modalWidth()` through wire materialization
   (they were serialized but dropped client-side).
 - Hide scrollbar on the scrollable body (shadcn dialog parity).
-- Expose `size` on `ActionBuilder::modal()` — client `ModalShell` already supports
-  `sm/md/lg/full`.
 - Sticky header/footer already exist (revola) — verify only.
 
 ## DX
