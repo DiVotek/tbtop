@@ -107,6 +107,18 @@ describe("materialize actions", () => {
 		expect(opts(submit).consumesForm).toBe(true);
 	});
 
+	it("marks a needs:['form'] action with validate:false as consumesForm:false (opted out of the gate)", () => {
+		const out = materialize(
+			node(
+				"action",
+				{ spec: { type: "server", needs: ["form"], validate: false } },
+				"addBlock",
+			),
+			BASE,
+		);
+		expect(opts(out).consumesForm).toBe(false);
+	});
+
 	it("maps a server spec to a handler posting needs-driven payload and running effects", async () => {
 		const calls: { path: string; body: unknown }[] = [];
 		const notifications: string[] = [];

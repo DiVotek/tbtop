@@ -25,6 +25,8 @@ interface ActionSpec {
 	newTab?: boolean;
 	form?: string;
 	needs?: string[];
+	/** Written only when the action opted out of the form's validation gate. */
+	validate?: false;
 	title?: string;
 	description?: string;
 	body?: StructureNode;
@@ -78,13 +80,15 @@ interface HandlerBagInput {
 
 /**
  * Handler-carrying branches (submit / server / custom). `consumesForm` marks
- * whether the handler reads the form — only submit and server actions with
- * needs:['form'] do; everything else (Cancel/close, row-scoped actions) must
- * not trip the surrounding form's pre-flight validation.
+ * whether the handler reads the form AND is gated by it — submit, and server
+ * actions with needs:['form'] that did not opt out via ->withoutValidation().
+ * Everything else (Cancel/close, row-scoped actions) must not trip the
+ * surrounding form's pre-flight validation.
  */
 function handlerBag({ base, node, spec, ctx, confirm }: HandlerBagInput): Bag {
 	const handler = buildHandler(node, spec, ctx);
-	const consumesForm = spec.type === "submit" || (spec.needs ?? []).includes("form");
+	const consumesForm =
+		spec.type === "submit" || ((spec.needs ?? []).includes("form") && spec.validate !== false);
 	const bag = { ...base, consumesForm };
 	if (confirm) {
 		return { ...bag, modal: confirmModal({ base: bag, confirm, handler }, ctx.t) };

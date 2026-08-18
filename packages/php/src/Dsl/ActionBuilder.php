@@ -40,6 +40,8 @@ final class ActionBuilder implements JsonSerializable
 
     private bool $slideOver = false;
 
+    private bool $withoutValidation = false;
+
     private ?string $authorizeAbility = null;
 
     private mixed $authorizeArg = null;
@@ -105,6 +107,22 @@ final class ActionBuilder implements JsonSerializable
         $this->handler = $handler;
 
         return $this->setSpec(['type' => 'server', 'needs' => $needs]);
+    }
+
+    /**
+     * Turn the enclosing form's rules from a gate into a schema filter for this
+     * action: the handler still receives only declared keys, but a field that
+     * fails its rules no longer blocks the action. Lets a form-scoped action
+     * (add a block, delete a row) run while the form is half-filled.
+     *
+     * Silently ignored on anything that is not a `handle()` with `'form'` in
+     * its needs — there is nothing to opt out of there.
+     */
+    public function withoutValidation(bool $without = true): self
+    {
+        $this->withoutValidation = $without;
+
+        return $this;
     }
 
     public function confirm(string $title, ?string $description = null): self
@@ -275,6 +293,11 @@ final class ActionBuilder implements JsonSerializable
             $spec = [...$spec, 'query' => true, 'queryNeeds' => $this->queryNeeds];
         }
 
+        // Only written when disabled, so existing nodes stay byte-identical.
+        if ($this->withoutValidation && self::consumesForm($spec)) {
+            $spec = [...$spec, 'validate' => false];
+        }
+
         return (new Node('action', [...$this->opts, ...$this->iconOption(), ...$this->tooltipOption(), 'spec' => $spec], $this->name, $this->metaBag))
             ->when($this->isIncluded());
     }
@@ -283,6 +306,13 @@ final class ActionBuilder implements JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->toNode()->jsonSerialize();
+    }
+
+    /** @param  array<string, mixed>  $spec */
+    private static function consumesForm(array $spec): bool
+    {
+        return ($spec['type'] ?? '') === 'server'
+            && in_array('form', is_array($spec['needs'] ?? null) ? $spec['needs'] : [], true);
     }
 
     /** @param  array<string, mixed>  $spec */
