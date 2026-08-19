@@ -96,10 +96,12 @@ function memberOf(value: unknown, key: string): unknown {
  */
 export function checkField(value: unknown, c: FieldConstraints): string | null {
 	const empty = value === undefined || value === null || value === "";
-	if (empty) {
-		return c.required ? "validation.required" : null;
+	const blank = empty || (Array.isArray(value) && value.length === 0);
+	if (blank && c.required) {
+		return "validation.required";
 	}
-	return checkPresent(value, c);
+	// `[]` is still present for size rules (Laravel fails `min:2` on it).
+	return empty ? null : checkPresent(value, c);
 }
 
 function checkPresent(value: unknown, c: FieldConstraints): string | null {
@@ -139,8 +141,17 @@ function checkFormat(value: unknown, c: FieldConstraints): string | null {
 	if (c.regex && !new RegExp(c.regex).test(str)) {
 		return "validation.regex";
 	}
-	if (c.in && !c.in.includes(str)) {
+	if (c.in && !inAllowed(value, c.in)) {
 		return "validation.in";
 	}
 	return null;
+}
+
+// Multi-value fields (multiple select, tags, checkbox list) are checked per element,
+// mirroring the server's `field.*` placement of `in`.
+function inAllowed(value: unknown, allowed: string[]): boolean {
+	if (Array.isArray(value)) {
+		return value.every((item) => allowed.includes(String(item)));
+	}
+	return allowed.includes(String(value));
 }
