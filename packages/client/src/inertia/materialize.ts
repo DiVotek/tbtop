@@ -23,6 +23,7 @@ type Bag = Record<string, unknown>;
 export interface MaterializeInput {
 	basePath: string;
 	data: Record<string, Bag>;
+	defaultContentLocale?: string;
 	t?: Translate;
 }
 
@@ -172,7 +173,7 @@ function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const formCtx: WalkCtx = { ...ctx, formName: name, formNode: node };
 	const options = walkChildren(node.options as Bag, formCtx);
 	const record = ctx.data[name] ?? {};
-	const constraints = collectConstraints(node, {});
+	const constraints = collectConstraints(node, {}, ctx.defaultContentLocale);
 	return {
 		...node,
 		options: {

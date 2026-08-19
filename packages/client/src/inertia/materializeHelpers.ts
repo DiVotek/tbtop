@@ -191,13 +191,15 @@ export function materializeStat(node: StructureNode, basePath: string): Structur
 export function collectConstraints(
 	node: StructureNode,
 	acc: Record<string, FieldConstraints>,
+	defaultLocale = "en",
 ): Record<string, FieldConstraints> {
 	const opts = node.options as Bag;
 	if (node.name && opts.constraints && node.kind !== "form") {
-		acc[node.name] = opts.constraints as FieldConstraints;
+		const name = opts.translatable === true ? `${node.name}.${defaultLocale}` : node.name;
+		acc[name] = opts.constraints as FieldConstraints;
 	}
 	for (const child of childNodes(opts)) {
-		collectConstraints(child, acc);
+		collectConstraints(child, acc, defaultLocale);
 	}
 	return acc;
 }

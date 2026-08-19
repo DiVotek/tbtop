@@ -423,6 +423,52 @@ describe("materialize form", () => {
 		expect(schema.parse({ title: "ok" })).toEqual({ title: "ok" });
 	});
 
+	it("applies required and size constraints to a translatable field's default-locale value", () => {
+		const translatable = node(
+			"form",
+			{
+				children: [
+					node(
+						"text",
+						{ translatable: true, constraints: { required: true, min: 3, max: 20 } },
+						"title",
+					),
+				],
+			},
+			"post",
+		);
+		const out = materialize(translatable, { ...BASE, data: {} });
+		const schema = opts(out).schema as { parse: (i: unknown) => unknown };
+		const messages = (input: unknown): string[] => {
+			try {
+				schema.parse(input);
+				return [];
+			} catch (error) {
+				return (error as { issues: { message: string }[] }).issues.map(
+					(issue) => issue.message,
+				);
+			}
+		};
+
+		expect(messages({ title: { en: "", uk: "Ukrainian" } })).toEqual(["validation.required"]);
+		expect(messages({ title: { en: "ab", uk: "" } })).toEqual(["validation.min:3"]);
+		expect(messages({ title: { en: "x".repeat(21), uk: "" } })).toEqual(["validation.max:20"]);
+		expect(schema.parse({ title: { en: "valid", uk: "" } })).toEqual({
+			title: { en: "valid", uk: "" },
+		});
+
+		const ukOut = materialize(translatable, {
+			...BASE,
+			data: {},
+			defaultContentLocale: "uk",
+		});
+		const ukSchema = opts(ukOut).schema as { parse: (i: unknown) => unknown };
+		expect(ukSchema.parse({ title: { en: "", uk: "valid" } })).toEqual({
+			title: { en: "", uk: "valid" },
+		});
+		expect(() => ukSchema.parse({ title: { en: "valid", uk: "" } })).toThrow();
+	});
+
 	it("flags the submit action's bag so the button can render type=submit", () => {
 		const mixed = node(
 			"form",

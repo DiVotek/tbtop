@@ -3,6 +3,7 @@ import type { FormEvent, ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { renderTranslatableField as renderTranslatableFieldShared } from "../fields/translatableField";
 import { type Translate, translateValidationMessage, useTranslation } from "../i18n/i18n";
+import { liftNestedErrors } from "../inertia/fieldErrors";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { applyColumnPlacement } from "../render/columnPlacement";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
@@ -390,6 +391,7 @@ function renderTranslatableFieldNode(input: TranslatableFieldInput): ReactNode {
 		onChange: (next) => ctrl.set(name, next),
 		onBlur: () => {
 			ctrl.markTouched(name);
+			revalidateField(ctrl, name, formCtx.t);
 		},
 		disabled,
 		describedBy,
@@ -408,15 +410,31 @@ export function revalidateField(ctrl: ControllerHandle, name: string, t: Transla
 	}
 	try {
 		ctrl.schema.parse(ctrl.data);
-		ctrl.setFieldError(name, null);
+		clearFieldErrors(ctrl, name);
 	} catch (err) {
 		const issues = (err as { issues?: { path: (string | number)[]; message: string }[] })
 			.issues;
 		if (!Array.isArray(issues)) {
 			return;
 		}
-		const match = issues.find((i) => i.path[0] === name);
-		ctrl.setFieldError(name, match ? translateValidationMessage(t, match.message) : null);
+		const fields: Record<string, string> = {};
+		for (const issue of issues.filter((candidate) => candidate.path[0] === name)) {
+			const path = issue.path.map(String).join(".");
+			fields[path] ??= translateValidationMessage(t, issue.message);
+		}
+		clearFieldErrors(ctrl, name);
+		for (const [field, message] of Object.entries(liftNestedErrors(fields))) {
+			ctrl.setFieldError(field, message);
+		}
+	}
+}
+
+function clearFieldErrors(ctrl: ControllerHandle, name: string): void {
+	const prefix = `${name}.`;
+	for (const field of Object.keys(ctrl.fieldErrors)) {
+		if (field === name || field.startsWith(prefix)) {
+			ctrl.setFieldError(field, null);
+		}
 	}
 }
 

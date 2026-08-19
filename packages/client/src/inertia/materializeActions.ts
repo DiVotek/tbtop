@@ -7,6 +7,7 @@ import type { ModalSize } from "../ui/modal-shell";
 import { type ConfirmSpec, confirmModal } from "./confirmModal";
 import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects } from "./effects";
+import { liftNestedErrors } from "./fieldErrors";
 import { serializeFormData } from "./serializeFormData";
 
 type Bag = Record<string, unknown>;
@@ -171,23 +172,6 @@ function submitHandler(
 			});
 		});
 }
-
-/**
- * Laravel keys nested errors as 'sections.0.heading'; field components
- * look up by root name. Lift the first nested message onto the root key
- * so repeater/array validation failures stay visible.
- */
-function liftNestedErrors(errors: Record<string, string>): Record<string, string> {
-	const lifted: Record<string, string> = { ...errors };
-	for (const [key, message] of Object.entries(errors)) {
-		const root = key.split(".")[0] ?? key;
-		if (root !== key && lifted[root] === undefined) {
-			lifted[root] = message;
-		}
-	}
-	return lifted;
-}
-
 /** Shape the row/selection/form payload an action endpoint expects. */
 function actionPayload(ctx: ClientActionContext, needs: string[], formNode?: StructureNode): Bag {
 	const payload: Bag = {};
