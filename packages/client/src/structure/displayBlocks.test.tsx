@@ -135,6 +135,23 @@ describe("DisplayHtmlBlock", () => {
 		);
 		expect(container.querySelector("p")?.textContent).toBe("Paragraph");
 	});
+
+	test("removes active markup while preserving benign formatting", () => {
+		const html =
+			'<strong>safe</strong><img src="x" onerror="document.body.dataset.injected=yes"><a href="javascript:alert(1)">link</a><script>alert(1)</script>';
+		const { container } = render(
+			<DisplayHtmlBlock
+				options={{ html }}
+				meta={NOOP_META}
+				ctx={NOOP_CTX}
+				renderChild={NOOP_RENDER}
+			/>,
+		);
+		expect(container.querySelector("strong")?.textContent).toBe("safe");
+		expect(container.querySelector("img")?.getAttribute("onerror")).toBeNull();
+		expect(container.querySelector("a")?.getAttribute("href")).toBeNull();
+		expect(container.querySelector("script")).toBeNull();
+	});
 });
 
 // ---------------------------------------------------------------------------
