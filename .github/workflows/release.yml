@@ -4,12 +4,12 @@
 # merge to main, then run this workflow from main. It:
 #   1. reads the version from package.json
 #   2. fails if that tag already exists
-#   3. npm publish (Trusted Publishing / OIDC, no token) -> @tbtop/inertia-admin
+#   3. npm publish if needed (Trusted Publishing / OIDC) -> @tbtop/inertia-admin
 #   4. creates and pushes the tag  -> Packagist publishes tbtop/admin via webhook
 #   5. creates a GitHub Release with generated notes
 #
-# npm goes BEFORE the tag on purpose: a npm failure then leaves no dangling tag,
-# so a re-run stays clean (the tag-exists guard wouldn't block it).
+# npm goes BEFORE the tag on purpose: a npm failure then leaves no dangling tag.
+# Re-runs skip npm when the exact package version is already published.
 #
 # npm publish lives here (not a tag-triggered workflow) because a tag pushed by
 # Actions does not trigger other workflows. One button, one run, both packages.
@@ -103,10 +103,20 @@ jobs:
           fi
           echo "$TAG is free"
 
-      # npm first: if this fails, no tag is pushed, so a re-run stays clean.
-      # OIDC is auto-detected; provenance is generated automatically.
+      # Fetching all versions distinguishes an absent version from a registry
+      # lookup failure, which must still stop the release.
       - name: Publish to npm
-        run: npm publish
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          versions="$(npm view "$name" versions --json)"
+          if PUBLISHED_VERSIONS="$versions" VERSION="$version" node -e \
+            'v=JSON.parse(process.env.PUBLISHED_VERSIONS); process.exit((Array.isArray(v)?v:[v]).includes(process.env.VERSION)?0:1)'
+          then
+            echo "$name@$version is already published; continuing the release"
+          else
+            npm publish
+          fi
 
       # Re-check right before tagging: the earlier check ran before npm publish,
       # and a full publication sits in the gap between the two. This can't
