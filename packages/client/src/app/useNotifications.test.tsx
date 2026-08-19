@@ -1,5 +1,5 @@
 import { describe, expect, spyOn, test } from "bun:test";
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { ClientProvider } from "../data/client";
@@ -161,5 +161,37 @@ describe("useNotifications", () => {
 		await waitFor(() => expect(errorSpy).toHaveBeenCalled());
 		await waitFor(() => expect(getByTestId("size").textContent).toBe("2"));
 		errorSpy.mockRestore();
+	});
+
+	test("overlapping mark-read actions compose and roll back only the failed action", async () => {
+		const releases = new Map<string, (status: number) => void>();
+		const notes = [note("a"), note("b")];
+		const deferred: FetchHandler = (req) => {
+			if (req.method === "GET") {
+				return jsonResponse({ data: notes, unreadCount: 2 });
+			}
+			return new Promise<Response>((resolve) => {
+				releases.set(new URL(req.url).pathname, (status) =>
+					resolve(new Response("{}", { status })),
+				);
+			});
+		};
+		const { result } = renderHook(() => useNotifications(null), { wrapper: wrap(deferred) });
+		await waitFor(() => expect(result.current.items).toHaveLength(2));
+
+		act(() => {
+			void result.current.markRead("a");
+			void result.current.markRead("b");
+		});
+		expect(result.current.items.every((item) => item.readAt !== null)).toBe(true);
+		expect(result.current.unreadCount).toBe(0);
+
+		act(() => {
+			releases.get("/notifications/a/read")?.(500);
+			releases.get("/notifications/b/read")?.(200);
+		});
+		await waitFor(() => expect(result.current.unreadCount).toBe(1));
+		expect(result.current.items.find((item) => item.id === "a")?.readAt).toBeNull();
+		expect(result.current.items.find((item) => item.id === "b")?.readAt).not.toBeNull();
 	});
 });

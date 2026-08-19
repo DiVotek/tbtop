@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApiBase, useClient } from "../data/client";
 import { useTranslation } from "../i18n/i18n";
@@ -19,6 +19,8 @@ export interface UseNotifications {
 }
 
 const nowIso = (): string => new Date().toISOString();
+const unread = (items: AdminNotification[]): number =>
+	items.reduce((count, item) => count + (item.readAt === null ? 1 : 0), 0);
 
 // oxlint-disable-next-line max-lines-per-function -- hook: state + the optimistic mutations stay inline (hook rules)
 export function useNotifications(pollInterval: number | null | undefined): UseNotifications {
@@ -29,6 +31,15 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
+	const itemsRef = useRef(items);
+	const mutationSequence = useRef(0);
+	const latestMutation = useRef(new Map<string, number>());
+
+	const updateItems = useCallback((next: AdminNotification[]) => {
+		itemsRef.current = next;
+		setItems(next);
+		setUnreadCount(unread(next));
+	}, []);
 
 	const refresh = useCallback(async () => {
 		try {
@@ -37,6 +48,7 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 				setError(true);
 				return;
 			}
+			itemsRef.current = parsed.items;
 			setItems(parsed.items);
 			setUnreadCount(parsed.unreadCount);
 			setError(false);
@@ -52,60 +64,84 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 	}, [refresh]);
 	usePolling(refresh, pollInterval);
 
-	// Optimistic: apply next state, send, roll back + toast on failure.
-	const mutate = useCallback(
-		async (nextItems: AdminNotification[], nextCount: number, send: () => Promise<unknown>) => {
-			const prevItems = items;
-			const prevCount = unreadCount;
-			setItems(nextItems);
-			setUnreadCount(nextCount);
+	const markRead = useCallback(
+		async (id: string) => {
+			const target = itemsRef.current.find((n) => n.id === id);
+			if (target === undefined || target.readAt !== null) {
+				return;
+			}
+			const operation = ++mutationSequence.current;
+			latestMutation.current.set(id, operation);
+			updateItems(
+				itemsRef.current.map((item) =>
+					item.id === id ? { ...item, readAt: nowIso() } : item,
+				),
+			);
 			try {
-				await send();
+				await client.post(`${base}/${id}/read`);
 			} catch {
-				setItems(prevItems);
-				setUnreadCount(prevCount);
+				if (latestMutation.current.get(id) === operation) {
+					updateItems(
+						itemsRef.current.map((item) =>
+							item.id === id ? { ...item, readAt: target.readAt } : item,
+						),
+					);
+				}
 				toast.error(t("notifications.action_failed"));
 			}
 		},
-		[items, unreadCount, t],
-	);
-
-	const markRead = useCallback(
-		(id: string) => {
-			const target = items.find((n) => n.id === id);
-			if (target === undefined || target.readAt !== null) {
-				return Promise.resolve();
-			}
-			const next = items.map((n) => (n.id === id ? { ...n, readAt: nowIso() } : n));
-			return mutate(next, Math.max(0, unreadCount - 1), () =>
-				client.post(`${base}/${id}/read`),
-			);
-		},
-		[items, unreadCount, mutate, client, base],
+		[client, base, t, updateItems],
 	);
 
 	const remove = useCallback(
-		(id: string) => {
-			const target = items.find((n) => n.id === id);
+		async (id: string) => {
+			const previous = itemsRef.current;
+			const target = previous.find((n) => n.id === id);
 			if (target === undefined) {
-				return Promise.resolve();
+				return;
 			}
-			const count = target.readAt === null ? Math.max(0, unreadCount - 1) : unreadCount;
-			return mutate(
-				items.filter((n) => n.id !== id),
-				count,
-				() => client.delete(`${base}/${id}`),
-			);
+			const operation = ++mutationSequence.current;
+			latestMutation.current.set(id, operation);
+			updateItems(previous.filter((item) => item.id !== id));
+			try {
+				await client.delete(`${base}/${id}`);
+			} catch {
+				if (latestMutation.current.get(id) === operation) {
+					const index = previous.indexOf(target);
+					const next = [...itemsRef.current];
+					next.splice(Math.min(index, next.length), 0, target);
+					updateItems(next);
+				}
+				toast.error(t("notifications.action_failed"));
+			}
 		},
-		[items, unreadCount, mutate, client, base],
+		[client, base, t, updateItems],
 	);
 
-	const clearAll = useCallback(() => {
-		if (items.length === 0) {
-			return Promise.resolve();
+	const clearAll = useCallback(async () => {
+		const previous = itemsRef.current;
+		if (previous.length === 0) {
+			return;
 		}
-		return mutate([], 0, () => client.delete(base));
-	}, [items, mutate, client, base]);
+		const operation = ++mutationSequence.current;
+		for (const item of previous) {
+			latestMutation.current.set(item.id, operation);
+		}
+		updateItems([]);
+		try {
+			await client.delete(base);
+		} catch {
+			const restorable = previous.filter(
+				(item) => latestMutation.current.get(item.id) === operation,
+			);
+			const restoredIds = new Set(restorable.map((item) => item.id));
+			updateItems([
+				...restorable,
+				...itemsRef.current.filter((item) => !restoredIds.has(item.id)),
+			]);
+			toast.error(t("notifications.action_failed"));
+		}
+	}, [client, base, t, updateItems]);
 
 	return { items, unreadCount, loading, error, refresh, markRead, remove, clearAll };
 }
