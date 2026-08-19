@@ -2,6 +2,7 @@
  * useRowReorder rules:
  * - onDragEnd reorders rows optimistically, then persists the new id order
  * - a rejected persist rolls the row order back to the pre-drag snapshot
+ * - a superseded persist is ignored entirely: no rollback, no error toast
  * - server rows (a refetch) replace the local order
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
@@ -106,7 +107,9 @@ describe("useRowReorder", () => {
 
 		expect(getByTestId("order").textContent).toBe("3,1,2");
 		expect(mockRefresh).toHaveBeenCalledTimes(1);
-		expect(mockNotify).toHaveBeenCalledTimes(1);
+		// The stale failure is fully suppressed — no rollback and no error toast
+		// contradicting the reorder the user already saw succeed.
+		expect(mockNotify).not.toHaveBeenCalled();
 	});
 
 	test("ignores a drag with no over target", () => {

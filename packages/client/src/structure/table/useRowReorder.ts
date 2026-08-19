@@ -73,9 +73,13 @@ export function useRowReorder(input: UseRowReorderInput): RowReorder {
 				input.onRefresh?.();
 			}
 		} catch {
-			if (generation === requestGeneration.current) {
-				setRows(snapshot);
+			// A superseded drag must stay silent: its rollback would clobber the
+			// newer order, and its toast would contradict the reorder the user
+			// already saw succeed.
+			if (generation !== requestGeneration.current) {
+				return;
 			}
+			setRows(snapshot);
 			ctx.notify({ kind: "error", message: ctx.t("table.reorder_failed") });
 		}
 	}
