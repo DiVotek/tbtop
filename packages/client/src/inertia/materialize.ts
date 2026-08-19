@@ -5,15 +5,11 @@ import type {
 	NodeMeta,
 	StructureNode,
 } from "../structure/types";
+import { collectConstraints } from "./collectConstraints";
 import { type ConditionAst, compileCondition } from "./conditionCompiler";
 import { compileConstraints } from "./constraints";
 import { materializeActionOptions } from "./materializeActions";
-import {
-	collectConstraints,
-	materializeChart,
-	materializeStat,
-	selectOptionsEndpoint,
-} from "./materializeHelpers";
+import { materializeChart, materializeStat, selectOptionsEndpoint } from "./materializeHelpers";
 import { materializeLiveRegion } from "./materializeLiveRegion";
 import { bindRegisteredKind, materializeNamedField } from "./materializeRegisteredKind";
 import { actionBags, materializeTable } from "./materializeTable";
@@ -173,7 +169,7 @@ function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const formCtx: WalkCtx = { ...ctx, formName: name, formNode: node };
 	const options = walkChildren(node.options as Bag, formCtx);
 	const record = ctx.data[name] ?? {};
-	const constraints = collectConstraints(node, {}, ctx.defaultContentLocale);
+	const constraints = collectConstraints(node, ctx.defaultContentLocale);
 	return {
 		...node,
 		options: {

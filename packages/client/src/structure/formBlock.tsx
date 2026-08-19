@@ -25,6 +25,7 @@ import { isNodeDisabled, isNodeHidden } from "./meta";
 import { useModalData } from "./modalDataContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { scrollToFirstError } from "./scrollToFirstError";
+import { structureChildren } from "./structureChildren";
 import type { ConditionContext, StructureNode } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
 import { useUnsavedGuard } from "./useUnsavedGuard";
@@ -492,11 +493,8 @@ function normalize(data: unknown): Bag {
 }
 
 /**
- * Recursively checks whether any field node in the tree has translatable:true.
- * Walks the same containers the server-side translatable cascade does
- * (Node::translatable(): children, fields, AND tabs[].body) — a form whose
- * translatable fields all live inside a tabs block must still get its
- * ContentLocaleBar.
+ * Recursively checks whether any field node in the tree has translatable:true,
+ * walking the same containers the server-side cascade does (Node::translatable()).
  */
 function detectTranslatableFields(children: StructureNode[]): boolean {
 	for (const node of children) {
@@ -504,12 +502,7 @@ function detectTranslatableFields(children: StructureNode[]): boolean {
 		if (opts?.translatable === true) {
 			return true;
 		}
-		const nested = (opts?.children ?? opts?.fields) as StructureNode[] | undefined;
-		if (nested && detectTranslatableFields(nested)) {
-			return true;
-		}
-		const tabs = opts?.tabs as { body?: StructureNode }[] | undefined;
-		if (tabs?.some((tab) => tab.body && detectTranslatableFields([tab.body]))) {
+		if (detectTranslatableFields(structureChildren(opts))) {
 			return true;
 		}
 	}
