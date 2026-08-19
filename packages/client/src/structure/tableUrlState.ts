@@ -145,7 +145,7 @@ function readPositiveInt(searchParams: URLSearchParams, key: string): number | u
 		return undefined;
 	}
 	const n = Number(raw);
-	return Number.isFinite(n) && n > 0 ? n : undefined;
+	return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
 function clearTableKeys(params: URLSearchParams, name: string): void {

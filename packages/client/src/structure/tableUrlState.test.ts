@@ -127,6 +127,24 @@ describe("tableUrlState: empty value pruning", () => {
 	});
 });
 
+// ─── pagination validation ──────────────────────────────────────────────────
+
+describe("tableUrlState: pagination validation", () => {
+	test("tableUrlState: accepts positive integer pagination values", () => {
+		const sp = new URLSearchParams("t[posts][page]=2&t[posts][perPage]=50");
+
+		expect(readTableParams(sp, "posts")).toEqual({ page: 2, perPage: 50 });
+	});
+
+	test("tableUrlState: omits malformed pagination values", () => {
+		for (const value of ["1.5", "2.5e-1", "0", "-1", "NaN", "Infinity"]) {
+			const sp = new URLSearchParams(`t[posts][page]=${value}&t[posts][perPage]=${value}`);
+
+			expect(readTableParams(sp, "posts")).toEqual({});
+		}
+	});
+});
+
 // ─── history.replaceState integration ────────────────────────────────────────
 
 describe("tableUrlState: persistTableParams calls history.replaceState", () => {
