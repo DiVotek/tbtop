@@ -106,3 +106,15 @@ it('RuleWalker: translatable multiple upload validates locale arrays and element
         'gallery.uk.*' => ['string'],
     ]);
 });
+
+it('RuleWalker: conditional required on multiple upload lands on field key, not element key', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->upload('docs')->multiple()->rules('required_with:title'),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'docs' => ['array', 'required_with:title'],
+        'docs.*' => ['string'],
+    ]);
+});

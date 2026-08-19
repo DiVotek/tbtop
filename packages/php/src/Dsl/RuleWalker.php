@@ -9,6 +9,13 @@ use Tbtop\Admin\Dsl\Fields\Upload;
 final class RuleWalker
 {
     /**
+     * Rules that constrain a multiple-value field as a whole rather than
+     * each element. `required` and its conditional variants belong here
+     * too: on `field.*` they would never fire for an empty array.
+     */
+    private const FIELD_LEVEL = ['nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
+
+    /**
      * Walks a structure tree collecting Laravel validation rules from fields.
      * Accepts Field instances.
      * Repeater sub-fields become `parent.*.child` rules.
@@ -79,8 +86,6 @@ final class RuleWalker
      */
     private static function fromMultipleSelectField(Select $field, string $prefix): array
     {
-        // Field-level: array constraints; element-level: everything else.
-        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
         $key = $prefix.$field->name;
         $allEntries = $field->ruleEntries();
 
@@ -89,7 +94,7 @@ final class RuleWalker
 
         foreach ($allEntries as $entry) {
             $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
-            if (in_array($name, $fieldLevel, true)) {
+            if (self::isFieldLevel($name)) {
                 if ($entry !== 'array') {
                     $fieldRules[] = $entry;
                 }
@@ -158,14 +163,13 @@ final class RuleWalker
      */
     private static function multipleUploadRules(Upload $field, string $key, array $entries): array
     {
-        $fieldLevel = ['required', 'nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
         $fieldRules = ['array'];
         $elementRules = ['string'];
         $hasMax = false;
 
         foreach ($entries as $entry) {
             $name = str_contains($entry, ':') ? substr($entry, 0, strpos($entry, ':')) : $entry;
-            if (in_array($name, $fieldLevel, true)) {
+            if (self::isFieldLevel($name)) {
                 if ($entry !== 'array') {
                     $fieldRules[] = $entry;
                 }
@@ -188,6 +192,11 @@ final class RuleWalker
             $key => $fieldRules,
             $key.'.*' => $elementRules,
         ];
+    }
+
+    private static function isFieldLevel(string $name): bool
+    {
+        return str_starts_with($name, 'required') || in_array($name, self::FIELD_LEVEL, true);
     }
 
     /**
