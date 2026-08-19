@@ -93,6 +93,10 @@ function WithCreateAffordance({
 	}
 
 	function handleSuccess(value: string, label: string) {
+		if (disabled) {
+			setOpen(false);
+			return;
+		}
 		if (resolvedLabels) {
 			resolvedLabels[value] = { value, label };
 		}
@@ -107,7 +111,8 @@ function WithCreateAffordance({
 			<button
 				type="button"
 				data-testid={`select-create-${name}`}
-				onClick={() => setOpen(true)}
+				disabled={disabled}
+				onClick={() => !disabled && setOpen(true)}
 				className="self-start text-xs text-primary underline"
 			>
 				+ Create

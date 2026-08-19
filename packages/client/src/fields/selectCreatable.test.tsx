@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
@@ -39,6 +39,71 @@ function makeCreateConfig() {
 }
 
 describe("Select field — creatable", () => {
+	test("disabled select cannot open the create dialog", async () => {
+		const user = userEvent.setup();
+		const post = mock(async () => ({ value: "99", label: "Carol" }));
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(
+			<Wrap>
+				<SelectForm
+					name="author"
+					value={null}
+					onChange={() => {}}
+					disabled
+					options={{
+						options: CHOICES,
+						create: { fields: makeCreateConfig().fields, post },
+					}}
+				/>
+			</Wrap>,
+		);
+		const button = getByTestId("select-create-author") as HTMLButtonElement;
+		expect(button.disabled).toBe(true);
+		await user.click(button);
+		expect(document.body.querySelector('[data-testid="select-create-dialog"]')).toBeNull();
+		expect(post).not.toHaveBeenCalled();
+	});
+
+	test("create success cannot change a select disabled while the request is pending", async () => {
+		const user = userEvent.setup();
+		const pending = Promise.withResolvers<{ value: string; label: string }>();
+		const post = mock(() => pending.promise);
+		const onChange = mock(() => {});
+		const Wrap = wrap(() => new Response("{}"));
+		const options = {
+			options: CHOICES,
+			create: { fields: makeCreateConfig().fields, post },
+		};
+		const view = render(
+			<Wrap>
+				<SelectForm name="author" value={null} onChange={onChange} options={options} />
+			</Wrap>,
+		);
+		await user.click(view.getByTestId("select-create-author"));
+		await user.click(
+			document.body.querySelector('[data-testid="select-create-submit"]') as HTMLElement,
+		);
+		await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
+
+		view.rerender(
+			<Wrap>
+				<SelectForm
+					name="author"
+					value={null}
+					onChange={onChange}
+					disabled
+					options={options}
+				/>
+			</Wrap>,
+		);
+		await act(() => pending.resolve({ value: "99", label: "Carol" }));
+
+		expect(onChange).not.toHaveBeenCalled();
+		await waitFor(() =>
+			expect(document.body.querySelector('[data-testid="select-create-dialog"]')).toBeNull(),
+		);
+	});
+
 	test("Select creatable: shows '+ Create' affordance when create config is present", async () => {
 		const Wrap = wrap(() => new Response("{}"));
 		const { container } = render(
