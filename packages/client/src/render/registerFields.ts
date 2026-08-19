@@ -26,13 +26,27 @@ import { UnknownCell, UnknownForm } from "../fields/unknownField";
 import { UploadCell } from "../fields/uploadCell";
 import { serializeUploadValue, UploadForm, type UploadValue } from "../fields/uploadField";
 import { MediaPickerCell, MediaPickerForm, type MediaPickerValue } from "../media/mediaPickerField";
-import { defineFieldClient } from "./defineFieldClient";
+import { type BlockDescriptor, getBlockDescriptor } from "./blockRegistry";
+import {
+	type FieldClientDescriptor,
+	defineFieldClient as registerFieldClient,
+} from "./defineFieldClient";
 
 /** Register all built-in field kinds (input, choice, structured). */
 export function registerFields(): void {
 	registerInputFields();
 	registerChoiceFields();
 	registerStructuredFields();
+}
+
+function defineFieldClient<T extends string, P>(
+	type: T,
+	descriptor: FieldClientDescriptor<P>,
+): BlockDescriptor<T, P> | undefined {
+	if (getBlockDescriptor(type)) {
+		return undefined;
+	}
+	return registerFieldClient(type, descriptor);
 }
 
 function registerInputFields(): void {
