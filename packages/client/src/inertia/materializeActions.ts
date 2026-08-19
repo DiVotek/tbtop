@@ -11,7 +11,7 @@ import { liftNestedErrors } from "./fieldErrors";
 import { serializeFormData } from "./serializeFormData";
 
 type Bag = Record<string, unknown>;
-type Handler = (ctx: ClientActionContext) => Promise<void>;
+type Handler = (ctx: ClientActionContext) => Promise<void | boolean>;
 
 interface ActionMaterializeCtx {
 	basePath: string;
@@ -218,6 +218,7 @@ function serverHandler({ basePath, name, needs, formNode }: ServerHandlerInput):
 			ctx.form?.reset();
 		}
 		executeEffects(effects, ctx);
+		return !effects.some((effect) => effect.kind === "haltModal");
 	};
 }
 
