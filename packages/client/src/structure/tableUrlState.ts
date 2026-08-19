@@ -152,7 +152,7 @@ function clearTableKeys(params: URLSearchParams, name: string): void {
 	const prefix = `${URL_NS}[${name}]`;
 	const toDelete: string[] = [];
 	for (const key of params.keys()) {
-		if (key.startsWith(prefix)) {
+		if (key === prefix || key.startsWith(`${prefix}[`)) {
 			toDelete.push(key);
 		}
 	}

@@ -100,6 +100,20 @@ describe("tableUrlState: multi-table namespacing", () => {
 		expect(readTableParams(sp, "posts")).toEqual({ search: "gamma" });
 		expect(readTableParams(sp, "authors")).toEqual({ search: "beta" });
 	});
+
+	test("tableUrlState: updating one table preserves prefix-extension keys", () => {
+		const sp = new URLSearchParams([
+			["t[post][search]", "old"],
+			["t[post]extension", "keep"],
+			["unrelated", "keep"],
+		]);
+
+		const next = writeTableParams(sp, "post", { search: "new" });
+
+		expect(next.get("t[post][search]")).toBe("new");
+		expect(next.get("t[post]extension")).toBe("keep");
+		expect(next.get("unrelated")).toBe("keep");
+	});
 });
 
 // ─── empty / default value pruning ───────────────────────────────────────────
