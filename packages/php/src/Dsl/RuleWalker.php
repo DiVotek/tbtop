@@ -9,11 +9,12 @@ use Tbtop\Admin\Dsl\Fields\Upload;
 final class RuleWalker
 {
     /**
-     * Rules that constrain a multiple-value field as a whole rather than
-     * each element. `required` and its conditional variants belong here
-     * too: on `field.*` they would never fire for an empty array.
+     * Whole-field rules. Laravel's implicit family (`required*`, `missing*`,
+     * `prohibited*`, `filled`) inspects the key, so on `field.*` it never runs for `[]`.
      */
-    private const FIELD_LEVEL = ['nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present'];
+    private const FIELD_LEVEL = ['nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present', 'filled'];
+
+    private const FIELD_LEVEL_PREFIXES = ['required', 'missing', 'prohibited'];
 
     /**
      * Walks a structure tree collecting Laravel validation rules from fields.
@@ -196,7 +197,16 @@ final class RuleWalker
 
     private static function isFieldLevel(string $name): bool
     {
-        return str_starts_with($name, 'required') || in_array($name, self::FIELD_LEVEL, true);
+        if (in_array($name, self::FIELD_LEVEL, true)) {
+            return true;
+        }
+        foreach (self::FIELD_LEVEL_PREFIXES as $prefix) {
+            if (str_starts_with($name, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -81,3 +81,15 @@ it('RuleWalker: conditional required on multiple select lands on field key, not 
         'tags.*' => ['in:a,b'],
     ]);
 });
+
+it('RuleWalker: implicit rules (filled, missing*, prohibited*) on multiple select land on field key', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->select('tags')->multiple()->rules('filled|missing_if:kind,draft|prohibited_unless:active,true|in:a,b'),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'tags' => ['array', 'filled', 'missing_if:kind,draft', 'prohibited_unless:active,true'],
+        'tags.*' => ['in:a,b'],
+    ]);
+});

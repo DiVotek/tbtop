@@ -118,3 +118,15 @@ it('RuleWalker: conditional required on multiple upload lands on field key, not 
         'docs.*' => ['string'],
     ]);
 });
+
+it('RuleWalker: implicit rules (filled, missing*, prohibited*) on multiple upload land on field key', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->upload('docs')->multiple()->rules('filled|missing_with:link|prohibited_if:kind,draft'),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'docs' => ['array', 'filled', 'missing_with:link', 'prohibited_if:kind,draft'],
+        'docs.*' => ['string'],
+    ]);
+});
