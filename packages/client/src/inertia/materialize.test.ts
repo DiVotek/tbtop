@@ -46,6 +46,27 @@ function fakeCtx(overrides: Partial<ClientActionContext> = {}): ClientActionCont
 
 const BASE = { basePath: "/admin/posts", data: {} };
 
+// collectConstraints tells fields from layout through the block registry,
+// so the form schema is only meaningful once the built-in kinds are known.
+registerFields();
+
+function schemaOf(form: StructureNode, defaultContentLocale = "en") {
+	const out = materialize(form, { ...BASE, defaultContentLocale });
+	return opts(out).schema as { parse: (i: unknown) => unknown };
+}
+
+function issuesOf(
+	schema: { parse: (i: unknown) => unknown },
+	input: unknown,
+): { path: (string | number)[]; message: string }[] {
+	try {
+		schema.parse(input);
+		return [];
+	} catch (error) {
+		return (error as { issues: { path: (string | number)[]; message: string }[] }).issues;
+	}
+}
+
 describe("materialize actions", () => {
 	it("materializes actions nested in field affixes with the enclosing form", () => {
 		const action = node("action", { spec: { type: "server", needs: ["form"] } }, "inspect");
@@ -467,6 +488,124 @@ describe("materialize form", () => {
 			title: { en: "", uk: "valid" },
 		});
 		expect(() => ukSchema.parse({ title: { en: "valid", uk: "" } })).toThrow();
+	});
+
+	it("validates fields inside tabs[].body like direct children, translatable under the default locale", () => {
+		// The cms page editor shape: name/slug live in a General tab, type
+		// outside. Server rules reach both; the client schema must too.
+		const tabbed = node(
+			"form",
+			{
+				children: [
+					node("tabs", {
+						tabs: [
+							{
+								label: "General",
+								body: node("stack", {
+									children: [
+										node(
+											"text",
+											{ translatable: true, constraints: { required: true } },
+											"name",
+										),
+									],
+								}),
+							},
+						],
+					}),
+					node("text", { constraints: { required: true } }, "type"),
+				],
+			},
+			"pageEditor",
+		);
+		const schema = schemaOf(tabbed);
+
+		expect(issuesOf(schema, { name: { en: "" }, type: "page" })).toEqual([
+			{ path: ["name", "en"], message: "validation.required" },
+		]);
+		expect(issuesOf(schema, { name: { en: "" }, type: "" })).toEqual([
+			{ path: ["name", "en"], message: "validation.required" },
+			{ path: ["type"], message: "validation.required" },
+		]);
+		expect(issuesOf(schema, { name: { en: "Home" }, type: "page" })).toEqual([]);
+	});
+
+	it("keys repeater sub-field constraints per row, like the server's items.*.name rules", () => {
+		const withRepeater = node(
+			"form",
+			{
+				children: [
+					node(
+						"repeater",
+						{ fields: [node("text", { constraints: { required: true } }, "name")] },
+						"items",
+					),
+				],
+			},
+			"post",
+		);
+		const schema = schemaOf(withRepeater);
+
+		expect(issuesOf(schema, { items: [{ name: "" }, { name: "x" }, {}] })).toEqual([
+			{ path: ["items", "0", "name"], message: "validation.required" },
+			{ path: ["items", "2", "name"], message: "validation.required" },
+		]);
+		// Bare "name" at the root is not the sub-field — it must not be flagged.
+		expect(issuesOf(schema, { items: [{ name: "ok" }], name: "" })).toEqual([]);
+		expect(issuesOf(schema, { items: [] })).toEqual([]);
+		expect(issuesOf(schema, {})).toEqual([]);
+	});
+
+	it("leaves a translatable repeater's sub-fields out, as RuleWalker does", () => {
+		// The value is a locale map of rows; the server collects no per-row
+		// rules for it, so the client must not invent them.
+		const translatableRepeater = node(
+			"form",
+			{
+				children: [
+					node(
+						"repeater",
+						{
+							translatable: true,
+							fields: [node("text", { constraints: { required: true } }, "name")],
+						},
+						"items",
+					),
+				],
+			},
+			"post",
+		);
+		const schema = schemaOf(translatableRepeater);
+
+		expect(issuesOf(schema, { items: { en: [{ name: "" }] } })).toEqual([]);
+	});
+
+	it("keeps a select's create mini-form constraints out of the parent schema", () => {
+		// create.fields is its own form with its own controller and server
+		// validation; folding it in would block Save on a field the parent
+		// form never carries.
+		const withCreate = node(
+			"form",
+			{
+				children: [
+					node(
+						"select",
+						{
+							options: [],
+							create: {
+								fields: [
+									node("text", { constraints: { required: true } }, "title"),
+								],
+							},
+						},
+						"category",
+					),
+				],
+			},
+			"post",
+		);
+
+		expect(issuesOf(schemaOf(withCreate), { category: "1" })).toEqual([]);
 	});
 
 	it("flags the submit action's bag so the button can render type=submit", () => {
