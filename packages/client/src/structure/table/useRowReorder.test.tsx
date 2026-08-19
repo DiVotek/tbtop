@@ -85,6 +85,30 @@ describe("useRowReorder", () => {
 		expect(mockRefresh).not.toHaveBeenCalled();
 	});
 
+	test("a stale failure cannot roll back a newer successful reorder", async () => {
+		const first = Promise.withResolvers<unknown>();
+		const second = Promise.withResolvers<unknown>();
+		const reorderRows = mock(() =>
+			reorderRows.mock.calls.length === 1 ? first.promise : second.promise,
+		);
+		let fire: (e: DragEndEvent) => void = () => {};
+		const { getByTestId } = render(
+			<Harness rows={ROWS} reorderRows={reorderRows} onReady={(f) => (fire = f)} />,
+		);
+
+		act(() => fire(dragEvent("1", "3")));
+		act(() => fire(dragEvent("2", "1")));
+		expect(getByTestId("order").textContent).toBe("3,1,2");
+
+		await act(async () => second.resolve({}));
+		expect(mockRefresh).toHaveBeenCalledTimes(1);
+		await act(async () => first.reject(new Error("late failure")));
+
+		expect(getByTestId("order").textContent).toBe("3,1,2");
+		expect(mockRefresh).toHaveBeenCalledTimes(1);
+		expect(mockNotify).toHaveBeenCalledTimes(1);
+	});
+
 	test("ignores a drag with no over target", () => {
 		const reorderRows = mock(() => Promise.resolve({}));
 		let fire: (e: DragEndEvent) => void = () => {};
