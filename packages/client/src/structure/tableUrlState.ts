@@ -122,7 +122,7 @@ export function persistTableParams(name: string, params: ListQueryParams): void 
 	}
 	const next = writeTableParams(new URLSearchParams(window.location.search), name, params);
 	const qs = next.toString();
-	const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+	const url = `${qs ? `${window.location.pathname}?${qs}` : window.location.pathname}${window.location.hash}`;
 	window.history.replaceState(window.history.state, "", url);
 }
 
