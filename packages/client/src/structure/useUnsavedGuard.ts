@@ -99,7 +99,7 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): Unsave
 			// the isDirty check (and for every navigation, not just GET) so the
 			// one-shot flag can't outlive the redirect it was set for and
 			// silently wave through a later, unrelated navigation.
-			if (consumeServerRedirect()) {
+			if (consumeServerRedirect(event.detail.visit)) {
 				return;
 			}
 			// The user already confirmed "Leave" for this exact visit — let the
