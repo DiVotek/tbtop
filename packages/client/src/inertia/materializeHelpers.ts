@@ -2,7 +2,6 @@ import type { QueryParams } from "../data/client";
 import { unwrapData } from "../data/envelope";
 import type { OptionDisplay, StaticOption } from "../fields/selectShared";
 import type { ClientActionContext, ListQueryParams, StructureNode } from "../structure/types";
-import type { FieldConstraints } from "./constraints";
 
 type Bag = Record<string, unknown>;
 
@@ -182,31 +181,6 @@ export function materializeStat(node: StructureNode, basePath: string): Structur
 				actionCtx.client.get(endpoint).then(unwrapData),
 		},
 	};
-}
-
-// ---------------------------------------------------------------------------
-// Constraint collection
-// ---------------------------------------------------------------------------
-
-export function collectConstraints(
-	node: StructureNode,
-	acc: Record<string, FieldConstraints>,
-	defaultLocale = "en",
-): Record<string, FieldConstraints> {
-	const opts = node.options as Bag;
-	if (node.name && opts.constraints && node.kind !== "form") {
-		const name = opts.translatable === true ? `${node.name}.${defaultLocale}` : node.name;
-		acc[name] = opts.constraints as FieldConstraints;
-	}
-	for (const child of childNodes(opts)) {
-		collectConstraints(child, acc, defaultLocale);
-	}
-	return acc;
-}
-
-export function childNodes(opts: Bag): StructureNode[] {
-	const children = Array.isArray(opts.children) ? opts.children : [];
-	return children as StructureNode[];
 }
 
 // ---------------------------------------------------------------------------

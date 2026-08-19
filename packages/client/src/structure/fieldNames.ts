@@ -1,4 +1,5 @@
 import { getBlockDescriptor } from "../render/blockRegistry";
+import { structureChildren } from "./structureChildren";
 import type { StructureNode } from "./types";
 
 type Bag = Record<string, unknown>;
@@ -22,31 +23,9 @@ function collectInto(node: StructureNode, out: string[]): void {
 		out.push(node.name);
 	}
 	const options = (node.options as Bag | undefined) ?? {};
-	for (const child of childNodes(options)) {
+	for (const child of structureChildren(options)) {
 		collectInto(child, out);
 	}
-}
-
-function childNodes(options: Bag): StructureNode[] {
-	return [...nodeList(options.children), ...nodeList(options.fields), ...tabBodies(options.tabs)];
-}
-
-function nodeList(value: unknown): StructureNode[] {
-	return Array.isArray(value) ? (value as StructureNode[]) : [];
-}
-
-function tabBodies(value: unknown): StructureNode[] {
-	if (!Array.isArray(value)) {
-		return [];
-	}
-	const out: StructureNode[] = [];
-	for (const tab of value) {
-		const body = (tab as { body?: StructureNode }).body;
-		if (body) {
-			out.push(body);
-		}
-	}
-	return out;
 }
 
 /**
