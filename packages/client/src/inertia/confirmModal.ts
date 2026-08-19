@@ -2,7 +2,7 @@ import { defaultMessages, type Translate } from "../i18n/i18n";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 
 type Bag = Record<string, unknown>;
-type Handler = (ctx: ClientActionContext) => Promise<void>;
+type Handler = (ctx: ClientActionContext) => Promise<void | boolean>;
 
 export interface ConfirmSpec {
 	title: string;
@@ -18,8 +18,10 @@ export interface ConfirmModalInput {
 /** A server action with `confirm` renders as a modal with confirm/cancel. */
 export function confirmModal({ base, confirm, handler }: ConfirmModalInput, t?: Translate): Bag {
 	const confirmedHandler: Handler = async (ctx) => {
-		await handler(ctx);
-		ctx.modal?.close();
+		const shouldClose = await handler(ctx);
+		if (shouldClose !== false) {
+			ctx.modal?.close();
+		}
 	};
 	return {
 		title: confirm.title,
