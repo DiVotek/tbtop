@@ -466,7 +466,7 @@ describe("MediaPickerForm: multiple select", () => {
 		await act(async () => {
 			await user.click(getByTestId("media-picker-choose-gallery"));
 		});
-		expect((await findByTestId("media-card-img1")).getAttribute("aria-selected")).toBe("true");
+		expect((await findByTestId("media-card-img1")).getAttribute("aria-pressed")).toBe("true");
 
 		await act(async () => {
 			await user.click(await findByTestId("media-card-pdf1"));
