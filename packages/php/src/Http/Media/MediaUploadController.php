@@ -44,7 +44,7 @@ final class MediaUploadController
 
         /** @var array<string, array{0: int, 1: int}> $profiles */
         $profiles = (array) ($config['profiles'] ?? []);
-        $sizes = MediaResource::generateConversions($file, $path, $disk, $profiles);
+        $image = MediaResource::imageAttributes($file, $path, $disk, $profiles);
 
         $media = Media::create([
             'folder_id' => $request->input('folderId') !== null ? (int) $request->input('folderId') : null,
@@ -53,7 +53,7 @@ final class MediaUploadController
             'path' => $path,
             'mime' => (string) $file->getMimeType(),
             'size' => (int) $file->getSize(),
-            'sizes' => $sizes,
+            ...$image,
             'alt' => null,
         ]);
 

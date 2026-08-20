@@ -32,8 +32,12 @@ const ITEM_IMG: MediaItem = {
 	folderId: null,
 	mime: "image/jpeg",
 	size: 204800,
+	width: null,
+	height: null,
 	url: "/storage/photo.jpg",
-	sizes: { profile: "/storage/photo-thumb.jpg" },
+	sizes: {
+		profile: { url: "/storage/photo-thumb.jpg", width: 128, height: 85, mime: "image/jpeg" },
+	},
 	alt: "A photo",
 	description: null,
 	tags: [],
@@ -46,6 +50,8 @@ const ITEM_PDF: MediaItem = {
 	folderId: null,
 	mime: "application/pdf",
 	size: 102400,
+	width: null,
+	height: null,
 	url: "/storage/document.pdf",
 	sizes: {},
 	alt: null,
@@ -419,6 +425,56 @@ describe("MediaGrid: pagination", () => {
 // ─── MediaDetail: PATCH on save ───────────────────────────────────────────────
 
 describe("MediaDetail: PATCH on save", () => {
+	test("switching items resets the form before saving the new item", async () => {
+		const user = userEvent.setup({ delay: null });
+		const patches: Array<{ url: string; body: unknown }> = [];
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "PATCH") {
+				patches.push({ url: req.url, body: await req.json() });
+				return new Response(JSON.stringify(ITEM_PDF), { status: 200 });
+			}
+			return new Response("{}");
+		};
+		const Wrap = wrap(handler);
+		const props = {
+			folders: [FOLDER_A],
+			onClose: () => {},
+			onUpdated: () => {},
+			onDeleted: () => {},
+		};
+		const { getByTestId, rerender } = render(
+			<Wrap>
+				<MediaDetail item={ITEM_IMG} {...props} />
+			</Wrap>,
+		);
+
+		await act(async () => {
+			await user.clear(getByTestId("detail-name-input"));
+			await user.type(getByTestId("detail-name-input"), "stale.jpg");
+		});
+		rerender(
+			<Wrap>
+				<MediaDetail item={ITEM_PDF} {...props} />
+			</Wrap>,
+		);
+
+		expect((getByTestId("detail-name-input") as HTMLInputElement).value).toBe(ITEM_PDF.name);
+		expect((getByTestId("detail-alt-input") as HTMLTextAreaElement).value).toBe("");
+		expect((getByTestId("detail-description-input") as HTMLTextAreaElement).value).toBe("");
+		await act(async () => {
+			await user.click(getByTestId("detail-save-btn"));
+		});
+
+		await waitFor(() => expect(patches).toHaveLength(1));
+		expect(patches[0]?.url).toContain("/media/pdf1");
+		expect(patches[0]?.body).toMatchObject({
+			name: ITEM_PDF.name,
+			description: null,
+			tags: [],
+			folderId: null,
+		});
+	});
+
 	test("clicking save calls PATCH and invokes onUpdated", async () => {
 		const user = userEvent.setup({ delay: null });
 		const patches: unknown[] = [];

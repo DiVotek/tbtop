@@ -5,46 +5,48 @@ namespace Tbtop\Admin\Uploads;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @phpstan-type Variant array{path: string, width: int, height: int, mime: string}
+ */
 final class ImageSizes
 {
     /** @return array{0: int|null, 1: int|null} */
     public static function dimensions(UploadedFile $file): array
     {
-        $info = @getimagesize($file->getRealPath());
+        $info = @getimagesize((string) $file->getRealPath());
 
         return $info === false ? [null, null] : [$info[0], $info[1]];
     }
 
     /**
-     * Generates resized variants (fit: inside) next to the original.
-     * Non-images and missing GD degrade to no variants.
-     * Format defaults to png; unsupported formats fall back to png per variant.
+     * Generates resized variants (fit: inside) next to the original, keyed by
+     * profile name. Non-images and missing GD degrade to no variants.
+     * Unsupported formats fall back to png per variant.
      *
-     * @param  array<string, array{0: int, 1: int}>  $sizes
-     * @return list<array<string, mixed>>
+     * @param  array<string, array{0: int, 1: int}>  $profiles
+     * @return array<string, Variant>
      */
     public static function generate(
         UploadedFile $file,
         string $path,
         string $disk,
-        array $sizes,
-        ?string $format = null,
+        array $profiles,
+        string $format = 'png',
         ?int $quality = null,
     ): array {
-        if ($sizes === [] || ! function_exists('imagecreatefromstring')) {
+        if ($profiles === [] || ! function_exists('imagecreatefromstring')) {
             return [];
         }
-        $source = @imagecreatefromstring((string) file_get_contents($file->getRealPath()));
-        if ($source === false) {
+        $source = ImageEncoder::fromUpload($file);
+        if ($source === null) {
             return [];
         }
 
-        $fmt = $format ?? 'png';
         $out = [];
-        foreach ($sizes as $name => [$maxW, $maxH]) {
-            $variant = self::variant($source, $path, $disk, (string) $name, $maxW, $maxH, $fmt, $quality);
+        foreach ($profiles as $name => [$maxW, $maxH]) {
+            $variant = self::variant($source, $path, $disk, (string) $name, $maxW, $maxH, $format, $quality);
             if ($variant !== null) {
-                $out[] = $variant;
+                $out[(string) $name] = $variant;
             }
         }
         imagedestroy($source);
@@ -52,7 +54,7 @@ final class ImageSizes
         return $out;
     }
 
-    /** @return array<string, mixed>|null */
+    /** @return Variant|null */
     private static function variant(
         \GdImage $source,
         string $path,
@@ -83,14 +85,6 @@ final class ImageSizes
         $variantPath = "{$info['dirname']}/{$info['filename']}-{$name}.{$enc['ext']}";
         Storage::disk($disk)->put($variantPath, $enc['blob']);
 
-        return [
-            'name' => $name,
-            'filename' => basename($variantPath),
-            'url' => UploadUrl::make($disk, $variantPath),
-            'width' => $newW,
-            'height' => $newH,
-            'mimeType' => $enc['mimeType'],
-            'filesize' => strlen($enc['blob']),
-        ];
+        return ['path' => $variantPath, 'width' => $newW, 'height' => $newH, 'mime' => $enc['mimeType']];
     }
 }
