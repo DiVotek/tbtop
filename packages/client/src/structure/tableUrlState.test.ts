@@ -100,6 +100,14 @@ describe("tableUrlState: multi-table namespacing", () => {
 		expect(readTableParams(sp, "posts")).toEqual({ search: "gamma" });
 		expect(readTableParams(sp, "authors")).toEqual({ search: "beta" });
 	});
+
+	test("tableUrlState: updating a table preserves tables whose names share its prefix", () => {
+		const sp = new URLSearchParams("t[post][page]=2&t[posts][page]=3");
+		const updated = writeTableParams(sp, "post", { page: 4 });
+
+		expect(readTableParams(updated, "post")).toEqual({ page: 4 });
+		expect(readTableParams(updated, "posts")).toEqual({ page: 3 });
+	});
 });
 
 // ─── empty / default value pruning ───────────────────────────────────────────

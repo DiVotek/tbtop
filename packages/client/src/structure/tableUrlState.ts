@@ -149,7 +149,7 @@ function readPositiveInt(searchParams: URLSearchParams, key: string): number | u
 }
 
 function clearTableKeys(params: URLSearchParams, name: string): void {
-	const prefix = `${URL_NS}[${name}]`;
+	const prefix = `${URL_NS}[${name}][`;
 	const toDelete: string[] = [];
 	for (const key of params.keys()) {
 		if (key.startsWith(prefix)) {
