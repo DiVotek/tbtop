@@ -3,7 +3,7 @@
  * keep-previous-data overlay, and empty state.
  */
 import { FileIcon, LayoutGridIcon, ListIcon, Loader2Icon, UploadIcon } from "lucide-react";
-import { type DragEvent, type ReactNode, useCallback, useRef, useState } from "react";
+import { type DragEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { TablePagination } from "../structure/table/pagination";
@@ -49,18 +49,34 @@ export function MediaGrid({
 	const t = useTranslation();
 	const { view, setView } = useViewMode();
 	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [search, setSearch] = useState(params.search);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [dragOver, setDragOver] = useState(false);
 	const { tasks, uploading, uploadFiles } = useUploadQueue({ folderId, onUploaded });
 
 	// ─── Search debounce ──────────────────────────────────────────────────────
 
+	useEffect(() => {
+		setSearch(params.search);
+		if (searchTimerRef.current) {
+			clearTimeout(searchTimerRef.current);
+			searchTimerRef.current = null;
+		}
+		return () => {
+			if (searchTimerRef.current) {
+				clearTimeout(searchTimerRef.current);
+			}
+		};
+	}, [params.folder, params.search]);
+
 	const handleSearch = useCallback(
 		(value: string) => {
+			setSearch(value);
 			if (searchTimerRef.current) {
 				clearTimeout(searchTimerRef.current);
 			}
 			searchTimerRef.current = setTimeout(() => {
+				searchTimerRef.current = null;
 				onChangeParams({ search: value, page: 1 });
 			}, 300);
 		},
@@ -123,7 +139,7 @@ export function MediaGrid({
 					type="search"
 					placeholder={t("media.search.placeholder")}
 					className="max-w-xs"
-					defaultValue={params.search}
+					value={search}
 					onChange={(e) => handleSearch(e.target.value)}
 					data-testid="media-search-input"
 				/>
