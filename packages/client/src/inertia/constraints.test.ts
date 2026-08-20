@@ -75,3 +75,23 @@ describe("compileConstraints message keys (i18n)", () => {
 		expect(errors(schema, { role: "superuser" })).toEqual(["validation.in"]);
 	});
 });
+
+describe("compileConstraints multi-value fields", () => {
+	it("checks `in` per element for arrays, not against the stringified array", () => {
+		const schema = { tags: { in: ["a", "b", "c"] } };
+		expect(errors(schema, { tags: ["a", "b"] })).toEqual([]);
+		expect(errors(schema, { tags: ["a", "zz"] })).toEqual(["validation.in"]);
+		expect(errors(schema, { tags: [] })).toEqual([]);
+	});
+
+	it("treats an empty array as missing for required", () => {
+		const schema = { tags: { required: true, in: ["a", "b"] } };
+		expect(errors(schema, { tags: [] })).toEqual(["validation.required"]);
+		expect(errors(schema, { tags: ["a"] })).toEqual([]);
+	});
+
+	it("still applies min to an empty array that is not required", () => {
+		const schema = { sections: { min: 2 } };
+		expect(errors(schema, { sections: [] })).toEqual(["validation.min:2"]);
+	});
+});
