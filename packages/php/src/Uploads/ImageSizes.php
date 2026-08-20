@@ -43,6 +43,7 @@ final class ImageSizes
                 $out[(string) $name] = $variant;
             }
         }
+
         return $out;
     }
 
