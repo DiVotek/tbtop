@@ -12,7 +12,7 @@ const EMPTY_CONDITION_CTX: ConditionContext = { record: undefined, data: {}, use
 
 export function renderNode(node: StructureNode, ctx: RenderContext = DEFAULT_CTX): ReactNode {
 	ensureBuiltinsRegistered();
-	if (isNodeHidden(node.meta, EMPTY_CONDITION_CTX)) {
+	if (isNodeHidden(node.meta, ctx.conditionContext ?? EMPTY_CONDITION_CTX)) {
 		return null;
 	}
 	const view = node as unknown as { children?: StructureNode[] };

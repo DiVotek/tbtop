@@ -43,6 +43,37 @@ test("Renderer recurses through a stack container", () => {
 	expect(items[1]?.textContent).toBe("Hello B");
 });
 
+test("Renderer evaluates visibility against the runtime condition context", () => {
+	const node = s.widget({ component: Hello, props: { name: "Visible" } });
+	node.meta.hidden = ({ data, record, user }) =>
+		data["status"] !== "ready" || record?.["active"] !== true || user !== "admin";
+	const matching = {
+		surface: "form" as const,
+		conditionContext: { data: { status: "ready" }, record: { active: true }, user: "admin" },
+	};
+	const nonMatching = {
+		surface: "form" as const,
+		conditionContext: { data: { status: "draft" }, record: { active: true }, user: "admin" },
+	};
+
+	expect(
+		render(renderNode(node, matching)).container.querySelector("[data-testid='hello']"),
+	).not.toBeNull();
+	expect(render(renderNode(node, nonMatching)).container.firstChild).toBeNull();
+});
+
+test("Renderer propagates the runtime condition context to nested children", () => {
+	const child = s.widget({ component: Hello, props: { name: "Nested" } });
+	child.meta.hidden = ({ data }) => data["showNested"] !== true;
+	const node = s.stack([child]);
+	const ctx = {
+		surface: "form" as const,
+		conditionContext: { data: { showNested: true }, record: undefined, user: null },
+	};
+
+	expect(render(renderNode(node, ctx)).queryByTestId("hello")).not.toBeNull();
+});
+
 test("Renderer emits a static grid-cols class so Tailwind can detect it", () => {
 	const node = s.grid({ cols: 3 }, [s.widget({ component: Hello, props: { name: "A" } })]);
 	const { container } = render(renderNode(node));

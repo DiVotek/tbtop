@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import type { StructureNode } from "../structure/structure";
+import type { ConditionContext, StructureNode } from "../structure/structure";
 
 export type BlockBehavior = "leaf" | "container" | "field";
 
@@ -21,6 +21,7 @@ export interface FieldBinding {
 
 export interface RenderContext {
 	surface: "form" | "cell";
+	conditionContext?: ConditionContext;
 	form?: unknown;
 	table?: unknown;
 	binding?: FieldBinding;
