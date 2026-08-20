@@ -43,8 +43,6 @@ final class ImageSizes
                 $out[(string) $name] = $variant;
             }
         }
-        imagedestroy($source);
-
         return $out;
     }
 
@@ -68,7 +66,6 @@ final class ImageSizes
         }
         $enc = ImageEncoder::encode($resized, $profile->format, $profile->quality)
             ?? ImageEncoder::encode($resized, 'png');
-        imagedestroy($resized);
         if ($enc === null) {
             return null;
         }
