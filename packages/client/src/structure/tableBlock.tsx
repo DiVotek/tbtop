@@ -64,17 +64,14 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 		deps: [queryParams],
 	});
 	const rawSaveCell = options.saveCell;
-	// ctx is stable within a render; rawSaveCell changes only on remount.
 	const saveCell = useMemo(
 		() => (rawSaveCell ? (args: SaveCellArgs) => rawSaveCell(ctx, args) : undefined),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[rawSaveCell],
+		[rawSaveCell, ctx],
 	);
 	const rawReorderRows = options.reorderRows;
 	const reorderRows = useMemo(
 		() => (rawReorderRows ? (ids: string[]) => rawReorderRows(ctx, ids) : undefined),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[rawReorderRows],
+		[rawReorderRows, ctx],
 	);
 
 	if (state.kind === "loading") {
