@@ -20,6 +20,7 @@
  * 'before' handler consumes it first, before ever looking at isDirty.
  */
 let serverRedirectPending = false;
+let serverRedirectVisit: object | null = null;
 
 /** Call immediately before router.visit() for a server-authored redirect effect. */
 export function markServerRedirect(): void {
@@ -27,14 +28,22 @@ export function markServerRedirect(): void {
 }
 
 /**
- * One-shot read: returns whether a server redirect is pending and clears the
- * flag. Must be called for every 'before' event (not just GET ones) so a
- * mark left set by a redirect that never reached the guard (e.g. no form on
- * the page) doesn't leak into and silently wave through a later, unrelated
- * navigation.
+ * Visit-scoped read: the first guard consumes the pending flag and associates
+ * it with this visit; other guards handling the same synchronous event can
+ * observe it too. The association expires in a microtask and uses identity,
+ * so it cannot wave through a different navigation.
  */
-export function consumeServerRedirect(): boolean {
+export function consumeServerRedirect(visit?: object): boolean {
+	if (visit && visit === serverRedirectVisit) {
+		return true;
+	}
 	const pending = serverRedirectPending;
 	serverRedirectPending = false;
+	serverRedirectVisit = pending && visit ? visit : null;
+	if (serverRedirectVisit) {
+		queueMicrotask(() => {
+			serverRedirectVisit = null;
+		});
+	}
 	return pending;
 }

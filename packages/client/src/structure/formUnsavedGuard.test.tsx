@@ -79,8 +79,9 @@ mock.module("@inertiajs/react", () => ({
 // Helper: fire a simulated Inertia 'before' event through the registered listeners.
 // Returns false if any listener returned false (navigation blocked).
 function fireInertiaNavigation(method = "get", url: unknown = "/admin/other"): boolean {
+	const event = { detail: { visit: { method, url } } };
 	for (const listener of registeredBeforeListeners) {
-		const result = listener({ detail: { visit: { method, url } } });
+		const result = listener(event);
 		if (result === false) {
 			return false;
 		}
@@ -319,6 +320,40 @@ describe("Form unsaved guard — Inertia navigation", () => {
 
 		expect(allowed).toBe(true);
 		expect(queryByTestId("confirm-dialog-confirm")).toBeNull();
+	});
+
+	test("all dirty guards skip the same server redirect", async () => {
+		const makeForm = (name: string) =>
+			s.form({ query: async () => ({ title: "Hello" }), guardUnsaved: true }, [
+				s.text({ name: "title" }),
+				s.action({
+					name: `${name}Edit`,
+					handler: async (c) => c.form?.set("title", "Changed"),
+				}),
+			]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryAllByTestId } = render(
+			<Wrap>
+				{renderNode(makeForm("first"))}
+				{renderNode(makeForm("second"))}
+			</Wrap>,
+		);
+
+		for (const name of ["firstEdit", "secondEdit"]) {
+			const edit = await findByTestId(`action-${name}`);
+			await act(async () => {
+				fireEvent.click(edit);
+			});
+		}
+
+		markServerRedirect();
+		let allowed = true;
+		await act(async () => {
+			allowed = fireInertiaNavigation("get", "/admin/saved");
+		});
+
+		expect(allowed).toBe(true);
+		expect(queryAllByTestId("confirm-dialog-confirm")).toHaveLength(0);
 	});
 
 	test("the server-redirect skip is one-shot: the NEXT navigation is guarded normally", async () => {
