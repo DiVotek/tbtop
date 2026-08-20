@@ -169,6 +169,22 @@ test("TabsBlock switches the visible panel when a trigger is clicked", () => {
 	expect(queryByText("First panel")).toBeNull();
 });
 
+test("TabsBlock selects a remaining tab when the active tab is removed", () => {
+	const general = s.tab("General", textNode("First panel"), { name: "general" });
+	const advanced = s.tab("Advanced", textNode("Second panel"), { name: "advanced" });
+	const { getByTestId, queryByText, rerender } = render(
+		renderNode(s.tabs([general, advanced], { name: "settings" })),
+	);
+
+	fireEvent.mouseDown(getByTestId("tab-Advanced"));
+	expect(queryByText("Second panel")).toBeTruthy();
+
+	rerender(renderNode(s.tabs([general], { name: "settings" })));
+
+	expect(getByTestId("tab-panel-General").getAttribute("data-state")).toBe("active");
+	expect(queryByText("First panel")).toBeTruthy();
+});
+
 // ---------------------------------------------------------------------------
 // GridBlock — breakpoint cols
 // ---------------------------------------------------------------------------

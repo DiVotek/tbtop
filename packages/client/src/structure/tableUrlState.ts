@@ -122,7 +122,7 @@ export function persistTableParams(name: string, params: ListQueryParams): void 
 	}
 	const next = writeTableParams(new URLSearchParams(window.location.search), name, params);
 	const qs = next.toString();
-	const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+	const url = `${qs ? `${window.location.pathname}?${qs}` : window.location.pathname}${window.location.hash}`;
 	window.history.replaceState(window.history.state, "", url);
 }
 
@@ -145,11 +145,11 @@ function readPositiveInt(searchParams: URLSearchParams, key: string): number | u
 		return undefined;
 	}
 	const n = Number(raw);
-	return Number.isFinite(n) && n > 0 ? n : undefined;
+	return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
 function clearTableKeys(params: URLSearchParams, name: string): void {
-	const prefix = `${URL_NS}[${name}]`;
+	const prefix = `${URL_NS}[${name}][`;
 	const toDelete: string[] = [];
 	for (const key of params.keys()) {
 		if (key.startsWith(prefix)) {
