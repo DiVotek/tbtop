@@ -34,7 +34,7 @@ import {
 	renderPieChart,
 	StatBlock,
 } from "../ui/charts";
-import { type BlockDescriptor, getBlockDescriptor } from "./blockRegistry";
+import { type BlockDescriptor, claimBuiltinsApplied, getBlockDescriptor } from "./blockRegistry";
 import {
 	FlexBlock,
 	GridBlock,
@@ -48,6 +48,11 @@ import { defineBlock as registerBlock } from "./defineBlock";
 import { registerFields } from "./registerFields";
 
 export function ensureBuiltinsRegistered(): void {
+	// Runs once per registry lifetime: renderNode calls this per node, so the
+	// per-kind "skip if already defined" pass below must not be the hot path.
+	if (!claimBuiltinsApplied()) {
+		return;
+	}
 	registerLayout();
 	registerChrome();
 	registerDataBlocks();
