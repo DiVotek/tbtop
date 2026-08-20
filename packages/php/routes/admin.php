@@ -152,13 +152,13 @@ $panelHomePath = static function (PanelConfig $panel): ?string {
 // tbtop.{panel}.* across all groups — slugs are unique, so they never collide.
 foreach (app(PanelRegistry::class)->all() as $panel) {
     $defaultStack = $panel->authStack();
-    $defaultKey = implode('|', $defaultStack);
+    $defaultKey = json_encode($defaultStack, JSON_THROW_ON_ERROR);
 
     /** @var array<string, array{stack: list<string>, pages: list<class-string<Page>>}> $buckets */
     $buckets = [];
     foreach ($panel->getPages() as $class) {
         $stack = $class::middleware($panel) ?? $defaultStack;
-        $key = implode('|', $stack);
+        $key = json_encode($stack, JSON_THROW_ON_ERROR);
         $buckets[$key] ??= ['stack' => $stack, 'pages' => []];
         $buckets[$key]['pages'][] = $class;
     }
@@ -167,8 +167,8 @@ foreach (app(PanelRegistry::class)->all() as $panel) {
     // the chrome cluster.
     $buckets[$defaultKey] ??= ['stack' => $defaultStack, 'pages' => []];
 
-    foreach ($buckets as $key => $bucket) {
-        $isDefault = $key === $defaultKey;
+    foreach ($buckets as $bucket) {
+        $isDefault = $bucket['stack'] === $defaultStack;
 
         Route::middleware([
             SetCurrentPanel::class.':'.$panel->getId(),

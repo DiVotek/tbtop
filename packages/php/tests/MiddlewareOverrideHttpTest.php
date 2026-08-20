@@ -79,6 +79,19 @@ it('MiddlewareOverride: chrome cluster stays guarded', function (): void {
     $this->postJson('/admin/locale', [])->assertUnauthorized();
 });
 
+it('MiddlewareOverride: delimiter collisions keep middleware stacks separate', function (): void {
+    $colliding = Route::getRoutes()->getByName('tbtop.admin.colliding-middleware-page');
+    $inherited = Route::getRoutes()->getByName('tbtop.admin.nav-page');
+    $chrome = Route::getRoutes()->getByName('tbtop.admin.locale');
+
+    expect($colliding->middleware())->toContain('web|auth:web')
+        ->and($colliding->middleware())->not->toContain('auth:web')
+        ->and($inherited->middleware())->toContain('web', 'auth:web')
+        ->and($inherited->middleware())->not->toContain('web|auth:web')
+        ->and($chrome->middleware())->toContain('web', 'auth:web')
+        ->and($chrome->middleware())->not->toContain('web|auth:web');
+});
+
 // ---------------------------------------------------------------------------
 // Route names unchanged across the multi-group split.
 // ---------------------------------------------------------------------------
