@@ -10,6 +10,7 @@ use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Media\SvgSanitizer;
 use Tbtop\Admin\Media\UrlFetcher;
 use Tbtop\Admin\Media\UrlFetchException;
+use Tbtop\Admin\Uploads\ConversionProfile;
 
 final class MediaImportController
 {
@@ -52,9 +53,8 @@ final class MediaImportController
                 return $this->error422('media.errors.'.$e->reason);
             }
 
-            /** @var array<string, array{0: int, 1: int}> $profiles */
-            $profiles = (array) ($config['profiles'] ?? []);
-            $sizes = MediaResource::generateConversions($file, $path, $disk, $profiles);
+            $profiles = ConversionProfile::fromConfig($config);
+            $image = MediaResource::imageAttributes($file, $path, $disk, $profiles);
 
             $customName = $request->input('name');
             $name = (is_string($customName) && $customName !== '') ? $customName : $filename;
@@ -66,7 +66,7 @@ final class MediaImportController
                 'path' => $path,
                 'mime' => $detectedMime,
                 'size' => $size,
-                'sizes' => $sizes,
+                ...$image,
                 'alt' => null,
             ]);
 

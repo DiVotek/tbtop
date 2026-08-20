@@ -36,6 +36,21 @@ test("Registry last-write-wins replaces a prior descriptor for the same kind", (
 	expect(queryByTestId("first")).toBeNull();
 });
 
+test("Builtin registration fills a partial registry without replacing an override", () => {
+	clearBlockRegistry();
+	const CustomForm = () => <span>custom form</span>;
+	const CustomText = () => <span>custom text</span>;
+	defineBlock("form", { behavior: "leaf", render: CustomForm });
+	defineBlock("text", { behavior: "leaf", render: CustomText });
+
+	ensureBuiltinsRegistered();
+
+	expect(getBlockDescriptor("stack")).toBeDefined();
+	expect(getBlockDescriptor("text")).toBeDefined();
+	expect(getBlockDescriptor("form")?.render).toBe(CustomForm);
+	expect(getBlockDescriptor("text")?.render).toBe(CustomText);
+});
+
 test("Registry container behavior receives children and renderChild", () => {
 	function ChildLeaf({ options }: RenderProps<{ label: string }>) {
 		return <li>{options.label}</li>;

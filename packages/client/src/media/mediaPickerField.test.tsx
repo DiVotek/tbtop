@@ -26,8 +26,12 @@ const ITEM_IMG: MediaItem = {
 	folderId: null,
 	mime: "image/jpeg",
 	size: 204800,
+	width: null,
+	height: null,
 	url: "/storage/photo.jpg",
-	sizes: { profile: "/storage/photo-thumb.jpg" },
+	sizes: {
+		profile: { url: "/storage/photo-thumb.jpg", width: 128, height: 85, mime: "image/jpeg" },
+	},
 	alt: "A photo",
 	description: null,
 	tags: [],
@@ -40,6 +44,8 @@ const ITEM_PDF: MediaItem = {
 	folderId: null,
 	mime: "application/pdf",
 	size: 102400,
+	width: null,
+	height: null,
 	url: "/storage/document.pdf",
 	sizes: {},
 	alt: null,
@@ -162,7 +168,7 @@ describe("MediaPickerForm: variant preview", () => {
 			</Wrap>,
 		);
 		const img = await findByTestId("media-preview-img-img1");
-		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile?.url ?? ITEM_IMG.url);
 		// The block stays clickable for re-selection.
 		expect(getByTestId("media-picker-preview-cover").tagName).toBe("BUTTON");
 	});
@@ -191,7 +197,7 @@ describe("MediaPickerForm: variant preview", () => {
 			</Wrap>,
 		);
 		const img = await findByTestId("media-preview-img-1");
-		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile?.url ?? ITEM_IMG.url);
 		expect(fetches).toBe(1);
 	});
 
@@ -216,7 +222,7 @@ describe("MediaPickerForm: variant preview", () => {
 			</Wrap>,
 		);
 		const img = await findByTestId("media-preview-img-1");
-		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile?.url ?? ITEM_IMG.url);
 	});
 
 	test("corner clear button fires onChange(null)", async () => {
@@ -438,6 +444,45 @@ describe("MediaPickerForm: single select", () => {
 // ─── Form: multiple select with confirm ───────────────────────────────────────
 
 describe("MediaPickerForm: multiple select", () => {
+	test("preserves existing values when confirming an additional selection", async () => {
+		const user = userEvent.setup({ delay: null });
+		const changes: Array<unknown> = [];
+		const handler: FetchHandler = (req) => {
+			if (req.url.includes("/media/img1")) {
+				return new Response(JSON.stringify(ITEM_IMG), { status: 200 });
+			}
+			if (req.url.includes("/media/folders")) {
+				return new Response("[]");
+			}
+			return mediaListResponse([ITEM_IMG, ITEM_PDF]);
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="gallery"
+					value={["img1"]}
+					onChange={(v) => changes.push(v)}
+					options={{ multiple: true }}
+				/>
+			</Wrap>,
+		);
+
+		await findByTestId("media-preview-img1");
+		await act(async () => {
+			await user.click(getByTestId("media-picker-choose-gallery"));
+		});
+		expect((await findByTestId("media-card-img1")).getAttribute("aria-pressed")).toBe("true");
+
+		await act(async () => {
+			await user.click(await findByTestId("media-card-pdf1"));
+			await user.click(getByTestId("media-picker-confirm"));
+		});
+
+		await waitFor(() => expect(changes).toHaveLength(1));
+		expect(changes[0]).toEqual(["img1", "pdf1"]);
+	});
+
 	test("selecting two items and clicking Confirm fires onChange with array", async () => {
 		const user = userEvent.setup({ delay: null });
 		const changes: Array<unknown> = [];

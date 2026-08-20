@@ -318,6 +318,41 @@ describe("EditableCell: optimistic rollback", () => {
 		const updatedToggle = container.querySelector('[role="switch"]') as HTMLElement;
 		expect(updatedToggle.getAttribute("aria-checked")).toBe("false");
 	});
+
+	test("ignores a stale rejection after a newer save completes", async () => {
+		const first = Promise.withResolvers<unknown>();
+		const second = Promise.withResolvers<unknown>();
+		const saveCell = mock((_args: unknown) =>
+			saveCell.mock.calls.length === 1 ? first.promise : second.promise,
+		);
+
+		const { container, queryByTestId } = render(
+			<EditableCell
+				col={booleanCol()}
+				row={row("3", { active: false })}
+				saveCell={saveCell}
+			/>,
+		);
+
+		const toggle = container.querySelector('[role="switch"]') as HTMLElement;
+		fireEvent.click(toggle);
+		fireEvent.click(toggle);
+		expect(saveCell).toHaveBeenCalledTimes(2);
+
+		await act(async () => {
+			second.resolve(undefined);
+			await second.promise;
+			first.reject({ errors: { active: ["Stale error"] } });
+			try {
+				await first.promise;
+			} catch {
+				// The component handles the rejection; keep act settled.
+			}
+		});
+
+		expect(queryByTestId("cell-error-active")).toBeNull();
+		expect(toggle.getAttribute("aria-checked")).toBe("false");
+	});
 });
 
 // ---------------------------------------------------------------------------

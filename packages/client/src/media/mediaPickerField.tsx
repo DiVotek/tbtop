@@ -257,6 +257,7 @@ export function MediaPickerForm({
 				open={pickerOpen}
 				multiple={multiple}
 				accept={accept}
+				initialItems={resolvedItems}
 				onClose={() => setPickerOpen(false)}
 				onSelect={handleSelected}
 				onConfirm={handleConfirm}
@@ -365,7 +366,7 @@ function MediaPreviewBlockContent({ item }: { item: MediaItem }): ReactNode {
 	if (isImageMime(item.mime)) {
 		return (
 			<img
-				src={item.sizes.profile ?? item.url}
+				src={item.sizes.profile?.url ?? item.url}
 				alt={item.alt ?? item.name}
 				className="h-full w-full object-cover"
 				data-testid={`media-preview-img-${item.id}`}
@@ -390,6 +391,7 @@ interface MediaPickerModalProps {
 	open: boolean;
 	multiple: boolean;
 	accept?: string[];
+	initialItems: MediaItem[];
 	onClose: () => void;
 	onSelect: (item: MediaItem) => void;
 	onConfirm: (items: MediaItem[]) => void;
@@ -408,13 +410,14 @@ function MediaPickerModal({ open, onClose, ...contentProps }: MediaPickerModalPr
 function MediaPickerModalContent({
 	multiple,
 	accept,
+	initialItems,
 	onClose,
 	onSelect,
 	onConfirm,
 }: Omit<MediaPickerModalProps, "open">): ReactNode {
 	const t = useTranslation();
 	const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-	const [selectedItems, setSelectedItems] = useState<MediaItem[]>([]);
+	const [selectedItems, setSelectedItems] = useState<MediaItem[]>(initialItems);
 	const [queryParams, setQueryParams] = useState<MediaQueryParams>({
 		folder: null,
 		search: "",

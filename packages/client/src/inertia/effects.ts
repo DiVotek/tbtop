@@ -1,6 +1,10 @@
 import { router } from "@inertiajs/react";
 import { defaultMessages } from "../i18n/i18n";
 import { copyToClipboard as writeClipboard } from "../lib/clipboard";
+import {
+	getAllRegisteredTableControllers,
+	getRegisteredTableController,
+} from "../structure/tableContext";
 import type { ClientActionContext, NotificationConfig } from "../structure/types";
 import { markServerRedirect } from "./navigationIntent";
 
@@ -32,8 +36,9 @@ type EffectContext = Pick<ClientActionContext, "notify" | "table" | "form" | "mo
 	Partial<Pick<ClientActionContext, "t">>;
 
 /**
- * Executes the closed server-effect vocabulary. A named refreshTable
- * without a surrounding table controller falls back to a page reload.
+ * Executes the closed server-effect vocabulary. refreshTable reaches every
+ * mounted table by name, not only the one surrounding the effect — see
+ * refreshTable() below.
  */
 export function executeEffects(effects: ServerEffect[], ctx: EffectContext): void {
 	for (const effect of effects) {
@@ -47,7 +52,7 @@ const EFFECT_HANDLERS: Record<
 > = {
 	notify: applyNotify,
 	redirect: (effect) => applyRedirect(effect),
-	refreshTable: (_effect, ctx) => refreshTable(ctx),
+	refreshTable: (effect, ctx) => refreshTable(effect, ctx),
 	resetForm: (_effect, ctx) => ctx.form?.reset(),
 	closeModal: (_effect, ctx) => ctx.modal?.close(),
 	haltModal: (effect, ctx) => ctx.modal?.halt?.(effect.message ?? "", effect.level),
@@ -148,9 +153,26 @@ function clearErrorsUnder(
 	}
 }
 
-function refreshTable(ctx: EffectContext): void {
+/**
+ * Table rows are fetched by the table itself (client.get), never carried as
+ * Inertia props, so a named target or the nearest table is refetched
+ * directly. Only when no table is registered at all — this effect reached a
+ * page with no mounted table — does a full reload remain meaningful.
+ */
+function refreshTable(effect: ServerEffect, ctx: EffectContext): void {
+	if (effect.table) {
+		getRegisteredTableController(effect.table)?.refresh();
+		return;
+	}
 	if (ctx.table) {
 		ctx.table.refresh();
+		return;
+	}
+	const tables = getAllRegisteredTableControllers();
+	if (tables.length > 0) {
+		for (const table of tables) {
+			table.refresh();
+		}
 		return;
 	}
 	router.reload();

@@ -66,6 +66,7 @@ export function MediaDetail({
 
 	return (
 		<DetailShell
+			key={item.id}
 			item={item}
 			folders={folders}
 			onClose={onClose}

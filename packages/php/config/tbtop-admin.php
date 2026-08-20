@@ -52,7 +52,17 @@ return [
         // Form Upload fields have a separate, per-field limit expressed in bytes.
         'max_size' => MediaUploadLimit::DEFAULT_KILOBYTES,
 
-        // Conversion profiles: name => [maxWidth, maxHeight].
+        // Default encoding for conversion variants: webp | jpeg | png.
+        // quality null = encoder default (webp 80, jpeg 82; png ignores it).
+        // A format GD cannot encode falls back to png.
+        'conversions' => [
+            'format' => 'webp',
+            'quality' => null,
+        ],
+
+        // Conversion profiles, generated for every uploaded raster image.
+        // Short form: name => [maxWidth, maxHeight] (uses the defaults above).
+        // Long form: name => ['width' => .., 'height' => .., 'format' => 'jpeg', 'quality' => 85].
         // Files are scaled to fit inside the given box (aspect-ratio preserved).
         'profiles' => [
             'thumb' => [320, 320],

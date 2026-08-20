@@ -14,6 +14,12 @@ final class ImageEncoder
         'png' => ['fn' => 'imagepng', 'mimeType' => 'image/png', 'ext' => 'png', 'quality' => null],
     ];
 
+    /** True for a format this encoder knows, regardless of GD support. */
+    public static function isKnownFormat(string $format): bool
+    {
+        return isset(self::FORMATS[$format]);
+    }
+
     /** True when GD can encode this target format. */
     public static function supports(string $format): bool
     {

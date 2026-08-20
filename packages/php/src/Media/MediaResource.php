@@ -6,25 +6,34 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\Models\MediaFolder;
+use Tbtop\Admin\Uploads\ConversionProfile;
+use Tbtop\Admin\Uploads\ImageSizes;
 use Tbtop\Admin\Uploads\UploadUrl;
 
 /**
  * Serialises Media / MediaFolder models to the wire contract shared with the
  * client package. Both toItem() and toFolder() return plain arrays so
  * controllers can json() them directly.
+ *
+ * @phpstan-import-type Variant from ImageSizes
  */
 final class MediaResource
 {
     /**
-     * @return array{id: int, name: string, folderId: int|null, mime: string, size: int, url: string, sizes: array<string, string>, alt: string|null, description: string|null, tags: array<int, string>, createdAt: string}
+     * @return array{id: int, name: string, folderId: int|null, mime: string, size: int, width: int|null, height: int|null, url: string, sizes: array<string, array{url: string, width: int, height: int, mime: string}>, alt: string|null, description: string|null, tags: array<int, string>, createdAt: string}
      */
     public static function toItem(Media $media): array
     {
         $disk = (string) config('tbtop-admin.media.disk', 'public');
 
         $sizes = [];
-        foreach ((is_array($media->sizes) ? $media->sizes : []) as $profile => $storedPath) {
-            $sizes[(string) $profile] = UploadUrl::make($disk, $storedPath);
+        foreach ($media->sizes ?? [] as $profile => $variant) {
+            $sizes[(string) $profile] = [
+                'url' => UploadUrl::make($disk, $variant['path']),
+                'width' => (int) $variant['width'],
+                'height' => (int) $variant['height'],
+                'mime' => (string) $variant['mime'],
+            ];
         }
 
         return [
@@ -33,6 +42,8 @@ final class MediaResource
             'folderId' => $media->folder_id !== null ? (int) $media->folder_id : null,
             'mime' => (string) $media->mime,
             'size' => (int) $media->size,
+            'width' => $media->width !== null ? (int) $media->width : null,
+            'height' => $media->height !== null ? (int) $media->height : null,
             'url' => UploadUrl::make($disk, (string) $media->path),
             'sizes' => $sizes,
             'alt' => $media->alt !== null ? (string) $media->alt : null,
@@ -55,38 +66,25 @@ final class MediaResource
     }
 
     /**
-     * Generate conversion variants for a media file and return the sizes map
-     * (profile => path on disk) to persist in the `sizes` column.
+     * Image-derived model attributes for a stored upload: original dimensions
+     * (null for non-images) and the conversion variants for the given profiles.
      *
-     * @param  array<string, array{0: int, 1: int}>  $profiles
-     * @return array<string, string>
+     * @param  array<string, ConversionProfile>  $profiles
+     * @return array{width: int|null, height: int|null, sizes: array<string, Variant>}
      */
-    public static function generateConversions(
+    public static function imageAttributes(
         UploadedFile $file,
         string $storedPath,
         string $disk,
         array $profiles,
     ): array {
-        if ($profiles === [] || ! function_exists('imagecreatefromstring')) {
-            return [];
-        }
+        [$width, $height] = ImageSizes::dimensions($file);
 
-        $source = @imagecreatefromstring((string) file_get_contents((string) $file->getRealPath()));
-        if ($source === false) {
-            return [];
-        }
-
-        $result = [];
-        foreach ($profiles as $name => [$maxW, $maxH]) {
-            $path = self::makeVariant($source, $storedPath, $disk, (string) $name, $maxW, $maxH);
-            if ($path !== null) {
-                $result[(string) $name] = $path;
-            }
-        }
-
-        imagedestroy($source);
-
-        return $result;
+        return [
+            'width' => $width,
+            'height' => $height,
+            'sizes' => ImageSizes::generate($file, $storedPath, $disk, $profiles),
+        ];
     }
 
     /**
@@ -101,41 +99,10 @@ final class MediaResource
             $storage->delete($media->path);
         }
 
-        foreach ((is_array($media->sizes) ? $media->sizes : []) as $variantPath) {
-            if ($variantPath !== '') {
-                $storage->delete($variantPath);
+        foreach ($media->sizes ?? [] as $variant) {
+            if ($variant['path'] !== '') {
+                $storage->delete($variant['path']);
             }
         }
-    }
-
-    private static function makeVariant(
-        \GdImage $source,
-        string $path,
-        string $disk,
-        string $name,
-        int $maxW,
-        int $maxH,
-    ): ?string {
-        $w = imagesx($source);
-        $h = imagesy($source);
-        $scale = min($maxW / $w, $maxH / $h, 1.0);
-        $newW = max((int) round($w * $scale), 1);
-        $newH = max((int) round($h * $scale), 1);
-
-        $resized = imagescale($source, $newW, $newH);
-        if ($resized === false) {
-            return null;
-        }
-
-        ob_start();
-        imagepng($resized);
-        $blob = (string) ob_get_clean();
-        imagedestroy($resized);
-
-        $info = pathinfo($path);
-        $variantPath = "{$info['dirname']}/{$info['filename']}-{$name}.png";
-        Storage::disk($disk)->put($variantPath, $blob);
-
-        return $variantPath;
     }
 }

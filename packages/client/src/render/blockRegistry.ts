@@ -100,9 +100,21 @@ export function getBlockDescriptor(kind: string): BlockDescriptor | undefined {
 	return registry.get(kind);
 }
 
+let builtinsApplied = false;
+
+/** One-shot gate for ensureBuiltinsRegistered; reset only by clearBlockRegistry (test isolation). */
+export function claimBuiltinsApplied(): boolean {
+	if (builtinsApplied) {
+		return false;
+	}
+	builtinsApplied = true;
+	return true;
+}
+
 export function clearBlockRegistry(): void {
 	registry.clear();
 	warnedKinds.clear();
+	builtinsApplied = false;
 }
 
 export function markKindWarned(kind: string): boolean {
