@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Auth\User as AuthUser;
 use Illuminate\Support\Facades\Route;
+use Tbtop\Admin\Panels\CurrentPanel;
 
 // Two panels are registered: AdminPanel (/admin, guard 'web', locales en/uk)
 // and OpsPanel (/ops, guard 'staff', locales fr/en). See PanelsHttpTestCase.
@@ -101,4 +102,17 @@ it('shares the panel id and the panel UI locales per request', function () {
         ->and($opsProps['prefix'])->toBe('/ops')
         ->and($opsProps['apiBase'])->toBe('/ops/api')
         ->and($opsProps['navigation'])->toBe('topbar');
+});
+
+it('clears the current panel after a panel request', function () {
+    Route::get('/outside-panel', fn () => response()->json([
+        'panel' => CurrentPanel::current()?->id(),
+    ]));
+
+    $this->actingAs(new AuthUser, 'staff');
+    $this->get('/ops/nav-demo', ['X-Inertia' => 'true'])->assertOk();
+
+    $this->getJson('/outside-panel')
+        ->assertOk()
+        ->assertJsonPath('panel', null);
 });
