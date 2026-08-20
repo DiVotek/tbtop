@@ -11,7 +11,7 @@
  *   lg   → sm:max-w-2xl
  *   full → sm:max-w-4xl  (picker modal)
  */
-import { type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { type ComponentPropsWithoutRef, type ReactNode, useRef } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { Button } from "./button";
@@ -152,6 +152,7 @@ export function ConfirmDialog({
 	const t = useTranslation();
 	const resolvedConfirm = confirmLabel ?? t("action.confirm");
 	const resolvedCancel = cancelLabel ?? t("action.cancel");
+	const confirmRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<ModalShell
@@ -160,6 +161,12 @@ export function ConfirmDialog({
 			title={title}
 			size="sm"
 			onlyDialog
+			// Focus the confirm button on open so Enter confirms immediately,
+			// instead of Radix's default of focusing the dialog content itself.
+			onOpenAutoFocus={(e) => {
+				e.preventDefault();
+				confirmRef.current?.focus();
+			}}
 			{...contentProps}
 			footer={
 				<>
@@ -172,6 +179,7 @@ export function ConfirmDialog({
 						{resolvedCancel}
 					</Button>
 					<Button
+						ref={confirmRef}
 						type="button"
 						variant={destructive ? "destructive" : "default"}
 						onClick={onConfirm}

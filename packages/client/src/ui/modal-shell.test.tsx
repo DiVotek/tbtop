@@ -10,6 +10,8 @@
  * ConfirmDialog behavioral contracts:
  *   - onConfirm fires when the confirm button is clicked
  *   - dialog closes (onOpenChange(false)) when cancel is clicked
+ *   - confirm button receives focus on open, so Enter confirms immediately
+ *   - Esc cancels (Radix Dialog default; covered here, not reimplemented)
  */
 import { describe, expect, mock, test } from "bun:test";
 import { act, render } from "@testing-library/react";
@@ -165,6 +167,59 @@ describe("ConfirmDialog", () => {
 
 		await act(async () => {
 			await user.click(getByTestId("confirm-dialog-cancel"));
+		});
+
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(onConfirm).not.toHaveBeenCalled();
+	});
+
+	test("focuses the confirm button on open so Enter confirms immediately", async () => {
+		const user = userEvent.setup({ delay: null });
+		const onConfirm = mock(() => {});
+		const onOpenChange = mock(() => {});
+
+		const { findByTestId } = render(
+			wrap(
+				<ConfirmDialog
+					open={true}
+					onOpenChange={onOpenChange}
+					title="Delete record?"
+					onConfirm={onConfirm}
+				/>,
+			),
+		);
+
+		const confirmBtn = await findByTestId("confirm-dialog-confirm");
+		await act(async () => {
+			await Promise.resolve();
+		});
+		expect(document.activeElement).toBe(confirmBtn);
+
+		await act(async () => {
+			await user.keyboard("{Enter}");
+		});
+
+		expect(onConfirm).toHaveBeenCalledTimes(1);
+	});
+
+	test("Esc cancels without confirming", async () => {
+		const user = userEvent.setup({ delay: null });
+		const onConfirm = mock(() => {});
+		const onOpenChange = mock(() => {});
+
+		render(
+			wrap(
+				<ConfirmDialog
+					open={true}
+					onOpenChange={onOpenChange}
+					title="Delete record?"
+					onConfirm={onConfirm}
+				/>,
+			),
+		);
+
+		await act(async () => {
+			await user.keyboard("{Escape}");
 		});
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
