@@ -365,6 +365,72 @@ describe("MediaGrid: search debounce", () => {
 			timeout: 1000,
 		});
 	});
+
+	test("folder navigation cancels a pending search and resets the input", async () => {
+		const user = userEvent.setup({ delay: null });
+		const changes: Array<Record<string, unknown>> = [];
+		const Wrap = wrap(() => new Response("{}"));
+		const gridProps = {
+			state: { kind: "loaded" as const, data: { data: [], total: 0, page: 1, perPage: 24 } },
+			onChangeParams: (p: Record<string, unknown>) => changes.push(p),
+			onSelect: () => {},
+			onSelectFolder: () => {},
+			onUploaded: () => {},
+			onOpenImportUrl: () => {},
+		};
+		const { getByTestId, rerender } = render(
+			<Wrap>
+				<MediaGrid
+					{...gridProps}
+					params={{ folder: null, search: "", page: 1, perPage: 24 }}
+					folderId={null}
+				/>
+			</Wrap>,
+		);
+		await act(async () => {
+			await user.type(getByTestId("media-search-input"), "cat");
+		});
+		rerender(
+			<Wrap>
+				<MediaGrid
+					{...gridProps}
+					params={{ folder: "f1", search: "", page: 1, perPage: 24 }}
+					folderId="f1"
+				/>
+			</Wrap>,
+		);
+
+		expect((getByTestId("media-search-input") as HTMLInputElement).value).toBe("");
+		await new Promise((resolve) => setTimeout(resolve, 350));
+		expect(changes).toEqual([]);
+	});
+
+	test("unmount cancels a pending search", async () => {
+		const user = userEvent.setup({ delay: null });
+		const changes: Array<Record<string, unknown>> = [];
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId, unmount } = render(
+			<Wrap>
+				<MediaGrid
+					state={{ kind: "loaded", data: { data: [], total: 0, page: 1, perPage: 24 } }}
+					params={{ folder: null, search: "", page: 1, perPage: 24 }}
+					onChangeParams={(p) => changes.push(p)}
+					onSelect={() => {}}
+					onSelectFolder={() => {}}
+					onUploaded={() => {}}
+					folderId={null}
+					onOpenImportUrl={() => {}}
+				/>
+			</Wrap>,
+		);
+		await act(async () => {
+			await user.type(getByTestId("media-search-input"), "cat");
+		});
+		unmount();
+
+		await new Promise((resolve) => setTimeout(resolve, 350));
+		expect(changes).toEqual([]);
+	});
 });
 
 // ─── MediaGrid: pagination ────────────────────────────────────────────────────
