@@ -131,7 +131,12 @@ function buildHandler(node: StructureNode, spec: ActionSpec, ctx: ActionMaterial
 	}
 	if (spec.type === "custom") {
 		return async (actionCtx) => {
-			await getCustomAction(spec.handler ?? "")?.(actionCtx, spec.params ?? {});
+			const name = spec.handler ?? "";
+			const handler = getCustomAction(name);
+			if (!handler) {
+				throw new Error(`Custom action handler "${name}" is not registered.`);
+			}
+			await handler(actionCtx, spec.params ?? {});
 		};
 	}
 	return serverHandler({

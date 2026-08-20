@@ -3,6 +3,7 @@ import * as inertiaReact from "@inertiajs/react";
 import type { AdminClient } from "../data/client";
 import { registerFields } from "../render/registerFields";
 import type { ClientActionContext, StructureNode } from "../structure/types";
+import { defineCustomAction } from "./customActions";
 import { materialize } from "./materialize";
 
 // materializeActions' submitHandler calls router.post directly. bun's
@@ -175,6 +176,58 @@ describe("materialize actions", () => {
 			payload: { row: { id: 7 }, selection: ["1", "2"], params: {} },
 		});
 		expect(notifications).toEqual(["done"]);
+	});
+
+	it("runs a registered custom action with its params", async () => {
+		const calls: unknown[] = [];
+		defineCustomAction("materialize-test-custom", async (_ctx, params) => {
+			calls.push(params);
+		});
+		const out = materialize(
+			node(
+				"action",
+				{ spec: { type: "custom", handler: "materialize-test-custom", params: { id: 7 } } },
+				"custom",
+			),
+			BASE,
+		);
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await handler(fakeCtx());
+
+		expect(calls).toEqual([{ id: 7 }]);
+	});
+
+	it("rejects an unregistered custom action with its handler name", async () => {
+		const out = materialize(
+			node("action", { spec: { type: "custom", handler: "missing-materialize-handler" } }),
+			BASE,
+		);
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
+
+		await expect(handler(fakeCtx())).rejects.toThrow("missing-materialize-handler");
+	});
+
+	it("keeps a confirmed custom action modal open when its handler is unregistered", async () => {
+		const calls: string[] = [];
+		const out = materialize(
+			node("action", {
+				confirm: { title: "Really?" },
+				spec: { type: "custom", handler: "missing-confirmed-handler" },
+			}),
+			BASE,
+		);
+		const modal = opts(out).modal as {
+			body: { options: { children: { options: { handler: unknown } }[] } };
+		};
+		const handler = modal.body.options.children[0]?.options.handler as (
+			ctx: ClientActionContext,
+		) => Promise<void>;
+
+		await expect(
+			handler(fakeCtx({ modal: { close: () => calls.push("close"), closeAll: () => {} } })),
+		).rejects.toThrow("missing-confirmed-handler");
+		expect(calls).toEqual([]);
 	});
 
 	it("marks the form clean before applying effects, so a redirect after save does not hit the unsaved guard", async () => {
