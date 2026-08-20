@@ -69,3 +69,27 @@ it('RuleWalker: distinct on multiple select lands on field key, not element key'
         'tags' => ['array', 'distinct'],
     ]);
 });
+
+it('RuleWalker: conditional required on multiple select lands on field key, not element key', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->select('tags')->multiple()->rules('required_unless:active,false|in:a,b'),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'tags' => ['array', 'required_unless:active,false'],
+        'tags.*' => ['in:a,b'],
+    ]);
+});
+
+it('RuleWalker: implicit rules (filled, missing*, prohibited*) on multiple select land on field key', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->select('tags')->multiple()->rules('filled|missing_if:kind,draft|prohibited_unless:active,true|in:a,b'),
+    ]);
+
+    expect($form->collectRules())->toBe([
+        'tags' => ['array', 'filled', 'missing_if:kind,draft', 'prohibited_unless:active,true'],
+        'tags.*' => ['in:a,b'],
+    ]);
+});
