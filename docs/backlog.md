@@ -83,4 +83,8 @@
 
 ## Media
 
+- **Conversion format for media-library variants** — `media.profiles` entries accept
+  `format`/`quality` (webp/jpeg via `ImageEncoder`, png fallback when GD lacks the codec).
+  `ImageSizes::generate()` already takes both; the open question is per-profile vs a
+  global `media.conversions` default. Variants currently hardcode png.
 - Media v2 ideas — TBD (carried from pre-extraction backlog).

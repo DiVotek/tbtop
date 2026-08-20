@@ -159,15 +159,15 @@ interface RunInput {
 }
 
 async function runHandlerWithValidation(input: RunInput): Promise<void> {
-	if (
-		input.preflight &&
-		input.formHandle &&
-		!preFlightSchemaParse(input.formHandle, input.ctx.t)
-	) {
-		input.formHandle.notifyErrorsApplied();
-		return;
-	}
 	try {
+		if (
+			input.preflight &&
+			input.formHandle &&
+			!preFlightSchemaParse(input.formHandle, input.ctx.t)
+		) {
+			input.formHandle.notifyErrorsApplied();
+			return;
+		}
 		await input.handler(input.ctx);
 	} catch (err) {
 		if (input.formHandle && tryApplyServerFieldErrors(err, input.formHandle)) {
@@ -208,8 +208,10 @@ function preFlightSchemaParse(handle: FormControllerInternal, t: Translate): boo
 		handle.schema.parse(handle.data);
 		return true;
 	} catch (err) {
-		applyZodIssues(err, handle, t);
-		return false;
+		if (applyZodIssues(err, handle, t)) {
+			return false;
+		}
+		throw err;
 	}
 }
 
@@ -217,10 +219,10 @@ interface ZodLike {
 	issues?: { path: (string | number)[]; message: string }[];
 }
 
-function applyZodIssues(err: unknown, handle: FormControllerInternal, t: Translate): void {
+function applyZodIssues(err: unknown, handle: FormControllerInternal, t: Translate): boolean {
 	const issues = (err as ZodLike).issues;
 	if (!Array.isArray(issues)) {
-		return;
+		return false;
 	}
 	const fields: Record<string, string> = {};
 	for (const issue of issues) {
@@ -229,7 +231,11 @@ function applyZodIssues(err: unknown, handle: FormControllerInternal, t: Transla
 			fields[name] = translateValidationMessage(t, issue.message);
 		}
 	}
+	if (Object.keys(fields).length === 0) {
+		return false;
+	}
 	applyFieldErrors(liftNestedErrors(fields), handle);
+	return true;
 }
 
 function tryApplyServerFieldErrors(err: unknown, handle: FormControllerInternal): boolean {

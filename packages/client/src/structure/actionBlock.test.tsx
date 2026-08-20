@@ -61,6 +61,29 @@ describe("Action error reporting outside a form", () => {
 		});
 		expect(toastErrorSpy.mock.calls[0]?.[0]).toBe("row boom");
 	});
+
+	test("Unexpected form schema errors are surfaced instead of treated as validation failures", async () => {
+		const handler = mock(async () => {});
+		const node = s.form(
+			{
+				schema: {
+					parse: () => {
+						throw new Error("schema crashed");
+					},
+				},
+			},
+			[s.text({ name: "title" }), s.action({ name: "save", handler })],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await act(async () => {
+			fireEvent.click(await findByTestId("action-save"));
+		});
+
+		expect(handler).not.toHaveBeenCalled();
+		expect(toastErrorSpy.mock.calls[0]?.[0]).toBe("schema crashed");
+	});
 });
 
 describe("Action testid fallback", () => {

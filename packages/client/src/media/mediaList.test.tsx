@@ -14,8 +14,12 @@ const ITEM_IMG: MediaItem = {
 	folderId: null,
 	mime: "image/jpeg",
 	size: 204800,
+	width: null,
+	height: null,
 	url: "/storage/photo.jpg",
-	sizes: { profile: "/storage/photo-thumb.jpg" },
+	sizes: {
+		profile: { url: "/storage/photo-thumb.jpg", width: 128, height: 85, mime: "image/jpeg" },
+	},
 	alt: "A photo",
 	description: null,
 	tags: ["hero", "banner"],

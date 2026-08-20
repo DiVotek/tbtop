@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Media\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Tbtop\Admin\Uploads\ImageSizes;
 
 /**
  * @property int $id
@@ -14,12 +15,16 @@ use Illuminate\Support\Carbon;
  * @property string $path
  * @property string $mime
  * @property int $size
- * @property array<string, string>|null $sizes
+ * @property int|null $width
+ * @property int|null $height
+ * @property array<string, Variant>|null $sizes
  * @property string|null $alt
  * @property string|null $description
  * @property array<int, string>|null $tags
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
+ * @phpstan-import-type Variant from ImageSizes
  */
 class Media extends Model
 {
@@ -32,6 +37,8 @@ class Media extends Model
     {
         return [
             'size' => 'integer',
+            'width' => 'integer',
+            'height' => 'integer',
             'sizes' => 'array',
             'tags' => 'array',
         ];
