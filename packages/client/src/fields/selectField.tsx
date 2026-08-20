@@ -93,10 +93,6 @@ function WithCreateAffordance({
 	}
 
 	function handleSuccess(value: string, label: string) {
-		if (disabled) {
-			setOpen(false);
-			return;
-		}
 		if (resolvedLabels) {
 			resolvedLabels[value] = { value, label };
 		}
