@@ -11,6 +11,16 @@ function gdSample(): GdImage
     return $img;
 }
 
+function failedImageWriter(GdImage $img): bool
+{
+    return false;
+}
+
+function emptyImageWriter(GdImage $img): bool
+{
+    return true;
+}
+
 // ------- encode: round-trips and reports the right mime/ext -------
 
 it('encodes webp to a decodable blob with webp mime/ext', function () {
@@ -46,6 +56,12 @@ it('encodes png to a decodable blob with png mime/ext', function () {
 it('returns null when encoding an unknown format', function () {
     expect(ImageEncoder::encode(gdSample(), 'gif'))->toBeNull();
 });
+
+it('rejects failed and empty writer output', function (string $writer) {
+    $capture = new ReflectionMethod(ImageEncoder::class, 'capture');
+
+    expect($capture->invoke(null, gdSample(), $writer, null))->toBeNull();
+})->with(['failedImageWriter', 'emptyImageWriter']);
 
 // ------- supports: mirrors function_exists, false for unknown -------
 

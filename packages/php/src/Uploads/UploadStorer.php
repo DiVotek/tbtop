@@ -59,20 +59,22 @@ final class UploadStorer
             return $fallback;
         }
 
-        return self::swap($config->disk, $path, $enc);
+        return self::swap($config->disk, $path, $enc) ?? $fallback;
     }
 
     /**
      * Writes the converted blob beside the original and drops the original.
      *
      * @param  array{blob: string, mimeType: string, ext: string}  $enc
-     * @return array{0: string, 1: string}
+     * @return array{0: string, 1: string}|null
      */
-    private static function swap(string $disk, string $path, array $enc): array
+    private static function swap(string $disk, string $path, array $enc): ?array
     {
         $info = pathinfo($path);
         $newPath = "{$info['dirname']}/{$info['filename']}.{$enc['ext']}";
-        Storage::disk($disk)->put($newPath, $enc['blob']);
+        if (! Storage::disk($disk)->put($newPath, $enc['blob'])) {
+            return null;
+        }
         if ($newPath !== $path) {
             Storage::disk($disk)->delete($path);
         }

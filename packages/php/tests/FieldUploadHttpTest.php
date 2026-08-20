@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Tbtop\Admin\Tests\FieldUploadHttpTestCase;
+use Tbtop\Admin\Uploads\UploadStorer;
 
 uses(FieldUploadHttpTestCase::class);
 
@@ -51,6 +52,22 @@ it('FieldUpload: converts to webp and drops the original', function (): void {
     Storage::disk('public')->assertExists($data['path']);
     Storage::disk('public')->assertMissing(str_replace('.webp', '.png', $data['path']));
 })->skip(! function_exists('imagewebp'), 'GD webp encoder unavailable');
+
+it('FieldUpload: keeps the original when the converted write fails', function (): void {
+    $disk = Mockery::mock();
+    $disk->shouldReceive('put')->once()->andReturnFalse();
+    $disk->shouldNotReceive('delete');
+    Storage::shouldReceive('disk')->once()->with('public')->andReturn($disk);
+
+    $swap = new ReflectionMethod(UploadStorer::class, 'swap');
+    $result = $swap->invoke(null, 'public', 'avatars/original.png', [
+        'blob' => 'converted',
+        'mimeType' => 'image/webp',
+        'ext' => 'webp',
+    ]);
+
+    expect($result)->toBeNull();
+});
 
 it('FieldUpload: rejects a mime outside the accept allowlist', function (): void {
     $file = UploadedFile::fake()->create('x.pdf', 10, 'application/pdf');

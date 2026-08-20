@@ -41,6 +41,9 @@ final class ImageEncoder
         }
         $spec = self::FORMATS[$format];
         $blob = self::capture($img, $spec['fn'], $quality ?? $spec['quality']);
+        if ($blob === null) {
+            return null;
+        }
 
         return ['blob' => $blob, 'mimeType' => $spec['mimeType'], 'ext' => $spec['ext']];
     }
@@ -54,11 +57,12 @@ final class ImageEncoder
     }
 
     /** Buffers a GD writer; png ignores the quality argument. */
-    private static function capture(\GdImage $img, string $writer, ?int $quality): string
+    private static function capture(\GdImage $img, string $writer, ?int $quality): ?string
     {
         ob_start();
-        $quality === null ? $writer($img) : $writer($img, null, $quality);
+        $written = $quality === null ? $writer($img) : $writer($img, null, $quality);
+        $blob = (string) ob_get_clean();
 
-        return (string) ob_get_clean();
+        return $written && $blob !== '' ? $blob : null;
     }
 }
