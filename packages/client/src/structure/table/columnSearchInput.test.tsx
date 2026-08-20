@@ -76,11 +76,25 @@ describe("ColumnSearchInput: independent per-column debouncing", () => {
 		expect(changes.find((c) => c.column === "slug")).toEqual({ column: "slug", value: "b" });
 	});
 
-	test("seeds the uncontrolled input from defaultValue", () => {
-		const { getByTestId } = render(
-			<ColumnSearchInput column={TITLE_COL} defaultValue="preset" onChange={() => {}} />,
+	test("reflects an externally replaced value and drops a pending change", async () => {
+		const changes: Array<{ column: string; value: string }> = [];
+		const onChange = (column: string, value: string) => changes.push({ column, value });
+		const user = userEvent.setup({ delay: null });
+		const { getByTestId, rerender } = render(
+			<ColumnSearchInput column={TITLE_COL} value="preset" onChange={onChange} />,
 		);
 		const input = getByTestId("table-col-search-title") as HTMLInputElement;
 		expect(input.value).toBe("preset");
+
+		await act(async () => {
+			await user.type(input, " stale");
+		});
+		rerender(<ColumnSearchInput column={TITLE_COL} value="" onChange={onChange} />);
+		expect(input.value).toBe("");
+
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 350));
+		});
+		expect(changes).toEqual([]);
 	});
 });

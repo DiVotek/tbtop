@@ -62,7 +62,7 @@ export function TableHead(props: TableHeadProps) {
 							{col.columnSearchable && (
 								<ColumnSearchInput
 									column={col}
-									defaultValue={props.colSearchValues?.[col.name]}
+									value={props.colSearchValues?.[col.name]}
 									onChange={props.onColSearchChange ?? (() => {})}
 								/>
 							)}
