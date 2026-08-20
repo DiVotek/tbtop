@@ -77,6 +77,28 @@ it('Reorder: id outside the scoped query is rejected and persists nothing', func
     expect(EcPost::pluck('sort_order', 'title')->all())->toBe($original);
 });
 
+it('Reorder: partial id list is rejected and persists nothing', function (): void {
+    $ids = reorderIdsByTitle(['c']);
+    $original = EcPost::pluck('sort_order', 'title')->all();
+
+    $this->postJson('/admin/reorder-posts/tables/ecposts/reorder', ['ids' => $ids])
+        ->assertStatus(422);
+
+    expect(EcPost::pluck('sort_order', 'title')->all())->toBe($original);
+});
+
+it('Reorder: duplicate ids are rejected and persist nothing', function (): void {
+    $ids = reorderIdsByTitle(['a', 'b']);
+    $ids[] = $ids[1];
+    $original = EcPost::pluck('sort_order', 'title')->all();
+
+    $this->postJson('/admin/reorder-posts/tables/ecposts/reorder', ['ids' => $ids])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['ids.2']);
+
+    expect(EcPost::pluck('sort_order', 'title')->all())->toBe($original);
+});
+
 // ---------------------------------------------------------------------------
 // Empty / invalid ids → 422
 // ---------------------------------------------------------------------------

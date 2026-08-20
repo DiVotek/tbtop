@@ -64,7 +64,7 @@ final class TableReorderController
     {
         $validated = Validator::make($request->all(), [
             'ids' => 'required|array|min:1',
-            'ids.*' => 'required',
+            'ids.*' => 'required|distinct:strict',
         ])->validate();
 
         /** @var list<int|string> */
@@ -87,16 +87,17 @@ final class TableReorderController
     }
 
     /**
-     * Reject the whole request when any id falls outside the scoped query —
-     * a client must not reorder rows it cannot see.
+     * Require every scoped row exactly once. Persisting a partial list from
+     * index zero would otherwise collide with positions held by omitted rows.
      *
      * @param  list<int|string>  $ids
      */
     private function assertIdsInScope(EloquentBuilder $builder, array $ids): void
     {
         $existing = (clone $builder)->whereKey($ids)->count();
-        if ($existing !== count($ids)) {
-            abort(422, 'One or more ids are outside the table scope.');
+        $scopeCount = (clone $builder)->count();
+        if ($existing !== count($ids) || $scopeCount !== count($ids)) {
+            abort(422, 'Ids must exactly match the table scope.');
         }
     }
 
