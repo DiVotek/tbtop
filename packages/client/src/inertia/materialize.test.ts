@@ -398,6 +398,54 @@ describe("materialize actions", () => {
 		expect(typeof confirmButton?.options.handler).toBe("function");
 	});
 
+	it("keeps a confirmed action modal open when the response carries haltModal", async () => {
+		const client = {
+			post: async () => ({ effects: [{ kind: "haltModal", message: "Validation failed" }] }),
+		} as unknown as AdminClient;
+		const calls: string[] = [];
+		const out = materialize(
+			node(
+				"action",
+				{
+					confirm: { title: "Really?" },
+					spec: { type: "server", needs: ["form"] },
+				},
+				"save",
+			),
+			BASE,
+		);
+		const modal = opts(out).modal as {
+			body: { options: { children: { options: { handler: unknown } }[] } };
+		};
+		const handler = modal.body.options.children[0]?.options.handler as (
+			ctx: ClientActionContext,
+		) => Promise<void>;
+
+		await handler(
+			fakeCtx({
+				client,
+				form: {
+					initial: {},
+					data: { title: "Unsaved" },
+					isDirty: true,
+					isValid: true,
+					changedFields: ["title"],
+					fieldErrors: {},
+					set: () => {},
+					reset: () => calls.push("reset"),
+					setFieldError: () => {},
+				},
+				modal: {
+					close: () => calls.push("close"),
+					closeAll: () => {},
+					halt: (message) => calls.push(`halt:${message}`),
+				},
+			}),
+		);
+
+		expect(calls).toEqual(["halt:Validation failed"]);
+	});
+
 	it("translates the fallback label for an unlabeled confirm button", () => {
 		const out = materialize(
 			node(
