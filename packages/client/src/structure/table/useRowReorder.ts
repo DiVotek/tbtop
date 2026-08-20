@@ -35,6 +35,7 @@ interface RowReorder {
 export function useRowReorder(input: UseRowReorderInput): RowReorder {
 	const ctx = useClientActionContext();
 	const [rows, setRows] = useState<Row[]>(input.rows);
+	const requestGeneration = useRef(0);
 	// Server rows win whenever they change (refetch); local order is transient.
 	const serverRows = input.rows;
 	const lastServer = useRef(serverRows);
@@ -59,17 +60,25 @@ export function useRowReorder(input: UseRowReorderInput): RowReorder {
 		const ids = rowIds(current);
 		const next = computeReorder(ids, String(active.id), String(over.id));
 		setRows(applyOrder(current, next));
-		void persist(next, current);
+		void persist(next, current, ++requestGeneration.current);
 	}
 
-	async function persist(nextIds: string[], snapshot: Row[]): Promise<void> {
+	async function persist(nextIds: string[], snapshot: Row[], generation: number): Promise<void> {
 		if (!input.reorderRows) {
 			return;
 		}
 		try {
 			await input.reorderRows(nextIds);
-			input.onRefresh?.();
+			if (generation === requestGeneration.current) {
+				input.onRefresh?.();
+			}
 		} catch {
+			// A superseded drag must stay silent: its rollback would clobber the
+			// newer order, and its toast would contradict the reorder the user
+			// already saw succeed.
+			if (generation !== requestGeneration.current) {
+				return;
+			}
 			setRows(snapshot);
 			ctx.notify({ kind: "error", message: ctx.t("table.reorder_failed") });
 		}
