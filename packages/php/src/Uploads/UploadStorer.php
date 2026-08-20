@@ -55,7 +55,6 @@ final class UploadStorer
             return $fallback;
         }
         $enc = ImageEncoder::encode($img, $format, $quality);
-        imagedestroy($img);
         if ($enc === null) {
             return $fallback;
         }
