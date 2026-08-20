@@ -1,13 +1,22 @@
 import type { LucideIcon } from "lucide-react";
 
+export interface MediaVariant {
+	url: string;
+	width: number;
+	height: number;
+	mime: string;
+}
+
 export interface MediaItem {
 	id: string;
 	name: string;
 	folderId: string | null;
 	mime: string;
 	size: number;
+	width: number | null;
+	height: number | null;
 	url: string;
-	sizes: Record<string, string>;
+	sizes: Record<string, MediaVariant>;
 	alt: string | null;
 	description: string | null;
 	tags: string[];

@@ -74,6 +74,7 @@ function Harness() {
 			))}
 			<button type="button" data-testid="mark-a" onClick={() => void n.markRead("a")} />
 			<button type="button" data-testid="remove-a" onClick={() => void n.remove("a")} />
+			<button type="button" data-testid="remove-b" onClick={() => void n.remove("b")} />
 			<button type="button" data-testid="clear" onClick={() => void n.clearAll()} />
 		</div>
 	);
@@ -135,6 +136,44 @@ describe("useNotifications", () => {
 		fireEvent.click(getByTestId("remove-a"));
 		await waitFor(() => expect(errorSpy).toHaveBeenCalled());
 		await waitFor(() => expect(queryByTestId("item-a")).not.toBeNull());
+		errorSpy.mockRestore();
+	});
+
+	test("a failed queued removal does not roll back an earlier successful removal", async () => {
+		let resolveA: (response: Response) => void = () => {};
+		let resolveB: (response: Response) => void = () => {};
+		const deleteA = new Promise<Response>((resolve) => {
+			resolveA = resolve;
+		});
+		const deleteB = new Promise<Response>((resolve) => {
+			resolveB = resolve;
+		});
+		const requests: string[] = [];
+		const deferredHandler: FetchHandler = (req) => {
+			const { pathname } = new URL(req.url);
+			if (req.method === "GET") {
+				return jsonResponse({ data: [note("a"), note("b")], unreadCount: 2 });
+			}
+			requests.push(pathname);
+			return pathname.endsWith("/a") ? deleteA : deleteB;
+		};
+		const errorSpy = spyOn(toast, "error").mockImplementation(() => "id");
+		const { getByTestId, queryByTestId } = render(<Harness />, {
+			wrapper: wrap(deferredHandler),
+		});
+		await waitFor(() => expect(getByTestId("count").textContent).toBe("2"));
+
+		fireEvent.click(getByTestId("remove-a"));
+		fireEvent.click(getByTestId("remove-b"));
+		await waitFor(() => expect(requests).toEqual(["/notifications/a"]));
+		resolveA(new Response(null, { status: 204 }));
+		await waitFor(() => expect(requests).toEqual(["/notifications/a", "/notifications/b"]));
+		resolveB(new Response("nope", { status: 500 }));
+
+		await waitFor(() => expect(errorSpy).toHaveBeenCalled());
+		expect(queryByTestId("item-a")).toBeNull();
+		expect(queryByTestId("item-b")).not.toBeNull();
+		expect(getByTestId("count").textContent).toBe("1");
 		errorSpy.mockRestore();
 	});
 

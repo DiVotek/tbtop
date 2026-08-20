@@ -166,7 +166,10 @@ export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 	const [active, setActive] = useState(() =>
 		urlName ? (seedTabsValue(urlName, values) ?? defaultValue) : defaultValue,
 	);
-	const activeIndex = Math.max(values.indexOf(active), 0);
+	const currentActive = values.includes(active)
+		? active
+		: ((urlName ? seedTabsValue(urlName, values) : undefined) ?? defaultValue);
+	const activeIndex = Math.max(values.indexOf(currentActive), 0);
 	const errorCounts = useTabErrorAutoSwitch({
 		tabFieldNames,
 		activeIndex,
@@ -174,16 +177,21 @@ export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 	});
 	const currentSearch = typeof window === "undefined" ? "" : window.location.search;
 	useEffect(() => {
-		if (urlName) {
-			persistTabsValue(urlName, active, defaultValue);
+		if (active !== currentActive) {
+			setActive(currentActive);
 		}
-	}, [urlName, active, defaultValue, currentSearch]);
+	}, [active, currentActive]);
+	useEffect(() => {
+		if (urlName) {
+			persistTabsValue(urlName, currentActive, defaultValue);
+		}
+	}, [urlName, currentActive, defaultValue, currentSearch]);
 
 	if (tabs.length === 0) {
 		return null;
 	}
 	return (
-		<Tabs value={active} onValueChange={setActive} data-testid="tabs">
+		<Tabs value={currentActive} onValueChange={setActive} data-testid="tabs">
 			<TabsList>
 				{tabs.map((tab, i) => (
 					<TabTrigger
