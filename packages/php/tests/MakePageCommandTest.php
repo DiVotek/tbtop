@@ -96,3 +96,17 @@ it('overwrites an existing file when --force is passed', function () {
 
     expect(file_get_contents($path))->not->toBe('<?php // original');
 });
+
+it('rejects page names that could escape the pages directory', function (string $name) {
+    $this->artisan('make:tbtop-page', ['name' => $name, '--force' => true])
+        ->assertFailed()
+        ->expectsOutputToContain('Page name must resolve to a valid PHP class name');
+
+    expect(is_dir(app_path('Admin/Pages')))->toBeFalse();
+})->with([
+    'traversal' => '../../../routes/Injected',
+    'forward slash' => 'Reports/Injected',
+    'backslash' => 'Reports\\Injected',
+    'empty after suffix removal' => 'Page',
+    'invalid punctuation' => '!!!',
+]);

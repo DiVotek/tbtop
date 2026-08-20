@@ -18,7 +18,15 @@ class MakePageCommand extends Command
 
     public function handle(): int
     {
+        $input = trim((string) $this->argument('name'));
         $name = $this->normalisedName();
+
+        if (preg_match('/[\\x00-\\x1F\\x7F\\/\\\\]/', $input) || ! preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name)) {
+            $this->components->error('Page name must resolve to a valid PHP class name and cannot contain path separators.');
+
+            return self::FAILURE;
+        }
+
         $class = $name.'Page';
         $namespace = $this->resolveNamespace();
         $targetDir = $this->resolveTargetDir($namespace);
