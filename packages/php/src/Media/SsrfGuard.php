@@ -16,36 +16,7 @@ final class SsrfGuard
      */
     public static function isBlocked(string $url): bool
     {
-        $parts = parse_url($url);
-
-        if (! is_array($parts)) {
-            return true;
-        }
-
-        $scheme = isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : '';
-        if (! in_array($scheme, self::ALLOWED_SCHEMES, true)) {
-            return true;
-        }
-
-        $host = (string) ($parts['host'] ?? '');
-        if ($host === '') {
-            return true;
-        }
-
-        $host = self::normalizeHost($host);
-        if ($host === null) {
-            return true;
-        }
-
-        if (self::isLiteralIp($host)) {
-            return ! self::isPublicIp($host);
-        }
-
-        if (self::isSuspiciousHostname($host)) {
-            return true;
-        }
-
-        return ! self::resolvesToPublicIp($host);
+        return self::pinnedDnsCurlOption($url) === [];
     }
 
     /**
@@ -98,30 +69,6 @@ final class SsrfGuard
         ];
     }
 
-    /**
-     * Resolve the host to a public IP once for DNS-pinning. Returns null if
-     * the host can't be resolved or resolves to a non-public address.
-     */
-    public static function resolvePinnedIp(string $host): ?string
-    {
-        $host = self::normalizeHost($host);
-        if ($host === null) {
-            return null;
-        }
-
-        if (self::isLiteralIp($host)) {
-            return self::isPublicIp($host) ? $host : null;
-        }
-
-        foreach (self::resolveAll($host) as $ip) {
-            if (self::isPublicIp($ip)) {
-                return $ip;
-            }
-        }
-
-        return null;
-    }
-
     private static function normalizeHost(string $host): ?string
     {
         $host = trim($host, '[]');
@@ -172,23 +119,6 @@ final class SsrfGuard
         }
 
         return false;
-    }
-
-    private static function resolvesToPublicIp(string $host): bool
-    {
-        $ips = self::resolveAll($host);
-
-        if ($ips === []) {
-            return false;
-        }
-
-        foreach ($ips as $ip) {
-            if (! self::isPublicIp($ip)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /** @return list<string> */

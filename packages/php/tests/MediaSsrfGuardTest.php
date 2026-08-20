@@ -57,23 +57,6 @@ it('blocks empty or malformed urls', function (string $url) {
     '//no-scheme.example.com',
 ]);
 
-// ------- resolvePinnedIp: literal private IP returns null -------
-
-it('resolvePinnedIp returns null for private ip literals', function (string $host) {
-    expect(SsrfGuard::resolvePinnedIp($host))->toBeNull();
-})->with([
-    '10.0.0.1',
-    '192.168.0.1',
-    '127.0.0.1',
-    'localhost',
-]);
-
-// ------- resolvePinnedIp: public literal IP is returned as-is -------
-
-it('resolvePinnedIp returns the ip for a public literal', function () {
-    expect(SsrfGuard::resolvePinnedIp('8.8.8.8'))->toBe('8.8.8.8');
-});
-
 // ------- pinnedDnsCurlOption: private host returns empty -------
 
 it('pinnedDnsCurlOption returns empty array for private host', function () {
