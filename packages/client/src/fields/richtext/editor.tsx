@@ -9,7 +9,7 @@ import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPl
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, SerializedEditorState } from "lexical";
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { RICHTEXT_NODES, RICHTEXT_THEME } from "./richtextConfig";
 import { resolveInitialEditorState } from "./richtextInitialState";
@@ -23,8 +23,6 @@ interface RichtextEditorProps {
 	onChange: (state: SerializedEditorState) => void;
 }
 
-const DEBOUNCE_MS = 300;
-
 export function RichtextEditor({
 	initialState,
 	placeholder,
@@ -32,18 +30,7 @@ export function RichtextEditor({
 	onChange,
 }: RichtextEditorProps) {
 	const t = useTranslation();
-	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const mountState = useRef(initialState);
-
-	const debouncedOnChange = useCallback(
-		(state: SerializedEditorState) => {
-			if (debounceRef.current) {
-				clearTimeout(debounceRef.current);
-			}
-			debounceRef.current = setTimeout(() => onChange(state), DEBOUNCE_MS);
-		},
-		[onChange],
-	);
 
 	const initialConfig = useMemo(
 		() => ({
@@ -81,7 +68,7 @@ export function RichtextEditor({
 				{/* Both ignore-flags keep mount-time updates (history-merge,
 				    selection) from writing back and falsely dirtying the form. */}
 				<OnChangePlugin
-					onChange={(state: EditorState) => debouncedOnChange(state.toJSON())}
+					onChange={(state: EditorState) => onChange(state.toJSON())}
 					ignoreSelectionChange
 					ignoreHistoryMergeTagChange
 				/>
