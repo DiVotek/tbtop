@@ -16,90 +16,57 @@ final class SsrfGuard
      */
     public static function isBlocked(string $url): bool
     {
-        $parts = parse_url($url);
-
-        if (! is_array($parts)) {
-            return true;
-        }
-
-        $scheme = isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : '';
-        if (! in_array($scheme, self::ALLOWED_SCHEMES, true)) {
-            return true;
-        }
-
-        $host = (string) ($parts['host'] ?? '');
-        if ($host === '') {
-            return true;
-        }
-
-        $host = self::normalizeHost($host);
-        if ($host === null) {
-            return true;
-        }
-
-        if (self::isLiteralIp($host)) {
-            return ! self::isPublicIp($host);
-        }
-
-        if (self::isSuspiciousHostname($host)) {
-            return true;
-        }
-
-        return ! self::resolvesToPublicIp($host);
+        return self::pinnedDnsCurlOption($url) === [];
     }
 
     /**
      * Returns a Guzzle curl option array that pins DNS for the given URL to the
-     * IP we validated, closing the TOCTOU gap between isBlocked() and the
-     * actual request. Returns [] when the host cannot be pinned.
+     * IP we validated, closing the TOCTOU gap between validation and the
+     * actual request. Returns [] when the URL is unsafe or cannot be pinned.
      *
      * @return array<string, array<int, mixed>>
      */
     public static function pinnedDnsCurlOption(string $url): array
     {
-        $host = parse_url($url, PHP_URL_HOST);
-        if (! is_string($host) || $host === '') {
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
             return [];
         }
 
-        $ip = self::resolvePinnedIp($host);
+        $scheme = isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : '';
+        $originalHost = (string) ($parts['host'] ?? '');
+        $host = self::normalizeHost($originalHost);
+        if (! in_array($scheme, self::ALLOWED_SCHEMES, true)
+            || $host === null
+            || (! self::isLiteralIp($host) && self::isSuspiciousHostname($host))) {
+            return [];
+        }
+
+        if (self::isLiteralIp($host)) {
+            $ip = self::isPublicIp($host) ? $host : null;
+        } else {
+            $ips = self::resolveAll($host);
+            $ip = $ips[0] ?? null;
+            foreach ($ips as $resolvedIp) {
+                if (! self::isPublicIp($resolvedIp)) {
+                    $ip = null;
+                    break;
+                }
+            }
+        }
+
         if ($ip === null) {
             return [];
         }
 
-        $port = parse_url($url, PHP_URL_PORT);
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        $port = $parts['port'] ?? null;
         $port = is_int($port) ? $port : ($scheme === 'https' ? 443 : 80);
 
         return [
             'curl' => [
-                CURLOPT_RESOLVE => ["{$host}:{$port}:{$ip}"],
+                CURLOPT_RESOLVE => ["{$originalHost}:{$port}:{$ip}"],
             ],
         ];
-    }
-
-    /**
-     * Resolve the host to a public IP once for DNS-pinning. Returns null if
-     * the host can't be resolved or resolves to a non-public address.
-     */
-    public static function resolvePinnedIp(string $host): ?string
-    {
-        $host = self::normalizeHost($host);
-        if ($host === null) {
-            return null;
-        }
-
-        if (self::isLiteralIp($host)) {
-            return self::isPublicIp($host) ? $host : null;
-        }
-
-        foreach (self::resolveAll($host) as $ip) {
-            if (self::isPublicIp($ip)) {
-                return $ip;
-            }
-        }
-
-        return null;
     }
 
     private static function normalizeHost(string $host): ?string
@@ -152,23 +119,6 @@ final class SsrfGuard
         }
 
         return false;
-    }
-
-    private static function resolvesToPublicIp(string $host): bool
-    {
-        $ips = self::resolveAll($host);
-
-        if ($ips === []) {
-            return false;
-        }
-
-        foreach ($ips as $ip) {
-            if (! self::isPublicIp($ip)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /** @return list<string> */

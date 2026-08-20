@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Http;
 use Tbtop\Admin\Media\SsrfGuard;
+use Tbtop\Admin\Media\UrlFetcher;
+use Tbtop\Admin\Media\UrlFetchException;
 
 // ------- blocked: scheme -------
 
@@ -54,25 +57,35 @@ it('blocks empty or malformed urls', function (string $url) {
     '//no-scheme.example.com',
 ]);
 
-// ------- resolvePinnedIp: literal private IP returns null -------
-
-it('resolvePinnedIp returns null for private ip literals', function (string $host) {
-    expect(SsrfGuard::resolvePinnedIp($host))->toBeNull();
-})->with([
-    '10.0.0.1',
-    '192.168.0.1',
-    '127.0.0.1',
-    'localhost',
-]);
-
-// ------- resolvePinnedIp: public literal IP is returned as-is -------
-
-it('resolvePinnedIp returns the ip for a public literal', function () {
-    expect(SsrfGuard::resolvePinnedIp('8.8.8.8'))->toBe('8.8.8.8');
-});
-
 // ------- pinnedDnsCurlOption: private host returns empty -------
 
 it('pinnedDnsCurlOption returns empty array for private host', function () {
     expect(SsrfGuard::pinnedDnsCurlOption('http://127.0.0.1/foo'))->toBe([]);
+});
+
+it('pinnedDnsCurlOption validates and pins a public literal', function () {
+    expect(SsrfGuard::pinnedDnsCurlOption('https://8.8.8.8/foo'))->toBe([
+        'curl' => [CURLOPT_RESOLVE => ['8.8.8.8:443:8.8.8.8']],
+    ]);
+});
+
+it('pinnedDnsCurlOption rejects an unsafe url before a request can be made', function (string $url) {
+    expect(SsrfGuard::pinnedDnsCurlOption($url))->toBe([]);
+})->with([
+    'file:///etc/passwd',
+    'http://2130706433/foo',
+    'http://localhost/admin',
+]);
+
+it('does not send a request when dns pinning fails', function () {
+    Http::fake();
+
+    try {
+        UrlFetcher::fetch('http://127.0.0.1/file.png', []);
+        $this->fail('Expected the URL to be blocked.');
+    } catch (UrlFetchException $e) {
+        expect($e->reason)->toBe(UrlFetchException::BLOCKED_URL);
+    }
+
+    Http::assertNothingSent();
 });

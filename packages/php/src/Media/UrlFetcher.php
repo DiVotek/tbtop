@@ -26,7 +26,8 @@ final class UrlFetcher
      */
     public static function fetch(string $url, array $accept): UploadedFile
     {
-        if (! self::hostAllowed($url) || SsrfGuard::isBlocked($url)) {
+        $pinnedDns = SsrfGuard::pinnedDnsCurlOption($url);
+        if (! self::hostAllowed($url) || $pinnedDns === []) {
             throw new UrlFetchException(UrlFetchException::BLOCKED_URL);
         }
 
@@ -45,7 +46,7 @@ final class UrlFetcher
                             throw new UrlFetchException(UrlFetchException::FILE_TOO_LARGE);
                         }
                     },
-                    ...SsrfGuard::pinnedDnsCurlOption($url),
+                    ...$pinnedDns,
                 ])
                 ->sink($tmpPath)
                 ->get($url);
