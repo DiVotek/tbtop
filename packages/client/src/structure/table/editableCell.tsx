@@ -21,6 +21,7 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 	const [error, setError] = useState<string | null>(null);
 	// Ref keeps onBlur stable — avoids stale closure capturing an outdated value
 	const valueRef = useRef<unknown>(row[col.name]);
+	const saveGenerationRef = useRef(0);
 
 	const id = readId(row);
 
@@ -36,11 +37,18 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 			return;
 		}
 		setError(null);
+		const generation = ++saveGenerationRef.current;
 
 		try {
 			const rawEffects = await saveCell({ column: col.name, id, value: next });
+			if (generation !== saveGenerationRef.current) {
+				return;
+			}
 			executeEffects(readEffects(rawEffects), ctx);
 		} catch (err: unknown) {
+			if (generation !== saveGenerationRef.current) {
+				return;
+			}
 			// rollback optimistic state
 			setValue(row[col.name]);
 			valueRef.current = row[col.name];
