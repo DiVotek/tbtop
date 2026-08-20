@@ -30,6 +30,25 @@ describe("lexicalToPlainText", () => {
 		expect(lexicalToPlainText(state)).toBe("First Second");
 	});
 
+	it("concatenates adjacent inline text nodes without adding spaces", () => {
+		const state = {
+			root: {
+				type: "root",
+				children: [
+					{
+						type: "paragraph",
+						children: [
+							{ type: "text", text: "hel" },
+							{ type: "text", text: "lo " },
+							{ type: "link", children: [{ type: "text", text: "world" }] },
+						],
+					},
+				],
+			},
+		};
+		expect(lexicalToPlainText(state)).toBe("hello world");
+	});
+
 	it("returns empty string for null", () => {
 		expect(lexicalToPlainText(null)).toBe("");
 	});

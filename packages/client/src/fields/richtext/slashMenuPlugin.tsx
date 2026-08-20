@@ -1,6 +1,6 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getSelection, $isRangeSelection, TextNode } from "lexical";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSlashCommands } from "./slashMenuCommands";
 import { SlashMenuList } from "./slashMenuList";
 import { caretPosition, type SlashMenuPosition } from "./slashMenuPosition";
@@ -11,10 +11,12 @@ export function SlashMenuPlugin() {
 	const [query, setQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [position, setPosition] = useState<SlashMenuPosition>({ top: 0, left: 0 });
+	const triggerRef = useRef<{ nodeKey: string; start: number; end: number } | null>(null);
 
 	const filtered = useSlashCommands(editor, query);
 
 	const close = useCallback(() => {
+		triggerRef.current = null;
 		setIsOpen(false);
 		setQuery("");
 		setSelectedIndex(0);
@@ -27,26 +29,31 @@ export function SlashMenuPlugin() {
 				return;
 			}
 
+			let shouldExecute = false;
 			editor.update(() => {
 				const selection = $getSelection();
-				if (!$isRangeSelection(selection)) {
+				const trigger = triggerRef.current;
+				if (!$isRangeSelection(selection) || !selection.isCollapsed() || !trigger) {
 					return;
 				}
 
 				const anchorNode = selection.anchor.getNode();
-				if (anchorNode instanceof TextNode) {
-					const text = anchorNode.getTextContent();
-					const slashIdx = text.lastIndexOf("/");
-					if (slashIdx >= 0) {
-						const before = text.slice(0, slashIdx);
-						anchorNode.setTextContent(before);
-						selection.anchor.set(anchorNode.getKey(), before.length, "text");
-						selection.focus.set(anchorNode.getKey(), before.length, "text");
-					}
+				if (
+					anchorNode instanceof TextNode &&
+					anchorNode.getKey() === trigger.nodeKey &&
+					selection.anchor.offset === trigger.end &&
+					anchorNode.getTextContent().slice(trigger.start, trigger.end).startsWith("/")
+				) {
+					anchorNode.spliceText(trigger.start, trigger.end - trigger.start, "");
+					selection.anchor.set(anchorNode.getKey(), trigger.start, "text");
+					selection.focus.set(anchorNode.getKey(), trigger.start, "text");
+					shouldExecute = true;
 				}
 			});
 
-			setTimeout(() => cmd.action(), 0);
+			if (shouldExecute) {
+				setTimeout(() => cmd.action(), 0);
+			}
 			close();
 		},
 		[editor, filtered, close],
@@ -85,6 +92,11 @@ export function SlashMenuPlugin() {
 				}
 
 				const q = match[1] ?? "";
+				triggerRef.current = {
+					nodeKey: anchorNode.getKey(),
+					start: offset - q.length - 1,
+					end: offset,
+				};
 				setQuery(q);
 				setSelectedIndex(0);
 

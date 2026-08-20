@@ -30,6 +30,11 @@ interface TableRenderProps {
 }
 
 export function TableBlock({ options }: TableRenderProps) {
+	const tableName = options.name ?? "";
+	return <StatefulTableBlock key={tableName} options={options} />;
+}
+
+function StatefulTableBlock({ options }: TableRenderProps) {
 	const ctx = useClientActionContext();
 	const tableName = options.name ?? "";
 	const [queryParams, setQueryParams] = useState<ListQueryParams>(() =>

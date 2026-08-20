@@ -94,6 +94,28 @@ describe("Form Enter-to-submit", () => {
 		expect(postCalls[0]?.data).toEqual({ title: "Hello" });
 	});
 
+	test("Enter skips a disabled submit action before an enabled one", async () => {
+		const disabledAction = node(
+			"action",
+			{ label: "Disabled", spec: { type: "submit" } },
+			"disabled",
+		);
+		disabledAction.meta.disabled = true;
+		const formNode = buildForm([
+			disabledAction,
+			node("action", { label: "Save", spec: { type: "submit" } }, "save"),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(formNode)}</Wrap>);
+		const form = await findByTestId("form-block");
+
+		await act(async () => {
+			fireEvent.submit(form);
+		});
+
+		expect(postCalls.length).toBe(1);
+	});
+
 	test("submit serializes upload preview objects to stored path strings", async () => {
 		const raw = node(
 			"form",
