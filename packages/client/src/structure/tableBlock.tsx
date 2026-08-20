@@ -19,7 +19,7 @@ import {
 	type TableBodyProps,
 	tableQueryStub,
 } from "./tableBlock.types";
-import { TableControllerProvider } from "./tableContext";
+import { TableControllerProvider, useRegisterTableController } from "./tableContext";
 import { useTableController } from "./tableController";
 import { persistTableParams, seedTableParams } from "./tableUrlState";
 import type { ClientActionContext, ListQueryParams } from "./types";
@@ -128,6 +128,7 @@ function TableBody(props: TableBodyProps) {
 		onChangeParams: props.onChangeParams,
 		onRefresh: props.onRefresh,
 	});
+	useRegisterTableController(props.tableName, ctrl);
 
 	const hasBulk = (props.bulkActions ?? []).length > 0;
 	const hasRowActions = (props.rowActions ?? []).length > 0;
