@@ -50,30 +50,50 @@ final class SsrfGuard
 
     /**
      * Returns a Guzzle curl option array that pins DNS for the given URL to the
-     * IP we validated, closing the TOCTOU gap between isBlocked() and the
-     * actual request. Returns [] when the host cannot be pinned.
+     * IP we validated, closing the TOCTOU gap between validation and the
+     * actual request. Returns [] when the URL is unsafe or cannot be pinned.
      *
      * @return array<string, array<int, mixed>>
      */
     public static function pinnedDnsCurlOption(string $url): array
     {
-        $host = parse_url($url, PHP_URL_HOST);
-        if (! is_string($host) || $host === '') {
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
             return [];
         }
 
-        $ip = self::resolvePinnedIp($host);
+        $scheme = isset($parts['scheme']) ? strtolower((string) $parts['scheme']) : '';
+        $originalHost = (string) ($parts['host'] ?? '');
+        $host = self::normalizeHost($originalHost);
+        if (! in_array($scheme, self::ALLOWED_SCHEMES, true)
+            || $host === null
+            || (! self::isLiteralIp($host) && self::isSuspiciousHostname($host))) {
+            return [];
+        }
+
+        if (self::isLiteralIp($host)) {
+            $ip = self::isPublicIp($host) ? $host : null;
+        } else {
+            $ips = self::resolveAll($host);
+            $ip = $ips[0] ?? null;
+            foreach ($ips as $resolvedIp) {
+                if (! self::isPublicIp($resolvedIp)) {
+                    $ip = null;
+                    break;
+                }
+            }
+        }
+
         if ($ip === null) {
             return [];
         }
 
-        $port = parse_url($url, PHP_URL_PORT);
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        $port = $parts['port'] ?? null;
         $port = is_int($port) ? $port : ($scheme === 'https' ? 443 : 80);
 
         return [
             'curl' => [
-                CURLOPT_RESOLVE => ["{$host}:{$port}:{$ip}"],
+                CURLOPT_RESOLVE => ["{$originalHost}:{$port}:{$ip}"],
             ],
         ];
     }
