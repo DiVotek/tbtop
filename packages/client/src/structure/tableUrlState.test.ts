@@ -100,6 +100,14 @@ describe("tableUrlState: multi-table namespacing", () => {
 		expect(readTableParams(sp, "posts")).toEqual({ search: "gamma" });
 		expect(readTableParams(sp, "authors")).toEqual({ search: "beta" });
 	});
+
+	test("tableUrlState: updating a table preserves tables whose names share its prefix", () => {
+		const sp = new URLSearchParams("t[post][page]=2&t[posts][page]=3");
+		const updated = writeTableParams(sp, "post", { page: 4 });
+
+		expect(readTableParams(updated, "post")).toEqual({ page: 4 });
+		expect(readTableParams(updated, "posts")).toEqual({ page: 3 });
+	});
 });
 
 // ─── empty / default value pruning ───────────────────────────────────────────
@@ -124,6 +132,24 @@ describe("tableUrlState: empty value pruning", () => {
 			filters: { tags: [] },
 		});
 		expect(sp.toString()).toBe("");
+	});
+});
+
+// ─── pagination validation ──────────────────────────────────────────────────
+
+describe("tableUrlState: pagination validation", () => {
+	test("tableUrlState: accepts positive integer pagination values", () => {
+		const sp = new URLSearchParams("t[posts][page]=2&t[posts][perPage]=50");
+
+		expect(readTableParams(sp, "posts")).toEqual({ page: 2, perPage: 50 });
+	});
+
+	test("tableUrlState: omits malformed pagination values", () => {
+		for (const value of ["1.5", "2.5e-1", "0", "-1", "NaN", "Infinity"]) {
+			const sp = new URLSearchParams(`t[posts][page]=${value}&t[posts][perPage]=${value}`);
+
+			expect(readTableParams(sp, "posts")).toEqual({});
+		}
 	});
 });
 
