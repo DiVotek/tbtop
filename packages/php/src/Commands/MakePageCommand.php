@@ -32,12 +32,6 @@ class MakePageCommand extends Command
         $targetDir = $this->resolveTargetDir($namespace);
         $targetPath = $targetDir.'/'.$class.'.php';
 
-        if (dirname($targetPath) !== rtrim(app_path('Admin/Pages'), '/\\')) {
-            $this->components->error('Page destination must remain within app/Admin/Pages.');
-
-            return self::FAILURE;
-        }
-
         if (file_exists($targetPath) && ! $this->option('force')) {
             $this->components->error("File already exists: {$targetPath}. Use --force to overwrite.");
 
