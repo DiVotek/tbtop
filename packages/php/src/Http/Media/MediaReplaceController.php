@@ -11,6 +11,7 @@ use Tbtop\Admin\Media\MimePolicy;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Media\SvgSanitizer;
+use Tbtop\Admin\Uploads\ConversionProfile;
 
 final class MediaReplaceController
 {
@@ -43,8 +44,7 @@ final class MediaReplaceController
             abort(422, __('tbtop-admin::admin.media.errors.'.$e->reason));
         }
 
-        /** @var array<string, array{0: int, 1: int}> $profiles */
-        $profiles = (array) ($config['profiles'] ?? []);
+        $profiles = ConversionProfile::fromConfig($config);
         $image = MediaResource::imageAttributes($file, $path, $disk, $profiles);
 
         // Old file and its conversions are removed only once the new upload

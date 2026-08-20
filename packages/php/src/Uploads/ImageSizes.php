@@ -20,20 +20,14 @@ final class ImageSizes
 
     /**
      * Generates resized variants (fit: inside) next to the original, keyed by
-     * profile name. Non-images and missing GD degrade to no variants.
-     * Unsupported formats fall back to png per variant.
+     * profile name. Non-images and missing GD degrade to no variants. A format
+     * GD cannot encode falls back to png per variant.
      *
-     * @param  array<string, array{0: int, 1: int}>  $profiles
+     * @param  array<string, ConversionProfile>  $profiles
      * @return array<string, Variant>
      */
-    public static function generate(
-        UploadedFile $file,
-        string $path,
-        string $disk,
-        array $profiles,
-        string $format = 'png',
-        ?int $quality = null,
-    ): array {
+    public static function generate(UploadedFile $file, string $path, string $disk, array $profiles): array
+    {
         if ($profiles === [] || ! function_exists('imagecreatefromstring')) {
             return [];
         }
@@ -43,8 +37,8 @@ final class ImageSizes
         }
 
         $out = [];
-        foreach ($profiles as $name => [$maxW, $maxH]) {
-            $variant = self::variant($source, $path, $disk, (string) $name, $maxW, $maxH, $format, $quality);
+        foreach ($profiles as $name => $profile) {
+            $variant = self::variant($source, $path, $disk, (string) $name, $profile);
             if ($variant !== null) {
                 $out[(string) $name] = $variant;
             }
@@ -60,14 +54,11 @@ final class ImageSizes
         string $path,
         string $disk,
         string $name,
-        int $maxW,
-        int $maxH,
-        string $format,
-        ?int $quality,
+        ConversionProfile $profile,
     ): ?array {
         $w = imagesx($source);
         $h = imagesy($source);
-        $scale = min($maxW / $w, $maxH / $h, 1);
+        $scale = min($profile->maxWidth / $w, $profile->maxHeight / $h, 1);
         $newW = max((int) round($w * $scale), 1);
         $newH = max((int) round($h * $scale), 1);
 
@@ -75,7 +66,8 @@ final class ImageSizes
         if ($resized === false) {
             return null;
         }
-        $enc = ImageEncoder::encode($resized, $format, $quality) ?? ImageEncoder::encode($resized, 'png');
+        $enc = ImageEncoder::encode($resized, $profile->format, $profile->quality)
+            ?? ImageEncoder::encode($resized, 'png');
         imagedestroy($resized);
         if ($enc === null) {
             return null;
