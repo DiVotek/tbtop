@@ -178,7 +178,9 @@ function handleFormSubmit(
 	if (submitter(e)) {
 		return;
 	}
-	formRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
+	formRef.current
+		?.querySelector<HTMLButtonElement>('button[type="submit"]:not(:disabled)')
+		?.click();
 }
 
 /** The control that triggered the submit (a clicked button), or null for Enter. */
