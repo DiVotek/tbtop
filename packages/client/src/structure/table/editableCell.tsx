@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { translateValidationMessage } from "../../i18n/i18n";
 import { checkField } from "../../inertia/constraints";
 import { executeEffects, readEffects } from "../../inertia/effects";
@@ -21,9 +21,25 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 	const [error, setError] = useState<string | null>(null);
 	// Ref keeps onBlur stable — avoids stale closure capturing an outdated value
 	const valueRef = useRef<unknown>(row[col.name]);
+	const confirmedValueRef = useRef<unknown>(row[col.name]);
+	const dirtyRef = useRef(false);
+	const cellKeyRef = useRef(`${readId(row) ?? ""}:${col.name}`);
 	const saveGenerationRef = useRef(0);
 
 	const id = readId(row);
+	const serverValue = row[col.name];
+
+	useEffect(() => {
+		const cellKey = `${id ?? ""}:${col.name}`;
+		const changedCell = cellKeyRef.current !== cellKey;
+		cellKeyRef.current = cellKey;
+		confirmedValueRef.current = serverValue;
+		if (changedCell || !dirtyRef.current) {
+			setValue(serverValue);
+			valueRef.current = serverValue;
+			dirtyRef.current = false;
+		}
+	}, [col.name, id, serverValue]);
 
 	async function save(next: unknown): Promise<void> {
 		if (!saveCell || !id) {
@@ -44,14 +60,17 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 			if (generation !== saveGenerationRef.current) {
 				return;
 			}
+			confirmedValueRef.current = next;
+			dirtyRef.current = false;
 			executeEffects(readEffects(rawEffects), ctx);
 		} catch (err: unknown) {
 			if (generation !== saveGenerationRef.current) {
 				return;
 			}
 			// rollback optimistic state
-			setValue(row[col.name]);
-			valueRef.current = row[col.name];
+			setValue(confirmedValueRef.current);
+			valueRef.current = confirmedValueRef.current;
+			dirtyRef.current = false;
 			setError(extractCellError(err, col.name));
 		}
 	}
@@ -79,6 +98,7 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 						onChange: (v: unknown) => {
 							setValue(v);
 							valueRef.current = v;
+							dirtyRef.current = !Object.is(v, confirmedValueRef.current);
 							if (persistsOnChange) {
 								void save(v);
 							}

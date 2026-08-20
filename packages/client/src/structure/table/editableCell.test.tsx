@@ -8,6 +8,7 @@
  */
 import { beforeAll, describe, expect, mock, test } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { defaultMessages } from "../../i18n/defaultMessages";
 
 // ---------------------------------------------------------------------------
@@ -159,6 +160,46 @@ describe("EditableCell: boolean toggle", () => {
 // ---------------------------------------------------------------------------
 
 describe("EditableCell: text input", () => {
+	test("syncs a server-updated row value and saves that value on blur", async () => {
+		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
+		const { container, rerender } = render(
+			<EditableCell col={textCol()} row={row("2", { title: "old" })} saveCell={saveCell} />,
+		);
+
+		rerender(
+			<EditableCell
+				col={textCol()}
+				row={row("2", { title: "server-new" })}
+				saveCell={saveCell}
+			/>,
+		);
+
+		const input = container.querySelector("input") as HTMLInputElement;
+		expect(input.value).toBe("server-new");
+		fireEvent.blur(input);
+
+		await waitFor(() => expect(saveCell).toHaveBeenCalledTimes(1));
+		expect(saveCell.mock.calls[0]?.[0]).toEqual({
+			column: "title",
+			id: "2",
+			value: "server-new",
+		});
+	});
+
+	test("does not overwrite an active unsaved edit with a server update", async () => {
+		const { container, rerender } = render(
+			<EditableCell col={textCol()} row={row("2", { title: "old" })} />,
+		);
+		const input = container.querySelector("input") as HTMLInputElement;
+		await userEvent.clear(input);
+		await userEvent.type(input, "local-edit");
+		expect(input.value).toBe("local-edit");
+
+		rerender(<EditableCell col={textCol()} row={row("2", { title: "server-new" })} />);
+
+		expect(input.value).toBe("local-edit");
+	});
+
 	test("blur calls saveCell; no change event call before blur", async () => {
 		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
 
