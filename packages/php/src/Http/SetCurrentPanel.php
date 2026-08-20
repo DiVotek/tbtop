@@ -20,6 +20,10 @@ class SetCurrentPanel
     {
         app()->instance(CurrentPanel::class, new CurrentPanel($this->registry->get($panelId)));
 
-        return $next($request);
+        try {
+            return $next($request);
+        } finally {
+            app()->forgetInstance(CurrentPanel::class);
+        }
     }
 }
