@@ -100,6 +100,14 @@ describe("tableUrlState: multi-table namespacing", () => {
 		expect(readTableParams(sp, "posts")).toEqual({ search: "gamma" });
 		expect(readTableParams(sp, "authors")).toEqual({ search: "beta" });
 	});
+
+	test("tableUrlState: updating a table preserves tables whose names share its prefix", () => {
+		const sp = new URLSearchParams("t[post][page]=2&t[posts][page]=3");
+		const updated = writeTableParams(sp, "post", { page: 4 });
+
+		expect(readTableParams(updated, "post")).toEqual({ page: 4 });
+		expect(readTableParams(updated, "posts")).toEqual({ page: 3 });
+	});
 });
 
 // ─── empty / default value pruning ───────────────────────────────────────────
@@ -124,6 +132,24 @@ describe("tableUrlState: empty value pruning", () => {
 			filters: { tags: [] },
 		});
 		expect(sp.toString()).toBe("");
+	});
+});
+
+// ─── pagination validation ──────────────────────────────────────────────────
+
+describe("tableUrlState: pagination validation", () => {
+	test("tableUrlState: accepts positive integer pagination values", () => {
+		const sp = new URLSearchParams("t[posts][page]=2&t[posts][perPage]=50");
+
+		expect(readTableParams(sp, "posts")).toEqual({ page: 2, perPage: 50 });
+	});
+
+	test("tableUrlState: omits malformed pagination values", () => {
+		for (const value of ["1.5", "2.5e-1", "0", "-1", "NaN", "Infinity"]) {
+			const sp = new URLSearchParams(`t[posts][page]=${value}&t[posts][perPage]=${value}`);
+
+			expect(readTableParams(sp, "posts")).toEqual({});
+		}
 	});
 });
 
@@ -155,6 +181,16 @@ describe("tableUrlState: persistTableParams calls history.replaceState", () => {
 		const url = replaceStateCalls[0]?.url as string;
 		expect(url).toContain("t%5Bposts%5D%5Bsearch%5D=hello");
 		expect(url).toContain("t%5Bposts%5D%5Bstatus%5D=draft");
+	});
+
+	test("tableUrlState: persistTableParams preserves existing query params and hash", () => {
+		originalReplaceState(null, "", "/admin/posts?keep=1#details");
+
+		persistTableParams("posts", { page: 2 });
+
+		expect(replaceStateCalls[0]?.url).toBe(
+			"/admin/posts?keep=1&t%5Bposts%5D%5Bpage%5D=2#details",
+		);
 	});
 
 	test("tableUrlState: persistTableParams with empty params removes table keys from URL", () => {

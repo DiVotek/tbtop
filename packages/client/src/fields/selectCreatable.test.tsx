@@ -39,6 +39,31 @@ function makeCreateConfig() {
 }
 
 describe("Select field — creatable", () => {
+	test("disabled select cannot open the create dialog", async () => {
+		const user = userEvent.setup();
+		const post = mock(async () => ({ value: "99", label: "Carol" }));
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(
+			<Wrap>
+				<SelectForm
+					name="author"
+					value={null}
+					onChange={() => {}}
+					disabled
+					options={{
+						options: CHOICES,
+						create: { fields: makeCreateConfig().fields, post },
+					}}
+				/>
+			</Wrap>,
+		);
+		const button = getByTestId("select-create-author") as HTMLButtonElement;
+		expect(button.disabled).toBe(true);
+		await user.click(button);
+		expect(document.body.querySelector('[data-testid="select-create-dialog"]')).toBeNull();
+		expect(post).not.toHaveBeenCalled();
+	});
+
 	test("Select creatable: shows '+ Create' affordance when create config is present", async () => {
 		const Wrap = wrap(() => new Response("{}"));
 		const { container } = render(

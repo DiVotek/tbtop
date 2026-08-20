@@ -34,7 +34,7 @@ import {
 	renderPieChart,
 	StatBlock,
 } from "../ui/charts";
-import { getBlockDescriptor } from "./blockRegistry";
+import { type BlockDescriptor, claimBuiltinsApplied, getBlockDescriptor } from "./blockRegistry";
 import {
 	FlexBlock,
 	GridBlock,
@@ -44,13 +44,13 @@ import {
 	TabsBlock,
 	WidgetBlock,
 } from "./builtinLayoutBlocks";
-import { defineBlock } from "./defineBlock";
+import { defineBlock as registerBlock } from "./defineBlock";
 import { registerFields } from "./registerFields";
 
-// Gate on the registry Map, not a boolean — a stale flag and a cleared
-// Map desync and leave renders empty (test isolation bug).
 export function ensureBuiltinsRegistered(): void {
-	if (getBlockDescriptor("form")) {
+	// Runs once per registry lifetime: renderNode calls this per node, so the
+	// per-kind "skip if already defined" pass below must not be the hot path.
+	if (!claimBuiltinsApplied()) {
 		return;
 	}
 	registerLayout();
@@ -58,6 +58,16 @@ export function ensureBuiltinsRegistered(): void {
 	registerDataBlocks();
 	registerCharts();
 	registerFields();
+}
+
+function defineBlock<TKind extends string, TOptions>(
+	kind: TKind,
+	descriptor: Parameters<typeof registerBlock<TKind, TOptions>>[1],
+): BlockDescriptor<TKind, TOptions> | undefined {
+	if (getBlockDescriptor(kind)) {
+		return undefined;
+	}
+	return registerBlock(kind, descriptor);
 }
 
 // Shell chrome kinds — option-less; they read shared-prop data from

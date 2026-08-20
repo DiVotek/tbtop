@@ -58,6 +58,8 @@ const UPLOADED: MediaItem = {
 	folderId: null,
 	mime: "image/png",
 	size: 10,
+	width: null,
+	height: null,
 	url: "/storage/fresh.png",
 	sizes: {},
 	alt: null,

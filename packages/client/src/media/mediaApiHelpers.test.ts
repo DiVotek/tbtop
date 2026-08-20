@@ -16,6 +16,8 @@ const RAW_ITEM = {
 	folderId: 3,
 	mime: "image/jpeg",
 	size: 1024,
+	width: null,
+	height: null,
 	url: "/storage/photo.jpg",
 	sizes: {},
 	alt: null,

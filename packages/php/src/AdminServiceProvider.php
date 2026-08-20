@@ -24,6 +24,7 @@ class AdminServiceProvider extends PackageServiceProvider
                 '2026_01_01_000001_create_tbtop_media_folders_table',
                 '2026_01_01_000002_create_tbtop_media_table',
                 '2026_01_01_000003_add_metadata_to_tbtop_media_table',
+                '2026_01_01_000004_add_dimensions_to_tbtop_media_table',
             ])
             ->runsMigrations()
             ->hasRoute('admin')

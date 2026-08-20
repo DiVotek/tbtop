@@ -28,6 +28,8 @@ class ActionSkipValidationPage extends Page
             $s->form('post', [
                 $s->text('title')->required(),
                 $s->text('note'),
+                $s->password('password')->nullable()->same('password_confirmation'),
+                $s->password('password_confirmation')->nullable(),
                 $s->repeater('items')->set('fields', [
                     $s->text('name')->required(),
                 ]),

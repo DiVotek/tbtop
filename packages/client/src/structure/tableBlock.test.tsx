@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
+import { executeEffects } from "../inertia/effects";
 import { materialize } from "../inertia/materialize";
 import { renderNode } from "../render/structureRenderer";
+import { ActionBlock } from "./actionBlock";
+import { useClientActionContext } from "./actionContext";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 import type { StructureNode } from "./types";
@@ -401,5 +404,121 @@ describe("Table integration", () => {
 		await findByText("A");
 		// perPage still applies to the query even though the footer is hidden.
 		expect(queryByTestId("pagination-per-page")).toBeNull();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// refreshTable delivered from outside the table's own React context — e.g. a
+// Page::headerActions() action, which renders as a sibling of the table, not
+// a descendant of its TableControllerProvider. Regression coverage for the
+// mounted-table registry in tableContext.tsx.
+// ---------------------------------------------------------------------------
+
+/** Renders a page-level action alongside `useClientActionContext()`, outside any table provider. */
+function OutsideAction({ onClick }: { onClick: () => void }) {
+	const ctx = useClientActionContext();
+	return (
+		<ActionBlock
+			options={{
+				name: "refresh-outside",
+				handler: async () => {
+					onClick();
+					executeEffects([{ kind: "refreshTable" }], ctx);
+				},
+			}}
+			meta={{}}
+		/>
+	);
+}
+
+/** Same as OutsideAction, but targets a specific table by name. */
+function OutsideNamedAction({ table, onClick }: { table: string; onClick: () => void }) {
+	const ctx = useClientActionContext();
+	return (
+		<ActionBlock
+			options={{
+				name: "refresh-named",
+				handler: async () => {
+					onClick();
+					executeEffects([{ kind: "refreshTable", table }], ctx);
+				},
+			}}
+			meta={{}}
+		/>
+	);
+}
+
+describe("refreshTable effect delivered outside the table's React context", () => {
+	function namedTableNode(name: string): StructureNode {
+		return {
+			kind: "table",
+			name,
+			options: { columns: [{ name: "title", label: "Title" }] },
+			meta: {},
+		};
+	}
+
+	test("an unnamed refreshTable effect with no surrounding table still refetches the one mounted table", async () => {
+		let queryCalls = 0;
+		const node = materialize(namedTableNode("posts"), { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(() => {
+			queryCalls += 1;
+			return new Response(JSON.stringify({ data: [{ id: "a", title: "A" }] }));
+		});
+		const { findByTestId, findByText } = render(
+			<Wrap>
+				{renderNode(node)}
+				<OutsideAction onClick={() => {}} />
+			</Wrap>,
+		);
+		await findByText("A");
+		const callsBeforeClick = queryCalls;
+
+		const action = await findByTestId("action-refresh-outside");
+		await act(async () => {
+			fireEvent.click(action);
+		});
+
+		expect(queryCalls).toBeGreaterThan(callsBeforeClick);
+	});
+
+	test("a named refreshTable effect refetches only the matching table", async () => {
+		let postsCalls = 0;
+		let commentsCalls = 0;
+		const postsNode = materialize(namedTableNode("posts"), {
+			basePath: "/admin/posts",
+			data: {},
+		});
+		const commentsNode = materialize(namedTableNode("comments"), {
+			basePath: "/admin/comments",
+			data: {},
+		});
+		const Wrap = wrap((req) => {
+			if (req.url.includes("/admin/posts/tables/posts")) {
+				postsCalls += 1;
+				return new Response(JSON.stringify({ data: [{ id: "a", title: "Post A" }] }));
+			}
+			commentsCalls += 1;
+			return new Response(JSON.stringify({ data: [{ id: "b", title: "Comment B" }] }));
+		});
+		const { findByTestId, findByText } = render(
+			<Wrap>
+				{renderNode(postsNode)}
+				{renderNode(commentsNode)}
+				<OutsideNamedAction table="comments" onClick={() => {}} />
+			</Wrap>,
+		);
+		await findByText("Post A");
+		await findByText("Comment B");
+		const postsBefore = postsCalls;
+		const commentsBefore = commentsCalls;
+
+		const action = await findByTestId("action-refresh-named");
+		await act(async () => {
+			fireEvent.click(action);
+		});
+
+		expect(commentsCalls).toBeGreaterThan(commentsBefore);
+		expect(postsCalls).toBe(postsBefore);
 	});
 });

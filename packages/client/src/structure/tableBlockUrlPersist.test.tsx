@@ -13,8 +13,9 @@ import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { materialize } from "../inertia/materialize";
 import { renderNode } from "../render/structureRenderer";
+import { TableBlock } from "./tableBlock";
 import { wrapForStructure as wrapForStructureFetch } from "./testFixtures";
-import type { StructureNode } from "./types";
+import type { ClientActionContext, StructureNode } from "./types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,6 +38,54 @@ function tableNode(name: string): StructureNode {
 function materializeTable(name: string, basePath = "/admin/posts") {
 	return materialize(tableNode(name), { basePath, data: {} });
 }
+
+describe("TableBlock URL persist: changing names resets table state", () => {
+	let originalHref: string;
+
+	beforeEach(() => {
+		originalHref = window.location.href;
+		window.history.replaceState(
+			null,
+			"",
+			"/?t%5Busers%5D%5Bsearch%5D=user-query&t%5Borders%5D%5Bsearch%5D=order-query",
+		);
+	});
+
+	afterEach(() => {
+		window.history.replaceState(null, "", originalHref);
+	});
+
+	test("TableBlock: rerendering with a new name uses only that table's persisted params", async () => {
+		const calls: Array<{ name: string; search: string | undefined }> = [];
+		const query = async (ctx: ClientActionContext) => {
+			calls.push({ name: currentName, search: ctx.table?.queryParams.search });
+			return [];
+		};
+		let currentName = "users";
+		const Wrap = wrapForStructureFetch(() => new Response(JSON.stringify({ data: [] })));
+		const options = { name: currentName, query, columns: [{ name: "title" }] };
+		const { rerender, findByTestId } = render(
+			<Wrap>
+				<TableBlock options={options} />
+			</Wrap>,
+		);
+		await findByTestId("table-block");
+		await waitFor(() => expect(calls).toContainEqual({ name: "users", search: "user-query" }));
+
+		currentName = "orders";
+		rerender(
+			<Wrap>
+				<TableBlock options={{ ...options, name: currentName }} />
+			</Wrap>,
+		);
+
+		await waitFor(() =>
+			expect(calls).toContainEqual({ name: "orders", search: "order-query" }),
+		);
+		expect(window.location.search).toContain("t%5Borders%5D%5Bsearch%5D=order-query");
+		expect(window.location.search).not.toContain("t%5Borders%5D%5Bsearch%5D=user-query");
+	});
+});
 
 // ---------------------------------------------------------------------------
 // Scenario 1 (regression): filter change uses XHR client.get, not navigation

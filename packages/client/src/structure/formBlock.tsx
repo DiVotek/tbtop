@@ -3,6 +3,7 @@ import type { FormEvent, ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { renderTranslatableField as renderTranslatableFieldShared } from "../fields/translatableField";
 import { type Translate, translateValidationMessage, useTranslation } from "../i18n/i18n";
+import { liftNestedErrors } from "../inertia/fieldErrors";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { applyColumnPlacement } from "../render/columnPlacement";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
@@ -24,6 +25,7 @@ import { isNodeDisabled, isNodeHidden } from "./meta";
 import { useModalData } from "./modalDataContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { scrollToFirstError } from "./scrollToFirstError";
+import { structureChildren } from "./structureChildren";
 import type { ConditionContext, StructureNode } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
 import { useUnsavedGuard } from "./useUnsavedGuard";
@@ -176,7 +178,9 @@ function handleFormSubmit(
 	if (submitter(e)) {
 		return;
 	}
-	formRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
+	formRef.current
+		?.querySelector<HTMLButtonElement>('button[type="submit"]:not(:disabled)')
+		?.click();
 }
 
 /** The control that triggered the submit (a clicked button), or null for Enter. */
@@ -390,6 +394,7 @@ function renderTranslatableFieldNode(input: TranslatableFieldInput): ReactNode {
 		onChange: (next) => ctrl.set(name, next),
 		onBlur: () => {
 			ctrl.markTouched(name);
+			revalidateField(ctrl, name, formCtx.t);
 		},
 		disabled,
 		describedBy,
@@ -408,15 +413,31 @@ export function revalidateField(ctrl: ControllerHandle, name: string, t: Transla
 	}
 	try {
 		ctrl.schema.parse(ctrl.data);
-		ctrl.setFieldError(name, null);
+		clearFieldErrors(ctrl, name);
 	} catch (err) {
 		const issues = (err as { issues?: { path: (string | number)[]; message: string }[] })
 			.issues;
 		if (!Array.isArray(issues)) {
 			return;
 		}
-		const match = issues.find((i) => i.path[0] === name);
-		ctrl.setFieldError(name, match ? translateValidationMessage(t, match.message) : null);
+		const fields: Record<string, string> = {};
+		for (const issue of issues.filter((candidate) => candidate.path[0] === name)) {
+			const path = issue.path.map(String).join(".");
+			fields[path] ??= translateValidationMessage(t, issue.message);
+		}
+		clearFieldErrors(ctrl, name);
+		for (const [field, message] of Object.entries(liftNestedErrors(fields))) {
+			ctrl.setFieldError(field, message);
+		}
+	}
+}
+
+function clearFieldErrors(ctrl: ControllerHandle, name: string): void {
+	const prefix = `${name}.`;
+	for (const field of Object.keys(ctrl.fieldErrors)) {
+		if (field === name || field.startsWith(prefix)) {
+			ctrl.setFieldError(field, null);
+		}
 	}
 }
 
@@ -474,11 +495,8 @@ function normalize(data: unknown): Bag {
 }
 
 /**
- * Recursively checks whether any field node in the tree has translatable:true.
- * Walks the same containers the server-side translatable cascade does
- * (Node::translatable(): children, fields, AND tabs[].body) — a form whose
- * translatable fields all live inside a tabs block must still get its
- * ContentLocaleBar.
+ * Recursively checks whether any field node in the tree has translatable:true,
+ * walking the same containers the server-side cascade does (Node::translatable()).
  */
 function detectTranslatableFields(children: StructureNode[]): boolean {
 	for (const node of children) {
@@ -486,12 +504,7 @@ function detectTranslatableFields(children: StructureNode[]): boolean {
 		if (opts?.translatable === true) {
 			return true;
 		}
-		const nested = (opts?.children ?? opts?.fields) as StructureNode[] | undefined;
-		if (nested && detectTranslatableFields(nested)) {
-			return true;
-		}
-		const tabs = opts?.tabs as { body?: StructureNode }[] | undefined;
-		if (tabs?.some((tab) => tab.body && detectTranslatableFields([tab.body]))) {
+		if (detectTranslatableFields(structureChildren(opts))) {
 			return true;
 		}
 	}

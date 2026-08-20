@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApiBase, useClient } from "../data/client";
 import { useTranslation } from "../i18n/i18n";
@@ -29,6 +29,17 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
+	const stateRef = useRef({ items, unreadCount });
+	const mutationQueue = useRef<Promise<void>>(Promise.resolve());
+
+	const setNotificationState = useCallback(
+		(nextItems: AdminNotification[], nextCount: number) => {
+			stateRef.current = { items: nextItems, unreadCount: nextCount };
+			setItems(nextItems);
+			setUnreadCount(nextCount);
+		},
+		[],
+	);
 
 	const refresh = useCallback(async () => {
 		try {
@@ -37,15 +48,14 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 				setError(true);
 				return;
 			}
-			setItems(parsed.items);
-			setUnreadCount(parsed.unreadCount);
+			setNotificationState(parsed.items, parsed.unreadCount);
 			setError(false);
 		} catch {
 			setError(true);
 		} finally {
 			setLoading(false);
 		}
-	}, [client, base]);
+	}, [client, base, setNotificationState]);
 
 	useEffect(() => {
 		void refresh();
@@ -54,57 +64,78 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 
 	// Optimistic: apply next state, send, roll back + toast on failure.
 	const mutate = useCallback(
-		async (nextItems: AdminNotification[], nextCount: number, send: () => Promise<unknown>) => {
-			const prevItems = items;
-			const prevCount = unreadCount;
-			setItems(nextItems);
-			setUnreadCount(nextCount);
-			try {
-				await send();
-			} catch {
-				setItems(prevItems);
-				setUnreadCount(prevCount);
-				toast.error(t("notifications.action_failed"));
-			}
+		(
+			update: (current: typeof stateRef.current) => typeof stateRef.current,
+			send: () => Promise<unknown>,
+		) => {
+			const operation = mutationQueue.current.then(async () => {
+				const previous = stateRef.current;
+				const next = update(previous);
+				setNotificationState(next.items, next.unreadCount);
+				try {
+					await send();
+				} catch {
+					setNotificationState(previous.items, previous.unreadCount);
+					toast.error(t("notifications.action_failed"));
+				}
+			});
+			mutationQueue.current = operation;
+			return operation;
 		},
-		[items, unreadCount, t],
+		[setNotificationState, t],
 	);
 
 	const markRead = useCallback(
 		(id: string) => {
-			const target = items.find((n) => n.id === id);
-			if (target === undefined || target.readAt !== null) {
-				return Promise.resolve();
-			}
-			const next = items.map((n) => (n.id === id ? { ...n, readAt: nowIso() } : n));
-			return mutate(next, Math.max(0, unreadCount - 1), () =>
-				client.post(`${base}/${id}/read`),
+			return mutate(
+				(current) => {
+					const target = current.items.find((n) => n.id === id);
+					if (target === undefined || target.readAt !== null) {
+						return current;
+					}
+					return {
+						items: current.items.map((n) =>
+							n.id === id ? { ...n, readAt: nowIso() } : n,
+						),
+						unreadCount: Math.max(0, current.unreadCount - 1),
+					};
+				},
+				() => client.post(`${base}/${id}/read`),
 			);
 		},
-		[items, unreadCount, mutate, client, base],
+		[mutate, client, base],
 	);
 
 	const remove = useCallback(
 		(id: string) => {
-			const target = items.find((n) => n.id === id);
-			if (target === undefined) {
-				return Promise.resolve();
-			}
-			const count = target.readAt === null ? Math.max(0, unreadCount - 1) : unreadCount;
 			return mutate(
-				items.filter((n) => n.id !== id),
-				count,
+				(current) => {
+					const target = current.items.find((n) => n.id === id);
+					if (target === undefined) {
+						return current;
+					}
+					return {
+						items: current.items.filter((n) => n.id !== id),
+						unreadCount:
+							target.readAt === null
+								? Math.max(0, current.unreadCount - 1)
+								: current.unreadCount,
+					};
+				},
 				() => client.delete(`${base}/${id}`),
 			);
 		},
-		[items, unreadCount, mutate, client, base],
+		[mutate, client, base],
 	);
 
 	const clearAll = useCallback(() => {
 		if (items.length === 0) {
 			return Promise.resolve();
 		}
-		return mutate([], 0, () => client.delete(base));
+		return mutate(
+			() => ({ items: [], unreadCount: 0 }),
+			() => client.delete(base),
+		);
 	}, [items, mutate, client, base]);
 
 	return { items, unreadCount, loading, error, refresh, markRead, remove, clearAll };

@@ -257,7 +257,7 @@ function renderSubField(input: RenderSubFieldInput) {
 	// function's own fullPath. defineFieldClient's formPropsFrom reads
 	// options.name ahead of ctx.binding.name, so the override belongs here.
 	// Harmless for every other kind, which never re-derives a name from options.
-	const options = { name: node.kind === "repeater" ? fullPath : subName, ...baseOptions };
+	const options = { ...baseOptions, name: node.kind === "repeater" ? fullPath : subName };
 	const label = (options as { label?: string }).label;
 	const required = (options as { required?: boolean }).required === true;
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;

@@ -184,6 +184,31 @@ describe("Translatable form integration", () => {
 		expect(input).toBe(after);
 	});
 
+	test("blurring a changed translatable field applies its schema error", async () => {
+		const user = userEvent.setup();
+		const Wrap = wrapWithLocales(["en", "uk"], "en");
+		const schema = {
+			parse(input: unknown) {
+				const title = (input as { title?: { en?: string } }).title;
+				if (title?.en === "") {
+					throw { issues: [{ path: ["title", "en"], message: "validation.required" }] };
+				}
+				return input;
+			},
+		};
+		const node = s.form({ query: async () => ({ title: { en: "initial", uk: "" } }), schema }, [
+			s.text({ name: "title", translatable: true } as Parameters<typeof s.text>[0]),
+		]);
+		const { container, findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("content-locale-bar");
+
+		const input = inputByName(container, "title.en");
+		await user.clear(input);
+		await user.tab();
+
+		expect((await findByTestId("field-error-title")).textContent).toBe("Required");
+	});
+
 	// -----------------------------------------------------------------------
 	// AC-3: error badge on inactive locale tab
 	// -----------------------------------------------------------------------

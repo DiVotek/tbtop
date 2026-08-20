@@ -26,20 +26,60 @@ export function compileConstraints(byField: Record<string, FieldConstraints>): {
 } {
 	return {
 		parse(input: unknown): unknown {
-			const data = (input ?? {}) as Record<string, unknown>;
-			const issues: Issue[] = [];
-			for (const [name, rules] of Object.entries(byField)) {
-				const message = checkField(data[name], rules);
-				if (message) {
-					issues.push({ path: [name], message });
-				}
-			}
+			const issues = Object.entries(byField).flatMap(([name, rules]) =>
+				issuesFor(input, name, rules),
+			);
 			if (issues.length > 0) {
 				throw { issues };
 			}
 			return input;
 		},
 	};
+}
+
+function issuesFor(input: unknown, name: string, rules: FieldConstraints): Issue[] {
+	const issues: Issue[] = [];
+	for (const { path, value } of resolvePaths(input, name.split("."))) {
+		const message = checkField(value, rules);
+		if (message) {
+			issues.push({ path, message });
+		}
+	}
+	return issues;
+}
+
+interface Resolved {
+	path: string[];
+	value: unknown;
+}
+
+/**
+ * Resolves a dotted key against the data. A `*` segment fans out over every
+ * element of an array at that point (`items.*.name` → `items.0.name`,
+ * `items.1.name`), mirroring how Laravel expands wildcard rules; a non-array
+ * under `*` yields nothing, so an empty repeater raises no sub-field issues.
+ * Concrete segments keep resolving past a missing value so a required leaf
+ * is still reported as undefined.
+ */
+function resolvePaths(input: unknown, segments: string[], resolved: string[] = []): Resolved[] {
+	const [head, ...rest] = segments;
+	if (head === undefined) {
+		return [{ path: resolved, value: input }];
+	}
+	if (head !== "*") {
+		return resolvePaths(memberOf(input, head), rest, [...resolved, head]);
+	}
+	if (!Array.isArray(input)) {
+		return [];
+	}
+	return input.flatMap((item, index) => resolvePaths(item, rest, [...resolved, String(index)]));
+}
+
+function memberOf(value: unknown, key: string): unknown {
+	if (value === null || typeof value !== "object") {
+		return undefined;
+	}
+	return (value as Record<string, unknown>)[key];
 }
 
 /**
@@ -56,10 +96,12 @@ export function compileConstraints(byField: Record<string, FieldConstraints>): {
  */
 export function checkField(value: unknown, c: FieldConstraints): string | null {
 	const empty = value === undefined || value === null || value === "";
-	if (empty) {
-		return c.required ? "validation.required" : null;
+	const blank = empty || (Array.isArray(value) && value.length === 0);
+	if (blank && c.required) {
+		return "validation.required";
 	}
-	return checkPresent(value, c);
+	// `[]` is still present for size rules (Laravel fails `min:2` on it).
+	return empty ? null : checkPresent(value, c);
 }
 
 function checkPresent(value: unknown, c: FieldConstraints): string | null {
@@ -99,8 +141,17 @@ function checkFormat(value: unknown, c: FieldConstraints): string | null {
 	if (c.regex && !new RegExp(c.regex).test(str)) {
 		return "validation.regex";
 	}
-	if (c.in && !c.in.includes(str)) {
+	if (c.in && !inAllowed(value, c.in)) {
 		return "validation.in";
 	}
 	return null;
+}
+
+// Multi-value fields (multiple select, tags, checkbox list) are checked per element,
+// mirroring the server's `field.*` placement of `in`.
+function inAllowed(value: unknown, allowed: string[]): boolean {
+	if (Array.isArray(value)) {
+		return value.every((item) => allowed.includes(String(item)));
+	}
+	return allowed.includes(String(value));
 }

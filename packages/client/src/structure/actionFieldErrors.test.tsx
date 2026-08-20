@@ -58,6 +58,44 @@ describe("Action field-errors channel (5.20)", () => {
 		expect(error.textContent).toBe("This path is already redirected");
 	});
 
+	test("a nested action error is lifted onto its root field", async () => {
+		const node = s.action({
+			name: "create",
+			label: "Create",
+			modal: {
+				title: "Create page",
+				body: (sb) =>
+					sb.form({}, [
+						sb.text({
+							name: "name",
+							translatable: true,
+						} as Parameters<typeof sb.text>[0]),
+						sb.action({
+							name: "save",
+							label: "Save",
+							handler: async () => {
+								throw fieldsError({ "name.en": "The name field is required" });
+							},
+						}),
+					]),
+			},
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, baseElement } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		await act(async () => {
+			fireEvent.click(await findByTestId("action-create"));
+		});
+		await act(async () => {
+			fireEvent.click(await findByTestId("action-save"));
+		});
+
+		const error = await findByTestId("field-error-name");
+		const input = baseElement.querySelector<HTMLInputElement>('input[name="name.en"]');
+		expect(error.textContent).toBe("The name field is required");
+		expect(input?.getAttribute("aria-describedby")?.split(" ")).toContain(error.id);
+	});
+
 	test("the user's typed input is still there after the field error is applied — form is not reset", async () => {
 		const user = userEvent.setup();
 		const node = s.action({
