@@ -97,8 +97,9 @@ export function useUnsavedGuard(isDirty: boolean, guardUnsaved: boolean): Unsave
 			// two independently-scheduled updates, not a reliably-ordered pair,
 			// so isDirty can still read true when this fires. Consumed before
 			// the isDirty check (and for every navigation, not just GET) so the
-			// one-shot flag can't outlive the redirect it was set for and
-			// silently wave through a later, unrelated navigation.
+			// mark can't outlive the redirect it was set for. The mark is scoped
+			// to this visit object, so every guard on the page (not only the
+			// first to run) sees the same redirect and lets it through.
 			if (consumeServerRedirect(event.detail.visit)) {
 				return;
 			}
