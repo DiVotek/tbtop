@@ -26,8 +26,12 @@ const ITEM_IMG: MediaItem = {
 	folderId: null,
 	mime: "image/jpeg",
 	size: 204800,
+	width: null,
+	height: null,
 	url: "/storage/photo.jpg",
-	sizes: { profile: "/storage/photo-thumb.jpg" },
+	sizes: {
+		profile: { url: "/storage/photo-thumb.jpg", width: 128, height: 85, mime: "image/jpeg" },
+	},
 	alt: "A photo",
 	description: null,
 	tags: [],
@@ -40,6 +44,8 @@ const ITEM_PDF: MediaItem = {
 	folderId: null,
 	mime: "application/pdf",
 	size: 102400,
+	width: null,
+	height: null,
 	url: "/storage/document.pdf",
 	sizes: {},
 	alt: null,
@@ -162,7 +168,7 @@ describe("MediaPickerForm: variant preview", () => {
 			</Wrap>,
 		);
 		const img = await findByTestId("media-preview-img-img1");
-		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile?.url ?? ITEM_IMG.url);
 		// The block stays clickable for re-selection.
 		expect(getByTestId("media-picker-preview-cover").tagName).toBe("BUTTON");
 	});
@@ -191,7 +197,7 @@ describe("MediaPickerForm: variant preview", () => {
 			</Wrap>,
 		);
 		const img = await findByTestId("media-preview-img-1");
-		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile?.url ?? ITEM_IMG.url);
 		expect(fetches).toBe(1);
 	});
 
@@ -216,7 +222,7 @@ describe("MediaPickerForm: variant preview", () => {
 			</Wrap>,
 		);
 		const img = await findByTestId("media-preview-img-1");
-		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile ?? ITEM_IMG.url);
+		expect(img.getAttribute("src")).toBe(ITEM_IMG.sizes.profile?.url ?? ITEM_IMG.url);
 	});
 
 	test("corner clear button fires onChange(null)", async () => {
