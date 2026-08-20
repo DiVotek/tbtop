@@ -16,7 +16,7 @@ use Tbtop\Admin\Tests\RouteCacheSerializationTestCase;
 use Tbtop\Admin\Tests\RunsMigrationsTestCase;
 use Tbtop\Admin\Tests\TableTabsHttpTestCase;
 
-uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php');
+uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php', 'ColumnProjectionAllowlistTest.php');
 uses(TableTabsHttpTestCase::class)->in('TableTabsHttpTest.php');
 uses(MediaHttpTestCase::class)->in('MediaHttpTest.php');
 uses(PageLayoutHttpTestCase::class)->in('PageLayoutTest.php');
