@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Dsl\ActionBuilder;
@@ -21,6 +22,9 @@ use Tbtop\Admin\Tests\Fixtures\SdPost;
  * so a real row must exist — schema mirrors SoftDeletesHttpTest.php's setup.
  */
 beforeEach(function (): void {
+    Gate::define('restore', fn (?object $user): bool => true);
+    Gate::define('forceDelete', fn (?object $user): bool => true);
+
     Schema::create('sdposts', function ($table): void {
         $table->id();
         $table->string('title');

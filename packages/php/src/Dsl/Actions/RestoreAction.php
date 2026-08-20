@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl\Actions;
 
+use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\ActionBuilder;
@@ -26,7 +27,11 @@ final class RestoreAction
         return RecordAction::server(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->restore(),
+            function (ActionCtx $ctx) use ($model): void {
+                $record = $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail();
+                Gate::authorize('restore', $record);
+                $record->restore();
+            },
             Effects::make()->notify(__('tbtop-admin::admin.restore.notify.success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.restore'))->color('gray');
     }
@@ -39,7 +44,11 @@ final class RestoreAction
         return RecordAction::bulk(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->restore(),
+            function (ActionCtx $ctx) use ($model): void {
+                $records = $model::withTrashed()->whereKey($ctx->selection)->get();
+                $records->each(fn ($record) => Gate::authorize('restore', $record));
+                $records->each->restore();
+            },
             Effects::make()->notify(__('tbtop-admin::admin.restore.notify.bulk_success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.restore'))->color('gray');
     }

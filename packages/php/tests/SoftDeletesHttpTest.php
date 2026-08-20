@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Tests\Fixtures\SdPost;
 use Tbtop\Admin\Tests\SoftDeletesHttpTestCase;
@@ -7,6 +8,9 @@ use Tbtop\Admin\Tests\SoftDeletesHttpTestCase;
 uses(SoftDeletesHttpTestCase::class);
 
 beforeEach(function (): void {
+    Gate::define('restore', fn ($user, SdPost $post): bool => $post->title !== 'Denied');
+    Gate::define('forceDelete', fn ($user, SdPost $post): bool => $post->title !== 'Denied');
+
     Schema::create('sdposts', function ($table): void {
         $table->id();
         $table->string('title');
@@ -18,6 +22,30 @@ beforeEach(function (): void {
     $trashed = SdPost::create(['title' => 'Gone']);
     $trashed->delete();
 });
+
+it('denies restore and force-delete for an unauthorized row', function (string $action): void {
+    $post = SdPost::create(['title' => 'Denied']);
+    $post->delete();
+
+    $this->postJson("/admin/soft-deletes/actions/{$action}", [
+        'payload' => ['row' => ['id' => $post->id]],
+    ])->assertForbidden();
+
+    expect(SdPost::onlyTrashed()->find($post->id))->not->toBeNull();
+})->with(['restore', 'forceDelete']);
+
+it('authorizes every bulk record before mutating any of them', function (string $action): void {
+    $allowed = SdPost::create(['title' => 'Allowed']);
+    $allowed->delete();
+    $denied = SdPost::create(['title' => 'Denied']);
+    $denied->delete();
+
+    $this->postJson("/admin/soft-deletes/actions/{$action}", [
+        'payload' => ['selection' => [$allowed->id, $denied->id]],
+    ])->assertForbidden();
+
+    expect(SdPost::onlyTrashed()->whereKey([$allowed->id, $denied->id])->count())->toBe(2);
+})->with(['restoreSelected', 'forceDeleteSelected']);
 
 // ---------------------------------------------------------------------------
 // Tab scoping rides the existing applyTab seam

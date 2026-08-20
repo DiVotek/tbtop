@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl\Actions;
 
+use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\ActionBuilder;
@@ -25,7 +26,11 @@ final class ForceDeleteAction
         return RecordAction::server(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->forceDelete(),
+            function (ActionCtx $ctx) use ($model): void {
+                $record = $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail();
+                Gate::authorize('forceDelete', $record);
+                $record->forceDelete();
+            },
             Effects::make()->notify(__('tbtop-admin::admin.force_delete.notify.success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.force_delete'))->color('danger')->confirm(
             __('tbtop-admin::admin.force_delete.confirm.title'),
@@ -41,7 +46,11 @@ final class ForceDeleteAction
         return RecordAction::bulk(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->forceDelete(),
+            function (ActionCtx $ctx) use ($model): void {
+                $records = $model::withTrashed()->whereKey($ctx->selection)->get();
+                $records->each(fn ($record) => Gate::authorize('forceDelete', $record));
+                $records->each->forceDelete();
+            },
             Effects::make()->notify(__('tbtop-admin::admin.force_delete.notify.bulk_success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.force_delete'))->color('danger')->confirm(
             __('tbtop-admin::admin.force_delete.confirm.title'),
