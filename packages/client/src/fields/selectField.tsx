@@ -107,7 +107,8 @@ function WithCreateAffordance({
 			<button
 				type="button"
 				data-testid={`select-create-${name}`}
-				onClick={() => setOpen(true)}
+				disabled={disabled}
+				onClick={() => !disabled && setOpen(true)}
 				className="self-start text-xs text-primary underline"
 			>
 				+ Create
