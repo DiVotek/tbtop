@@ -6,6 +6,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\Models\MediaFolder;
+use Tbtop\Admin\Uploads\ConversionProfile;
 use Tbtop\Admin\Uploads\ImageSizes;
 use Tbtop\Admin\Uploads\UploadUrl;
 
@@ -68,7 +69,7 @@ final class MediaResource
      * Image-derived model attributes for a stored upload: original dimensions
      * (null for non-images) and the conversion variants for the given profiles.
      *
-     * @param  array<string, array{0: int, 1: int}>  $profiles
+     * @param  array<string, ConversionProfile>  $profiles
      * @return array{width: int|null, height: int|null, sizes: array<string, Variant>}
      */
     public static function imageAttributes(

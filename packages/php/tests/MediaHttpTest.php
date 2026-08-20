@@ -162,14 +162,37 @@ it('upload stores dimensions for the original and each conversion', function () 
 
     expect($data['width'])->toBe(600)
         ->and($data['height'])->toBe(400)
-        ->and($data['sizes']['thumb'])->toMatchArray(['width' => 128, 'height' => 85, 'mime' => 'image/png'])
-        ->and($data['sizes']['thumb']['url'])->toEndWith('-thumb.png');
+        ->and($data['sizes']['thumb'])->toMatchArray(['width' => 128, 'height' => 85, 'mime' => 'image/webp'])
+        ->and($data['sizes']['thumb']['url'])->toEndWith('-thumb.webp');
 
     $row = Media::firstOrFail();
     expect($row->width)->toBe(600)
         ->and($row->height)->toBe(400)
-        ->and($row->sizes['thumb'])->toMatchArray(['width' => 128, 'height' => 85, 'mime' => 'image/png'])
+        ->and($row->sizes['thumb'])->toMatchArray(['width' => 128, 'height' => 85, 'mime' => 'image/webp'])
         ->and(Storage::disk('public')->exists($row->sizes['thumb']['path']))->toBeTrue();
+});
+
+it('upload encodes each conversion in its own format, falling back to the global default', function () {
+    config()->set('tbtop-admin.media.profiles', [
+        'thumb' => [128, 128],
+        'og' => ['width' => 300, 'height' => 300, 'format' => 'jpeg', 'quality' => 85],
+    ]);
+    $file = UploadedFile::fake()->image('big.png', 600, 400);
+
+    $data = $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201)->json();
+
+    expect($data['sizes']['thumb']['mime'])->toBe('image/webp')
+        ->and($data['sizes']['og'])->toMatchArray(['width' => 300, 'height' => 200, 'mime' => 'image/jpeg'])
+        ->and($data['sizes']['og']['url'])->toEndWith('-og.jpg');
+});
+
+it('upload rejects an unknown conversion format at config level', function () {
+    config()->set('tbtop-admin.media.profiles', ['bad' => ['width' => 10, 'height' => 10, 'format' => 'avif']]);
+    $file = UploadedFile::fake()->image('big.png', 60, 40);
+
+    expect(fn () => $this->withoutExceptionHandling()->postJson('/admin/api/media/upload', ['file' => $file]))
+        ->toThrow(InvalidArgumentException::class, "Unknown conversion format 'avif'");
 });
 
 it('upload leaves dimensions null and sizes empty for a non-raster image', function () {
