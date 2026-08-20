@@ -366,7 +366,7 @@ function MediaPreviewBlockContent({ item }: { item: MediaItem }): ReactNode {
 	if (isImageMime(item.mime)) {
 		return (
 			<img
-				src={item.sizes.profile ?? item.url}
+				src={item.sizes.profile?.url ?? item.url}
 				alt={item.alt ?? item.name}
 				className="h-full w-full object-cover"
 				data-testid={`media-preview-img-${item.id}`}

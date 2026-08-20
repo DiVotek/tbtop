@@ -45,7 +45,7 @@ final class MediaReplaceController
 
         /** @var array<string, array{0: int, 1: int}> $profiles */
         $profiles = (array) ($config['profiles'] ?? []);
-        $sizes = MediaResource::generateConversions($file, $path, $disk, $profiles);
+        $image = MediaResource::imageAttributes($file, $path, $disk, $profiles);
 
         // Old file and its conversions are removed only once the new upload
         // has been stored and sanitized — deleting them earlier would leave
@@ -60,7 +60,7 @@ final class MediaReplaceController
             'path' => $path,
             'mime' => (string) $file->getMimeType(),
             'size' => (int) $file->getSize(),
-            'sizes' => $sizes,
+            ...$image,
         ]);
 
         return response()->json(MediaResource::toItem($media->refresh()));

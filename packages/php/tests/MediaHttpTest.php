@@ -154,13 +154,34 @@ it('uploads an image and returns 201 MediaItem', function () {
     expect(Media::count())->toBe(1);
 });
 
-it('upload generates conversions for configured profiles', function () {
+it('upload stores dimensions for the original and each conversion', function () {
     $file = UploadedFile::fake()->image('big.png', 600, 400);
 
     $data = $this->postJson('/admin/api/media/upload', ['file' => $file])
         ->assertStatus(201)->json();
 
-    expect($data['sizes'])->toHaveKey('thumb');
+    expect($data['width'])->toBe(600)
+        ->and($data['height'])->toBe(400)
+        ->and($data['sizes']['thumb'])->toMatchArray(['width' => 128, 'height' => 85, 'mime' => 'image/png'])
+        ->and($data['sizes']['thumb']['url'])->toEndWith('-thumb.png');
+
+    $row = Media::firstOrFail();
+    expect($row->width)->toBe(600)
+        ->and($row->height)->toBe(400)
+        ->and($row->sizes['thumb'])->toMatchArray(['width' => 128, 'height' => 85, 'mime' => 'image/png'])
+        ->and(Storage::disk('public')->exists($row->sizes['thumb']['path']))->toBeTrue();
+});
+
+it('upload leaves dimensions null and sizes empty for a non-raster image', function () {
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" /></svg>';
+    $file = UploadedFile::fake()->createWithContent('icon.svg', $svg);
+
+    $data = $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201)->json();
+
+    expect($data['width'])->toBeNull()
+        ->and($data['height'])->toBeNull()
+        ->and($data['sizes'])->toBe([]);
 });
 
 it('upload assigns folder when folderId provided', function () {
@@ -555,7 +576,7 @@ it('delete removes media record and files from disk', function () {
 
     $media = Media::create(mediaRow([
         'path' => 'tbtop-media/photo.png',
-        'sizes' => ['thumb' => 'tbtop-media/photo-thumb.png'],
+        'sizes' => ['thumb' => ['path' => 'tbtop-media/photo-thumb.png', 'width' => 10, 'height' => 10, 'mime' => 'image/png']],
     ]));
 
     $this->deleteJson("/admin/api/media/{$media->id}")->assertNoContent();

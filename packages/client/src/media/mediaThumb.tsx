@@ -44,7 +44,7 @@ export function MediaThumb({
 	if (isImageMime(item.mime)) {
 		return (
 			<img
-				src={item.sizes.profile ?? item.url}
+				src={item.sizes.profile?.url ?? item.url}
 				alt={item.alt ?? item.name}
 				className={cn(
 					CONTAINER_SIZE[size],
