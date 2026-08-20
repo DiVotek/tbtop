@@ -80,7 +80,7 @@ final class UploadStorer
         return [$newPath, $enc['mimeType']];
     }
 
-    /** Best-effort private visibility; a driver that lacks it must not fail the upload. */
+    /** Private visibility is mandatory; remove the upload if it cannot be applied. */
     private static function applyVisibility(string $disk, string $path, string $visibility): void
     {
         if ($visibility !== 'private') {
@@ -88,8 +88,14 @@ final class UploadStorer
         }
         try {
             Storage::disk($disk)->setVisibility($path, 'private');
-        } catch (Throwable) {
-            // Driver does not support per-file visibility; keep the stored file.
+        } catch (Throwable $exception) {
+            try {
+                Storage::disk($disk)->delete($path);
+            } catch (Throwable) {
+                // Preserve the visibility failure that made the upload unsafe.
+            }
+
+            throw $exception;
         }
     }
 }

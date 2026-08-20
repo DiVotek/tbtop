@@ -1,10 +1,13 @@
 <?php
 
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Tbtop\Admin\Tests\FieldUploadHttpTestCase;
+use Tbtop\Admin\Uploads\UploadFieldConfig;
+use Tbtop\Admin\Uploads\UploadStorer;
 
 uses(FieldUploadHttpTestCase::class);
 
@@ -94,6 +97,20 @@ it('FieldUpload: a private upload returns a signed view-route url, not /storage'
         ->toContain('signature=')
         ->not->toContain('/storage');
     Storage::disk('local')->assertExists($data['path']);
+});
+
+it('FieldUpload: removes a private upload when visibility cannot be applied', function (): void {
+    $disk = Mockery::mock(FilesystemAdapter::class);
+    $disk->shouldReceive('putFileAs')->once()->andReturn('private-docs/a.png');
+    $disk->shouldReceive('get')->once()->with('private-docs/a.png')->andReturn("\0png");
+    $disk->shouldReceive('setVisibility')->once()->andThrow(new RuntimeException('visibility failed'));
+    $disk->shouldReceive('delete')->once()->with('private-docs/a.png')->andReturnTrue();
+    Storage::set('local', $disk);
+
+    $config = new UploadFieldConfig('local', 'private-docs', 'private', 1024, [], null);
+
+    expect(fn () => UploadStorer::store(UploadedFile::fake()->image('a.png'), $config))
+        ->toThrow(RuntimeException::class, 'visibility failed');
 });
 
 it('FieldUpload: the signed view url streams the private file with a nosniff header', function (): void {
