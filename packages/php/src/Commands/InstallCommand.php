@@ -80,7 +80,7 @@ class InstallCommand extends Command
     private function manualSteps(): void
     {
         $this->newLine();
-        $this->components->warn('Three steps remain, in files this package does not own:');
+        $this->components->warn('Four steps remain, in files this package does not own:');
         $this->newLine();
 
         $this->line('  1. Add the admin entry to the Vite input list (vite.config.ts):');
@@ -91,7 +91,11 @@ class InstallCommand extends Command
         $this->line("       ->rootView('admin')");
         $this->newLine();
 
-        $this->line('  3. Install the client package and rebuild:');
+        $this->line('  3. Make sure the host compiles Tailwind v4 (the client ships a Tailwind source, not built CSS):');
+        $this->line('       npm install -D tailwindcss @tailwindcss/vite   # and add tailwindcss() to the Vite plugins');
+        $this->newLine();
+
+        $this->line('  4. Install the client package and rebuild:');
         $this->line('       npm install @tbtop/inertia-admin && npm run build');
     }
 }
