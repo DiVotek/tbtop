@@ -42,6 +42,9 @@ it('resolves a dotted relation column on the Eloquent model array path', functio
     $result = ColumnProjection::apply(relationTable(), CarModel::with('location')->get());
 
     expect($result[0]['location.name'])->toBe('Berlin');
+    expect($result[0])->toHaveKey('id')
+        ->and($result[0])->not->toHaveKey('location_id')
+        ->and($result[0])->not->toHaveKey('location');
     // Serialized wire carries the flat key the client renders.
     expect(json_decode(json_encode($result[0]), true)['location.name'])->toBe('Berlin');
 });
