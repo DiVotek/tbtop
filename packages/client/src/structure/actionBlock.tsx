@@ -319,7 +319,7 @@ function interpolateTemplate(
 			warnMissingKey(actionName, href, key);
 			return null;
 		}
-		result = result.replace(`{${key}}`, String(val));
+		result = result.replace(`{${key}}`, encodeURIComponent(String(val)));
 	}
 	return result;
 }

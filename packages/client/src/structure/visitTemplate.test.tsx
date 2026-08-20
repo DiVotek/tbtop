@@ -42,6 +42,22 @@ describe("Visit-template interpolation", () => {
 		expect(el.getAttribute("href")).toBe("/admin/posts/42/edit");
 	});
 
+	test("template visit percent-encodes reserved characters in row values", async () => {
+		const node = s.action({ name: "edit", label: "Edit", url: "/admin/posts/{id}/edit" });
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(
+			<Wrap>
+				<RowProvider value={{ id: "a/b?x=1&y=2#part name" }}>
+					{renderNode(node)}
+				</RowProvider>
+			</Wrap>,
+		);
+		const el = await findByTestId("action-edit");
+		expect(el.getAttribute("href")).toBe(
+			"/admin/posts/a%2Fb%3Fx%3D1%26y%3D2%23part%20name/edit",
+		);
+	});
+
 	test("template visit with multiple placeholders interpolates all", async () => {
 		const node = s.action({
 			name: "view",
