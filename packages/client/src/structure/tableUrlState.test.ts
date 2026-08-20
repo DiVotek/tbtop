@@ -183,6 +183,16 @@ describe("tableUrlState: persistTableParams calls history.replaceState", () => {
 		expect(url).toContain("t%5Bposts%5D%5Bstatus%5D=draft");
 	});
 
+	test("tableUrlState: persistTableParams preserves existing query params and hash", () => {
+		originalReplaceState(null, "", "/admin/posts?keep=1#details");
+
+		persistTableParams("posts", { page: 2 });
+
+		expect(replaceStateCalls[0]?.url).toBe(
+			"/admin/posts?keep=1&t%5Bposts%5D%5Bpage%5D=2#details",
+		);
+	});
+
 	test("tableUrlState: persistTableParams with empty params removes table keys from URL", () => {
 		// First set some params
 		persistTableParams("posts", { search: "hello" });
