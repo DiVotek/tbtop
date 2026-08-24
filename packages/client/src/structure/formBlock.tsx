@@ -199,15 +199,15 @@ function submitter(e: FormEvent<HTMLFormElement>): HTMLElement | null {
  * equal record — resetting then would wipe the user's edits and the
  * just-applied server field errors.
  */
-function useSyncInitial(initial: Bag, reset: () => void): void {
+function useSyncInitial(initial: Bag, syncInitial: (values: Bag) => void): void {
 	const prevRef = useRef(initial);
 	useEffect(() => {
 		if (isEqual(prevRef.current, initial)) {
 			return;
 		}
 		prevRef.current = initial;
-		reset();
-	}, [initial, reset]);
+		syncInitial(initial);
+	}, [initial, syncInitial]);
 }
 
 /** Per-form values every recursive renderFormChild/renderFieldNode call needs. */

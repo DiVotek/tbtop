@@ -104,4 +104,15 @@ it('reorders selected media with pointer drag', function () {
 
     $page->assertScript(firstMediaPreviewExpr(), "media-preview-{$second->id}")
         ->assertNoSmoke();
+
+    $page->script(<<<'JS'
+document
+  .querySelector('[data-testid="media-picker-gallery_media_ids"]')
+  .closest('form')
+  .querySelector('[data-testid="action-save"]')
+  .click()
+JS);
+
+    $page->assertScript(firstMediaPreviewExpr(), "media-preview-{$second->id}")
+        ->assertNoSmoke();
 });

@@ -471,9 +471,9 @@ describe("Form unsaved guard — tab close / refresh (beforeunload)", () => {
 // Real-order regression: server-initiated redirect after a successful save
 // must not trip the unsaved guard.
 //
-// The reset-in-onSuccess fix (materializeActions.ts submitHandler) resets the
-// form controller before resolving the submit promise, but that reset is a
-// setState — it lands on the NEXT commit, not synchronously. AdminPage runs a
+// The post-save commit (materializeActions.ts submitHandler) marks the form
+// clean before resolving the submit promise, but that update is a setState —
+// it lands on the NEXT commit, not synchronously. AdminPage runs a
 // separate `useEffect` keyed on `page.flash` that fires `router.visit` for a
 // redirect effect. In the real app both the reset-triggering onSuccess and
 // the flash-effect-driven redirect are reactions to the SAME props swap

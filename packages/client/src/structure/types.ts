@@ -68,7 +68,8 @@ export interface FormController {
 	/** Active field-level errors, keyed by field name (dotted for nested paths). */
 	fieldErrors: Record<string, string>;
 	set: (field: string, value: unknown) => void;
-	reset: () => void;
+	/** Reset to the current baseline, or replace it with saved values and mark the form clean. */
+	reset: (values?: Record<string, unknown>) => void;
 	/**
 	 * Sets (or clears, with null) a field-level error — the action-endpoint
 	 * field-errors channel (audit 5.20): a server action that throws a

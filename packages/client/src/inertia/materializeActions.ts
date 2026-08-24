@@ -162,15 +162,12 @@ function submitHandler(
 				preserveScroll: true,
 				preserveState: true,
 				onSuccess: () => {
-					// Mark the form clean before resolving: props are already updated
-					// at this point, so initial reflects the freshly saved record and
-					// reset() re-syncs to it. Flash effects (executed separately in
-					// AdminPage, without a form in context) may include a redirect —
-					// a plain GET router.visit — and the unsaved-changes guard would
-					// otherwise see a still-dirty form and block it with a native
-					// "leave site?"/confirm prompt right after a successful save. See
-					// the same fix for serverHandler above.
-					ctx.form?.reset();
+					// Commit the submitted values instead of resetting to the previous
+					// record: onSuccess can run before React commits fresh Inertia props.
+					// A plain reset here would visibly roll successful edits back until
+					// reload. The later props sync still replaces this baseline with the
+					// canonical server record.
+					ctx.form?.reset(ctx.form.data);
 					resolve();
 				},
 				onError: (errors) => reject({ errors: liftNestedErrors(errors) }),

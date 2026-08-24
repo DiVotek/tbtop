@@ -730,20 +730,12 @@ describe("materialize form", () => {
 		expect(opts(back).isSubmit).toBeUndefined();
 	});
 
-	it("marks the form clean before resolving, so a redirect flash effect after save does not hit the unsaved guard", async () => {
-		// Regression, submit-path counterpart to the serverHandler fix above:
-		// router.post's onSuccess resolves the action promise, but the server's
-		// back() response carries flash effects (executed in AdminPage's
-		// useEffect, with no form in context) that can include a redirect —
-		// a plain GET router.visit. useUnsavedGuard reads form.isDirty at visit
-		// time, so if the form controller is still dirty when that GET fires,
-		// the user sees a native "leave site?" confirm right after a successful
-		// save. form.reset() must run before the promise resolves.
+	it("commits submitted values before resolving without rolling back to stale initial data", async () => {
 		postImpl = (_url, _data, options) => {
 			options.onSuccess?.();
 		};
 
-		const calls: string[] = [];
+		const resets: unknown[] = [];
 		const out = materialize(form, { ...BASE, data: {} });
 		const children = opts(out).children as StructureNode[];
 		const save = children.find((c) => c.name === "save") as StructureNode;
@@ -759,13 +751,13 @@ describe("materialize form", () => {
 					changedFields: ["title"],
 					fieldErrors: {},
 					set: () => {},
-					reset: () => calls.push("reset"),
+					reset: (values) => resets.push(values),
 					setFieldError: () => {},
 				},
 			}),
 		);
 
-		expect(calls).toEqual(["reset"]);
+		expect(resets).toEqual([{ title: "New" }]);
 	});
 });
 
