@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "../i18n/i18n";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
@@ -19,9 +20,10 @@ export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyCon
 }
 
 export function RelationCell({ value }: FieldCellProps<unknown>) {
+	const t = useTranslation();
 	return nullableCell(value, (v) => {
 		if (Array.isArray(v)) {
-			return <span>{v.length} items</span>;
+			return <span>{t("field.relation.items").replace("{count}", String(v.length))}</span>;
 		}
 		if (typeof v === "object" && v !== null) {
 			return <span>{relationObjectLabel(v)}</span>;

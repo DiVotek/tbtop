@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nProvider } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
 import { RelationCell, RelationForm } from "./relationField";
@@ -176,6 +177,18 @@ describe("RelationCell", () => {
 	test("summarizes a to-many array as a count", () => {
 		const { container } = render(<RelationCell value={[1, 2, 3]} />);
 		expect(container.textContent).toBe("3 items");
+	});
+
+	test("translates the to-many item count", () => {
+		const { container } = render(
+			<I18nProvider
+				pluginMessages={{ uk: { "field.relation.items": "{count} пов’язаних" } }}
+				locale="uk"
+			>
+				<RelationCell value={[1, 2, 3]} />
+			</I18nProvider>,
+		);
+		expect(container.textContent).toBe("3 пов’язаних");
 	});
 
 	test("renders nothing for a null value", () => {

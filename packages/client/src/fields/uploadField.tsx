@@ -111,6 +111,7 @@ interface PreviewProps {
 }
 
 function UploadPreview({ value, disabled, onRemove }: PreviewProps) {
+	const t = useTranslation();
 	const filename = basename(value.path);
 	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
 	return (
@@ -124,7 +125,7 @@ function UploadPreview({ value, disabled, onRemove }: PreviewProps) {
 			<button
 				type="button"
 				className="rounded p-1 hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
-				aria-label="Remove"
+				aria-label={t("field.upload.remove")}
 				disabled={disabled}
 				onClick={onRemove}
 			>

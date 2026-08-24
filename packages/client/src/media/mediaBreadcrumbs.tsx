@@ -24,7 +24,7 @@ export function MediaBreadcrumbs({
 	return (
 		<nav
 			className="flex items-center gap-1 text-sm text-muted-foreground"
-			aria-label="breadcrumb"
+			aria-label={t("nav.breadcrumb")}
 			data-testid="media-breadcrumbs"
 		>
 			<button
