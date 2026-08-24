@@ -61,6 +61,16 @@ function mediaListResponse(items: MediaItem[]) {
 	);
 }
 
+const resolvedItemsHandler: FetchHandler = (req) => {
+	if (req.url.includes("/media/img1")) {
+		return new Response(JSON.stringify(ITEM_IMG), { status: 200 });
+	}
+	if (req.url.includes("/media/pdf1")) {
+		return new Response(JSON.stringify(ITEM_PDF), { status: 200 });
+	}
+	return new Response("[]");
+};
+
 function wrap(handler: FetchHandler) {
 	const client = createAdminClient({ baseUrl: "http://test", fetch: makeTestFetch(handler) });
 	return function Wrapper({ children }: { children: ReactNode }) {
@@ -444,6 +454,71 @@ describe("MediaPickerForm: single select", () => {
 // ─── Form: multiple select with confirm ───────────────────────────────────────
 
 describe("MediaPickerForm: multiple select", () => {
+	test("reorderable renders a drag handle for every selected item", async () => {
+		const Wrap = wrap(resolvedItemsHandler);
+		const { findByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="gallery"
+					value={["img1", "pdf1"]}
+					onChange={() => {}}
+					options={{ multiple: true, reorderable: true }}
+				/>
+			</Wrap>,
+		);
+
+		expect(await findByTestId("media-preview-drag-handle-img1")).toBeTruthy();
+		expect(await findByTestId("media-preview-drag-handle-pdf1")).toBeTruthy();
+	});
+
+	test("multiple without reorderable does not render drag handles", async () => {
+		const Wrap = wrap(resolvedItemsHandler);
+		const { findByTestId, queryByTestId } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="gallery"
+					value={["img1", "pdf1"]}
+					options={{ multiple: true }}
+					onChange={() => {}}
+				/>
+			</Wrap>,
+		);
+
+		await findByTestId("media-preview-img1");
+		expect(queryByTestId("media-preview-drag-handle-img1")).toBeNull();
+	});
+
+	test("external value reordering updates the preview order", async () => {
+		const Wrap = wrap(resolvedItemsHandler);
+		const { container, findByTestId, rerender } = render(
+			<Wrap>
+				<MediaPickerForm
+					name="gallery"
+					value={["img1", "pdf1"]}
+					onChange={() => {}}
+					options={{ multiple: true, reorderable: true }}
+				/>
+			</Wrap>,
+		);
+
+		await findByTestId("media-preview-pdf1");
+		rerender(
+			<Wrap>
+				<MediaPickerForm
+					name="gallery"
+					value={["pdf1", "img1"]}
+					onChange={() => {}}
+					options={{ multiple: true, reorderable: true }}
+				/>
+			</Wrap>,
+		);
+
+		await waitFor(() => {
+			const chips = container.querySelectorAll("[data-testid^='media-preview-']:not(button)");
+			expect(chips[0]?.getAttribute("data-testid")).toBe("media-preview-pdf1");
+		});
+	});
+
 	test("preserves existing values when confirming an additional selection", async () => {
 		const user = userEvent.setup({ delay: null });
 		const changes: Array<unknown> = [];

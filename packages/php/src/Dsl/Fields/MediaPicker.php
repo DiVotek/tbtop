@@ -21,6 +21,12 @@ final class MediaPicker extends Field
         return $this->set('multiple', $value);
     }
 
+    /** Allow drag-to-reorder when multiple is enabled. */
+    public function reorderable(bool $value = true): static
+    {
+        return $this->set('reorderable', $value);
+    }
+
     /**
      * Filter which MIME types are visible/uploadable in the picker.
      *

@@ -13,6 +13,21 @@
  * accept filtering: applied client-side only — the server list endpoint has no
  * mime filter. Server-side filtering can be added later.
  */
+import {
+	closestCenter,
+	DndContext,
+	type DragEndEvent,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+} from "@dnd-kit/core";
+import { restrictToParentElement } from "@dnd-kit/modifiers";
+import {
+	rectSortingStrategy,
+	SortableContext,
+	sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import { FileIcon, ImageIcon, XIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
@@ -24,7 +39,8 @@ import { ModalShell } from "../ui/modal-shell";
 import { fileKindOf } from "./fileType";
 import { FolderTree } from "./folderTree";
 import { MediaGrid } from "./mediaGrid";
-import { MediaThumb } from "./mediaThumb";
+import { orderMediaItems, reorderMediaIds } from "./mediaOrder";
+import { MediaPreviewChip, SortableMediaPreviewChip } from "./mediaPreviewChip";
 import type { MediaItem } from "./types";
 import type { MediaQueryParams } from "./useMediaApi";
 import {
@@ -39,6 +55,7 @@ import {
 
 interface MediaPickerOptions {
 	multiple?: boolean;
+	reorderable?: boolean;
 	/** client-side MIME filter, e.g. ['image/*', 'application/pdf'] */
 	accept?: string[];
 	/**
@@ -87,8 +104,13 @@ export function MediaPickerForm({
 	const t = useTranslation();
 	const client = useMediaClient();
 	const multiple = options?.multiple ?? false;
+	const reorderable = multiple && options?.reorderable === true;
 	const accept = options?.accept;
 	const variant = options?.variant ?? "inline";
+	const sensors = useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+	);
 
 	const [resolvedItems, setResolvedItems] = useState<MediaItem[]>([]);
 	const [pickerOpen, setPickerOpen] = useState(false);
@@ -114,7 +136,8 @@ export function MediaPickerForm({
 		}
 		const resolvedIds = resolvedItems.map((i) => i.id);
 		const same =
-			ids.length === resolvedIds.length && ids.every((id) => resolvedIds.includes(id));
+			ids.length === resolvedIds.length &&
+			ids.every((id, index) => resolvedIds[index] === id);
 		if (same) {
 			return;
 		}
@@ -166,6 +189,19 @@ export function MediaPickerForm({
 		} else {
 			onChange(next[0] ?? null);
 		}
+	}
+
+	function handleDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+		if (disabled || !over || active.id === over.id) {
+			return;
+		}
+		const nextIds = reorderMediaIds(ids, String(active.id), String(over.id));
+		if (nextIds === ids) {
+			return;
+		}
+		setResolvedItems((current) => orderMediaItems(current, nextIds));
+		onChange(nextIds);
 	}
 
 	const hasValue = ids.length > 0;
@@ -222,18 +258,15 @@ export function MediaPickerForm({
 		<div className="flex flex-col gap-2" data-testid={`media-picker-${name}`}>
 			{multiple ? (
 				<>
-					{/* Preview chips */}
 					{resolvedItems.length > 0 && (
-						<div className="flex flex-wrap gap-2">
-							{resolvedItems.map((item) => (
-								<MediaPreviewChip
-									key={item.id}
-									item={item}
-									onRemove={() => handleRemove(item.id)}
-									disabled={disabled}
-								/>
-							))}
-						</div>
+						<MediaPreviewChips
+							items={resolvedItems}
+							reorderable={reorderable}
+							disabled={disabled}
+							sensors={sensors}
+							onDragEnd={handleDragEnd}
+							onRemove={handleRemove}
+						/>
 					)}
 					<div className="flex gap-2">
 						<Button
@@ -266,40 +299,44 @@ export function MediaPickerForm({
 	);
 }
 
-// ─── MediaPreviewChip ─────────────────────────────────────────────────────────
-
-function MediaPreviewChip({
-	item,
-	onRemove,
-	disabled,
-}: {
-	item: MediaItem;
-	onRemove: () => void;
+interface MediaPreviewChipsProps {
+	items: MediaItem[];
+	reorderable: boolean;
 	disabled?: boolean;
-}): ReactNode {
+	sensors: ReturnType<typeof useSensors>;
+	onDragEnd: (event: DragEndEvent) => void;
+	onRemove: (id: string) => void;
+}
+
+function MediaPreviewChips(props: MediaPreviewChipsProps): ReactNode {
+	const chips = props.items.map((item) => {
+		const Chip = props.reorderable ? SortableMediaPreviewChip : MediaPreviewChip;
+		return (
+			<Chip
+				key={item.id}
+				item={item}
+				onRemove={() => props.onRemove(item.id)}
+				disabled={props.disabled}
+			/>
+		);
+	});
+	if (!props.reorderable) {
+		return <div className="flex flex-wrap gap-2">{chips}</div>;
+	}
 	return (
-		<div
-			className="group relative flex items-center gap-2 rounded-md border bg-card p-1.5"
-			data-testid={`media-preview-${item.id}`}
+		<DndContext
+			sensors={props.sensors}
+			collisionDetection={closestCenter}
+			onDragEnd={props.onDragEnd}
+			modifiers={[restrictToParentElement]}
 		>
-			<div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded bg-muted">
-				<MediaThumb item={item} size="sm" />
-			</div>
-			<span className="max-w-[120px] truncate text-xs">{item.name}</span>
-			{!disabled && (
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="h-5 w-5 p-0"
-					onClick={onRemove}
-					aria-label={`Remove ${item.name}`}
-					data-testid={`media-preview-remove-${item.id}`}
-				>
-					<XIcon className="h-3 w-3" />
-				</Button>
-			)}
-		</div>
+			<SortableContext
+				items={props.items.map((item) => item.id)}
+				strategy={rectSortingStrategy}
+			>
+				<div className="flex flex-wrap gap-2">{chips}</div>
+			</SortableContext>
+		</DndContext>
 	);
 }
 

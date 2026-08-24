@@ -74,6 +74,7 @@ class UploadDemoPage extends Page
             $s->form('gallery', [
                 $s->media('gallery_media_ids')->label('Gallery images')
                     ->multiple()
+                    ->reorderable()
                     ->accept(['image/*'])
                     ->rules('nullable|array'),
                 $s->actionsRow([
