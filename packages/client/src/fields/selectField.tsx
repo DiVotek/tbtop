@@ -82,6 +82,7 @@ function WithCreateAffordance({
 	children,
 }: WithCreateProps) {
 	const [open, setOpen] = useState(false);
+	const t = useTranslation();
 	const create = options?.create as SelectCreateConfig | undefined;
 	const control = (
 		<InputGroup options={options} disabled={disabled} invalid={invalid}>
@@ -111,7 +112,7 @@ function WithCreateAffordance({
 				onClick={() => !disabled && setOpen(true)}
 				className="self-start text-xs text-primary underline"
 			>
-				+ Create
+				+ {t("action.create")}
 			</button>
 			{open && (
 				<SelectCreateDialog

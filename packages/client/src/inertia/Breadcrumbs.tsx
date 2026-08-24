@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { ChevronRight } from "lucide-react";
+import { useTranslation } from "../i18n/i18n";
 
 export interface BreadcrumbItem {
 	label: string;
@@ -15,12 +16,13 @@ interface BreadcrumbsProps {
  * (current page title alone adds no navigational value).
  */
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
+	const t = useTranslation();
 	if (items.length <= 1) {
 		return null;
 	}
 
 	return (
-		<nav aria-label="Breadcrumb">
+		<nav aria-label={t("nav.breadcrumb")}>
 			<ol className="flex items-center gap-1 text-sm text-muted-foreground">
 				{items.map((item, index) => {
 					const isLast = index === items.length - 1;

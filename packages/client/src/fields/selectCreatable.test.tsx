@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { I18nProvider } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
 import { SelectForm } from "./selectField";
@@ -80,6 +81,25 @@ describe("Select field — creatable", () => {
 			const btn = container.querySelector('[data-testid="select-create-author"]');
 			expect(btn).not.toBeNull();
 		});
+	});
+
+	test("Select creatable: translates the create affordance", async () => {
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(
+			<Wrap>
+				<I18nProvider pluginMessages={{ uk: { "action.create": "Створити" } }} locale="uk">
+					<SelectForm
+						name="author"
+						value={null}
+						onChange={() => {}}
+						options={{ options: CHOICES, create: makeCreateConfig() }}
+					/>
+				</I18nProvider>
+			</Wrap>,
+		);
+		await waitFor(() =>
+			expect(getByTestId("select-create-author").textContent).toBe("+ Створити"),
+		);
 	});
 
 	test("Select creatable: clicking '+ Create' opens a dialog", async () => {

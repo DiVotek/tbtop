@@ -1,4 +1,5 @@
 import { HexAlphaColorPicker, HexColorPicker } from "react-colorful";
+import { useTranslation } from "../i18n/i18n";
 import { nullableCell } from "./cellHelpers";
 import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
 
@@ -34,6 +35,7 @@ export function ColorpickerForm({
 	disabled,
 	options,
 }: FieldFormProps<string, ColorpickerOptionsBag>) {
+	const t = useTranslation();
 	const current = asString(value);
 	const Picker = hasAlpha(current) ? HexAlphaColorPicker : HexColorPicker;
 	const palette = options?.palette ?? [];
@@ -44,7 +46,11 @@ export function ColorpickerForm({
 				onChange={(next) => (disabled ? undefined : onChange(next === "" ? null : next))}
 			/>
 			{palette.length > 0 ? (
-				<div role="listbox" aria-label="Color palette" className="flex flex-wrap gap-1">
+				<div
+					role="listbox"
+					aria-label={t("field.colorpicker.palette")}
+					className="flex flex-wrap gap-1"
+				>
 					{palette.map((swatch) => (
 						<button
 							key={swatch}

@@ -209,7 +209,7 @@ export function MediaPickerForm({
 						size="sm"
 						disabled={disabled}
 						onClick={handleClear}
-						aria-label="Clear selection"
+						aria-label={t("media.picker.clear")}
 						data-testid={`media-picker-clear-${name}`}
 					>
 						<XIcon className="h-4 w-4" />
@@ -352,7 +352,7 @@ function MediaPreviewBlock({
 					size="sm"
 					className="absolute top-2 right-2 h-6 w-6 p-0"
 					onClick={onClear}
-					aria-label="Clear selection"
+					aria-label={t("media.picker.clear")}
 					data-testid={`media-picker-clear-${name}`}
 				>
 					<XIcon className="h-4 w-4" />

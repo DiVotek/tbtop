@@ -13,6 +13,7 @@ import {
 	useState,
 } from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
+import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { useMediaQuery } from "../lib/useMediaQuery";
 
@@ -138,11 +139,12 @@ function ResponsiveDialogOverlay({
 
 export function ResponsiveDialogClose(props: ComponentProps<typeof DialogPrimitive.Close>) {
 	const { dismissible, alert } = useResponsiveDialog();
+	const t = useTranslation();
 	const Close = useShouldUseDialog() ? DialogPrimitive.Close : DrawerPrimitive.Close;
 	const shouldPreventClose = !dismissible && !alert;
 	return (
 		<Close
-			aria-label="Close"
+			aria-label={t("action.close")}
 			{...(shouldPreventClose && { onClick: (e: React.MouseEvent) => e.preventDefault() })}
 			{...props}
 		/>
@@ -243,6 +245,7 @@ export const ResponsiveDialogContent = forwardRef<
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: vendored revola adapter; residual complexity is render-conditional JSX
 	) => {
 		const { direction, modal, dismissible, alert } = useResponsiveDialog();
+		const t = useTranslation();
 		const shouldUseDialog = useShouldUseDialog();
 		const Content = shouldUseDialog ? DialogPrimitive.Content : DrawerPrimitive.Content;
 
@@ -285,7 +288,7 @@ export const ResponsiveDialogContent = forwardRef<
 							)}
 						>
 							<XIcon className="size-4" />
-							<span className="sr-only">close</span>
+							<span className="sr-only">{t("action.close")}</span>
 						</ResponsiveDialogClose>
 					)}
 				</Content>
