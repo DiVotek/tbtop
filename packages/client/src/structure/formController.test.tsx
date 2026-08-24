@@ -59,6 +59,20 @@ describe("useFormController", () => {
 		expect(handle.changedFields).toEqual([]);
 	});
 
+	test("FormController reset can commit saved values as the new baseline", () => {
+		const captures = mount({ images: [1, 2] });
+		act(() => last(captures).set("images", [2, 1]));
+		act(() => last(captures).reset(last(captures).data));
+
+		expect(last(captures).initial).toEqual({ images: [2, 1] });
+		expect(last(captures).data).toEqual({ images: [2, 1] });
+		expect(last(captures).isDirty).toBe(false);
+
+		act(() => last(captures).set("images", [1, 2]));
+		act(() => last(captures).reset());
+		expect(last(captures).data).toEqual({ images: [2, 1] });
+	});
+
 	test("FormController changedFields includes both edited keys regardless of order", () => {
 		const captures = mount({ title: "Hello", body: "World" });
 		act(() => last(captures).set("title", "Hi"));

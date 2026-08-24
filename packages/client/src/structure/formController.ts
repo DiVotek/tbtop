@@ -22,8 +22,8 @@ export interface FormControllerInternal extends FormController {
 
 // oxlint-disable-next-line max-lines-per-function -- hook: 5 useCallbacks must stay inline (hook rules)
 export function useFormController(input: UseFormControllerInput): FormControllerInternal {
-	const initialRef = useRef(input.initial);
-	initialRef.current = input.initial;
+	const baselineRef = useRef(input.initial);
+	const [initial, setInitial] = useState<Bag>(() => ({ ...input.initial }));
 	const [data, setData] = useState<Bag>(() => ({ ...input.initial }));
 	const [touched, setTouched] = useState<Set<string>>(() => new Set());
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -33,8 +33,11 @@ export function useFormController(input: UseFormControllerInput): FormController
 		setData((prev) => ({ ...prev, [field]: value }));
 	}, []);
 
-	const reset = useCallback(() => {
-		setData({ ...initialRef.current });
+	const reset = useCallback((values?: Bag) => {
+		const next = values ?? baselineRef.current;
+		baselineRef.current = next;
+		setInitial({ ...next });
+		setData({ ...next });
 		setTouched(new Set());
 		setFieldErrors({});
 	}, []);
@@ -66,12 +69,12 @@ export function useFormController(input: UseFormControllerInput): FormController
 		setErrorScrollTick((t) => t + 1);
 	}, []);
 
-	const changedFields = useMemo(() => diffKeys(input.initial, data), [input.initial, data]);
+	const changedFields = useMemo(() => diffKeys(initial, data), [initial, data]);
 	const isDirty = changedFields.length > 0;
 	const isValid = Object.keys(fieldErrors).length === 0;
 
 	return {
-		initial: input.initial,
+		initial,
 		data,
 		isDirty,
 		isValid,
