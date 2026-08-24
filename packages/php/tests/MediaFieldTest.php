@@ -27,6 +27,18 @@ it('MediaField: ->multiple(false) sets multiple to false', function () {
     expect($json['options']['multiple'])->toBeFalse();
 });
 
+it('MediaField: ->reorderable() enables drag reordering', function () {
+    $json = encodeMediaField(MediaPicker::make('images')->multiple()->reorderable());
+
+    expect($json['options']['reorderable'])->toBeTrue();
+});
+
+it('MediaField: ->reorderable(false) disables drag reordering', function () {
+    $json = encodeMediaField(MediaPicker::make('images')->multiple()->reorderable(false));
+
+    expect($json['options']['reorderable'])->toBeFalse();
+});
+
 it('MediaField: ->accept() sets accept array', function () {
     $json = encodeMediaField(MediaPicker::make('docs')->accept(['image/*', 'application/pdf']));
 

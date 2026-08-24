@@ -153,6 +153,7 @@
 							"options": {
 								"properties": {
 									"multiple": { "type": "boolean" },
+									"reorderable": { "type": "boolean" },
 									"accept": { "type": "array", "items": { "type": "string" } }
 								}
 							}
