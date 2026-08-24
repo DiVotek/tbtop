@@ -217,7 +217,7 @@ function serverHandler({ basePath, name, needs, formNode }: ServerHandlerInput):
 		// the post-save reset would immediately discard what it just wrote.
 		const keepsForm = effects.some((e) => e.kind === "haltModal" || e.kind === "setFormData");
 		if (needs.includes("form") && !keepsForm) {
-			ctx.form?.reset(ctx.form.data);
+			ctx.form?.reset();
 		}
 		executeEffects(effects, ctx);
 		return !effects.some((effect) => effect.kind === "haltModal");

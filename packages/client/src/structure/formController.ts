@@ -22,7 +22,12 @@ export interface FormControllerInternal extends FormController {
 
 // oxlint-disable-next-line max-lines-per-function -- hook: 5 useCallbacks must stay inline (hook rules)
 export function useFormController(input: UseFormControllerInput): FormControllerInternal {
+	const sourceRef = useRef(input.initial);
 	const baselineRef = useRef(input.initial);
+	if (!isEqual(sourceRef.current, input.initial)) {
+		sourceRef.current = input.initial;
+		baselineRef.current = input.initial;
+	}
 	const [initial, setInitial] = useState<Bag>(() => ({ ...input.initial }));
 	const [data, setData] = useState<Bag>(() => ({ ...input.initial }));
 	const [touched, setTouched] = useState<Set<string>>(() => new Set());
