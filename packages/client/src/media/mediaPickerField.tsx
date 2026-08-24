@@ -39,7 +39,7 @@ import { ModalShell } from "../ui/modal-shell";
 import { fileKindOf } from "./fileType";
 import { FolderTree } from "./folderTree";
 import { MediaGrid } from "./mediaGrid";
-import { reorderMediaIds } from "./mediaOrder";
+import { orderMediaItems, reorderMediaIds } from "./mediaOrder";
 import { MediaPreviewChip, SortableMediaPreviewChip } from "./mediaPreviewChip";
 import type { MediaItem } from "./types";
 import type { MediaQueryParams } from "./useMediaApi";
@@ -200,8 +200,7 @@ export function MediaPickerForm({
 		if (nextIds === ids) {
 			return;
 		}
-		const itemMap = new Map(resolvedItems.map((item) => [item.id, item]));
-		setResolvedItems(nextIds.map((id) => itemMap.get(id)).filter(Boolean) as MediaItem[]);
+		setResolvedItems((current) => orderMediaItems(current, nextIds));
 		onChange(nextIds);
 	}
 

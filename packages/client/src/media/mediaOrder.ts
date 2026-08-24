@@ -8,3 +8,11 @@ export function reorderMediaIds(ids: string[], activeId: string, overId: string)
 	}
 	return arrayMove(ids, oldIndex, newIndex);
 }
+
+export function orderMediaItems<T extends { id: string }>(items: T[], orderedIds: string[]): T[] {
+	const positions = new Map(orderedIds.map((id, index) => [id, index]));
+	return [...items].sort(
+		(a, b) =>
+			(positions.get(a.id) ?? orderedIds.length) - (positions.get(b.id) ?? orderedIds.length),
+	);
+}
