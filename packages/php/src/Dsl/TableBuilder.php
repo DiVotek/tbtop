@@ -546,6 +546,18 @@ final class TableBuilder implements JsonSerializable
         return $names;
     }
 
+    /** The declared Column matching $name, or null when there is none. */
+    public function findColumn(string $name): ?Column
+    {
+        foreach ($this->columnObjects as $col) {
+            if ($col->name === $name) {
+                return $col;
+            }
+        }
+
+        return null;
+    }
+
     /** @return array{field: string, dir: string}|null */
     public function defaultSortSpec(): ?array
     {

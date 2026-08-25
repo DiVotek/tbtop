@@ -15,7 +15,7 @@ class CarModel extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['name', 'location_id'];
+    protected $fillable = ['name', 'location_id', 'price'];
 
     public function location(): BelongsTo
     {
