@@ -15,3 +15,19 @@ export function isNodeDisabled(meta: NodeMeta | undefined, condCtx: ConditionCon
 	}
 	return typeof disabled === "function" && disabled(condCtx) === true;
 }
+
+/**
+ * True when a field's asterisk should show: a static options.required, or a
+ * requiredIf condition (meta.required) that currently evaluates true.
+ */
+export function isNodeRequired(
+	meta: NodeMeta | undefined,
+	condCtx: ConditionContext,
+	staticRequired: boolean,
+): boolean {
+	if (staticRequired) {
+		return true;
+	}
+	const required = meta?.required;
+	return typeof required === "function" && required(condCtx) === true;
+}

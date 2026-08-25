@@ -21,7 +21,7 @@ import {
 import { FormError, FormSkeleton } from "./defaults";
 import { FormControllerProvider } from "./formContext";
 import { isEqual, useFormController } from "./formController";
-import { isNodeDisabled, isNodeHidden } from "./meta";
+import { isNodeDisabled, isNodeHidden, isNodeRequired } from "./meta";
 import { useModalData } from "./modalDataContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { scrollToFirstError } from "./scrollToFirstError";
@@ -254,7 +254,9 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 	const name = node.name as string;
 	const fieldError = ctrl.fieldErrors[name];
 	const label = (options as { label?: string }).label;
-	const required = (options as { required?: boolean }).required === true;
+	const condCtx: ConditionContext = { record: undefined, data: ctrl.data, user: null };
+	const staticRequired = (options as { required?: boolean }).required === true;
+	const required = isNodeRequired(node.meta, condCtx, staticRequired);
 	const helperText = (options as { helperText?: string }).helperText;
 	const tooltip = (options as { tooltip?: string }).tooltip;
 	const fieldId = node.meta.id ?? name;

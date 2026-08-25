@@ -4,7 +4,7 @@ import { renderDescriptor } from "../render/renderDescriptor";
 import { useActiveLocale, useContentLocaleConfig } from "../structure/contentLocaleContext";
 import { FieldError } from "../structure/formBlock";
 import { useNearestFormHandle } from "../structure/formContext";
-import { isNodeDisabled, isNodeHidden } from "../structure/meta";
+import { isNodeDisabled, isNodeHidden, isNodeRequired } from "../structure/meta";
 import type { StructureNode } from "../structure/structure";
 import type { ConditionContext } from "../structure/types";
 import { Button } from "../ui/button";
@@ -259,7 +259,8 @@ function renderSubField(input: RenderSubFieldInput) {
 	// Harmless for every other kind, which never re-derives a name from options.
 	const options = { ...baseOptions, name: node.kind === "repeater" ? fullPath : subName };
 	const label = (options as { label?: string }).label;
-	const required = (options as { required?: boolean }).required === true;
+	const staticRequired = (options as { required?: boolean }).required === true;
+	const required = isNodeRequired(node.meta, condCtx, staticRequired);
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
 	const fieldError = subFieldError({ fullPath, isTranslatable, activeLocale, fieldErrors });
 	const control = isTranslatable
