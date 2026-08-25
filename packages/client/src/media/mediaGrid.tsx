@@ -6,6 +6,7 @@ import { FileIcon, LayoutGridIcon, ListIcon, Loader2Icon, UploadIcon } from "luc
 import { type DragEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
+import { useDebounce } from "../lib/useDebounce";
 import { TablePagination } from "../structure/table/pagination";
 import type { TablePaginationOptions } from "../structure/types";
 import { Button } from "../ui/button";
@@ -48,7 +49,6 @@ export function MediaGrid({
 }: MediaGridProps): ReactNode {
 	const t = useTranslation();
 	const { view, setView } = useViewMode();
-	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [search, setSearch] = useState(params.search);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [dragOver, setDragOver] = useState(false);
@@ -56,32 +56,20 @@ export function MediaGrid({
 
 	// ─── Search debounce ──────────────────────────────────────────────────────
 
+	const debouncedChangeParams = useDebounce(onChangeParams, 300);
+
+	// Folder navigation resets the input directly, bypassing any pending
+	// debounce — a stale search from the previous folder must not fire after
+	// the reset (see #256: a pending debounce clobbered a folder-nav reset).
 	useEffect(() => {
 		setSearch(params.search);
-		if (searchTimerRef.current) {
-			clearTimeout(searchTimerRef.current);
-			searchTimerRef.current = null;
-		}
-		return () => {
-			if (searchTimerRef.current) {
-				clearTimeout(searchTimerRef.current);
-			}
-		};
-	}, [params.folder, params.search]);
+		debouncedChangeParams.cancel();
+	}, [params.folder, params.search, debouncedChangeParams]);
 
-	const handleSearch = useCallback(
-		(value: string) => {
-			setSearch(value);
-			if (searchTimerRef.current) {
-				clearTimeout(searchTimerRef.current);
-			}
-			searchTimerRef.current = setTimeout(() => {
-				searchTimerRef.current = null;
-				onChangeParams({ search: value, page: 1 });
-			}, 300);
-		},
-		[onChangeParams],
-	);
+	function handleSearch(value: string): void {
+		setSearch(value);
+		debouncedChangeParams({ search: value, page: 1 });
+	}
 
 	// ─── Sort ─────────────────────────────────────────────────────────────────
 
