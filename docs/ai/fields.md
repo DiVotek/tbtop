@@ -109,11 +109,11 @@ the `KitchenSinkPage`/`ContractTest` gate.
 
 | Field | `S` factory | Wire `kind` | Field-specific methods | Needs server endpoint? |
 |---|---|---|---|---|
-| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string $text)` | No |
+| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string $text)`; `mask(string $pattern)` — input mask where `9` is a digit, `a` a letter, `*` alphanumeric and anything else a literal (fixed length; no optional or repeating tokens); `prefix()`/`suffix()` for inline affixes | No |
 | **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | `placeholder(string $text)` | No |
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
 | **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
-| **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)` (also `->set('min', ...)`, `->set('step', ...)` via base `set`) | No |
+| **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes. Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
 | **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS`; call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
@@ -129,9 +129,9 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Upload** | `$s->upload('x')` / `Upload::make('x')` | `upload` | `accept(string\|list<string> $accept)` — MIME types/extensions e.g. `'image/*'` or `['application/pdf', 'image/*']`; `disk(string $disk)` — Laravel filesystem disk (default `'public'`) | Upload endpoint (JSON, not Inertia) — see [./wiring.md](./wiring.md) |
 | **Media picker** | `$s->media('x')` / `MediaPicker::make('x')` | `media` | `multiple(bool)` — allow selecting more than one; `reorderable(bool)` — opt-in drag handles in multiple mode; the submitted ID array follows the preview order, so consumers that treat the first ID as the cover receive the chosen cover; `accept(list<string> $mimes)` — filter visible/uploadable types; `variant('inline'\|'preview')` — single-select display: 'inline' (default) is a Choose button with a read-only filename field, 'preview' is a fully clickable preview block (dashed placeholder when empty, large image/typed file card when filled); multiple mode always renders preview chips regardless of variant | Media-library endpoint — see [./wiring.md](./wiring.md) |
 | **Relation** | `$s->relation('x')` / `Relation::make('x')` | `relation` | `query(callable)` — Eloquent query builder for related records; `labelKey(string $column)` — display column (default `'name'`); `searchable(bool)` | Yes — relation-search endpoint. See [./wiring.md](./wiring.md) |
-| **Repeater** | `$s->repeater('x')` / `Repeater::make('x')` | `repeater` | `fields(list<Field> $fields)` — child field list, **may contain another `repeater` to nest rows** (validation rules prefix through every level as `x.*.child.*.field`); `minItems(int)` / `maxItems(int)` — item bounds; `defaultItems(int)` — empty rows to seed when the value is absent; `collapsible(bool = true)` — render each row as a one-line summary that expands to its edit form on click (off by default; existing repeaters stay fully expanded); `summary(string $field)` — sub-field whose value titles the collapsed row (falls back to "Untitled") | No |
+| **Repeater** | `$s->repeater('x')` / `Repeater::make('x')` | `repeater` | `fields(list<Field> $fields)` — child field list, **may contain another `repeater` to nest rows** (validation rules prefix through every level as `x.*.child.*.field`) — a `unique()` on a row field is checked per row against the table, not against the other submitted rows, so two new rows with the same value pass; `minItems(int)` / `maxItems(int)` — item bounds; `defaultItems(int)` — empty rows to seed when the value is absent; `collapsible(bool = true)` — render each row as a one-line summary that expands to its edit form on click (off by default; existing repeaters stay fully expanded); `summary(string $field)` — sub-field whose value titles the collapsed row (falls back to "Untitled") | No |
 | **Richtext** | `$s->richtext('x')` / `Richtext::make('x')` | `richtext` | `placeholder(string $text)` | No |
-| **In filter** | `$s->inFilter('x')` / `InFilter::make('x')` | `in` | `options(list<{value, label}> $options)` — fixed option list. **Filter context only** — use in `table()->filters()`, not in forms | No |
+| **In filter** | `$s->inFilter('x')` / `Tbtop\Admin\Dsl\Fields\InFilter::make('x')` | `in` | `options(list<{value, label}> $options)` — fixed option list. **Filter context only** — use in `table()->filters()`, not in forms | No |
 
 ### Client component mapping
 
@@ -261,6 +261,8 @@ closure receives their current values as `$deps`. On a parent change the client 
 options and clears the dependent value (opt out with `keepValueOnParentChange()`); until the
 parent has a value the field is disabled, unless `whenParentEmpty('empty')` renders it
 enabled with an empty option set. Daterange shares the same concern for `disabledRanges()`.
+A plain `select` cascading from another `select` uses exactly this shape — the Relation
+example below differs only in what the closure returns.
 
 ---
 
@@ -327,6 +329,14 @@ The initial ranges serialize with the page (deps seeded from the form record); w
 `dependsOn()` parent changes, the client POSTs `{deps}` to the daterange-ranges endpoint,
 which re-runs the closure and answers `{ranges}`. Without `dependsOn()` the serialized
 ranges are final and the endpoint is never called.
+
+A static cutoff needs no `dependsOn()` at all:
+
+```php
+$s->daterange('sale_period')->disabledRanges(fn (array $deps) => [
+    ['from' => null, 'to' => now()->subDay()->toDateString()], // nothing before today
+]);
+```
 
 ```php
 $s->daterange('stay')->label('Stay')
@@ -553,6 +563,10 @@ a config profile. `apps/demo/app/Admin/Pages/UploadDemoPage.php` exercises the f
 | `maxSize` | `maxSize(int $bytes)` | 5 MiB | Max upload size in **bytes** |
 | `convertTo` | `convertTo(string)` | — | Re-encode the image: `'webp'` \| `'jpeg'` \| `'png'` |
 | `quality` | `quality(int)` | — | Encoder quality `1-100` for the converted image |
+| `multiple` | `multiple(bool = true)` | `false` | Accept several files; the form value becomes an array of path strings |
+| `maxFiles` | `maxFiles(int)` | — | Cap on file count in `multiple()` mode |
+| `reorderable` | `reorderable(bool = true)` | `false` | Drag to reorder the uploaded files (`multiple()` only) |
+| `saveUsing` | `saveUsing(Closure)` | — | Take over storage: receives the file plus resolved config, returns `{path, url}`. ⚠️ **Bypasses `UploadStorer`, so SVG sanitization and conversion are skipped.** The mime guard (`accept` + `text/html` rejection) still runs first, but a closure that stores SVG must sanitize it itself |
 
 A public-disk upload that re-encodes to webp, and a private-disk one served only through the
 app:

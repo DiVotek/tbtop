@@ -14,7 +14,7 @@ for the Node stack — philosophy holds, the runtime is now Laravel; re-read wit
 A consumer writes admin pages in a **PHP DSL** (`S` builder, Filament-shaped). Pages
 serialize to **StructureNode JSON** and ship as Inertia props. A **React client**
 (`@tbtop/inertia-admin`) interprets the JSON and renders. Laravel owns everything backend:
-auth (Fortify), validation, queues, migrations, notifications, money casts. The DSL owns
+auth, validation, queues, migrations, notifications, money casts. The DSL owns
 page composition. The client owns rendering. **These three boundaries are the architecture.**
 
 ## Workspace layout
@@ -38,7 +38,7 @@ code, place it:
 | Validation logic | PHP (Laravel rules) — **always** | PHP is the security boundary. The client zod is UX-only (on-blur), never trusted. |
 | Backend behavior (queue, job, notification, auth method, DB) | Plain Laravel in the consumer app | Laravel owns the backend. Don't reinvent it in the DSL. |
 | Rendering / interactivity | `packages/client/src/` | The client owns the screen |
-| A new effect | **Don't, by default.** The set is closed (`notify/redirect/refreshTable/resetForm/closeModal/haltModal`). "I need a new effect" usually means a `custom` client handler or a server redirect. |
+| A new effect | **Don't, by default.** The set is closed (`notify/redirect/refreshTable/resetForm/closeModal/haltModal/copyToClipboard/setFormData`). "I need a new effect" usually means a `custom` client handler or a server redirect. |
 
 If you can't place it from this table, **ask** — don't guess. A misplaced responsibility is
 the most expensive mistake on this stack.
@@ -59,34 +59,59 @@ drift silently unless disciplined:
 - `FieldKindParityTest` enforces `KindClass::make('x')` ≡ `$s->kind('x')`. Add a field kind →
   register it in both spots or this fails.
 
+## Docs are gated too
+
+`docs/ai/api/*.md` is **generated from PHP docblocks** — never hand-edit it. The generator is
+a test, same discipline as the kitchen-sink fixture:
+
+- Add or change a public method → `UPDATE_FIXTURES=1 vendor/bin/pest --filter ApiReference`,
+  then review the diff. A plain run fails when the reference is stale.
+- A new `public` method must be classifiable: authoring methods return `self`/`static`;
+  internals match a name pattern (`get*`/`is*`/`has*`/`*Closure`/`*Resolver`/…). Anything
+  else fails the test until you make it fluent, rename it, or list it in
+  `MethodClassifier::AUTHORING_EXCEPTIONS`.
+- **Write the docblock, not a doc page.** The one-line description an author needs belongs on
+  the method; gotchas and worked examples go in the hand-written `docs/ai/*.md` prose.
+- New route → add its row to the endpoint inventory in `docs/ai/wiring.md`, or
+  `WiringDocsParityTest` fails.
+
 ## Check before you build
 
 Weak agents reinvent what exists. Before adding anything, confirm it's not already there:
 
-- **Fields (21 + the `in` filter):** text, textarea, password, number, date, datetime,
-  daterange, boolean, checkbox, radio, select (static + async + creatable), tags, colorpicker,
-  keyvalue, slug, upload, media, relation, repeater, richtext (real Lexical); plus `inFilter`
-  (wire kind `in`, filter bars only). Grep `packages/client/src/fields/` and
-  `packages/php/src/Dsl/Fields/` first. Full lookup in `docs/ai/fields.md`.
+- **Fields (26, incl. the `in` filter):** text, textarea, password, otp, number, date,
+  datetime, time, daterange, boolean, checkbox, checkboxlist, radio, togglebuttons, slider,
+  select (static + async + creatable + multiple), tags, colorpicker, keyvalue, slug, upload,
+  media, relation, repeater, richtext (real Lexical); plus `inFilter` (wire kind `in`, filter
+  bars only). Grep `packages/client/src/fields/` and `packages/php/src/Dsl/Fields/` first.
+  Prose in `docs/ai/fields.md`; the exhaustive generated method list in `docs/ai/api/`.
 - **Layout/display:** stack, row, flex, grid, section, collapsible, aside, tabs,
   displayText/Html/Alert/Divider (headings are `displayText()->variant('heading')` — there is
-  no bare `heading`/`divider` method), markdown, actionGroup. In `S.php`. For content that
-  must re-render on form-field changes: `liveRegion(name)->dependsOn(...)->render(fn)` —
-  server re-renders display nodes per change, no custom client code.
-- **Table features:** sort, pagination, global search, per-field filters (modal/inline), row
-  actions, bulk actions, row-click, column visibility, URL-state. In `TableBuilder.php`.
+  no bare `heading`/`divider` method), markdown, actionGroup, dropdown, plus the display-value
+  family (displayValue/Image/Richtext/KeyValue — the read-only detail story). In `S.php`. For
+  content that must re-render on form-field changes: `liveRegion(name)->dependsOn(...)->render(fn)`
+  — server re-renders display nodes per change, no custom client code.
+- **Table features:** sort, pagination, global search, per-column search, per-field filters
+  (modal/inline), filter tabs, row grouping, drag-reorder, inline-editable cells, row actions,
+  bulk actions, header actions, row-click, record URLs, column visibility, empty state,
+  soft-delete macro, URL-state. In `TableBuilder.php` / `Column.php`.
+- **Panel-level:** multi-panel config, navigation (sidebar/topbar), chrome-as-DSL, command
+  palette, database notifications (header bell), appearance (theme/density/max-width),
+  UI + content locales. In `Panels/PanelConfig.php`; see `docs/ai/api/panel.md`.
 - **Auth:** login, register, password reset, email verification, 2FA, passkeys, password
-  confirmation — implemented in the **demo via Laravel Breeze controllers** (test-covered),
-  **not** in the package. There is NO Fortify and no package-side auth backend. Don't rebuild
-  the flows to learn them; the open gap is auth-page *layout* + a package-side backend story
-  (see roadmap §1.1).
+  confirmation — the **backend lives in the demo via Laravel Breeze controllers**
+  (test-covered), **not** in the package. There is NO Fortify and no package-side auth
+  backend. The screens are DSL pages using `layout(): 'center'` plus a `middleware()`
+  override to stay public (`LoginPage`, `TwoFactorChallengePage`, `TwoFactorSetupPage`,
+  `ApiTokensPage`). Don't rebuild the flows to learn them; the open gap is a package-side
+  backend story, not the layout (see roadmap §1.1).
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
   `apps/demo/resources/js/admin.tsx` for the rating-field example. Use this for app-specific
   fields instead of editing the packages.
 
-Known stubs/gaps (don't assume these work): no auth-page layout, no package-side auth
-backend, no soft-delete macro, no infolist. (The relation field shipped full async in PR #2 —
-no longer a stub.) Full list in `docs/roadmap.md` and `docs/backlog.md`.
+Known stubs/gaps (don't assume these work): no package-side auth backend, no CSV
+export/import, no global search. Full list in `docs/roadmap.md` and
+`docs/backlog.md` — both lag the code, so verify against source before trusting a "gap".
 
 ## Commands
 

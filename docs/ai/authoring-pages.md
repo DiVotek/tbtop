@@ -66,6 +66,58 @@ that table is the contributor-facing source.
 
 ---
 
+## Panel and Chrome — the bootstrap
+
+A panel is one class extending `Tbtop\Admin\Panels\Panel` and registered in
+`config('tbtop-admin.panels')`. The shell (header/sidebar/footer) is a second, optional
+class extending `Tbtop\Admin\Panels\Chrome`. Full method lists:
+[api/panel.md](./api/panel.md).
+
+```php
+use Tbtop\Admin\CommandPalette\{Command, CommandPaletteConfig};
+use Tbtop\Admin\Panels\{Panel, PanelConfig};
+
+class AdminPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel
+            ->id('admin')->prefix('admin')->guard('web')
+            ->pages([DashboardPage::class, PostsIndexPage::class])
+            ->locales(['en', 'uk'])
+            ->defaultThemeMode('dark')
+            ->chrome(AdminChrome::class)
+            ->commandPalette(fn (CommandPaletteConfig $palette) => $palette->commands([
+                Command::make('New post')->url('/admin/posts/new'),
+            ]));
+    }
+}
+```
+
+```php
+use Tbtop\Admin\Dsl\{Node, S};
+use Tbtop\Admin\Panels\Chrome;
+
+class AdminChrome extends Chrome
+{
+    // Stock header is [$s->userMenu()]; stock sidebar is [$s->logo(), $s->navMenu()].
+    protected function headerItems(S $s): array
+    {
+        return [$s->notifications(), $s->themeToggle(), ...parent::headerItems($s)];
+    }
+
+    public function footer(S $s): ?Node
+    {
+        return $s->row([$s->displayText('© Acme')->variant('muted')]);
+    }
+}
+```
+
+Override `headerItems()`/`sidebarItems()` to add to the stock shell; override
+`header()`/`sidebar()`/`footer()` to replace an area. The reference implementation is
+`apps/demo/app/Admin/{AdminPanel,DemoChrome}.php`. Several panels = several `Panel`
+classes in the config list, each with its own `id()`/`prefix()`.
+
 ## The Page class
 
 Every admin page extends `Tbtop\Admin\Pages\Page`. Two methods are abstract; the rest
@@ -77,7 +129,10 @@ are overridable hooks with sensible defaults.
 | `view()` | `view(S $s): Node` | Yes | Returns the root `Node` tree the client renders |
 | `slug()` | `static slug(): string` | No | Stable identifier used in action/form endpoint URLs. Defaults to kebab-cased class basename |
 | `title()` | `title(): string` | No | Page heading. Defaults to headline-cased class basename |
-| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. `parent` nests this page under another page's nav item — see [./recipes.md](./recipes.md#navigation-configuration) |
+| `subtitle()` | `subtitle(): ?string` | No | Muted line under the heading; `null` renders nothing |
+| `headerActions()` | `headerActions(S $s): array` | No | Actions rendered in the page header, beside the title |
+| `middleware()` | `static middleware(PanelConfig $panel): ?list<string>` | No | Replaces the panel's auth/app middleware for this page **and its whole endpoint cluster** (forms, actions, tables, data). The mechanism for a **public** page inside an authenticated panel: return `['web']` to skip `auth:{guard}` — panel binding, locale and the Inertia share still apply. Spread `$panel->authStack()` to add rather than replace. `null` inherits |
+| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. `parent` nests this page under another page's nav item — see [./recipes.md](./recipes.md#recipe-9--navigation-configuration) |
 | `can()` | `static can(): ?string` | No | Gate ability name required to view this page. `null` = no gate (any authenticated user) |
 | `breadcrumbs()` | `breadcrumbs(): array\|\Closure\|null` | No | Override breadcrumbs. Return `[['label' => '...', 'url' => '...']]`, a closure receiving the page instance, or `null` to auto-build from the nav tree |
 | `layout()` | `layout(): string` | No | Shell layout: `'admin'` (sidebar + header, the default) or `'center'` (chrome-less, content centered) |
@@ -127,7 +182,7 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `row` | `row(array $children, array $opts = []): Node` | Horizontal row of children |
 | `flex` | `flex(array $children, string $direction = 'row', ?string $justify = null, ?string $align = null, ?int $gap = null, bool $wrap = false, ?string $variant = null, ?string $class = null): Node` | Flex container with explicit direction (`'row'`\|`'col'`), justify, align, gap, wrap, an optional `'card'` variant, and an escape-hatch `class` |
 | `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8); `$opts['gap']` is 0-12 (default 4); `$opts['class']` is an escape-hatch |
-| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch) |
+| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'action'` (`['label' => …, 'url' => …]` — a quiet right-aligned link in the header row), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch), plus `colSpan`/`colStart` and the meta keys |
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
 | `aside` | `aside(array $children, array $opts = []): Node` | Right-column sticky panel on wide screens; `$opts` supports `'class'` (escape-hatch) |
 
@@ -144,11 +199,17 @@ or not.
 
 #### Custom classes — the `class` escape hatch
 
-`stack`/`flex`/`grid`/`section`/`aside` all accept a `class` option (a plain string of
+`stack`/`row`/`flex`/`grid`/`section`/`aside` all accept a `class` option (a plain string of
 Tailwind utility classes) that the client merges onto that block's own root element —
-`$s->stack($children, ['class' => 'gap-6'])`, `$s->grid(['cols' => 3, 'class' => '...'], $children)`,
+`$s->stack($children, ['class' => 'mt-8'])`, `$s->grid(['cols' => 3, 'class' => '...'], $children)`,
 `$s->section(['title' => '...', 'class' => '...'], $children)`. `flex` takes it as a trailing
 named parameter instead, since it already has named options: `$s->flex($children, variant: 'card', class: 'mt-2')`.
+
+**Reach for a real option first.** `stack`/`row` accept `gap` (the 0-12 Tailwind scale) and
+`colSpan`/`colStart` for grid placement, so `['gap' => 6]` beats `['class' => 'gap-6']` — it
+survives a Tailwind content-scan miss and reads as intent. Every layout block also accepts
+the meta keys (`id`, `hidden`, `disabled`, `hiddenIf`, `disabledIf`) directly in `$opts`.
+Passing an unknown key throws rather than shipping silently.
 
 This is a plain merge onto the existing root (via `cn()`, so a conflicting utility in `class`
 wins over the block's own default) — it never adds a wrapper `<div>`, so it's safe on `flex`/`grid`
@@ -222,6 +283,7 @@ $s->flex([$badge, $s->unsavedIndicator(), $s->spacer(), $save], variant: 'card')
 | `displayKeyValue` | `displayKeyValue(array $map): DisplayKeyValueBlock` | `<dl>` map render of key/value pairs |
 | `tabs` | `tabs(array $tabs, array $opts = []): Node` | Tab container; each tab is `['label' => '...', 'body' => ...]` |
 | `actionGroup` | `actionGroup(string $label, array $actions, ?string $as = null): Node` | Button group or dropdown; `$as` is `'buttons'`\|`'dropdown'` (default `'buttons'`) |
+| `dropdown` | `dropdown(string $label, array $actions): Node` | Sugar for `actionGroup(..., 'dropdown')` — always a menu, even for one action |
 
 > **The display-value family is the read-only detail story** (the old "infolist" gap).
 > The author holds the record and passes each value to a block directly — there is no
@@ -239,9 +301,11 @@ from shared Inertia props.
 | Method | Purpose |
 |---|---|
 | `navMenu()` | Sidebar navigation groups |
-| `userMenu()` | Profile dropdown (identity, theme, locale, logout) |
+| `userMenu(array $opts = [])` | Profile dropdown (identity, theme, locale, logout); `['locales' => false]` drops the locale row |
 | `logo()` | Panel brand text |
-| `localeSwitcher()` | UI-locale switcher; hidden when the panel has one locale |
+| `localeSwitcher(?string $variant = null)` | UI-locale switcher; hidden when the panel has one locale. `'dropdown'` renders it as a menu instead of buttons |
+| `notifications()` | Notification bell — unread count, list, mark-read. Backed by the notification endpoints; polling interval from `PanelConfig::notificationsPolling()` |
+| `themeToggle()` | Light/dark/system toggle. Renders nothing when the panel sets `darkMode(false)` |
 | `spacer()` | Flex spacer pushing siblings to the far edge |
 | `unsavedIndicator(?string $label = null)` | "Unsaved changes" hint for the nearest enclosing form; renders nothing while that form is clean |
 
@@ -249,24 +313,67 @@ from shared Inertia props.
 
 | Method | Signature | Purpose |
 |---|---|---|
-| `form` | `form(string $name, array $children): FormBuilder` | Creates and registers a form; returns a `FormBuilder` |
-| `table` | `table(string $name): TableBuilder` | Creates and registers a table; returns a `TableBuilder` |
-| `action` | `action(string $name): ActionBuilder` | Creates and registers an action; returns an `ActionBuilder` |
-| `stat` | `stat(string $label): Stat` | Creates a KPI stat card |
+| `form` | `form(string $name, array $children): FormBuilder` | Creates and registers a form |
+| `table` | `table(string $name): TableBuilder` | Creates and registers a table |
+| `action` | `action(string $name): ActionBuilder` | Creates and registers an action |
+| `stat` | `stat(string $label): Stat` | KPI stat card |
 | `chart` | `chart(string $name, string $type, array $opts = []): ChartBuilder` | Creates and registers a chart |
-| `actionsRow` | `actionsRow(array $actions): Node` | Wraps a list of `ActionBuilder` instances in a `row` node |
+| `list` | `list(string $name): ListBuilder` | Server-rendered list block — `->items(fn)` returns the rows |
+| `liveRegion` | `liveRegion(string $name): LiveRegionBuilder` | Display content re-rendered server-side when a form field changes (see below) |
+| `actionsRow` | `actionsRow(array $actions, array $opts = []): Node` | Wraps a list of `ActionBuilder` instances in a `row` node |
+
+#### `liveRegion` — server-rendered content that reacts to form input
+
+The escape hatch for "this part of the page depends on what the user just typed", without
+writing any client code:
+
+```php
+$s->liveRegion('total')
+    ->dependsOn(['quantity', 'unit_price'])
+    ->render(fn (array $deps) => $s->displayValue(
+        (int) ($deps['quantity'] ?? 0) * (int) ($deps['unit_price'] ?? 0)
+    )->money('USD')),
+```
+
+On every change to a declared dependency the client POSTs the current values to the
+live-region endpoint, the closure re-runs server-side, and the returned nodes replace the
+region's content.
+
+**Constraints worth knowing:**
+
+- **Display nodes only** — no form fields. A field here would mean a dynamic form schema
+  (validation, dirty tracking, names), which forms do not support.
+- **The closure must be pure** over `$deps` plus captured scope: it runs once at page
+  assembly (seeding `options.initial`) and again on every endpoint request.
+- **Actions inside a region must be deps-stable.** Handlers resolve by name at dispatch
+  time using the *initial* deps, so a re-render may vary an action's **visibility** but
+  never whether the node exists at all.
+- **`when()` is the access boundary, not `hiddenIf()`.** `hiddenIf()` only hides the region
+  client-side and leaves the endpoint reachable; `when(false)` drops it and the endpoint
+  answers 404.
+- **Deps are filtered to the `dependsOn()` list** and arrive as strings.
+- **One round-trip per change.** For pure client-side math (no server rules, no DB), a
+  form-aware custom block is cheaper — see
+  [Recipe 10](./recipes.md#recipe-10--form-aware-custom-block-live-client-side-computation).
+- **Repeater rows cannot be dependencies yet** (collection deps are a backlog item). A
+  total that must follow line items as the user types is therefore a Recipe 10 job, not a
+  `liveRegion`.
 
 ### Field factories
 
-`S` exposes every built-in field as a magic method: `text`, `textarea`, `password`,
-`number`, `date`, `datetime`, `daterange`, `boolean`, `checkbox`, `radio`, `select`,
-`tags`, `colorpicker`, `keyvalue`, `slug`, `upload`, `media`, `relation`, `repeater`,
-`richtext`. Each takes a field name as its first argument. Also available:
-`inFilter(string $name): InFilter` — a multi-value IN filter for table filter bars.
+`S` exposes every built-in field as a magic method — `text`, `textarea`, `password`, `otp`,
+`number`, `date`, `datetime`, `time`, `daterange`, `boolean`, `checkbox`, `checkboxlist`,
+`radio`, `togglebuttons`, `slider`, `select`, `tags`, `colorpicker`, `keyvalue`, `slug`,
+`upload`, `media`, `relation`, `repeater`, `richtext` — each taking a field name as its first
+argument. Also available: `inFilter(string $name): InFilter`, a multi-value IN filter for
+table filter bars (a concrete method, not magic dispatch).
 
-Full field API is in [./fields.md](./fields.md).
+Behavior and gotchas are in [./fields.md](./fields.md); the exhaustive per-field method list
+is in [api/fields.md](./api/fields.md).
 
-Custom field kinds can be registered with `S::register(string $kind, string $fieldClass)`.
+Custom field kinds can be registered with `S::register(string $kind, string $fieldClass)` —
+the class must extend `Tbtop\Admin\Dsl\Fields\Field`, and a matching client renderer must
+exist (see [./wiring.md](./wiring.md#client-extension-points)).
 
 ---
 
@@ -307,24 +414,22 @@ $s->form('settings', [
 
 Returned by `$s->table(string $name)`.
 
-| Method | Signature | Purpose |
-|---|---|---|
-| `columns` | `columns(array $columns): self` | Column descriptors: `Column` instances, raw arrays, or shorthand `['name' => 'Label']` |
-| `query` | `query(Closure $query): self` | Server-side Eloquent query closure |
-| `searchable` | `searchable(array $fields): self` | Table-level list of globally-searchable field names |
-| `filters` | `filters(array $fields): self` | Filter fields (same `Field` instances as forms); defaults `filtersIn` to `'modal'` |
-| `filtersIn` | `filtersIn(string $mode): self` | `'modal'` (filter icon opens a drawer) or `'inline'` (filters always visible) |
-| `deferFilters` | `deferFilters(bool $value = true): self` | Require an explicit Apply action before filter changes narrow the query |
-| `filtersFormColumns` | `filtersFormColumns(int $columns): self` | Grid columns for the filters form layout |
-| `filtersFormWidth` | `filtersFormWidth(string $width): self` | Modal width when `filtersIn('modal')`: `'sm'`\|`'md'`\|`'lg'`\|`'full'` |
-| `tabs` | `tabs(array $tabs): self` | Predefined query-scope tabs; first tab is the default |
-| `defaultSort` | `defaultSort(string $field, string $dir = 'asc'): self` | Default sort column and direction |
-| `groups` | `groups(string $column): self` | Partition contiguous rows sharing `$column`'s value under group headers (see below) |
-| `paginate` | `paginate(int $perPage = 25, array $options = [10, 25, 50, 100]): self` | Pagination config |
-| `rowActions` | `rowActions(array $actions): self` | Per-row action buttons; `ActionBuilder` instances |
-| `rowClick` | `rowClick(string $actionName): self` | Name of a row action to trigger when the row is clicked |
-| `bulkActions` | `bulkActions(array $actions): self` | Checkbox bulk-select actions; `ActionBuilder` instances |
-| `softDeletes` | `softDeletes(S $s, string $model, array $options = []): self` | Soft-delete convenience layer (see below) |
+> **Full method list: [api/tables.md](./api/tables.md)** — generated from source, always
+> complete. This section covers only the parts that need explaining beyond a one-liner.
+
+The shape of a table: `columns()` + `query()` are the minimum. Everything else is opt-in —
+search (`searchable()`, `Column::individuallySearchable()`), filters (`filters()` +
+`filtersIn()`), tabs, sorting, pagination, row/bulk/header actions, drag-reorder, grouping,
+inline-editable cells, and the record-URL row link.
+
+**Toolbar visibility** — three knobs that are easy to confuse:
+
+- `toolbar(false)` hides the search input and the column-visibility dropdown as a pair;
+  `searchInput(false)` / `columnToggle(false)` hide one each. **Filters, tabs and header
+  actions still render** — they are not part of the toolbar for this purpose.
+- `embedded(true)` is the stronger one: it drops the whole toolbar **including filters**,
+  plus the pagination footer, for a table sitting inside a card next to other content.
+  Rows, badges, `recordUrl` and `perPage` still apply.
 
 #### `groups()` — row grouping
 
@@ -390,42 +495,35 @@ label/icon/color stay chainable.
 
 Instantiate with `Column::make(string $name)`.
 
-**Core methods:**
+**Full method list: [api/tables.md](./api/tables.md#column)** — generated from source.
+The groups below explain what the reference cannot.
 
-| Method | Signature | Purpose |
-|---|---|---|
-| `label` | `label(string $label): static` | Column header text |
-| `kind` | `kind(string $kind): static` | Display kind: `'text'`, `'date'`, `'datetime'`, `'time'`, `'number'`, `'money'`, `'boolean'`, `'badge'`, `'icon'` |
-| `sortable` | `sortable(bool $sortable = true): static` | Enables sort on this column |
-| `sortBy` | `sortBy(string $field): static` | Server-only: sort by a different field (may be a dot-path to a relation, e.g. `'contact.full_name'`, resolved via a correlated subquery — no JOIN) instead of the column name |
-| `sortUsing` | `sortUsing(Closure $fn): static` | Server-only: full control over the ORDER BY — `fn(Builder $query, string $direction)`; wins over `sortBy()` |
-| `searchable` | `searchable(bool $searchable = true): static` | Includes this column in global search |
-| `individuallySearchable` | `individuallySearchable(bool $value = true): static` | Adds a per-column search input in the table header, debounced independently of the global search box |
-| `toggleable` | `toggleable(bool $toggleable = true, bool $hiddenByDefault = false): static` | User can toggle column visibility; optionally hide by default |
-| `hidden` | `hidden(): static` | Always exclude from wire and projection |
-| `visible` | `visible(Closure $closure): static` | Conditional visibility; closure returns bool |
-| `align` | `align(string $align): static` | `'left'`\|`'center'`\|`'right'` |
-| `icon` | `icon(string $name, string $position = 'left'): static` | Lucide icon alongside the cell value |
-| `width` | `width(string $width): static` | CSS width string |
-| `wrap` | `wrap(): static` | Wrap long values |
-| `truncate` | `truncate(): static` | Truncate long values (default behavior) |
-| `noWrap` | `noWrap(bool $value = true): static` | Keep the complete cell value on one line without truncating it |
-| `tooltip` | `tooltip(string $tooltip): static` | Hover tooltip |
-| `translatable` | `translatable(bool $value = true): static` | Mark as a translatable column |
-| `formatUsing` | `formatUsing(Closure $fn): static` | Custom server-side cell formatter |
+**Kind methods are exclusive.** `badge()`, `boolean()`, `toggle()`, `money()`, `date()`,
+`link()`, `image()`, `textInput()`, … each set the column's single `kind`; chaining two
+keeps only the last one and silently drops the earlier one's config.
 
-**Kind-sugar methods** (set `kind` and store format metadata):
+**Display kinds.** `kind()` picks how a cell renders; the sugar methods set it and store
+format metadata in one call: `date()`, `datetime()`, `time()`, `number()`, `money()`,
+`boolean()`, `badge()`, `iconMap()`, `image()`, `color()`, `link()`. Formatting itself
+happens server-side in `Tbtop\Admin\Http\KindFormat`, shared with `displayValue` so a
+value looks identical in a table cell and a detail view.
 
-| Method | Signature | Notes |
-|---|---|---|
-| `date` | `date(?string $format = null): static` | Optional PHP date format string |
-| `datetime` | `datetime(?string $format = null): static` | Optional PHP date format string |
-| `time` | `time(?string $format = null): static` | Optional PHP date format string; defaults to `'H:i'` |
-| `number` | `number(?int $decimals = null): static` | Optional decimal places |
-| `money` | `money(string $currency): static` | ISO currency code, e.g. `'USD'` |
-| `boolean` | `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): static` | Icon/color overrides optional |
-| `badge` | `badge(array $colors): static` | `['value' => Color\|string]` map |
-| `iconMap` | `iconMap(array $map): static` | `['value' => ['icon' => '...', 'color' => '...']]` or `['value' => 'icon-name']` |
+> **`money()` takes minor units.** The stored value is divided by 100 — pass cents, not
+> a decimal amount.
+
+> **`formatUsing()` replaces kind formatting, it does not layer on top.** When both are
+> set, `ColumnProjection` returns the closure's output and the kind's formatter never
+> runs — so a `formatUsing` on a `money()` column must do its own currency rendering.
+
+**Visibility.** Three different things: `hidden()` drops the column from the wire
+entirely; `visible(fn)` decides that per request, server-side; `toggleable()` ships the
+column and lets the user hide it, with the second argument choosing the initial state.
+
+**Inline editing.** `toggle()`, `textInput()` and `selectColumn()` make a cell editable
+in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()` for per-cell
+validation and `options()` for the select variant. The save posts to the cell endpoint
+and returns effects — see [wiring.md](./wiring.md) and
+[Recipe 7](./recipes.md#recipe-7--inline-editable-column-toggle--onsave).
 
 ```php
 // from apps/demo/app/Admin/Pages/PostsIndexPage.php
@@ -458,12 +556,16 @@ persist in the URL under `t[{table}][colSearch][{column}]`, alongside `filters`/
 Instantiate via `$s->action(string $name)`. Every action needs exactly one spec method
 (`visit`, `submit`, `handle`, `modal`, or `custom`) — calling two throws.
 
+> **Full method list: [api/actions.md](./api/actions.md)** — generated from source. The
+> table below covers the spec methods and the ones with real gotchas; styling helpers
+> (`size`, `outlined`, `link`, `button`, `badge`) are in the reference.
+
 | Method | Signature | Purpose |
 |---|---|---|
 | `label` | `label(string $label): self` | Button label |
 | `color` | `color(string $color): self` | Button color, e.g. `'primary'`, `'danger'` |
 | `keybinding` | `keybinding(string $keys): self` | Keyboard shortcut, e.g. `'mod+s'` |
-| `visit` | `visit(string $href): self` | **Spec.** Client-side navigation to a static URL |
+| `visit` | `visit(string $href, bool $newTab = false): self` | **Spec.** Client-side navigation to a static URL; `$newTab` opens it in a new browser tab instead |
 | `submit` | `submit(?string $form = null): self` | **Spec.** Submit a form; optional form name (defaults to the enclosing form) |
 | `handle` | `handle(Closure $handler, array $needs = []): self` | **Spec.** Server action handler; `$needs` declares payload sources (`'form'`\|`'row'`\|`'selection'`) |
 | `modal` | `modal(string $title, Node\|FormBuilder\|JsonSerializable\|null $body = null, ?string $description = null): self` | **Spec.** Opens a modal dialog |
@@ -501,6 +603,8 @@ Thin factories over `$s->action()` + `Effects` for the common record operations.
 you the danger-color + confirm + needs-wiring boilerplate and return a **chainable**
 `ActionBuilder`, so you keep the full fluent API. Reach for these before hand-rolling a
 delete/edit/clone — they bake in the right defaults and stay overridable.
+
+Import them from that namespace, e.g. `use Tbtop\Admin\Dsl\Actions\{CreateAction, EditAction, DeleteAction};`.
 
 **The registry mandate (read this first).** Every preset takes `S $s` as its first argument
 for one non-negotiable reason: it builds the action via `$s->action()`, which both *creates*
@@ -557,7 +661,7 @@ CreateAction::make(
     form: $s->form('quickCreatePost', [
         $s->text('title')->label('Title')->required()->rules('max:200')->translatable(),
         $s->slug('slug')->label('Slug')->required()
-            ->set('fromField', 'title')
+            ->fromField('title')
             ->rules(['max:200', 'regex:/^[a-z0-9-]+$/', 'unique:posts,slug']),
     ]),
     storeUsing: function (ActionCtx $ctx): Effects {
@@ -658,11 +762,19 @@ See the full round-trip walkthrough in
 
 Instantiate with `Tab::make(string $name)`. Passed to `TableBuilder::tabs()`.
 
+**Full method list: [api/tables.md](./api/tables.md#tab)** — generated from source.
+
 | Method | Signature | Purpose |
 |---|---|---|
-| `label` | `label(?string $label): self` | Tab label (defaults to the name) |
+| `label` | `label(?string $label): self` | Tab label (defaults to the raw name) |
 | `query` | `query(Closure $query): self` | Query scope applied when this tab is active |
-| `count` | `count(bool $count = true): self` | Show a row-count badge on the tab (off by default) |
+| `count` | `count(bool $count = true): self` | Row-count badge on the tab — **off by default because it costs one extra count query per tab** |
+| `description` | `description(string $description): self` | Subtitle shown under the **page title** while this tab is active — not text on the tab itself |
+| `icon` | `icon(string $name, string $position = 'left'): static` | Kebab-case Lucide icon on the tab |
+| `tooltip` | `tooltip(string $text): static` | Hover tooltip |
+
+> **Not the same as `$s->tabs()`.** These are table *filter scopes*; `$s->tabs()` is a layout
+> container splitting page content into panels. Unrelated concepts, similar names.
 
 ```php
 // from apps/demo/app/Admin/Pages/PostsIndexPage.php
@@ -678,16 +790,12 @@ Tab::make('draft')->label('Draft')
 
 Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 
-| Method | Signature | Purpose |
-|---|---|---|
-| `value` | `value(mixed $value): self` | Scalar value or `Closure` resolved at render time |
-| `description` | `description(?string $description): self` | Sub-label beneath the value |
-| `delta` | `delta(string $text, string $direction): self` | Trend indicator; `$direction` is `'up'`\|`'down'`\|`'flat'` |
-| `icon` | `icon(string $lucideName): self` | Lucide icon name |
-| `color` | `color(Color\|string $color): self` | Accent color |
-| `sparkline` | `sparkline(array $numbers): self` | List of numbers rendered as a mini sparkline |
+**Full method list: [api/blocks.md](./api/blocks.md#stat)** — generated from source.
 
-Call `->toNode()` to embed a `Stat` in a layout node.
+`value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
+indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
+on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
+clamped again client-side**. Call `->toNode()` to embed a `Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php
@@ -702,16 +810,34 @@ Stat::make('Total Posts')
 ### ChartBuilder
 
 Returned by `$s->chart(string $name, string $type, array $opts = [])`. The `$type`
-drives the recharts component on the client (`'bar'`, `'donut'`, etc.).
+drives the recharts component on the client: `'line'`, `'bar'`, `'area'`, `'pie'` or `'donut'`.
 
-| Method | Signature | Purpose |
-|---|---|---|
-| `query` | `query(Closure $query): self` | Server-side data resolver; marks the chart as dynamic (fetched via the page data endpoint) |
-| `params` | `params(array $fields): self` | Filter fields rendered above the chart; values passed to the query closure |
-| `set` | `set(string $key, mixed $value): self` | Set any extra option key on the node |
+**Full method list: [api/blocks.md](./api/blocks.md#chartbuilder)** — generated from source.
 
-Static data can be embedded directly in `$opts` (no `query()` call needed). Call
-`->toNode()` when the builder is used inside a layout.
+`query()` makes the chart dynamic (fetched via the page data endpoint); `params()` renders
+filter fields above it whose values reach the query closure; `poll()` re-fetches on an
+interval. Static data goes in `$opts['data']` with no `query()` call. Call `->toNode()`
+when the builder is used inside a layout.
+
+```php
+$s->chart('postsOverTime', 'line', [
+    'title' => 'Posts over time',
+    'xKey' => 'period',                                     // x-axis column of each row
+    'series' => [['dataKey' => 'count', 'label' => 'Posts']], // one line per series
+])
+    ->params([$s->select('interval')->options([
+        ['value' => 'day', 'label' => 'Day'], ['value' => 'month', 'label' => 'Month'],
+    ])->default('month')])
+    ->query(fn (Request $request, array $params) => Post::query()
+        ->selectRaw("strftime(?, created_at) as period, count(*) as count",
+            [$params['interval'] === 'day' ? '%Y-%m-%d' : '%Y-%m'])
+        ->groupBy('period')->orderBy('period')->get())
+    ->poll(30)
+    ->toNode();
+```
+
+Rows are flat: every series `dataKey` plus the `xKey` (line/bar/area) or `nameKey`
+(pie/donut) column. `strftime` is SQLite — swap for your driver's date formatter.
 
 ---
 
@@ -734,8 +860,8 @@ a named client-side handler, or let the server do a full Inertia redirect.
 |---|---|---|
 | `notify` | `notify(string $message, string $kind = 'success'): self` | Shows a toast notification; `$kind` controls the style (e.g. `'success'`, `'error'`) |
 | `redirect` | `redirect(string $href): self` | Navigates to the given URL (Inertia visit) |
-| `refreshTable` | `refreshTable(?string $table = null): self` | Re-fetches the named table; `null` refreshes the first/only table on the page |
-| `resetForm` | `resetForm(?string $form = null): self` | Resets the named form to its `record` state; `null` resets the first/only form |
+| `refreshTable` | `refreshTable(?string $table = null): self` | Re-fetches the named table. With `null` it falls through: the enclosing table → **every** mounted table → a full page reload when none is registered |
+| `resetForm` | `resetForm(?string $form = null): self` | Resets the **nearest enclosing** form to its `record` state. ⚠️ The `$form` name is currently ignored client-side — passing one does not target that form |
 | `closeModal` | `closeModal(): self` | Closes the currently open modal dialog |
 | `haltModal` | `haltModal(string $message, string $kind = 'error'): self` | Surfaces `$message` **inside the still-open modal** (e.g. a server-side validation failure) — does not close it, unlike every other effect that touches a modal |
 | `copyToClipboard` | `copyToClipboard(string $text): self` | Writes `$text` to the clipboard and toasts on success; a failed write stays silent |

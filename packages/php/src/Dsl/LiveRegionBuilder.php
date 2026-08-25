@@ -52,7 +52,14 @@ final class LiveRegionBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  callable(array<string, string>, S): mixed  $fn Returns a node or a list of nodes. */
+    /**
+     * The region's content, re-rendered server-side each time a declared
+     * dependsOn() field changes (one round-trip per change). $fn receives
+     * only the dependsOn()-filtered deps, not the full form state, and must
+     * return display nodes only — no fields.
+     *
+     * @param  callable(array<string, string>, S): mixed  $fn  Returns a node or a list of nodes.
+     */
     public function render(callable $fn): self
     {
         $this->renderClosure = Closure::fromCallable($fn);

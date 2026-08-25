@@ -20,7 +20,15 @@ namespace Tbtop\Admin\Dsl\Concerns;
  */
 trait HasOptions
 {
-    /** @param  list<array{value: mixed, label: string, description?: string, disabled?: bool, display?: array<string, string>}>  $options */
+    /**
+     * Set the fixed option list. Each entry is {value, label, description?,
+     * disabled?, display?} — values are string-normalized on the wire, so seed
+     * default()/query results with string values too. 'display' (image,
+     * subtitle, html) only renders on Select; other adopters (Radio,
+     * CheckboxList, ToggleButtons, InFilter) render only description/disabled.
+     *
+     * @param  list<array{value: mixed, label: string, description?: string, disabled?: bool, display?: array<string, string>}>  $options
+     */
     public function options(array $options): static
     {
         return $this->set('options', self::normalizeOptionValues($options));

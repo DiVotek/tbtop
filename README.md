@@ -138,6 +138,6 @@ phpstan runs at level 5 (the skeleton default; raise it in `phpstan.neon.dist`).
 
 ## Status
 
-See `docs/roadmap.md` for the release plan and the current gap list (auth-page
-layout and the relation field are the known blockers). Per-package contributor
+See `docs/roadmap.md` for the release plan and the current gap list (a
+package-side auth backend is the known blocker). Per-package contributor
 notes live in the root `CLAUDE.md`.

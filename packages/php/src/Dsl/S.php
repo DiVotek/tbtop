@@ -166,7 +166,13 @@ final class S
     // Layout builders
     // -------------------------------------------------------------------------
 
-    /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
+    /**
+     * Vertical flex container. $opts accepts 'class', 'gap', 'colSpan',
+     * 'colStart', plus the meta keys (id, hidden, disabled, hiddenIf, disabledIf).
+     *
+     * @param  list<mixed>  $children
+     * @param  array<string, mixed>  $opts
+     */
     public function stack(array $children, array $opts = []): Node
     {
         self::assertKnownKeys('stack', $opts, ['class', 'gap', 'colSpan', 'colStart', ...Meta::keys()]);
@@ -175,7 +181,13 @@ final class S
         return self::layout('stack', $children, $opts);
     }
 
-    /** @param  list<mixed>  $children @param  array<string, mixed>  $opts */
+    /**
+     * Horizontal flex container. $opts accepts 'class', 'gap', 'colSpan',
+     * 'colStart', plus the meta keys (id, hidden, disabled, hiddenIf, disabledIf).
+     *
+     * @param  list<mixed>  $children
+     * @param  array<string, mixed>  $opts
+     */
     public function row(array $children, array $opts = []): Node
     {
         self::assertKnownKeys('row', $opts, ['class', 'gap', 'colSpan', 'colStart', ...Meta::keys()]);
@@ -381,8 +393,11 @@ final class S
     }
 
     /**
-     * Aside layout node: renders as a right-column sticky panel on wide screens.
-     * $opts supports 'class' (extra Tailwind classes merged onto the root element).
+     * Fixed-width (w-80) side column: place it as a sibling of the main
+     * content inside row()/flex() — row([tabs, aside]) is the detail-page
+     * shape. It does not stick on scroll. Not the same as
+     * section(['aside' => node]), which is a column inside one card. $opts supports 'class' (extra Tailwind classes merged
+     * onto the root element).
      *
      * @param  list<mixed>  $children
      * @param  array{class?: string, colSpan?: int|array<string, int>, colStart?: int|array<string, int>}  $opts
@@ -467,11 +482,13 @@ final class S
         }, $children);
     }
 
+    /** Static text block. There is no bare heading(): a heading is displayText()->variant('heading'). */
     public function displayText(string $content): TextBlock
     {
         return TextBlock::make($content);
     }
 
+    /** Raw HTML block, rendered unsanitized — the author owns escaping. */
     public function displayHtml(string $rawHtml): HtmlBlock
     {
         return HtmlBlock::make($rawHtml);
@@ -487,11 +504,13 @@ final class S
         return MarkdownBlock::make($content);
     }
 
+    /** Horizontal rule. */
     public function displayDivider(): Node
     {
         return new Node('displayDivider');
     }
 
+    /** Inline alert/callout box; chain ->color() / ->title() on the returned block. */
     public function displayAlert(string $message): AlertBlock
     {
         return AlertBlock::make($message);
@@ -500,7 +519,9 @@ final class S
     /**
      * Read-only display of one value, formatted like a table column. The author
      * passes the value directly; chain a kind-sugar method (->badge / ->boolean
-     * / ->icon / ->money / ->date / ->datetime / ->number) on the result.
+     * / ->icon / ->money / ->date / ->datetime / ->number) on the result. It has
+     * no label of its own — pair it with a displayText() heading, or use
+     * displayKeyValue() for labelled pairs.
      */
     public function displayValue(mixed $value): DisplayValueBlock
     {
@@ -537,6 +558,11 @@ final class S
     }
 
     /**
+     * Tab container. Each tab needs 'body' (a single node) XOR 'children' (a
+     * list, optionally laid out via 'columns'), plus a 'label' or 'name' to
+     * derive one from. Pass 'name' in $opts to make this a named tabs block
+     * (every tab then also needs its own unique 'name', for URL/state addressing).
+     *
      * @param  list<array{name?: string, label?: string, body?: mixed, children?: list<mixed>, columns?: int|array<string, int>, icon?: string|array{name: string, position?: string}, badge?: string|int}>  $tabs  Each entry needs 'body' XOR 'children' ('columns' only applies with 'children')
      * @param  array<string, mixed>  $opts
      */
@@ -700,17 +726,33 @@ final class S
     // and the server resolves handlers (onSubmit, action endpoints) from these
     // maps. Keep names unique per page.
 
-    /** @param  list<mixed>  $children */
+    /**
+     * Registers the form under $name in this page's request-scoped registry,
+     * so the HTTP layer can resolve it by name — keep names unique per page,
+     * since re-using one replaces the earlier entry.
+     *
+     * @param  list<mixed>  $children
+     */
     public function form(string $name, array $children): FormBuilder
     {
         return $this->forms[$name] = new FormBuilder($name, $children);
     }
 
+    /**
+     * Registers the table under $name in this page's request-scoped registry,
+     * so the HTTP layer can resolve it by name — keep names unique per page,
+     * since re-using one replaces the earlier entry.
+     */
     public function table(string $name): TableBuilder
     {
         return $this->tables[$name] = new TableBuilder($name);
     }
 
+    /**
+     * Registers the stat under $label in this page's request-scoped registry,
+     * so the HTTP layer can resolve it by name — keep labels unique per page,
+     * since re-using one replaces the earlier entry.
+     */
     public function stat(string $label): Stat
     {
         return $this->stats[$label] = Stat::make($label);
@@ -722,12 +764,28 @@ final class S
         return ListBuilder::make($name);
     }
 
-    /** @param  array<string, mixed>  $opts */
+    /**
+     * Registers the chart under $name in this page's request-scoped registry,
+     * so the HTTP layer can resolve it by name — keep names unique per page,
+     * since re-using one replaces the earlier entry. $type picks the client
+     * chart component: 'line', 'bar', 'area', 'pie', or 'donut'. $opts keys:
+     * 'title', 'description', 'height' (px), 'series' (list of
+     * ['dataKey' => column, 'label'?, 'color'?]), 'xKey' (the x-axis column for
+     * line/bar/area) or 'nameKey' (the slice-label column for pie/donut).
+     * Static data goes in 'data' as a list of rows; ->query() replaces it.
+     *
+     * @param  array<string, mixed>  $opts
+     */
     public function chart(string $name, string $type, array $opts = []): ChartBuilder
     {
         return $this->charts[$name] = new ChartBuilder($name, $type, $opts);
     }
 
+    /**
+     * Registers the action under $name in this page's request-scoped registry,
+     * so the HTTP layer can resolve it by name — keep names unique per page,
+     * since re-using one replaces the earlier entry.
+     */
     public function action(string $name): ActionBuilder
     {
         return $this->actions[$name] = new ActionBuilder($name);
@@ -744,6 +802,8 @@ final class S
     }
 
     /**
+     * Row of standalone action buttons, outside any form or table.
+     *
      * @param  list<ActionBuilder>  $actions
      * @param  array{variant?: 'grid'}  $opts  'grid' lays the actions out as a
      *                                         responsive card grid instead of an inline row.

@@ -54,6 +54,7 @@ final class ActionBuilder implements JsonSerializable
 
     public function __construct(public readonly string $name) {}
 
+    /** Button/link text. */
     public function label(string $label): self
     {
         $this->opts['label'] = $label;
@@ -61,6 +62,7 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /** Visual color/tint of the trigger (e.g. 'danger' for a destructive action). */
     public function color(string $color): self
     {
         $this->opts['color'] = $color;
@@ -79,6 +81,7 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /** Keyboard shortcut that triggers the action (e.g. 'mod+s'). */
     public function keybinding(string $keys): self
     {
         $this->opts['keybinding'] = $keys;
@@ -86,7 +89,7 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  bool  $newTab  Open the target in a new browser tab. */
+    /** Visit spec: navigates to $href on click, one of the mutually exclusive action specs. @param  bool  $newTab  Open the target in a new browser tab. */
     public function visit(string $href, bool $newTab = false): self
     {
         return $this->setSpec(array_filter([
@@ -96,12 +99,25 @@ final class ActionBuilder implements JsonSerializable
         ], static fn (mixed $v): bool => $v !== null));
     }
 
+    /**
+     * Submit spec: one of the mutually exclusive action specs (visit/submit/
+     * handle/modal/custom) — setting a second one throws. With $form omitted,
+     * submits the form the action is rendered inside; pass a form name to
+     * target a different form on the same page.
+     */
     public function submit(?string $form = null): self
     {
         return $this->setSpec(array_filter(['type' => 'submit', 'form' => $form]));
     }
 
-    /** @param  list<string>  $needs Payload sources: form | row | selection. */
+    /**
+     * Server spec: one of the mutually exclusive action specs. $handler runs
+     * server-side and must return an Effects instance (see Actions\Effects) —
+     * a non-Effects return is treated as no effects. $needs declares which
+     * payload sources are collected and passed to $handler: 'form' (validated
+     * field values), 'row' (the record for a row action), 'selection' (checked
+     * row keys for a bulk action).
+     */
     public function handle(Closure $handler, array $needs = []): self
     {
         $this->handler = $handler;
@@ -125,6 +141,11 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Adds a confirmation dialog before the action fires. Composes with any
+     * spec (visit/submit/handle/modal/custom) — unlike those, it is not
+     * itself a spec and doesn't participate in the "exactly one" exclusivity.
+     */
     public function confirm(string $title, ?string $description = null): self
     {
         $this->opts['confirm'] = array_filter([
@@ -135,6 +156,12 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Modal spec: one of the mutually exclusive action specs (visit/submit/
+     * handle/modal/custom) — calling a second spec method on the same
+     * action throws. $body renders inside the dialog; pass a FormBuilder to
+     * collect input, or omit it for a plain content/confirmation modal.
+     */
     public function modal(string $title, Node|FormBuilder|JsonSerializable|null $body = null, ?string $description = null): self
     {
         return $this->setSpec(array_filter([
@@ -171,12 +198,12 @@ final class ActionBuilder implements JsonSerializable
     }
 
     /**
-     * Server-side Gate check. A failing check omits the action from the wire
-     * entirely (mirrors Filament's Gate::allows() auto-hide) — ChildInclusion
-     * applies it, from the Node constructor for 'children'/'fields' and from
-     * S::normalizeChildren() for the table-specific keys. Cosmetic only: the
-     * endpoint stays reachable, so ActionController re-checks isAuthorized()
-     * authoritatively.
+     * Gate check (Gate::allows($ability, $arg)). A failing check drops the
+     * action from the wire, the way Filament auto-hides — and the same check
+     * is re-run authoritatively when the action fires, so a hidden action
+     * cannot be triggered by hand-crafting the request.
+     *
+     * @see ChildInclusion for the omission, ActionController::isAuthorized() for the re-check
      */
     public function authorize(string $ability, mixed $arg = null): self
     {
@@ -237,17 +264,23 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  array<string, mixed>  $params */
+    /**
+     * Custom spec: one of the mutually exclusive action specs. Dispatches to a
+     * client-side handler registered via defineCustomAction($handler, ...) —
+     * $params is passed through unchanged. A $handler name with no registered
+     * handler throws client-side when the action fires, not at page load.
+     */
     public function custom(string $handler, array $params = []): self
     {
         return $this->setSpec(['type' => 'custom', 'handler' => $handler, 'params' => $params]);
     }
 
     /**
-     * Backend data source for a modal action. Overrides the trait to also track
-     * the payload sources the closure needs. The closure runs server-side when
-     * the modal opens, receives the row/selection context, and returns arbitrary
-     * data fed to the modal body (e.g. a record to prefill a form).
+     * Optional data source for a modal action: runs server-side when the modal
+     * opens, receives the row/selection context, and returns data fed to the
+     * modal body (e.g. a record to prefill a form). Not needed for a modal that
+     * only collects input — CreateAction has none; EditAction uses it to load
+     * the record.
      *
      * @param  list<string>  $needs  Payload sources: row | selection | form.
      */

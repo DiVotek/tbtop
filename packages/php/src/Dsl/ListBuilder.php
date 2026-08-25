@@ -29,6 +29,11 @@ final class ListBuilder implements JsonSerializable
     }
 
     /**
+     * Row source for the list. $fn runs server-side at serialization time (no
+     * request payload — same lazy-resolution shape as Stat::value) and
+     * returns each row as ['title' => ..., 'meta'?, 'color'?, 'url'?];
+     * 'title' is required, 'color' is one of success|warning|danger|muted.
+     *
      * @param  callable(): list<array{title: string, meta?: string, color?: string, url?: string}>  $fn
      */
     public function items(callable $fn): self

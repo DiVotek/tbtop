@@ -61,6 +61,11 @@ final class TableBuilder implements JsonSerializable
 
     /**
      * Accept Column instances, raw arrays, or shorthand ['name' => 'Label'].
+     * A dotted name (Column::make('customer.name')) reads through a loaded
+     * relation via data_get — eager-load it in query() (fn () =>
+     * Order::query()->with('customer')). Display only: sort
+     * and search run as SQL on the column name, so sortable()/searchable() on
+     * a dotted column errors at query time.
      *
      * @param  array<int|string, mixed>  $columns
      */
@@ -89,7 +94,13 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<string>  $fields */
+    /**
+     * Table-level global search fields, by FIELD name (not necessarily a
+     * visible column). Merges additively with any Column::searchable() —
+     * searchableFields() unions both lists, neither one overrides the other.
+     *
+     * @param  list<string>  $fields
+     */
     public function searchable(array $fields): self
     {
         $this->searchable = $fields;
@@ -99,9 +110,11 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Declare filter fields (same Field instances used in forms).
-     * Serialized into options.filters as field nodes.
-     * Also sets filtersIn to 'modal' if not already set.
+     * Declare filter fields (same Field instances used in forms); renders in a
+     * modal unless filtersIn() says otherwise. Kinds with a built-in WHERE
+     * mapping: select/radio/number/date/datetime/time (=), boolean, in/tags
+     * (IN), daterange (between). Any other kind — text, relation, … — throws
+     * at request time unless it carries a filterUsing() closure.
      *
      * @param  list<Field>  $fields
      */
@@ -168,7 +181,7 @@ final class TableBuilder implements JsonSerializable
         return $this->tabObjects[0] ?? null;
     }
 
-    /** @param  'modal'|'inline'  $mode */
+    /** Where declared filters() render: a dismissible modal, or inline in the toolbar. @param  'modal'|'inline'  $mode */
     public function filtersIn(string $mode): self
     {
         $this->filtersIn = $mode;
@@ -236,6 +249,13 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Initial sort applied when the request carries no sort param. Feeds two
+     * couplings: groups($column) requires defaultSort($column, ...) to be
+     * set first (else it throws), and reorderable() writes its own
+     * defaultSort for the reorder column unless one is already set — so call
+     * defaultSort() before reorderable() only if you want to override it.
+     */
     public function defaultSort(string $field, string $dir = 'asc'): self
     {
         $this->opts['defaultSort'] = ['field' => $field, 'dir' => $dir];
@@ -260,8 +280,10 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
+     * Deprecated — sets only perPage on the pagination spec, kept for
+     * back-compat. Use paginate() for the unified pagination config.
+     *
      * @deprecated Use paginate() for the unified pagination config.
-     * Kept for back-compat; sets perPage on the pagination spec.
      */
     public function perPage(int $perPage): self
     {
@@ -325,7 +347,11 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<ActionBuilder|Node>  $actions — plain actions render inline; wrap in S::dropdown()/actionGroup() to collapse into a menu. */
+    /**
+     * Actions rendered per row, e.g. Edit/Delete.
+     *
+     * @param  list<ActionBuilder|Node>  $actions  — plain actions render inline; wrap in S::dropdown()/actionGroup() to collapse into a menu.
+     */
     public function rowActions(array $actions): self
     {
         $this->opts['rowActions'] = $actions;
@@ -376,8 +402,9 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Make each row a link. The resolver runs server-side per row and returns a
-     * URL; the client navigates there on row click. The closure never serializes.
+     * Make each row a link. $resolver receives the row (the Eloquent model, or
+     * the stdClass for DB::table() rows) and returns a URL; the client
+     * navigates there on row click. Never serialized.
      */
     public function recordUrl(Closure $resolver): self
     {
@@ -419,7 +446,7 @@ final class TableBuilder implements JsonSerializable
         return $this->opts['reorder']['column'] ?? null;
     }
 
-    /** @param  list<ActionBuilder>  $actions */
+    /** Actions available for a selection of rows, shown once at least one row is checked. @param  list<ActionBuilder>  $actions */
     public function bulkActions(array $actions): self
     {
         $this->opts['bulkActions'] = $actions;
@@ -458,6 +485,13 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Escape hatch: writes $key directly into the serialized table node
+     * options, bypassing any dedicated fluent method. Key names are NOT
+     * validated against the schema — a typo or unsupported key ships
+     * silently. Prefer a real fluent method when one exists; use this only
+     * for a wire key with no builder support yet.
+     */
     public function set(string $key, mixed $value): self
     {
         $this->opts[$key] = $value;

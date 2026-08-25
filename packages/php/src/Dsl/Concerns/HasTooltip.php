@@ -6,6 +6,7 @@ trait HasTooltip
 {
     protected ?string $tooltipText = null;
 
+    /** Tooltip text shown on hover. */
     public function tooltip(string $text): static
     {
         $this->tooltipText = $text;

@@ -16,6 +16,7 @@ final class Number extends Field
         return 'number';
     }
 
+    /** Placeholder text shown in the empty input. */
     public function placeholder(string $text): static
     {
         return $this->set('placeholder', $text);

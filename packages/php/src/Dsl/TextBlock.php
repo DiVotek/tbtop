@@ -23,7 +23,7 @@ final class TextBlock implements JsonSerializable
         return new self($content);
     }
 
-    /** @param  'heading'|'subheading'|'body'|'muted'  $variant */
+    /** Typographic style applied to the rendered text. @param  'heading'|'subheading'|'body'|'muted'  $variant */
     public function variant(string $variant): self
     {
         $clone = clone $this;

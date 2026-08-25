@@ -9,7 +9,12 @@ trait HasIcon
 
     private const ICON_POSITIONS = ['left', 'right'];
 
-    /** @param  string  $position  One of self::ICON_POSITIONS ('left'|'right') */
+    /**
+     * $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved
+     * against the client's icon registry; register custom names client-side
+     * via registerIcon before using them here. $position is 'left' (default)
+     * or 'right', placing the icon relative to the label.
+     */
     public function icon(string $name, string $position = 'left'): static
     {
         if (! in_array($position, self::ICON_POSITIONS, true)) {

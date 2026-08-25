@@ -37,9 +37,9 @@ trait HasDependencies
     }
 
     /**
-     * Behavior while a declared parent has no value:
-     *  'disabled' (default) — field is disabled, no request fired.
-     *  'empty'              — field stays enabled but shows an empty list.
+     * Behavior while a declared parent has no value: 'disabled' (default) —
+     * field is disabled, no request fired; 'empty' — field stays enabled but
+     * shows an empty list.
      */
     public function whenParentEmpty(string $mode): static
     {

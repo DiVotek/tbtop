@@ -17,6 +17,16 @@ trait HasServerQuery
     /** Server-only — never serialized to the wire. */
     protected ?Closure $queryClosure = null;
 
+    /**
+     * Server-side data closure — never serialized, re-resolved from the page
+     * tree on each request. The closure contract depends on the adopter:
+     * TableBuilder — fn(): Builder, must return a FRESH builder each call (it
+     * is invoked once for rows and once per tab for counts); Tab — fn(Builder
+     * $q): void, narrow the table builder in place; Relation — fn(array
+     * $deps): Builder, the Eloquent query to pick from, $deps holding the
+     * dependsOn() parents' current values — search text and the result cap are
+     * applied on top by the endpoint (labelKey() LIKE, searchLimit()).
+     */
     public function query(callable $fn): static
     {
         $this->queryClosure = Closure::fromCallable($fn);

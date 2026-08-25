@@ -32,7 +32,14 @@ final class ChartBuilder implements JsonSerializable
         private array $opts = [],
     ) {}
 
-    /** Overrides the trait: also flags the page data endpoint as this chart's source. */
+    /**
+     * Makes the chart dynamic: data comes from the page data endpoint instead
+     * of $opts. $fn: fn(Request $request, array $params): array — $params
+     * holds the current values of the params() fields keyed by field name
+     * (empty array without params()). Return a list of flat rows (arrays or a
+     * query result) containing the xKey/nameKey column and every series
+     * dataKey, e.g. [['period' => '2026-08', 'count' => 12], ...].
+     */
     public function query(callable $fn): static
     {
         $this->queryClosure = Closure::fromCallable($fn);
@@ -41,7 +48,14 @@ final class ChartBuilder implements JsonSerializable
         return $this;
     }
 
-    /** @param  list<Field>  $fields */
+    /**
+     * Filter fields rendered above the chart (regular field builders, e.g.
+     * select('interval')->options([...])->default('month')). Their values
+     * reach the query() closure as $params['name']. Text-ish kinds debounce
+     * before refetching; every change costs one request, so keep the set small.
+     *
+     * @param  list<Field>  $fields
+     */
     public function params(array $fields): self
     {
         $this->paramFields = $fields;
@@ -56,8 +70,9 @@ final class ChartBuilder implements JsonSerializable
     }
 
     /**
-     * Re-fetch the chart's data endpoint every $seconds (client-clamped to a
-     * 5s minimum). Only meaningful together with ->query().
+     * Re-fetch the chart's data endpoint every $seconds. The 5-second floor is
+     * enforced twice: below it this throws, and the client clamps whatever
+     * reaches it. Only meaningful together with ->query().
      */
     public function poll(int $seconds): self
     {
@@ -71,6 +86,12 @@ final class ChartBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Escape hatch: writes $key directly into the serialized chart node
+     * options, bypassing any dedicated fluent method. Key names are NOT
+     * validated against the schema — a typo or unsupported key ships
+     * silently. Prefer a real fluent method when one exists.
+     */
     public function set(string $key, mixed $value): self
     {
         $this->opts[$key] = $value;
