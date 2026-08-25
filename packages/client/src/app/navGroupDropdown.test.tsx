@@ -1,9 +1,23 @@
-import { describe, expect, test } from "bun:test";
-import { act, fireEvent, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import * as inertiaReact from "@inertiajs/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { AdminLayoutShell } from "./AdminLayout";
 import type { NavGroup } from "./chromeContext";
 
 const USER = { name: "Alice", email: "alice@example.com" };
+const originalVisit = inertiaReact.router.visit;
+let visitMock: ReturnType<typeof mock>;
+
+beforeEach(() => {
+	visitMock = mock(() => {});
+	(inertiaReact.router as unknown as Record<string, unknown>).visit = visitMock;
+});
+
+afterEach(() => {
+	(inertiaReact.router as unknown as Record<string, unknown>).visit = originalVisit.bind(
+		inertiaReact.router,
+	);
+});
 
 const NAV: NavGroup[] = [
 	{
@@ -64,6 +78,88 @@ describe("NavGroupDropdown (topbar)", () => {
 		expect(badge.textContent).toBe("3");
 		// badgeColor "danger" resolves through the shared color registry.
 		expect(badge.className).toContain("bg-destructive");
+	});
+
+	test("the Radix menu-item contract reaches the underlying Inertia link", async () => {
+		const { getByTestId, findByText } = renderTopbarNav();
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+
+		const link = (await findByText("Iconic")).closest("a");
+		expect(link?.getAttribute("href")).toBe("/admin/iconic");
+		expect(link?.getAttribute("role")).toBe("menuitem");
+		expect(link?.hasAttribute("data-radix-collection-item")).toBe(true);
+	});
+
+	test("a normal Inertia link visit closes the menu", async () => {
+		const { getByTestId, findByText, queryByTestId } = renderTopbarNav();
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+
+		fireEvent.click((await findByText("Iconic")).closest("a") as HTMLAnchorElement);
+
+		expect(visitMock).toHaveBeenCalled();
+		await waitFor(() => expect(queryByTestId("nav-group-menu-Content")).toBeNull());
+	});
+
+	test.each([
+		["Enter", "Enter"],
+		["Space", " "],
+	])("%s activates the focused link and closes the menu", async (_name, key) => {
+		const { getByTestId, findByText, queryByTestId } = renderTopbarNav();
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+		const link = (await findByText("Iconic")).closest("a") as HTMLAnchorElement;
+
+		await act(async () => {
+			link.focus();
+			fireEvent.keyDown(link, { key });
+		});
+
+		expect(visitMock).toHaveBeenCalled();
+		await waitFor(() => expect(queryByTestId("nav-group-menu-Content")).toBeNull());
+	});
+
+	test("a modifier click keeps native link behavior without starting an Inertia visit", async () => {
+		const { getByTestId, findByText, queryByTestId } = renderTopbarNav();
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+
+		fireEvent.click((await findByText("Iconic")).closest("a") as HTMLAnchorElement, {
+			ctrlKey: true,
+		});
+
+		expect(visitMock).not.toHaveBeenCalled();
+		await waitFor(() => expect(queryByTestId("nav-group-menu-Content")).toBeNull());
+	});
+
+	test("a new-tab item remains a native anchor", async () => {
+		const newTabNav: NavGroup[] = [
+			{
+				key: "Resources",
+				group: "Resources",
+				items: [{ label: "Documentation", href: "/docs", newTab: true }],
+			},
+		];
+		const { getByTestId, findByText } = render(
+			<AdminLayoutShell nav={newTabNav} user={USER} currentUrl="/admin" navigation="topbar">
+				<div />
+			</AdminLayoutShell>,
+		);
+		await openGroup(getByTestId("nav-group-trigger-Resources"));
+		const link = (await findByText("Documentation")).closest("a") as HTMLAnchorElement;
+
+		expect(link.getAttribute("href")).toBe("/docs");
+		expect(link.getAttribute("target")).toBe("_blank");
+		expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+		expect(link.getAttribute("role")).toBe("menuitem");
+	});
+
+	test("Escape and an outside pointer press dismiss the menu", async () => {
+		const { getByTestId, queryByTestId } = renderTopbarNav();
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+		fireEvent.keyDown(getByTestId("nav-group-menu-Content"), { key: "Escape" });
+		await waitFor(() => expect(queryByTestId("nav-group-menu-Content")).toBeNull());
+
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+		fireEvent.pointerDown(document.body, { bubbles: true, isPrimary: true });
+		await waitFor(() => expect(queryByTestId("nav-group-menu-Content")).toBeNull());
 	});
 
 	test("the trigger for the group holding the current page is highlighted", () => {
