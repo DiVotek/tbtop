@@ -5,18 +5,23 @@ import { AdminLayoutShell } from "./AdminLayout";
 import type { NavGroup } from "./chromeContext";
 
 const USER = { name: "Alice", email: "alice@example.com" };
-const originalVisit = inertiaReact.router.visit;
+let previousVisit: unknown;
 let visitMock: ReturnType<typeof mock>;
 
 beforeEach(() => {
+	const router = inertiaReact.router as unknown as Record<string, unknown>;
+	previousVisit = router.visit;
 	visitMock = mock(() => {});
-	(inertiaReact.router as unknown as Record<string, unknown>).visit = visitMock;
+	router.visit = visitMock;
 });
 
 afterEach(() => {
-	(inertiaReact.router as unknown as Record<string, unknown>).visit = originalVisit.bind(
-		inertiaReact.router,
-	);
+	const router = inertiaReact.router as unknown as Record<string, unknown>;
+	if (previousVisit === undefined) {
+		delete router.visit;
+		return;
+	}
+	router.visit = previousVisit;
 });
 
 const NAV: NavGroup[] = [
