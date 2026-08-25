@@ -1,6 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
-import { useState } from "react";
+import { type ComponentPropsWithoutRef, type Ref, useState } from "react";
 import { cn } from "../lib/cn";
 import { isExternalUrl } from "../structure/actionBlock";
 import { resolveColorClasses } from "../structure/table/colorRegistry";
@@ -77,16 +77,29 @@ function GroupHeading({ group }: { group: NavGroup }) {
 	);
 }
 
-interface NavItemLinkProps {
+interface NavItemLinkProps
+	extends Omit<
+		ComponentPropsWithoutRef<"a">,
+		"children" | "href" | "onClick" | "onError" | "onProgress"
+	> {
 	item: NavItem;
 	currentUrl: string;
+	onClick?: ComponentPropsWithoutRef<typeof Link>["onClick"];
+	ref?: Ref<HTMLAnchorElement>;
 }
 
-export function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
+export function NavItemLink({
+	item,
+	currentUrl,
+	className: inheritedClassName,
+	ref,
+	...linkProps
+}: NavItemLinkProps) {
 	const active = currentUrl.startsWith(item.href);
 	const density = useDensity();
 	const icon = item.icon ? <NodeIcon icon={item.icon} className="size-4 shrink-0" /> : null;
 	const className = cn(
+		inheritedClassName,
 		"flex items-center gap-2 rounded-md text-sm hover:bg-accent",
 		density === "compact" ? "px-3 py-2" : "px-2 py-1.5",
 		active && "bg-accent font-medium",
@@ -103,6 +116,8 @@ export function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
 	if (item.newTab || isExternalUrl(item.href)) {
 		return (
 			<a
+				{...linkProps}
+				ref={ref}
 				href={item.href}
 				className={className}
 				target={item.newTab ? "_blank" : undefined}
@@ -113,7 +128,7 @@ export function NavItemLink({ item, currentUrl }: NavItemLinkProps) {
 		);
 	}
 	return (
-		<Link href={item.href} className={className}>
+		<Link {...linkProps} ref={ref} href={item.href} className={className}>
 			{content}
 		</Link>
 	);

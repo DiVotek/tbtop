@@ -36,49 +36,56 @@ export function SectionBlock({ options, children, renderChild }: RenderProps<Sec
 		options.columns != null
 			? `grid gap-4 ${resolveColumnsClass(options.columns)}`
 			: "flex flex-col gap-3";
-	const body = expanded && <div className={bodyClass}>{mapChildren(children, renderChild)}</div>;
+	const body = expanded ? (
+		<div className={bodyClass}>{mapChildren(children, renderChild)}</div>
+	) : null;
+	const content = options.aside ? (
+		<div className="flex flex-col gap-4 md:flex-row">
+			<div className="min-w-0 flex-1">{body}</div>
+			<div className="w-full shrink-0 md:w-64" data-testid="section-aside">
+				{renderChild(options.aside)}
+			</div>
+		</div>
+	) : (
+		body
+	);
+	const hasHeader =
+		options.title !== undefined ||
+		options.description !== undefined ||
+		options.icon !== undefined ||
+		options.action !== undefined;
+	const header = hasHeader ? (
+		<SectionHeader
+			title={options.title}
+			description={options.description}
+			icon={options.icon}
+			action={options.action}
+			collapsible={options.collapsible}
+			open={open}
+			onToggle={() => setOpen((prev) => !prev)}
+			variant={options.variant}
+		/>
+	) : undefined;
 	if (options.variant === "card") {
 		return (
-			<CardSection
-				title={options.title}
-				action={options.action}
-				frameless={hasTableChild(children)}
-				class={options.class}
-			>
-				{body}
+			<CardSection header={header} frameless={hasTableChild(children)} class={options.class}>
+				{content}
 			</CardSection>
 		);
 	}
 	if (options.variant === "plain") {
 		return (
-			<PlainSection title={options.title} class={options.class}>
-				{body}
+			<PlainSection header={header} class={options.class}>
+				{content}
 			</PlainSection>
 		);
 	}
 	return (
 		<section className={cn("flex flex-col gap-3", options.class)} data-testid="section-block">
-			<SectionHeader
-				title={options.title}
-				description={options.description}
-				icon={options.icon}
-				action={options.action}
-				collapsible={options.collapsible}
-				open={open}
-				onToggle={() => setOpen((prev) => !prev)}
-			/>
+			{header}
 			{/* aside is a persistent context slot (actions/status) — it stays visible
 			   even when collapsible hides the body; see docs/ai/authoring-pages.md */}
-			{options.aside ? (
-				<div className="flex flex-col gap-4 md:flex-row">
-					<div className="min-w-0 flex-1">{body}</div>
-					<div className="w-full shrink-0 md:w-64" data-testid="section-aside">
-						{renderChild(options.aside)}
-					</div>
-				</div>
-			) : (
-				body
-			)}
+			{content}
 		</section>
 	);
 }

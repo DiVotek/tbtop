@@ -14,20 +14,35 @@ function encodeVariantNode(mixed $node): array
 it('section variant card serializes options.variant', function (): void {
     $s = new S;
     $json = encodeVariantNode($s->section(
-        ['title' => 'Recently updated', 'variant' => 'card', 'action' => ['label' => 'Open', 'url' => '/x']],
+        [
+            'title' => 'Recently updated',
+            'variant' => 'card',
+            'collapsible' => true,
+            'collapsed' => true,
+            'action' => ['label' => 'Open', 'url' => '/x'],
+        ],
         [$s->displayText('...')],
     ));
 
     expect($json['options']['variant'])->toBe('card')
         ->and($json['options']['title'])->toBe('Recently updated')
+        ->and($json['options']['collapsible'])->toBeTrue()
+        ->and($json['options']['collapsed'])->toBeTrue()
         ->and($json['options']['action'])->toBe(['label' => 'Open', 'url' => '/x']);
 });
 
 it('section variant plain serializes options.variant', function (): void {
     $s = new S;
-    $json = encodeVariantNode($s->section(['title' => 'Browse', 'variant' => 'plain'], []));
+    $json = encodeVariantNode($s->section([
+        'title' => 'Browse',
+        'variant' => 'plain',
+        'collapsible' => true,
+        'collapsed' => true,
+    ], []));
 
-    expect($json['options']['variant'])->toBe('plain');
+    expect($json['options']['variant'])->toBe('plain')
+        ->and($json['options']['collapsible'])->toBeTrue()
+        ->and($json['options']['collapsed'])->toBeTrue();
 });
 
 it('section without variant emits no variant key (back-compat)', function (): void {

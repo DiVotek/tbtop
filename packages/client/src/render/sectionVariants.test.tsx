@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { s } from "../structure/structure";
 import { wrapForStructure } from "../structure/testFixtures";
 import type { StructureNode } from "../structure/types";
@@ -39,7 +40,7 @@ describe("section variant card", () => {
 		expect(heading.className).toContain("font-semibold");
 		// header row lives INSIDE the card and separates with border-b
 		expect(card.contains(heading)).toBe(true);
-		expect(heading.parentElement?.className).toContain("border-b");
+		expect(heading.closest(".border-b")).not.toBeNull();
 		expect(getByText("hello")).toBeTruthy();
 	});
 
@@ -57,6 +58,40 @@ describe("section variant card", () => {
 		const link = getByTestId("section-action");
 		expect(link.getAttribute("href")).toBe("/admin/pages");
 		expect(link.className).toContain("text-muted-foreground");
+	});
+
+	test("starts collapsed and toggles by pointer or keyboard with the shared header content", async () => {
+		const user = userEvent.setup({ delay: null });
+		const section = node("section", {
+			title: "Advanced",
+			description: "Rarely-needed settings.",
+			icon: { name: "lock", position: "left" },
+			action: { label: "Help", url: "/help" },
+			variant: "card",
+			collapsible: true,
+			collapsed: true,
+			children: [text],
+		});
+		const { getByRole, getByTestId, getByText, queryByText } = render(renderNode(section));
+		const toggle = getByRole("button", { name: "Advanced" });
+		const card = getByTestId("section-card");
+
+		expect(card.className).toContain("bg-card");
+		expect(toggle.getAttribute("aria-expanded")).toBe("false");
+		expect(queryByText("hello")).toBeNull();
+		expect(card.querySelector(".px-4.pb-4")).toBeNull();
+		expect(getByText("Rarely-needed settings.")).toBeTruthy();
+		expect(getByTestId("section-action").getAttribute("href")).toBe("/help");
+
+		await user.click(toggle);
+		expect(toggle.getAttribute("aria-expanded")).toBe("true");
+		expect(getByText("hello")).toBeTruthy();
+
+		toggle.focus();
+		await user.keyboard("{Enter}");
+		expect(document.activeElement).toBe(toggle);
+		expect(toggle.getAttribute("aria-expanded")).toBe("false");
+		expect(queryByText("hello")).toBeNull();
 	});
 
 	test("no header row when title and action are absent", () => {
@@ -137,7 +172,7 @@ describe("section variant plain", () => {
 		expect(label.className).toContain("uppercase");
 		expect(label.className).toContain("tracking-wide");
 		expect(label.className).toContain("text-muted-foreground");
-		expect(label.className).toContain("mb-3");
+		expect(label.closest(".mb-3")).not.toBeNull();
 		expect(queryByTestId("section-card")).toBeNull();
 	});
 
@@ -154,6 +189,59 @@ describe("section variant plain", () => {
 		);
 		expect(getByTestId("section-plain").className).toContain("custom-plain");
 	});
+
+	test("supports collapsed state and keyboard toggle without adding card chrome", async () => {
+		const user = userEvent.setup({ delay: null });
+		const section = node("section", {
+			title: "Browse",
+			description: "Choose a category.",
+			action: { label: "View all", url: "/all" },
+			variant: "plain",
+			collapsible: true,
+			collapsed: true,
+			children: [text],
+		});
+		const { getByRole, getByTestId, getByText, queryByTestId, queryByText } = render(
+			renderNode(section),
+		);
+		const toggle = getByRole("button", { name: "Browse" });
+
+		expect(toggle.getAttribute("aria-expanded")).toBe("false");
+		expect(queryByText("hello")).toBeNull();
+		expect(getByText("Choose a category.")).toBeTruthy();
+		expect(getByTestId("section-action").getAttribute("href")).toBe("/all");
+		expect(queryByTestId("section-card")).toBeNull();
+
+		toggle.focus();
+		await user.keyboard(" ");
+		expect(toggle.getAttribute("aria-expanded")).toBe("true");
+		expect(getByText("hello")).toBeTruthy();
+	});
+});
+
+test("nested variant sections keep independent toggle state", () => {
+	const child = node("section", {
+		title: "Child",
+		variant: "plain",
+		collapsible: true,
+		collapsed: true,
+		children: [{ kind: "displayText", options: { content: "child body" }, meta: {} }],
+	});
+	const parent = node("section", {
+		title: "Parent",
+		variant: "card",
+		collapsible: true,
+		children: [child],
+	});
+	const { getAllByTestId, getByText, queryByText } = render(renderNode(parent));
+	const [parentToggle, childToggle] = getAllByTestId("section-toggle");
+
+	expect(parentToggle?.getAttribute("aria-expanded")).toBe("true");
+	expect(childToggle?.getAttribute("aria-expanded")).toBe("false");
+	expect(queryByText("child body")).toBeNull();
+	fireEvent.click(childToggle!);
+	expect(getByText("child body")).toBeTruthy();
+	expect(parentToggle?.getAttribute("aria-expanded")).toBe("true");
 });
 
 describe("section without variant", () => {

@@ -165,10 +165,21 @@ it('list node conforms to the wire grammar schema', function () {
 it('section card and plain variants conform to the wire grammar schema', function () {
     $s = new S;
     $card = $s->section(
-        ['title' => 'Recently updated', 'variant' => 'card', 'action' => ['label' => 'Open', 'url' => '/x']],
+        [
+            'title' => 'Recently updated',
+            'variant' => 'card',
+            'collapsible' => true,
+            'collapsed' => true,
+            'action' => ['label' => 'Open', 'url' => '/x'],
+        ],
         [$s->displayText('...')]
     );
-    $plain = $s->section(['title' => 'Browse', 'variant' => 'plain'], [$s->displayText('...')]);
+    $plain = $s->section([
+        'title' => 'Browse',
+        'variant' => 'plain',
+        'collapsible' => true,
+        'collapsed' => true,
+    ], [$s->displayText('...')]);
 
     validateAgainstSchema(json_decode(json_encode($card)));
     validateAgainstSchema(json_decode(json_encode($plain)));
