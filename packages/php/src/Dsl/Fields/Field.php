@@ -10,6 +10,8 @@ use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
+use Tbtop\Admin\Dsl\Cond;
+use Tbtop\Admin\Dsl\CondToRequiredRule;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\OptionList;
 use Tbtop\Admin\Dsl\S;
@@ -75,6 +77,37 @@ abstract class Field implements JsonSerializable
         $this->opts['required'] = true;
 
         return $this->rules('required');
+    }
+
+    /**
+     * Marks the field required only when the given condition holds: sets
+     * meta.requiredIf (compiled client-side into the live asterisk) and
+     * appends the equivalent server rule, derived from the Cond. Unlike
+     * required(), this does NOT set opts['required'] - the asterisk is
+     * conditional, not static.
+     */
+    public function requiredIf(Cond|string $condOrField, string $op = '', mixed $value = null): static
+    {
+        $cond = $condOrField instanceof Cond
+            ? $condOrField
+            : Cond::fromShorthand($condOrField, $op, $value);
+
+        $this->metaBag['requiredIf'] = $cond;
+
+        return $this->rules(CondToRequiredRule::rule($cond));
+    }
+
+    /**
+     * Sets the static "required" asterisk/UI marker only, with no rule.
+     * For a field made required through some other mechanism (a composite
+     * rule, a cross-field requiredIf already covering it) that still needs
+     * the visual indicator.
+     */
+    public function markAsRequired(bool $state = true): static
+    {
+        $this->opts['required'] = $state;
+
+        return $this;
     }
 
     /** @param  string|list<string>  $rules */

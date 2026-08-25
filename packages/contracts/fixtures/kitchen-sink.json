@@ -501,6 +501,20 @@
                                     },
                                     {
                                         "kind": "text",
+                                        "options": {
+                                            "label": "Company name"
+                                        },
+                                        "meta": {
+                                            "requiredIf": {
+                                                "op": "eq",
+                                                "field": "type",
+                                                "value": "company"
+                                            }
+                                        },
+                                        "name": "company_name"
+                                    },
+                                    {
+                                        "kind": "text",
                                         "options": {},
                                         "meta": {
                                             "disabledIf": {
