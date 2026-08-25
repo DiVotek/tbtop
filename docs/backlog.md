@@ -1,28 +1,32 @@
 # Backlog
 
 > Detail pool behind `roadmap.md`. Items promote into a roadmap phase when a real
-> consumer (EasyCar first) or adoption pain demands them. Last revised: 2026-06-11.
+> consumer (EasyCar first) or adoption pain demands them. Last revised: 2026-08-24.
+>
+> **This file lags the code.** Shipped items are struck through as they land, but the
+> sweep is manual — never conclude a feature is missing from this file alone. The
+> source of truth for what exists is `docs/ai/api/` (generated) and the code itself.
 
 ## Tables
 
-- **Predefined filter tabs** — `TableBuilder::tabs([Tab::make('active')->query(fn), ...])`;
-  selected tab in URL state `t[table][tab]`; server resolves the tab closure by name
-  (same per-request pattern as server actions). Opt-in count badges (one count query per
-  tab, off by default).
+- ~~**Predefined filter tabs**~~ **Shipped** — `TableBuilder::tabs([Tab::make('active')
+  ->query(fn), ...])`, URL state `t[table][tab]`, opt-in count badges via `Tab::count()`.
 - **Reorderable rows (drag-and-drop)** — `TableBuilder::reorderable('sort_order')`;
   dnd-kit (new client dep), handle column, `POST .../tables/{t}/reorder` with ordered
   ids. Reorder disabled while sort/filters active (Filament behavior). **Shipped (M-94)** —
   wire shape `reorder: {column}`, endpoint scopes ids to the table query. See
   [./ai/wiring.md](./ai/wiring.md).
-- Sticky table header, filter chips, saved filters, per-column search.
-- CSV export / import (queued), soft-delete macro (trashed filter + restore/force).
+- Sticky table header, filter chips, saved filters.
+- ~~Per-column search~~ **Shipped** — `Column::individuallySearchable()`.
+- ~~Soft-delete macro~~ **Shipped** — `TableBuilder::softDeletes($s, Model::class)`.
+- CSV export / import (queued).
 
 ## Fields / forms
 
-- **helperText + tooltip** — `Field::helperText()` (muted text under the field) +
-  `Field::tooltip()` (info icon near the label, Radix Tooltip). Wire: field options +
-  schema + field chrome in `formBlock`.
-- Infolist / read-only detail view.
+- ~~**helperText + tooltip**~~ **Shipped** — `Field::helperText()` + `Field::tooltip()`.
+- ~~Infolist / read-only detail view~~ **Shipped** — the display-value family
+  (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`); see
+  `RecordDetailPage` in the demo.
 - **Declarative autofill (`S::autofill`)** — third typed consumer of deps-driven
   server-computed field data (after liveRegion → display nodes, disabledRanges → widget
   params; here → field values): `autofill('car_defaults')->dependsOn('car_id')->fill(fn)`.
@@ -46,11 +50,10 @@
 
 ## Display / layout
 
-- **`S::markdown($md)`** — server-side `Str::markdown()` (league/commonmark ships with
-  Laravel) → emits the existing `displayHtml` wire node. Zero client code, zero schema
-  change.
-- **Flex options on `row`/`stack`** — `->justify(...)`, `->align(...)`, `->gap(n)`,
-  `->wrap()`. No new block kind: both blocks are already flex containers.
+- ~~**`S::markdown($md)`**~~ **Shipped** — server-side commonmark → `displayHtml`;
+  `->allowHtml()` for trusted content only.
+- ~~**Flex options on `row`/`stack`**~~ **Shipped** — `justify`/`align`/`gap`/`wrap`, plus
+  `S::flex()` with a `card` variant and a `class` escape hatch.
 
 ## Modal
 
@@ -64,14 +67,14 @@
 
 ## DX
 
-- **`tbtop:page` scaffold command** — artisan generator for an empty Page class
-  (path/nav/view stub). The package registers zero commands today.
+- ~~**`tbtop:page` scaffold command**~~ **Shipped** — `make:tbtop-page`, alongside
+  `admin:install` (publishes the host wiring).
 
 ## Platform
 
-- **Database notifications center** — bell in header chrome (depends on chrome-as-DSL),
-  Laravel `database` channel, unread count + list + mark-read endpoints; polling first,
-  broadcasting later.
+- ~~**Database notifications center**~~ **Shipped (polling)** — `$s->notifications()` bell,
+  `Notification::make()->sendToDatabase()`, `PanelConfig::notificationsPolling()`.
+  Broadcasting still open.
 - **MCP server** — `laravel/mcp`; tools generated from the page registry. Gates must
   apply. Phase 1 read-only (table queries/filters/search), phase 2 actions. Needs its own
   design session.

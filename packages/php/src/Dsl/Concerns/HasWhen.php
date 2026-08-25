@@ -19,6 +19,13 @@ trait HasWhen
 
     private ?bool $whenResolved = null;
 
+    /**
+     * Server-side existence gate: false (or a closure resolving falsy) means
+     * the node is dropped before serialization — absent from the wire, and
+     * any endpoint scoped to it (action, query, data) answers 404. Not the
+     * same as hiddenIf()/disabledIf(), which ship the node and let the
+     * client hide/disable it while its value still submits.
+     */
     public function when(bool|Closure $condition): static
     {
         $this->whenCondition = $condition;

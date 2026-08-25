@@ -59,6 +59,7 @@ final class NavItem
         return $this;
     }
 
+    /** Open url() in a new browser tab instead of navigating in place. */
     public function newTab(bool $newTab = true): self
     {
         $this->newTab = $newTab;

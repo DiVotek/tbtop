@@ -21,6 +21,7 @@ final class CommandPaletteConfig
     /** @var list<Command> */
     private array $commands = [];
 
+    /** Palette is enabled by default; pass false to disable it (same as disable()). */
     public function enable(bool $enabled = true): static
     {
         $this->enabled = $enabled;
@@ -28,6 +29,7 @@ final class CommandPaletteConfig
         return $this;
     }
 
+    /** Sugar for enable(false); a disabled palette is omitted from the wire entirely. */
     public function disable(): static
     {
         $this->enabled = false;
@@ -59,7 +61,7 @@ final class CommandPaletteConfig
         return $this;
     }
 
-    /** @param  list<Command>  $commands */
+    /** Replaces the custom command list; additive to includeNav()'s auto-listed sidebar destinations, not a substitute for it. @param  list<Command>  $commands */
     public function commands(array $commands): static
     {
         $this->commands = $commands;
@@ -67,6 +69,7 @@ final class CommandPaletteConfig
         return $this;
     }
 
+    /** Whether the ⌘K palette is registered for this panel at all. */
     public function isEnabled(): bool
     {
         return $this->enabled;

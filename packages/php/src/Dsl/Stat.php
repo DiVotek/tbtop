@@ -60,6 +60,7 @@ final class Stat implements JsonSerializable
         return new self($label);
     }
 
+    /** The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick). */
     public function value(mixed $value): self
     {
         $this->value = $value;
@@ -68,6 +69,9 @@ final class Stat implements JsonSerializable
     }
 
     /**
+     * Sub-label under the value, optionally tinted to carry meaning
+     * ('success'/'warning'/'danger'); the default is muted text.
+     *
      * @param  string|null  $color  One of self::SEMANTIC_COLORS ('success'|'warning'|'danger'),
      *                              or null (default) for the current muted text.
      */
@@ -82,6 +86,9 @@ final class Stat implements JsonSerializable
     }
 
     /**
+     * Change indicator (e.g. "+12%") rendered next to the value. $direction
+     * is 'up', 'down' or 'flat' and picks the arrow and tint.
+     *
      * @param  'up'|'down'|'flat'  $direction
      */
     public function delta(string $text, string $direction): self
@@ -91,6 +98,7 @@ final class Stat implements JsonSerializable
         return $this;
     }
 
+    /** Tint for the value/icon (a Color or a registered color token). */
     public function color(Color|string $color): self
     {
         $this->color = $color;
@@ -112,6 +120,9 @@ final class Stat implements JsonSerializable
     }
 
     /**
+     * Mini trend chart from a plain list of numbers — no axes or labels, so
+     * the series only has to be ordered, not scaled.
+     *
      * @param  list<int|float>  $numbers
      * @param  string  $position  One of self::SPARKLINE_POSITIONS ('inline'|'bottom').
      *                            'inline' (default, back-compat) renders under the card
@@ -130,7 +141,7 @@ final class Stat implements JsonSerializable
         return $this;
     }
 
-    /** @param  string  $color  One of success|warning|danger|primary. Default: current chart color. */
+    /** Tint applied to the sparkline chart. @param  string  $color  One of success|warning|danger|primary. Default: current chart color. */
     public function sparklineColor(string $color): self
     {
         $allowed = [...self::SEMANTIC_COLORS, 'primary'];
@@ -145,10 +156,11 @@ final class Stat implements JsonSerializable
     }
 
     /**
-     * Poll the stat's data endpoint every $seconds (client-clamped to a 5s
-     * minimum). The value closure is re-invoked on every poll tick instead of
-     * once at page render. Stamps options.source so the client knows to fetch
-     * from the page data endpoint, keyed by this stat's label.
+     * Poll the stat's data endpoint every $seconds, re-invoking the value
+     * closure on each tick instead of once at page render. The 5-second floor
+     * is enforced twice: below it this throws, and the client clamps whatever
+     * reaches it. Stamps options.source so the client fetches from the page
+     * data endpoint, keyed by this stat's label.
      */
     public function poll(int $seconds): self
     {

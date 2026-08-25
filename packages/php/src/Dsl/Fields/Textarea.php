@@ -13,6 +13,7 @@ final class Textarea extends Field
         return 'textarea';
     }
 
+    /** Placeholder text shown in the empty textarea. */
     public function placeholder(string $text): static
     {
         return $this->set('placeholder', $text);

@@ -25,6 +25,7 @@ final class AlertBlock implements JsonSerializable
         return new self($message);
     }
 
+    /** Optional heading rendered above the message; pass null to clear it. */
     public function title(?string $title): self
     {
         $clone = clone $this;
@@ -33,6 +34,7 @@ final class AlertBlock implements JsonSerializable
         return $clone;
     }
 
+    /** Alert tint (e.g. info/success/warning/danger). Defaults to 'info'. */
     public function color(Color|string $color): self
     {
         $clone = clone $this;

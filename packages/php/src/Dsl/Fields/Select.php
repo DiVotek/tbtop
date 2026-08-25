@@ -34,6 +34,11 @@ class Select extends Field
         return 'select';
     }
 
+    /**
+     * Render as a filterable combobox instead of a plain select. With static
+     * options the filtering is client-side over labels; with query() the typed
+     * term reaches the closure and filtering happens server-side.
+     */
     public function searchable(bool $value = true): static
     {
         return $this->set('searchable', $value);

@@ -25,6 +25,7 @@ final class NotificationAction implements JsonSerializable
         return new self($label);
     }
 
+    /** Target URL the action link navigates to. */
     public function url(string $url): self
     {
         $this->url = $url;
@@ -32,6 +33,7 @@ final class NotificationAction implements JsonSerializable
         return $this;
     }
 
+    /** Open the link in a new browser tab instead of navigating in place. */
     public function openInNewTab(bool $newTab = true): self
     {
         $this->newTab = $newTab;
@@ -39,7 +41,7 @@ final class NotificationAction implements JsonSerializable
         return $this;
     }
 
-    /** @return array<string, mixed> */
+    /** Sparse wire payload: label/url always; newTab only when set. @return array<string, mixed> */
     public function toArray(): array
     {
         $out = ['label' => $this->label, 'url' => $this->url];

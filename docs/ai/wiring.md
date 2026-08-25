@@ -48,6 +48,7 @@ Route file: `packages/php/routes/admin.php`
 | `POST` | `/api/media/upload` | `media.upload` | `MediaUploadController` | JSON | `MediaItem` (201) |
 | `POST` | `/api/media/import-url` | `media.import-url` | `MediaImportController` | JSON | `MediaItem` (201) |
 | `GET` | `/api/media/{id}` | `media.show` | `MediaController@show` | JSON | `MediaItem` |
+| `GET` | `/api/media/{id}/download` | `media.download` | `MediaDownloadController` | file stream | attachment response for the stored file |
 | `PATCH` | `/api/media/{id}` | `media.update` | `MediaController@update` | JSON | `MediaItem` |
 | `POST` | `/api/media/{id}/replace` | `media.replace` | `MediaReplaceController` | JSON | `MediaItem` |
 | `DELETE` | `/api/media/{id}` | `media.destroy` | `MediaController@destroy` | JSON | `204 No Content` |
@@ -55,6 +56,32 @@ Route file: `packages/php/routes/admin.php`
 | `POST` | `/api/media/folders` | `media.folders.store` | `MediaFolderController@store` | JSON | `FolderItem` (201) |
 | `PATCH` | `/api/media/folders/{id}` | `media.folders.update` | `MediaFolderController@update` | JSON | `FolderItem` |
 | `DELETE` | `/api/media/folders/{id}` | `media.folders.destroy` | `MediaFolderController@destroy` | JSON | `204 No Content` or `{message}` (409 if non-empty) |
+
+### Notification routes (prefix: `{prefix}/api/notifications`, name: `tbtop.{panel}.notifications.*`)
+
+Back the header bell (`$s->notifications()`). Every route is scoped to the
+authenticated notifiable — a foreign notification id answers 404, never 403.
+Polling interval comes from `PanelConfig::notificationsPolling($seconds)`;
+unset means the client fetches once on mount and after each mutation.
+
+| Method | Path pattern | Route name | Controller | Transport | Response shape |
+|---|---|---|---|---|---|
+| `GET` | `/api/notifications` | `notifications.index` | `NotificationsController@index` | JSON | `{data: NotificationItem[], unreadCount: int}` |
+| `POST` | `/api/notifications/{notification}/read` | `notifications.read` | `NotificationsController@markRead` | JSON | `204 No Content` |
+| `DELETE` | `/api/notifications/{notification}` | `notifications.destroy` | `NotificationsController@destroy` | JSON | `204 No Content` |
+| `DELETE` | `/api/notifications` | `notifications.clear` | `NotificationsController@destroyAll` | JSON | `204 No Content` |
+
+Authoring side is plain Laravel plus a thin builder — see
+[api/notifications.md](./api/notifications.md):
+
+```php
+Notification::make()->title('Import finished')->success()
+    ->actions([NotificationAction::make('View')->url('/admin/imports/12')])
+    ->sendToDatabase($user);
+```
+
+The payload is stored in the database and rendered page-independently, so a
+notification action is a **link only** — it can never carry a server closure.
 
 ### Page-scoped routes (registered per-page via the page class's `slug()`)
 
@@ -64,9 +91,12 @@ Route file: `packages/php/routes/admin.php`
 | `POST` | `{page-path}/forms/{tbtopForm}` | `{slug}.form` | `FormSubmitController` | Inertia | `redirect()->back()` + `Inertia::flash('tbtop.effects', […])` |
 | `POST` | `{page-path}/actions/{tbtopAction}` | `{slug}.action` | `ActionController` | JSON | `{effects: Effect[]}` |
 | `POST` | `{page-path}/actions/{tbtopAction}/data` | `{slug}.actionData` | `ActionDataController` | JSON | `{data: <query result>}` |
-| `GET` | `{page-path}/tables/{tbtopTable}` | `{slug}.table` | `TableController` | JSON | `{data: {rows, pagination, …, tabCounts?}}` |
+| `GET` | `{page-path}/tables/{tbtopTable}` | `{slug}.table` | `TableController` | JSON | `{data: {data: Row[], total, page, perPage, tabCounts?}}` |
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
+| `POST` | `{page-path}/select-options/{tbtopField}` | `{slug}.selectOptions` | `SelectOptionsController` | JSON | search mode: `{options: [{value, label, display?}]}` · resolve mode: `{option: {value, label}\|null}` |
+| `POST` | `{page-path}/tables/{tbtopTable}/filters/{tbtopFilter}/options` | `{slug}.tableFilterOptions` | `TableFilterOptionsController` | JSON | same responder and shape as `selectOptions`, for an async `select()->query()` used as a table filter |
+| `POST` | `{page-path}/daterange-ranges/{tbtopField}` | `{slug}.daterangeRanges` | `DaterangeRangesController` | JSON | `{ranges: [{from?, to?}]}` — re-runs `disabledRanges()` with the posted `{deps}` |
 | `POST` | `{page-path}/relation-search/{tbtopField}` | `{slug}.relationSearch` | `RelationSearchController` | JSON | search mode: `{options: [{value, label}]}` · resolve mode: `{option: {value, label}\|null}` |
 | `POST` | `{page-path}/live-region/{tbtopRegion}` | `{slug}.liveRegion` | `LiveRegionController` | JSON | `{nodes: Node[]}` — re-runs the region's render closure with `{deps}` filtered to its `dependsOn()` list |
 | `POST` | `{page-path}/uploads/{tbtopField}` | `{slug}.upload` | `FieldUploadController` | JSON | `{data: {path, url}}` |
@@ -100,6 +130,35 @@ transaction. Hitting a non-reorderable table is a 422.
 **Form submit effects** — `FormSubmitController` flashes a `tbtop.effects`
 array via `Inertia::flash`. The effect set is closed; see
 [./authoring-pages.md](./authoring-pages.md) for the full catalog.
+
+---
+
+## Package configuration
+
+`packages/php/config/tbtop-admin.php` (publish with `php artisan admin:install`).
+It is heavily commented — read it directly for the authoritative detail. What
+matters when authoring:
+
+| Key | Why you'd touch it |
+|---|---|
+| `panels` | The list of `Panel` class-strings. **A panel that isn't here has no routes.** Everything else panel-shaped (prefix, guard, pages, locales, chrome) lives in that class's `configure()`, not in config. |
+| `content_locales` / `default_content_locale` | The locales a `translatable()` field stores. Global on purpose — content locales describe the *data*, not a panel, unlike `PanelConfig::locales()`, which is the *UI* language. The default one drives which locale a field's base `rules()` validate. |
+| `relation.search_cap` | Row cap for the relation-search endpoint; a field overrides it with `->searchLimit()`. |
+| `media.disk` / `accept` / `max_size` | Media-library storage and what may be uploaded. `accept` takes fnmatch patterns; `max_size` is in **kilobytes** (Laravel validation units) — note the `Upload` field's own `maxSize()` is in **bytes**. |
+| `media.conversions` / `profiles` | Variants generated per raster image: `profiles` is `name => [maxWidth, maxHeight]` (or a long form with per-profile format/quality). |
+| `media.url_import` | Timeout and an `allowed_hosts` allowlist for import-from-URL. Empty means any non-blocked host — the SSRF guard still applies. |
+
+> **SVG is sanitized, not trusted.** Uploads are cleaned server-side by
+> `Media\SvgSanitizer` keyed off file content (not the spoofable MIME), and
+> `text/html` is refused regardless of `accept`. A custom `Upload::saveUsing()`
+> bypasses that path — sanitize yourself if you take it.
+
+### Artisan commands
+
+| Command | What it does |
+|---|---|
+| `php artisan admin:install` | Publishes the host wiring: config, the root Blade view, and the admin JS entry. `--force` overwrites existing files. |
+| `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. |
 
 ---
 

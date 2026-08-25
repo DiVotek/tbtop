@@ -41,6 +41,7 @@ final class DisplayValueBlock implements JsonSerializable
     // Kind sugar (bodies mirror Column.php)
     // -------------------------------------------------------------------------
 
+    /** Formats server-side and bakes the string into the wire — no format meta ships. */
     public function date(?string $format = null): self
     {
         $this->guardNotFieldBound('date');
@@ -53,6 +54,7 @@ final class DisplayValueBlock implements JsonSerializable
         return $clone;
     }
 
+    /** Formats server-side and bakes the string into the wire — no format meta ships. */
     public function datetime(?string $format = null): self
     {
         $this->guardNotFieldBound('datetime');
@@ -65,6 +67,7 @@ final class DisplayValueBlock implements JsonSerializable
         return $clone;
     }
 
+    /** Formats server-side and bakes the string into the wire — no format meta ships. */
     public function number(?int $decimals = null): self
     {
         $this->guardNotFieldBound('number');
@@ -77,6 +80,10 @@ final class DisplayValueBlock implements JsonSerializable
         return $clone;
     }
 
+    /**
+     * Formats server-side and bakes the string into the wire.
+     * Takes minor units — the value is divided by 100, same as Column::money().
+     */
     public function money(string $currency): self
     {
         $this->guardNotFieldBound('money');
@@ -127,6 +134,7 @@ final class DisplayValueBlock implements JsonSerializable
         return $clone;
     }
 
+    /** Kind sugar: renders the value as a boolean icon (mirrors Column::boolean()); the raw value ships, the client renders the icon. */
     public function boolean(
         ?string $trueIcon = null,
         ?string $falseIcon = null,
@@ -144,6 +152,10 @@ final class DisplayValueBlock implements JsonSerializable
     }
 
     /**
+     * Ships the raw value plus its color map and lets the client render the
+     * badge — unlike date/money, nothing is baked server-side. An unmatched
+     * value still renders, in the default gray.
+     *
      * @param  array<string, Color|string>  $colors  value → Color|string
      */
     public function badge(array $colors): self
@@ -156,6 +168,9 @@ final class DisplayValueBlock implements JsonSerializable
     }
 
     /**
+     * Ships the raw value plus its icon map and lets the client render the
+     * icon. An unmatched value falls back to plain text.
+     *
      * @param  array<string, array{icon: string, color?: string}|string>  $map  value → ['icon', 'color'] or icon string
      */
     public function icon(array $map): self

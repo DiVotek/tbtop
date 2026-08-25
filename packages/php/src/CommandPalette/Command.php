@@ -54,6 +54,7 @@ final class Command
         return $this;
     }
 
+    /** Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). */
     public function openInNewTab(bool $newTab = true): self
     {
         $this->newTab = $newTab;

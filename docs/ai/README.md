@@ -45,35 +45,62 @@ If you can't place it from this table, **ask** — don't guess.
 
 Weak instinct: reinvent what's there. The framework is broad. Before adding anything:
 
-- **22 field-ish kinds exist** (21 fields + the `in` filter) — text, textarea, password,
-  number, date, datetime, daterange, boolean, checkbox, radio, select (static / async /
-  creatable), tags, colorpicker, keyvalue, slug, upload, media, relation, repeater,
-  richtext, plus the `in` filter. Confirm in [./fields.md](./fields.md) **first**.
+- **26 field kinds exist** (25 fields + the `in` filter) — text, textarea, password, otp,
+  number, date, datetime, time, daterange, boolean, checkbox, checkboxlist, radio,
+  togglebuttons, slider, select (static / searchable / async / creatable / multiple), tags,
+  colorpicker, keyvalue, slug, upload, media, relation, repeater, richtext, plus the `in`
+  filter. Prose in [./fields.md](./fields.md); the exhaustive method list, generated from
+  source, in [./api/fields.md](./api/fields.md). Confirm there **first**.
 - **Layout & display, tables, actions** — stack/row/flex/grid/section/collapsible/aside,
-  display blocks, tabs, action groups; tables with sort/pagination/search/filters/tabs/
-  row+bulk actions; the closed effect set. All in [./authoring-pages.md](./authoring-pages.md).
+  display blocks (incl. the displayValue/Image/Richtext/KeyValue read-only family), tabs,
+  action groups; tables with sort/pagination/global + per-column search/filters/tabs/
+  grouping/drag-reorder/inline-editable cells/row+bulk+header actions; the closed effect set.
+  Concepts in [./authoring-pages.md](./authoring-pages.md), full method lists in [./api/](./api/).
+- **Panel-level features are easy to miss** — multi-panel, navigation, chrome-as-DSL, the
+  command palette, database notifications, appearance and locales all live on `PanelConfig`.
+  See [./api/panel.md](./api/panel.md) and [Recipe 8/9](./recipes.md).
 - **Many "missing" Filament features compose from existing primitives** — relation
   managers (multiple tables on a page), read-only detail (display blocks), soft-delete
-  (by hand via `->query()`). Check [./recipes.md](./recipes.md) before concluding a feature
-  is absent.
+  (the `->softDeletes()` macro). Check [./recipes.md](./recipes.md) before concluding a
+  feature is absent.
 
-## The four documents
+## How these docs are split
 
-Read in this order if you're new; jump straight to one if you know your task.
+**Prose explains; the generated reference enumerates.** Reach for the reference when you
+need "does this method exist and what does it take"; reach for the prose when you need
+"how do I compose this, and what will bite me".
 
-1. **[authoring-pages.md](./authoring-pages.md)** — the PHP side. The `Page` class, the full
-   `S` builder catalog, every builder's API (Form/Table/Column/Action/Tab/Stat/Chart), the
-   closed effect set, and the action handler context. **Start here to build a page.**
-2. **[fields.md](./fields.md)** — the field inventory as a lookup table: each field's
-   factory, its fluent methods, and whether it needs a server endpoint. **Read before
-   building any field.**
-3. **[wiring.md](./wiring.md)** — how the two sides join: the HTTP endpoints, the
-   Inertia-vs-plain-JSON transport rule (the #1 wiring mistake), the contract gate that
-   keeps PHP and the client in sync, and the client extension API. **Read when adding a
-   field kind, an endpoint, or a custom block.**
+### Hand-written — concepts, gotchas, worked examples
+
+1. **[authoring-pages.md](./authoring-pages.md)** — the PHP side. The `Page` class, the `S`
+   builder catalog, layout blocks (their option vocabulary lives here, not in the generated
+   reference), the closed effect set, and the action handler context. **Start here to build
+   a page.**
+2. **[fields.md](./fields.md)** — how fields behave: the select progression
+   (static → searchable → async → creatable), rich options, the upload cookbook,
+   translatable fields, dependent/cascading fields. **Read before building any field.**
+3. **[wiring.md](./wiring.md)** — how the two sides join: the HTTP endpoint inventory, the
+   Inertia-vs-plain-JSON transport rule (the #1 wiring mistake), the contract gate, and the
+   client extension API. **Read when adding a field kind, an endpoint, or a custom block.**
 4. **[recipes.md](./recipes.md)** — compositions indexed by intent: how to build the thing
    you think is missing out of parts that exist. **Read before concluding a feature needs
    new framework code.**
+
+### Generated — the exhaustive method lists
+
+Built from PHP docblocks by `ApiReferenceTest`, so they cannot drift from the code.
+**Never hand-edit them**; fix the docblock and regenerate with
+`UPDATE_FIXTURES=1 vendor/bin/pest --filter ApiReference` (from `packages/php/`).
+
+| File | Covers |
+|---|---|
+| [api/builder.md](./api/builder.md) | The `S` builder — layout, display, chrome and data-builder factories |
+| [api/fields.md](./api/fields.md) | Base methods shared by every field, then each field kind + the concerns it composes (validation helpers, dependencies, options, affixes) |
+| [api/tables.md](./api/tables.md) | `TableBuilder`, `Column`, `Tab` |
+| [api/actions.md](./api/actions.md) | `ActionBuilder`, `Effects`, `FormBuilder` |
+| [api/panel.md](./api/panel.md) | `PanelConfig`, `Chrome`, nav, command palette |
+| [api/blocks.md](./api/blocks.md) | Display blocks, `Stat`, `ChartBuilder`, `ListBuilder`, `LiveRegionBuilder` |
+| [api/notifications.md](./api/notifications.md) | `Notification`, `NotificationAction` |
 
 ## Ground rules for every page
 
@@ -87,8 +114,11 @@ Read in this order if you're new; jump straight to one if you know your task.
 - **The effect set is closed.** Need behavior outside it → `custom` handler or server
   redirect, not a new effect.
 
-> **A note on `CLAUDE.md`:** the repo's `CLAUDE.md` is the framework-contributor guide and
-> is mostly accurate, but it has drifted in two spots these docs correct against source: it
-> counts "20 fields" (the real count is 21 + the `in` filter), and it lists the relation
-> field as a "plain input" stub (it shipped full async in PR #2). When `CLAUDE.md` and these
-> source-verified docs disagree, trust the docs — and fix `CLAUDE.md`.
+> **Trust order when sources disagree.** `docs/ai/api/` is generated from source, so its
+> **signatures** cannot lag — it wins on "does this method exist and what does it take".
+> Its *descriptions* are only as true as the docblock they came from, and a docblock
+> describing **client** behavior is unverified prose like any other: when a claim about
+> rendering matters, check `packages/client/src/`. These prose files are hand-maintained
+> and source-verified; `CLAUDE.md` is the contributor guide and lags more easily.
+> `docs/roadmap.md` and `docs/backlog.md` lag furthest — they list shipped features as
+> pending, so never conclude a feature is missing from them alone.

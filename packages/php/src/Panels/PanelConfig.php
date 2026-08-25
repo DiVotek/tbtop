@@ -63,6 +63,7 @@ final class PanelConfig
     /** @var list<NavItem> */
     private array $userMenuItems = [];
 
+    /** Feeds the route-name namespace (`tbtop.{id}.*`) — changing it on an existing panel renames every route. */
     public function id(string $id): static
     {
         $this->id = $id;
@@ -70,6 +71,7 @@ final class PanelConfig
         return $this;
     }
 
+    /** URL path prefix the panel is mounted under. Defaults to the panel id when unset — see getPrefix(). */
     public function prefix(string $prefix): static
     {
         $this->prefix = $prefix;
@@ -77,6 +79,7 @@ final class PanelConfig
         return $this;
     }
 
+    /** Auth guard checked by authStack(). Defaults to 'web'. */
     public function guard(string $guard): static
     {
         $this->guard = $guard;
@@ -84,7 +87,7 @@ final class PanelConfig
         return $this;
     }
 
-    /** @param  list<string>  $middleware */
+    /** Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}` on top at read time. @param  list<string>  $middleware */
     public function middleware(array $middleware): static
     {
         $this->middleware = $middleware;
@@ -92,7 +95,7 @@ final class PanelConfig
         return $this;
     }
 
-    /** @param  list<class-string<Page>>  $pages */
+    /** Page classes that get routes registered for this panel. @param  list<class-string<Page>>  $pages */
     public function pages(array $pages): static
     {
         $this->pages = $pages;
@@ -108,6 +111,7 @@ final class PanelConfig
         return $this;
     }
 
+    /** Default admin UI locale, overriding the first entry of locales(). */
     public function defaultLocale(string $locale): static
     {
         $this->defaultLocale = $locale;
@@ -131,6 +135,7 @@ final class PanelConfig
         return $this;
     }
 
+    /** Brand name shown in the chrome (sidebar/topbar header). */
     public function brand(string $brand): static
     {
         $this->brand = $brand;
@@ -171,7 +176,11 @@ final class PanelConfig
         return $this;
     }
 
-    /** Enable (default), disable with false, or configure the ⌘K command palette via a closure. */
+    /**
+     * Enable (default), disable with false, or configure the ⌘K command palette
+     * via a closure. The closure receives the CommandPaletteConfig to mutate
+     * (->commands([Command::make(...)...])) and returns nothing.
+     */
     public function commandPalette(bool|Closure $config = true): static
     {
         $palette = $this->getCommandPalette();
@@ -193,7 +202,14 @@ final class PanelConfig
         return $this;
     }
 
-    /** Chrome class serialized into the shell areas (header/sidebar/footer DSL). @param  class-string<Chrome>  $chrome */
+    /**
+     * Class-string of a Chrome subclass that authors the shell (header/sidebar/
+     * footer). Override headerItems()/sidebarItems() and spread the parent to
+     * append to the stock shell; override header()/sidebar()/footer() to
+     * replace an area outright.
+     *
+     * @param  class-string<Chrome>  $chrome
+     */
     public function chrome(string $chrome): static
     {
         $this->chrome = $chrome;
@@ -201,7 +217,12 @@ final class PanelConfig
         return $this;
     }
 
-    /** Per-group nav metadata (icon, collapsible), matched to a page's nav group by label. @param  list<NavGroup>  $groups */
+    /**
+     * Per-group nav metadata as a list of NavGroup::make('Content')->icon('file-text')
+     * ->collapsible(), matched to a page's nav()['group'] by that label.
+     *
+     * @param  list<NavGroup>  $groups
+     */
     public function navigationGroups(array $groups): static
     {
         $this->navigationGroups = $groups;

@@ -33,6 +33,7 @@ final class DisplayImageBlock implements JsonSerializable
         return new self($src);
     }
 
+    /** Accessible alt text for the rendered image. */
     public function alt(string $alt): self
     {
         $clone = clone $this;
@@ -41,6 +42,7 @@ final class DisplayImageBlock implements JsonSerializable
         return $clone;
     }
 
+    /** Caption text rendered below the image/link. */
     public function caption(string $caption): self
     {
         $clone = clone $this;

@@ -115,6 +115,7 @@ final class Column implements JsonSerializable
     // Fluent API
     // -------------------------------------------------------------------------
 
+    /** Column header text; defaults to a humanized $name when unset. */
     public function label(string $label): static
     {
         $this->label = $label;
@@ -122,6 +123,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Raw kind string; prefer a dedicated kind method (money(), badge(), image(), ...) when one exists. */
     public function kind(string $kind): static
     {
         $this->kind = $kind;
@@ -129,6 +131,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Allow the user to sort the table by this column. */
     public function sortable(bool $sortable = true): static
     {
         $this->sortable = $sortable;
@@ -173,6 +176,7 @@ final class Column implements JsonSerializable
         return $this->sortUsingClosure;
     }
 
+    /** Include this column in the table's global search. See TableBuilder::searchable() for how column- and table-level search combine. */
     public function searchable(bool $searchable = true): static
     {
         $this->searchable = $searchable;
@@ -188,6 +192,12 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Lets the user show/hide this column via the column-visibility dropdown.
+     * $hiddenByDefault only sets the initial state — the column still ships
+     * on the wire and the user can re-enable it. Contrast with hidden(),
+     * which excludes the column from the wire entirely and no UI can undo it.
+     */
     public function toggleable(bool $toggleable = true, bool $hiddenByDefault = false): static
     {
         $this->toggleable = $toggleable;
@@ -196,6 +206,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Excludes the column from the wire and from projection entirely — no client UI can bring it back. */
     public function hidden(): static
     {
         $this->alwaysHidden = true;
@@ -213,7 +224,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** @param  'left'|'center'|'right'  $align */
+    /** Horizontal alignment of the cell content and header. @param  'left'|'center'|'right'  $align */
     public function align(string $align): static
     {
         $this->align = $align;
@@ -221,7 +232,12 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** @param  'left'|'right'  $position */
+    /**
+     * A fixed icon shown beside every cell value (kebab-case Lucide name).
+     * For an icon that varies with the value, use iconMap() instead.
+     *
+     * @param  'left'|'right'  $position
+     */
     public function icon(string $name, string $position = 'left'): static
     {
         $this->icon = ['name' => $name, 'position' => $position];
@@ -229,6 +245,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Column width as a CSS length (e.g. '120px', '10%'). */
     public function width(string $width): static
     {
         $this->width = $width;
@@ -238,6 +255,7 @@ final class Column implements JsonSerializable
 
     // wrap/truncate/noWrap are three mutually exclusive line-break modes sharing
     // two wire keys, so each setter clears the others: the last call wins.
+    /** Allow cell content to wrap onto multiple lines. Mutually exclusive with truncate()/noWrap() — last call wins. */
     public function wrap(): static
     {
         $this->wrap = true;
@@ -246,6 +264,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Truncate overflowing cell content with an ellipsis. Mutually exclusive with wrap()/noWrap() — last call wins. */
     public function truncate(): static
     {
         $this->wrap = false;
@@ -254,6 +273,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Prevent cell content from wrapping (single line, may overflow). Mutually exclusive with wrap()/truncate() — last call wins. */
     public function noWrap(bool $value = true): static
     {
         $this->noWrap = $value;
@@ -287,6 +307,7 @@ final class Column implements JsonSerializable
         return $this->tooltipResolver;
     }
 
+    /** Read the cell value from the record's per-locale map for the active locale, instead of a scalar. */
     public function translatable(bool $value = true): static
     {
         $this->translatable = $value;
@@ -318,6 +339,12 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Server-side formatter, fn(mixed $value): mixed, run in ColumnProjection
+     * per row. Runs INSTEAD OF kind-sugar formatting (date/datetime/number/
+     * money), not in addition — set a kind for wire metadata (align, filter
+     * type) if needed, but formatUsing() alone decides the displayed value.
+     */
     public function formatUsing(Closure $fn): static
     {
         $this->formatUsing = $fn;
@@ -329,6 +356,7 @@ final class Column implements JsonSerializable
     // Kind sugar
     // -------------------------------------------------------------------------
 
+    /** Kind sugar: sets kind = 'date' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'Y-m-d'. */
     public function date(?string $format = null): static
     {
         $this->kind = 'date';
@@ -339,6 +367,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Kind sugar: sets kind = 'datetime' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'Y-m-d H:i:s'. */
     public function datetime(?string $format = null): static
     {
         $this->kind = 'datetime';
@@ -349,6 +378,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Kind sugar: sets kind = 'time' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'H:i'. */
     public function time(?string $format = null): static
     {
         $this->kind = 'time';
@@ -359,6 +389,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Kind sugar: sets kind = 'number' and stores $decimals; formatting (number_format) is applied server-side by KindFormat, not here. Omitting $decimals leaves the raw value unformatted. */
     public function number(?int $decimals = null): static
     {
         $this->kind = 'number';
@@ -369,6 +400,12 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Money kind: takes the stored value in MINOR units (integer cents),
+     * divides by 100 and appends $currency — store 1999, not 19.99. There is
+     * no money input kind: on forms use number()->step('0.01')->prefix('$')
+     * and convert to cents in onSubmit.
+     */
     public function money(string $currency): static
     {
         $this->kind = 'money';
@@ -377,6 +414,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
+    /** Kind sugar: sets kind = 'boolean' with optional icon/color overrides for true/false; the client renders the icon, no server formatting involved. */
     public function boolean(
         ?string $trueIcon = null,
         ?string $falseIcon = null,
@@ -393,6 +431,10 @@ final class Column implements JsonSerializable
     }
 
     /**
+     * Render the cell as a colored badge; sets kind = 'badge'. A value with no
+     * entry in $colors still renders (gray/default badge styling), it just
+     * doesn't get its own color.
+     *
      * @param  array<string, Color|string>  $colors  value → Color|string
      */
     public function badge(array $colors): static
@@ -404,6 +446,9 @@ final class Column implements JsonSerializable
     }
 
     /**
+     * Render the cell as an icon keyed by value; sets kind = 'icon'. A value
+     * with no entry in $map falls back to rendering the raw value as text.
+     *
      * @param  array<string, array{icon: string, color?: string}|string>  $map  value → ['icon', 'color'] or icon string
      */
     public function iconMap(array $map): static
@@ -431,9 +476,10 @@ final class Column implements JsonSerializable
     }
 
     /**
-     * Render the column as a link; sets kind = 'link'. The resolver runs
-     * server-side per row and returns a URL or null (null → empty cell).
-     * The closure never serializes.
+     * Render the column as a link. $url receives the row (the Eloquent model,
+     * or the stdClass for DB::table() rows) and returns a URL or null (null →
+     * empty cell). Never serialized. Like every kind method, exclusive with the
+     * other kinds — the last one called wins.
      */
     public function link(Closure $url, bool $external = false, ?string $icon = null): static
     {

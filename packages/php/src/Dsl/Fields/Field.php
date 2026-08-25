@@ -55,6 +55,7 @@ abstract class Field implements JsonSerializable
         return new static($name);
     }
 
+    /** Display label rendered above the input; defaults to a humanized $name when unset. */
     public function label(string $label): static
     {
         return $this->set('label', $label);
@@ -72,6 +73,7 @@ abstract class Field implements JsonSerializable
         return $this->set('tooltip', $text);
     }
 
+    /** Marks the field required: flags it on the wire and adds a `required` validation rule. */
     public function required(): static
     {
         $this->opts['required'] = true;
@@ -113,7 +115,14 @@ abstract class Field implements JsonSerializable
         return $this;
     }
 
-    /** @param  string|list<string>  $rules */
+    /**
+     * Appends Laravel validation rules, merged with any already collected.
+     * Pass a `regex:` rule as an array element, never inline it in a
+     * pipe-delimited string — the pattern's own `|` would be split on and
+     * the string form throws for this reason.
+     *
+     * @param  string|list<string>  $rules
+     */
     public function rules(string|array $rules): static
     {
         $this->ruleList = $this->appendRules($this->ruleList, $rules);
@@ -134,6 +143,12 @@ abstract class Field implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Store the value as a per-locale map instead of a scalar. On a repeater,
+     * this cascades to its sub-fields rather than translating the repeater's
+     * own value (see isTranslatableField()); pair with rulesForLocale() to
+     * validate each locale independently.
+     */
     public function translatable(bool $value = true): static
     {
         $this->translatableFlag = $value;
@@ -141,6 +156,13 @@ abstract class Field implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Rule set for one locale of a translatable field, replacing — not adding
+     * to — whatever rules() would otherwise apply there. Only the default
+     * content locale falls back to rules() when it has no override; every
+     * other locale without one just gets 'nullable'. Unlike rules(), a
+     * pipe string here is not guarded against an inline regex: pattern.
+     */
     public function rulesForLocale(string $locale, string|array $rules): static
     {
         $list = is_string($rules) ? explode('|', $rules) : $rules;
@@ -171,6 +193,11 @@ abstract class Field implements JsonSerializable
         return $this->localeRules;
     }
 
+    /**
+     * Seeds the form value when the record has no key for this field. An
+     * explicit key in the form's record() always wins — even
+     * record(['x' => null]) keeps the null instead of this default.
+     */
     public function default(mixed $value): static
     {
         return $this->set('default', $value);
@@ -192,6 +219,13 @@ abstract class Field implements JsonSerializable
         return $this->set('colStart', $start);
     }
 
+    /**
+     * Escape hatch: writes $key directly into the serialized node options,
+     * bypassing any dedicated fluent method. Key names are NOT validated
+     * against the schema — a typo or unsupported key ships silently and only
+     * fails (if at all) on the client. Prefer a real fluent method when one
+     * exists; use this only for a wire key with no builder support yet.
+     */
     public function set(string $key, mixed $value): static
     {
         $this->opts[$key] = $value;

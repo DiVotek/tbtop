@@ -9,6 +9,7 @@ final class Richtext extends Field
         return 'richtext';
     }
 
+    /** Placeholder text shown in the empty editor. */
     public function placeholder(string $text): static
     {
         return $this->set('placeholder', $text);

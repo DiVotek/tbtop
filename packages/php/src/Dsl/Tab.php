@@ -30,6 +30,7 @@ final class Tab
         return new self($name);
     }
 
+    /** Display text for the tab; falls back to the raw tab name when unset. */
     public function label(?string $label): self
     {
         $this->label = $label;

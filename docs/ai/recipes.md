@@ -40,7 +40,7 @@ for each relation you want to manage:
 ```php
 public function view(S $s): Node
 {
-    $record = Post::findOrFail($this->recordId());
+    $record = Post::findOrFail(request()->route('post'));
 
     return $s->stack([
         $s->form('post', [...]),   // parent record form
@@ -119,7 +119,7 @@ Example — a record detail page (the demo's `RecordDetailPage` is the full vers
 ```php
 public function view(S $s): Node
 {
-    $order = Order::findOrFail($this->recordId());
+    $order = Order::findOrFail(request()->route('order'));
 
     return $s->stack([
         $s->displayText("Order #{$order->id}")->variant('heading'),
@@ -701,6 +701,82 @@ Two rules make this pattern sound:
 
 ---
 
+## Recipe 12 — Notify a user from an action handler
+
+**What Filament calls it:** `Notification::make()->sendToDatabase($user)` inside an action.
+
+Same here: the notification builder is plain Laravel, so call it inside any `handle()` /
+`onSubmit` / preset closure and still return `Effects` for the actor's own feedback. A
+modal that collects input is `EditAction` territory — it appends the inner Save/Cancel row
+that actually submits the form (a hand-rolled `->modal(form)` needs its own inner
+`handle()` action inside the form; `->modal()` and `->handle()` on the *same* builder are
+two specs and throw).
+
+```php
+EditAction::make(
+    $s,
+    name: 'reassign',
+    title: 'Reassign task',
+    form: $s->form('reassign', [
+        $s->relation('assignee_id')->label('Assignee')->searchable()
+            ->query(fn (array $deps) => User::query())->required(),
+    ]),
+    loadUsing: fn (ActionCtx $ctx): array => ['assignee_id' => $ctx->row['assignee_id'] ?? null],
+    saveUsing: function (ActionCtx $ctx): Effects {
+        $task = Task::query()->whereKey($ctx->row['id'])->firstOrFail();
+        $task->update(['assignee_id' => $ctx->form['assignee_id']]);
+
+        Notification::make()->title("Task #{$task->id} assigned to you")->info()
+            ->actions([NotificationAction::make('Open')->url("/admin/tasks/{$task->id}")])
+            ->sendToDatabase($task->assignee);
+
+        return Effects::make()->notify('Reassigned')->closeModal()->refreshTable();
+    },
+)->label('Reassign');
+```
+
+`sendToDatabase()` accepts a notifiable model, a collection or an array (it wraps
+`Notification::send`). The bell in the chrome (`$s->notifications()`) picks it up on the
+next poll. Notification actions are links only — no closures survive storage.
+
+---
+
+## Recipe 13 — Detail page: tabs beside a side column
+
+**What Filament calls it:** a form with tabs and a sticky "summary" aside.
+
+`$s->aside()` is a fixed-width (`w-80`) column that only makes sense as a sibling inside a
+`row()`/`flex()`; it does **not** stick on scroll. Fields inside a non-active tab stay part
+of the form — they still submit, and a validation error on one switches the tabs to the
+failing tab automatically.
+
+```php
+public function view(S $s): Node
+{
+    return $s->form('product', [
+        $s->row([
+            $s->tabs([
+                ['label' => 'General', 'children' => [$s->text('title'), $s->number('price_cents')]],
+                ['label' => 'Media', 'children' => [$s->upload('gallery')->multiple()]],
+            ]),
+            $s->aside([
+                $s->section(['title' => 'Summary'], [
+                    $s->displayValue($this->record['price_cents'] ?? 0)->money('USD'),
+                    $s->displayValue($this->record['status'] ?? 'draft')->badge(),
+                ]),
+            ]),
+        ]),
+        $s->actionsRow([FormActions::save($s)]),
+    ])->record($this->record)->onSubmit(fn (ActionCtx $ctx) => '/admin/products');
+}
+```
+
+For a summary that must follow the form as the user types, put a `liveRegion()` in the
+aside instead of static `displayValue()` blocks (scalar deps only — see
+[authoring-pages.md](./authoring-pages.md#data-builders)).
+
+---
+
 ## Not yet expressible
 
 These Filament features do not compose today. Do NOT attempt to fake them with existing
@@ -708,10 +784,10 @@ primitives — the result will be incomplete or broken.
 
 | Feature | Why it does not compose |
 |---|---|
-| **Relation managers with inline editing** | The N-table pattern (Recipe 1) handles add/delete via row actions. True inline editing (editing a relation row without a separate page) would require a modal form on a relation row action — the mechanism exists (`->modal()` on an action), but wiring a form's save back to the related record's endpoint requires per-page controller work that has no convention yet. Track via the roadmap. |
-| **Infolist field *binding* declarations** | The *auto-binding* form (`TextEntry::make('title')` that resolves `$record->title` itself) does not exist and is not planned — by design. Read-only record detail is covered instead by the display-value family (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`, M-96): the author passes each value directly (Recipe 2). If you specifically want declarative field→attribute binding, that is the part that does not compose. |
+| ~~Relation managers with inline editing~~ | **This composes now.** `EditAction::make($s, $form, $loadUsing, $saveUsing)` is the convention — a modal form on a relation row action, loaded via the action-data endpoint and saved through `$saveUsing`. See Recipe 6. For a single cell, `Column::textInput()/toggle()/selectColumn()` + `onSave()` is lighter still (Recipe 7). |
+| **Infolist field *binding* declarations** | The *auto-binding* form (`TextEntry::make('title')` that resolves `$record->title` itself) does not exist and is not planned — by design. Read-only record detail is covered instead by the display-value family (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`, M-96): the author passes each value directly (Recipe 2). One narrow exception: inside a **modal**, `displayValue(...)->field('name')` binds by name to the modal's query result — but it resolves from modal data, not from a page record, and is incompatible with the server-baked kinds (date/datetime/number/money). |
 | **CSV export / import** | No export action kind exists. Filament uses queued jobs for large exports. This needs a new effect kind or a direct download endpoint — neither is in the closed effect set today. Listed as backlog 🟡 in the roadmap. |
-| **Global search** | The table-level `->searchable()` and per-column `.searchable()` work within a single table. A cross-page global search (the Spotlight-style overlay in Filament) needs a layout-slot design — it is listed as a known gap in the roadmap. |
+| **Global search over records** | Table-level `->searchable()` and per-column `->searchable()` work within a single table; there is no cross-model record search. Note the **⌘K command palette does exist** (`PanelConfig::commandPalette()`, `Command::make()`) — it searches nav items and author-declared commands, not table rows. Record-level global search remains a roadmap gap. |
 | **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in the roadmap. |
 | **Saved filters / filter presets** | No persistence layer for user-saved filter states. Listed as backlog 🟡. |
-| **Auth-page layout (Login, Register pages as DSL classes)** | The `center` layout exists and works. But there are no `LoginPage` / `RegisterPage` DSL classes in the package — auth currently lives in demo Breeze controllers. This needs a design session (see roadmap §1.1). |
+| **Package-side auth backend** | The *screens* compose today: the demo's `LoginPage`, `TwoFactorChallengePage`, `TwoFactorSetupPage` and `ApiTokensPage` are ordinary DSL pages using `layout(): 'center'` plus a `middleware()` override to stay public — copy them. What the **package** does not ship is the backend: the demo posts to Laravel Breeze controllers, and there is no Fortify. Standing up auth in a new consumer means bringing your own controllers (see roadmap §1.1). |

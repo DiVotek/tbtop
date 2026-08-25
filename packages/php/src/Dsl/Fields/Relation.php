@@ -23,6 +23,7 @@ final class Relation extends Field
         return 'relation';
     }
 
+    /** Type-ahead over the relation-search endpoint; without it the field renders the resolved label only. */
     public function searchable(bool $value = true): static
     {
         return $this->set('searchable', $value);

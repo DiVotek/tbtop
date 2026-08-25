@@ -32,7 +32,16 @@ final class FormBuilder implements JsonSerializable
         $this->children = $children;
     }
 
-    /** @param  array<string, mixed>  $record Initial form data, lands in page props. */
+    /**
+     * Seeds initial form data (lands in page props). Explicit keys here win
+     * over a field's own default() — RecordDefaults only fills in keys absent
+     * from $record, so record(['x' => null]) keeps the explicit null instead
+     * of the field default. A scalar value for a translatable field is
+     * expanded into a per-locale map (see TranslatableRecord::normalize),
+     * with the scalar assigned to the default content locale.
+     *
+     * @param  array<string, mixed>  $record  Initial form data, lands in page props.
+     */
     public function record(array $record): self
     {
         $this->record = $record;
@@ -40,6 +49,12 @@ final class FormBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Server-side handler run after validation passes, never serialized.
+     * It receives an ActionCtx (validated input at $ctx->form, plus user,
+     * request and route params) — not a bare array. Return an Effects
+     * instance, or a string to redirect there.
+     */
     public function onSubmit(Closure $handler): self
     {
         $this->onSubmit = $handler;

@@ -36,6 +36,7 @@ final class Notification
         return new self;
     }
 
+    /** The only field always present on the wire payload; every other setter is optional. */
     public function title(string $title): self
     {
         $this->title = $title;
@@ -43,6 +44,7 @@ final class Notification
         return $this;
     }
 
+    /** Optional supporting text shown under the title. */
     public function body(string $body): self
     {
         $this->body = $body;
@@ -66,32 +68,43 @@ final class Notification
         return $this;
     }
 
+    /** Semantic status, set via color() under the hood. success()/warning()/danger()/info() are sugar calling this with a fixed value. */
     public function status(string $status): self
     {
         return $this->color($status);
     }
 
+    /** Sugar for status('success'). */
     public function success(): self
     {
         return $this->status('success');
     }
 
+    /** Sugar for status('warning'). */
     public function warning(): self
     {
         return $this->status('warning');
     }
 
+    /** Sugar for status('danger'). */
     public function danger(): self
     {
         return $this->status('danger');
     }
 
+    /** Sugar for status('info'). */
     public function info(): self
     {
         return $this->status('info');
     }
 
-    /** @param  list<NotificationAction>  $actions */
+    /**
+     * Links only — never a server closure. The payload is frozen into
+     * `notifications.data` and rendered independent of any page or request,
+     * so there's no endpoint left to resolve a closure against.
+     *
+     * @param  list<NotificationAction>  $actions
+     */
     public function actions(array $actions): self
     {
         $this->actions = $actions;
@@ -100,7 +113,8 @@ final class Notification
     }
 
     /**
-     * The payload frozen into `notifications.data`.
+     * The payload frozen into `notifications.data`, sparse: only title is
+     * always present.
      *
      * @return array<string, mixed>
      */
