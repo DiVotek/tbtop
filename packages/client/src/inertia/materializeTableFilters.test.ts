@@ -4,7 +4,8 @@
  * as form children and repeater fields.
  */
 import { describe, expect, it } from "bun:test";
-import type { ConditionContext, StructureNode } from "../structure/types";
+import type { AdminClient } from "../data/client";
+import type { ClientActionContext, ConditionContext, StructureNode } from "../structure/types";
 import { materialize } from "./materialize";
 
 function serverNode(
@@ -82,5 +83,130 @@ describe("MaterializeTableFilters: hiddenIf on filter fields", () => {
 		expect(hiddenFn(ctxNews)).toBe(true);
 		// type=article → not hidden
 		expect(hiddenFn(ctxArticle)).toBe(false);
+	});
+});
+
+interface PostCall {
+	url: string;
+	body: unknown;
+}
+
+type QueryFn = (
+	ctx: ClientActionContext,
+	search: string,
+	deps?: Record<string, string>,
+) => Promise<unknown>;
+type LoadFn = (
+	ctx: ClientActionContext,
+	value: string,
+	deps?: Record<string, string>,
+) => Promise<unknown>;
+type MultiLoadFn = (
+	ctx: ClientActionContext,
+	values: string[],
+	deps?: Record<string, string>,
+) => Promise<unknown>;
+
+function postingContext(calls: PostCall[]): ClientActionContext {
+	return {
+		client: {
+			post: (url: string, body: unknown) => {
+				calls.push({ url, body });
+				if (body !== null && typeof body === "object" && "value" in body) {
+					return Promise.resolve({ option: { value: "fr", label: "France" } });
+				}
+				return Promise.resolve({ options: [{ value: "fr", label: "France" }] });
+			},
+		} as unknown as AdminClient,
+		user: null,
+		params: {},
+		navigate: () => {},
+		notify: () => {},
+		t: (key) => key,
+	};
+}
+
+describe("MaterializeTableFilters: scoped async options", () => {
+	it("binds only filter selects to their table URL and preserves the form URL", async () => {
+		const form = serverNode(
+			"form",
+			{
+				children: [serverNode("select", { async: true }, "country")],
+			},
+			"main",
+		);
+		const primary = serverNode(
+			"table",
+			{
+				columns: [],
+				filters: [
+					serverNode("select", { async: true }, "country"),
+					serverNode("select", { async: true, multiple: true }, "tags"),
+				],
+			},
+			"primary",
+		);
+		const secondary = serverNode(
+			"table",
+			{
+				columns: [],
+				filters: [serverNode("select", { async: true }, "country")],
+			},
+			"secondary",
+		);
+		const root = serverNode("stack", { children: [form, primary, secondary] }, "root");
+		const out = materialize(root, BASE);
+		const children = (out.options as { children: StructureNode[] }).children;
+		const formChildren = (children[0] as StructureNode).options as {
+			children: StructureNode[];
+		};
+		const formSelect = (formChildren.children[0] as StructureNode).options as Record<
+			string,
+			unknown
+		>;
+		const primaryFilters = (
+			(children[1] as StructureNode).options as {
+				filters: StructureNode[];
+			}
+		).filters;
+		const secondaryFilters = (
+			(children[2] as StructureNode).options as {
+				filters: StructureNode[];
+			}
+		).filters;
+		const primaryCountry = primaryFilters[0]?.options as Record<string, unknown>;
+		const primaryTags = primaryFilters[1]?.options as Record<string, unknown>;
+		const secondaryCountry = secondaryFilters[0]?.options as Record<string, unknown>;
+		const calls: PostCall[] = [];
+		const ctx = postingContext(calls);
+
+		await (formSelect.query as QueryFn)(ctx, "form");
+		await (primaryCountry.query as QueryFn)(ctx, "pri", { region: "eu" });
+		await (primaryCountry.onLoad as LoadFn)(ctx, "fr");
+		await (primaryTags.onLoad as MultiLoadFn)(ctx, ["t1", "t2"]);
+		await (secondaryCountry.query as QueryFn)(ctx, "sec");
+
+		expect(calls).toEqual([
+			{
+				url: "/admin/posts/select-options/country",
+				body: { search: "form", deps: undefined },
+			},
+			{
+				url: "/admin/posts/tables/primary/filters/country/options",
+				body: { search: "pri", deps: { region: "eu" } },
+			},
+			{
+				url: "/admin/posts/tables/primary/filters/country/options",
+				body: { value: "fr", deps: undefined },
+			},
+			{
+				url: "/admin/posts/tables/primary/filters/tags/options",
+				body: { values: ["t1", "t2"], deps: undefined },
+			},
+			{
+				url: "/admin/posts/tables/secondary/filters/country/options",
+				body: { search: "sec", deps: undefined },
+			},
+		]);
 	});
 });

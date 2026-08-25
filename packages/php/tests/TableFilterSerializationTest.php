@@ -59,6 +59,20 @@ it('TableSerialization: filtersIn inline serializes correctly', function (): voi
     expect($json['options']['filtersIn'])->toBe('inline');
 });
 
+it('TableSerialization: creatable selects fail fast when used as table filters', function (): void {
+    $s = new S;
+
+    $s->table('posts')->filters([
+        Select::make('author_id')->creatable(
+            [Text::make('name')],
+            fn (array $data): array => ['value' => '1', 'label' => $data['name']],
+        ),
+    ]);
+})->throws(
+    InvalidArgumentException::class,
+    'Table filter "author_id" on table "posts" cannot use creatable(); select creation is only supported inside forms.',
+);
+
 it('TableSerialization: deferFilters emits true on wire', function (): void {
     $s = new S;
     $table = $s->table('posts')

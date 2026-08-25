@@ -3,7 +3,8 @@
  * plus the shared per-field renderer.
  */
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { FieldDependencyProvider } from "../../fields/fieldDependencies";
 import { useTranslation } from "../../i18n/i18n";
 import { cn } from "../../lib/cn";
 import { getBlockDescriptor } from "../../render/blockRegistry";
@@ -60,18 +61,21 @@ export function InlineFilters({
 	formColumns,
 }: FiltersProps) {
 	const t = useTranslation();
+	const initialFilterValues = useRef(filterValues).current;
 	const gridClass = formColumns
 		? (FORM_COLS_CLASS[formColumns] ?? FORM_COLS_CLASS[1])
 		: undefined;
 	return (
 		<div className="flex items-end gap-2 flex-wrap" data-testid="table-filters-inline">
-			<div
-				className={
-					gridClass ? cn("grid gap-2", gridClass) : "flex items-end gap-2 flex-wrap"
-				}
-			>
-				{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
-			</div>
+			<FieldDependencyProvider data={filterValues} initial={initialFilterValues}>
+				<div
+					className={
+						gridClass ? cn("grid gap-2", gridClass) : "flex items-end gap-2 flex-wrap"
+					}
+				>
+					{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
+				</div>
+			</FieldDependencyProvider>
 			{deferred && (
 				<Button onClick={onApply} data-testid="table-filters-apply">
 					{t("table.filters.apply")}
@@ -100,6 +104,7 @@ export function ModalFilters({
 }: FiltersProps) {
 	const t = useTranslation();
 	const [open, setOpen] = useState(false);
+	const initialFilterValues = useRef(filterValues).current;
 	const gridClass = formColumns
 		? (FORM_COLS_CLASS[formColumns] ?? FORM_COLS_CLASS[1])
 		: undefined;
@@ -137,9 +142,13 @@ export function ModalFilters({
 					</div>
 				}
 			>
-				<div className={gridClass ? cn("grid gap-4", gridClass) : "flex flex-col gap-4"}>
-					{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
-				</div>
+				<FieldDependencyProvider data={filterValues} initial={initialFilterValues}>
+					<div
+						className={gridClass ? cn("grid gap-4", gridClass) : "flex flex-col gap-4"}
+					>
+						{filters.map((f) => renderFilterField(f, filterValues, onFilterChange))}
+					</div>
+				</FieldDependencyProvider>
 			</ModalShell>
 		</>
 	);

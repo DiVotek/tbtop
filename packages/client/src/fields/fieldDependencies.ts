@@ -1,6 +1,29 @@
-import { useEffect, useRef } from "react";
+import { createContext, createElement, type ReactNode, useContext, useEffect, useRef } from "react";
 import { useNearestFormController } from "../structure/formContext";
 import { isEqual } from "../structure/formController";
+import type { FormController } from "../structure/types";
+
+interface DependencyValues {
+	data: Record<string, unknown>;
+	initial: Record<string, unknown>;
+}
+
+const DependencyValuesContext = createContext<DependencyValues | null>(null);
+
+function dependencyValues(
+	provided: DependencyValues | null,
+	controller: FormController | null,
+): DependencyValues {
+	return provided ?? { data: controller?.data ?? {}, initial: controller?.initial ?? {} };
+}
+
+export function FieldDependencyProvider({
+	data,
+	initial,
+	children,
+}: DependencyValues & { children: ReactNode }): ReactNode {
+	return createElement(DependencyValuesContext.Provider, { value: { data, initial } }, children);
+}
 
 export interface DependencyConfig {
 	dependsOn?: string[];
@@ -146,11 +169,12 @@ export function useFieldDependencies({
 	onChange,
 }: UseFieldDependenciesArgs): DependencyState {
 	const ctrl = useNearestFormController();
+	const provided = useContext(DependencyValuesContext);
+	const { data, initial } = dependencyValues(provided, ctrl);
 	const parents = config.dependsOn ?? [];
 	const hasDeps = parents.length > 0;
-	const { deps, ready } = readDeps(parents, ctrl?.data ?? {});
+	const { deps, ready } = readDeps(parents, data);
 	const depsKey = hasDeps ? JSON.stringify(deps) : "";
-	const initial = ctrl?.initial ?? {};
 	const initialDepsKey = hasDeps ? JSON.stringify(readDeps(parents, initial).deps) : "";
 	useDependentReset({
 		depsKey,

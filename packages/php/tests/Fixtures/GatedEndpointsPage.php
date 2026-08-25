@@ -62,6 +62,11 @@ class GatedEndpointsPage extends Page
                         ->textInput()
                         ->onSave(fn (mixed $record, mixed $value) => null),
                 ])
+                ->filters([
+                    $s->select('tag_id')
+                        ->label('Tag')
+                        ->query(fn (array $deps, string $search): array => ['1' => 'Gated']),
+                ])
                 ->query(fn () => DB::table('items'))
                 ->toNode(),
             $s->chart('summary', 'donut', ['nameKey' => 'label'])

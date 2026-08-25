@@ -111,11 +111,23 @@ export function materializeRelation(node: StructureNode, basePath: string): Stru
  * PHP builder got a query() closure answers it — so the async bag is injected
  * solely when the server set `async`. The closure itself never crosses the wire.
  */
-export function selectOptionsEndpoint(node: StructureNode, basePath: string, opts: Bag): Bag {
+interface SelectOptionsScope {
+	basePath: string;
+	tableName?: string;
+}
+
+export function selectOptionsEndpoint(
+	node: StructureNode,
+	opts: Bag,
+	scope: SelectOptionsScope,
+): Bag {
 	if (opts.async !== true) {
 		return opts;
 	}
-	const endpoint = `${basePath}/select-options/${node.name as string}`;
+	const fieldName = node.name as string;
+	const endpoint = scope.tableName
+		? `${scope.basePath}/tables/${scope.tableName}/filters/${fieldName}/options`
+		: `${scope.basePath}/select-options/${fieldName}`;
 	const bag = opts.multiple === true ? asyncMultiOptionsBag(endpoint) : asyncOptionsBag(endpoint);
 	return { ...opts, ...bag };
 }

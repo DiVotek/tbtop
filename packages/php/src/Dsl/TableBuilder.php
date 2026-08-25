@@ -10,6 +10,7 @@ use Tbtop\Admin\Dsl\Actions\RestoreAction;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Select;
 
 /**
  * Fluent table surface — DSL boundary, method count is the API.
@@ -102,6 +103,14 @@ final class TableBuilder implements JsonSerializable
      */
     public function filters(array $fields): self
     {
+        foreach ($fields as $field) {
+            if ($field instanceof Select && $field->creatableClosure() !== null) {
+                throw new InvalidArgumentException(
+                    "Table filter \"{$field->name}\" on table \"{$this->name}\" cannot use creatable(); select creation is only supported inside forms."
+                );
+            }
+        }
+
         $this->filterFields = $fields;
         if ($this->filtersIn === null) {
             $this->filtersIn = 'modal';
@@ -167,6 +176,21 @@ final class TableBuilder implements JsonSerializable
     public function filterFields(): array
     {
         return $this->filterFields;
+    }
+
+    public function findQueryableSelectFilter(string $name): ?Select
+    {
+        foreach ($this->filterFields as $field) {
+            if ($field instanceof Select
+                && $field->isIncluded()
+                && $field->name === $name
+                && $field->queryClosure() !== null
+            ) {
+                return $field;
+            }
+        }
+
+        return null;
     }
 
     /** Require an explicit Apply action before filter changes narrow the query. */

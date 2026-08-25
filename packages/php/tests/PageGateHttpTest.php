@@ -131,6 +131,20 @@ it('PageGate: gated select-options endpoint returns 200 when gate allows', funct
         ->assertOk();
 });
 
+it('PageGate: gated table-filter options endpoint returns 403 when gate denies', function (): void {
+    Gate::define('view-gated-endpoints', fn (?object $user) => false);
+
+    $this->postJson('/admin/gated-endpoints/tables/items/filters/tag_id/options', ['search' => ''])
+        ->assertForbidden();
+});
+
+it('PageGate: gated table-filter options endpoint returns 200 when gate allows', function (): void {
+    Gate::define('view-gated-endpoints', fn (?object $user) => true);
+
+    $this->postJson('/admin/gated-endpoints/tables/items/filters/tag_id/options', ['search' => ''])
+        ->assertOk();
+});
+
 // ---------------------------------------------------------------------------
 // Gate check: editable cell endpoint
 // ---------------------------------------------------------------------------

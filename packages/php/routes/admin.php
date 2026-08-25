@@ -26,6 +26,7 @@ use Tbtop\Admin\Http\SelectOptionsController;
 use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Http\TableController;
+use Tbtop\Admin\Http\TableFilterOptionsController;
 use Tbtop\Admin\Http\TableReorderController;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\PanelConfig;
@@ -56,6 +57,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::get("{$path}/tables/{tbtopTable}", TableController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.table');
+        Route::post("{$path}/tables/{tbtopTable}/filters/{tbtopFilter}/options", TableFilterOptionsController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.tableFilterOptions');
         Route::get("{$path}/data/{tbtopData}", DataController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.data');
