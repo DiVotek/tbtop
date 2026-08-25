@@ -136,6 +136,7 @@ class PlaygroundPage extends Page
                     'icon' => 'lock',
                     'collapsible' => true,
                     'collapsed' => true,
+                    'variant' => 'card',
                 ], [
                     $s->boolean('beta_features')->label('Enable beta features')->rules('boolean'),
                 ]),

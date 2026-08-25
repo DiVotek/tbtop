@@ -188,6 +188,9 @@ Each layout block accepts children and optional option arrays, and returns a `No
 
 A section's `'aside'` is a persistent context slot: when a `section` sets both
 `'aside'` and `'collapsible'`, collapsing hides only the main body — the aside stays visible.
+The default, `'card'`, and `'plain'` variants share the same header behavior: description,
+icon, action, chevron, keyboard toggle, and initial `'collapsed'` state all remain available;
+the variant changes visual chrome only.
 
 `->columnSpan(int|array $span)` / `->columnStart(int|array $start)` are fluent
 methods on `Field` only (same int-or-breakpoint-object shape, 1-8) — `Node`
@@ -240,7 +243,7 @@ the existing default of `4`.
 #### `section` — `variant: 'card'` body padding
 
 A `variant: 'card'` section's body is padded (`px-4 pb-4`, plus `pt-3` when the card has a
-header — a title or an `action` — or `pt-4` when it doesn't) so fields sit clear of the card's
+header — a title, description, icon, or an `action` — or `pt-4` when it doesn't) so fields sit clear of the card's
 border instead of touching it, matching the header row's own `px-4 py-3` rhythm.
 
 **Exception — a table child stays frameless.** If a `section(['variant' => 'card'], ...)`'s
