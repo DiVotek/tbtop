@@ -116,6 +116,27 @@ it('TableSerialization: filtersFormWidth rejects an invalid width', function ():
     (new S)->table('posts')->filtersFormWidth('xl');
 })->throws(InvalidArgumentException::class);
 
+it('TableSerialization: filtersFormColumns(12) serializes the column count', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->filters([Text::make('q')])
+        ->filtersFormColumns(12)
+        ->query(fn () => null);
+
+    $json = encodeTable($table->toNode());
+
+    expect($json['options']['filtersFormColumns'])->toBe(12);
+});
+
+it('TableSerialization: filtersFormColumns rejects a column count below 1', function (): void {
+    (new S)->table('posts')->filtersFormColumns(0);
+})->throws(InvalidArgumentException::class);
+
+it('TableSerialization: filtersFormColumns rejects a column count above 12', function (): void {
+    (new S)->table('posts')->filtersFormColumns(13);
+})->throws(InvalidArgumentException::class);
+
 it('TableSerialization: searchable serializes as list of column names', function (): void {
     $s = new S;
     $table = $s->table('posts')
