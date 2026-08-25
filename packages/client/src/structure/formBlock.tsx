@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { renderTranslatableField as renderTranslatableFieldShared } from "../fields/translatableField";
 import { type Translate, translateValidationMessage, useTranslation } from "../i18n/i18n";
 import { liftNestedErrors } from "../inertia/fieldErrors";
+import { useReconciled } from "../lib/useReconciled";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { applyColumnPlacement } from "../render/columnPlacement";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
@@ -200,14 +201,14 @@ function submitter(e: FormEvent<HTMLFormElement>): HTMLElement | null {
  * just-applied server field errors.
  */
 function useSyncInitial(initial: Bag, syncInitial: (values: Bag) => void): void {
-	const prevRef = useRef(initial);
+	const record = useReconciled(initial, { isEqual });
 	useEffect(() => {
-		if (isEqual(prevRef.current, initial)) {
+		if (!record.changed) {
 			return;
 		}
-		prevRef.current = initial;
+		record.accept();
 		syncInitial(initial);
-	}, [initial, syncInitial]);
+	}, [record, initial, syncInitial]);
 }
 
 /** Per-form values every recursive renderFormChild/renderFieldNode call needs. */

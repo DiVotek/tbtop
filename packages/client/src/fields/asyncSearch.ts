@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLatest } from "../lib/useLatest";
 import type { ClientActionContext } from "../structure/types";
 
 type SearchState =
@@ -34,6 +35,7 @@ export function useAsyncSearch({
 	const [state, setState] = useState<SearchState>(() =>
 		hasQuery ? { kind: "loading" } : { kind: "ready", rows: [] },
 	);
+	const run = useLatest();
 	// biome-ignore lint/correctness/useExhaustiveDependencies: hasQuery/refetchKey trigger refetch
 	useEffect(() => {
 		const fn = queryRef.current;
@@ -41,26 +43,19 @@ export function useAsyncSearch({
 			setState({ kind: "ready", rows: [] });
 			return;
 		}
-		let cancelled = false;
 		setState({ kind: "loading" });
-		fn(ctxRef.current, debouncedSearch).then(
-			(rows) => {
-				if (!cancelled) {
-					setState({ kind: "ready", rows });
-				}
-			},
-			(err: unknown) => {
-				if (cancelled) {
-					return;
-				}
-				const message = err instanceof Error ? err.message : "Query failed";
-				setState({ kind: "error", message });
-			},
-		);
+		void run(() => fn(ctxRef.current, debouncedSearch), {
+			onResult: (rows) => setState({ kind: "ready", rows }),
+			onError: (err) =>
+				setState({
+					kind: "error",
+					message: err instanceof Error ? err.message : "Query failed",
+				}),
+		});
 		return () => {
-			cancelled = true;
+			run.cancel();
 		};
-	}, [hasQuery, debouncedSearch, refetchKey]);
+	}, [hasQuery, debouncedSearch, refetchKey, run]);
 	return state;
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLatest } from "../lib/useLatest";
 import type { ClientActionContext } from "../structure/types";
 import type { StaticOption } from "./selectShared";
 
@@ -96,6 +97,7 @@ export function useSingleResolvedLabel({
 	const cacheRef = useLabelCache(refetchKey, state);
 	const knownRef = useRef(knownLabels);
 	knownRef.current = knownLabels;
+	const run = useLatest();
 
 	useEffect(() => {
 		const cached = cacheRef.current.labels;
@@ -110,25 +112,19 @@ export function useSingleResolvedLabel({
 			setState({ kind: "ready", labels: cached });
 			return;
 		}
-		let cancelled = false;
 		setState({ kind: "loading" });
-		onLoad(ctxRef.current, id).then(
-			(row) => {
-				if (!cancelled) {
-					const labels = mergeLabel({ cached, id, row, opts: optsRef.current });
-					setState({ kind: "ready", labels });
-				}
-			},
-			() => {
-				if (!cancelled) {
-					setState({ kind: "ready", labels: cached });
-				}
-			},
-		);
+		void run(() => onLoad(ctxRef.current, id), {
+			onResult: (row) =>
+				setState({
+					kind: "ready",
+					labels: mergeLabel({ cached, id, row, opts: optsRef.current }),
+				}),
+			onError: () => setState({ kind: "ready", labels: cached }),
+		});
 		return () => {
-			cancelled = true;
+			run.cancel();
 		};
-	}, [id, fieldName, refetchKey, cacheRef]);
+	}, [id, fieldName, refetchKey, cacheRef, run]);
 	return state;
 }
 

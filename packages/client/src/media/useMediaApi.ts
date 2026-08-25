@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApiBase, useClient } from "../data/client";
+import { useLatest } from "../lib/useLatest";
 import {
 	extractMessage,
 	normalizeMediaFolder,
@@ -96,9 +97,9 @@ export function useMediaItems(params: MediaQueryParams): {
 
 	const paramsRef = useRef(params);
 	paramsRef.current = params;
+	const run = useLatest();
 
 	useEffect(() => {
-		let cancelled = false;
 		setState((prev) => {
 			if (prev.kind === "loaded" || prev.kind === "reloading") {
 				return { kind: "reloading", data: prev.data };
@@ -107,25 +108,18 @@ export function useMediaItems(params: MediaQueryParams): {
 		});
 		const query = buildMediaQuery(paramsRef.current);
 
-		client.get("/media", query).then(
-			(raw) => {
-				if (!cancelled) {
-					setState({ kind: "loaded", data: normalizeMediaListResponse(raw) });
-				}
-			},
-			(err: unknown) => {
-				if (!cancelled) {
-					setState({ kind: "error", message: extractMessage(err) });
-				}
-			},
-		);
+		void run(() => client.get("/media", query), {
+			onResult: (raw) => setState({ kind: "loaded", data: normalizeMediaListResponse(raw) }),
+			onError: (err) => setState({ kind: "error", message: extractMessage(err) }),
+		});
 		return () => {
-			cancelled = true;
+			run.cancel();
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		client,
 		tick,
+		run,
 		params.folder,
 		params.search,
 		params.page,
@@ -150,27 +144,21 @@ export function useMediaFolders(): {
 	const [loading, setLoading] = useState(true);
 
 	const refetch = useCallback(() => setTick((t) => t + 1), []);
+	const run = useLatest();
 
 	useEffect(() => {
-		let cancelled = false;
 		setLoading(true);
-		client.get("/media/folders").then(
-			(raw) => {
-				if (!cancelled) {
-					setFolders(Array.isArray(raw) ? raw.map(normalizeMediaFolder) : []);
-					setLoading(false);
-				}
+		void run(() => client.get("/media/folders"), {
+			onResult: (raw) => {
+				setFolders(Array.isArray(raw) ? raw.map(normalizeMediaFolder) : []);
+				setLoading(false);
 			},
-			() => {
-				if (!cancelled) {
-					setLoading(false);
-				}
-			},
-		);
+			onError: () => setLoading(false),
+		});
 		return () => {
-			cancelled = true;
+			run.cancel();
 		};
-	}, [client, tick]);
+	}, [client, tick, run]);
 
 	return { folders, loading, refetch };
 }

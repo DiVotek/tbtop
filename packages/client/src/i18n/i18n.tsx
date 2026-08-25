@@ -7,6 +7,7 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { useLatest } from "../lib/useLatest";
 import { defaultMessages, type Messages } from "./defaultMessages";
 import { type LocaleLoader, loadMessages } from "./loadMessages";
 import { readStoredLocale, writeStoredLocale } from "./localeStorage";
@@ -84,23 +85,20 @@ export function I18nProvider({
 		fallback: pluginMessages?.[fallbackLang] ?? {},
 	}));
 
+	const run = useLatest();
 	useEffect(() => {
-		let cancelled = false;
-		void hydrateMessages({
-			locale,
-			fallbackLang,
-			languages,
-			pluginMessages,
-			onResolved: (next) => {
-				if (!cancelled) {
-					setResolved((prev) => (sameMessages(prev, next) ? prev : next));
-				}
+		void run(() => loadMessagesFor({ locale, fallbackLang, languages, pluginMessages }), {
+			onResult: (next) => {
+				setResolved((prev) => (sameMessages(prev, next) ? prev : next));
+			},
+			onError: (err) => {
+				console.error(`[i18n] failed to load messages for locale "${locale}":`, err);
 			},
 		});
 		return () => {
-			cancelled = true;
+			run.cancel();
 		};
-	}, [locale, fallbackLang, languages, pluginMessages]);
+	}, [locale, fallbackLang, languages, pluginMessages, run]);
 
 	const setLocale = useCallback(
 		(next: string) => {
@@ -206,33 +204,25 @@ function sameMessages(a: ResolvedMessages, b: ResolvedMessages): boolean {
 	return sameBag(a.active, b.active) && sameBag(a.fallback, b.fallback);
 }
 
-async function hydrateMessages({
+async function loadMessagesFor({
 	locale,
 	fallbackLang,
 	languages,
 	pluginMessages,
-	onResolved,
 }: {
 	locale: string;
 	fallbackLang: string;
 	languages: Record<string, LocaleLoader> | undefined;
 	pluginMessages: PluginMessages | undefined;
-	onResolved: (next: ResolvedMessages) => void;
-}): Promise<void> {
-	try {
-		const [activeConsumer, fallbackConsumer] = await Promise.all([
-			loadIfPresent(languages?.[locale]),
-			locale === fallbackLang
-				? Promise.resolve({})
-				: loadIfPresent(languages?.[fallbackLang]),
-		]);
-		onResolved({
-			active: { ...pluginMessages?.[locale], ...activeConsumer },
-			fallback: { ...pluginMessages?.[fallbackLang], ...fallbackConsumer },
-		});
-	} catch (err) {
-		console.error(`[i18n] failed to load messages for locale "${locale}":`, err);
-	}
+}): Promise<ResolvedMessages> {
+	const [activeConsumer, fallbackConsumer] = await Promise.all([
+		loadIfPresent(languages?.[locale]),
+		locale === fallbackLang ? Promise.resolve({}) : loadIfPresent(languages?.[fallbackLang]),
+	]);
+	return {
+		active: { ...pluginMessages?.[locale], ...activeConsumer },
+		fallback: { ...pluginMessages?.[fallbackLang], ...fallbackConsumer },
+	};
 }
 
 async function loadIfPresent(loader: LocaleLoader | undefined): Promise<Messages> {

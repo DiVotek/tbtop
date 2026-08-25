@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { translateValidationMessage } from "../../i18n/i18n";
 import { checkField } from "../../inertia/constraints";
 import { executeEffects, readEffects } from "../../inertia/effects";
+import { useLatest } from "../../lib/useLatest";
+import { useReconciled } from "../../lib/useReconciled";
 import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { useClientActionContext } from "../actionContext";
@@ -23,23 +25,23 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 	const valueRef = useRef<unknown>(row[col.name]);
 	const confirmedValueRef = useRef<unknown>(row[col.name]);
 	const dirtyRef = useRef(false);
-	const cellKeyRef = useRef(`${readId(row) ?? ""}:${col.name}`);
-	const saveGenerationRef = useRef(0);
+	const run = useLatest();
 
 	const id = readId(row);
 	const serverValue = row[col.name];
+	const server = useReconciled(serverValue, { key: `${id ?? ""}:${col.name}` });
 
-	useEffect(() => {
-		const cellKey = `${id ?? ""}:${col.name}`;
-		const changedCell = cellKeyRef.current !== cellKey;
-		cellKeyRef.current = cellKey;
+	if (server.changed) {
+		server.accept();
 		confirmedValueRef.current = serverValue;
-		if (changedCell || !dirtyRef.current) {
-			setValue(serverValue);
+		// A different cell always wins; the same cell yields only when the
+		// user has no unsaved edit in it.
+		if (server.keyChanged || !dirtyRef.current) {
 			valueRef.current = serverValue;
 			dirtyRef.current = false;
+			setValue(serverValue);
 		}
-	}, [col.name, id, serverValue]);
+	}
 
 	async function save(next: unknown): Promise<void> {
 		if (!saveCell || !id) {
@@ -53,26 +55,21 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 			return;
 		}
 		setError(null);
-		const generation = ++saveGenerationRef.current;
 
-		try {
-			const rawEffects = await saveCell({ column: col.name, id, value: next });
-			if (generation !== saveGenerationRef.current) {
-				return;
-			}
-			confirmedValueRef.current = next;
-			dirtyRef.current = false;
-			executeEffects(readEffects(rawEffects), ctx);
-		} catch (err: unknown) {
-			if (generation !== saveGenerationRef.current) {
-				return;
-			}
-			// rollback optimistic state
-			setValue(confirmedValueRef.current);
-			valueRef.current = confirmedValueRef.current;
-			dirtyRef.current = false;
-			setError(extractCellError(err, col.name));
-		}
+		await run(() => saveCell({ column: col.name, id, value: next }), {
+			onResult: (rawEffects) => {
+				confirmedValueRef.current = next;
+				dirtyRef.current = false;
+				executeEffects(readEffects(rawEffects), ctx);
+			},
+			onError: (err) => {
+				// rollback optimistic state
+				setValue(confirmedValueRef.current);
+				valueRef.current = confirmedValueRef.current;
+				dirtyRef.current = false;
+				setError(extractCellError(err, col.name));
+			},
+		});
 	}
 
 	const descriptor = getBlockDescriptor(col.editable.as);

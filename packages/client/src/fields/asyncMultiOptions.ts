@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLatest } from "../lib/useLatest";
 import type { ClientActionContext } from "../structure/types";
 import {
 	type AsyncMultiOptionsBag,
@@ -39,6 +40,7 @@ export function useMultiResolvedLabels({
 	if (state.kind === "ready") {
 		shownRef.current = state.labels;
 	}
+	const run = useLatest();
 
 	useEffect(() => {
 		const ids: string[] = JSON.parse(idsKey);
@@ -52,32 +54,20 @@ export function useMultiResolvedLabels({
 			setState({ kind: "ready", labels: {} });
 			return;
 		}
-		let cancelled = false;
 		const shown = shownRef.current;
 		setState(
 			Object.keys(shown).length === 0
 				? { kind: "loading" }
 				: { kind: "ready", labels: shown },
 		);
-		onLoad(ctxRef.current, ids).then(
-			(rows) => {
-				if (cancelled) {
-					return;
-				}
-				setState({
-					kind: "ready",
-					labels: buildLabelMap(rows, optsRef.current),
-				});
-			},
-			() => {
-				if (!cancelled) {
-					setState({ kind: "ready", labels: shown });
-				}
-			},
-		);
+		void run(() => onLoad(ctxRef.current, ids), {
+			onResult: (rows) =>
+				setState({ kind: "ready", labels: buildLabelMap(rows, optsRef.current) }),
+			onError: () => setState({ kind: "ready", labels: shown }),
+		});
 		return () => {
-			cancelled = true;
+			run.cancel();
 		};
-	}, [idsKey, fieldName]);
+	}, [idsKey, fieldName, run]);
 	return state;
 }

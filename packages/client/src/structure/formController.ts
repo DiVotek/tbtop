@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useReconciled } from "../lib/useReconciled";
 import type { FormController } from "./types";
 
 type Bag = Record<string, unknown>;
@@ -22,10 +23,12 @@ export interface FormControllerInternal extends FormController {
 
 // oxlint-disable-next-line max-lines-per-function -- hook: 5 useCallbacks must stay inline (hook rules)
 export function useFormController(input: UseFormControllerInput): FormControllerInternal {
-	const sourceRef = useRef(input.initial);
 	const baselineRef = useRef(input.initial);
-	if (!isEqual(sourceRef.current, input.initial)) {
-		sourceRef.current = input.initial;
+	// A fresh but deep-equal record (every Inertia props refresh delivers one)
+	// must not reset the baseline the user's edits are measured against.
+	const source = useReconciled(input.initial, { isEqual });
+	if (source.changed) {
+		source.accept();
 		baselineRef.current = input.initial;
 	}
 	const [initial, setInitial] = useState<Bag>(() => ({ ...input.initial }));

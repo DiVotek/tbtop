@@ -2,9 +2,10 @@
  * ColumnSearchInput — one per-column header search box.
  * Controlled draft + its own debounce instance, isolated from every other column.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { useDebounce } from "../../lib/useDebounce";
+import { useReconciled } from "../../lib/useReconciled";
 import { Input } from "../../ui/input";
 import type { TableColumn } from "../types";
 
@@ -17,15 +18,19 @@ interface ColumnSearchInputProps {
 export function ColumnSearchInput({ column, value = "", onChange }: ColumnSearchInputProps) {
 	const t = useTranslation();
 	const [draft, setDraft] = useState(value);
-	const valueGeneration = useRef(0);
-	useEffect(() => {
-		valueGeneration.current += 1;
+	const incoming = useReconciled(value);
+	// An externally reset value supersedes a pending debounce, which would
+	// otherwise write the abandoned draft back.
+	const draftGeneration = useRef(0);
+	if (incoming.changed) {
+		incoming.accept();
+		draftGeneration.current += 1;
 		setDraft(value);
-	}, [value]);
+	}
 	const debouncedChange = useDebounce(
 		useCallback(
 			(next: string, generation: number) => {
-				if (generation === valueGeneration.current) {
+				if (generation === draftGeneration.current) {
 					onChange(column.name, next);
 				}
 			},
@@ -47,7 +52,7 @@ export function ColumnSearchInput({ column, value = "", onChange }: ColumnSearch
 			onChange={(e) => {
 				const next = e.target.value;
 				setDraft(next);
-				debouncedChange(next, valueGeneration.current);
+				debouncedChange(next, draftGeneration.current);
 			}}
 		/>
 	);

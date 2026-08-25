@@ -33,6 +33,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
+import { useLatest } from "../lib/useLatest";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { ModalShell } from "../ui/modal-shell";
@@ -114,6 +115,7 @@ export function MediaPickerForm({
 
 	const [resolvedItems, setResolvedItems] = useState<MediaItem[]>([]);
 	const [pickerOpen, setPickerOpen] = useState(false);
+	const run = useLatest();
 
 	// Form values may arrive as JSON numbers (e.g. settings-backed forms);
 	// coerce to strings so id comparisons never mix types.
@@ -143,8 +145,8 @@ export function MediaPickerForm({
 		}
 
 		const missing = ids.filter((id) => !resolvedIds.includes(id));
-		Promise.all(missing.map((id) => fetchMediaItem(client, id)))
-			.then((fetched) => {
+		void run(() => Promise.all(missing.map((id) => fetchMediaItem(client, id))), {
+			onResult: (fetched) => {
 				setResolvedItems((prev) => {
 					const map = new Map(prev.map((i) => [i.id, i]));
 					for (const item of fetched) {
@@ -152,10 +154,10 @@ export function MediaPickerForm({
 					}
 					return ids.map((id) => map.get(id)).filter(Boolean) as MediaItem[];
 				});
-			})
-			.catch(() => {
-				// silently ignore — items just won't have previews
-			});
+			},
+			// silently ignore — items just won't have previews
+			onError: () => {},
+		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ids.join(",")]);
 
