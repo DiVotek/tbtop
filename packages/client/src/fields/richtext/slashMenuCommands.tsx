@@ -1,3 +1,4 @@
+import "./lexicalCore";
 import { $createCodeNode } from "@lexical/code";
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
 import { $createHeadingNode, $createQuoteNode } from "@lexical/rich-text";
