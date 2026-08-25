@@ -120,37 +120,15 @@ final class Node implements JsonSerializable
      * single DSL value (Field|Node|TextBlock|...), not a list, so it is appended
      * as one more child rather than merged in.
      *
-     * Both keys are walked, not the first one present: a node can carry
-     * 'children' and 'fields' at once (the schema allows it, and Field::set()
-     * reaches it), and stopping at 'children' made the 'fields' list invisible
-     * to every walker built on this — rule collection, defaults, translatable
-     * names. translatable() has always walked both; this now agrees with it.
+     * Delegates to StructureWalk, the one place this key set (and the
+     * ChildInclusion verdict) is stated — see its docblock for why a second
+     * copy of this list is how it drifted before.
      *
      * @return list<mixed>
      */
     public function nestedChildren(): array
     {
-        $out = [];
-        foreach (self::CHILD_LIST_KEYS as $key) {
-            $nested = $this->options[$key] ?? null;
-            if (is_array($nested)) {
-                $out = [...$out, ...array_values($nested)];
-            }
-        }
-
-        foreach (self::CHILD_KEYS as $key) {
-            if (($this->options[$key] ?? null) !== null) {
-                $out[] = $this->options[$key];
-            }
-        }
-
-        foreach ($this->options['tabs'] ?? [] as $tab) {
-            if (is_array($tab) && isset($tab['body'])) {
-                $out[] = $tab['body'];
-            }
-        }
-
-        return $out;
+        return StructureWalk::descendants($this);
     }
 
     /** @return array<string, mixed> */

@@ -40,11 +40,14 @@ final class RuleWalker
     /** @return array<string, list<string>> */
     private static function fromChild(mixed $child, string $prefix): array
     {
+        if (! ChildInclusion::isConditionMet($child)) {
+            return [];
+        }
         if ($child instanceof Field) {
             return self::fromField($child, $prefix);
         }
         if ($child instanceof Node) {
-            return self::collect($child->nestedChildren(), $prefix);
+            return self::collect(StructureWalk::descendants($child), $prefix);
         }
 
         return [];
@@ -280,11 +283,14 @@ final class RuleWalker
     /** @return array<string, string> */
     private static function attributesFromChild(mixed $child, string $prefix): array
     {
+        if (! ChildInclusion::isConditionMet($child)) {
+            return [];
+        }
         if ($child instanceof Field) {
             return self::attributesFromField($child, $prefix);
         }
         if ($child instanceof Node) {
-            return self::collectAttributes($child->nestedChildren(), $prefix);
+            return self::collectAttributes(StructureWalk::descendants($child), $prefix);
         }
 
         return [];
