@@ -21,6 +21,7 @@ use Tbtop\Admin\Dsl\TableBuilder;
 final class EditableColumnController
 {
     use AuthorizesPage;
+    use RespondsWithEffects;
 
     public function __invoke(Request $request): JsonResponse
     {
@@ -48,9 +49,9 @@ final class EditableColumnController
         $value = $this->validateValue($col, $columnName, $payload['value'] ?? null);
         $builder = $this->resolveBuilder($table);
         $record = $this->resolveRecord($builder, $payload['id'] ?? null);
-        $effects = $this->runSave($col, $record, $value, $tableName);
+        $result = $this->runSave($col, $record, $value);
 
-        return response()->json(['effects' => $effects]);
+        return $this->respondWithEffects($result, Effects::make()->refreshTable($tableName));
     }
 
     /**
@@ -147,19 +148,13 @@ final class EditableColumnController
         return $record;
     }
 
-    private function runSave(
-        Column $col,
-        mixed $record,
-        mixed $value,
-        string $tableName,
-    ): Effects {
+    private function runSave(Column $col, mixed $record, mixed $value): mixed
+    {
         $closure = $col->onSaveClosure();
         if ($closure === null) {
             abort(422, 'onSave closure is missing on this editable column.');
         }
 
-        $result = $closure($record, $value);
-
-        return $result instanceof Effects ? $result : Effects::make()->refreshTable($tableName);
+        return $closure($record, $value);
     }
 }

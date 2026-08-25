@@ -18,7 +18,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { useEffect, useState } from "react";
-import { executeEffects, readEffects } from "../inertia/effects";
+import { readEffects } from "../inertia/effects";
+import { executeFlashEffects } from "../inertia/flashEffects";
 import { materialize } from "../inertia/materialize";
 import { markServerRedirect } from "../inertia/navigationIntent";
 import { renderNode } from "../render/structureRenderer";
@@ -480,15 +481,15 @@ describe("Form unsaved guard — tab close / refresh (beforeunload)", () => {
 // (Inertia's back() response), so the redirect can fire in the same
 // React commit as the reset — before useUnsavedGuard's effect has
 // re-registered with isDirty=false. FlashEffectProbe below mirrors AdminPage's
-// real effect (using the real executeEffects/readEffects) so this test drives
-// the actual same-tick race instead of a mock that can't reproduce it.
+// real effect (using the real executeFlashEffects/readEffects) so this test
+// drives the actual same-tick race instead of a mock that can't reproduce it.
 // ---------------------------------------------------------------------------
 
 function FlashEffectProbe({ flash }: { flash: unknown }) {
 	useEffect(() => {
 		const effects = readEffects(flash);
 		if (effects.length > 0) {
-			executeEffects(effects, { notify: () => {} });
+			executeFlashEffects(effects, { notify: () => {} });
 		}
 	}, [flash]);
 	return null;
