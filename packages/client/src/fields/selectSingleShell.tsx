@@ -119,9 +119,16 @@ export function SingleComboboxShell({
 			</div>
 
 			<Combobox.Portal>
-				<Combobox.Positioner className="z-50" sideOffset={4}>
-					<Combobox.Popup className="w-[var(--anchor-width)] rounded-md border border-input bg-background shadow-md">
-						<Combobox.List className="max-h-60 overflow-y-auto p-1">
+				{/* Radix dialogs disable pointer events on body; this body-level portal
+				    must opt back in so modal filter options remain clickable. */}
+				<Combobox.Positioner
+					data-testid={`select-positioner-${name}`}
+					className="z-50"
+					style={{ pointerEvents: "auto" }}
+					sideOffset={4}
+				>
+					<Combobox.Popup className="flex max-h-[var(--available-height)] w-[var(--anchor-width)] flex-col overflow-hidden rounded-md border border-input bg-background shadow-md">
+						<Combobox.List className="min-h-0 max-h-60 overflow-y-auto p-1">
 							{/* Rows come from the server, so Combobox.Empty — which reads Base
 							    UI's own collection — would always consider the list empty. */}
 							{listState !== "rows" && (

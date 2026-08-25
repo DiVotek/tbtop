@@ -16,6 +16,9 @@ class SelectQueryPage extends Page
     /** @var list<array{deps: array<string, string>, search: string}> Captured closure arguments. */
     public static array $calls = [];
 
+    /** @var list<array{filter: string, deps: array<string, string>, search: string}> */
+    public static array $tableCalls = [];
+
     private const COUNTRIES = [
         'fr' => 'France',
         'de' => 'Germany',
@@ -114,6 +117,63 @@ class SelectQueryPage extends Page
                     ]),
                 $s->select('status')->label('Status')->options([['value' => 'a', 'label' => 'A']]),
             ])->onSubmit(fn () => null),
+            $s->table('primary')
+                ->columns(['id' => 'ID'])
+                ->filters([
+                    $s->select('country')
+                        ->label('Country')
+                        ->query(function (array $deps, string $search): array {
+                            static::$tableCalls[] = [
+                                'filter' => 'primary.country',
+                                'deps' => $deps,
+                                'search' => $search,
+                            ];
+
+                            return [[
+                                'value' => 'primary',
+                                'label' => 'Primary country',
+                                'secret' => 'must-not-leak',
+                                'display' => ['subtitle' => 'Primary table'],
+                            ]];
+                        })
+                        ->resolveUsing(fn (string $value): string => $value === 'primary' ? 'Primary country' : $value),
+                    $s->select('city')
+                        ->dependsOn('country')
+                        ->query(function (array $deps, string $search): array {
+                            static::$tableCalls[] = [
+                                'filter' => 'primary.city',
+                                'deps' => $deps,
+                                'search' => $search,
+                            ];
+
+                            return ['par' => 'Paris', 'ber' => 'Berlin'];
+                        }),
+                    $s->select('tags')
+                        ->multiple()
+                        ->query(fn (array $deps, string $search): array => [
+                            't1' => 'Laravel',
+                            't2' => 'React',
+                        ]),
+                    $s->select('status')->options([['value' => 'active', 'label' => 'Active']]),
+                    $s->select('hidden')->query(fn (): array => ['x' => 'Hidden'])->when(false),
+                ])
+                ->query(fn () => null)
+                ->toNode(),
+            $s->table('secondary')
+                ->columns(['id' => 'ID'])
+                ->filters([
+                    $s->select('country')->query(fn (): array => ['secondary' => 'Secondary country']),
+                ])
+                ->query(fn () => null)
+                ->toNode(),
+            $s->table('hidden_table')
+                ->columns(['id' => 'ID'])
+                ->filters([
+                    $s->select('country')->query(fn (): array => ['hidden' => 'Hidden country']),
+                ])
+                ->query(fn () => null)
+                ->when(false)
+                ->toNode(),
         ]);
     }
 }

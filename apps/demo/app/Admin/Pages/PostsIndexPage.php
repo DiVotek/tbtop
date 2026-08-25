@@ -121,11 +121,19 @@ class PostsIndexPage extends Page
                         ]),
                     Select::make('author_id')
                         ->label('Author')
-                        ->options(
-                            User::query()->pluck('email', 'id')
-                                ->map(fn ($email, $id) => ['value' => $id, 'label' => $email])
+                        ->searchable()
+                        ->query(
+                            fn (array $deps, string $search): array => User::query()
+                                ->when($search !== '', fn ($query) => $query->where('email', 'like', "%{$search}%"))
+                                ->orderBy('email')
+                                ->limit(20)
+                                ->get(['id', 'email'])
+                                ->map(fn (User $user) => ['value' => $user->id, 'label' => $user->email])
                                 ->values()
                                 ->all()
+                        )
+                        ->resolveUsing(
+                            fn (string $value): ?string => User::query()->whereKey($value)->value('email')
                         ),
                     Daterange::make('published_at')->label('Published date'),
                     Boolean::make('with_rating')

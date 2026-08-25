@@ -5,12 +5,14 @@ import type { StaticOption } from "./selectShared";
 
 interface ComboboxOptionProps {
 	option: StaticOption;
+	testId?: string;
 }
 
-export function ComboboxOption({ option }: ComboboxOptionProps) {
+export function ComboboxOption({ option, testId }: ComboboxOptionProps) {
 	return (
 		<Combobox.Item
 			value={option.value}
+			data-testid={testId}
 			className="relative cursor-pointer rounded py-1.5 pr-8 pl-2 text-sm data-[highlighted]:bg-accent data-[selected]:font-medium"
 		>
 			<SelectOptionContent option={option} />

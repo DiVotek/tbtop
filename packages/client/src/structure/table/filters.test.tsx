@@ -2,9 +2,11 @@
  * InlineFilters/ModalFilters layout: formColumns grid-cols application,
  * formWidth applied to the modal's dialog content.
  */
-import { describe, expect, test } from "bun:test";
-import { fireEvent, render } from "@testing-library/react";
+import { describe, expect, mock, test } from "bun:test";
+import { fireEvent, render, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { ensureBuiltinsRegistered } from "../../render/registerBuiltins";
+import { wrapForStructure as wrap } from "../testFixtures";
 import { InlineFilters, ModalFilters } from "./filters";
 
 ensureBuiltinsRegistered();
@@ -41,6 +43,59 @@ describe("InlineFilters: formColumns grid layout", () => {
 			/>,
 		);
 		expect(container.querySelector(".grid")).toBeNull();
+	});
+
+	test("supplies sibling filter values to async dependsOn queries", async () => {
+		const query = mock(
+			async (_ctx: unknown, _search: string, deps?: Record<string, string>) => [
+				{ value: deps?.country ?? "", label: "Paris" },
+			],
+		);
+		const filters = [
+			{
+				kind: "select",
+				name: "country",
+				options: { options: [{ value: "fr", label: "France" }] },
+				meta: {},
+			},
+			{
+				kind: "select",
+				name: "city",
+				options: {
+					dependsOn: ["country"],
+					query,
+					onLoad: async () => ({ value: "par", label: "Paris" }),
+					optionValue: (row: unknown) => (row as { value: string }).value,
+					optionLabel: (row: unknown) => (row as { label: string }).label,
+				},
+				meta: {},
+			},
+		];
+		const Wrap = wrap(() => new Response("{}"));
+
+		function Harness() {
+			const [values, setValues] = useState<Record<string, unknown>>({ country: "fr" });
+			return (
+				<InlineFilters
+					filters={filters}
+					filterValues={values}
+					onFilterChange={(name, value) =>
+						setValues((current) => ({ ...current, [name]: value }))
+					}
+					onReset={() => setValues({})}
+					activeCount={1}
+				/>
+			);
+		}
+
+		render(
+			<Wrap>
+				<Harness />
+			</Wrap>,
+		);
+
+		await waitFor(() => expect(query).toHaveBeenCalled());
+		expect(query.mock.calls[0]?.[2]).toEqual({ country: "fr" });
 	});
 });
 

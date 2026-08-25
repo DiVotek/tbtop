@@ -7,6 +7,7 @@ uses(SelectOptionsHttpTestCase::class);
 
 beforeEach(function (): void {
     SelectQueryPage::$calls = [];
+    SelectQueryPage::$tableCalls = [];
 });
 
 // ---------------------------------------------------------------------------
@@ -210,4 +211,85 @@ it('Select options: unknown field name returns 404', function (): void {
 it('Select options: a select without query() returns 404', function (): void {
     $this->postJson('/admin/select-query-page/select-options/status', ['search' => ''])
         ->assertNotFound();
+});
+
+// ---------------------------------------------------------------------------
+// Table-filter scoped endpoint
+// ---------------------------------------------------------------------------
+
+it('Table filter options: search resolves the requested table despite form and table name collisions', function (): void {
+    $this->postJson('/admin/select-query-page/tables/primary/filters/country/options', ['search' => 'pri'])
+        ->assertOk()
+        ->assertExactJson(['options' => [[
+            'value' => 'primary',
+            'label' => 'Primary country',
+            'display' => ['subtitle' => 'Primary table'],
+        ]]]);
+
+    $this->postJson('/admin/select-query-page/tables/secondary/filters/country/options', ['search' => ''])
+        ->assertOk()
+        ->assertExactJson(['options' => [
+            ['value' => 'secondary', 'label' => 'Secondary country'],
+        ]]);
+
+    expect(SelectQueryPage::$tableCalls)->toBe([[
+        'filter' => 'primary.country',
+        'deps' => [],
+        'search' => 'pri',
+    ]]);
+});
+
+it('Table filter options: the existing form endpoint still resolves the form field collision', function (): void {
+    $this->postJson('/admin/select-query-page/select-options/country', ['search' => 'gree'])
+        ->assertOk()
+        ->assertExactJson(['options' => [
+            ['value' => 'gr', 'label' => 'Greece'],
+        ]]);
+});
+
+it('Table filter options: value resolves one stored option', function (): void {
+    $this->postJson('/admin/select-query-page/tables/primary/filters/country/options', [
+        'value' => 'primary',
+    ])->assertOk()->assertExactJson([
+        'option' => ['value' => 'primary', 'label' => 'Primary country'],
+    ]);
+});
+
+it('Table filter options: values resolves a stored multiple selection', function (): void {
+    $this->postJson('/admin/select-query-page/tables/primary/filters/tags/options', [
+        'values' => ['t2', 't1'],
+    ])->assertOk()->assertExactJson(['options' => [
+        ['value' => 't2', 'label' => 'React'],
+        ['value' => 't1', 'label' => 'Laravel'],
+    ]]);
+});
+
+it('Table filter options: only declared dependency keys reach the filter closure', function (): void {
+    $this->postJson('/admin/select-query-page/tables/primary/filters/city/options', [
+        'search' => 'ber',
+        'deps' => ['country' => 'de', 'injected' => 'x'],
+    ])->assertOk();
+
+    expect(SelectQueryPage::$tableCalls)->toBe([[
+        'filter' => 'primary.city',
+        'deps' => ['country' => 'de'],
+        'search' => 'ber',
+    ]]);
+});
+
+it('Table filter options: rejects unreachable tables and fields', function (string $path): void {
+    $this->postJson("/admin/select-query-page/{$path}", ['search' => ''])->assertNotFound();
+})->with([
+    'unknown table' => 'tables/missing/filters/country/options',
+    'hidden table' => 'tables/hidden_table/filters/country/options',
+    'unknown filter' => 'tables/primary/filters/missing/options',
+    'hidden filter' => 'tables/primary/filters/hidden/options',
+    'static filter' => 'tables/primary/filters/status/options',
+]);
+
+it('Table filter options: panel authentication still protects the scoped endpoint', function (): void {
+    auth()->logout();
+
+    $this->postJson('/admin/select-query-page/tables/primary/filters/country/options', ['search' => ''])
+        ->assertUnauthorized();
 });

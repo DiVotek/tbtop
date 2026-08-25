@@ -14,13 +14,14 @@ type Walk = (node: StructureNode) => StructureNode;
 export interface TableMaterializeCtx {
 	basePath: string;
 	walk: Walk;
+	walkFilter: Walk;
 }
 
 export function materializeTable(node: StructureNode, ctx: TableMaterializeCtx): StructureNode {
 	const opts = node.options as Bag;
 	const name = node.name ?? "";
 	const compiledFilters = Array.isArray(opts.filters)
-		? (opts.filters as StructureNode[]).map((f) => ctx.walk(f))
+		? (opts.filters as StructureNode[]).map((f) => ctx.walkFilter(f))
 		: undefined;
 	return {
 		...node,

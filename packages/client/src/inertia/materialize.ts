@@ -26,6 +26,7 @@ export interface MaterializeInput {
 interface WalkCtx extends MaterializeInput {
 	formName?: string;
 	formNode?: StructureNode;
+	filterTableName?: string;
 }
 
 /**
@@ -68,7 +69,11 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 	if (node.kind === "table") {
 		return materializeTable(
 			{ ...node, meta },
-			{ basePath: ctx.basePath, walk: (n) => walk(n, ctx) },
+			{
+				basePath: ctx.basePath,
+				walk: (n) => walk(n, ctx),
+				walkFilter: (n) => walk(n, { ...ctx, filterTableName: node.name }),
+			},
 		);
 	}
 	if (node.kind.startsWith("chart:")) {
@@ -182,7 +187,10 @@ function materializeForm(node: StructureNode, ctx: WalkCtx): StructureNode {
 
 function materializeSelect(node: StructureNode, ctx: WalkCtx): StructureNode {
 	const walked = walkChildren(node.options as Bag, ctx);
-	const opts = selectOptionsEndpoint(node, ctx.basePath, walked);
+	const opts = selectOptionsEndpoint(node, walked, {
+		basePath: ctx.basePath,
+		tableName: ctx.filterTableName,
+	});
 	const create = opts.create as Bag | undefined;
 	if (!create) {
 		return { ...node, options: opts };
