@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "../lib/useDebounce";
 import { useLatest } from "../lib/useLatest";
 import type { ClientActionContext } from "../structure/types";
 
@@ -26,7 +27,11 @@ export function useAsyncSearch({
 	search,
 	refetchKey = 0,
 }: AsyncSearchArgs): SearchState {
-	const debouncedSearch = useDebounced(search);
+	// Mount and empty-again pass through instantly; only typing is delayed. Mount
+	// must not park the control in a skeleton for the delay, and clearing the
+	// search (Escape, a selection resetting the query) must refetch the
+	// unfiltered list at once rather than lag behind the debounce.
+	const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS, (s) => s === "");
 	const ctxRef = useRef(ctx);
 	ctxRef.current = ctx;
 	const queryRef = useRef(query);
@@ -57,20 +62,4 @@ export function useAsyncSearch({
 		};
 	}, [hasQuery, debouncedSearch, refetchKey, run]);
 	return state;
-}
-
-/** Mount and empty-again pass through instantly; only typing is delayed. */
-function useDebounced(value: string): string {
-	const [debounced, setDebounced] = useState(value);
-	const isFirst = useRef(true);
-	useEffect(() => {
-		if (isFirst.current || value === "") {
-			isFirst.current = false;
-			setDebounced(value);
-			return;
-		}
-		const timer = setTimeout(() => setDebounced(value), SEARCH_DEBOUNCE_MS);
-		return () => clearTimeout(timer);
-	}, [value]);
-	return debounced;
 }

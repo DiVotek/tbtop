@@ -16,7 +16,6 @@ export interface MultiResolveArgs {
 	opts: AsyncMultiOptionsBag;
 }
 
-// oxlint-disable-next-line max-lines-per-function -- hook: effect + refs can't split without breaking hook rules
 export function useMultiResolvedLabels({
 	ctx,
 	fieldName,

@@ -76,7 +76,6 @@ function useLabelCache(refetchKey: number | string, state: ResolvedState): { cur
 	return cacheRef;
 }
 
-// oxlint-disable-next-line max-lines-per-function -- hook: effect + refs can't split without breaking hook rules
 export function useSingleResolvedLabel({
 	ctx,
 	fieldName,
