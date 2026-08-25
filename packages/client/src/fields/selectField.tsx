@@ -54,7 +54,7 @@ export function SelectForm(rawProps: FieldFormProps<SelectValueType, SelectOptio
 	if (opts.query) {
 		return <AsyncSingleSelectWithCreate {...props} />;
 	}
-	if (opts.searchable) {
+	if (opts.searchable && !opts.query) {
 		return <SearchableStaticSelectWithCreate {...props} />;
 	}
 	return <StaticSingleSelectWithCreate {...props} />;

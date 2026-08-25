@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { wrapForStructure as wrap } from "../structure/testFixtures";
 import { ModalShell } from "../ui/modal-shell";
 import { SelectForm } from "./selectField";
 import type { SelectValueType } from "./selectShared";
@@ -223,6 +224,30 @@ describe("Select field — static searchable", () => {
 
 		expect(getByRole("dialog")).toBeTruthy();
 		expect(getByTestId("select-label-fruit").textContent).toBe("Apple");
+	});
+
+	test("Select searchable: a query-backed select keeps the async adapter", async () => {
+		const query = mock(async () => [{ value: "remote", label: "Remote option" }]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(
+			<Wrap>
+				<SelectForm
+					name="fruit"
+					value={null}
+					onChange={() => {}}
+					options={{
+						searchable: true,
+						options: CHOICES,
+						query,
+						optionLabel: (row) => String((row as { label: string }).label),
+						optionValue: (row) => String((row as { value: string }).value),
+					}}
+				/>
+			</Wrap>,
+		);
+
+		await waitFor(() => expect(getByTestId("select-search-fruit")).toBeTruthy());
+		expect(query).toHaveBeenCalledTimes(1);
 	});
 
 	test("Select non-searchable: no filter input rendered", () => {
