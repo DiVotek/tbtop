@@ -2,8 +2,8 @@ import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, renderHook } from "@testing-library/react";
 import { useFormController } from "../structure/formController";
-import type { ClientActionContext, ModalController } from "../structure/types";
-import { executeEffects } from "./effects";
+import type { ModalController } from "../structure/types";
+import { type ActionEffectContext, executeEffects } from "./effects";
 import { consumeServerRedirect } from "./navigationIntent";
 
 // executeEffects' redirect handler calls router.visit directly. bun's
@@ -22,11 +22,10 @@ mock.module("@inertiajs/react", () => ({
 	router: { visit: routerVisit, post: mock(() => {}), on: mock(() => () => {}) },
 }));
 
-type EffectCtx = Pick<ClientActionContext, "notify" | "table" | "form" | "modal">;
-
-function fakeCtx(overrides: Partial<EffectCtx> = {}): EffectCtx {
+function fakeCtx(overrides: Partial<ActionEffectContext> = {}): ActionEffectContext {
 	return {
 		notify: () => {},
+		t: (key: string) => key,
 		...overrides,
 	};
 }
@@ -147,11 +146,17 @@ describe("executeEffects: copyToClipboard", () => {
 	});
 
 	test("falls back to the default message when no translate function is supplied", async () => {
+		// t is always present on the real action-context call sites (see
+		// ActionEffectContext) — this exercises applyCopyToClipboard's own
+		// fallback, which flashEffects.ts's optional-t context relies on.
 		const writeText = mock((_text: string) => Promise.resolve());
 		stubClipboard(writeText);
 		const notify = mock(() => {});
 
-		executeEffects([{ kind: "copyToClipboard", text: "abc" }], fakeCtx({ notify }));
+		executeEffects(
+			[{ kind: "copyToClipboard", text: "abc" }],
+			fakeCtx({ notify, t: undefined }),
+		);
 		await Promise.resolve();
 		await Promise.resolve();
 

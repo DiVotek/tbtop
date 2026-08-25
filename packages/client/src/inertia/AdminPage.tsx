@@ -20,7 +20,8 @@ import {
 import { PageSubtitleProvider, usePageSubtitle } from "../structure/pageSubtitleContext";
 import type { ActionConfig, AuthUser, StructureNode } from "../structure/types";
 import { type BreadcrumbItem, Breadcrumbs } from "./Breadcrumbs";
-import { executeEffects, readEffects } from "./effects";
+import { readEffects } from "./effects";
+import { executeFlashEffects } from "./flashEffects";
 import { materialize, materializeActionList } from "./materialize";
 import { pageBasePath } from "./pageBasePath";
 
@@ -101,7 +102,7 @@ export function AdminPage() {
 	useEffect(() => {
 		const effects = readEffects(flash);
 		if (effects.length > 0) {
-			executeEffects(effects, {
+			executeFlashEffects(effects, {
 				notify: (msg) => notifyToast(msg.kind, msg.message),
 			});
 		}
