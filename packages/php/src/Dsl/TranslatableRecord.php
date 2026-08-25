@@ -32,15 +32,27 @@ final class TranslatableRecord
         return $record;
     }
 
-    /** @param  list<mixed>  $children @return list<string> */
+    /**
+     * Node containers only — deliberately not through Field::childFields(),
+     * so a repeater's sub-fields stay invisible here as they always have.
+     * Their values live at record['items'][n]['name'], never at the flat
+     * top-level key this class normalizes, so descending would only risk a
+     * name collision with an unrelated top-level field of the same name.
+     *
+     * @param  list<mixed>  $children
+     * @return list<string>
+     */
     private static function translatableNames(array $children): array
     {
         $names = [];
         foreach ($children as $child) {
+            if (! ChildInclusion::isConditionMet($child)) {
+                continue;
+            }
             if ($child instanceof Field && $child->isTranslatableField()) {
                 $names[] = $child->name;
             } elseif ($child instanceof Node) {
-                $names = [...$names, ...self::translatableNames($child->nestedChildren())];
+                $names = [...$names, ...self::translatableNames(StructureWalk::descendants($child))];
             }
         }
 

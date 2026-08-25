@@ -36,7 +36,9 @@ final class RecordDefaults
 
     /**
      * Fields addressable at the record's top level: layout containers are
-     * transparent, but repeater rows are their own data level.
+     * transparent, but repeater rows are their own data level — a domain
+     * rule of this reader, not the traversal, so it stays a predicate here
+     * rather than a StructureWalk key.
      *
      * @param  list<mixed>  $children
      * @return list<Field>
@@ -45,16 +47,16 @@ final class RecordDefaults
     {
         $out = [];
         foreach ($children as $child) {
+            if (! ChildInclusion::isConditionMet($child)) {
+                continue;
+            }
             if ($child instanceof Field) {
                 $out[] = $child;
             }
             if ($child instanceof Repeater) {
                 continue;
             }
-            $nested = $child instanceof Field
-                ? $child->childFields()
-                : ($child instanceof Node ? $child->nestedChildren() : []);
-            $out = [...$out, ...self::fields($nested)];
+            $out = [...$out, ...self::fields(StructureWalk::descendants($child))];
         }
 
         return $out;
