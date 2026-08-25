@@ -26,7 +26,10 @@ final class CondToRequiredRule
             'in' => 'required_if:'.$data['field'].','.self::stringifyList($data['value']),
             'neq' => 'required_unless:'.$data['field'].','.self::stringify($data['value']),
             'notIn' => 'required_unless:'.$data['field'].','.self::stringifyList($data['value']),
-            'notEmpty', 'truthy' => 'required_with:'.$data['field'],
+            'notEmpty' => 'required_with:'.$data['field'],
+            // Client truthy is Boolean(val); required_if_accepted (true/1/on/yes) is the
+            // boolean-input equivalent, unlike required_with which treats false as present.
+            'truthy' => 'required_if_accepted:'.$data['field'],
             'empty' => 'required_without:'.$data['field'],
             default => throw new InvalidArgumentException(
                 "requiredIf: operator \"{$op}\" is not supported server-side",

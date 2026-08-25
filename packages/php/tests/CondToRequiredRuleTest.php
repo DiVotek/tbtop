@@ -13,7 +13,7 @@ it('CondToRequiredRule: maps each supported op to its Laravel rule string', func
     'neq' => [Cond::neq('status', 'draft'), 'required_unless:status,draft'],
     'notIn' => [Cond::notIn('status', ['archived', 'deleted']), 'required_unless:status,archived,deleted'],
     'notEmpty' => [Cond::notEmpty('parent_id'), 'required_with:parent_id'],
-    'truthy' => [Cond::truthy('locked'), 'required_with:locked'],
+    'truthy' => [Cond::truthy('locked'), 'required_if_accepted:locked'],
     'empty' => [Cond::empty('published_at'), 'required_without:published_at'],
 ]);
 
