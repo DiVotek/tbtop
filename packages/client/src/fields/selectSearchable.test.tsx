@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
+import { ModalShell } from "../ui/modal-shell";
 import { SelectForm } from "./selectField";
+import type { SelectValueType } from "./selectShared";
 
 const CHOICES = [
 	{ value: "apple", label: "Apple" },
@@ -40,7 +43,7 @@ describe("Select field — static searchable", () => {
 
 	test("Select searchable: typing filters options by label", async () => {
 		const user = userEvent.setup();
-		const { container } = render(
+		const { getByTestId } = render(
 			<SelectForm
 				name="fruit"
 				value={null}
@@ -48,15 +51,12 @@ describe("Select field — static searchable", () => {
 				options={{ options: CHOICES, searchable: true }}
 			/>,
 		);
-		const input = container.querySelector(
-			'[data-testid="select-search-fruit"]',
-		) as HTMLInputElement;
-		expect(input).not.toBeNull();
+		const input = getByTestId("select-search-fruit") as HTMLInputElement;
 		await user.type(input, "an");
 
 		// "Banana" contains "an", "Apple" and "Cherry" do not
 		await waitFor(() => {
-			const visible = container.querySelectorAll('[data-testid="select-option-fruit"]');
+			const visible = document.querySelectorAll('[data-testid="select-option-fruit"]');
 			expect(visible.length).toBe(1);
 			expect(visible[0]?.textContent).toContain("Banana");
 		});
@@ -64,7 +64,7 @@ describe("Select field — static searchable", () => {
 
 	// NEW CONTRACT: list is closed by default; must open trigger first.
 	test("Select searchable: options list is closed by default", () => {
-		const { container } = render(
+		render(
 			<SelectForm
 				name="fruit"
 				value={null}
@@ -72,13 +72,13 @@ describe("Select field — static searchable", () => {
 				options={{ options: CHOICES, searchable: true }}
 			/>,
 		);
-		const items = container.querySelectorAll('[data-testid="select-option-fruit"]');
+		const items = document.querySelectorAll('[data-testid="select-option-fruit"]');
 		expect(items.length).toBe(0);
 	});
 
 	test("Select searchable: shows all options after opening", async () => {
 		const user = userEvent.setup();
-		const { container } = render(
+		const { getByTestId } = render(
 			<SelectForm
 				name="fruit"
 				value={null}
@@ -86,12 +86,9 @@ describe("Select field — static searchable", () => {
 				options={{ options: CHOICES, searchable: true }}
 			/>,
 		);
-		const trigger = container.querySelector(
-			'[data-testid="select-search-fruit"]',
-		) as HTMLElement;
-		await user.click(trigger);
+		await user.click(getByTestId("select-search-fruit"));
 		await waitFor(() => {
-			const items = container.querySelectorAll('[data-testid="select-option-fruit"]');
+			const items = document.querySelectorAll('[data-testid="select-option-fruit"]');
 			expect(items.length).toBe(3);
 		});
 	});
@@ -99,7 +96,7 @@ describe("Select field — static searchable", () => {
 	test("Select searchable: clicking an option selects it and closes the list", async () => {
 		const user = userEvent.setup();
 		const captured: (string | null)[] = [];
-		const { container } = render(
+		const { getByTestId } = render(
 			<SelectForm
 				name="fruit"
 				value={null}
@@ -107,28 +104,23 @@ describe("Select field — static searchable", () => {
 				options={{ options: CHOICES, searchable: true }}
 			/>,
 		);
-		const trigger = container.querySelector(
-			'[data-testid="select-search-fruit"]',
-		) as HTMLElement;
-		await user.click(trigger);
+		await user.click(getByTestId("select-search-fruit"));
 		await waitFor(() => {
 			expect(
-				container.querySelectorAll('[data-testid="select-option-fruit"]').length,
+				document.querySelectorAll('[data-testid="select-option-fruit"]').length,
 			).toBeGreaterThan(0);
 		});
-		const options = container.querySelectorAll('[data-testid="select-option-fruit"]');
+		const options = document.querySelectorAll('[data-testid="select-option-fruit"]');
 		await user.click(options[0] as HTMLElement);
 		expect(captured.at(-1)).toBe("apple");
 		await waitFor(() => {
-			expect(container.querySelectorAll('[data-testid="select-option-fruit"]').length).toBe(
-				0,
-			);
+			expect(document.querySelectorAll('[data-testid="select-option-fruit"]').length).toBe(0);
 		});
 	});
 
 	test("Select searchable: Escape key closes the options list", async () => {
 		const user = userEvent.setup();
-		const { container } = render(
+		const { getByTestId } = render(
 			<SelectForm
 				name="fruit"
 				value={null}
@@ -136,21 +128,101 @@ describe("Select field — static searchable", () => {
 				options={{ options: CHOICES, searchable: true }}
 			/>,
 		);
-		const trigger = container.querySelector(
-			'[data-testid="select-search-fruit"]',
-		) as HTMLElement;
-		await user.click(trigger);
+		await user.click(getByTestId("select-search-fruit"));
 		await waitFor(() => {
 			expect(
-				container.querySelectorAll('[data-testid="select-option-fruit"]').length,
+				document.querySelectorAll('[data-testid="select-option-fruit"]').length,
 			).toBeGreaterThan(0);
 		});
 		await user.keyboard("{Escape}");
 		await waitFor(() => {
-			expect(container.querySelectorAll('[data-testid="select-option-fruit"]').length).toBe(
-				0,
-			);
+			expect(document.querySelectorAll('[data-testid="select-option-fruit"]').length).toBe(0);
 		});
+	});
+
+	test("Select searchable: portals the popup to the body on the shared floating layer", async () => {
+		const user = userEvent.setup();
+		const { container, getByTestId } = render(
+			<SelectForm
+				name="fruit"
+				value={null}
+				onChange={() => {}}
+				options={{ options: CHOICES, searchable: true }}
+			/>,
+		);
+
+		await user.click(getByTestId("select-search-fruit"));
+		const positioner = await waitFor(() => getByTestId("select-positioner-fruit"));
+
+		expect(document.body.contains(positioner)).toBe(true);
+		expect(container.contains(positioner)).toBe(false);
+		expect(positioner.parentElement?.parentElement).toBe(document.body);
+		expect(positioner.style.pointerEvents).toBe("auto");
+		expect(positioner.className).toContain("z-50");
+	});
+
+	test("Select searchable: ArrowDown and Enter select the highlighted option", async () => {
+		const user = userEvent.setup();
+		const captured: (string | null)[] = [];
+		const { getByTestId } = render(
+			<SelectForm
+				name="fruit"
+				value={null}
+				onChange={(next) => captured.push(next as string | null)}
+				options={{ options: CHOICES, searchable: true }}
+			/>,
+		);
+
+		const input = getByTestId("select-search-fruit");
+		await user.click(input);
+		await user.keyboard("{ArrowDown}{Enter}");
+
+		expect(captured.at(-1)).toBe("apple");
+		expect(document.activeElement).toBe(input);
+		await waitFor(() => {
+			expect(document.querySelector('[data-testid="select-option-fruit"]')).toBeNull();
+		});
+	});
+
+	test("Select searchable: an outside click dismisses the popup", async () => {
+		const user = userEvent.setup();
+		const { getByTestId } = render(
+			<>
+				<SelectForm
+					name="fruit"
+					value={null}
+					onChange={() => {}}
+					options={{ options: CHOICES, searchable: true }}
+				/>
+				<button type="button" data-testid="outside">
+					Outside
+				</button>
+			</>,
+		);
+
+		await user.click(getByTestId("select-search-fruit"));
+		await waitFor(() => {
+			expect(document.querySelector('[data-testid="select-option-fruit"]')).not.toBeNull();
+		});
+		await user.click(getByTestId("outside"));
+
+		await waitFor(() => {
+			expect(document.querySelector('[data-testid="select-option-fruit"]')).toBeNull();
+		});
+	});
+
+	test("Select searchable: selecting a portalled option keeps a parent modal open", async () => {
+		const user = userEvent.setup();
+		const { getByTestId, getByRole } = render(<ModalSearchableSelect />);
+
+		await user.click(getByTestId("select-search-fruit"));
+		const option = await waitFor(
+			() => document.querySelector('[data-testid="select-option-fruit"]') as HTMLElement,
+		);
+		await user.click(option);
+
+		expect(getByRole("dialog")).toBeTruthy();
+		expect(getByTestId("select-label-fruit").textContent).toBe("Apple");
 	});
 
 	test("Select non-searchable: no filter input rendered", () => {
@@ -165,3 +237,25 @@ describe("Select field — static searchable", () => {
 		expect(container.querySelector('[data-testid="select-search-fruit"]')).toBeNull();
 	});
 });
+
+function ModalSearchableSelect() {
+	const [isOpen, setIsOpen] = useState(true);
+	const [value, setValue] = useState<SelectValueType | null>(null);
+
+	return (
+		<ModalShell
+			open={isOpen}
+			onOpenChange={setIsOpen}
+			title="Filters"
+			description="Filter records"
+			onlyDialog
+		>
+			<SelectForm
+				name="fruit"
+				value={value}
+				onChange={setValue}
+				options={{ options: CHOICES, searchable: true }}
+			/>
+		</ModalShell>
+	);
+}

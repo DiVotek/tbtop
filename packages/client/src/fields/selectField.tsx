@@ -1,11 +1,8 @@
 import { useRef, useState } from "react";
-import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
-import { cn } from "../lib/cn";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
-import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import type { OptionMap } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
@@ -14,7 +11,7 @@ import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./f
 import { InputGroup } from "./inputGroup";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
-import { ComboboxOption } from "./selectMultiOption";
+import { ComboboxOption, matchesQuery } from "./selectMultiOption";
 import { SelectOptionContent } from "./selectOptionContent";
 import {
 	coerceSelectValue,
@@ -218,104 +215,38 @@ function SearchableStaticSelect({
 	options,
 	resolvedLabels,
 }: StaticSelectProps) {
-	const t = useTranslation();
-	const density = useDensity();
 	const choices = options?.options ?? [];
-	const [search, setSearch] = useState("");
-	const [open, setOpen] = useState(false);
-	const filtered = search
-		? choices.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
-		: choices;
+	const [query, setQuery] = useState("");
+	const filtered = choices.filter((option) => matchesQuery(option.label, query));
+	const current = asString(value);
 	// An empty value is "nothing selected", not an option labelled "".
 	const selectedOption =
-		typeof value === "string" && value !== ""
-			? (choices.find((o) => o.value === value) ??
-				resolvedLabels?.[value] ?? { value, label: value })
+		current !== ""
+			? (choices.find((option) => option.value === current) ??
+				resolvedLabels?.[current] ?? { value: current, label: current })
 			: undefined;
-	// Show the selected label as normal-colored text, not gray placeholder text.
-	const showLabel = selectedOption !== undefined && search === "";
-
-	function handleOpen(): void {
-		if (!disabled) {
-			setOpen(true);
-		}
-	}
-
-	function handleClose(): void {
-		setOpen(false);
-		setSearch("");
-		onBlur?.();
-	}
-
-	function handleSelect(optValue: string): void {
-		onChange(optValue);
-		setSearch("");
-		setOpen(false);
-	}
-
-	function handleKeyDown(e: React.KeyboardEvent): void {
-		if (e.key === "Escape") {
-			handleClose();
-		}
-	}
 
 	return (
-		<div
-			id={fieldId({ id, name })}
-			className="relative"
-			data-testid={`select-${name}`}
-			onKeyDown={handleKeyDown}
+		<SingleComboboxShell
+			id={id}
+			name={name}
+			value={current || null}
+			selected={selectedOption}
+			onChange={onChange}
+			onBlur={onBlur}
+			disabled={disabled}
+			invalid={invalid}
+			onQueryChange={setQuery}
+			listState={filtered.length === 0 ? "empty" : "rows"}
 		>
-			<Input
-				type="text"
-				data-testid={`select-search-${name}`}
-				placeholder={showLabel ? "" : t("field.select.placeholder")}
-				value={search}
-				onClick={handleOpen}
-				onFocus={handleOpen}
-				onChange={(e) => setSearch(e.target.value)}
-				onBlur={(e) => {
-					// Delay so option button mousedown fires before blur closes the list.
-					const related = e.relatedTarget as HTMLElement | null;
-					if (!related?.closest(`[data-testid="select-${name}"]`)) {
-						handleClose();
-					}
-				}}
-				disabled={disabled}
-				aria-invalid={invalid || undefined}
-			/>
-			{showLabel && selectedOption && (
-				// Selected label replaces the empty input's placeholder and stays on one line.
-				<span
-					data-testid={`select-label-${name}`}
-					onClick={handleOpen}
-					className={cn(
-						"pointer-events-none absolute inset-y-0 right-0 left-0 flex min-w-0 items-center truncate text-foreground",
-						inputTextClass,
-						density === "compact" && inputCompactFontClass,
-					)}
-				>
-					<SelectOptionContent option={selectedOption} surface="inline" />
-				</span>
-			)}
-			{open && (
-				<div className="absolute z-10 mt-1 w-full rounded border border-input bg-background shadow-md">
-					{filtered.map((opt) => (
-						<button
-							key={opt.value}
-							type="button"
-							data-testid={`select-option-${name}`}
-							disabled={disabled}
-							onMouseDown={(e) => e.preventDefault()}
-							onClick={() => handleSelect(opt.value)}
-							className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
-						>
-							<SelectOptionContent option={opt} />
-						</button>
-					))}
-				</div>
-			)}
-		</div>
+			{filtered.map((option) => (
+				<ComboboxOption
+					key={option.value}
+					option={option}
+					testId={`select-option-${name}`}
+				/>
+			))}
+		</SingleComboboxShell>
 	);
 }
 
