@@ -36,10 +36,19 @@ final class CondToRequiredRule
 
     private static function stringify(mixed $value): string
     {
-        return match (true) {
+        $string = match (true) {
             is_bool($value) => $value ? 'true' : 'false',
             default => (string) $value,
         };
+        // Laravel's rule-string format has no escaping: a comma in the value
+        // would split into several accepted values and diverge from the client.
+        if (str_contains($string, ',')) {
+            throw new InvalidArgumentException(
+                "requiredIf: value \"{$string}\" contains a comma, which cannot be encoded in a Laravel rule string",
+            );
+        }
+
+        return $string;
     }
 
     /** @param  list<mixed>  $values */

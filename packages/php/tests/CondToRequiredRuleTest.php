@@ -30,3 +30,10 @@ it('CondToRequiredRule: rejects numeric-comparison ops with no server-side equiv
     'not' => [Cond::not(Cond::eq('a', 1)), 'not'],
     'server' => [Cond::server(), 'server'],
 ]);
+
+it('CondToRequiredRule: rejects values containing a comma, which the rule-string format cannot encode', function () {
+    expect(fn () => CondToRequiredRule::rule(Cond::eq('code', 'a,b')))
+        ->toThrow(InvalidArgumentException::class, 'contains a comma');
+    expect(fn () => CondToRequiredRule::rule(Cond::in('code', ['ok', 'a,b'])))
+        ->toThrow(InvalidArgumentException::class, 'contains a comma');
+});
