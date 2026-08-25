@@ -6,6 +6,7 @@ import type { NavGroup } from "./chromeContext";
 
 const USER = { name: "Alice", email: "alice@example.com" };
 let previousVisit: unknown;
+let previousUrl: string;
 let visitMock: ReturnType<typeof mock>;
 
 beforeEach(() => {
@@ -13,15 +14,20 @@ beforeEach(() => {
 	previousVisit = router.visit;
 	visitMock = mock(() => {});
 	router.visit = visitMock;
+	previousUrl = window.location.href;
 });
 
 afterEach(() => {
 	const router = inertiaReact.router as unknown as Record<string, unknown>;
 	if (previousVisit === undefined) {
 		delete router.visit;
-		return;
+	} else {
+		router.visit = previousVisit;
 	}
-	router.visit = previousVisit;
+	// The modifier-click case deliberately lets the anchor navigate natively, which
+	// mutates window.location for the whole test process. Restore it, or unrelated
+	// suites that assert on the path fail depending on file order.
+	window.history.replaceState(null, "", previousUrl);
 });
 
 const NAV: NavGroup[] = [
