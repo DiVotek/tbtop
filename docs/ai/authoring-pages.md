@@ -397,6 +397,8 @@ Instantiate with `Column::make(string $name)`.
 | `label` | `label(string $label): static` | Column header text |
 | `kind` | `kind(string $kind): static` | Display kind: `'text'`, `'date'`, `'datetime'`, `'time'`, `'number'`, `'money'`, `'boolean'`, `'badge'`, `'icon'` |
 | `sortable` | `sortable(bool $sortable = true): static` | Enables sort on this column |
+| `sortBy` | `sortBy(string $field): static` | Server-only: sort by a different field (may be a dot-path to a relation, e.g. `'contact.full_name'`, resolved via a correlated subquery — no JOIN) instead of the column name |
+| `sortUsing` | `sortUsing(Closure $fn): static` | Server-only: full control over the ORDER BY — `fn(Builder $query, string $direction)`; wins over `sortBy()` |
 | `searchable` | `searchable(bool $searchable = true): static` | Includes this column in global search |
 | `individuallySearchable` | `individuallySearchable(bool $value = true): static` | Adds a per-column search input in the table header, debounced independently of the global search box |
 | `toggleable` | `toggleable(bool $toggleable = true, bool $hiddenByDefault = false): static` | User can toggle column visibility; optionally hide by default |

@@ -29,6 +29,12 @@ final class Column implements JsonSerializable
 
     private ?bool $sortable = null;
 
+    /** Server-only: sortBy() target field — never serialized. */
+    private ?string $sortByField = null;
+
+    /** Server-only: sortUsing() closure — never serialized. */
+    private ?Closure $sortUsingClosure = null;
+
     private ?bool $searchable = null;
 
     private ?bool $individuallySearchable = null;
@@ -128,6 +134,43 @@ final class Column implements JsonSerializable
         $this->sortable = $sortable;
 
         return $this;
+    }
+
+    /**
+     * Server-only: sort by a different field than the column name when this
+     * column is sorted. $field may be a dot-path to a related column (e.g.
+     * "contact.full_name") — resolved via a correlated subquery, no JOIN.
+     * Ignored when sortUsing() is also set (sortUsing wins). Never serialized.
+     */
+    public function sortBy(string $field): static
+    {
+        $this->sortByField = $field;
+
+        return $this;
+    }
+
+    /**
+     * Server-only: full control over the ORDER BY when this column is sorted.
+     * Wins over sortBy(). fn(Builder $query, string $direction): void|Builder
+     * — $direction is already validated to 'asc'|'desc'. Never serialized.
+     */
+    public function sortUsing(Closure $fn): static
+    {
+        $this->sortUsingClosure = $fn;
+
+        return $this;
+    }
+
+    /** Server-only: the sortBy() target field, or null when not set. */
+    public function sortByField(): ?string
+    {
+        return $this->sortByField;
+    }
+
+    /** Server-only: the sortUsing() closure, or null when not set. */
+    public function sortUsingClosure(): ?Closure
+    {
+        return $this->sortUsingClosure;
     }
 
     public function searchable(bool $searchable = true): static
