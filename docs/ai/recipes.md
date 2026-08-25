@@ -753,6 +753,8 @@ failing tab automatically.
 ```php
 public function view(S $s): Node
 {
+    $product = Product::findOrFail(request()->route('product'));
+
     return $s->form('product', [
         $s->row([
             $s->tabs([
@@ -761,13 +763,16 @@ public function view(S $s): Node
             ]),
             $s->aside([
                 $s->section(['title' => 'Summary'], [
-                    $s->displayValue($this->record['price_cents'] ?? 0)->money('USD'),
-                    $s->displayValue($this->record['status'] ?? 'draft')->badge(),
+                    $s->displayValue($product->price_cents)->money('USD'),
+                    $s->displayValue($product->status)->badge([
+                        'draft' => Color::Gray,
+                        'published' => Color::Success,
+                    ]),
                 ]),
             ]),
         ]),
         $s->actionsRow([FormActions::save($s)]),
-    ])->record($this->record)->onSubmit(fn (ActionCtx $ctx) => '/admin/products');
+    ])->record($product->toArray())->onSubmit(fn (ActionCtx $ctx) => '/admin/products');
 }
 ```
 

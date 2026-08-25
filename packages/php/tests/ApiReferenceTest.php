@@ -16,7 +16,7 @@ it('ApiReference: generated pages match the committed snapshot', function () {
 
     foreach (SurfaceMap::all() as $slug => $surface) {
         $path = API_REFERENCE_DIR.'/'.$slug.'.md';
-        $current = $renderer->render($slug, $surface)."\n";
+        $current = $renderer->render($slug, $surface);
 
         if (! file_exists($path) || getenv('UPDATE_FIXTURES')) {
             @mkdir(dirname($path), 0755, true);

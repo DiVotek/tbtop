@@ -52,4 +52,3 @@ Everything reachable from the `S` instance injected into `view(S $s)`. Field fac
 | `themeToggle(): Node` | Standalone theme toggle; one click cycles light → dark → system. |
 | `unsavedIndicator(?string $label = null): Node` | "Unsaved changes" indicator for the nearest enclosing form. Renders nothing when that form is clean. $label overrides the default translated text. |
 | `userMenu(array $opts = []): Node` | Profile dropdown: user identity, custom items, locale, logout. Pass ['locales' => false] to hide the built-in language section when the panel offers locale switching elsewhere. |
-

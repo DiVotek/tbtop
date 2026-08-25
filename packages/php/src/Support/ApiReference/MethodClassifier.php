@@ -41,7 +41,7 @@ final class MethodClassifier
         'reorderColumn', 'handler', 'skipsFormValidation', 'submitHandler',
         'appearance', 'header', 'sidebar', 'footer', 'displayLabel',
         'toDatabaseNotification', 'builtInKindClasses', 'cascadeTranslatable',
-        'makeField',
+        'makeField', 'sortByField',
     ];
 
     /**

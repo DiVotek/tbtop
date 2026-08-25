@@ -64,7 +64,7 @@ final class ReferenceRenderer
 
             foreach ($originMethods as $method) {
                 $info = $this->reader->read($method);
-                $lines[] = '| `'.$info->signature.'` | '.$this->cell($info).' |';
+                $lines[] = '| `'.$this->escapeCell($info->signature).'` | '.$this->cell($info).' |';
             }
 
             $lines[] = '';
@@ -109,6 +109,12 @@ final class ReferenceRenderer
             return '—';
         }
 
-        return str_replace(['|', "\n"], ['\\|', ' '], $info->description);
+        return $this->escapeCell($info->description);
+    }
+
+    /** A `|` breaks a GFM table cell unless escaped; a raw newline breaks the row entirely. */
+    private function escapeCell(string $text): string
+    {
+        return str_replace(['|', "\n"], ['\\|', ' '], $text);
     }
 }

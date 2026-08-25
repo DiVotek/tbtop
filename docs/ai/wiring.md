@@ -61,8 +61,10 @@ Route file: `packages/php/routes/admin.php`
 
 Back the header bell (`$s->notifications()`). Every route is scoped to the
 authenticated notifiable — a foreign notification id answers 404, never 403.
-Polling interval comes from `PanelConfig::notificationsPolling($seconds)`;
-unset means the client fetches once on mount and after each mutation.
+Polling interval comes from `PanelConfig::notificationsPolling($seconds)`,
+defaulting to 30 seconds; pass `null` explicitly to disable polling. The client
+still fetches once on mount and each time the bell opens; mark-read/remove/clear
+are applied optimistically and never refetch.
 
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|

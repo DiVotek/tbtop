@@ -23,7 +23,7 @@ The table builder, its columns, and filter tabs.
 | `embedded(bool $value = true): self` | Render the table without its toolbar (search/filters/column-visibility) or pagination footer — for embedding inside a section/card alongside other content. Rows, badges, recordUrl, and perPage still apply. |
 | `emptyState(string $heading, ?string $description = null, ?string $icon = null): self` | Customize the empty-table message. $icon is a registered client icon name. |
 | `filters(array $fields): self` | Declare filter fields (same Field instances used in forms); renders in a modal unless filtersIn() says otherwise. Kinds with a built-in WHERE mapping: select/radio/number/date/datetime/time (=), boolean, in/tags (IN), daterange (between). Any other kind — text, relation, … — throws at request time unless it carries a filterUsing() closure. |
-| `filtersFormColumns(int $columns): self` | Number of grid columns for the filters form layout. |
+| `filtersFormColumns(int $columns): self` | Number of grid columns for the filters form layout (1-12). |
 | `filtersFormWidth(string $width): self` | Width of the filters modal. Only meaningful when filtersIn('modal'). |
 | `filtersIn(string $mode): self` | Where declared filters() render: a dismissible modal, or inline in the toolbar. |
 | `groups(string $column): self` | Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first. |
@@ -43,7 +43,7 @@ The table builder, its columns, and filter tabs.
 | `softDeletes(S $s, string $model, array $options = []): self` | Soft-delete convenience layer over existing primitives: prepends active/trashed/all tabs and appends restore/forceDelete row + bulk actions. Each part opts out via $options. Everything MERGES with config already set, so call this AFTER your own tabs()/rowActions()/bulkActions(). The active tab lands first so it is the default; the global SoftDeletes scope hides trashed rows until the consumer switches tabs. |
 | `tabs(array $tabs): self` | Declare predefined filter tabs. Tab names must be unique per table; the first declared tab is the default when no tab param is sent. |
 | `toolbar(bool $value = true): self` | Show/hide the search input and column-visibility dropdown as a pair. Tabs and headerActions are unaffected. Filters (inline/modal) are unaffected — they render alongside the toolbar regardless. |
-| `when(Closure|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
+| `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
 
 ## Column
 
@@ -54,7 +54,7 @@ The table builder, its columns, and filter tabs.
 | `align(string $align): static` | Horizontal alignment of the cell content and header. |
 | `alt(string $alt): static` | Alt text for the image thumbnail. |
 | `badge(array $colors): static` | Render the cell as a colored badge; sets kind = 'badge'. A value with no entry in $colors still renders (gray/default badge styling), it just doesn't get its own color. |
-| `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color|string|null $trueColor = null, Color|string|null $falseColor = null): static` | Kind sugar: sets kind = 'boolean' with optional icon/color overrides for true/false; the client renders the icon, no server formatting involved. |
+| `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): static` | Kind sugar: sets kind = 'boolean' with optional icon/color overrides for true/false; the client renders the icon, no server formatting involved. |
 | `circular(): static` | Circular shape. Last shape call wins. |
 | `color(): static` | Render the column value as a color swatch; sets kind = 'color'. |
 | `copyable(string $copyMessage = 'Copied', int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
@@ -77,16 +77,18 @@ The table builder, its columns, and filter tabs.
 | `onSave(Closure $fn): static` | Consumer-provided save closure — REQUIRED when column is editable. |
 | `options(array $options): static` | Static options for an editable select column. Uses the same {value, label} normalization the Select field emits so the wire shape matches. |
 | `rounded(): static` | Rounded-corner shape. Last shape call wins. |
-| `rules(array|string $rules): static` | Laravel validation rules applied before the save closure runs. Accepts pipe-delimited string or an array; deduplicates entries. |
+| `rules(array\|string $rules): static` | Laravel validation rules applied before the save closure runs. Accepts pipe-delimited string or an array; deduplicates entries. |
 | `searchable(bool $searchable = true): static` | Include this column in the table's global search. See TableBuilder::searchable() for how column- and table-level search combine. |
 | `selectColumn(): static` | Make the column an inline (sync) select; sets kind = 'select' when no kind is already set. |
+| `sortBy(string $field): static` | Server-only: sort by a different field than the column name when this column is sorted. $field may be a dot-path to a related column (e.g. "contact.full_name") — resolved via a correlated subquery, no JOIN. Ignored when sortUsing() is also set (sortUsing wins). Never serialized. |
+| `sortUsing(Closure $fn): static` | Server-only: full control over the ORDER BY when this column is sorted. Wins over sortBy(). fn(Builder $query, string $direction): void\|Builder — $direction is already validated to 'asc'\|'desc'. Never serialized. |
 | `sortable(bool $sortable = true): static` | Allow the user to sort the table by this column. |
 | `square(): static` | Square shape (sharp corners). Last shape call wins. |
 | `textInput(): static` | Make the column an inline text input; sets kind = 'text' when no kind is already set. |
 | `time(?string $format = null): static` | Kind sugar: sets kind = 'time' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'H:i'. |
 | `toggle(): static` | Make the column an inline boolean toggle; sets kind = 'boolean'. |
 | `toggleable(bool $toggleable = true, bool $hiddenByDefault = false): static` | Lets the user show/hide this column via the column-visibility dropdown. $hiddenByDefault only sets the initial state — the column still ships on the wire and the user can re-enable it. Contrast with hidden(), which excludes the column from the wire entirely and no UI can undo it. |
-| `tooltip(Closure|string $tooltip): static` | String → static tooltip, serialized as-is. Closure → per-row resolver, run server-side in ColumnProjection and never serialized (mirrors link()'s linkResolver pattern). |
+| `tooltip(Closure\|string $tooltip): static` | String → static tooltip, serialized as-is. Closure → per-row resolver, run server-side in ColumnProjection and never serialized (mirrors link()'s linkResolver pattern). |
 | `translatable(bool $value = true): static` | Read the cell value from the record's per-locale map for the active locale, instead of a scalar. |
 | `truncate(): static` | Truncate overflowing cell content with an ellipsis. Mutually exclusive with wrap()/noWrap() — last call wins. |
 | `uppercase(bool $value = true): static` | Style the cell text uppercase with wide tracking — for short code-like values (types, statuses). |
@@ -106,4 +108,3 @@ The table builder, its columns, and filter tabs.
 | `label(?string $label): self` | Display text for the tab; falls back to the raw tab name when unset. |
 | `query(callable $fn): static` | Server-side data closure — never serialized, re-resolved from the page tree on each request. The closure contract depends on the adopter: TableBuilder — fn(): Builder, must return a FRESH builder each call (it is invoked once for rows and once per tab for counts); Tab — fn(Builder $q): void, narrow the table builder in place; Relation — fn(array $deps): Builder, the Eloquent query to pick from, $deps holding the dependsOn() parents' current values — search text and the result cap are applied on top by the endpoint (labelKey() LIKE, searchLimit()). |
 | `tooltip(string $text): static` | Tooltip text shown on hover. |
-

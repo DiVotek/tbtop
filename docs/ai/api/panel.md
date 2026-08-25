@@ -19,7 +19,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `brand(string $brand): static` | Brand name shown in the chrome (sidebar/topbar header). |
 | `breadcrumbs(bool $enabled = true): static` | Whether pages build and send the breadcrumbs prop. |
 | `chrome(string $chrome): static` | Class-string of a Chrome subclass that authors the shell (header/sidebar/ footer). Override headerItems()/sidebarItems() and spread the parent to append to the stock shell; override header()/sidebar()/footer() to replace an area outright. |
-| `commandPalette(Closure|bool $config = true): static` | Enable (default), disable with false, or configure the ⌘K command palette via a closure. The closure receives the CommandPaletteConfig to mutate (->commands([Command::make(...)...])) and returns nothing. |
+| `commandPalette(Closure\|bool $config = true): static` | Enable (default), disable with false, or configure the ⌘K command palette via a closure. The closure receives the CommandPaletteConfig to mutate (->commands([Command::make(...)...])) and returns nothing. |
 | `darkMode(bool $enabled = true): static` | Allow or disable the dark-mode toggle entirely (default: allowed). |
 | `defaultLocale(string $locale): static` | Default admin UI locale, overriding the first entry of locales(). |
 | `defaultThemeMode(string $mode): static` | Initial theme when the visitor has no saved preference. |
@@ -58,7 +58,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `collapsed(bool $collapsed = true): self` | Start the group collapsed (implies collapsible). |
 | `collapsible(bool $collapsible = true): self` | Render the group header as a collapse toggle. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
-| `label(Closure|string $label): self` | Translated header text shown in the sidebar. Pass a Closure to defer translation to request time — panel config is built once (singleton), so a bare __() there would freeze on the first request's locale. |
+| `label(Closure\|string $label): self` | Translated header text shown in the sidebar. Pass a Closure to defer translation to request time — panel config is built once (singleton), so a bare __() there would freeze on the first request's locale. |
 
 ## NavItem
 
@@ -97,4 +97,3 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `keywords(array $keywords): self` | Extra search terms beyond the label. |
 | `openInNewTab(bool $newTab = true): self` | Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). |
 | `url(string $url): self` | Navigate to a URL — an internal path (Inertia visit) or an external link. |
-
