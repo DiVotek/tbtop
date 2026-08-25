@@ -15,6 +15,7 @@ class TableSortRelationHttpTestCase extends TestCase
         Schema::create('locations', function ($table): void {
             $table->id();
             $table->string('name');
+            $table->softDeletes();
         });
         Schema::create('cars', function ($table): void {
             $table->id();

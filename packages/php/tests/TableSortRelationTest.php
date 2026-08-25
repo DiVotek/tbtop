@@ -57,3 +57,15 @@ it('sortUsing() receives the validated direction and its ordering is applied', f
     expect(carNames('sort=rank&dir=asc'))->toBe(['Low', 'Mid', 'NullPrice']);
     expect(carNames('sort=rank&dir=desc'))->toBe(['Mid', 'Low', 'NullPrice']);
 });
+
+it('keeps the related model global scopes in the sort subquery', function (): void {
+    // Zebra > Aardvark, so a subquery that ignores SoftDeletes orders Car X
+    // after Car Y; with the scope Car X sorts as NULL (first on sqlite asc).
+    $zebra = LocationModel::create(['name' => 'Zebra']);
+    $aardvark = LocationModel::create(['name' => 'Aardvark']);
+    CarModel::create(['name' => 'Car X', 'location_id' => $zebra->id]);
+    CarModel::create(['name' => 'Car Y', 'location_id' => $aardvark->id]);
+    $zebra->delete();
+
+    expect(carNames('sort=location.name&dir=asc'))->toBe(['Car X', 'Car Y']);
+});

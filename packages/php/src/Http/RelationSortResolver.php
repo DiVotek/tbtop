@@ -52,7 +52,7 @@ final class RelationSortResolver
         if ($remaining === []) {
             $sub = $relation->getRelationExistenceQuery($innerQuery, $parentQuery, [$column]);
 
-            return $sub->limit(1)->getQuery();
+            return $sub->limit(1)->toBase();
         }
 
         $nextRelation = self::relationOf($relation->getRelated(), $remaining[0]);
@@ -68,7 +68,7 @@ final class RelationSortResolver
         $sub = $relation->getRelationExistenceQuery($innerQuery, $parentQuery, [])
             ->selectSub($nested, $column);
 
-        return $sub->limit(1)->getQuery();
+        return $sub->limit(1)->toBase();
     }
 
     private static function relationOf(Model $model, string $method): ?Relation
