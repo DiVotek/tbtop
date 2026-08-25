@@ -85,6 +85,9 @@ abstract class Field implements JsonSerializable
      * appends the equivalent server rule, derived from the Cond. Unlike
      * required(), this does NOT set opts['required'] - the asterisk is
      * conditional, not static.
+     *
+     * A `truthy` condition maps to required_if_accepted (true/1/on/yes) — boolean
+     * input semantics; gate on a checkbox/boolean field, not on free text.
      */
     public function requiredIf(Cond|string $condOrField, string $op = '', mixed $value = null): static
     {

@@ -25,9 +25,9 @@ export function isNodeRequired(
 	condCtx: ConditionContext,
 	staticRequired: boolean,
 ): boolean {
-	if (staticRequired) {
+	const required = meta?.required;
+	if (staticRequired || required === true) {
 		return true;
 	}
-	const required = meta?.required;
 	return typeof required === "function" && required(condCtx) === true;
 }
