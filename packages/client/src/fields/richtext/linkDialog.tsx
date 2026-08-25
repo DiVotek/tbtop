@@ -1,3 +1,4 @@
+import "./lexicalCore";
 import { TOGGLE_LINK_COMMAND } from "@lexical/link";
 import type { LexicalEditor, RangeSelection } from "lexical";
 import { $setSelection } from "lexical";

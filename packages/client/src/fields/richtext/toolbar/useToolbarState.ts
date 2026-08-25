@@ -1,3 +1,4 @@
+import "../lexicalCore";
 import { $isCodeNode } from "@lexical/code";
 import { $isLinkNode } from "@lexical/link";
 import { $isListNode, ListNode } from "@lexical/list";

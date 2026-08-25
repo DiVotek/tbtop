@@ -1,3 +1,4 @@
+import "./lexicalCore";
 import { $generateNodesFromDOM } from "@lexical/html";
 import type { LexicalEditor, SerializedEditorState } from "lexical";
 import { $getRoot, $insertNodes } from "lexical";
