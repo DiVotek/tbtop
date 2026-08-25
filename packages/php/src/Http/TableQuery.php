@@ -19,7 +19,7 @@ final class TableQuery
         self::applySearch($table, $request, $builder);
         self::applyColumnSearch($table, $request, $builder);
         self::applyFilters($table, $request, $builder);
-        self::applySort($table, $request, $builder);
+        TableSortApplier::apply($table, $request, $builder);
 
         $pagination = $table->paginationSpec();
         $allowedPerPage = $pagination['options'];
@@ -148,33 +148,5 @@ final class TableQuery
             return;
         }
         TableFilterApplier::apply($fields, $filterValues, $builder);
-    }
-
-    private static function applySort(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
-    {
-        $default = $table->defaultSortSpec();
-        $requestedSort = (string) $request->query('sort', '');
-        $dir = (string) $request->query('dir', $default['dir'] ?? 'asc');
-
-        // Security whitelist: only allow explicitly declared sortable columns.
-        // The default-sort field is always implicitly allowed.
-        $allowed = $table->sortableColumnNames();
-        $defaultField = $default['field'] ?? null;
-
-        if ($requestedSort !== '') {
-            $isAllowed = in_array($requestedSort, $allowed, true)
-                || ($defaultField !== null && $requestedSort === $defaultField);
-
-            if ($isAllowed) {
-                $builder->orderBy($requestedSort, $dir === 'desc' ? 'desc' : 'asc');
-
-                return;
-            }
-        }
-
-        // Fall through to default sort
-        if ($defaultField !== null) {
-            $builder->orderBy($defaultField, $default['dir'] ?? 'asc');
-        }
     }
 }

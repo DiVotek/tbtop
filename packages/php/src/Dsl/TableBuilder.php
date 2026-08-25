@@ -24,6 +24,10 @@ final class TableBuilder implements JsonSerializable
 
     private const FILTERS_FORM_WIDTHS = ['sm', 'md', 'lg', 'full'];
 
+    private const FILTERS_FORM_COLUMNS_MIN = 1;
+
+    private const FILTERS_FORM_COLUMNS_MAX = 12;
+
     /**
      * All column descriptors, including hidden ones (they need to participate
      * in projection decisions but not in wire serialization).
@@ -201,9 +205,15 @@ final class TableBuilder implements JsonSerializable
         return $this;
     }
 
-    /** Number of grid columns for the filters form layout. */
+    /** Number of grid columns for the filters form layout (1-12). */
     public function filtersFormColumns(int $columns): self
     {
+        if ($columns < self::FILTERS_FORM_COLUMNS_MIN || $columns > self::FILTERS_FORM_COLUMNS_MAX) {
+            throw new InvalidArgumentException(
+                "Invalid filters form columns \"{$columns}\". Must be between ".
+                self::FILTERS_FORM_COLUMNS_MIN.' and '.self::FILTERS_FORM_COLUMNS_MAX.'.'
+            );
+        }
         $this->opts['filtersFormColumns'] = $columns;
 
         return $this;
@@ -534,6 +544,18 @@ final class TableBuilder implements JsonSerializable
         }
 
         return $names;
+    }
+
+    /** The declared Column matching $name, or null when there is none. */
+    public function findColumn(string $name): ?Column
+    {
+        foreach ($this->columnObjects as $col) {
+            if ($col->name === $name) {
+                return $col;
+            }
+        }
+
+        return null;
     }
 
     /** @return array{field: string, dir: string}|null */

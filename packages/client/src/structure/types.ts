@@ -42,6 +42,8 @@ export interface NodeMeta {
 	hidden?: ConditionFn | boolean;
 	/** Static boolean (server-side meta('disabled', true)) or a compiled disabledIf condition. */
 	disabled?: ConditionFn | boolean;
+	/** Compiled requiredIf condition — drives the live asterisk alongside options.required. */
+	required?: ConditionFn | boolean;
 }
 
 export interface StructureNode<TKind extends string = string, TOptions = unknown> {

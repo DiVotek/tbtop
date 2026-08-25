@@ -29,7 +29,7 @@ interface TableToolbarProps {
 	searchPlaceholder?: string;
 	/** Require an explicit Apply action before filter changes narrow the query. */
 	deferFilters?: boolean;
-	/** Grid column count for the filters form layout (1-4). */
+	/** Grid column count for the filters form layout (1-12). */
 	filtersFormColumns?: number;
 	/** Width of the filters modal; only meaningful when filtersIn === "modal". */
 	filtersFormWidth?: ModalSize;
@@ -139,11 +139,13 @@ export function TableToolbar(props: TableToolbarProps) {
 				/>
 			)}
 			{props.columnToggle !== false && (
-				<ColumnVisibilityDropdown
-					columns={dropdownCols}
-					visibleColumns={visibleColumns}
-					onToggle={onToggleColumn}
-				/>
+				<div className="ml-auto">
+					<ColumnVisibilityDropdown
+						columns={dropdownCols}
+						visibleColumns={visibleColumns}
+						onToggle={onToggleColumn}
+					/>
+				</div>
 			)}
 		</div>
 	);

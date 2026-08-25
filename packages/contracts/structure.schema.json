@@ -16,7 +16,8 @@
 					"type": "object",
 					"properties": {
 						"hiddenIf": { "$ref": "#/$defs/condition" },
-						"disabledIf": { "$ref": "#/$defs/condition" }
+						"disabledIf": { "$ref": "#/$defs/condition" },
+						"requiredIf": { "$ref": "#/$defs/condition" }
 					}
 				}
 			},

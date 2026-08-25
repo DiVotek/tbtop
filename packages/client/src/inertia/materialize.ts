@@ -101,18 +101,22 @@ function walk(node: StructureNode, ctx: WalkCtx): StructureNode {
 }
 
 /**
- * Compiles wire-format hiddenIf / disabledIf ASTs into ConditionFn.
+ * Compiles wire-format hiddenIf / disabledIf / requiredIf ASTs into ConditionFn.
  * Leaves all other meta keys intact.
  */
 function compileMeta(raw: NodeMeta): NodeMeta {
 	const meta = { ...raw } as NodeMeta & Record<string, unknown>;
 	const rawHiddenIf = (raw as Record<string, unknown>).hiddenIf;
 	const rawDisabledIf = (raw as Record<string, unknown>).disabledIf;
+	const rawRequiredIf = (raw as Record<string, unknown>).requiredIf;
 	if (rawHiddenIf !== undefined && typeof rawHiddenIf !== "function") {
 		meta.hidden = compileCondition(rawHiddenIf as ConditionAst);
 	}
 	if (rawDisabledIf !== undefined && typeof rawDisabledIf !== "function") {
 		meta.disabled = compileCondition(rawDisabledIf as ConditionAst);
+	}
+	if (rawRequiredIf !== undefined && typeof rawRequiredIf !== "function") {
+		meta.required = compileCondition(rawRequiredIf as ConditionAst);
 	}
 	return meta;
 }

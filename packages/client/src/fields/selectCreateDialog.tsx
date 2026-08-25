@@ -5,7 +5,7 @@ import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
 import { useClientActionContext } from "../structure/actionContext";
 import { FormControllerProvider } from "../structure/formContext";
 import { useFormController } from "../structure/formController";
-import { isNodeDisabled, isNodeHidden } from "../structure/meta";
+import { isNodeDisabled, isNodeHidden, isNodeRequired } from "../structure/meta";
 import type { ConditionContext, StructureNode } from "../structure/types";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -101,7 +101,8 @@ function renderMiniField(node: StructureNode, ctrl: Ctrl): ReactNode {
 	if (descriptor?.behavior === "field" && node.name) {
 		const name = node.name;
 		const label = (opts as { label?: string }).label;
-		const required = (opts as { required?: boolean }).required === true;
+		const staticRequired = (opts as { required?: boolean }).required === true;
+		const required = isNodeRequired(node.meta, condCtx, staticRequired);
 		const fieldError = ctrl.fieldErrors[name];
 		const control = renderDescriptor(descriptor, {
 			kind: node.kind,

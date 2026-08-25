@@ -6,6 +6,7 @@ use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\NavPage;
 use Tbtop\Admin\Tests\Fixtures\PostEditPage;
 use Tbtop\Admin\Tests\Fixtures\PostsIndexPage;
+use Tbtop\Admin\Tests\Fixtures\RequiredIfFormPage;
 use Tbtop\Admin\Tests\Fixtures\TabbedFormPage;
 use Tbtop\Admin\Tests\Fixtures\TranslatablePostsPage;
 
@@ -25,6 +26,7 @@ class AdminPanel extends TestPanel
             PostsIndexPage::class,
             TranslatablePostsPage::class,
             TabbedFormPage::class,
+            RequiredIfFormPage::class,
             NavPage::class,
         ];
     }
