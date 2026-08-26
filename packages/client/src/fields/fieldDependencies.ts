@@ -1,6 +1,5 @@
-import { createContext, createElement, type ReactNode, useContext, useEffect, useRef } from "react";
+import { createContext, createElement, type ReactNode, useContext } from "react";
 import { useNearestFormController } from "../structure/formContext";
-import { isEqual } from "../structure/formController";
 import type { FormController } from "../structure/types";
 
 interface DependencyValues {
@@ -40,7 +39,8 @@ export interface DependencyState {
 	disabledByParent: boolean;
 }
 
-function scalarToString(raw: unknown): string {
+/** Shared with useDependentResets — the same non-empty spelling for a deps key. */
+export function scalarToString(raw: unknown): string {
 	if (typeof raw === "boolean") {
 		return raw ? "1" : "0";
 	}
@@ -93,7 +93,8 @@ export function readDeps(
 	return { deps, ready };
 }
 
-function hasValue(v: unknown): boolean {
+/** Shared with useDependentResets — the same emptiness rule a form-level reset uses. */
+export function hasValue(v: unknown): boolean {
 	if (v === null || v === undefined) {
 		return false;
 	}
@@ -106,68 +107,18 @@ function hasValue(v: unknown): boolean {
 	return true;
 }
 
-interface ResetArgs {
-	depsKey: string;
-	hasDeps: boolean;
-	keep: boolean;
-	value: unknown;
-	initialKey: string;
-	initialValue: unknown;
-	onChange: (next: null) => void;
+export interface UseFieldDependenciesArgs {
+	config: DependencyConfig;
 }
 
 /**
- * Clears this field when a watched parent changes; the clear cascades downstream.
- *
- * A field mounts before the record's values reach it, so the parent landing
- * afterwards reads as a parent change and would wipe a saved value the user
- * never touched. The record's own (parents, value) pair is never invalid, so a
- * transition arriving at exactly that pair is hydration, not a change. Checking
- * the value too matters: a key-only rule would also skip the reset when the user
- * re-picks the original parent under a different child.
+ * Resolves parent values from the form controller and gates fetch/disabled
+ * state. The reset-on-parent-change cascade itself is form-level now (see
+ * useDependentResets) — a field can be unmounted (hidden by a condition,
+ * inside a collapsed row) while its parent changes, so the reset can't live
+ * in a per-field effect that only runs while mounted.
  */
-function useDependentReset(args: ResetArgs): void {
-	const { depsKey, hasDeps, keep } = args;
-	const prevKeyRef = useRef(depsKey);
-	const onChangeRef = useRef(args.onChange);
-	onChangeRef.current = args.onChange;
-	const valueRef = useRef(args.value);
-	valueRef.current = args.value;
-	const initialKeyRef = useRef(args.initialKey);
-	initialKeyRef.current = args.initialKey;
-	const initialValueRef = useRef(args.initialValue);
-	initialValueRef.current = args.initialValue;
-	useEffect(() => {
-		if (!hasDeps || keep || prevKeyRef.current === depsKey) {
-			prevKeyRef.current = depsKey;
-			return;
-		}
-		prevKeyRef.current = depsKey;
-		const atInitial =
-			depsKey === initialKeyRef.current && isEqual(valueRef.current, initialValueRef.current);
-		if (atInitial) {
-			return;
-		}
-		if (hasValue(valueRef.current)) {
-			onChangeRef.current(null);
-		}
-	}, [depsKey, hasDeps, keep]);
-}
-
-export interface UseFieldDependenciesArgs {
-	name: string;
-	config: DependencyConfig;
-	value: unknown;
-	onChange: (next: null) => void;
-}
-
-/** Resolves parent values from the form controller, gates fetch, and cascades resets. */
-export function useFieldDependencies({
-	name,
-	config,
-	value,
-	onChange,
-}: UseFieldDependenciesArgs): DependencyState {
+export function useFieldDependencies({ config }: UseFieldDependenciesArgs): DependencyState {
 	const ctrl = useNearestFormController();
 	const provided = useContext(DependencyValuesContext);
 	const { data, initial } = dependencyValues(provided, ctrl);
@@ -176,15 +127,6 @@ export function useFieldDependencies({
 	const { deps, ready } = readDeps(parents, data);
 	const depsKey = hasDeps ? JSON.stringify(deps) : "";
 	const initialDepsKey = hasDeps ? JSON.stringify(readDeps(parents, initial).deps) : "";
-	useDependentReset({
-		depsKey,
-		hasDeps,
-		keep: config.keepValue === true,
-		value,
-		initialKey: initialDepsKey,
-		initialValue: initial[name],
-		onChange,
-	});
 	const disabledByParent = hasDeps && !ready && config.whenParentEmpty !== "empty";
 	return { hasDeps, deps, depsKey, initialDepsKey, ready, disabledByParent };
 }
