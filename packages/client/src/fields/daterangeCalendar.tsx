@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { DateRange, Matcher } from "react-day-picker";
 import { useLocale } from "../i18n/i18n";
 import { Calendar } from "../ui/calendar";
-import { browserLocale, intlFormatters, resolveWeekStart } from "./daterangeLocale";
+import { intlFormatters, regionalTag, resolveWeekStart } from "./daterangeLocale";
 
 interface DaterangeCalendarProps {
 	selected: DateRange | undefined;
@@ -29,9 +29,6 @@ export function DaterangeCalendar({
 	const months = useMonthCount();
 	const formatters = useMemo(() => intlFormatters(locale), [locale]);
 
-	// A bare admin language ("en", "uk") carries no region, so the week start
-	// comes from the browser tag when it agrees on the language — that is where
-	// en-US vs en-GB is actually known.
 	const weekStartsOn = resolveWeekStart(regionalTag(locale));
 
 	return (
@@ -50,15 +47,6 @@ export function DaterangeCalendar({
 			autoFocus
 		/>
 	);
-}
-
-function regionalTag(locale: string): string {
-	if (locale.includes("-")) {
-		return locale;
-	}
-	const browser = browserLocale();
-	const sameLanguage = browser?.split("-")[0]?.toLowerCase() === locale.toLowerCase();
-	return sameLanguage && browser ? browser : locale;
 }
 
 /** Matches Tailwind's sm breakpoint — two months need ~36rem of popover width. */
