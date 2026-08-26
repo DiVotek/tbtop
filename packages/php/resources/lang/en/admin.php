@@ -294,6 +294,7 @@ return [
             'tooLarge' => 'File exceeds the maximum size',
         ],
         'colorpicker' => ['palette' => 'Color palette'],
+        'date' => ['placeholder' => 'Pick a date'],
         'daterange' => [
             'placeholder' => 'Pick a date range',
             'clear' => 'Clear',

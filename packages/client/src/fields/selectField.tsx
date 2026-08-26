@@ -257,7 +257,6 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 		name: props.name,
 		value,
 		opts,
-		onChange: props.onChange,
 	});
 	const [refetchKey, setRefetchKey] = useState(0);
 

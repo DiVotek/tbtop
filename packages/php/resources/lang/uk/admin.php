@@ -294,6 +294,7 @@ return [
             'tooLarge' => 'Файл перевищує максимальний розмір',
         ],
         'colorpicker' => ['palette' => 'Палітра кольорів'],
+        'date' => ['placeholder' => 'Виберіть дату'],
         'daterange' => [
             'placeholder' => 'Виберіть діапазон дат',
             'clear' => 'Очистити',

@@ -19,6 +19,12 @@ export interface FormControllerInternal extends FormController {
 	/** Incremented each time errors are applied after a failed submit — triggers scroll-to-error. */
 	errorScrollTick: number;
 	notifyErrorsApplied: () => void;
+	/**
+	 * Applies a whole-bag transform in one state update — for a caller (the
+	 * dependent-field cascade) that computes several field changes together
+	 * and must commit them as a single data change, not one `set` per field.
+	 */
+	setMany: (mutate: (data: Bag) => Bag) => void;
 }
 
 // oxlint-disable-next-line max-lines-per-function -- hook: 5 useCallbacks must stay inline (hook rules)
@@ -39,6 +45,10 @@ export function useFormController(input: UseFormControllerInput): FormController
 
 	const set = useCallback((field: string, value: unknown) => {
 		setData((prev) => ({ ...prev, [field]: value }));
+	}, []);
+
+	const setMany = useCallback((mutate: (prev: Bag) => Bag) => {
+		setData(mutate);
 	}, []);
 
 	const reset = useCallback((values?: Bag) => {
@@ -88,6 +98,7 @@ export function useFormController(input: UseFormControllerInput): FormController
 		isValid,
 		changedFields,
 		set,
+		setMany,
 		reset,
 		touched,
 		fieldErrors,

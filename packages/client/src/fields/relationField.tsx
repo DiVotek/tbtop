@@ -64,7 +64,6 @@ export function RelationForm({
 		name,
 		value: current,
 		opts: options ?? {},
-		onChange,
 	});
 
 	if (remote.isFirstLoad) {
