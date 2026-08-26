@@ -319,3 +319,145 @@ describe("useDependentResets: settles synchronously with the triggering change",
 		await waitFor(() => expect(data.car_id).toBe(null));
 	});
 });
+
+/**
+ * Multi-step repro harness: each `set(field, value)` clicks a dedicated
+ * action whose handler applies exactly that one controller.set call, then
+ * `read()` clicks a save action and returns the resulting c.form.data. Real
+ * FormBlock/FormController wiring throughout — every step observes the
+ * live controller a real click would see, not a stale snapshot.
+ *
+ * `commitBaseline()` mirrors materializeActions.ts's serverHandler: after
+ * ANY server action that reads `form` succeeds (not just the form's own
+ * save), the client commits the live data as the new baseline —
+ * `ctx.form?.reset(ctx.form.data)` — so a later failed submit's rollback
+ * doesn't erase this action's effect. That reset call produces a NEW
+ * ctrl.initial reference holding the current (mid-edit) values — content
+ * changes, but so does identity — which is the lever a real page has to
+ * retrigger useDependentResets's own initial-reconciliation branch without
+ * an actual Inertia round trip.
+ */
+function multiStepHarness(fields: StructureNode[], initial: Record<string, unknown>) {
+	let seenData: Record<string, unknown> | undefined;
+	const steps: { field: string; value: unknown }[] = [];
+	function makeNode(): StructureNode {
+		return s.form({ query: async () => ({ ...initial }) }, [
+			...fields,
+			s.action({
+				name: "apply",
+				handler: async (c) => {
+					const step = steps.at(-1);
+					if (step) {
+						c.form?.set(step.field, step.value);
+					}
+				},
+			}),
+			s.action({
+				name: "read",
+				handler: async (c) => {
+					seenData = c.form?.data;
+				},
+			}),
+			s.action({
+				name: "commitBaseline",
+				handler: async (c) => {
+					if (c.form) {
+						c.form.reset(c.form.data);
+					}
+				},
+			}),
+		]);
+	}
+	const rendered = render(<Wrap>{renderNode(makeNode())}</Wrap>);
+	return {
+		set: async (field: string, value: unknown) => {
+			steps.push({ field, value });
+			const applyBtn = await rendered.findByTestId("action-apply");
+			await act(async () => fireEvent.click(applyBtn));
+		},
+		read: async (): Promise<Record<string, unknown>> => {
+			const readBtn = await rendered.findByTestId("action-read");
+			await act(async () => fireEvent.click(readBtn));
+			return seenData ?? {};
+		},
+		commitBaseline: async (): Promise<void> => {
+			const commitBtn = await rendered.findByTestId("action-commitBaseline");
+			await act(async () => fireEvent.click(commitBtn));
+		},
+	};
+}
+
+describe("useDependentResets: multi-step cascade does not stop resetting after the first change", () => {
+	// Reproduces a real-browser sequence reported against the type -> car_id ->
+	// period_id chain: the reset fired correctly once, then went silent for
+	// every later parent change on the same field, leaving a stale dependent
+	// value in the submitted data. The initial record's car_id ("sedan-1") is
+	// deliberately re-picked at step 4 (not a fresh value) — that is the exact
+	// condition that must still reset period_id: only the CHILD's own value
+	// differing from the record's own initial should matter, not whether the
+	// parent's resolved key happens to equal the record's own parent key.
+	const carOptions = [
+		{ value: "sedan-1", label: "Sedan 1" },
+		{ value: "suv-1", label: "SUV 1" },
+	];
+	const periodOptions = [
+		{ value: "week", label: "1 week" },
+		{ value: "month", label: "1 month" },
+	];
+	function fields(): StructureNode[] {
+		return [
+			{ kind: "select", name: "type", options: { options: TYPE_OPTIONS }, meta: {} },
+			{
+				kind: "select",
+				name: "car_id",
+				options: { options: carOptions, dependsOn: ["type"] },
+				meta: { hidden: (ctx) => ctx.data.car_id !== "" && ctx.data.car_id != null },
+			},
+			{
+				kind: "select",
+				name: "period_id",
+				options: { options: periodOptions, dependsOn: ["car_id"] },
+				meta: {},
+			},
+		];
+	}
+
+	test("period_id keeps resetting on every later car_id/type change, not just the first", async () => {
+		const h = multiStepHarness(fields(), { type: "A", car_id: "sedan-1", period_id: "week" });
+
+		// 1. type A -> B: car_id and period_id both reset.
+		await h.set("type", "B");
+
+		// 2. user picks period_id manually while car_id is still empty.
+		await h.set("period_id", "month");
+
+		// 3. type B -> A: car_id stays empty -> empty (key unchanged), so
+		// period_id's own parent (car_id) never actually changed value —
+		// period_id is allowed to survive this step.
+		await h.set("type", "A");
+
+		// An unrelated server action (anything else on the page bound to the
+		// form) succeeds here and commits the live values as the new
+		// baseline — a real page has many such actions (autosave, a sibling
+		// widget's own action) that read the form and, per
+		// materializeActions.ts's serverHandler, commit on success.
+		await h.commitBaseline();
+
+		// 4. user picks car_id back to the record's own initial value
+		// ("sedan-1"). period_id's parent goes empty -> "sedan-1", a real
+		// change, and period_id's live value ("month") differs from its own
+		// initial ("week") — it must reset regardless of car_id landing back
+		// on its initial value.
+		await h.set("car_id", "sedan-1");
+		let data = await h.read();
+		expect(data.period_id).toBe(null);
+
+		// 5. type A -> B again: car_id resets a second time, proving the
+		// mechanism did not go permanently silent after step 1's reset.
+		await h.set("period_id", "month");
+		await h.set("type", "B");
+		data = await h.read();
+		expect(data.car_id).toBe(null);
+		expect(data.period_id).toBe(null);
+	});
+});

@@ -100,7 +100,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 	const t = useTranslation();
 	const formCtx: FormRenderCtx = { ctrl, locales: localeConfig.locales, t };
 	useSyncInitial(initial, ctrl.reset);
-	useDependentResets(children ?? [], ctrl);
+	useDependentResets(children ?? [], ctrl, initial);
 	const guard = useUnsavedGuard(ctrl.isDirty, guardUnsaved);
 	const hasTranslatable = detectTranslatableFields(children ?? []);
 	const formRef = useRef<HTMLFormElement | null>(null);

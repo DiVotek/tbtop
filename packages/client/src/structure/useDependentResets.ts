@@ -18,24 +18,42 @@ type Bag = Record<string, unknown>;
  * Tracking every declared dependent field from the form root, keyed by data
  * path, fixes that — mount state no longer matters.
  *
+ * `recordInitial` is the RAW query-result prop (formBlock's `initial`), not
+ * ctrl.initial: after any server action that reads the form succeeds,
+ * materializeActions.ts's serverHandler commits the live edited values as a
+ * new ctrl.initial baseline (`ctx.form.reset(ctx.form.data)`) so a later
+ * failed submit's rollback doesn't erase that action's effect. That commit
+ * is not a record reload — the hydration-safety check below must keep
+ * comparing against the record's own originally-loaded values, or a later
+ * coincidental match against that mid-session snapshot silently swallows a
+ * reset that should fire (a real regression this once shipped with).
+ *
  * Declarations are recomputed from the current tree/data every render (a
  * repeater's rows come and go), but each path's "did the parent change"
  * check is keyed off a ref map that survives across renders regardless of
  * whether that field is currently rendered.
  */
-export function useDependentResets(tree: StructureNode[], ctrl: FormControllerInternal): void {
+export function useDependentResets(
+	tree: StructureNode[],
+	ctrl: FormControllerInternal,
+	recordInitial: Bag,
+): void {
 	const prevKeysRef = useRef<Map<string, string>>(new Map());
 	const prevRowsRef = useRef<Map<string, unknown[]>>(new Map());
+	const trueInitialRef = useRef<Bag>(recordInitial);
 	const seededRef = useRef(false);
 
-	// A record reset/reload must reseed rather than read the incoming record as
-	// a cascade of parent changes — reseed whenever `initial` actually changes.
-	const initialSync = useReconciled(ctrl.initial);
+	// A genuine record reload must reseed and re-baseline hydration safety —
+	// same content-equality gate formBlock's own useSyncInitial uses to
+	// decide "this is actually a different record", not a bare reference
+	// bump (ctrl.initial changes reference on every baseline commit too).
+	const recordSync = useReconciled(recordInitial, { isEqual });
 
 	// oxlint-disable react-hooks/exhaustive-deps -- ctrl is a fresh object every render
 	useEffect(() => {
-		if (initialSync.changed) {
-			initialSync.accept();
+		if (recordSync.changed) {
+			recordSync.accept();
+			trueInitialRef.current = recordInitial;
 			seededRef.current = false;
 			prevKeysRef.current = new Map();
 			prevRowsRef.current = new Map();
@@ -65,13 +83,13 @@ export function useDependentResets(tree: StructureNode[], ctrl: FormControllerIn
 		const next = applyResets({
 			declarations: declarations.filter((decl) => !shifted.has(decl.path)),
 			data: ctrl.data,
-			initial: ctrl.initial,
+			initial: trueInitialRef.current,
 			prevKeys,
 		});
 		if (next !== ctrl.data) {
 			ctrl.setMany(() => next);
 		}
-	}, [tree, ctrl.data, initialSync]);
+	}, [tree, ctrl.data, recordSync, recordInitial]);
 	// oxlint-enable react-hooks/exhaustive-deps
 }
 
@@ -129,7 +147,9 @@ interface ResetOneArgs {
  * Clears one declaration's field when its resolved deps key changed since
  * last seen, mirroring the field-level rule this replaces: a parent landing
  * for the first time at exactly the record's own (parents, value) pair is
- * hydration, not a user change, so it is left alone.
+ * hydration, not a user change, so it is left alone. `initial` here is the
+ * stable record-load snapshot (trueInitialRef), never a mid-session
+ * baseline commit — see useDependentResets's doc comment.
  */
 function resetOne(args: ResetOneArgs): Bag {
 	const { decl, draft, initial, prevKeys } = args;
