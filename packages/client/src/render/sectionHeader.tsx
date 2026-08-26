@@ -15,7 +15,13 @@ interface SectionHeaderProps {
 	collapsible?: boolean;
 	open: boolean;
 	onToggle: () => void;
+	variant?: "card" | "plain";
 }
+
+const VARIANT_HEADING_CLASS = {
+	card: "text-sm font-semibold",
+	plain: "text-sm font-semibold uppercase tracking-wide text-muted-foreground",
+} as const;
 
 /** Section title/description/icon row, optionally a chevron-toggle button and a right-aligned action link. */
 export function SectionHeader({
@@ -26,14 +32,18 @@ export function SectionHeader({
 	collapsible,
 	open,
 	onToggle,
+	variant,
 }: SectionHeaderProps) {
 	if (!title && !description && !icon && !action) {
 		return null;
 	}
+	const Heading = variant === undefined ? "h2" : "h3";
+	const headingClass =
+		variant === undefined ? "text-lg font-semibold" : VARIANT_HEADING_CLASS[variant];
 	const heading = (
 		<div className="flex items-center gap-2">
 			{icon?.position !== "right" && <NodeIcon icon={icon} />}
-			{title && <h2 className="text-lg font-semibold">{title}</h2>}
+			{title && <Heading className={headingClass}>{title}</Heading>}
 			{icon?.position === "right" && <NodeIcon icon={icon} />}
 		</div>
 	);

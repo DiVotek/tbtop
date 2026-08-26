@@ -289,6 +289,8 @@ final class S
      * wraps the section in a bordered card with an inline header; 'plain' renders
      * the title as an uppercase muted label. Omitted = current stack render),
      * 'class' (extra Tailwind classes merged onto the section's root element).
+     * All variants retain the same description, icon, action, aside, and
+     * collapsible behavior; the variant changes visual chrome only.
      *
      * @param  array<string, mixed>  $opts
      * @param  list<mixed>  $children
