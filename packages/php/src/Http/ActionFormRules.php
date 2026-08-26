@@ -2,8 +2,8 @@
 
 namespace Tbtop\Admin\Http;
 
-use LogicException;
 use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\StructureWalk;
 
 /**
  * Finds the form an action submits into.
@@ -18,15 +18,16 @@ use Tbtop\Admin\Dsl\Node;
  *
  * No enclosing form means no rules, which is not an error: an action may read
  * `payload.form` and validate it by hand inside its handler.
+ *
+ * Descent goes through StructureWalk::actionSearchDescendants() — the widened
+ * key set (table action lists, an action's modal body, prefix/suffix) that
+ * this search alone needs, plus the ability to walk a not-yet-serialized
+ * builder. Threading $enclosing (the closest form name seen above the
+ * current node) through the walk is this class's own job: it is what the
+ * search is for, not a traversal concern.
  */
 final class ActionFormRules
 {
-    /** Options that carry lists of table actions. */
-    private const ACTION_LIST_KEYS = ['headerActions', 'rowActions', 'bulkActions'];
-
-    /** Options that can carry a nested subtree beyond the plain child lists. */
-    private const NESTED_OPTION_KEYS = ['body', 'spec', 'prefix', 'suffix'];
-
     /**
      * Name of the form whose rules apply to $actionName, or null when none do.
      *
@@ -48,26 +49,14 @@ final class ActionFormRules
         return is_array($spec) && in_array('form', $spec['needs'] ?? [], true);
     }
 
-    /** Depth-first, carrying the closest form name seen above the current node. */
+    /**
+     * Depth-first, carrying the closest form name seen above the current
+     * node. $node may be a builder StructureWalk has not yet serialized.
+     */
     private static function search(mixed $node, string $actionName, ?string $enclosing): ?string
     {
-        if (is_object($node) && ! $node instanceof Node && method_exists($node, 'toNode')) {
-            // Builders sit in the tree unserialized — a form's children hold
-            // ActionBuilder instances, not their nodes.
-            //
-            // toNode() rejects some authoring mistakes by throwing (slideOver()
-            // on a non-modal action, say). That belongs to the render path; here
-            // it would turn one bad sibling into a 500 for an unrelated action,
-            // so an unserializable branch is simply not searchable.
-            try {
-                $serialized = $node->toNode();
-            } catch (LogicException) {
-                return null;
-            }
-
-            return self::search($serialized, $actionName, $enclosing);
-        }
-        if (! $node instanceof Node) {
+        $node = StructureWalk::resolveActionNode($node);
+        if ($node === null) {
             return null;
         }
         if ($node->kind === 'action' && $node->name === $actionName) {
@@ -77,47 +66,7 @@ final class ActionFormRules
             $enclosing = $node->name;
         }
 
-        return self::searchBelow($node, $actionName, $enclosing);
-    }
-
-    private static function searchBelow(Node $node, string $actionName, ?string $enclosing): ?string
-    {
-        foreach (Node::CHILD_LIST_KEYS as $key) {
-            $found = self::searchList($node->options[$key] ?? [], $actionName, $enclosing);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-        foreach (self::ACTION_LIST_KEYS as $key) {
-            $found = self::searchList($node->options[$key] ?? [], $actionName, $enclosing);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-        foreach (self::NESTED_OPTION_KEYS as $key) {
-            $found = self::searchOption($node->options[$key] ?? null, $actionName, $enclosing);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-        foreach ($node->options['tabs'] ?? [] as $tab) {
-            $found = self::searchOption(is_array($tab) ? ($tab['body'] ?? null) : null, $actionName, $enclosing);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-
-        return null;
-    }
-
-    /** A nested option is either a subtree itself or an array carrying one under 'body'. */
-    private static function searchOption(mixed $option, string $actionName, ?string $enclosing): ?string
-    {
-        if (is_array($option)) {
-            return self::searchOption($option['body'] ?? null, $actionName, $enclosing);
-        }
-
-        return $option === null ? null : self::search($option, $actionName, $enclosing);
+        return self::searchList(StructureWalk::actionSearchDescendants($node), $actionName, $enclosing);
     }
 
     /** @param  iterable<mixed>  $children */

@@ -28,19 +28,26 @@ export interface ServerEffect {
 	data?: Record<string, unknown>;
 }
 
-// "t" is optional: the native-Inertia-flash call site (AdminPage.tsx) builds
-// a minimal ctx with only `notify` (no surrounding action/form/table exists
-// on a fresh page load) — copyToClipboard falls back to defaultMessages
-// directly when no translate function is available.
-type EffectContext = Pick<ClientActionContext, "notify" | "table" | "form" | "modal"> &
-	Partial<Pick<ClientActionContext, "t">>;
+/**
+ * Context for effects reaching the client from within an action/cell render
+ * position (materializeActions.ts, editableCell.tsx): the full slice of
+ * ClientActionContext an action handler runs with. table/form/modal stay
+ * optional here because THEIR presence is legitimately positional (a page
+ * action outside any table has no ctx.table) — but the fields themselves are
+ * always part of the type, so every effect kind is at least reachable.
+ * Contrast flashEffects.ts's FlashEffectContext, which omits them entirely.
+ */
+export type ActionEffectContext = Pick<
+	ClientActionContext,
+	"notify" | "table" | "form" | "modal" | "t"
+>;
 
 /**
- * Executes the closed server-effect vocabulary. refreshTable reaches every
- * mounted table by name, not only the one surrounding the effect — see
- * refreshTable() below.
+ * Executes the closed server-effect vocabulary for an action/cell-save
+ * response. refreshTable reaches every mounted table by name, not only the
+ * one surrounding the effect — see refreshTable() below.
  */
-export function executeEffects(effects: ServerEffect[], ctx: EffectContext): void {
+export function executeEffects(effects: ServerEffect[], ctx: ActionEffectContext): void {
 	for (const effect of effects) {
 		applyEffect(effect, ctx);
 	}
@@ -48,11 +55,11 @@ export function executeEffects(effects: ServerEffect[], ctx: EffectContext): voi
 
 const EFFECT_HANDLERS: Record<
 	ServerEffect["kind"],
-	(effect: ServerEffect, ctx: EffectContext) => void
+	(effect: ServerEffect, ctx: ActionEffectContext) => void
 > = {
 	notify: applyNotify,
 	redirect: (effect) => applyRedirect(effect),
-	refreshTable: (effect, ctx) => refreshTable(effect, ctx),
+	refreshTable: (effect, ctx) => refreshTable(effect, ctx.table),
 	resetForm: (_effect, ctx) => ctx.form?.reset(),
 	closeModal: (_effect, ctx) => ctx.modal?.close(),
 	haltModal: (effect, ctx) => ctx.modal?.halt?.(effect.message ?? "", effect.level),
@@ -60,15 +67,17 @@ const EFFECT_HANDLERS: Record<
 	setFormData: applySetFormData,
 };
 
-function applyEffect(effect: ServerEffect, ctx: EffectContext): void {
+function applyEffect(effect: ServerEffect, ctx: ActionEffectContext): void {
 	EFFECT_HANDLERS[effect.kind]?.(effect, ctx);
 }
 
-function applyNotify(effect: ServerEffect, ctx: EffectContext): void {
+/** Shared with flashEffects.ts — notify has no positional dependency, so both dispatch tables use it directly. */
+export function applyNotify(effect: ServerEffect, ctx: Pick<ClientActionContext, "notify">): void {
 	ctx.notify({ kind: effect.level ?? "success", message: effect.message ?? "" });
 }
 
-function applyRedirect(effect: ServerEffect): void {
+/** Shared with flashEffects.ts — redirect touches only the router, so both dispatch tables use it directly. */
+export function applyRedirect(effect: ServerEffect): void {
 	if (effect.href) {
 		// A server-authored redirect is an intentional navigation, not an
 		// accidental page leave — see navigationIntent.ts for why the
@@ -84,8 +93,12 @@ function applyRedirect(effect: ServerEffect): void {
  * back to execCommand in non-secure contexts) and notifies on success. A
  * failed write (permission denied, no clipboard API and no execCommand
  * fallback) stays silent — there's nothing actionable to tell the user.
+ * Shared with flashEffects.ts — clipboard writes have no positional dependency.
  */
-async function applyCopyToClipboard(effect: ServerEffect, ctx: EffectContext): Promise<void> {
+export async function applyCopyToClipboard(
+	effect: ServerEffect,
+	ctx: Pick<ClientActionContext, "notify"> & Partial<Pick<ClientActionContext, "t">>,
+): Promise<void> {
 	if (!effect.text) {
 		return;
 	}
@@ -102,7 +115,7 @@ async function applyCopyToClipboard(effect: ServerEffect, ctx: EffectContext): P
  * Writes server-supplied values into the nearest form via `set`, never
  * `initial` — the form must stay dirty so the user still sees unsaved state.
  */
-function applySetFormData(effect: ServerEffect, ctx: EffectContext): void {
+function applySetFormData(effect: ServerEffect, ctx: ActionEffectContext): void {
 	if (!ctx.form) {
 		console.warn("[tbtop] setFormData: no enclosing form — effect ignored.");
 		return;
@@ -143,7 +156,7 @@ function isTopLevelField(field: string): boolean {
 function clearErrorsUnder(
 	field: string,
 	errorKeys: string[],
-	form: NonNullable<EffectContext["form"]>,
+	form: NonNullable<ActionEffectContext["form"]>,
 ): void {
 	const prefix = `${field}.`;
 	for (const key of errorKeys) {
@@ -155,17 +168,18 @@ function clearErrorsUnder(
 
 /**
  * Table rows are fetched by the table itself (client.get), never carried as
- * Inertia props, so a named target or the nearest table is refetched
- * directly. Only when no table is registered at all — this effect reached a
- * page with no mounted table — does a full reload remain meaningful.
+ * Inertia props, so a named target or the nearest table (when the caller has
+ * one — flash delivery never does) is refetched directly. Only when no table
+ * is registered at all — this effect reached a page with no mounted table —
+ * does a full reload remain meaningful.
  */
-function refreshTable(effect: ServerEffect, ctx: EffectContext): void {
+export function refreshTable(effect: ServerEffect, nearest?: ClientActionContext["table"]): void {
 	if (effect.table) {
 		getRegisteredTableController(effect.table)?.refresh();
 		return;
 	}
-	if (ctx.table) {
-		ctx.table.refresh();
+	if (nearest) {
+		nearest.refresh();
 		return;
 	}
 	const tables = getAllRegisteredTableControllers();

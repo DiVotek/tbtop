@@ -109,8 +109,8 @@ final class FormBuilder implements JsonSerializable
      * leaking a value the author hid).
      *
      * Only the top level needs filtering: everything below descends through
-     * Node::nestedChildren() or Field::childFields(), both of which already
-     * carry the verdict, and an excluded container is dropped whole here.
+     * StructureWalk, which already carries the verdict, and an excluded
+     * container is dropped whole here.
      *
      * @return list<mixed>
      */
@@ -175,20 +175,12 @@ final class FormBuilder implements JsonSerializable
     /** @param  list<mixed>  $children */
     private static function searchLiveRegion(array $children, string $name): ?LiveRegionBuilder
     {
-        foreach ($children as $child) {
-            if (! ChildInclusion::isConditionMet($child)) {
-                continue;
-            }
-            if ($child instanceof LiveRegionBuilder && $child->name === $name) {
-                return $child;
-            }
-            $found = self::searchLiveRegion(self::nestedChildren($child), $name);
-            if ($found !== null) {
-                return $found;
-            }
-        }
+        $found = self::searchAny(
+            $children,
+            static fn (mixed $c): bool => $c instanceof LiveRegionBuilder && $c->name === $name,
+        );
 
-        return null;
+        return $found instanceof LiveRegionBuilder ? $found : null;
     }
 
     /**
@@ -263,7 +255,8 @@ final class FormBuilder implements JsonSerializable
 
     /**
      * Depth-first walk of form children, returning the first Field the
-     * predicate accepts. Recurses into nested fields and Node containers.
+     * predicate accepts. Recurses into nested fields and Node containers via
+     * StructureWalk.
      *
      * Excluded subtrees are skipped whole: this walk is what the field
      * endpoints (upload, select options/create, relation search) resolve a
@@ -275,28 +268,17 @@ final class FormBuilder implements JsonSerializable
      */
     private static function searchField(array $children, callable $matches): ?Field
     {
-        foreach ($children as $child) {
-            if (! ChildInclusion::isConditionMet($child)) {
-                continue;
-            }
-            if ($child instanceof Field && $matches($child)) {
-                return $child;
-            }
-            $nested = self::nestedChildren($child);
-            if ($nested !== []) {
-                $found = self::searchField($nested, $matches);
-                if ($found !== null) {
-                    return $found;
-                }
-            }
-        }
+        $found = self::searchAny(
+            $children,
+            static fn (mixed $c): bool => $c instanceof Field && $matches($c),
+        );
 
-        return null;
+        return $found instanceof Field ? $found : null;
     }
 
     /**
      * Depth-first collect of every Field the predicate accepts. Recurses into
-     * nested fields and Node containers.
+     * nested fields and Node containers via StructureWalk.
      *
      * @param  list<mixed>  $children
      * @param  callable(Field): bool  $matches
@@ -305,16 +287,9 @@ final class FormBuilder implements JsonSerializable
     private static function collectFields(array $children, callable $matches): array
     {
         $out = [];
-        foreach ($children as $child) {
-            if (! ChildInclusion::isConditionMet($child)) {
-                continue;
-            }
-            if ($child instanceof Field && $matches($child)) {
-                $out[] = $child;
-            }
-            $nested = self::nestedChildren($child);
-            if ($nested !== []) {
-                $out = [...$out, ...self::collectFields($nested, $matches)];
+        foreach (self::collectAny($children, static fn (mixed $c): bool => $c instanceof Field && $matches($c)) as $field) {
+            if ($field instanceof Field) {
+                $out[] = $field;
             }
         }
 
@@ -322,20 +297,40 @@ final class FormBuilder implements JsonSerializable
     }
 
     /**
-     * Child fields nested inside a Field or a Node container.
+     * The untyped counterpart of searchField(): the first descendant (of any
+     * type — a LiveRegionBuilder is not a Field) the predicate accepts.
      *
-     * @return list<mixed>
+     * @param  list<mixed>  $children
+     * @param  callable(mixed): bool  $matches
      */
-    private static function nestedChildren(mixed $child): array
+    private static function searchAny(array $children, callable $matches): mixed
     {
-        if ($child instanceof Field) {
-            return $child->childFields();
-        }
-        if ($child instanceof Node) {
-            return $child->nestedChildren();
+        foreach ($children as $child) {
+            $found = StructureWalk::find($child, $matches);
+            if ($found !== null) {
+                return $found;
+            }
         }
 
-        return [];
+        return null;
+    }
+
+    /**
+     * The untyped counterpart of collectFields(): every descendant (of any
+     * type) the predicate accepts.
+     *
+     * @param  list<mixed>  $children
+     * @param  callable(mixed): bool  $matches
+     * @return list<mixed>
+     */
+    private static function collectAny(array $children, callable $matches): array
+    {
+        $out = [];
+        foreach ($children as $child) {
+            $out = [...$out, ...StructureWalk::collect($child, $matches)];
+        }
+
+        return $out;
     }
 
     public function toNode(): Node
@@ -400,14 +395,10 @@ final class FormBuilder implements JsonSerializable
     private static function collectLiveRegions(array $children): array
     {
         $out = [];
-        foreach ($children as $child) {
-            if (! ChildInclusion::isConditionMet($child)) {
-                continue;
+        foreach (self::collectAny($children, static fn (mixed $c): bool => $c instanceof LiveRegionBuilder) as $region) {
+            if ($region instanceof LiveRegionBuilder) {
+                $out[] = $region;
             }
-            if ($child instanceof LiveRegionBuilder) {
-                $out[] = $child;
-            }
-            $out = [...$out, ...self::collectLiveRegions(self::nestedChildren($child))];
         }
 
         return $out;

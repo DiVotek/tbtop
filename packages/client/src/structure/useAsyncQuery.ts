@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLatest } from "../lib/useLatest";
 import type { ClientActionContext } from "./types";
 
 export type AsyncState<T> =
@@ -28,13 +29,13 @@ export function useAsyncQuery<T>(input: UseAsyncQueryInput<T>): {
 	ctxRef.current = input.ctx;
 	const queryFn = input.query;
 	const deps = input.deps ?? [];
+	const run = useLatest();
 
 	// oxlint-disable react-hooks/exhaustive-deps -- consumer deps spread is intentionally dynamic
 	useEffect(() => {
 		if (!queryFn) {
 			return;
 		}
-		let cancelled = false;
 		// Keep previous data visible during reload — only go to `loading` on first fetch.
 		setState((prev) => {
 			if (prev.kind === "loaded" || prev.kind === "reloading") {
@@ -42,23 +43,14 @@ export function useAsyncQuery<T>(input: UseAsyncQueryInput<T>): {
 			}
 			return { kind: "loading" };
 		});
-		queryFn(ctxRef.current).then(
-			(data) => {
-				if (!cancelled) {
-					setState({ kind: "loaded", data });
-				}
-			},
-			(err: unknown) => {
-				if (cancelled) {
-					return;
-				}
-				setState({ kind: "error", message: extractMessage(err) });
-			},
-		);
+		void run(() => queryFn(ctxRef.current), {
+			onResult: (data) => setState({ kind: "loaded", data }),
+			onError: (err) => setState({ kind: "error", message: extractMessage(err) }),
+		});
 		return () => {
-			cancelled = true;
+			run.cancel();
 		};
-	}, [queryFn, tick, ...deps]);
+	}, [queryFn, tick, run, ...deps]);
 	// oxlint-enable react-hooks/exhaustive-deps
 
 	return { state, refetch };

@@ -1,3 +1,4 @@
+import "./lexicalCore";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getSelection, $isRangeSelection, TextNode } from "lexical";
 import { useCallback, useEffect, useRef, useState } from "react";

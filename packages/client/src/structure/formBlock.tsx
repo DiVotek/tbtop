@@ -2,8 +2,10 @@ import { InfoIcon } from "lucide-react";
 import type { FormEvent, ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { renderTranslatableField as renderTranslatableFieldShared } from "../fields/translatableField";
-import { type Translate, translateValidationMessage, useTranslation } from "../i18n/i18n";
-import { liftNestedErrors } from "../inertia/fieldErrors";
+import type { Translate } from "../i18n/i18n";
+import { useTranslation } from "../i18n/i18n";
+import { fieldErrorsFromZodIssues } from "../inertia/fieldErrors";
+import { useReconciled } from "../lib/useReconciled";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { applyColumnPlacement } from "../render/columnPlacement";
 import { invokeBlock, renderDescriptor } from "../render/renderDescriptor";
@@ -200,14 +202,14 @@ function submitter(e: FormEvent<HTMLFormElement>): HTMLElement | null {
  * just-applied server field errors.
  */
 function useSyncInitial(initial: Bag, syncInitial: (values: Bag) => void): void {
-	const prevRef = useRef(initial);
+	const record = useReconciled(initial, { isEqual });
 	useEffect(() => {
-		if (isEqual(prevRef.current, initial)) {
+		if (!record.changed) {
 			return;
 		}
-		prevRef.current = initial;
+		record.accept();
 		syncInitial(initial);
-	}, [initial, syncInitial]);
+	}, [record, initial, syncInitial]);
 }
 
 /** Per-form values every recursive renderFormChild/renderFieldNode call needs. */
@@ -417,18 +419,12 @@ export function revalidateField(ctrl: ControllerHandle, name: string, t: Transla
 		ctrl.schema.parse(ctrl.data);
 		clearFieldErrors(ctrl, name);
 	} catch (err) {
-		const issues = (err as { issues?: { path: (string | number)[]; message: string }[] })
-			.issues;
-		if (!Array.isArray(issues)) {
+		const fields = fieldErrorsFromZodIssues(err, t, (path) => path[0] === name);
+		if (fields === undefined) {
 			return;
 		}
-		const fields: Record<string, string> = {};
-		for (const issue of issues.filter((candidate) => candidate.path[0] === name)) {
-			const path = issue.path.map(String).join(".");
-			fields[path] ??= translateValidationMessage(t, issue.message);
-		}
 		clearFieldErrors(ctrl, name);
-		for (const [field, message] of Object.entries(liftNestedErrors(fields))) {
+		for (const [field, message] of Object.entries(fields)) {
 			ctrl.setFieldError(field, message);
 		}
 	}

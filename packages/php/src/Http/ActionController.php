@@ -13,6 +13,7 @@ use Tbtop\Admin\Actions\Effects;
 final class ActionController
 {
     use AuthorizesPage;
+    use RespondsWithEffects;
 
     public function __invoke(Request $request): JsonResponse
     {
@@ -32,9 +33,7 @@ final class ActionController
 
         $result = $handler($ctx);
 
-        return response()->json([
-            'effects' => $result instanceof Effects ? $result : [],
-        ]);
+        return $this->respondWithEffects($result, Effects::make());
     }
 
     /**
