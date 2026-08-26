@@ -46,12 +46,7 @@ export function DaterangeForm(props: DaterangeFormProps) {
 function DependentDaterange(props: DaterangeFormProps) {
 	const ctx = useClientActionContext();
 	const opts = props.options ?? {};
-	const dep = useFieldDependencies({
-		name: props.name,
-		config: opts,
-		value: props.value,
-		onChange: props.onChange,
-	});
+	const dep = useFieldDependencies({ config: opts });
 	const ranges = useDisabledRanges({
 		initial: opts.disabledRanges ?? [],
 		depsKey: dep.depsKey,

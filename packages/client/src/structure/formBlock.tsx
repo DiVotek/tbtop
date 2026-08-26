@@ -30,6 +30,7 @@ import { scrollToFirstError } from "./scrollToFirstError";
 import { structureChildren } from "./structureChildren";
 import type { ConditionContext, StructureNode } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
+import { useDependentResets } from "./useDependentResets";
 import { useUnsavedGuard } from "./useUnsavedGuard";
 
 type Bag = Record<string, unknown>;
@@ -99,6 +100,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 	const t = useTranslation();
 	const formCtx: FormRenderCtx = { ctrl, locales: localeConfig.locales, t };
 	useSyncInitial(initial, ctrl.reset);
+	useDependentResets(children ?? [], ctrl);
 	const guard = useUnsavedGuard(ctrl.isDirty, guardUnsaved);
 	const hasTranslatable = detectTranslatableFields(children ?? []);
 	const formRef = useRef<HTMLFormElement | null>(null);

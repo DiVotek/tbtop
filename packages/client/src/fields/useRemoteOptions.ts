@@ -18,7 +18,6 @@ export interface RemoteOptionsArgs<TBag extends AsyncSingleOptionsBag & Dependen
 	name: string;
 	value: string | null;
 	opts: TBag;
-	onChange: (next: string | null) => void;
 }
 
 export interface RemoteOptionsState<TBag> {
@@ -47,10 +46,9 @@ export function useRemoteOptions<TBag extends AsyncSingleOptionsBag & Dependency
 	name,
 	value,
 	opts,
-	onChange,
 }: RemoteOptionsArgs<TBag>): RemoteOptionsState<TBag> {
 	const ctx = useClientActionContext();
-	const dep = useFieldDependencies({ name, config: opts, value, onChange });
+	const dep = useFieldDependencies({ config: opts });
 	const isGated = dep.hasDeps && !dep.ready;
 	const bound = dep.hasDeps ? bindDeps(opts, dep.deps) : opts;
 
