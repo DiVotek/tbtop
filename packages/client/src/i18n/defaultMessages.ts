@@ -61,6 +61,7 @@ export const defaultMessages: Messages = {
 	"field.upload.reorder": "Reorder",
 	"field.upload.tooLarge": "File exceeds the maximum size",
 	"field.colorpicker.palette": "Color palette",
+	"field.date.placeholder": "Pick a date",
 	"field.daterange.placeholder": "Pick a date range",
 	"field.daterange.clear": "Clear",
 	"field.tags.placeholder": "Add tag…",

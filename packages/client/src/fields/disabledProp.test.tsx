@@ -61,12 +61,14 @@ describe("disabled threading: input-like fields", () => {
 		expect(input.disabled).toBe(true);
 	});
 
-	test("DateForm: input is disabled when disabled=true", () => {
+	test("DateForm: trigger is disabled when disabled=true", () => {
 		const { container } = render(
 			<DateForm name="published_at" value={null} onChange={noop} disabled />,
 		);
-		const input = container.querySelector("input") as HTMLInputElement;
-		expect(input.disabled).toBe(true);
+		const trigger = container.querySelector(
+			'[data-testid="date-trigger"]',
+		) as HTMLButtonElement;
+		expect(trigger.disabled).toBe(true);
 	});
 
 	test("DateTimeForm: input is disabled when disabled=true", () => {

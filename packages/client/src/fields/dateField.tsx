@@ -2,6 +2,8 @@ import { Input } from "../ui/input";
 import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
+export { DateForm } from "./dateForm";
+
 export function DateCell({ value }: FieldCellProps<string>) {
 	return nullableCell(value, (v) => {
 		const date = new Date(String(v));
@@ -22,22 +24,6 @@ export function DateTimeCell({ value }: FieldCellProps<string>) {
 	});
 }
 
-// Display normalizes via defaultValue only — writing the normalized value
-// back into the controller on mount falsely dirtied untouched forms.
-export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
-	const isoDate = toIsoDate(value);
-	return (
-		<Input
-			id={fieldId({ id, name })}
-			name={name}
-			type="date"
-			defaultValue={isoDate}
-			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
-			disabled={disabled}
-		/>
-	);
-}
-
 export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
 	const local = toLocalDateTime(value);
 	return (
@@ -50,16 +36,6 @@ export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormP
 			disabled={disabled}
 		/>
 	);
-}
-
-function toIsoDate(value: unknown): string {
-	if (value instanceof Date && !Number.isNaN(value.getTime())) {
-		return value.toISOString().slice(0, 10);
-	}
-	if (typeof value === "string" && value.length >= 10) {
-		return value.slice(0, 10);
-	}
-	return "";
 }
 
 function toLocalDateTime(value: unknown): string {

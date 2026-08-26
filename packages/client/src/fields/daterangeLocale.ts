@@ -105,6 +105,20 @@ export function browserLocale(): string | undefined {
 	return typeof navigator === "undefined" ? undefined : navigator.language;
 }
 
+/**
+ * A bare admin language ("en", "uk") carries no region, so the week start
+ * comes from the browser tag when it agrees on the language — that is where
+ * en-US vs en-GB is actually known.
+ */
+export function regionalTag(locale: string): string {
+	if (locale.includes("-")) {
+		return locale;
+	}
+	const browser = browserLocale();
+	const sameLanguage = browser?.split("-")[0]?.toLowerCase() === locale.toLowerCase();
+	return sameLanguage && browser ? browser : locale;
+}
+
 function regionOf(locale: string | undefined): string | undefined {
 	if (!locale) {
 		return undefined;
