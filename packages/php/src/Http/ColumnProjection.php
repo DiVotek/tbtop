@@ -30,7 +30,7 @@ final class ColumnProjection
 
         $out = [];
         foreach ($rows as $row) {
-            $projected = $columns === [] ? $row : self::projectRow($row, $columns);
+            $projected = self::projectRow($row, $columns);
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
@@ -68,10 +68,9 @@ final class ColumnProjection
     }
 
     /**
-     * Eloquent models project to a plain array (so toArray() casts/accessors
-     * — incl. Spatie locale re-expansion — never re-run after us); other rows
-     * (stdClass from query builder) mutate in place. Mixed return is fine:
-     * response()->json serializes both the same.
+     * Eloquent models project to a plain array; other rows project to a fresh
+     * object. In both cases the output is an allowlist of the record key and
+     * visible declared columns, never the complete database row.
      *
      * @param  list<Column>  $columns
      */
@@ -85,8 +84,7 @@ final class ColumnProjection
     }
 
     /**
-     * Build output from the model's array form and overwrite each declared
-     * column; the model is never mutated. Translatable columns read the raw
+     * Build output from the model's array form. Translatable columns read the raw
      * locale map (bypassing the flattening accessor); the rest read from the
      * toArray result via data_get, so dotted relation columns (location.name)
      * resolve the nested value, matching the query-builder path. The resolved
@@ -97,7 +95,9 @@ final class ColumnProjection
      */
     private static function projectModelToArray(Model $row, array $columns): array
     {
-        $out = $row->toArray();
+        $sourceRow = $row->toArray();
+        $keyName = $row->getKeyName();
+        $out = [$keyName => $row->getKey()];
         foreach ($columns as $col) {
             $name = $col->name;
             $linkResolver = $col->linkResolver();
@@ -108,7 +108,7 @@ final class ColumnProjection
             }
             $source = $col->isTranslatable()
                 ? self::rawAttribute($row, $name)
-                : data_get($out, $name);
+                : data_get($sourceRow, $name);
             $out[$name] = self::computeValue($col, $source);
         }
 
@@ -120,22 +120,25 @@ final class ColumnProjection
      */
     private static function projectInPlace(mixed $row, array $columns): mixed
     {
+        $out = new \stdClass;
+        $id = data_get($row, 'id');
+        if ($id !== null) {
+            $out->id = $id;
+        }
         foreach ($columns as $col) {
             $name = $col->name;
             $linkResolver = $col->linkResolver();
             if ($linkResolver !== null) {
-                data_set($row, $name, $linkResolver($row));
+                data_set($out, $name, $linkResolver($row));
 
                 continue;
             }
             $raw = data_get($row, $name);
             $value = self::computeValue($col, $raw);
-            if ($value !== $raw) {
-                data_set($row, $name, $value);
-            }
+            data_set($out, $name, $value);
         }
 
-        return $row;
+        return $out;
     }
 
     /** translatable → formatUsing → declarative kind format. */

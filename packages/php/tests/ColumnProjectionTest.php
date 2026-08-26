@@ -86,7 +86,7 @@ it('ColumnProjection: time() formats timestamps with default H:i format', functi
 // hidden columns excluded from projection
 // ---------------------------------------------------------------------------
 
-it('ColumnProjection: hidden column not processed', function (): void {
+it('ColumnProjection: hidden and undeclared columns are not exposed', function (): void {
     // Use a format that would change the value if processed
     $processed = false;
     $table = (new TableBuilder('cposts'))
@@ -101,9 +101,13 @@ it('ColumnProjection: hidden column not processed', function (): void {
         ->query(fn () => DB::table('cposts'));
 
     $rows = DB::table('cposts')->orderBy('id')->get()->all();
-    ColumnProjection::apply($table, $rows);
+    $result = ColumnProjection::apply($table, $rows);
 
-    expect($processed)->toBeFalse();
+    expect($processed)->toBeFalse()
+        ->and($result[0])->toHaveProperty('id')
+        ->and($result[0])->toHaveProperty('title', 'Post A')
+        ->and($result[0])->not->toHaveProperty('status')
+        ->and($result[0])->not->toHaveProperty('price');
 });
 
 // ---------------------------------------------------------------------------
