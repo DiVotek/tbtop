@@ -39,6 +39,20 @@ it('ColumnProjection: formatUsing closure transforms cell value', function (): v
         ->and($result[1]->title)->toBe('POST B');
 });
 
+it('ColumnProjection: formatUsing receives the row as second argument', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('title')->formatUsing(fn ($v, $row) => "{$v}/{$row->id}"),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->title)->toBe('Post A/1')
+        ->and($result[1]->title)->toBe('Post B/2');
+});
+
 // ---------------------------------------------------------------------------
 // date / datetime formatting
 // ---------------------------------------------------------------------------
