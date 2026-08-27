@@ -865,7 +865,7 @@ a named client-side handler, or let the server do a full Inertia redirect.
 | `redirect` | `redirect(string $href): self` | Navigates to the given URL (Inertia visit) |
 | `refreshTable` | `refreshTable(?string $table = null): self` | Re-fetches the named table. With `null` it falls through: the enclosing table → **every** mounted table → a full page reload when none is registered |
 | `resetForm` | `resetForm(?string $form = null): self` | Resets the **nearest enclosing** form to its `record` state. ⚠️ The `$form` name is currently ignored client-side — passing one does not target that form |
-| `closeModal` | `closeModal(): self` | Closes the currently open modal dialog |
+| `closeModal` | `closeModal(): self` | Closes the modal the action ran in. From a form `onSubmit` handler (delivered as Inertia flash) it closes the **topmost open** modal; a no-op when none is open |
 | `haltModal` | `haltModal(string $message, string $kind = 'error'): self` | Surfaces `$message` **inside the still-open modal** (e.g. a server-side validation failure) — does not close it, unlike every other effect that touches a modal |
 | `copyToClipboard` | `copyToClipboard(string $text): self` | Writes `$text` to the clipboard and toasts on success; a failed write stays silent |
 | `setFormData` | `setFormData(array $data): self` | Replaces each key's value in the **nearest enclosing form**, which stays mounted and **dirty** — no reload, no DB write. Requires the action to have received the form (`->needs('form')`) |

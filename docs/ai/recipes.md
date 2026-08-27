@@ -708,9 +708,11 @@ Two rules make this pattern sound:
 Same here: the notification builder is plain Laravel, so call it inside any `handle()` /
 `onSubmit` / preset closure and still return `Effects` for the actor's own feedback. A
 modal that collects input is `EditAction` territory — it appends the inner Save/Cancel row
-that actually submits the form (a hand-rolled `->modal(form)` needs its own inner
-`handle()` action inside the form; `->modal()` and `->handle()` on the *same* builder are
-two specs and throw).
+that actually submits the form. A hand-rolled `->modal(form)` needs its own inner action
+inside the form: either a `handle()` action, or a `submit()` action whose form `onSubmit`
+returns `Effects` — `->notify()->closeModal()->redirect($sameUrl)` arrives as Inertia flash
+and `closeModal` closes the topmost open modal. (`->modal()` and `->handle()` on the
+*same* builder are two specs and throw.)
 
 ```php
 EditAction::make(
