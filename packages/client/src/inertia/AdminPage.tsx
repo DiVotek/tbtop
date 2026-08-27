@@ -164,7 +164,8 @@ export function AdminPage() {
 // so it is present regardless of which shell wraps the page.
 AdminPage.layout = (page: ReactNode) => <LayoutDispatcher>{page}</LayoutDispatcher>;
 
-function LayoutDispatcher({ children }: { children: ReactNode }) {
+/** Shared by AdminErrorPage so an error keeps the panel shell of a normal page. */
+export function LayoutDispatcher({ children }: { children: ReactNode }) {
 	const { props } = usePage<AdminPageProps>();
 	const tbtop = props.tbtop;
 	const prefix = tbtop?.prefix ?? "";
