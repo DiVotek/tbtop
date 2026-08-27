@@ -18,6 +18,7 @@ import { FormError, FormSkeleton } from "./defaults";
 import { parseKeybinding, registerKeybinding } from "./keybinding";
 import { ModalProvider, useNearestModal } from "./modalContext";
 import { ModalDataProvider } from "./modalDataContext";
+import { useModalStack } from "./modalStack";
 import { s } from "./structure";
 import { useNearestTriggerVariant } from "./triggerVariantContext";
 import type { NotificationConfig, StructureNode } from "./types";
@@ -104,6 +105,14 @@ export function ActionModal({
 	}, [open]);
 
 	const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+	// Registered only while open: a flash-delivered closeModal targets the last opened.
+	const stack = useModalStack();
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+		return stack.push(close);
+	}, [open, close, stack]);
 	const haltModal = useCallback(
 		(message: string, level?: NotificationConfig["kind"]) => setHalt({ message, level }),
 		[],
