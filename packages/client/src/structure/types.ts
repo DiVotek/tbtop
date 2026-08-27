@@ -59,6 +59,7 @@ export interface TabItem {
 	body: StructureNode;
 	icon?: IconDef;
 	badge?: string;
+	active?: boolean;
 }
 
 export interface FormController {

@@ -284,7 +284,7 @@ $s->flex([$badge, $s->unsavedIndicator(), $s->spacer(), $save], variant: 'card')
 | `displayImage` | `displayImage(string $src): DisplayImageBlock` | Full-size image (`->alt()`/`->caption()`) or a file-download link (`->asLink()`); author passes the URL |
 | `displayRichtext` | `displayRichtext(array $state): DisplayRichtextBlock` | Read-only render of a stored Lexical `SerializedEditorState` map |
 | `displayKeyValue` | `displayKeyValue(array $map): DisplayKeyValueBlock` | `<dl>` map render of key/value pairs |
-| `tabs` | `tabs(array $tabs, array $opts = []): Node` | Tab container; each tab is `['label' => '...', 'body' => ...]` |
+| `tabs` | `tabs(array $tabs, array $opts = []): Node` | Tab container; each tab is `['label' => '...', 'body' => ...]`; add `'active' => true` to open a tab other than the first (last flagged wins) |
 | `actionGroup` | `actionGroup(string $label, array $actions, ?string $as = null): Node` | Button group or dropdown; `$as` is `'buttons'`\|`'dropdown'` (default `'buttons'`) |
 | `dropdown` | `dropdown(string $label, array $actions): Node` | Sugar for `actionGroup(..., 'dropdown')` — always a menu, even for one action |
 
@@ -422,8 +422,9 @@ Returned by `$s->table(string $name)`.
 
 The shape of a table: `columns()` + `query()` are the minimum. Everything else is opt-in —
 search (`searchable()`, `Column::individuallySearchable()`), filters (`filters()` +
-`filtersIn()`), tabs, sorting, pagination, row/bulk/header actions, drag-reorder, grouping,
-inline-editable cells, and the record-URL row link.
+`filtersIn()`, which accepts only `'modal'` or `'inline'` and throws otherwise), tabs,
+sorting, pagination, row/bulk/header actions, drag-reorder, grouping, inline-editable cells,
+and the record-URL row link.
 
 **Toolbar visibility** — three knobs that are easy to confuse:
 

@@ -694,7 +694,8 @@
 									"label": { "type": "string" },
 									"body": { "$ref": "#/$defs/node" },
 									"icon": { "$ref": "#/$defs/icon" },
-									"badge": { "type": "string" }
+									"badge": { "type": "string" },
+									"active": { "type": "boolean" }
 								}
 							},
 							{ "$ref": "#/$defs/tableTab" }

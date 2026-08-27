@@ -3,10 +3,10 @@ import { cn } from "../lib/cn";
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import { collectFieldNames, countTabErrors, firstTabIndexWithError } from "../structure/fieldNames";
 import { useNearestFormHandle } from "../structure/formContext";
-import type { StructureNode } from "../structure/structure";
 import { TriggerVariantProvider } from "../structure/triggerVariantContext";
+import type { TabItem } from "../structure/types";
 import { Badge } from "../ui/badge";
-import { type IconDef, NodeIcon } from "../ui/node-icon";
+import { NodeIcon } from "../ui/node-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
 import { mapChildren } from "./mapChildren";
@@ -40,7 +40,7 @@ interface GridOptions {
 
 interface TabsOptions {
 	name?: string;
-	tabs: { name?: string; label: string; body: StructureNode; icon?: IconDef; badge?: string }[];
+	tabs: TabItem[];
 }
 
 interface WidgetOptions {
@@ -160,7 +160,7 @@ export function GridBlock({ options, children, renderChild }: RenderProps<GridOp
 export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 	const { name, tabs } = options;
 	const values = tabs.map((tab, index) => tab.name ?? String(index));
-	const defaultValue = values[0] ?? "0";
+	const defaultValue = defaultTabValue(tabs, values);
 	const urlName = name && tabs.every((tab) => tab.name) ? name : undefined;
 	const tabFieldNames = useTabFieldNames(tabs);
 	const [active, setActive] = useState(() =>
@@ -316,6 +316,12 @@ function useTabErrorAutoSwitch({
 	}, [errorScrollTick, activeIndex, tabFieldNames, fieldErrors, setActiveIndex]);
 
 	return counts;
+}
+
+/** Several `active` flags is an authoring slip, so the last one wins. */
+function defaultTabValue(tabs: TabItem[], values: string[]): string {
+	const activeIndex = tabs.findLastIndex((tab) => tab.active === true);
+	return (activeIndex >= 0 ? values[activeIndex] : values[0]) ?? "0";
 }
 
 export function WidgetBlock({ options }: RenderProps<WidgetOptions>) {

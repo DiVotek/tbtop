@@ -185,6 +185,19 @@ test("TabsBlock selects a remaining tab when the active tab is removed", () => {
 	expect(queryByText("First panel")).toBeTruthy();
 });
 
+test("TabsBlock opens the last tab flagged active instead of the first", () => {
+	const node = s.tabs([
+		s.tab("General", textNode("First panel")),
+		s.tab("Advanced", textNode("Second panel"), { active: true }),
+		s.tab("Danger", textNode("Third panel"), { active: true }),
+	]);
+	const { getByText, queryByText } = render(renderNode(node));
+
+	expect(getByText("Third panel")).toBeTruthy();
+	expect(queryByText("First panel")).toBeNull();
+	expect(queryByText("Second panel")).toBeNull();
+});
+
 // ---------------------------------------------------------------------------
 // GridBlock — breakpoint cols
 // ---------------------------------------------------------------------------

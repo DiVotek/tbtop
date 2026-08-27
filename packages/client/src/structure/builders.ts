@@ -72,9 +72,14 @@ export function buildTabs(items: TabItem[], opts?: Bag): StructureNode {
 export function buildTab(
 	label: string,
 	body: StructureNode,
-	opts?: { name?: string; icon?: string | IconDef; badge?: string | number },
+	opts?: { name?: string; icon?: string | IconDef; badge?: string | number; active?: boolean },
 ): TabItem {
-	const tab: TabItem = { ...(opts?.name ? { name: opts.name } : {}), label, body };
+	const tab: TabItem = {
+		...(opts?.name ? { name: opts.name } : {}),
+		label,
+		body,
+		...(opts?.active === true ? { active: true } : {}),
+	};
 	if (opts?.icon !== undefined) {
 		tab.icon =
 			typeof opts.icon === "string"
