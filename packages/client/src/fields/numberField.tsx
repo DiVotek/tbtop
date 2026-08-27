@@ -17,6 +17,7 @@ export function NumberForm({
 	name,
 	value,
 	onChange,
+	onBlur,
 	disabled,
 	invalid,
 	describedBy,
@@ -30,6 +31,7 @@ export function NumberForm({
 				type="number"
 				defaultValue={typeof value === "number" ? String(value) : ""}
 				onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+				onBlur={onBlur}
 				disabled={disabled}
 				aria-invalid={invalid || undefined}
 				aria-describedby={describedBy}

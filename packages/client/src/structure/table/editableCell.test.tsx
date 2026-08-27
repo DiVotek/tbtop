@@ -233,6 +233,40 @@ describe("EditableCell: text input", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Number — raw value with affix, commits a number on blur
+// ---------------------------------------------------------------------------
+
+describe("EditableCell: number input", () => {
+	const priceCol: EditableCellTestCol = {
+		name: "price",
+		kind: "number",
+		suffix: { kind: "displayText", options: { content: "USD" }, meta: {} },
+		editable: { as: "number", input: { step: 0.01 } },
+	};
+
+	test("shows the raw stored number next to the suffix and posts a number on blur", async () => {
+		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
+		const { container, getByText } = render(
+			<EditableCell col={priceCol} row={row("7", { price: 1234.5 })} saveCell={saveCell} />,
+		);
+
+		const input = container.querySelector("input") as HTMLInputElement;
+		expect(input.type).toBe("number");
+		expect(input.value).toBe("1234.5");
+		expect(input.step).toBe("0.01");
+		expect(getByText("USD")).toBeTruthy();
+
+		await userEvent.clear(input);
+		await userEvent.type(input, "99.9");
+		expect(saveCell).toHaveBeenCalledTimes(0);
+		fireEvent.blur(input);
+
+		await waitFor(() => expect(saveCell).toHaveBeenCalledTimes(1));
+		expect(saveCell.mock.calls[0]?.[0]).toEqual({ column: "price", id: "7", value: 99.9 });
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Select (static) — forwards options, persists on change (not blur)
 // ---------------------------------------------------------------------------
 
