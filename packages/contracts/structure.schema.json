@@ -91,6 +91,7 @@
 									"recordUrl": { "type": "boolean" },
 									"recordUrlNewTab": { "type": "boolean" },
 									"deferFilters": { "type": "boolean" },
+									"filtersIn": { "type": "string", "enum": ["modal", "inline"] },
 									"filtersFormColumns": { "type": "integer" },
 									"filtersFormWidth": {
 										"type": "string",
