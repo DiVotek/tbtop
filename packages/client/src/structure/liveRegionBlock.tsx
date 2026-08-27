@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { readDeps } from "../fields/fieldDependencies";
+import { readDeps, useFieldDependencies } from "../fields/fieldDependencies";
 import type { RenderProps } from "../render/blockRegistry";
 import { useClientActionContext } from "./actionContext";
 import { AsyncErrorBox } from "./asyncErrorBox";
-import { useNearestFormController } from "./formContext";
 import type { ClientActionContext, StructureNode } from "./types";
 
 export interface LiveRegionOptions {
@@ -23,9 +22,9 @@ export interface LiveRegionOptions {
  */
 export function LiveRegionBlock({ options, renderChild }: RenderProps<LiveRegionOptions>) {
 	const ctx = useClientActionContext();
-	const ctrl = useNearestFormController();
 	const dependsOn = options.dependsOn ?? [];
-	const { deps } = readDeps(dependsOn, ctrl?.data ?? {});
+	// Provider-aware: inside a repeater row the deps resolve against the row bag.
+	const { deps } = useFieldDependencies({ config: { dependsOn } });
 	const depsKey = JSON.stringify(deps);
 
 	const [nodes, setNodes] = useState<StructureNode[]>(options.initial ?? []);
