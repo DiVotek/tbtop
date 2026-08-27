@@ -598,3 +598,39 @@ it('Column: toggle() without onSave() throws when added to a table via columns()
         ->query(fn () => null)
     )->toThrow(InvalidArgumentException::class, 'requires ->onSave()');
 });
+
+it('Column: numberInput() + step() emit editable.as=number with input.step and kind=number', function (): void {
+    $json = encodeColumn(
+        Column::make('price')->numberInput()->step('0.01')->onSave(fn ($r, $v) => null)
+    );
+
+    expect($json['kind'])->toBe('number')
+        ->and($json['editable'])->toBe(['as' => 'number', 'input' => ['step' => 0.01]]);
+});
+
+it('Column: numberInput() keeps an explicitly set kind and step() accepts a number or "any"', function (): void {
+    $json = encodeColumn(Column::make('qty')->kind('text')->numberInput()->step('any'));
+
+    expect($json['kind'])->toBe('text')
+        ->and($json['editable']['input']['step'])->toBe('any')
+        ->and(fn () => Column::make('qty')->step('lots'))->toThrow(InvalidArgumentException::class);
+});
+
+it('Column: prefix()/suffix() serialize display nodes at column level for any kind', function (): void {
+    $s = new S;
+    $json = encodeColumn(Column::make('price')->number(2)->prefix('$')->suffix($s->displayText('USD')->variant('muted')));
+
+    expect($json['prefix']['kind'])->toBe('displayText')
+        ->and($json['prefix']['options']['content'])->toBe('$')
+        ->and($json['suffix']['kind'])->toBe('displayText')
+        ->and($json['suffix']['options']['content'])->toBe('USD')
+        ->and($json['suffix']['options']['variant'])->toBe('muted')
+        ->and($json)->not->toHaveKey('editable');
+});
+
+it('Column: prefix() rejects a nested Field', function (): void {
+    $s = new S;
+
+    expect(fn () => Column::make('price')->prefix($s->text('other')))
+        ->toThrow(InvalidArgumentException::class, 'Column "price" prefix() received field "other"');
+});

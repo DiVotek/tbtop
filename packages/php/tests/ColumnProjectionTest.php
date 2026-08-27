@@ -121,6 +121,29 @@ it('ColumnProjection: hidden column not processed', function (): void {
 });
 
 // ---------------------------------------------------------------------------
+// editable columns are projected raw
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: an editable column keeps its stored value while a non-editable number(2) column is formatted', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('price')->numberInput()->step('0.01')->suffix('USD')
+                ->formatUsing(fn ($v) => 'formatted')
+                ->onSave(fn () => null),
+            Column::make('title')->textInput()->formatUsing(fn ($v) => strtoupper((string) $v))->onSave(fn () => null),
+            Column::make('id')->number(2),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->price)->toBe(1000)
+        ->and($result[0]->title)->toBe('Post A')
+        ->and($result[0]->id)->toBe('1.00');
+});
+
+// ---------------------------------------------------------------------------
 // Sort whitelist (security red test)
 // ---------------------------------------------------------------------------
 

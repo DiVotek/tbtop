@@ -70,12 +70,14 @@ The table builder, its columns, and filter tabs.
 | `kind(string $kind): static` | Raw kind string; prefer a dedicated kind method (money(), badge(), image(), ...) when one exists. |
 | `label(string $label): static` | Column header text; defaults to a humanized $name when unset. |
 | `link(Closure $url, bool $external = false, ?string $icon = null): static` | Render the column as a link. $url receives the row (the Eloquent model, or the stdClass for DB::table() rows) and returns a URL or null (null → empty cell). Never serialized. Like every kind method, exclusive with the other kinds — the last one called wins. |
-| `money(string $currency): static` | Money kind: takes the stored value in MINOR units (integer cents), divides by 100 and appends $currency — store 1999, not 19.99. There is no money input kind: on forms use number()->step('0.01')->prefix('$') and convert to cents in onSubmit. |
+| `money(string $currency): static` | Money kind: takes the stored value in MINOR units (integer cents), divides by 100 and appends $currency — store 1999, not 19.99. Output only: for an inline-editable decimal amount use numberInput()->step('0.01')->suffix('USD'), and on forms number()->step('0.01')->prefix('$') with conversion in onSubmit. |
 | `muted(bool $value = true): static` | Style the cell text small and muted — for secondary metadata columns (dates, parents, counts). |
 | `noWrap(bool $value = true): static` | Prevent cell content from wrapping (single line, may overflow). Mutually exclusive with wrap()/truncate() — last call wins. |
 | `number(?int $decimals = null): static` | Kind sugar: sets kind = 'number' and stores $decimals; formatting (number_format) is applied server-side by KindFormat, not here. Omitting $decimals leaves the raw value unformatted. |
+| `numberInput(): static` | Make the column an inline number input; sets kind = 'number' when no kind is already set. The cell ships the stored value raw (no number_format) so the editor can round-trip it; add prefix()/suffix() for a unit and step() for decimals. |
 | `onSave(Closure $fn): static` | Consumer-provided save closure — REQUIRED when column is editable. |
 | `options(array $options): static` | Static options for an editable select column. Uses the same {value, label} normalization the Select field emits so the wire shape matches. |
+| `prefix(JsonSerializable\|string $content): static` | Display node rendered before the cell value — in display mode for any kind (boolean ignores it) and inside the inline editor for text / number / select columns. A string becomes a TextBlock; a nested Field throws. |
 | `rounded(): static` | Rounded-corner shape. Last shape call wins. |
 | `rules(array\|string $rules): static` | Laravel validation rules applied before the save closure runs. Accepts pipe-delimited string or an array; deduplicates entries. |
 | `searchable(bool $searchable = true): static` | Include this column in the table's global search. See TableBuilder::searchable() for how column- and table-level search combine. |
@@ -84,6 +86,8 @@ The table builder, its columns, and filter tabs.
 | `sortUsing(Closure $fn): static` | Server-only: full control over the ORDER BY when this column is sorted. Wins over sortBy(). fn(Builder $query, string $direction): void\|Builder — $direction is already validated to 'asc'\|'desc'. Never serialized. |
 | `sortable(bool $sortable = true): static` | Allow the user to sort the table by this column. |
 | `square(): static` | Square shape (sharp corners). Last shape call wins. |
+| `step(string\|int\|float $step): static` | Increment granularity of the inline number editor (its step attribute). Accepts a number, a numeric string ('0.01' — shipped as a number), or 'any' for arbitrary precision. |
+| `suffix(JsonSerializable\|string $content): static` | Display node rendered after the cell value (e.g. a currency code). Same rules as prefix(). |
 | `textInput(): static` | Make the column an inline text input; sets kind = 'text' when no kind is already set. |
 | `time(?string $format = null): static` | Kind sugar: sets kind = 'time' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'H:i'. |
 | `toggle(): static` | Make the column an inline boolean toggle; sets kind = 'boolean'. |
