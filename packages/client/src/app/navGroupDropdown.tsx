@@ -1,3 +1,4 @@
+import { Link } from "@inertiajs/react";
 import { ChevronDownIcon } from "lucide-react";
 import { cn } from "../lib/cn";
 import {
@@ -30,13 +31,27 @@ interface NavGroupDropdownProps {
  * item icons and badges carry over unchanged. The trigger highlights when
  * the current page lives inside the group. Being a dropdown, it subsumes
  * the sidebar's collapsible/collapsed behaviour — every group is collapsed
- * until opened.
+ * until opened. The ungrouped bucket (group: null) has no trigger to open:
+ * its items render inline, each as its own link (icon-only in rail mode).
  */
 export function NavGroupDropdown({ group, currentUrl, rail = false }: NavGroupDropdownProps) {
 	const active = group.items.some((item) => containsActive(item, currentUrl));
+	if (group.group === null) {
+		return (
+			<div className={cn("flex gap-1", rail && "flex-col")} data-testid="nav-ungrouped">
+				{group.items.map((item) =>
+					rail ? (
+						<RailItemLink key={item.href} item={item} currentUrl={currentUrl} />
+					) : (
+						<NavItemLink key={item.href} item={item} currentUrl={currentUrl} />
+					),
+				)}
+			</div>
+		);
+	}
 	return (
 		<DropdownMenu>
-			<GroupTrigger group={group} active={active} rail={rail} />
+			<GroupTrigger group={group} label={group.group} active={active} rail={rail} />
 			<DropdownMenuContent
 				align="start"
 				side={rail ? "right" : "bottom"}
@@ -53,10 +68,12 @@ export function NavGroupDropdown({ group, currentUrl, rail = false }: NavGroupDr
 
 function GroupTrigger({
 	group,
+	label,
 	active,
 	rail,
 }: {
 	group: NavGroup;
+	label: string;
 	active: boolean;
 	rail: boolean;
 }) {
@@ -66,7 +83,7 @@ function GroupTrigger({
 				<TooltipTrigger asChild>
 					<DropdownMenuTrigger
 						data-testid={`nav-group-trigger-${group.key}`}
-						aria-label={group.group}
+						aria-label={label}
 						className={cn(
 							"flex size-9 items-center justify-center rounded-md hover:bg-accent",
 							active && "bg-accent",
@@ -75,7 +92,7 @@ function GroupTrigger({
 						<NodeIcon icon={group.icon} className="size-4 shrink-0" />
 					</DropdownMenuTrigger>
 				</TooltipTrigger>
-				<TooltipContent side="right">{group.group}</TooltipContent>
+				<TooltipContent side="right">{label}</TooltipContent>
 			</Tooltip>
 		);
 	}
@@ -88,7 +105,7 @@ function GroupTrigger({
 			)}
 		>
 			<NodeIcon icon={group.icon} className="size-4 shrink-0" />
-			<span>{group.group}</span>
+			<span>{label}</span>
 			<ChevronDownIcon className="size-3.5 shrink-0 opacity-60" aria-hidden />
 		</DropdownMenuTrigger>
 	);
@@ -114,5 +131,27 @@ function DropdownNavItem({ item, currentUrl }: { item: NavItem; currentUrl: stri
 				))}
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
+	);
+}
+
+/** Rail rendering of an ungrouped item: icon-only link, label in a tooltip. */
+function RailItemLink({ item, currentUrl }: { item: NavItem; currentUrl: string }) {
+	const active = containsActive(item, currentUrl);
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Link
+					href={item.href}
+					aria-label={item.label}
+					className={cn(
+						"flex size-9 items-center justify-center rounded-md hover:bg-accent",
+						active && "bg-accent",
+					)}
+				>
+					<NodeIcon icon={item.icon} className="size-4 shrink-0" />
+				</Link>
+			</TooltipTrigger>
+			<TooltipContent side="right">{item.label}</TooltipContent>
+		</Tooltip>
 	);
 }

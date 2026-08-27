@@ -15,7 +15,8 @@ export interface NavItem {
 export interface NavGroup {
 	/** Stable, unlocalized key — used to persist collapse state across locales. */
 	key: string;
-	group: string;
+	/** Display label; null = ungrouped items, rendered without heading or indent. */
+	group: string | null;
 	items: NavItem[];
 	icon?: IconDef;
 	collapsible?: boolean;

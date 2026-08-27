@@ -135,6 +135,27 @@ describe("NavGroupSection", () => {
 		const stored = JSON.parse(window.localStorage.getItem("tbtop:nav-collapsed") ?? "{}");
 		expect(stored.content).toBe(false);
 	});
+
+	test("an ungrouped bucket (group: null) renders its items with no heading and no group indent", () => {
+		const nav: NavGroup[] = [
+			{ key: "", group: null, items: [{ label: "Dashboard", href: "/admin/dashboard" }] },
+			{ key: "Content", group: "Content", items: [{ label: "Posts", href: "/admin/posts" }] },
+		];
+		const { getByText, container } = render(
+			<AdminLayoutShell nav={nav} user={USER} currentUrl="/admin">
+				<div />
+			</AdminLayoutShell>,
+		);
+
+		const dashboard = getByText("Dashboard").closest("a");
+		const posts = getByText("Posts").closest("a");
+		expect(dashboard).toBeTruthy();
+		expect(posts?.parentElement?.className).toContain("pl-5");
+		expect(dashboard?.parentElement?.className).not.toContain("pl-5");
+		// Only one group heading exists in the sidebar: Content.
+		const headings = Array.from(container.querySelectorAll(".uppercase"));
+		expect(headings.map((el) => el.textContent)).toEqual(["Content"]);
+	});
 });
 
 describe("NavItemLink density", () => {

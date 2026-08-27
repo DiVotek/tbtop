@@ -12,9 +12,17 @@ use Tbtop\Admin\Panels\CurrentPanel;
 final class NavBuilder
 {
     /**
+     * Bucket key for items that declare no group. Emitted with `group: null`
+     * so the client renders them without a heading or indent.
+     */
+    private const UNGROUPED = '';
+
+    /**
      * Builds the sidebar tree from the panel's pages' nav() declarations plus
      * any panel-level navigationItems(). Pages with route params, null nav(),
-     * or a failing gate are skipped. A nav()['parent'] nests a page under
+     * or a failing gate are skipped. Items that declare no group land in a
+     * single ungrouped bucket (wire `group: null`), which sorts like any
+     * undeclared group. A nav()['parent'] nests a page under
      * another page's item (unknown/cyclic parents throw at build time); a
      * page whose parent is gated out for the current user promotes to its
      * own group's top level instead of vanishing. Per-item icon/badge come
@@ -46,11 +54,11 @@ final class NavBuilder
             if ($entry['parent'] !== null && self::gatePasses($entries[$entry['parent']]['can'])) {
                 continue;
             }
-            $groups[$entry['group']][] = self::buildNode($class, $entries, $childrenOf);
+            $groups[$entry['group'] ?? self::UNGROUPED][] = self::buildNode($class, $entries, $childrenOf);
         }
 
         foreach ($panel->navigationItems() as $item) {
-            $groups[$item->getGroup() ?? 'General'][] = self::customItemFrom($item);
+            $groups[$item->getGroup() ?? self::UNGROUPED][] = self::customItemFrom($item);
         }
 
         return self::assemble($groups, $panel->navigationGroups());
@@ -62,7 +70,7 @@ final class NavBuilder
      * for parent lookups.
      *
      * @param  list<class-string<Page>>  $classes
-     * @return array<class-string<Page>, array{group: string, item: array<string, mixed>, parent: class-string<Page>|null, can: string|null}>
+     * @return array<class-string<Page>, array{group: string|null, item: array<string, mixed>, parent: class-string<Page>|null, can: string|null}>
      */
     private static function collectPages(array $classes, string $prefix): array
     {
@@ -75,7 +83,7 @@ final class NavBuilder
             }
             $parent = $nav['parent'] ?? null;
             $entries[$class] = [
-                'group' => (string) ($nav['group'] ?? 'General'),
+                'group' => isset($nav['group']) ? (string) $nav['group'] : null,
                 'item' => self::itemFrom($nav, $prefix.'/'.trim($path, '/'), $class),
                 'parent' => $parent !== null ? (string) $parent : null,
                 'can' => $class::can(),
@@ -228,7 +236,8 @@ final class NavBuilder
      * Groups are ordered per navigationGroups()'s declaration; groups it
      * doesn't mention keep their first-seen order and sort after every
      * declared group. The emitted 'group' is the translated display label
-     * (falling back to the key when no NavGroup declared one).
+     * (falling back to the key when no NavGroup declared one), or null for
+     * the ungrouped bucket.
      *
      * @param  array<string, list<array<string, mixed>>>  $groups
      * @param  list<NavGroup>  $navGroups
@@ -256,7 +265,8 @@ final class NavBuilder
         foreach ($keys as $key) {
             $items = $groups[$key];
             usort($items, static fn (array $a, array $b) => $a['order'] <=> $b['order']);
-            $out[] = ['key' => $key, 'group' => $labels[$key] ?? $key, 'items' => $items, ...($meta[$key] ?? [])];
+            $label = $key === self::UNGROUPED ? null : ($labels[$key] ?? $key);
+            $out[] = ['key' => $key, 'group' => $label, 'items' => $items, ...($meta[$key] ?? [])];
         }
 
         return $out;

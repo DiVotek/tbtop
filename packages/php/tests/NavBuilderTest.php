@@ -20,6 +20,7 @@ use Tbtop\Admin\Tests\Fixtures\NavPage;
 use Tbtop\Admin\Tests\Fixtures\NavParentPage;
 use Tbtop\Admin\Tests\Fixtures\PostEditPage;
 use Tbtop\Admin\Tests\Fixtures\PostsIndexPage;
+use Tbtop\Admin\Tests\Fixtures\UngroupedNavPage;
 
 it('builds nav groups from page declarations, skipping parametrized and nav-less pages', function () {
     $panel = panelWithPages([
@@ -264,7 +265,7 @@ it('NavBuilder: merges panel navigationItems() into their declared group alongsi
         ]);
 });
 
-it('NavBuilder: a navigationItems() entry without a group defaults to General', function () {
+it('NavBuilder: a navigationItems() entry without a group lands in the ungrouped (null) group', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)
             ->id('admin')
@@ -274,8 +275,37 @@ it('NavBuilder: a navigationItems() entry without a group defaults to General', 
     );
 
     expect(NavBuilder::build($panel))->toBe([
-        ['key' => 'General', 'group' => 'General', 'items' => [['label' => 'Docs', 'href' => 'https://example.test', 'order' => 0]]],
+        ['key' => '', 'group' => null, 'items' => [['label' => 'Docs', 'href' => 'https://example.test', 'order' => 0]]],
     ]);
+});
+
+it('NavBuilder: a page whose nav() omits group emits group null, ordered among the other groups', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([UngroupedNavPage::class, NavPage::class])
+            ->navigationGroups([NavGroup::make('Content')->label('Контент')])
+    );
+
+    $nav = NavBuilder::build($panel);
+
+    // Declared groups first; the ungrouped bucket is undeclared, so it sorts after.
+    expect(array_column($nav, 'group'))->toBe(['Контент', null])
+        ->and($nav[1]['items'][0]['label'])->toBe('Ungrouped item');
+});
+
+it('NavBuilder: an explicit General group is still labeled by its NavGroup', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([])
+            ->navigationItems([NavItem::make('Docs')->url('https://example.test')->group('General')])
+            ->navigationGroups([NavGroup::make('General')->label('Загальне')])
+    );
+
+    expect(NavBuilder::build($panel)[0])->toMatchArray(['key' => 'General', 'group' => 'Загальне']);
 });
 
 it('PanelConfig: exposes userMenuItems as sparse wire payloads through the current panel', function () {

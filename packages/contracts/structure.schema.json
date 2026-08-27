@@ -855,7 +855,7 @@
 			"required": ["key", "group", "items"],
 			"properties": {
 				"key": { "type": "string" },
-				"group": { "type": "string" },
+				"group": { "type": ["string", "null"] },
 				"items": { "type": "array", "items": { "$ref": "#/$defs/navItem" } },
 				"icon": { "$ref": "#/$defs/icon" },
 				"collapsible": { "type": "boolean" },
