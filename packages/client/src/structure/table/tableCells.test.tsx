@@ -413,6 +413,48 @@ describe("TableCell: column display properties", () => {
 	});
 });
 
+describe("TableCell: column affixes", () => {
+	test("renders prefix and suffix nodes around a display value", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", price: "1,234.50" }],
+			columns: [
+				{
+					name: "price",
+					label: "Price",
+					kind: "number",
+					prefix: { kind: "displayText", options: { content: "$" }, meta: {} },
+					suffix: { kind: "displayText", options: { content: "USD" }, meta: {} },
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.querySelector("[data-slot=cell-prefix]")?.textContent).toBe("$");
+		expect(td?.querySelector("[data-slot=cell-suffix]")?.textContent).toBe("USD");
+		expect(td?.textContent).toBe("$1,234.50USD");
+	});
+
+	test("boolean cells ignore affixes", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", active: true }],
+			columns: [
+				{
+					name: "active",
+					label: "Active",
+					kind: "boolean",
+					suffix: { kind: "displayText", options: { content: "yes" }, meta: {} },
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector("[data-slot=cell-suffix]")).toBeNull();
+	});
+});
+
 describe("TableCell: per-row tooltip", () => {
 	test("static col.tooltip renders a Radix tooltip trigger in the td (no native title)", async () => {
 		const node = s.table({

@@ -241,6 +241,14 @@ class KitchenSinkPage extends Page
                         ])
                         ->rules('required|in:draft,published')
                         ->onSave(fn ($record, $value) => null),
+                    Column::make('price')
+                        ->label('Price (editable)')
+                        ->numberInput()
+                        ->step('0.01')
+                        ->suffix('USD')
+                        ->rules('required|numeric|min:0')
+                        ->onSave(fn ($record, $value) => null),
+                    Column::make('rank')->number()->prefix('#')->label('Rank'),
                     Column::make('view')
                         ->label('View')
                         ->link(fn ($row) => '/admin/posts/'.data_get($row, 'id'), external: true, icon: 'external-link'),

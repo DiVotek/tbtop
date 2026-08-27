@@ -522,11 +522,22 @@ value looks identical in a table cell and a detail view.
 entirely; `visible(fn)` decides that per request, server-side; `toggleable()` ships the
 column and lets the user hide it, with the second argument choosing the initial state.
 
-**Inline editing.** `toggle()`, `textInput()` and `selectColumn()` make a cell editable
-in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()` for per-cell
-validation and `options()` for the select variant. The save posts to the cell endpoint
-and returns effects — see [wiring.md](./wiring.md) and
+**Inline editing.** `toggle()`, `textInput()`, `numberInput()` and `selectColumn()` make
+a cell editable in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()`
+for per-cell validation, `options()` for the select variant and `step()` for the number
+variant (`step('0.01')` for decimals). The save posts to the cell endpoint and returns
+effects — see [wiring.md](./wiring.md) and
 [Recipe 7](./recipes.md#recipe-7--inline-editable-column-toggle--onsave).
+
+> **Editable cells ship the stored value raw.** `formatUsing()` and the kind formatters
+> (`number(2)`, `date()`, …) are skipped for an editable column — the editor has to
+> round-trip what is in the database, and `"1,234.56"` is not a number. Use
+> `prefix()`/`suffix()` for the unit instead of formatting it into the value.
+
+**Affixes.** `prefix()` / `suffix()` take a string or a display node and render it next
+to the cell value in display mode for any kind (boolean ignores them), and inside the
+inline editor for text / number / select columns. Typical use:
+`Column::make('price')->numberInput()->step('0.01')->suffix('USD')`.
 
 ```php
 // from apps/demo/app/Admin/Pages/PostsIndexPage.php

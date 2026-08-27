@@ -1218,6 +1218,42 @@
                             }
                         },
                         {
+                            "name": "price",
+                            "label": "Price (editable)",
+                            "kind": "number",
+                            "suffix": {
+                                "kind": "displayText",
+                                "options": {
+                                    "content": "USD",
+                                    "variant": "body"
+                                },
+                                "meta": {}
+                            },
+                            "editable": {
+                                "as": "number",
+                                "constraints": {
+                                    "required": true,
+                                    "min": 0
+                                },
+                                "input": {
+                                    "step": 0.01
+                                }
+                            }
+                        },
+                        {
+                            "name": "rank",
+                            "label": "Rank",
+                            "kind": "number",
+                            "prefix": {
+                                "kind": "displayText",
+                                "options": {
+                                    "content": "#",
+                                    "variant": "body"
+                                },
+                                "meta": {}
+                            }
+                        },
+                        {
                             "name": "view",
                             "label": "View",
                             "kind": "link",

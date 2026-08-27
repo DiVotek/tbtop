@@ -803,11 +803,13 @@
 							"icon": { "type": "string" }
 						}
 					},
+					"prefix": { "$ref": "#/$defs/node" },
+					"suffix": { "$ref": "#/$defs/node" },
 					"editable": {
 						"type": "object",
 						"required": ["as"],
 						"properties": {
-							"as": { "type": "string", "enum": ["boolean", "text", "select"] },
+							"as": { "type": "string", "enum": ["boolean", "text", "select", "number"] },
 							"constraints": { "$ref": "#/$defs/constraints" },
 							"options": {
 								"type": "array",
@@ -819,6 +821,15 @@
 										"label": { "type": "string" }
 									}
 								}
+							},
+							"input": {
+								"type": "object",
+								"properties": {
+									"step": {
+										"oneOf": [{ "type": "number" }, { "type": "string", "enum": ["any"] }]
+									}
+								},
+								"additionalProperties": false
 							}
 						},
 						"additionalProperties": false

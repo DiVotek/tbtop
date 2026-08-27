@@ -84,8 +84,16 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 		<div onClick={(e) => e.stopPropagation()}>
 			{renderDescriptor(descriptor, {
 				kind: col.editable.as,
-				// Forward static select options so the Select renders its choices
-				options: { name: col.name, options: col.editable.options },
+				// Static select options, editor attributes (step) and the column's
+				// affixes — text/number/select forms wrap themselves in InputGroup
+				// and read prefix/suffix from here.
+				options: {
+					name: col.name,
+					options: col.editable.options,
+					...col.editable.input,
+					prefix: col.prefix,
+					suffix: col.suffix,
+				},
 				meta: {},
 				ctx: {
 					surface: "form",

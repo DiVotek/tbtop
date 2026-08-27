@@ -27,6 +27,12 @@ domain: tables
 - **Contract gate covers reorder.** The `reorder` option is added to the
   `kind=="table"` block in `structure.schema.json` and exercised by the
   kitchen-sink fixture, so schema-conformance + snapshot both pin the wire shape.
+- **Editable columns are projected raw.** `ColumnProjection` skips `formatUsing()` and
+  the kind formatters for any editable column: the inline editor must round-trip the
+  stored value, and a `number_format`-ed string cannot be edited as a number. Units live
+  in column-level `prefix`/`suffix` display nodes (shared `AffixNode` normalization with
+  form fields), rendered in display mode and inside the editor's `InputGroup`. `money()`
+  stays output-only; decimals edit through `numberInput()->step('0.01')`.
 
 ## Why
 

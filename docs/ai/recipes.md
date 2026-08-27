@@ -478,7 +478,10 @@ Column::make('published')
 Notes:
 
 - `toggle()` sets `kind = 'boolean'` and marks the column inline-editable in one call. For
-  text use `textInput()`, for a static select use `selectColumn()->options([...])`.
+  text use `textInput()`, for a static select use `selectColumn()->options([...])`, for a
+  number use `numberInput()->step('0.01')` — add `suffix('USD')` (or `prefix('$')`) for the
+  unit; the cell shows the stored value raw so the editor can round-trip it. `money()` stays
+  output-only.
 - `onSave` is **required** on an editable column — omit it and the cell has nowhere to
   persist. The closure's first parameter is type-hinted to your model; the framework
   resolves the row to a model instance before calling it.
