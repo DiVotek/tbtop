@@ -66,7 +66,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 
 | Method | What it does |
 |---|---|
-| `group(string $group): self` | Sidebar group heading this item is listed under (nav context only). |
+| `group(string $group): self` | Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
 | `newTab(bool $newTab = true): self` | Open url() in a new browser tab instead of navigating in place. |
 | `sort(int $order): self` | Sort position within its group (nav context only). |

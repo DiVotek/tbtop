@@ -57,6 +57,17 @@ domain: panels
   renderer, so item icons/badges carry over), while the mobile drawer keeps `vertical` so the
   same tree stacks as collapsible groups — no new wire kind, no schema/contract change. Both
   layouts reuse `SidebarDrawer` for mobile.
+- **No default nav group.** Items that declare no group land in one ungrouped bucket that
+  ships as `navGroup.group: null` (key `''`) and renders without heading or indent; it sorts
+  like any undeclared group. The old implicit `General` group forced consumers to wrap a
+  Dashboard entry in a group just to see it. An explicit `'General'` still works as a label.
+- **404s render inside the panel chrome.** Each panel's default route group ends with a
+  `Route::fallback()` → `PanelErrorController`, and the provider registers a
+  `NotFoundHttpException` renderable that fires only while `CurrentPanel` is bound and the
+  request is not a JSON client. Both go through `PanelErrorPage` → Inertia `admin/error`
+  `{status, title, message}` with the normal shared `tbtop` props; the client's
+  `AdminErrorPage` reuses `AdminPage`'s layout dispatcher. Requests outside a panel keep the
+  app handler — the package never overrides the consumer's `Handler`.
 
 ## Why
 

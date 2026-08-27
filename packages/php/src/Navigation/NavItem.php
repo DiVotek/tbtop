@@ -43,7 +43,7 @@ final class NavItem
         return $this;
     }
 
-    /** Sidebar group heading this item is listed under (nav context only). */
+    /** Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. */
     public function group(string $group): self
     {
         $this->group = $group;
