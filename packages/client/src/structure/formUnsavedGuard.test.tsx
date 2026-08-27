@@ -23,6 +23,7 @@ import { executeFlashEffects } from "../inertia/flashEffects";
 import { materialize } from "../inertia/materialize";
 import { markServerRedirect } from "../inertia/navigationIntent";
 import { renderNode } from "../render/structureRenderer";
+import { useModalStack } from "./modalStack";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 import type { ClientActionContext, StructureNode } from "./types";
@@ -486,12 +487,13 @@ describe("Form unsaved guard — tab close / refresh (beforeunload)", () => {
 // ---------------------------------------------------------------------------
 
 function FlashEffectProbe({ flash }: { flash: unknown }) {
+	const modals = useModalStack();
 	useEffect(() => {
 		const effects = readEffects(flash);
 		if (effects.length > 0) {
-			executeFlashEffects(effects, { notify: () => {} });
+			executeFlashEffects(effects, { notify: () => {}, modals });
 		}
-	}, [flash]);
+	}, [flash, modals]);
 	return null;
 }
 

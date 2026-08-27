@@ -52,7 +52,7 @@ final class Effects implements JsonSerializable
         return $this->push(array_filter(['kind' => 'resetForm', 'form' => $form]));
     }
 
-    /** Closes the modal the action ran in; a no-op outside a modal action. */
+    /** Closes the modal the action ran in — or, from a form-submit handler, the topmost open modal; a no-op when none is open. */
     public function closeModal(): self
     {
         return $this->push(['kind' => 'closeModal']);
