@@ -25,7 +25,7 @@ The table builder, its columns, and filter tabs.
 | `filters(array $fields): self` | Declare filter fields (same Field instances used in forms); renders in a modal unless filtersIn() says otherwise. Kinds with a built-in WHERE mapping: select/radio/number/date/datetime/time (=), boolean, in/tags (IN), daterange (between). Any other kind — text, relation, … — throws at request time unless it carries a filterUsing() closure. |
 | `filtersFormColumns(int $columns): self` | Number of grid columns for the filters form layout (1-12). |
 | `filtersFormWidth(string $width): self` | Width of the filters modal. Only meaningful when filtersIn('modal'). |
-| `filtersIn(string $mode): self` | Where declared filters() render: a dismissible modal, or inline in the toolbar. |
+| `filtersIn(string $mode): self` | Where declared filters() render: a dismissible modal, or inline in the toolbar. Any other mode throws — the client renders no filters for an unknown value. |
 | `groups(string $column): self` | Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first. |
 | `headerActions(array $actions): self` | Actions rendered above the table (e.g. a Create button). |
 | `openRecordUrlInNewTab(bool $newTab = true): self` | Open the record URL in a new browser tab. |

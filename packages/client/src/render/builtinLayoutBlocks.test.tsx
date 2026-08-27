@@ -31,7 +31,7 @@ test("StackBlock renders default flex-col gap-4", () => {
 	const node = s.stack([]);
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toBe("flex flex-col gap-4");
+	expect(el.className).toBe("flex flex-col [&>*]:min-w-0 gap-4");
 });
 
 // ---------------------------------------------------------------------------
@@ -185,6 +185,19 @@ test("TabsBlock selects a remaining tab when the active tab is removed", () => {
 	expect(queryByText("First panel")).toBeTruthy();
 });
 
+test("TabsBlock opens the last tab flagged active instead of the first", () => {
+	const node = s.tabs([
+		s.tab("General", textNode("First panel")),
+		s.tab("Advanced", textNode("Second panel"), { active: true }),
+		s.tab("Danger", textNode("Third panel"), { active: true }),
+	]);
+	const { getByText, queryByText } = render(renderNode(node));
+
+	expect(getByText("Third panel")).toBeTruthy();
+	expect(queryByText("First panel")).toBeNull();
+	expect(queryByText("Second panel")).toBeNull();
+});
+
 // ---------------------------------------------------------------------------
 // GridBlock — breakpoint cols
 // ---------------------------------------------------------------------------
@@ -197,7 +210,7 @@ test("GridBlock with an int cols renders the back-compat responsive classes", ()
 	const node = s.grid({ cols: 3 }, [textNode("a")]);
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toBe("grid gap-4 grid-cols-1 md:grid-cols-3");
+	expect(el.className).toBe("grid [&>*]:min-w-0 gap-4 grid-cols-1 md:grid-cols-3");
 });
 
 test("GridBlock with a breakpoint object cols renders each prefixed class", () => {
@@ -205,7 +218,7 @@ test("GridBlock with a breakpoint object cols renders each prefixed class", () =
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toBe(
-		"grid gap-4 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+		"grid [&>*]:min-w-0 gap-4 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
 	);
 });
 
@@ -213,7 +226,7 @@ test("GridBlock with no cols defaults to a single column", () => {
 	const node = s.grid({}, [textNode("a")]);
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toBe("grid gap-4 grid-cols-1");
+	expect(el.className).toBe("grid [&>*]:min-w-0 gap-4 grid-cols-1");
 });
 
 // ---------------------------------------------------------------------------

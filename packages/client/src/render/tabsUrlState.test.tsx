@@ -76,6 +76,26 @@ describe("named tabs URL state", () => {
 		fireEvent.mouseDown(getByTestId("tab-SEO"));
 		expect(window.location.search).toBe("?tab%5Bpost%5D=seo");
 	});
+
+	test("an active tab is the URL default: selecting it clears the param, leaving it sets one", async () => {
+		const node = s.tabs(
+			[
+				s.tab("General", panel("General panel"), { name: "general" }),
+				s.tab("SEO", panel("SEO panel"), { name: "seo", active: true }),
+			],
+			{ name: "post" },
+		);
+		const { getByTestId } = render(renderNode(node));
+
+		expect(getByTestId("tab-SEO").getAttribute("data-state")).toBe("active");
+		expect(window.location.search).toBe("");
+
+		fireEvent.mouseDown(getByTestId("tab-General"));
+		await waitFor(() => expect(window.location.search).toBe("?tab%5Bpost%5D=general"));
+
+		fireEvent.mouseDown(getByTestId("tab-SEO"));
+		await waitFor(() => expect(window.location.search).toBe(""));
+	});
 });
 
 function namedTabs(): StructureNode {

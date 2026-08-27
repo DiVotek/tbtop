@@ -106,3 +106,34 @@ it('collects sub-field rules from both child list keys at once', function () {
         'items.*.from_fields' => ['required'],
     ]);
 });
+
+// A field serialized with ->toNode() before reaching the form loses its rule
+// list (a Node carries only constraints) and, for a repeater, the `name.*.`
+// prefix of its sub-fields. That is an authoring mistake, so the walker
+// refuses it instead of validating a payload that silently differs from the form.
+
+it('throws when a repeater reaches the rule walk as a serialized Node', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->repeater('sections')->rules('array|max:10')->fields([
+            $s->text('heading')->required(),
+        ])->toNode(),
+    ]);
+
+    expect(fn () => $form->collectRules())
+        ->toThrow(InvalidArgumentException::class, '"sections"')
+        ->and(fn () => $form->collectAttributes())
+        ->toThrow(InvalidArgumentException::class, 'Repeater');
+});
+
+it('throws when a leaf field reaches the rule walk as a serialized Node', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->section(['title' => 'Main'], [
+            $s->text('title')->required()->toNode(),
+        ]),
+    ]);
+
+    expect(fn () => $form->collectRules())
+        ->toThrow(InvalidArgumentException::class, '"title"');
+});

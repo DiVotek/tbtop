@@ -177,6 +177,7 @@
 /* sets --col-span[-bp] / --col-start[-bp] inline vars and this utility reads */
 /* them. A bare int sets only the -md var (mobile stays span 1 / auto).      */
 .field-col-place {
+	min-width: 0;
 	grid-column: var(--col-start, auto) / span var(--col-span, 1);
 }
 

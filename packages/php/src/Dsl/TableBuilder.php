@@ -24,6 +24,8 @@ final class TableBuilder implements JsonSerializable
 
     private const FILTERS_FORM_WIDTHS = ['sm', 'md', 'lg', 'full'];
 
+    private const FILTERS_IN_MODES = ['modal', 'inline'];
+
     private const FILTERS_FORM_COLUMNS_MIN = 1;
 
     private const FILTERS_FORM_COLUMNS_MAX = 12;
@@ -181,9 +183,20 @@ final class TableBuilder implements JsonSerializable
         return $this->tabObjects[0] ?? null;
     }
 
-    /** Where declared filters() render: a dismissible modal, or inline in the toolbar. @param  'modal'|'inline'  $mode */
+    /**
+     * Where declared filters() render: a dismissible modal, or inline in the
+     * toolbar. Any other mode throws — the client renders no filters for an
+     * unknown value.
+     *
+     * @param  string  $mode  One of self::FILTERS_IN_MODES ('modal'|'inline')
+     */
     public function filtersIn(string $mode): self
     {
+        if (! in_array($mode, self::FILTERS_IN_MODES, true)) {
+            throw new InvalidArgumentException(
+                "Invalid filters mode \"{$mode}\". Allowed: ".implode(', ', self::FILTERS_IN_MODES).'.'
+            );
+        }
         $this->filtersIn = $mode;
 
         return $this;

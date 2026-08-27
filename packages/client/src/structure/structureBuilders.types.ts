@@ -90,6 +90,7 @@ export interface StructureBuilders<TForm = unknown> {
 			name?: string;
 			icon?: string | { name: string; position?: string };
 			badge?: string | number;
+			active?: boolean;
 		},
 	) => TabItem;
 	form: <TJson = TForm>(

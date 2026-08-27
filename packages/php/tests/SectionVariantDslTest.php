@@ -1,5 +1,6 @@
 <?php
 
+use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\S;
 
 function encodeVariantNode(mixed $node): array
@@ -92,6 +93,17 @@ it('section accepts every whitelisted option key', function (): void {
 
     expect($json['options']['title'])->toBe('X')
         ->and($json['meta']['id'])->toBe('my-section');
+});
+
+it('section hiddenIf serializes the condition under meta, not options', function (): void {
+    $s = new S;
+    $json = encodeVariantNode($s->section(
+        ['title' => 'Shipping', 'hiddenIf' => Cond::eq('delivery', 'pickup')],
+        [$s->text('address')],
+    ));
+
+    expect($json['meta']['hiddenIf'])->toBe(['op' => 'eq', 'field' => 'delivery', 'value' => 'pickup'])
+        ->and($json['options'])->not->toHaveKey('hiddenIf');
 });
 
 // ---------------------------------------------------------------------------
