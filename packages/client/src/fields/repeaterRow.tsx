@@ -2,13 +2,14 @@ import { useTranslation } from "../i18n/i18n";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { renderDescriptor } from "../render/renderDescriptor";
 import { useActiveLocale, useContentLocaleConfig } from "../structure/contentLocaleContext";
-import { FieldError } from "../structure/formBlock";
+import { readPath } from "../structure/dependentFieldPath";
 import { useNearestFormHandle } from "../structure/formContext";
 import { isNodeDisabled, isNodeHidden, isNodeRequired } from "../structure/meta";
 import type { StructureNode } from "../structure/structure";
 import type { ConditionContext } from "../structure/types";
 import { Button } from "../ui/button";
-import { Label } from "../ui/label";
+import { chromeLayoutFor, describedBy, FieldChrome } from "./fieldChrome";
+import { FieldDependencyProvider } from "./fieldDependencies";
 import { RepeaterSummaryRow } from "./repeaterSummaryRow";
 import { renderTranslatableField } from "./translatableField";
 
@@ -41,7 +42,7 @@ export function RepeaterRow(props: RepeaterRowProps) {
 	const { item, index, subFields, disabled, repeaterName } = props;
 	const itemPath = `${repeaterName}.${index}`;
 
-	const editor = subFields.map((node, sIdx) => {
+	const subFieldNodes = subFields.map((node, sIdx) => {
 		const condCtx = makeScopedCondCtx(item, rootData);
 		return renderSubField({
 			node,
@@ -57,6 +58,15 @@ export function RepeaterRow(props: RepeaterRowProps) {
 			onChange: (next) => props.onSubFieldChange(node.name ?? "", next),
 		});
 	});
+	// Sub-field dependsOn is row-relative (see dependentFields.ts): a sibling
+	// name resolves against this row bag, never the root form. Read-only
+	// override — a per-row form controller would break every
+	// useNearestFormController consumer inside the row.
+	const editor = (
+		<FieldDependencyProvider data={item} initial={rowInitial(ctrl?.initial, itemPath)}>
+			{subFieldNodes}
+		</FieldDependencyProvider>
+	);
 
 	if (props.collapsible) {
 		return (
@@ -180,6 +190,11 @@ function firstNonEmptyValue(map: Record<string, unknown>): string | undefined {
 	return undefined;
 }
 
+function rowInitial(formInitial: Item | undefined, itemPath: string): Item {
+	const row = formInitial ? readPath(formInitial, itemPath) : undefined;
+	return row !== null && typeof row === "object" && !Array.isArray(row) ? (row as Item) : {};
+}
+
 function makeScopedCondCtx(itemData: Item, rootData: Record<string, unknown>): ConditionContext {
 	return { record: undefined, data: itemData, user: null, root: rootData };
 }
@@ -262,7 +277,10 @@ function renderSubField(input: RenderSubFieldInput) {
 	const staticRequired = (options as { required?: boolean }).required === true;
 	const required = isNodeRequired(node.meta, condCtx, staticRequired);
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
+	const helperText = (options as { helperText?: string }).helperText;
+	const tooltip = (options as { tooltip?: string }).tooltip;
 	const fieldError = subFieldError({ fullPath, isTranslatable, activeLocale, fieldErrors });
+	const description = describedBy(scopedId, fieldError, helperText);
 	const control = isTranslatable
 		? renderTranslatableSubField({
 				descriptor,
@@ -272,6 +290,7 @@ function renderSubField(input: RenderSubFieldInput) {
 				scopedId,
 				value: itemValue[subName],
 				fieldDisabled,
+				describedBy: description,
 				locales,
 				onChange,
 			})
@@ -286,22 +305,27 @@ function renderSubField(input: RenderSubFieldInput) {
 						value: itemValue[subName] ?? null,
 						onChange,
 						disabled: fieldDisabled,
+						invalid: fieldError !== undefined,
+						describedBy: description,
 					},
 				},
 				children: undefined,
 				renderChild: () => null,
 			});
 	return (
-		<div key={nodeKey} className="flex flex-col gap-1.5" data-field-name={fullPath}>
-			{label && (
-				<Label htmlFor={scopedId}>
-					{label}
-					{required && <span className="text-destructive">*</span>}
-				</Label>
-			)}
+		<FieldChrome
+			key={nodeKey}
+			fieldId={scopedId}
+			name={fullPath}
+			label={label}
+			required={required}
+			tooltip={tooltip}
+			helperText={helperText}
+			error={fieldError}
+			layout={chromeLayoutFor(node.kind)}
+		>
 			{control}
-			{fieldError && <FieldError name={fullPath} message={fieldError} />}
-		</div>
+		</FieldChrome>
 	);
 }
 
@@ -313,6 +337,7 @@ interface RenderTranslatableSubFieldInput {
 	scopedId: string;
 	value: unknown;
 	fieldDisabled: boolean;
+	describedBy: string | undefined;
 	locales: string[];
 	onChange: (next: unknown) => void;
 }
@@ -331,6 +356,7 @@ function renderTranslatableSubField(input: RenderTranslatableSubFieldInput) {
 		scopedId,
 		value,
 		fieldDisabled,
+		describedBy: description,
 		locales,
 		onChange,
 	} = input;
@@ -350,6 +376,7 @@ function renderTranslatableSubField(input: RenderTranslatableSubFieldInput) {
 		value,
 		onChange,
 		disabled: fieldDisabled,
+		describedBy: description,
 		locales,
 	});
 }
