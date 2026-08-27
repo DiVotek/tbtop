@@ -27,6 +27,9 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'testing');
+        // A minimal Inertia root view: full-document responses (a plain GET
+        // that 404s inside a panel) would otherwise fail on "View [app] not found".
+        config()->set('view.paths', [__DIR__.'/views']);
 
         /*
          foreach (\Illuminate\Support\Facades\File::allFiles(__DIR__ . '/../database/migrations') as $migration) {

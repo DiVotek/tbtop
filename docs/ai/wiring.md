@@ -39,6 +39,7 @@ Route file: `packages/php/routes/admin.php`
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
+| `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
 
 ### Media manager routes (prefix: `{prefix}/api/media`, name: `tbtop.{panel}.media.*`)
 

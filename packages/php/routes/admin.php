@@ -20,6 +20,7 @@ use Tbtop\Admin\Http\Media\MediaReplaceController;
 use Tbtop\Admin\Http\Media\MediaUploadController;
 use Tbtop\Admin\Http\NotificationsController;
 use Tbtop\Admin\Http\PageController;
+use Tbtop\Admin\Http\PanelErrorController;
 use Tbtop\Admin\Http\RelationSearchController;
 use Tbtop\Admin\Http\SelectCreateController;
 use Tbtop\Admin\Http\SelectOptionsController;
@@ -194,6 +195,11 @@ foreach (app(PanelRegistry::class)->all() as $panel) {
                         $homeUrl = '/'.trim($panel->getPrefix(), '/').'/'.$home;
                         Route::get('/', static fn () => redirect($homeUrl));
                     }
+
+                    // Unknown URLs under the prefix 404 inside the panel chrome.
+                    // Fallbacks are matched after every other route, and the
+                    // group prefix keeps each panel's fallback to its own URLs.
+                    Route::fallback(PanelErrorController::class)->name('fallback');
                 }
 
                 $registerPageRoutes($bucket['pages']);
