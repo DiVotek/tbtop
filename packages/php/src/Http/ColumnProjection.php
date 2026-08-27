@@ -109,7 +109,7 @@ final class ColumnProjection
             $source = $col->isTranslatable()
                 ? self::rawAttribute($row, $name)
                 : data_get($out, $name);
-            $out[$name] = self::computeValue($col, $source);
+            $out[$name] = self::computeValue($col, $source, $row);
         }
 
         return $out;
@@ -129,7 +129,7 @@ final class ColumnProjection
                 continue;
             }
             $raw = data_get($row, $name);
-            $value = self::computeValue($col, $raw);
+            $value = self::computeValue($col, $raw, $row);
             if ($value !== $raw) {
                 data_set($row, $name, $value);
             }
@@ -139,14 +139,14 @@ final class ColumnProjection
     }
 
     /** translatable → formatUsing → declarative kind format. */
-    private static function computeValue(Column $col, mixed $value): mixed
+    private static function computeValue(Column $col, mixed $value, mixed $row): mixed
     {
         if ($col->isTranslatable()) {
             $value = TranslatableValue::pick($value);
         }
         $fmt = $col->getFormatUsing();
         if ($fmt !== null) {
-            return $fmt($value);
+            return $fmt($value, $row);
         }
 
         return self::applyKindFormat($col, $value);

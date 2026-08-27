@@ -340,10 +340,12 @@ final class Column implements JsonSerializable
     }
 
     /**
-     * Server-side formatter, fn(mixed $value): mixed, run in ColumnProjection
-     * per row. Runs INSTEAD OF kind-sugar formatting (date/datetime/number/
-     * money), not in addition — set a kind for wire metadata (align, filter
-     * type) if needed, but formatUsing() alone decides the displayed value.
+     * Server-side formatter, fn(mixed $value, Model|object $row): mixed, run in
+     * ColumnProjection per row ($row is the raw row, before this column's own
+     * value is written back). Runs INSTEAD OF kind-sugar formatting
+     * (date/datetime/number/money), not in addition — set a kind for wire
+     * metadata (align, filter type) if needed, but formatUsing() alone decides
+     * the displayed value.
      */
     public function formatUsing(Closure $fn): static
     {
