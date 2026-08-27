@@ -579,6 +579,15 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `authorize` | `authorize(string $ability, mixed $arg = null): self` | Server-side `Gate::allows($ability, $arg)` check; a failing check drops the action from the wire entirely. See "Authorization" below for the collection points that enforce it |
 | `custom` | `custom(string $handler, array $params = []): self` | **Spec.** Delegates to a named client-side handler |
 
+#### Modal body and its actions
+
+A modal has no footer slot: `modal()` takes one body node and renders it in a scrollable
+area. Put the Save/Cancel buttons in an `actionsRow` as the **last child of the body** —
+they scroll with the content (on short viewports the user scrolls down to reach them).
+The prebuilt `EditAction`/`CreateAction` append that row for you; a hand-rolled
+`->modal($form)` must include its own. A sticky footer is a tracked backlog item
+(`docs/backlog.md`, Modal), not a DSL option.
+
 #### Authorization — `authorize()`
 
 `->authorize($ability, $arg = null)` runs a `Gate::allows($ability, $arg)` check and, on
