@@ -3,13 +3,12 @@ import { getBlockDescriptor } from "../render/blockRegistry";
 import { renderDescriptor } from "../render/renderDescriptor";
 import { useActiveLocale, useContentLocaleConfig } from "../structure/contentLocaleContext";
 import { readPath } from "../structure/dependentFieldPath";
-import { FieldError } from "../structure/formBlock";
 import { useNearestFormHandle } from "../structure/formContext";
 import { isNodeDisabled, isNodeHidden, isNodeRequired } from "../structure/meta";
 import type { StructureNode } from "../structure/structure";
 import type { ConditionContext } from "../structure/types";
 import { Button } from "../ui/button";
-import { Label } from "../ui/label";
+import { chromeLayoutFor, describedBy, FieldChrome } from "./fieldChrome";
 import { FieldDependencyProvider } from "./fieldDependencies";
 import { RepeaterSummaryRow } from "./repeaterSummaryRow";
 import { renderTranslatableField } from "./translatableField";
@@ -278,7 +277,10 @@ function renderSubField(input: RenderSubFieldInput) {
 	const staticRequired = (options as { required?: boolean }).required === true;
 	const required = isNodeRequired(node.meta, condCtx, staticRequired);
 	const isTranslatable = (options as { translatable?: boolean }).translatable === true;
+	const helperText = (options as { helperText?: string }).helperText;
+	const tooltip = (options as { tooltip?: string }).tooltip;
 	const fieldError = subFieldError({ fullPath, isTranslatable, activeLocale, fieldErrors });
+	const description = describedBy(scopedId, fieldError, helperText);
 	const control = isTranslatable
 		? renderTranslatableSubField({
 				descriptor,
@@ -288,6 +290,7 @@ function renderSubField(input: RenderSubFieldInput) {
 				scopedId,
 				value: itemValue[subName],
 				fieldDisabled,
+				describedBy: description,
 				locales,
 				onChange,
 			})
@@ -302,22 +305,27 @@ function renderSubField(input: RenderSubFieldInput) {
 						value: itemValue[subName] ?? null,
 						onChange,
 						disabled: fieldDisabled,
+						invalid: fieldError !== undefined,
+						describedBy: description,
 					},
 				},
 				children: undefined,
 				renderChild: () => null,
 			});
 	return (
-		<div key={nodeKey} className="flex flex-col gap-1.5" data-field-name={fullPath}>
-			{label && (
-				<Label htmlFor={scopedId}>
-					{label}
-					{required && <span className="text-destructive">*</span>}
-				</Label>
-			)}
+		<FieldChrome
+			key={nodeKey}
+			fieldId={scopedId}
+			name={fullPath}
+			label={label}
+			required={required}
+			tooltip={tooltip}
+			helperText={helperText}
+			error={fieldError}
+			layout={chromeLayoutFor(node.kind)}
+		>
 			{control}
-			{fieldError && <FieldError name={fullPath} message={fieldError} />}
-		</div>
+		</FieldChrome>
 	);
 }
 
@@ -329,6 +337,7 @@ interface RenderTranslatableSubFieldInput {
 	scopedId: string;
 	value: unknown;
 	fieldDisabled: boolean;
+	describedBy: string | undefined;
 	locales: string[];
 	onChange: (next: unknown) => void;
 }
@@ -347,6 +356,7 @@ function renderTranslatableSubField(input: RenderTranslatableSubFieldInput) {
 		scopedId,
 		value,
 		fieldDisabled,
+		describedBy: description,
 		locales,
 		onChange,
 	} = input;
@@ -366,6 +376,7 @@ function renderTranslatableSubField(input: RenderTranslatableSubFieldInput) {
 		value,
 		onChange,
 		disabled: fieldDisabled,
+		describedBy: description,
 		locales,
 	});
 }
