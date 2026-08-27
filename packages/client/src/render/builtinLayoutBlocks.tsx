@@ -92,7 +92,11 @@ function resolveGap(gap: number | undefined, defaultGap: string): string {
 }
 
 export function StackBlock({ options, children, renderChild }: RenderProps<StackOptions>) {
-	const className = cn("flex flex-col", resolveGap(options.gap, "gap-4"), options.class);
+	const className = cn(
+		"flex flex-col [&>*]:min-w-0",
+		resolveGap(options.gap, "gap-4"),
+		options.class,
+	);
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
@@ -151,7 +155,14 @@ export function FlexBlock({ options, children, renderChild }: RenderProps<FlexBl
 export function GridBlock({ options, children, renderChild }: RenderProps<GridOptions>) {
 	const gap = options.gap != null ? (GAP[options.gap] ?? "gap-4") : "gap-4";
 	return (
-		<div className={cn("grid", gap, resolveColumnsClass(options.cols), options.class)}>
+		<div
+			className={cn(
+				"grid [&>*]:min-w-0",
+				gap,
+				resolveColumnsClass(options.cols),
+				options.class,
+			)}
+		>
 			{mapChildren(children, renderChild)}
 		</div>
 	);

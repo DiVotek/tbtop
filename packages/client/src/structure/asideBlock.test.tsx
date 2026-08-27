@@ -90,7 +90,9 @@ describe("Aside block", () => {
 		const Wrap = wrap(() => new Response("{}"));
 		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		const aside = getByTestId("aside-block");
-		expect(aside.className).toContain("w-80");
+		expect(aside.className).toContain("max-w-80");
+		expect(aside.className).toContain("w-full");
+		expect(aside.className).not.toContain("shrink-0");
 		expect(aside.className).toContain("custom-aside");
 	});
 
