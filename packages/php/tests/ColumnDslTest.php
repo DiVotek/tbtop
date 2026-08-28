@@ -634,3 +634,61 @@ it('Column: prefix() rejects a nested Field', function (): void {
     expect(fn () => Column::make('price')->prefix($s->text('other')))
         ->toThrow(InvalidArgumentException::class, 'Column "price" prefix() received field "other"');
 });
+
+// ---------------------------------------------------------------------------
+// formatUsing() + editable is a silent no-op — rejected at serialization
+// ---------------------------------------------------------------------------
+
+it('Column: formatUsing() combined with an editable column throws at serialization', function (): void {
+    $col = Column::make('price')
+        ->numberInput()
+        ->formatUsing(fn ($v) => $v)
+        ->onSave(fn ($r, $v) => null);
+
+    expect(fn () => encodeColumn($col))
+        ->toThrow(InvalidArgumentException::class, 'formatting an inline-editable cell is unsupported, use affixes (prefix/suffix) instead');
+});
+
+it('Column: formatUsing() alone serializes fine', function (): void {
+    $json = encodeColumn(Column::make('price')->kind('number')->formatUsing(fn ($v) => $v));
+
+    expect($json)->not->toHaveKey('editable');
+});
+
+it('Column: editable alone (no formatUsing) serializes fine', function (): void {
+    $json = encodeColumn(Column::make('price')->numberInput()->onSave(fn ($r, $v) => null));
+
+    expect($json['editable']['as'])->toBe('number');
+});
+
+// ---------------------------------------------------------------------------
+// step() requires numberInput() — rejected at serialization
+// ---------------------------------------------------------------------------
+
+it('Column: step() without numberInput() throws at serialization', function (): void {
+    $col = Column::make('qty')->step(0.01);
+
+    expect(fn () => encodeColumn($col))
+        ->toThrow(InvalidArgumentException::class, 'step() requires numberInput()');
+});
+
+it('Column: step() with numberInput() serializes fine', function (): void {
+    $json = encodeColumn(Column::make('qty')->numberInput()->step(0.01)->onSave(fn ($r, $v) => null));
+
+    expect($json['editable']['input']['step'])->toBe(0.01);
+});
+
+it('Column: step() rejects zero, negative, and non-numeric values', function (): void {
+    expect(fn () => Column::make('qty')->step(0))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => Column::make('qty')->step(-1))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => Column::make('qty')->step('-0.5'))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => Column::make('qty')->step('0'))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => Column::make('qty')->step('not-a-number'))->toThrow(InvalidArgumentException::class);
+});
+
+it('Column: step() accepts a positive int, float, numeric string, or "any"', function (): void {
+    expect(fn () => Column::make('qty')->step(1))->not->toThrow(InvalidArgumentException::class)
+        ->and(fn () => Column::make('qty')->step(0.5))->not->toThrow(InvalidArgumentException::class)
+        ->and(fn () => Column::make('qty')->step('0.01'))->not->toThrow(InvalidArgumentException::class)
+        ->and(fn () => Column::make('qty')->step('any'))->not->toThrow(InvalidArgumentException::class);
+});

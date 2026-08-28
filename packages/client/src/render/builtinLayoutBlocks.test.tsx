@@ -24,7 +24,7 @@ test("RowBlock renders default flex-row gap-2", () => {
 	const node = s.row([]);
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toBe("flex flex-row gap-2");
+	expect(el.className).toBe("flex flex-row [&>*]:min-w-0 gap-2");
 });
 
 test("StackBlock renders default flex-col gap-4", () => {
@@ -32,6 +32,23 @@ test("StackBlock renders default flex-col gap-4", () => {
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
 	expect(el.className).toBe("flex flex-col [&>*]:min-w-0 gap-4");
+});
+
+// A row/flex child (e.g. tabs()) defaults to min-width:auto, which lets it
+// push the row past its track when it can't otherwise shrink (documented
+// shape: row([tabs(...), aside(...)])). Children need min-w-0 to shrink.
+test("RowBlock gives its children min-w-0 so a wide child can shrink instead of overflowing", () => {
+	const node = s.row([textNode("wide"), textNode("aside")]);
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("[&>*]:min-w-0");
+});
+
+test("FlexBlock gives its children min-w-0 so a wide child can shrink instead of overflowing", () => {
+	const node = { kind: "flex", options: { direction: "row", children: [] }, meta: {} } as never;
+	const { container } = render(renderNode(node));
+	const el = container.firstElementChild as HTMLElement;
+	expect(el.className).toContain("[&>*]:min-w-0");
 });
 
 // ---------------------------------------------------------------------------

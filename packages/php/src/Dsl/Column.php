@@ -353,6 +353,13 @@ final class Column implements JsonSerializable
      * (date/datetime/number/money), not in addition — set a kind for wire
      * metadata (align, filter type) if needed, but formatUsing() alone decides
      * the displayed value.
+     *
+     * Unsupported together with an editable column
+     * (toggle()/textInput()/numberInput()/selectColumn()): ColumnProjection
+     * skips formatting for editable cells so the inline editor gets the raw
+     * stored value, which makes formatUsing() silently never run.
+     * Serialization throws in that case — use prefix()/suffix() for a unit
+     * or decoration instead.
      */
     public function formatUsing(Closure $fn): static
     {
@@ -548,7 +555,10 @@ final class Column implements JsonSerializable
     // Editable-column fluent API
     // -------------------------------------------------------------------------
 
-    /** Make the column an inline boolean toggle; sets kind = 'boolean'. */
+    /**
+     * Make the column an inline boolean toggle; sets kind = 'boolean'.
+     * Incompatible with formatUsing() — throws at serialization.
+     */
     public function toggle(): static
     {
         $this->editAs = 'boolean';
@@ -557,7 +567,10 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** Make the column an inline text input; sets kind = 'text' when no kind is already set. */
+    /**
+     * Make the column an inline text input; sets kind = 'text' when no kind
+     * is already set. Incompatible with formatUsing() — throws at serialization.
+     */
     public function textInput(): static
     {
         $this->editAs = 'text';
@@ -566,7 +579,10 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** Make the column an inline (sync) select; sets kind = 'select' when no kind is already set. */
+    /**
+     * Make the column an inline (sync) select; sets kind = 'select' when no
+     * kind is already set. Incompatible with formatUsing() — throws at serialization.
+     */
     public function selectColumn(): static
     {
         $this->editAs = 'select';
@@ -579,7 +595,8 @@ final class Column implements JsonSerializable
      * Make the column an inline number input; sets kind = 'number' when no
      * kind is already set. The cell ships the stored value raw (no
      * number_format) so the editor can round-trip it; add prefix()/suffix()
-     * for a unit and step() for decimals.
+     * for a unit and step() for decimals. Incompatible with formatUsing() —
+     * throws at serialization.
      */
     public function numberInput(): static
     {
@@ -591,16 +608,27 @@ final class Column implements JsonSerializable
 
     /**
      * Increment granularity of the inline number editor (its step attribute).
-     * Accepts a number, a numeric string ('0.01' — shipped as a number), or
-     * 'any' for arbitrary precision.
+     * Accepts a positive number, a numeric string ('0.01' — shipped as a
+     * number, must be > 0), or 'any' for arbitrary precision. Requires
+     * numberInput() to also be called — without it, editInput is set but no
+     * editable column is emitted, so step() silently has no effect; that
+     * combination throws at serialization.
      */
     public function step(int|float|string $step): static
     {
-        if (is_string($step) && $step !== 'any') {
+        if ($step === 'any') {
+            $this->editInput['step'] = $step;
+
+            return $this;
+        }
+        if (is_string($step)) {
             if (! is_numeric($step)) {
-                throw new InvalidArgumentException('Column::step() only accepts a number, a numeric string, or "any".');
+                throw new InvalidArgumentException('Column::step() only accepts a positive number, a positive numeric string, or "any".');
             }
             $step = (float) $step;
+        }
+        if ($step <= 0) {
+            throw new InvalidArgumentException('Column::step() only accepts a positive number, a positive numeric string, or "any".');
         }
         $this->editInput['step'] = $step;
 
@@ -822,8 +850,19 @@ final class Column implements JsonSerializable
             $out[$key] = $node;
         }
 
+        if ($this->editInput !== [] && $this->editAs === null) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": step() requires numberInput().",
+            );
+        }
+
         // Editable: only emitted when editAs is set; onSaveClosure never serialized
         if ($this->editAs !== null) {
+            if ($this->formatUsing !== null) {
+                throw new InvalidArgumentException(
+                    "Column \"{$this->name}\": formatting an inline-editable cell is unsupported, use affixes (prefix/suffix) instead.",
+                );
+            }
             $editable = ['as' => $this->editAs];
             $constraints = ConstraintMap::toConstraints($this->editRules);
             if ($constraints !== []) {

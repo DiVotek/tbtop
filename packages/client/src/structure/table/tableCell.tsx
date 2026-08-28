@@ -110,7 +110,11 @@ function renderCell({ col, row, tooltip, saveCell }: RenderCellArgs): ReactNode 
 			/>
 		);
 	}
-	return <CellAffixes col={col}>{renderDisplayValue(col, row, tooltip)}</CellAffixes>;
+	return (
+		<CellAffixes col={col} value={row[col.name]}>
+			{renderDisplayValue(col, row, tooltip)}
+		</CellAffixes>
+	);
 }
 
 function renderDisplayValue(
