@@ -1,6 +1,8 @@
 import { describe, expect, mock, spyOn, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
-import type { ModalStack } from "../structure/modalStack";
+import { render } from "@testing-library/react";
+import { createElement, useEffect } from "react";
+import { type ModalStack, ModalStackProvider, useModalStack } from "../structure/modalStack";
 import { executeFlashEffects } from "./flashEffects";
 
 // Mirrors effects.test.ts's router stub: executeFlashEffects' redirect
@@ -53,5 +55,30 @@ describe("executeFlashEffects: supported kinds", () => {
 		executeFlashEffects([{ kind: "closeModal" }], { notify: mock(() => {}), modals: noModals });
 		expect(warn).not.toHaveBeenCalled();
 		warn.mockRestore();
+	});
+
+	// A submit handler inside a nested modal can chain two closeModal effects
+	// in one flash payload (e.g. close the child modal, then its parent). Both
+	// must run against a real ModalStack: closeTop has to pop before invoking,
+	// or the second effect would just hit the still-registered top again.
+	test("two closeModal effects in one payload close two nested modals", () => {
+		const closed: string[] = [];
+		let stack: ModalStack | undefined;
+		function Harness() {
+			stack = useModalStack();
+			useEffect(() => {
+				stack?.push(() => closed.push("child"));
+				stack?.push(() => closed.push("parent"));
+			}, []);
+			return null;
+		}
+		render(createElement(ModalStackProvider, null, createElement(Harness)));
+
+		executeFlashEffects([{ kind: "closeModal" }, { kind: "closeModal" }], {
+			notify: mock(() => {}),
+			modals: stack as ModalStack,
+		});
+
+		expect(closed).toEqual(["parent", "child"]);
 	});
 });

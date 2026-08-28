@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useMemo, useRef } from "react";
+import { safeUuid } from "../lib/safeUuid";
 
 /**
  * Page-level registry of open DSL modals in open order, so a dispatcher with no
@@ -18,22 +19,32 @@ const NOOP_STACK: ModalStack = {
 
 const ModalStackCtx = createContext<ModalStack>(NOOP_STACK);
 
+interface StackEntry {
+	id: string;
+	close: () => void;
+}
+
 export function ModalStackProvider({ children }: { children: ReactNode }) {
-	const entries = useRef<Array<() => void>>([]);
+	const entries = useRef<StackEntry[]>([]);
 	const value = useMemo<ModalStack>(
 		() => ({
 			push: (close) => {
-				entries.current.push(close);
+				const id = safeUuid();
+				entries.current.push({ id, close });
 				return () => {
-					entries.current = entries.current.filter((entry) => entry !== close);
+					entries.current = entries.current.filter((entry) => entry.id !== id);
 				};
 			},
+			// Pop before invoking: two closeModal effects delivered in one
+			// synchronous payload must each close a distinct modal, not hit
+			// the same (still-registered) top twice.
 			closeTop: () => {
 				const top = entries.current.at(-1);
 				if (!top) {
 					return false;
 				}
-				top();
+				entries.current = entries.current.slice(0, -1);
+				top.close();
 				return true;
 			},
 		}),

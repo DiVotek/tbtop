@@ -63,4 +63,43 @@ class PanelNotFoundTest extends TestCase
             ->assertHeaderMissing('X-Inertia')
             ->assertDontSee('admin/error');
     }
+
+    public function test_guest_404_on_a_public_page_route_renders_the_chrome_less_center_layout(): void
+    {
+        // LoginPage is reachable without the panel's auth guard; a 404 raised
+        // from one of its own routes (e.g. an undefined data source) must not
+        // leak panel chrome to a visitor who was never authenticated.
+        $this->post('/logout');
+
+        $this->get('/admin/login/data/bogus')
+            ->assertNotFound()
+            ->assertInertia(function (Assert $page) {
+                $page->component('admin/error', false)
+                    ->where('status', 404)
+                    ->where('layout', 'center');
+            });
+    }
+
+    public function test_authenticated_404_on_a_public_page_route_still_gets_the_panel_chrome(): void
+    {
+        $this->get('/admin/login/data/bogus')
+            ->assertNotFound()
+            ->assertInertia(function (Assert $page) {
+                $page->component('admin/error', false)
+                    ->where('status', 404)
+                    ->where('layout', 'admin')
+                    ->where('tbtop.panel', 'admin')
+                    ->has('tbtop.nav');
+            });
+    }
+
+    public function test_unknown_url_json_request_receives_a_plain_json_404(): void
+    {
+        $response = $this->getJson('/admin/definitely/not/a/page')
+            ->assertNotFound()
+            ->assertHeaderMissing('X-Inertia');
+
+        $this->assertJson($response->getContent());
+        $this->assertStringNotContainsString('admin/error', $response->getContent());
+    }
 }

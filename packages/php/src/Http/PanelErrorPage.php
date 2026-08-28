@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 use Tbtop\Admin\Panels\CurrentPanel;
@@ -28,12 +29,20 @@ final class PanelErrorPage
 
     public static function render(Request $request, CurrentPanel $panel, int $status, string $title, string $message): Response
     {
+        // A 404 can be raised from a public bucket (e.g. the login page's own
+        // data/action routes), reached before the panel's auth guard ever
+        // runs. Rendering panel chrome there would leak nav/brand to a guest,
+        // so an unauthenticated visitor gets the chrome-less center layout —
+        // the same one LoginPage itself uses.
+        $layout = Auth::guard($panel->guard())->check() ? 'admin' : 'center';
+
         // toResponse() picks the Inertia JSON envelope for X-Inertia requests
         // and the root view otherwise; the status is applied on top of either.
         return Inertia::render('admin/error', [
             'status' => $status,
             'title' => $title,
             'message' => $message,
+            'layout' => $layout,
         ])
             ->rootView($panel->rootView())
             ->toResponse($request)

@@ -943,7 +943,8 @@
                                 "name": "star",
                                 "position": "left"
                             },
-                            "badge": "3"
+                            "badge": "3",
+                            "active": true
                         },
                         {
                             "name": "more",
@@ -1113,6 +1114,26 @@
                             "name": "bulk-delete"
                         }
                     ],
+                    "filters": [
+                        {
+                            "kind": "in",
+                            "options": {
+                                "options": [
+                                    {
+                                        "value": "draft",
+                                        "label": "Draft"
+                                    },
+                                    {
+                                        "value": "published",
+                                        "label": "Published"
+                                    }
+                                ]
+                            },
+                            "meta": {},
+                            "name": "status"
+                        }
+                    ],
+                    "filtersIn": "inline",
                     "tabs": [
                         {
                             "name": "all",

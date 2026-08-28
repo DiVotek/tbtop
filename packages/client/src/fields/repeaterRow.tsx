@@ -20,6 +20,8 @@ interface RepeaterRowProps {
 	repeaterName: string;
 	item: Item;
 	index: number;
+	/** The row's index when `initial` was captured; undefined for a row added since (no `initial` entry to read). */
+	initialIndex: number | undefined;
 	itemCount: number;
 	subFields: StructureNode[];
 	minItems: number;
@@ -39,7 +41,7 @@ export function RepeaterRow(props: RepeaterRowProps) {
 	const { locales, defaultLocale } = useContentLocaleConfig();
 	const activeLocaleCtx = useActiveLocale();
 	const activeLocale = activeLocaleCtx?.active ?? defaultLocale;
-	const { item, index, subFields, disabled, repeaterName } = props;
+	const { item, index, initialIndex, subFields, disabled, repeaterName } = props;
 	const itemPath = `${repeaterName}.${index}`;
 
 	const subFieldNodes = subFields.map((node, sIdx) => {
@@ -47,7 +49,9 @@ export function RepeaterRow(props: RepeaterRowProps) {
 		return renderSubField({
 			node,
 			nodeKey: `${index}.${node.name ?? sIdx}`,
-			scopedId: `${index}-${node.name ?? sIdx}`,
+			// repeaterName, not just index: two repeaters on one form share
+			// index/field-name pairs and would otherwise emit duplicate DOM ids.
+			scopedId: `${repeaterName}-${index}-${node.name ?? sIdx}`,
 			itemPath,
 			itemValue: item,
 			condCtx,
@@ -62,8 +66,10 @@ export function RepeaterRow(props: RepeaterRowProps) {
 	// name resolves against this row bag, never the root form. Read-only
 	// override — a per-row form controller would break every
 	// useNearestFormController consumer inside the row.
+	const initialItemPath =
+		initialIndex !== undefined ? `${repeaterName}.${initialIndex}` : undefined;
 	const editor = (
-		<FieldDependencyProvider data={item} initial={rowInitial(ctrl?.initial, itemPath)}>
+		<FieldDependencyProvider data={item} initial={rowInitial(ctrl?.initial, initialItemPath)}>
 			{subFieldNodes}
 		</FieldDependencyProvider>
 	);
@@ -190,8 +196,8 @@ function firstNonEmptyValue(map: Record<string, unknown>): string | undefined {
 	return undefined;
 }
 
-function rowInitial(formInitial: Item | undefined, itemPath: string): Item {
-	const row = formInitial ? readPath(formInitial, itemPath) : undefined;
+function rowInitial(formInitial: Item | undefined, itemPath: string | undefined): Item {
+	const row = formInitial && itemPath !== undefined ? readPath(formInitial, itemPath) : undefined;
 	return row !== null && typeof row === "object" && !Array.isArray(row) ? (row as Item) : {};
 }
 

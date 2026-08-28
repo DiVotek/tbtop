@@ -131,6 +131,27 @@ it('tab with neither body nor children throws', function () {
     $s->tabs([['label' => 'Empty']]);
 })->throws(InvalidArgumentException::class);
 
+it('tabs accepts colSpan/colStart and serializes placement like stack', function () {
+    $s = new S;
+    $tabsNode = $s->tabs([
+        ['label' => 'Details', 'body' => $s->text('a')],
+    ], ['colSpan' => 2, 'colStart' => ['md' => 2]]);
+    $stackNode = $s->stack([$s->text('a')], ['colSpan' => 2, 'colStart' => ['md' => 2]]);
+
+    $tabsOptions = encodeLayoutNode($tabsNode)['options'];
+    $stackOptions = encodeLayoutNode($stackNode)['options'];
+
+    expect($tabsOptions['colSpan'])->toBe(2)
+        ->and($tabsOptions['colStart'])->toBe(['md' => 2])
+        ->and($tabsOptions['colSpan'])->toBe($stackOptions['colSpan'])
+        ->and($tabsOptions['colStart'])->toBe($stackOptions['colStart']);
+});
+
+it('tabs colSpan above 8 throws', function () {
+    $s = new S;
+    $s->tabs([['label' => 'Details', 'body' => $s->text('a')]], ['colSpan' => 9]);
+})->throws(InvalidArgumentException::class);
+
 // ---------------------------------------------------------------------------
 // Field::columnSpan / columnStart
 // ---------------------------------------------------------------------------

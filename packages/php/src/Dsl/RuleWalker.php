@@ -65,6 +65,9 @@ final class RuleWalker
      */
     private static function assertNotSerializedField(Node $node): void
     {
+        if ($node->name === null) {
+            return; // Field::toNode() always carries a name; an unnamed Node is a custom display block sharing the kind
+        }
         $fieldClass = S::builtInKindClasses()[$node->kind] ?? null;
         if ($fieldClass === null) {
             return;
