@@ -233,6 +233,34 @@ describe("NavGroupDropdown (topbar)", () => {
 		expect(subtrigger.textContent).toBe("Settings");
 		expect(subtrigger.tagName).not.toBe("A");
 	});
+
+	test("an ungrouped parent with children gets its own dropdown trigger exposing them", async () => {
+		const nav: NavGroup[] = [
+			{
+				key: "",
+				group: null,
+				items: [
+					{
+						label: "Settings",
+						href: "/admin/settings",
+						children: [{ label: "General", href: "/admin/settings/general" }],
+					},
+				],
+			},
+		];
+		const { getByTestId, findByText, queryByText } = render(
+			<AdminLayoutShell nav={nav} user={USER} currentUrl="/admin" navigation="topbar">
+				<div />
+			</AdminLayoutShell>,
+		);
+
+		const trigger = getByTestId("nav-ungrouped-trigger-/admin/settings");
+		expect(trigger.textContent).toContain("Settings");
+		expect(queryByText("General")).toBeNull();
+
+		await openGroup(trigger);
+		expect(await findByText("General")).toBeTruthy();
+	});
 });
 
 describe("NavGroupDropdown (rail)", () => {
@@ -268,6 +296,75 @@ describe("NavGroupDropdown (rail)", () => {
 	test("the rail trigger for the group holding the current page is highlighted", () => {
 		const { getByTestId } = renderRail("/admin/iconic");
 		expect(getByTestId("nav-group-trigger-Content").className).toContain("bg-accent");
+	});
+
+	test("the rail renders a fallback letter glyph for an ungrouped item without an icon", () => {
+		const nav: NavGroup[] = [
+			{ key: "", group: null, items: [{ label: "Dashboard", href: "/admin/dashboard" }] },
+		];
+		const { getByText, getByTestId } = render(
+			<AdminLayoutShell nav={nav} user={USER} currentUrl="/admin" navigation="topbar-sidebar">
+				<div />
+			</AdminLayoutShell>,
+		);
+		fireEvent.click(getByTestId("sidebar-collapse"));
+
+		const link = getByText("D").closest("a");
+		expect(link?.getAttribute("href")).toBe("/admin/dashboard");
+		expect(link?.querySelector("svg")).toBeNull();
+	});
+
+	test("the rail renders the icon (no letter glyph) for an ungrouped item that has one", () => {
+		const nav: NavGroup[] = [
+			{
+				key: "",
+				group: null,
+				items: [
+					{
+						label: "Dashboard",
+						href: "/admin/dashboard",
+						icon: { name: "star", position: "left" },
+					},
+				],
+			},
+		];
+		const { getByRole, queryByText, getByTestId } = render(
+			<AdminLayoutShell nav={nav} user={USER} currentUrl="/admin" navigation="topbar-sidebar">
+				<div />
+			</AdminLayoutShell>,
+		);
+		fireEvent.click(getByTestId("sidebar-collapse"));
+
+		const link = getByRole("link", { name: "Dashboard" });
+		expect(link.querySelector("svg")).toBeTruthy();
+		expect(queryByText("D")).toBeNull();
+	});
+
+	test("an ungrouped parent with children gets its own dropdown trigger in the rail", async () => {
+		const nav: NavGroup[] = [
+			{
+				key: "",
+				group: null,
+				items: [
+					{
+						label: "Settings",
+						href: "/admin/settings",
+						children: [{ label: "General", href: "/admin/settings/general" }],
+					},
+				],
+			},
+		];
+		const { getByTestId, findByText } = render(
+			<AdminLayoutShell nav={nav} user={USER} currentUrl="/admin" navigation="topbar-sidebar">
+				<div />
+			</AdminLayoutShell>,
+		);
+		fireEvent.click(getByTestId("sidebar-collapse"));
+
+		const trigger = getByTestId("nav-ungrouped-trigger-/admin/settings");
+		expect(trigger.getAttribute("aria-label")).toBe("Settings");
+		await openGroup(trigger);
+		expect(await findByText("General")).toBeTruthy();
 	});
 
 	test("when key differs from the localized group label, the rail testid follows the key while the tooltip and aria-label show the label", () => {

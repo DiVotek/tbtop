@@ -290,9 +290,21 @@ it('NavBuilder: a page whose nav() omits group emits group null, ordered among t
 
     $nav = NavBuilder::build($panel);
 
-    // Declared groups first; the ungrouped bucket is undeclared, so it sorts after.
-    expect(array_column($nav, 'group'))->toBe(['Контент', null])
-        ->and($nav[1]['items'][0]['label'])->toBe('Ungrouped item');
+    // The ungrouped bucket always renders first, ahead of every declared group.
+    expect(array_column($nav, 'group'))->toBe([null, 'Контент'])
+        ->and($nav[0]['items'][0]['label'])->toBe('Ungrouped item');
+});
+
+it('NavBuilder: the ungrouped bucket renders before declared and undeclared groups alike', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([NavBetaGroupPage::class, UngroupedNavPage::class, NavAlphaGroupPage::class])
+            ->navigationGroups([NavGroup::make('Alpha')])
+    );
+
+    expect(array_column(NavBuilder::build($panel), 'group'))->toBe([null, 'Alpha', 'Beta']);
 });
 
 it('NavBuilder: an explicit General group is still labeled by its NavGroup', function () {

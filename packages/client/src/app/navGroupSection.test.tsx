@@ -156,6 +156,31 @@ describe("NavGroupSection", () => {
 		const headings = Array.from(container.querySelectorAll(".uppercase"));
 		expect(headings.map((el) => el.textContent)).toEqual(["Content"]);
 	});
+
+	test("an ungrouped parent with children keeps them expandable in the sidebar", () => {
+		const nav: NavGroup[] = [
+			{
+				key: "",
+				group: null,
+				items: [
+					{
+						label: "Settings",
+						href: "/admin/settings",
+						children: [{ label: "General", href: "/admin/settings/general" }],
+					},
+				],
+			},
+		];
+		const { getByTestId, getByText, queryByText } = render(
+			<AdminLayoutShell nav={nav} user={USER} currentUrl="/admin">
+				<div />
+			</AdminLayoutShell>,
+		);
+
+		expect(queryByText("General")).toBeNull();
+		fireEvent.click(getByTestId("nav-item-toggle-/admin/settings"));
+		expect(getByText("General")).toBeTruthy();
+	});
 });
 
 describe("NavItemLink density", () => {

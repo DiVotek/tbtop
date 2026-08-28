@@ -631,8 +631,8 @@ A page whose `nav()` omits `group` (or a `NavItem` without `->group()`) is **not
 default group. All such items form one ungrouped bucket that ships as `group: null` and
 renders without a heading and without the group indent — sidebar links at the level of the
 other groups' headings, inline links in the topbar, icon-only links in the collapsed rail,
-and no group label in the command palette. The bucket has no `navigationGroups()` entry,
-so it sorts like any undeclared group (after the declared ones, first-seen order). Use it
+and no group label in the command palette. The bucket has no `navigationGroups()` entry, so
+it always renders first, ahead of every declared and undeclared group. Use it
 for a Dashboard-style entry that should not sit under a "General" label; a page that wants
 a heading declares `'group' => 'General'` (and may label it via `NavGroup::make('General')`).
 
