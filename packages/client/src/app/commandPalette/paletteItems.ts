@@ -42,7 +42,7 @@ export function buildPaletteItems(nav: NavGroup[], data: CommandPaletteData): Pa
 					(item): PaletteItem => ({
 						id: `nav:${item.href}`,
 						label: item.label,
-						group: group.group,
+						group: group.group ?? undefined,
 						icon: item.icon,
 						keywords: [],
 						run: () => {

@@ -18,7 +18,8 @@ interface NavGroupSectionProps {
 /**
  * A sidebar group: a label header — optionally with an icon and, when
  * collapsible, a chevron toggle — above its item links. Items carry their
- * own icon and badge.
+ * own icon and badge. The ungrouped bucket (group: null) has no header and
+ * no indent: its items sit at the level of the other groups' headings.
  */
 export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 	// Restore the last collapse choice; fall back to the server's default.
@@ -32,6 +33,16 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 			return next;
 		});
 	};
+
+	if (group.group === null) {
+		return (
+			<div className="flex flex-col gap-1" data-testid="nav-ungrouped">
+				{group.items.map((item) => (
+					<NavItemNode key={item.href} item={item} currentUrl={currentUrl} />
+				))}
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex flex-col gap-1">

@@ -47,12 +47,12 @@ final class BreadcrumbsBuilder
         $nav = $page::nav();
         $title = $page->title();
 
-        if ($nav === null) {
-            // Page is not in nav → single-item crumb (current page only)
+        if ($nav === null || ! isset($nav['group'])) {
+            // Not in nav, or ungrouped → single-item crumb (current page only)
             return [['label' => $title]];
         }
 
-        $group = (string) ($nav['group'] ?? 'General');
+        $group = (string) $nav['group'];
         $label = self::groupLabel($group, $panel);
 
         // Find if any nav item in this group corresponds to a page with the same path
@@ -97,8 +97,7 @@ final class BreadcrumbsBuilder
             if ($nav === null) {
                 continue;
             }
-            $navGroup = (string) ($nav['group'] ?? 'General');
-            if ($navGroup !== $group) {
+            if (! isset($nav['group']) || (string) $nav['group'] !== $group) {
                 continue;
             }
             $path = $class::path();

@@ -209,7 +209,7 @@ class KitchenSinkPage extends Page
                 ])->record(['title' => 'Hello'])->onSubmit(fn () => Effects::make()),
             ]),
             $s->tabs([
-                ['name' => 'main', 'label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3'],
+                ['name' => 'main', 'label' => 'Main', 'body' => $s->displayText('Tab body')->variant('subheading'), 'icon' => 'star', 'badge' => '3', 'active' => true],
                 ['name' => 'more', 'label' => 'More', 'body' => $s->displayText('Second tab')->variant('muted')],
                 ['name' => 'grid', 'label' => 'Grid', 'children' => [
                     $s->displayText('Left')->variant('body'),
@@ -241,12 +241,27 @@ class KitchenSinkPage extends Page
                         ])
                         ->rules('required|in:draft,published')
                         ->onSave(fn ($record, $value) => null),
+                    Column::make('price')
+                        ->label('Price (editable)')
+                        ->numberInput()
+                        ->step('0.01')
+                        ->suffix('USD')
+                        ->rules('required|numeric|min:0')
+                        ->onSave(fn ($record, $value) => null),
+                    Column::make('rank')->number()->prefix('#')->label('Rank'),
                     Column::make('view')
                         ->label('View')
                         ->link(fn ($row) => '/admin/posts/'.data_get($row, 'id'), external: true, icon: 'external-link'),
                 ])
                 ->searchable(['title'])
+                ->filters([
+                    $s->inFilter('status')->options([
+                        ['value' => 'draft', 'label' => 'Draft'],
+                        ['value' => 'published', 'label' => 'Published'],
+                    ]),
+                ])
                 ->deferFilters()
+                ->filtersIn('inline')
                 ->filtersFormColumns(2)
                 ->searchPlaceholder('Search posts…')
                 ->columnToggle(false)

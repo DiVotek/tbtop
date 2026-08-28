@@ -49,6 +49,8 @@ export const defaultMessages: Messages = {
 	"nav.theme": "Toggle theme",
 	"nav.breadcrumb": "Breadcrumb",
 	"state.pageNotFound": "Page not found",
+	"state.pageNotFoundHint": "The page you are looking for does not exist or has moved.",
+	"state.backToPanel": "Back to the panel",
 	"field.otp.label": "One-time code",
 	"field.password.hide": "Hide password",
 	"field.password.show": "Show password",

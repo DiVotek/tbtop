@@ -39,6 +39,7 @@ export type {
 } from "./i18n/i18n";
 export { defaultMessages, I18nProvider, useLocale, useTranslation } from "./i18n/i18n";
 // Inertia integration — server-authored pages
+export { AdminErrorPage } from "./inertia/AdminErrorPage";
 export { AdminPage } from "./inertia/AdminPage";
 export { compileConstraints, type FieldConstraints } from "./inertia/constraints";
 export { defineCustomAction } from "./inertia/customActions";

@@ -15,7 +15,7 @@ use Tbtop\Admin\I18n\TranslatableValue;
  *   2. formatUsing   — arbitrary Closure($value) → $value
  *   3. declarative   — date/datetime/number/money formatting
  *
- * Hidden columns are never processed.
+ * Hidden columns are never processed; editable columns skip steps 2–3.
  */
 final class ColumnProjection
 {
@@ -138,11 +138,19 @@ final class ColumnProjection
         return $row;
     }
 
-    /** translatable → formatUsing → declarative kind format. */
+    /**
+     * translatable → formatUsing → declarative kind format. Editable columns
+     * stop after the translatable step: the inline editor needs the stored
+     * value (a formatted "1,234.56" cannot be edited as a number), and the
+     * cell displays raw value + affix instead of a formatted string.
+     */
     private static function computeValue(Column $col, mixed $value, mixed $row): mixed
     {
         if ($col->isTranslatable()) {
             $value = TranslatableValue::pick($value);
+        }
+        if ($col->isEditable()) {
+            return $value;
         }
         $fmt = $col->getFormatUsing();
         if ($fmt !== null) {

@@ -160,7 +160,7 @@ describe("EditableCell: boolean toggle", () => {
 // ---------------------------------------------------------------------------
 
 describe("EditableCell: text input", () => {
-	test("syncs a server-updated row value and saves that value on blur", async () => {
+	test("syncs a server-updated row value and does not save it back on a clean blur", async () => {
 		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
 		const { container, rerender } = render(
 			<EditableCell col={textCol()} row={row("2", { title: "old" })} saveCell={saveCell} />,
@@ -178,12 +178,11 @@ describe("EditableCell: text input", () => {
 		expect(input.value).toBe("server-new");
 		fireEvent.blur(input);
 
-		await waitFor(() => expect(saveCell).toHaveBeenCalledTimes(1));
-		expect(saveCell.mock.calls[0]?.[0]).toEqual({
-			column: "title",
-			id: "2",
-			value: "server-new",
-		});
+		// value is unchanged from the reconciled server value — blur must not re-save it
+		const { promise, resolve } = Promise.withResolvers<void>();
+		setTimeout(resolve, 10);
+		await promise;
+		expect(saveCell).toHaveBeenCalledTimes(0);
 	});
 
 	test("does not overwrite an active unsaved edit with a server update", async () => {
@@ -200,7 +199,7 @@ describe("EditableCell: text input", () => {
 		expect(input.value).toBe("local-edit");
 	});
 
-	test("blur calls saveCell; no change event call before blur", async () => {
+	test("blur calls saveCell after an edit; no change event call before blur", async () => {
 		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
 
 		const { container } = render(
@@ -211,9 +210,7 @@ describe("EditableCell: text input", () => {
 		expect(input).toBeTruthy();
 
 		// Change event alone should NOT trigger saveCell
-		await act(async () => {
-			fireEvent.focus(input);
-		});
+		await userEvent.type(input, " world");
 		expect(saveCell).toHaveBeenCalledTimes(0);
 
 		// Only blur triggers save
@@ -229,6 +226,58 @@ describe("EditableCell: text input", () => {
 		)[0];
 		expect(call.column).toBe("title");
 		expect(call.id).toBe("2");
+		expect(call.value).toBe("Hello world");
+	});
+
+	test("does NOT call saveCell on blur when the value is unchanged (clean blur)", async () => {
+		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
+
+		const { container } = render(
+			<EditableCell col={textCol()} row={row("2", { title: "Hello" })} saveCell={saveCell} />,
+		);
+
+		const input = container.querySelector("input") as HTMLInputElement;
+
+		await act(async () => {
+			fireEvent.focus(input);
+			fireEvent.blur(input);
+		});
+
+		expect(saveCell).toHaveBeenCalledTimes(0);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Number — raw value with affix, commits a number on blur
+// ---------------------------------------------------------------------------
+
+describe("EditableCell: number input", () => {
+	const priceCol: EditableCellTestCol = {
+		name: "price",
+		kind: "number",
+		suffix: { kind: "displayText", options: { content: "USD" }, meta: {} },
+		editable: { as: "number", input: { step: 0.01 } },
+	};
+
+	test("shows the raw stored number next to the suffix and posts a number on blur", async () => {
+		const saveCell = mock((_args: unknown) => Promise.resolve(undefined));
+		const { container, getByText } = render(
+			<EditableCell col={priceCol} row={row("7", { price: 1234.5 })} saveCell={saveCell} />,
+		);
+
+		const input = container.querySelector("input") as HTMLInputElement;
+		expect(input.type).toBe("number");
+		expect(input.value).toBe("1234.5");
+		expect(input.step).toBe("0.01");
+		expect(getByText("USD")).toBeTruthy();
+
+		await userEvent.clear(input);
+		await userEvent.type(input, "99.9");
+		expect(saveCell).toHaveBeenCalledTimes(0);
+		fireEvent.blur(input);
+
+		await waitFor(() => expect(saveCell).toHaveBeenCalledTimes(1));
+		expect(saveCell.mock.calls[0]?.[0]).toEqual({ column: "price", id: "7", value: 99.9 });
 	});
 });
 

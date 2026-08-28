@@ -7,6 +7,7 @@ import { cn } from "../../lib/cn";
 import { CopyButton } from "../../ui/copyButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { TableColumn } from "../types";
+import { CellAffixes } from "./cellAffix";
 import { ImageCell, LinkCell } from "./cellHelpers";
 import { formatColumnValue } from "./columnValueFormat";
 import { EditableCell } from "./editableCell";
@@ -109,6 +110,18 @@ function renderCell({ col, row, tooltip, saveCell }: RenderCellArgs): ReactNode 
 			/>
 		);
 	}
+	return (
+		<CellAffixes col={col} value={row[col.name]}>
+			{renderDisplayValue(col, row, tooltip)}
+		</CellAffixes>
+	);
+}
+
+function renderDisplayValue(
+	col: TableColumn,
+	row: Record<string, unknown>,
+	tooltip: string | undefined,
+): ReactNode {
 	if (col.kind === "image") {
 		return <ImageCell value={row[col.name]} col={col} tooltip={tooltip} />;
 	}

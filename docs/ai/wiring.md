@@ -39,6 +39,16 @@ Route file: `packages/php/routes/admin.php`
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
+| `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
+
+**Panel 404s.** Two paths lead to the `admin/error` page, both rendered by
+`PanelErrorPage` inside the panel chrome: the per-panel `Route::fallback()` above (an
+unknown URL under the prefix), and a `NotFoundHttpException`/`ModelNotFoundException`
+raised while a panel is bound — e.g. `findOrFail()` inside a page's `view()` — caught by
+the renderable that `AdminServiceProvider` registers. JSON clients (`Accept:
+application/json`, i.e. the table/select/upload endpoints) and requests outside every
+panel keep the app's own 404. The client resolves `admin/error` to the exported
+`AdminErrorPage` (see `apps/demo/resources/js/admin.tsx`).
 
 ### Media manager routes (prefix: `{prefix}/api/media`, name: `tbtop.{panel}.media.*`)
 
@@ -243,8 +253,9 @@ respectively (`packages/php/src/AdminServiceProvider.php:52-53`). Three `$defs` 
 - **`navItem`** — `{label, href, order, icon?, badge?, badgeColor?, newTab?, children?}`.
   `children` is a self-referencing array of `navItem` — the nesting mechanism for
   `nav()['parent']` (see [./recipes.md](./recipes.md#recipe-9--navigation-configuration)).
-- **`navGroup`** — `{group, items: navItem[], icon?, collapsible?, collapsed?}`; `nav` is
-  `navGroup[]`.
+- **`navGroup`** — `{key, group, items: navItem[], icon?, collapsible?, collapsed?}`; `nav` is
+  `navGroup[]`. `group` is the display label or `null` for the single ungrouped bucket
+  (items that declared no group), which the client renders without heading or indent.
 - **`userMenuItem`** — `{label, href, icon?, newTab?}`; no `order`/`children` — user-menu
   entries are a flat list, not grouped or nested.
 

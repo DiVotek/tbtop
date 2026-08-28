@@ -21,7 +21,7 @@ uses(TableTabsHttpTestCase::class)->in('TableTabsHttpTest.php');
 uses(MediaHttpTestCase::class)->in('MediaHttpTest.php');
 uses(PageLayoutHttpTestCase::class)->in('PageLayoutTest.php');
 uses(RunsMigrationsTestCase::class)->in('PackageMigrationsTest.php');
-uses(PanelsHttpTestCase::class)->in('PanelsHttpTest.php');
+uses(PanelsHttpTestCase::class)->in('PanelsHttpTest.php', 'PanelErrorHttpTest.php');
 uses(NotificationsHttpTestCase::class)->in('NotificationsHttpTest.php');
 uses(HeaderActionsHttpTestCase::class)->in('HeaderActionsHttpTest.php');
 uses(RouteCacheSerializationTestCase::class)->in('RouteCacheSerializationTest.php');

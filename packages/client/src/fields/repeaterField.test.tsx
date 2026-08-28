@@ -1,11 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { materialize } from "../inertia/materialize";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "../structure/structure";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
+import type { StructureNode } from "../structure/types";
+import type { FetchHandler } from "../testFixtures";
 import { RepeaterCell, RepeaterForm } from "./repeaterField";
 
 ensureBuiltinsRegistered();
@@ -50,6 +53,20 @@ describe("RepeaterForm", () => {
 			/>,
 		);
 		expect(container.querySelectorAll("[data-repeater-item]")).toHaveLength(2);
+	});
+
+	test("row fields render their helperText and tooltip like top-level fields", () => {
+		const valueField = {
+			kind: "text",
+			name: "value",
+			options: { label: "Value", helperText: "Comma-separated", tooltip: "Rule operand" },
+			meta: {},
+		};
+		const { getByText, getByRole } = render(
+			<Harness initial={[{ value: "x" }]} options={{ fields: [valueField] }} />,
+		);
+		expect(getByText("Comma-separated")).toBeTruthy();
+		expect(getByRole("button", { name: "Rule operand" })).toBeTruthy();
 	});
 
 	test("Add item appends an empty item", async () => {
@@ -174,6 +191,33 @@ describe("RepeaterForm", () => {
 		expect(last[1]).toEqual({ title: "b", qty: 2 });
 	});
 
+	test("two repeaters with a same-named field render distinct control/label ids", () => {
+		const { container } = render(
+			<>
+				<RepeaterForm
+					name="rulesA"
+					value={[{ title: "a" }]}
+					onChange={() => {}}
+					options={{ fields: [titleField] }}
+				/>
+				<RepeaterForm
+					name="rulesB"
+					value={[{ title: "b" }]}
+					onChange={() => {}}
+					options={{ fields: [titleField] }}
+				/>
+			</>,
+		);
+		const inputs = container.querySelectorAll("input");
+		const ids = Array.from(inputs).map((i) => i.id);
+		expect(new Set(ids).size).toBe(ids.length);
+		const labels = container.querySelectorAll("label[for]");
+		for (const label of labels) {
+			const targetId = label.getAttribute("for") as string;
+			expect(container.querySelector(`#${CSS.escape(targetId)}`)).toBeTruthy();
+		}
+	});
+
 	test("sub-field ids are scoped per item so labels target the right input", () => {
 		const { container } = render(
 			<Harness
@@ -252,5 +296,126 @@ describe("repeater via s.form integration", () => {
 		);
 		const label = container.querySelector("label");
 		expect(label?.textContent).toContain("Items");
+	});
+});
+
+// A row's `initial` value must follow its own React identity (the stable
+// per-row UUID key), never its current position — moveUp/moveDown swap two
+// rows' positions without touching their data. A daterange sub-field with
+// dependsOn is the observable proof: on mount its query is skipped only when
+// depsKey already equals initialDepsKey (see daterangeDisabled.ts), so a row
+// whose initial got swapped with its neighbor's spuriously looks "changed"
+// immediately after a reorder and fires an unwanted refetch.
+describe("repeater row initial follows the row through a reorder", () => {
+	function reorderStructure(): StructureNode {
+		return {
+			kind: "form",
+			name: "trip",
+			options: {
+				name: "trip",
+				children: [
+					{
+						kind: "repeater",
+						name: "legs",
+						options: {
+							name: "legs",
+							fields: [
+								{
+									kind: "text",
+									name: "season",
+									options: { label: "Season" },
+									meta: {},
+								},
+								{
+									kind: "daterange",
+									name: "stay",
+									options: { label: "Stay", dependsOn: ["season"] },
+									meta: {},
+								},
+							],
+						},
+						meta: {},
+					},
+				],
+			},
+			meta: {},
+		} as StructureNode;
+	}
+
+	function rangesHandler(calls: Record<string, string>[]): FetchHandler {
+		return async (req) => {
+			const body = (await req.json()) as { deps?: Record<string, string> };
+			calls.push(body.deps ?? {});
+			return Response.json({ ranges: [] });
+		};
+	}
+
+	test("swapping two rows does not trigger a spurious ranges refetch for either row", async () => {
+		const calls: Record<string, string>[] = [];
+		const materialized = materialize(reorderStructure(), {
+			basePath: "/admin/collections",
+			data: {
+				trip: {
+					legs: [
+						{ season: "summer", stay: null },
+						{ season: "winter", stay: null },
+					],
+				},
+			},
+		});
+		const Wrap = wrap(rangesHandler(calls));
+		const { container, getAllByRole } = render(<Wrap>{renderNode(materialized)}</Wrap>);
+		await waitFor(() =>
+			expect(container.querySelectorAll("[data-repeater-item]").length).toBe(2),
+		);
+
+		const moveDowns = getAllByRole("button", { name: "Move down" });
+		await act(async () => {
+			(moveDowns[0] as HTMLElement).click();
+		});
+		await waitFor(() =>
+			expect(container.querySelectorAll("[data-repeater-item]").length).toBe(2),
+		);
+
+		// Give any spurious effect-driven fetch a chance to fire before asserting none did.
+		await act(async () => Promise.resolve());
+		expect(calls).toEqual([]);
+	});
+
+	test("sanity: an actual season change after reorder does refetch with that row's own deps", async () => {
+		const calls: Record<string, string>[] = [];
+		const materialized = materialize(reorderStructure(), {
+			basePath: "/admin/collections",
+			data: {
+				trip: {
+					legs: [
+						{ season: "summer", stay: null },
+						{ season: "winter", stay: null },
+					],
+				},
+			},
+		});
+		const Wrap = wrap(rangesHandler(calls));
+		const user = userEvent.setup();
+		const { container, getAllByRole } = render(<Wrap>{renderNode(materialized)}</Wrap>);
+		await waitFor(() =>
+			expect(container.querySelectorAll("[data-repeater-item]").length).toBe(2),
+		);
+
+		const moveDowns = getAllByRole("button", { name: "Move down" });
+		await act(async () => {
+			(moveDowns[0] as HTMLElement).click();
+		});
+
+		// Row that started as "summer" is now at index 1; editing its own
+		// season field must key the refetch off ITS row, not the neighbor's.
+		const seasonAtRow1 = container.querySelector(
+			'[data-repeater-item="1"] input[name="season"]',
+		) as HTMLInputElement;
+		await user.clear(seasonAtRow1);
+		await user.type(seasonAtRow1, "autumn");
+
+		await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+		expect(calls.at(-1)).toEqual({ season: "autumn" });
 	});
 });

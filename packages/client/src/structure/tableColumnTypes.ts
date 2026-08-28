@@ -6,6 +6,7 @@
 import type { ReactNode } from "react";
 import type { FieldConstraints } from "../inertia/constraints";
 import type { CopyableConfig } from "./copyable";
+import type { StructureNode } from "./structure";
 
 export interface TableColumnIcon {
 	name: string;
@@ -77,10 +78,16 @@ export interface TableColumn<TRow = unknown> {
 	shape?: "square" | "circular" | "rounded";
 	alt?: string;
 	link?: TableColumnLinkOptions;
+	/** Display node rendered before the value — in display mode and inside the inline editor (boolean ignores it). */
+	prefix?: StructureNode;
+	/** Display node rendered after the value, e.g. a unit or currency code. */
+	suffix?: StructureNode;
 	editable?: {
-		as: "boolean" | "text" | "select";
+		as: "boolean" | "text" | "select" | "number";
 		constraints?: FieldConstraints;
 		/** Static options for an inline select column ({value, label}). */
 		options?: Array<{ value: string; label: string }>;
+		/** Editor attributes; number columns carry their step here. */
+		input?: { step?: number | "any" };
 	};
 }

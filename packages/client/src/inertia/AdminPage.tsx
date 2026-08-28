@@ -13,6 +13,7 @@ import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
 import { ActionBlock } from "../structure/actionBlock";
 import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
+import { ModalStackProvider, useModalStack } from "../structure/modalStack";
 import {
 	PageContentErrorBoundary,
 	PageContentErrorPanel,
@@ -95,18 +96,7 @@ export function AdminPage() {
 		[headerActions, basePath, data, defaultContentLocale, t],
 	);
 
-	// Native Inertia flash: the adapter delivers a fresh object per response,
-	// so identical consecutive effects still re-trigger this (shared props
-	// would be reference-deduped by preserveEqualProps and fire only once).
 	const flash = (page.flash as Record<string, unknown> | undefined)?.["tbtop.effects"];
-	useEffect(() => {
-		const effects = readEffects(flash);
-		if (effects.length > 0) {
-			executeFlashEffects(effects, {
-				notify: (msg) => notifyToast(msg.kind, msg.message),
-			});
-		}
-	}, [flash]);
 
 	// Panel-configured content width (appearance.maxWidth); 5xl matches the
 	// pre-option behavior for panels that never set it.
@@ -124,37 +114,42 @@ export function AdminPage() {
 						config={{ locales: contentLocales, defaultLocale: defaultContentLocale }}
 					>
 						<PageSubtitleProvider>
-							<Head title={title} />
-							<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
-								{showPageHeader && breadcrumbs && (
-									<Breadcrumbs items={breadcrumbs} />
-								)}
-								{showPageHeader && (
-									<div className="flex items-start justify-between gap-4">
-										<div>
-											<h1 className="text-2xl font-semibold tracking-tight">
-												{title}
-											</h1>
-											<PageSubtitle staticSubtitle={subtitle} />
-										</div>
-										{headerActionBags.ok ? (
-											<PageHeaderActions actions={headerActionBags.value} />
-										) : (
-											<PageContentErrorPanel
-												error={headerActionBags.error}
-												t={t}
-											/>
-										)}
-									</div>
-								)}
-								<PageContentErrorBoundary>
-									{node.ok ? (
-										renderNode(node.value)
-									) : (
-										<PageContentErrorPanel error={node.error} t={t} />
+							<ModalStackProvider>
+								<FlashEffects flash={flash} />
+								<Head title={title} />
+								<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
+									{showPageHeader && breadcrumbs && (
+										<Breadcrumbs items={breadcrumbs} />
 									)}
-								</PageContentErrorBoundary>
-							</div>
+									{showPageHeader && (
+										<div className="flex items-start justify-between gap-4">
+											<div>
+												<h1 className="text-2xl font-semibold tracking-tight">
+													{title}
+												</h1>
+												<PageSubtitle staticSubtitle={subtitle} />
+											</div>
+											{headerActionBags.ok ? (
+												<PageHeaderActions
+													actions={headerActionBags.value}
+												/>
+											) : (
+												<PageContentErrorPanel
+													error={headerActionBags.error}
+													t={t}
+												/>
+											)}
+										</div>
+									)}
+									<PageContentErrorBoundary>
+										{node.ok ? (
+											renderNode(node.value)
+										) : (
+											<PageContentErrorPanel error={node.error} t={t} />
+										)}
+									</PageContentErrorBoundary>
+								</div>
+							</ModalStackProvider>
 						</PageSubtitleProvider>
 						<Toaster />
 					</ContentLocaleConfigProvider>
@@ -169,7 +164,8 @@ export function AdminPage() {
 // so it is present regardless of which shell wraps the page.
 AdminPage.layout = (page: ReactNode) => <LayoutDispatcher>{page}</LayoutDispatcher>;
 
-function LayoutDispatcher({ children }: { children: ReactNode }) {
+/** Shared by AdminErrorPage so an error keeps the panel shell of a normal page. */
+export function LayoutDispatcher({ children }: { children: ReactNode }) {
 	const { props } = usePage<AdminPageProps>();
 	const tbtop = props.tbtop;
 	const prefix = tbtop?.prefix ?? "";
@@ -230,6 +226,26 @@ function attempt<T>(run: () => T): Attempt<T> {
 		console.error("[tabletop] failed to materialize page structure", error);
 		return { ok: false, error };
 	}
+}
+
+/**
+ * Native Inertia flash: the adapter delivers a fresh object per response, so
+ * identical consecutive effects still re-trigger (shared props would be
+ * reference-deduped by preserveEqualProps and fire only once). Rendered inside
+ * ModalStackProvider so closeModal can reach the page's open modals.
+ */
+function FlashEffects({ flash }: { flash: unknown }) {
+	const modals = useModalStack();
+	useEffect(() => {
+		const effects = readEffects(flash);
+		if (effects.length > 0) {
+			executeFlashEffects(effects, {
+				notify: (msg) => notifyToast(msg.kind, msg.message),
+				modals,
+			});
+		}
+	}, [flash, modals]);
+	return null;
 }
 
 function notifyToast(kind: string | undefined, message: string): void {

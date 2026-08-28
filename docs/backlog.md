@@ -1,7 +1,7 @@
 # Backlog
 
 > Detail pool behind `roadmap.md`. Items promote into a roadmap phase when a real
-> consumer (EasyCar first) or adoption pain demands them. Last revised: 2026-08-24.
+> consumer (EasyCar first) or adoption pain demands them. Last revised: 2026-08-27.
 >
 > **This file lags the code.** Shipped items are struck through as they land, but the
 > sweep is manual — never conclude a feature is missing from this file alone. The
@@ -17,6 +17,14 @@
   wire shape `reorder: {column}`, endpoint scopes ids to the table query. See
   [./ai/wiring.md](./ai/wiring.md).
 - Sticky table header, filter chips, saved filters.
+- **Sidebar filter placement** — `filtersIn()` is `modal|inline` (validated). A left
+  sidebar variant needs the filter panel outside the toolbar row: a two-column shell in
+  `tableBlock`, collapsing to `modal` under `md`. Wanted for attribute filters on catalog
+  tables (ecom).
+- **`Column::moneyInput()` / minor-units editing** — inline editing ships as
+  `numberInput()->step(...)->suffix(...)` over the raw stored value. If a consumer stores
+  minor units, the framework would own ÷100 on projection and ×100 before `onSave`,
+  mirroring `KindFormat`. Not needed while consumers store decimals.
 - ~~Per-column search~~ **Shipped** — `Column::individuallySearchable()`.
 - ~~Soft-delete macro~~ **Shipped** — `TableBuilder::softDeletes($s, Model::class)`.
 - CSV export / import (queued).
@@ -50,6 +58,10 @@
 
 ## Display / layout
 
+- **Conditions outside forms** — `structureRenderer` evaluates `hiddenIf`/`disabledIf`
+  against an empty context on non-form surfaces, so a condition on a page-level layout
+  node never fires (static `hidden: true` works). Needs a page-level condition context
+  (record + user) before conditions are promised outside forms.
 - ~~**`S::markdown($md)`**~~ **Shipped** — server-side commonmark → `displayHtml`;
   `->allowHtml()` for trusted content only.
 - ~~**Flex options on `row`/`stack`**~~ **Shipped** — `justify`/`align`/`gap`/`wrap`, plus
@@ -63,7 +75,11 @@
   DEMO-4 also wired `slideOver()`/`modalWidth()` through wire materialization
   (they were serialized but dropped client-side).
 - Hide scrollbar on the scrollable body (shadcn dialog parity).
-- Sticky header/footer already exist (revola) — verify only.
+- **Footer actions slot** — `ModalShell` supports a sticky footer (every built-in dialog
+  uses it) but the DSL modal renders one body only; an `actionsRow` at the end of the body
+  scrolls with the content. Design: `ActionBuilder::footer([...])` → `spec.footer`, the
+  footer must render inside `ModalProvider`/`ModalDataProvider`. Promote when a consumer
+  hits the short-viewport case again.
 
 ## DX
 

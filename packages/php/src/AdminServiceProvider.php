@@ -2,11 +2,17 @@
 
 namespace Tbtop\Admin;
 
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Commands\InstallCommand;
 use Tbtop\Admin\Commands\MakePageCommand;
+use Tbtop\Admin\Http\PanelErrorPage;
 use Tbtop\Admin\I18n\LocaleService;
 use Tbtop\Admin\Navigation\NavBuilder;
 use Tbtop\Admin\Panels\ChromeSerializer;
@@ -40,6 +46,8 @@ class AdminServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        $this->registerPanelErrorRenderer();
+
         Inertia::share('tbtop', static function (): ?array {
             $panel = CurrentPanel::current();
             if ($panel === null) {
@@ -71,6 +79,31 @@ class AdminServiceProvider extends PackageServiceProvider
                 ],
                 'palette' => $palette === null ? null : (object) $palette,
             ];
+        });
+    }
+
+    /**
+     * A 404 raised while a panel is bound (a page's own findOrFail, an unknown
+     * sub-route) renders the `admin/error` page inside that panel's chrome.
+     * Laravel converts ModelNotFoundException to NotFoundHttpException before
+     * consulting renderables, so one type covers both. Requests outside a
+     * panel, and JSON clients (the table/select/upload endpoints), fall
+     * through to the app's own handler untouched.
+     */
+    private function registerPanelErrorRenderer(): void
+    {
+        $this->callAfterResolving(ExceptionHandler::class, static function (ExceptionHandler $handler): void {
+            if (! $handler instanceof Handler) {
+                return;
+            }
+            $handler->renderable(static function (NotFoundHttpException $e, Request $request): ?Response {
+                $panel = CurrentPanel::current();
+                if ($panel === null || $request->expectsJson()) {
+                    return null;
+                }
+
+                return PanelErrorPage::notFound($request, $panel);
+            });
         });
     }
 }

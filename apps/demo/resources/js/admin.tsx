@@ -4,7 +4,13 @@ import "@tbtop/inertia-admin/styles.css";
 import "../css/app.css";
 
 import { createInertiaApp } from "@inertiajs/react";
-import { defineFieldClient, Input, registerBlock, registerIcon } from "@tbtop/inertia-admin";
+import {
+	AdminErrorPage,
+	defineFieldClient,
+	Input,
+	registerBlock,
+	registerIcon,
+} from "@tbtop/inertia-admin";
 import { Home, Image, List, Settings } from "lucide-react";
 import { createRoot } from "react-dom/client";
 import { route as routeFn } from "ziggy-js";
@@ -69,6 +75,9 @@ createInertiaApp({
 		if (name === "admin/page") {
 			const mod = await import("@tbtop/inertia-admin");
 			return { default: mod.AdminPage };
+		}
+		if (name === "admin/error") {
+			return { default: AdminErrorPage };
 		}
 		// Admin entry only handles admin/* pages.
 		throw new Error(`[admin] No component found for page: ${name}`);

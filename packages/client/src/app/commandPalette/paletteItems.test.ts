@@ -46,6 +46,15 @@ describe("buildPaletteItems", () => {
 		});
 	});
 
+	test("lists ungrouped nav items (group: null) without a group label", () => {
+		const nav: NavGroup[] = [
+			{ key: "", group: null, items: [{ label: "Dashboard", href: "/admin" }] },
+		];
+		const items = buildPaletteItems(nav, { hotkey: "mod+k" });
+		expect(items.map((i) => i.label)).toEqual(["Dashboard"]);
+		expect(items[0]?.group).toBeUndefined();
+	});
+
 	test("excludes nav destinations when includeNav is false", () => {
 		const data: CommandPaletteData = {
 			hotkey: "mod+k",

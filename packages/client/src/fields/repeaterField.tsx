@@ -47,7 +47,7 @@ export function RepeaterForm({
 	const seeded: Item[] =
 		defaultItems > 0 && !disabled ? Array.from({ length: defaultItems }, () => ({})) : [];
 	const items: Item[] = value !== undefined && value !== null ? value : seeded;
-	const keys = useStableItemKeys(items);
+	const { keys, initialIndexOf } = useStableItemKeys(items);
 
 	function emit(next: Item[], keyMutation: (k: string[]) => string[]): void {
 		keys.current = keyMutation(keys.current);
@@ -62,6 +62,7 @@ export function RepeaterForm({
 					repeaterName={name}
 					item={item}
 					index={index}
+					initialIndex={initialIndexOf(keys.current[index])}
 					itemCount={items.length}
 					subFields={subFields}
 					minItems={minItems}
@@ -97,14 +98,33 @@ export function RepeaterForm({
 	);
 }
 
-function useStableItemKeys(items: Item[]): { current: string[] } {
-	const ref = useRef<string[]>([]);
-	if (ref.current.length !== items.length) {
-		const next = ref.current.slice(0, items.length);
+/**
+ * Assigns each row a stable UUID key that follows it through reorders
+ * (moveUp/moveDown swap the key alongside the item), and records the index
+ * each key had when first assigned. That original index is how a row's
+ * `initial` value is found after a reorder: `initial` is captured once at
+ * mount and stays keyed by position, so only a row's own original position —
+ * not its current one — can look it up correctly. A row added afterward
+ * (via "Add item") gets no entry: it has no `initial` counterpart at all.
+ */
+function useStableItemKeys(items: Item[]): {
+	keys: { current: string[] };
+	initialIndexOf: (key: string | undefined) => number | undefined;
+} {
+	const keysRef = useRef<string[]>([]);
+	const originalIndexRef = useRef<Map<string, number>>(new Map());
+	if (keysRef.current.length !== items.length) {
+		const next = keysRef.current.slice(0, items.length);
 		while (next.length < items.length) {
-			next.push(safeUuid());
+			const key = safeUuid();
+			originalIndexRef.current.set(key, next.length);
+			next.push(key);
 		}
-		ref.current = next;
+		keysRef.current = next;
 	}
-	return ref;
+	return {
+		keys: keysRef,
+		initialIndexOf: (key) =>
+			key !== undefined ? originalIndexRef.current.get(key) : undefined,
+	};
 }

@@ -564,12 +564,17 @@ final class S
      * list, optionally laid out via 'columns'), plus a 'label' or 'name' to
      * derive one from. Pass 'name' in $opts to make this a named tabs block
      * (every tab then also needs its own unique 'name', for URL/state addressing).
+     * Mark one tab 'active' => true to open it by default instead of the first;
+     * when several are marked, the last one wins. $opts also accepts 'colSpan'
+     * and 'colStart' to place the whole block within a parent grid.
      *
-     * @param  list<array{name?: string, label?: string, body?: mixed, children?: list<mixed>, columns?: int|array<string, int>, icon?: string|array{name: string, position?: string}, badge?: string|int}>  $tabs  Each entry needs 'body' XOR 'children' ('columns' only applies with 'children')
+     * @param  list<array{name?: string, label?: string, body?: mixed, children?: list<mixed>, columns?: int|array<string, int>, icon?: string|array{name: string, position?: string}, badge?: string|int, active?: bool}>  $tabs  Each entry needs 'body' XOR 'children' ('columns' only applies with 'children')
      * @param  array<string, mixed>  $opts
      */
     public function tabs(array $tabs, array $opts = []): Node
     {
+        self::assertKnownKeys('tabs', $opts, ['name', 'colSpan', 'colStart', ...Meta::keys()]);
+        self::validateColumnPlacement($opts);
         [$options, $meta] = Meta::split($opts);
         $name = $options['name'] ?? null;
         unset($options['name']);
@@ -620,6 +625,9 @@ final class S
         }
         if (isset($tab['badge'])) {
             $out['badge'] = (string) $tab['badge'];
+        }
+        if (($tab['active'] ?? false) === true) {
+            $out['active'] = true;
         }
 
         return $out;

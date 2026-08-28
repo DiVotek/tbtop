@@ -43,18 +43,23 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 		}
 	}
 
-	async function save(next: unknown): Promise<void> {
+	async function save(next: unknown, options: { skipIfClean?: boolean } = {}): Promise<void> {
 		if (!saveCell || !id) {
 			return;
 		}
 
-		// UX-only pre-validation (server re-validates regardless)
+		// UX-only pre-validation (server re-validates regardless). Runs even on a
+		// clean blur so an already-invalid stored value still surfaces its error.
 		const msg = checkField(next, col.editable.constraints ?? {});
 		if (msg) {
 			setError(translateValidationMessage(ctx.t, msg));
 			return;
 		}
 		setError(null);
+
+		if (options.skipIfClean && !dirtyRef.current) {
+			return;
+		}
 
 		await run(() => saveCell({ column: col.name, id, value: next }), {
 			onResult: (rawEffects) => {
@@ -84,8 +89,16 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 		<div onClick={(e) => e.stopPropagation()}>
 			{renderDescriptor(descriptor, {
 				kind: col.editable.as,
-				// Forward static select options so the Select renders its choices
-				options: { name: col.name, options: col.editable.options },
+				// Static select options, editor attributes (step) and the column's
+				// affixes — text/number/select forms wrap themselves in InputGroup
+				// and read prefix/suffix from here.
+				options: {
+					name: col.name,
+					options: col.editable.options,
+					...col.editable.input,
+					prefix: col.prefix,
+					suffix: col.suffix,
+				},
 				meta: {},
 				ctx: {
 					surface: "form",
@@ -102,7 +115,7 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 						},
 						onBlur: () => {
 							if (!persistsOnChange) {
-								void save(valueRef.current);
+								void save(valueRef.current, { skipIfClean: true });
 							}
 						},
 					},

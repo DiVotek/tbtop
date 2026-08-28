@@ -91,6 +91,7 @@
 									"recordUrl": { "type": "boolean" },
 									"recordUrlNewTab": { "type": "boolean" },
 									"deferFilters": { "type": "boolean" },
+									"filtersIn": { "type": "string", "enum": ["modal", "inline"] },
 									"filtersFormColumns": { "type": "integer" },
 									"filtersFormWidth": {
 										"type": "string",
@@ -693,7 +694,8 @@
 									"label": { "type": "string" },
 									"body": { "$ref": "#/$defs/node" },
 									"icon": { "$ref": "#/$defs/icon" },
-									"badge": { "type": "string" }
+									"badge": { "type": "string" },
+									"active": { "type": "boolean" }
 								}
 							},
 							{ "$ref": "#/$defs/tableTab" }
@@ -803,11 +805,13 @@
 							"icon": { "type": "string" }
 						}
 					},
+					"prefix": { "$ref": "#/$defs/node" },
+					"suffix": { "$ref": "#/$defs/node" },
 					"editable": {
 						"type": "object",
 						"required": ["as"],
 						"properties": {
-							"as": { "type": "string", "enum": ["boolean", "text", "select"] },
+							"as": { "type": "string", "enum": ["boolean", "text", "select", "number"] },
 							"constraints": { "$ref": "#/$defs/constraints" },
 							"options": {
 								"type": "array",
@@ -819,6 +823,15 @@
 										"label": { "type": "string" }
 									}
 								}
+							},
+							"input": {
+								"type": "object",
+								"properties": {
+									"step": {
+										"oneOf": [{ "type": "number" }, { "type": "string", "enum": ["any"] }]
+									}
+								},
+								"additionalProperties": false
 							}
 						},
 						"additionalProperties": false
@@ -855,7 +868,7 @@
 			"required": ["key", "group", "items"],
 			"properties": {
 				"key": { "type": "string" },
-				"group": { "type": "string" },
+				"group": { "type": ["string", "null"] },
 				"items": { "type": "array", "items": { "$ref": "#/$defs/navItem" } },
 				"icon": { "$ref": "#/$defs/icon" },
 				"collapsible": { "type": "boolean" },

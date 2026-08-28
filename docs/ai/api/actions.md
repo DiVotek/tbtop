@@ -47,7 +47,7 @@ Action authoring and the closed effect vocabulary an action handler returns.
 
 | Method | What it does |
 |---|---|
-| `closeModal(): self` | Closes the modal the action ran in; a no-op outside a modal action. |
+| `closeModal(): self` | Closes the modal the action ran in — or, from a form-submit handler, the topmost open modal; a no-op when none is open. |
 | `copyToClipboard(string $text): self` | Client writes $text to the clipboard and shows a success notify. |
 | `haltModal(string $message, string $kind = 'error'): self` | Surfaces $message inside the still-open modal; does NOT close it. |
 | `notify(string $message, string $kind = 'success'): self` | Toast the message. Only 'error' and 'warning' have their own styling — every other value, including an unrecognized one, renders as success. Note the failure level is 'error', not 'danger' (which is the *button* color vocabulary and would silently toast green here). |

@@ -64,3 +64,21 @@ it('requires unique tab names throughout a named block', function (array $tabs):
         ['name' => 'general', 'body' => (new S)->displayText('Other')],
     ]],
 ])->throws(InvalidArgumentException::class);
+
+it('serializes active only on the tab that opted in with true', function (): void {
+    $s = new S;
+    $tabs = $s->tabs([
+        ['label' => 'General', 'body' => $s->displayText('A'), 'active' => false],
+        ['label' => 'Advanced', 'body' => $s->displayText('B'), 'active' => true],
+        ['label' => 'Other', 'body' => $s->displayText('C')],
+    ])->options['tabs'];
+
+    expect($tabs[0])->not->toHaveKey('active')
+        ->and($tabs[1]['active'])->toBeTrue()
+        ->and($tabs[2])->not->toHaveKey('active');
+});
+
+it('rejects an unknown tabs block option', function (): void {
+    expect(fn () => (new S)->tabs([], ['default' => 'general']))
+        ->toThrow(InvalidArgumentException::class, 'default');
+});

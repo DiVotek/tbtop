@@ -285,6 +285,8 @@ describe("row variant grid", () => {
 	test("row without variant keeps the default inline flex render", () => {
 		const { container, queryByTestId } = render(renderNode(node("row", { children: [text] })));
 		expect(queryByTestId("row-grid")).toBeNull();
-		expect((container.firstElementChild as HTMLElement).className).toBe("flex flex-row gap-2");
+		expect((container.firstElementChild as HTMLElement).className).toBe(
+			"flex flex-row [&>*]:min-w-0 gap-2",
+		);
 	});
 });

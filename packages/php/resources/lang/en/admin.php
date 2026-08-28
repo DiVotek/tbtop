@@ -69,6 +69,8 @@ return [
         'error' => 'Something went wrong',
         'reload' => 'Reload',
         'pageNotFound' => 'Page not found',
+        'pageNotFoundHint' => 'The page you are looking for does not exist or has moved.',
+        'backToPanel' => 'Back to the panel',
     ],
     'delete' => [
         'confirm' => [

@@ -91,7 +91,30 @@ describe("Aside block", () => {
 		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		const aside = getByTestId("aside-block");
 		expect(aside.className).toContain("w-80");
+		expect(aside.className).toContain("shrink-0");
 		expect(aside.className).toContain("custom-aside");
+	});
+
+	// twMerge must resolve the width conflict in the consumer's favor — a
+	// stray max-w-* default would clamp a wider consumer class regardless of
+	// which width utility wins the merge (the shape the bug report was about).
+	test("Aside: a consumer width class (e.g. w-96) overrides the default w-80", () => {
+		const node = s.aside(
+			[
+				{
+					kind: "displayText" as const,
+					options: { content: "Sidebar", variant: "body" as const },
+					meta: {},
+				},
+			],
+			{ class: "w-96" },
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const aside = getByTestId("aside-block");
+		expect(aside.className).toContain("w-96");
+		expect(aside.className).not.toContain("w-80");
+		expect(aside.className).toContain("shrink-0");
 	});
 
 	test("Aside: hiddenIf=true hides the aside block entirely", () => {

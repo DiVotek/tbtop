@@ -478,7 +478,10 @@ Column::make('published')
 Notes:
 
 - `toggle()` sets `kind = 'boolean'` and marks the column inline-editable in one call. For
-  text use `textInput()`, for a static select use `selectColumn()->options([...])`.
+  text use `textInput()`, for a static select use `selectColumn()->options([...])`, for a
+  number use `numberInput()->step('0.01')` — add `suffix('USD')` (or `prefix('$')`) for the
+  unit; the cell shows the stored value raw so the editor can round-trip it. `money()` stays
+  output-only.
 - `onSave` is **required** on an editable column — omit it and the cell has nowhere to
   persist. The closure's first parameter is type-hinted to your model; the framework
   resolves the row to a model instance before calling it.
@@ -622,6 +625,17 @@ group not mentioned there keeps its first-seen (page-registration) order and sor
 every declared group (`NavBuilder.php:225-229`, `assemble()`). Per-group icon/collapsible
 metadata is matched by label the same way.
 
+### Ungrouped items
+
+A page whose `nav()` omits `group` (or a `NavItem` without `->group()`) is **not** put in a
+default group. All such items form one ungrouped bucket that ships as `group: null` and
+renders without a heading and without the group indent — sidebar links at the level of the
+other groups' headings, inline links in the topbar, icon-only links in the collapsed rail,
+and no group label in the command palette. The bucket has no `navigationGroups()` entry, so
+it always renders first, ahead of every declared and undeclared group. Use it
+for a Dashboard-style entry that should not sit under a "General" label; a page that wants
+a heading declares `'group' => 'General'` (and may label it via `NavGroup::make('General')`).
+
 ---
 
 ## Recipe 10 — Form-aware custom block (live client-side computation)
@@ -708,9 +722,11 @@ Two rules make this pattern sound:
 Same here: the notification builder is plain Laravel, so call it inside any `handle()` /
 `onSubmit` / preset closure and still return `Effects` for the actor's own feedback. A
 modal that collects input is `EditAction` territory — it appends the inner Save/Cancel row
-that actually submits the form (a hand-rolled `->modal(form)` needs its own inner
-`handle()` action inside the form; `->modal()` and `->handle()` on the *same* builder are
-two specs and throw).
+that actually submits the form. A hand-rolled `->modal(form)` needs its own inner action
+inside the form: either a `handle()` action, or a `submit()` action whose form `onSubmit`
+returns `Effects` — `->notify()->closeModal()->redirect($sameUrl)` arrives as Inertia flash
+and `closeModal` closes the topmost open modal. (`->modal()` and `->handle()` on the
+*same* builder are two specs and throw.)
 
 ```php
 EditAction::make(

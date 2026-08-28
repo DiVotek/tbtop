@@ -59,6 +59,13 @@ it('TableSerialization: filtersIn inline serializes correctly', function (): voi
     expect($json['options']['filtersIn'])->toBe('inline');
 });
 
+it('TableSerialization: filtersIn rejects a mode the client cannot render', function (): void {
+    $s = new S;
+
+    expect(fn () => $s->table('posts')->filtersIn('sidebar'))
+        ->toThrow(InvalidArgumentException::class, 'sidebar');
+});
+
 it('TableSerialization: creatable selects fail fast when used as table filters', function (): void {
     $s = new S;
 

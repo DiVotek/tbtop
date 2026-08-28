@@ -943,7 +943,8 @@
                                 "name": "star",
                                 "position": "left"
                             },
-                            "badge": "3"
+                            "badge": "3",
+                            "active": true
                         },
                         {
                             "name": "more",
@@ -1113,6 +1114,26 @@
                             "name": "bulk-delete"
                         }
                     ],
+                    "filters": [
+                        {
+                            "kind": "in",
+                            "options": {
+                                "options": [
+                                    {
+                                        "value": "draft",
+                                        "label": "Draft"
+                                    },
+                                    {
+                                        "value": "published",
+                                        "label": "Published"
+                                    }
+                                ]
+                            },
+                            "meta": {},
+                            "name": "status"
+                        }
+                    ],
+                    "filtersIn": "inline",
                     "tabs": [
                         {
                             "name": "all",
@@ -1215,6 +1236,42 @@
                                         "label": "Published"
                                     }
                                 ]
+                            }
+                        },
+                        {
+                            "name": "price",
+                            "label": "Price (editable)",
+                            "kind": "number",
+                            "suffix": {
+                                "kind": "displayText",
+                                "options": {
+                                    "content": "USD",
+                                    "variant": "body"
+                                },
+                                "meta": {}
+                            },
+                            "editable": {
+                                "as": "number",
+                                "constraints": {
+                                    "required": true,
+                                    "min": 0
+                                },
+                                "input": {
+                                    "step": 0.01
+                                }
+                            }
+                        },
+                        {
+                            "name": "rank",
+                            "label": "Rank",
+                            "kind": "number",
+                            "prefix": {
+                                "kind": "displayText",
+                                "options": {
+                                    "content": "#",
+                                    "variant": "body"
+                                },
+                                "meta": {}
                             }
                         },
                         {

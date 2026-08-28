@@ -132,7 +132,7 @@ are overridable hooks with sensible defaults.
 | `subtitle()` | `subtitle(): ?string` | No | Muted line under the heading; `null` renders nothing |
 | `headerActions()` | `headerActions(S $s): array` | No | Actions rendered in the page header, beside the title |
 | `middleware()` | `static middleware(PanelConfig $panel): ?list<string>` | No | Replaces the panel's auth/app middleware for this page **and its whole endpoint cluster** (forms, actions, tables, data). The mechanism for a **public** page inside an authenticated panel: return `['web']` to skip `auth:{guard}` — panel binding, locale and the Inertia share still apply. Spread `$panel->authStack()` to add rather than replace. `null` inherits |
-| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. `parent` nests this page under another page's nav item — see [./recipes.md](./recipes.md#recipe-9--navigation-configuration) |
+| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. Omit `group` to list the page ungrouped (no heading, no indent). `parent` nests this page under another page's nav item — see [./recipes.md](./recipes.md#recipe-9--navigation-configuration) |
 | `can()` | `static can(): ?string` | No | Gate ability name required to view this page. `null` = no gate (any authenticated user) |
 | `breadcrumbs()` | `breadcrumbs(): array\|\Closure\|null` | No | Override breadcrumbs. Return `[['label' => '...', 'url' => '...']]`, a closure receiving the page instance, or `null` to auto-build from the nav tree |
 | `layout()` | `layout(): string` | No | Shell layout: `'admin'` (sidebar + header, the default) or `'center'` (chrome-less, content centered) |
@@ -284,7 +284,7 @@ $s->flex([$badge, $s->unsavedIndicator(), $s->spacer(), $save], variant: 'card')
 | `displayImage` | `displayImage(string $src): DisplayImageBlock` | Full-size image (`->alt()`/`->caption()`) or a file-download link (`->asLink()`); author passes the URL |
 | `displayRichtext` | `displayRichtext(array $state): DisplayRichtextBlock` | Read-only render of a stored Lexical `SerializedEditorState` map |
 | `displayKeyValue` | `displayKeyValue(array $map): DisplayKeyValueBlock` | `<dl>` map render of key/value pairs |
-| `tabs` | `tabs(array $tabs, array $opts = []): Node` | Tab container; each tab is `['label' => '...', 'body' => ...]` |
+| `tabs` | `tabs(array $tabs, array $opts = []): Node` | Tab container; each tab is `['label' => '...', 'body' => ...]`; add `'active' => true` to open a tab other than the first (last flagged wins) |
 | `actionGroup` | `actionGroup(string $label, array $actions, ?string $as = null): Node` | Button group or dropdown; `$as` is `'buttons'`\|`'dropdown'` (default `'buttons'`) |
 | `dropdown` | `dropdown(string $label, array $actions): Node` | Sugar for `actionGroup(..., 'dropdown')` — always a menu, even for one action |
 
@@ -422,8 +422,9 @@ Returned by `$s->table(string $name)`.
 
 The shape of a table: `columns()` + `query()` are the minimum. Everything else is opt-in —
 search (`searchable()`, `Column::individuallySearchable()`), filters (`filters()` +
-`filtersIn()`), tabs, sorting, pagination, row/bulk/header actions, drag-reorder, grouping,
-inline-editable cells, and the record-URL row link.
+`filtersIn()`, which accepts only `'modal'` or `'inline'` and throws otherwise), tabs,
+sorting, pagination, row/bulk/header actions, drag-reorder, grouping, inline-editable cells,
+and the record-URL row link.
 
 **Toolbar visibility** — three knobs that are easy to confuse:
 
@@ -522,11 +523,22 @@ value looks identical in a table cell and a detail view.
 entirely; `visible(fn)` decides that per request, server-side; `toggleable()` ships the
 column and lets the user hide it, with the second argument choosing the initial state.
 
-**Inline editing.** `toggle()`, `textInput()` and `selectColumn()` make a cell editable
-in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()` for per-cell
-validation and `options()` for the select variant. The save posts to the cell endpoint
-and returns effects — see [wiring.md](./wiring.md) and
+**Inline editing.** `toggle()`, `textInput()`, `numberInput()` and `selectColumn()` make
+a cell editable in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()`
+for per-cell validation, `options()` for the select variant and `step()` for the number
+variant (`step('0.01')` for decimals). The save posts to the cell endpoint and returns
+effects — see [wiring.md](./wiring.md) and
 [Recipe 7](./recipes.md#recipe-7--inline-editable-column-toggle--onsave).
+
+> **Editable cells ship the stored value raw.** `formatUsing()` and the kind formatters
+> (`number(2)`, `date()`, …) are skipped for an editable column — the editor has to
+> round-trip what is in the database, and `"1,234.56"` is not a number. Use
+> `prefix()`/`suffix()` for the unit instead of formatting it into the value.
+
+**Affixes.** `prefix()` / `suffix()` take a string or a display node and render it next
+to the cell value in display mode for any kind (boolean ignores them), and inside the
+inline editor for text / number / select columns. Typical use:
+`Column::make('price')->numberInput()->step('0.01')->suffix('USD')`.
 
 ```php
 // from apps/demo/app/Admin/Pages/PostsIndexPage.php
@@ -578,6 +590,15 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `confirm` | `confirm(string $title, ?string $description = null): self` | Adds a confirmation dialog before the action fires |
 | `authorize` | `authorize(string $ability, mixed $arg = null): self` | Server-side `Gate::allows($ability, $arg)` check; a failing check drops the action from the wire entirely. See "Authorization" below for the collection points that enforce it |
 | `custom` | `custom(string $handler, array $params = []): self` | **Spec.** Delegates to a named client-side handler |
+
+#### Modal body and its actions
+
+A modal has no footer slot: `modal()` takes one body node and renders it in a scrollable
+area. Put the Save/Cancel buttons in an `actionsRow` as the **last child of the body** —
+they scroll with the content (on short viewports the user scrolls down to reach them).
+The prebuilt `EditAction`/`CreateAction` append that row for you; a hand-rolled
+`->modal($form)` must include its own. A sticky footer is a tracked backlog item
+(`docs/backlog.md`, Modal), not a DSL option.
 
 #### Authorization — `authorize()`
 
@@ -865,7 +886,7 @@ a named client-side handler, or let the server do a full Inertia redirect.
 | `redirect` | `redirect(string $href): self` | Navigates to the given URL (Inertia visit) |
 | `refreshTable` | `refreshTable(?string $table = null): self` | Re-fetches the named table. With `null` it falls through: the enclosing table → **every** mounted table → a full page reload when none is registered |
 | `resetForm` | `resetForm(?string $form = null): self` | Resets the **nearest enclosing** form to its `record` state. ⚠️ The `$form` name is currently ignored client-side — passing one does not target that form |
-| `closeModal` | `closeModal(): self` | Closes the currently open modal dialog |
+| `closeModal` | `closeModal(): self` | Closes the modal the action ran in. From a form `onSubmit` handler (delivered as Inertia flash) it closes the **topmost open** modal; a no-op when none is open |
 | `haltModal` | `haltModal(string $message, string $kind = 'error'): self` | Surfaces `$message` **inside the still-open modal** (e.g. a server-side validation failure) — does not close it, unlike every other effect that touches a modal |
 | `copyToClipboard` | `copyToClipboard(string $text): self` | Writes `$text` to the clipboard and toasts on success; a failed write stays silent |
 | `setFormData` | `setFormData(array $data): self` | Replaces each key's value in the **nearest enclosing form**, which stays mounted and **dirty** — no reload, no DB write. Requires the action to have received the form (`->needs('form')`) |

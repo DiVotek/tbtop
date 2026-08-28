@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use InvalidArgumentException;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Fields\Upload;
@@ -18,7 +19,8 @@ final class RuleWalker
 
     /**
      * Walks a structure tree collecting Laravel validation rules from fields.
-     * Accepts Field instances.
+     * Accepts Field instances; a field already serialized with ->toNode()
+     * throws, since a Node no longer carries the rules to collect.
      * Repeater sub-fields become `parent.*.child` rules.
      * Translatable fields become `field.locale` dotted rules per locale.
      *
@@ -47,10 +49,36 @@ final class RuleWalker
             return self::fromField($child, $prefix);
         }
         if ($child instanceof Node) {
+            self::assertNotSerializedField($child);
+
             return self::collect(StructureWalk::descendants($child), $prefix);
         }
 
         return [];
+    }
+
+    /**
+     * A field that reached the walk as a Node has already been serialized: its
+     * rule list is gone (a Node carries only constraints) and a repeater's
+     * sub-fields would be collected without the `name.*.` prefix. Both leave the
+     * validated payload silently different from the rendered form, so refuse.
+     */
+    private static function assertNotSerializedField(Node $node): void
+    {
+        if ($node->name === null) {
+            return; // Field::toNode() always carries a name; an unnamed Node is a custom display block sharing the kind
+        }
+        $fieldClass = S::builtInKindClasses()[$node->kind] ?? null;
+        if ($fieldClass === null) {
+            return;
+        }
+        $builder = substr($fieldClass, strrpos($fieldClass, '\\') + 1);
+        $name = $node->name ?? '(unnamed)';
+
+        throw new InvalidArgumentException(
+            "Field \"{$name}\" (kind \"{$node->kind}\") was serialized with ->toNode() before validation could read it; ".
+            "pass the {$builder} builder itself so its rules are collected."
+        );
     }
 
     /** @param  Field  $field @return array<string, list<string>> */
@@ -290,6 +318,8 @@ final class RuleWalker
             return self::attributesFromField($child, $prefix);
         }
         if ($child instanceof Node) {
+            self::assertNotSerializedField($child);
+
             return self::collectAttributes(StructureWalk::descendants($child), $prefix);
         }
 

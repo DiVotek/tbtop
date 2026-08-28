@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { AdminLayoutShell } from "./AdminLayout";
 
 const USER = { name: "Alice Smith", email: "alice@example.com" };
@@ -57,5 +57,40 @@ describe("TopbarSidebarFrame", () => {
 		expect(header.className).toContain("sticky");
 		expect(header.className).toContain("top-0");
 		expect(header.className).toContain("bg-background");
+	});
+
+	test("collapsing to the rail keeps an ungrouped parent's children reachable via its own trigger", async () => {
+		const navWithUngroupedParent = [
+			{
+				key: "",
+				group: null,
+				items: [
+					{
+						label: "Settings",
+						href: "/admin/settings",
+						children: [{ label: "General", href: "/admin/settings/general" }],
+					},
+				],
+			},
+		];
+		const { getByTestId, findByText } = render(
+			<AdminLayoutShell
+				nav={navWithUngroupedParent}
+				user={USER}
+				currentUrl="/admin"
+				navigation="topbar-sidebar"
+			>
+				<div />
+			</AdminLayoutShell>,
+		);
+		fireEvent.click(getByTestId("sidebar-collapse"));
+
+		const trigger = getByTestId("nav-ungrouped-trigger-/admin/settings");
+		await act(async () => {
+			fireEvent.pointerDown(trigger, { bubbles: true, cancelable: true, isPrimary: true });
+			fireEvent.click(trigger);
+		});
+
+		expect(await findByText("General")).toBeTruthy();
 	});
 });

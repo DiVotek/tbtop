@@ -261,6 +261,8 @@ closure receives their current values as `$deps`. On a parent change the client 
 options and clears the dependent value (opt out with `keepValueOnParentChange()`); until the
 parent has a value the field is disabled, unless `whenParentEmpty('empty')` renders it
 enabled with an empty option set. Daterange shares the same concern for `disabledRanges()`.
+Inside a `repeater` row the parent is resolved against the **row** (`dependsOn('field')` reads
+the sibling `rules.N.field`), not the root form; a root-level parent is not reachable from a row.
 A plain `select` cascading from another `select` uses exactly this shape — the Relation
 example below differs only in what the closure returns.
 

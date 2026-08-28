@@ -3,10 +3,10 @@ import { cn } from "../lib/cn";
 import { type ColumnsSpec, resolveColumnsClass } from "../structure/columnsSpec";
 import { collectFieldNames, countTabErrors, firstTabIndexWithError } from "../structure/fieldNames";
 import { useNearestFormHandle } from "../structure/formContext";
-import type { StructureNode } from "../structure/structure";
 import { TriggerVariantProvider } from "../structure/triggerVariantContext";
+import type { TabItem } from "../structure/types";
 import { Badge } from "../ui/badge";
-import { type IconDef, NodeIcon } from "../ui/node-icon";
+import { NodeIcon } from "../ui/node-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { RenderProps } from "./blockRegistry";
 import { mapChildren } from "./mapChildren";
@@ -40,7 +40,7 @@ interface GridOptions {
 
 interface TabsOptions {
 	name?: string;
-	tabs: { name?: string; label: string; body: StructureNode; icon?: IconDef; badge?: string }[];
+	tabs: TabItem[];
 }
 
 interface WidgetOptions {
@@ -92,7 +92,11 @@ function resolveGap(gap: number | undefined, defaultGap: string): string {
 }
 
 export function StackBlock({ options, children, renderChild }: RenderProps<StackOptions>) {
-	const className = cn("flex flex-col", resolveGap(options.gap, "gap-4"), options.class);
+	const className = cn(
+		"flex flex-col [&>*]:min-w-0",
+		resolveGap(options.gap, "gap-4"),
+		options.class,
+	);
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
@@ -121,7 +125,11 @@ export function RowBlock({ options, children, renderChild }: RenderProps<RowOpti
 			</div>
 		);
 	}
-	const className = cn("flex flex-row", resolveGap(options.gap, "gap-2"), options.class);
+	const className = cn(
+		"flex flex-row [&>*]:min-w-0",
+		resolveGap(options.gap, "gap-2"),
+		options.class,
+	);
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
@@ -144,14 +152,21 @@ export function FlexBlock({ options, children, renderChild }: RenderProps<FlexBl
 	const gap = options.gap != null ? (GAP[options.gap] ?? defaultGap) : defaultGap;
 	const wrap = options.wrap ? "flex-wrap" : "";
 	const card = options.variant === "card" ? "rounded-md border bg-card px-3 py-2" : "";
-	const className = cn("flex", dir, justify, align, gap, wrap, card, options.class);
+	const className = cn("flex [&>*]:min-w-0", dir, justify, align, gap, wrap, card, options.class);
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }
 
 export function GridBlock({ options, children, renderChild }: RenderProps<GridOptions>) {
 	const gap = options.gap != null ? (GAP[options.gap] ?? "gap-4") : "gap-4";
 	return (
-		<div className={cn("grid", gap, resolveColumnsClass(options.cols), options.class)}>
+		<div
+			className={cn(
+				"grid [&>*]:min-w-0",
+				gap,
+				resolveColumnsClass(options.cols),
+				options.class,
+			)}
+		>
 			{mapChildren(children, renderChild)}
 		</div>
 	);
@@ -160,7 +175,7 @@ export function GridBlock({ options, children, renderChild }: RenderProps<GridOp
 export function TabsBlock({ options, renderChild }: RenderProps<TabsOptions>) {
 	const { name, tabs } = options;
 	const values = tabs.map((tab, index) => tab.name ?? String(index));
-	const defaultValue = values[0] ?? "0";
+	const defaultValue = defaultTabValue(tabs, values);
 	const urlName = name && tabs.every((tab) => tab.name) ? name : undefined;
 	const tabFieldNames = useTabFieldNames(tabs);
 	const [active, setActive] = useState(() =>
@@ -316,6 +331,12 @@ function useTabErrorAutoSwitch({
 	}, [errorScrollTick, activeIndex, tabFieldNames, fieldErrors, setActiveIndex]);
 
 	return counts;
+}
+
+/** Several `active` flags is an authoring slip, so the last one wins. */
+function defaultTabValue(tabs: TabItem[], values: string[]): string {
+	const activeIndex = tabs.findLastIndex((tab) => tab.active === true);
+	return (activeIndex >= 0 ? values[activeIndex] : values[0]) ?? "0";
 }
 
 export function WidgetBlock({ options }: RenderProps<WidgetOptions>) {
