@@ -55,6 +55,20 @@ describe("RepeaterForm", () => {
 		expect(container.querySelectorAll("[data-repeater-item]")).toHaveLength(2);
 	});
 
+	test("row fields render their helperText and tooltip like top-level fields", () => {
+		const valueField = {
+			kind: "text",
+			name: "value",
+			options: { label: "Value", helperText: "Comma-separated", tooltip: "Rule operand" },
+			meta: {},
+		};
+		const { getByText, getByRole } = render(
+			<Harness initial={[{ value: "x" }]} options={{ fields: [valueField] }} />,
+		);
+		expect(getByText("Comma-separated")).toBeTruthy();
+		expect(getByRole("button", { name: "Rule operand" })).toBeTruthy();
+	});
+
 	test("Add item appends an empty item", async () => {
 		const user = userEvent.setup();
 		const emits: (Item[] | null)[] = [];
