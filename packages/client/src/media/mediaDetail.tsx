@@ -113,7 +113,7 @@ function DetailShell({
 		try {
 			const updated = await patchMediaItem(client, item.id, {
 				name: name.trim() || item.name,
-				alt: alt || undefined,
+				alt: alt.trim() === "" ? null : alt,
 				description: description.trim() === "" ? null : description,
 				tags,
 				folderId: folderId === "__root__" ? null : folderId,
