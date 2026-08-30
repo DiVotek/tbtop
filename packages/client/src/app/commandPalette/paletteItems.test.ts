@@ -91,7 +91,7 @@ describe("buildPaletteItems", () => {
 		expect(routerVisit).toHaveBeenCalledWith("/admin");
 	});
 
-	test("a handler command run invokes the registered client handler", () => {
+	test("a handler command run invokes the registered client handler", async () => {
 		const handler = mock(() => {});
 		definePaletteCommand("ping", handler);
 		const data: CommandPaletteData = {
@@ -100,7 +100,32 @@ describe("buildPaletteItems", () => {
 			commands: [{ label: "Ping", handler: "ping" }],
 		};
 		buildPaletteItems(NAV, data)[0]?.run();
+		await Promise.resolve();
 		expect(handler).toHaveBeenCalled();
+	});
+
+	test("a synchronously throwing handler is caught and logged", async () => {
+		const error = new Error("boom");
+		definePaletteCommand("sync-failing", () => {
+			throw error;
+		});
+		const consoleError = spyOn(console, "error").mockImplementation(() => {});
+		const data: CommandPaletteData = {
+			hotkey: "mod+k",
+			includeNav: false,
+			commands: [{ label: "Fails", handler: "sync-failing" }],
+		};
+		const run = buildPaletteItems(NAV, data)[0]?.run;
+
+		expect(() => run?.()).not.toThrow();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(consoleError).toHaveBeenCalledWith(
+			"[command-palette] handler error",
+			"sync-failing",
+			error,
+		);
+		consoleError.mockRestore();
 	});
 
 	test("a rejecting async handler is caught and logged, not left unhandled", async () => {
@@ -115,6 +140,8 @@ describe("buildPaletteItems", () => {
 			commands: [{ label: "Fails", handler: "failing" }],
 		};
 		buildPaletteItems(NAV, data)[0]?.run();
+		await Promise.resolve();
+		await Promise.resolve();
 		await Promise.resolve();
 		await Promise.resolve();
 		expect(consoleError).toHaveBeenCalledWith(
