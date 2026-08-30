@@ -61,7 +61,7 @@ function UploadSingleForm({
 	const [error, setError] = useState<string | null>(null);
 	const preview = normalizeUploadValue(value);
 
-	const onFiles = async (files: FileList | null) => {
+	const onFiles = async (files: File[]) => {
 		const file = files?.[0];
 		if (!file) {
 			return;
@@ -152,7 +152,7 @@ interface PickerProps {
 	onBlur?: () => void;
 	invalid?: boolean;
 	describedBy?: string;
-	onFiles: (files: FileList | null) => void;
+	onFiles: (files: File[]) => void;
 }
 
 export function UploadPicker({
@@ -188,7 +188,11 @@ export function UploadPicker({
 					onBlur={onBlur}
 					aria-invalid={invalid || undefined}
 					aria-describedby={describedBy}
-					onChange={(e) => onFiles(e.target.files)}
+					onChange={(e) => {
+						const files = Array.from(e.currentTarget.files ?? []);
+						e.currentTarget.value = "";
+						onFiles(files);
+					}}
 				/>
 			</label>
 			{error ? (

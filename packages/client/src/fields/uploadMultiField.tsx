@@ -63,8 +63,8 @@ export function UploadMultiForm({
 	);
 
 	const uploadFiles = useCallback(
-		async (files: FileList | null) => {
-			if (!files || files.length === 0) {
+		async (files: File[]) => {
+			if (files.length === 0) {
 				return;
 			}
 			setError(null);
