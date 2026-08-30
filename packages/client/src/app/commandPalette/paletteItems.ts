@@ -8,9 +8,11 @@ function runCommand(cmd: PaletteCommand): () => void {
 	if (cmd.handler) {
 		const name = cmd.handler;
 		return () => {
-			Promise.resolve(getPaletteCommand(name)?.()).catch((err: unknown) => {
-				console.error("[command-palette] handler error", name, err);
-			});
+			Promise.resolve()
+				.then(() => getPaletteCommand(name)?.())
+				.catch((err: unknown) => {
+					console.error("[command-palette] handler error", name, err);
+				});
 		};
 	}
 	const href = cmd.href;
