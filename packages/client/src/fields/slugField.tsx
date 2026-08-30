@@ -1,9 +1,9 @@
 import { Wand2, X } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "../i18n/i18n";
-import { useNearestFormController } from "../structure/formContext";
 import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { useFieldSourceData } from "./fieldDependencies";
 import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
 import { slugify } from "./slugify";
 import { usePanelLocale } from "./translatableWrapper";
@@ -62,14 +62,14 @@ export function SlugForm({
 	options,
 }: FieldFormProps<string, SlugOptionsBag>) {
 	const fromField = options?.fromField ?? "";
-	const ctrl = useNearestFormController();
+	const sourceData = useFieldSourceData();
 	const panelLocale = usePanelLocale();
 	const syncBroken = useRef(false);
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 
 	const currentSlug = asString(value);
-	const sourceValue = ctrl ? sourceAt(ctrl.data, fromField, panelLocale) : "";
+	const sourceValue = sourceAt(sourceData, fromField, panelLocale);
 
 	const emitDerived = useCallback((source: string, current: string) => {
 		const derived = slugify(source);

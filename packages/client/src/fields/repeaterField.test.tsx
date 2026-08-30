@@ -45,6 +45,63 @@ const titleField = { kind: "text", name: "title", options: {}, meta: {} };
 const qtyField = { kind: "number", name: "qty", options: {}, meta: {} };
 
 describe("RepeaterForm", () => {
+	test("slug sources resolve against their own row, including nested repeaters", async () => {
+		const user = userEvent.setup();
+		const node = s.form(
+			{
+				query: async () => ({
+					title: "Root title",
+					items: [
+						{
+							title: "First row",
+							slug: "old",
+							children: [{ title: "First child", slug: "old" }],
+						},
+						{
+							title: "Second row",
+							slug: "old",
+							children: [{ title: "Second child", slug: "old" }],
+						},
+					],
+				}),
+			},
+			[
+				s.text({ name: "title" }),
+				s.repeater({
+					name: "items",
+					fields: (sb) => [
+						sb.text({ name: "title" }),
+						sb.slug({ name: "slug", fromField: "title" }),
+						sb.repeater({
+							name: "children",
+							fields: (nested) => [
+								nested.text({ name: "title" }),
+								nested.slug({ name: "slug", fromField: "title" }),
+							],
+						}),
+					],
+				}),
+			],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { container, getAllByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const generate = await waitFor(() => {
+			const buttons = getAllByRole("button", { name: "Generate" });
+			expect(buttons).toHaveLength(4);
+			return buttons;
+		});
+		for (const button of generate) {
+			await user.click(button);
+		}
+		await waitFor(() => {
+			const slugs = Array.from(
+				container.querySelectorAll<HTMLInputElement>('[data-field="slug"] input'),
+			).map((input) => input.value);
+			expect(slugs).toEqual(["first-row", "first-child", "second-row", "second-child"]);
+		});
+	});
+
 	test("renders one card per item", () => {
 		const { container } = render(
 			<Harness
