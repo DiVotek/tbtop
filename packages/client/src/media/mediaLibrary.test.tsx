@@ -22,6 +22,7 @@ import { type FetchHandler, makeTestFetch } from "../testFixtures";
 import { ImportUrlDialog } from "./importUrlDialog";
 import { MediaDetail } from "./mediaDetail";
 import { MediaGrid } from "./mediaGrid";
+import { MediaLibraryBlock } from "./mediaLibraryBlock";
 import type { MediaFolder, MediaItem } from "./types";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -85,6 +86,58 @@ beforeEach(() => {
 
 afterEach(() => {
 	clearBlockRegistry();
+});
+
+// ─── MediaLibraryBlock: folder mutations refresh both views ──────────────────
+
+describe("MediaLibraryBlock: folder mutations", () => {
+	test("creating a folder refreshes both the tree and grid folder cards", async () => {
+		const user = userEvent.setup({ delay: null });
+		const folders: MediaFolder[] = [];
+		let folderFetches = 0;
+		let itemFetches = 0;
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "POST" && req.url.includes("/media/folders")) {
+				const body = (await req.json()) as { name: string };
+				const folder = { id: "f2", name: body.name, parentId: null };
+				folders.push(folder);
+				return new Response(JSON.stringify(folder), { status: 201 });
+			}
+			if (req.url.includes("/media/folders")) {
+				folderFetches += 1;
+				return new Response(JSON.stringify(folders), { status: 200 });
+			}
+			itemFetches += 1;
+			return new Response(
+				JSON.stringify({ data: [], folders, total: 0, page: 1, perPage: 24 }),
+				{ status: 200 },
+			);
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<MediaLibraryBlock
+					options={{}}
+					meta={{}}
+					ctx={{ surface: "form" }}
+					renderChild={() => null}
+				/>
+			</Wrap>,
+		);
+
+		await waitFor(() => expect(folderFetches).toBe(1));
+		await waitFor(() => expect(itemFetches).toBe(1));
+		await act(async () => {
+			await user.click(getByTestId("folder-new"));
+			await user.type(getByTestId("folder-name-input"), "Contracts");
+			await user.click(getByTestId("folder-name-confirm"));
+		});
+
+		expect(await findByTestId("folder-item-f2")).toBeTruthy();
+		expect(await findByTestId("folder-card-f2")).toBeTruthy();
+		expect(folderFetches).toBe(2);
+		expect(itemFetches).toBe(2);
+	});
 });
 
 // ─── MediaGrid: renders items ─────────────────────────────────────────────────
