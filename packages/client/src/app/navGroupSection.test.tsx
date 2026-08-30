@@ -3,7 +3,7 @@ import { fireEvent, render } from "@testing-library/react";
 import { AdminLayoutShell } from "./AdminLayout";
 import type { NavGroup } from "./chromeContext";
 import { DensityContext } from "./densityContext";
-import { NavItemLink } from "./navGroupSection";
+import { containsActive, NavItemLink } from "./navGroupSection";
 
 const USER = { name: "Alice", email: "alice@example.com" };
 
@@ -213,6 +213,33 @@ describe("NavItemLink density", () => {
 		const link = getByText("Posts").closest("a");
 		expect(link?.className).toContain("px-3");
 		expect(link?.className).toContain("py-2");
+	});
+});
+
+describe("navigation active URL matching", () => {
+	const item = { label: "Post", href: "/admin/post" };
+
+	test("does not highlight a link that only shares a pathname prefix", () => {
+		const { getByText } = render(<NavItemLink item={item} currentUrl="/admin/posts" />);
+		expect(getByText("Post").closest("a")?.className).not.toContain("bg-accent font-medium");
+	});
+
+	test("treats the root link as exact-only", () => {
+		expect(containsActive({ label: "Home", href: "/" }, "/admin/posts")).toBe(false);
+	});
+
+	test("matches nested pathname segments and ignores query strings and hashes", () => {
+		const posts = { label: "Posts", href: "/admin/posts?view=all" };
+		expect(containsActive(posts, "/admin/posts/42?tab=edit#content")).toBe(true);
+	});
+
+	test("does not expand an ancestor for an unrelated prefix match", () => {
+		const parent = {
+			label: "Content",
+			href: "/admin/content",
+			children: [item],
+		};
+		expect(containsActive(parent, "/admin/posts")).toBe(false);
 	});
 });
 
