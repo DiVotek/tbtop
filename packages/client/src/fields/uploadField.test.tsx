@@ -93,6 +93,34 @@ describe("UploadForm", () => {
 		expect(captured).toHaveLength(0);
 	});
 
+	test("Upload retries when the same file is selected after an error", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		let attempts = 0;
+		const { container, getByRole } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={null}
+					onChange={() => {}}
+					options={{
+						upload: async () => {
+							attempts += 1;
+							throw new Error("Upload failed");
+						},
+					}}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		const file = new File(["x"], "retry.png", { type: "image/png" });
+
+		await userEvent.upload(input, file);
+		await waitFor(() => expect(getByRole("alert").textContent).toContain("Upload failed"));
+		await userEvent.upload(input, file);
+
+		await waitFor(() => expect(attempts).toBe(2));
+	});
+
 	test("Upload with a value renders preview and clears to null on remove", async () => {
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
