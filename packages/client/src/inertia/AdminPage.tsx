@@ -141,7 +141,7 @@ export function AdminPage() {
 											)}
 										</div>
 									)}
-									<PageContentErrorBoundary>
+									<PageContentErrorBoundary resetKey={page.url}>
 										{node.ok ? (
 											renderNode(node.value)
 										) : (
