@@ -1,6 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
-import { type ComponentPropsWithoutRef, type Ref, useState } from "react";
+import { type ComponentPropsWithoutRef, type Ref, useEffect, useState } from "react";
 import { cn } from "../lib/cn";
 import { isExternalUrl } from "../structure/actionBlock";
 import { resolveColorClasses } from "../structure/table/colorRegistry";
@@ -165,7 +165,14 @@ interface NavItemNodeProps {
  */
 export function NavItemNode({ item, currentUrl }: NavItemNodeProps) {
 	const children = item.children ?? [];
-	const [open, setOpen] = useState(() => containsActive(item, currentUrl));
+	const active = containsActive(item, currentUrl);
+	const [open, setOpen] = useState(() => active);
+
+	useEffect(() => {
+		if (active) {
+			setOpen(true);
+		}
+	}, [active]);
 
 	if (children.length === 0) {
 		return <NavItemLink item={item} currentUrl={currentUrl} />;
