@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { describe, expect, mock, test } from "bun:test";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { RowProvider } from "../structure/rowContext";
@@ -174,6 +174,28 @@ describe("UploadForm", () => {
 		);
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		expect(input.getAttribute("accept")).toBe("image/*");
+	});
+
+	test("Upload forwards validation and blur props to the file input", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const onBlur = mock(() => {});
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={null}
+					onChange={() => {}}
+					onBlur={onBlur}
+					invalid
+					describedBy="file-error"
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(input.getAttribute("aria-describedby")).toBe("file-error");
+		fireEvent.blur(input);
+		expect(onBlur).toHaveBeenCalledTimes(1);
 	});
 
 	test("Upload tolerates a plain string value without crashing", () => {

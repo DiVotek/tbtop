@@ -40,7 +40,10 @@ export function UploadMultiForm({
 	name,
 	value,
 	onChange,
+	onBlur,
 	disabled,
+	invalid,
+	describedBy,
 	options,
 }: FieldFormProps<UploadValue | UploadValue[] | string | string[], UploadOptionsBag>) {
 	const t = useTranslation();
@@ -191,6 +194,9 @@ export function UploadMultiForm({
 					busy={uploading}
 					disabled={disabled}
 					error={error}
+					onBlur={onBlur}
+					invalid={invalid}
+					describedBy={describedBy}
 					onFiles={uploadFiles}
 				/>
 			) : null}

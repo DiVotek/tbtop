@@ -49,7 +49,10 @@ function UploadSingleForm({
 	name,
 	value,
 	onChange,
+	onBlur,
 	disabled,
+	invalid,
+	describedBy,
 	options,
 }: FieldFormProps<UploadValue | string, UploadOptionsBag>) {
 	const { t, ctx, client } = useUploadDependencies();
@@ -99,6 +102,9 @@ function UploadSingleForm({
 			busy={busy}
 			disabled={disabled}
 			error={error}
+			onBlur={onBlur}
+			invalid={invalid}
+			describedBy={describedBy}
 			onFiles={onFiles}
 		/>
 	);
@@ -143,6 +149,9 @@ interface PickerProps {
 	busy: boolean;
 	disabled?: boolean;
 	error: string | null;
+	onBlur?: () => void;
+	invalid?: boolean;
+	describedBy?: string;
 	onFiles: (files: FileList | null) => void;
 }
 
@@ -154,6 +163,9 @@ export function UploadPicker({
 	busy,
 	disabled,
 	error,
+	onBlur,
+	invalid,
+	describedBy,
 	onFiles,
 }: PickerProps) {
 	const t = useTranslation();
@@ -173,6 +185,9 @@ export function UploadPicker({
 					multiple={multiple}
 					className="sr-only"
 					disabled={busy || disabled}
+					onBlur={onBlur}
+					aria-invalid={invalid || undefined}
+					aria-describedby={describedBy}
 					onChange={(e) => onFiles(e.target.files)}
 				/>
 			</label>
