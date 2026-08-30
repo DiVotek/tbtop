@@ -249,6 +249,21 @@ describe("NavItemNode (nested nav)", () => {
 		expect(getByText("General")).toBeTruthy();
 	});
 
+	test("reopens when navigation changes to a descendant URL", () => {
+		const { getByTestId, getByText, queryByText, rerender } = renderNested();
+		const toggle = getByTestId("nav-item-toggle-/admin/settings");
+		expect(queryByText("General")).toBeNull();
+
+		rerender(
+			<AdminLayoutShell nav={NESTED_NAV} user={USER} currentUrl="/admin/settings/general">
+				<div />
+			</AdminLayoutShell>,
+		);
+
+		expect(getByText("General")).toBeTruthy();
+		expect(toggle.getAttribute("aria-expanded")).toBe("true");
+	});
+
 	test("the parent row itself still links to its own page", () => {
 		const { getByText } = renderNested();
 		expect(getByText("Settings").closest("a")?.getAttribute("href")).toBe("/admin/settings");
