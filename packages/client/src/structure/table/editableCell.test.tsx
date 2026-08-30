@@ -443,6 +443,43 @@ describe("EditableCell: optimistic rollback", () => {
 		expect(queryByTestId("cell-error-active")).toBeNull();
 		expect(toggle.getAttribute("aria-checked")).toBe("false");
 	});
+
+	test("ignores a pending save rejection after the cell is reused for another row", async () => {
+		const pending = Promise.withResolvers<unknown>();
+		const saveCell = mock((_args: unknown) => pending.promise);
+		const { container, queryByTestId, rerender } = render(
+			<EditableCell
+				col={booleanCol()}
+				row={row("3", { active: false })}
+				saveCell={saveCell}
+			/>,
+		);
+
+		fireEvent.click(container.querySelector('[role="switch"]') as HTMLElement);
+		rerender(
+			<EditableCell
+				col={booleanCol()}
+				row={row("4", { active: true })}
+				saveCell={saveCell}
+			/>,
+		);
+
+		await act(async () => {
+			pending.reject({ errors: { active: ["Stale row error"] } });
+			try {
+				await pending.promise;
+			} catch {
+				// The component handles the rejection; keep act settled.
+			}
+		});
+
+		expect(queryByTestId("cell-error-active")).toBeNull();
+		expect(
+			(container.querySelector('[role="switch"]') as HTMLElement).getAttribute(
+				"aria-checked",
+			),
+		).toBe("true");
+	});
 });
 
 // ---------------------------------------------------------------------------
