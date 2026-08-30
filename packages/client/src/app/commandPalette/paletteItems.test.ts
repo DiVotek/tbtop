@@ -40,10 +40,34 @@ describe("buildPaletteItems", () => {
 		const items = buildPaletteItems(NAV, { hotkey: "mod+k" });
 		expect(items.map((i) => i.label)).toEqual(["Dashboard", "Posts", "Brands"]);
 		expect(items[0]).toMatchObject({
-			id: "nav:/admin",
+			id: "nav:/admin:0",
 			group: "Overview",
 			icon: { name: "star" },
 		});
+	});
+
+	test("assigns unique IDs to repeated nav destinations and commands", () => {
+		const nav: NavGroup[] = [
+			{
+				key: "Repeated",
+				group: "Repeated",
+				items: [
+					{ label: "First nav", href: "/same" },
+					{ label: "Second nav", href: "/same" },
+				],
+			},
+		];
+		const items = buildPaletteItems(nav, {
+			hotkey: "mod+k",
+			commands: [
+				{ label: "First href", href: "/same" },
+				{ label: "Second href", href: "/same" },
+				{ label: "First handler", handler: "same" },
+				{ label: "Second handler", handler: "same" },
+			],
+		});
+
+		expect(new Set(items.map((item) => item.id)).size).toBe(items.length);
 	});
 
 	test("lists ungrouped nav items (group: null) without a group label", () => {

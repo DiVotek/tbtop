@@ -38,11 +38,12 @@ function runCommand(cmd: PaletteCommand): () => void {
 export function buildPaletteItems(nav: NavGroup[], data: CommandPaletteData): PaletteItem[] {
 	const items: PaletteItem[] = [];
 	if (data.includeNav !== false) {
+		let navIndex = 0;
 		for (const group of nav) {
 			items.push(
 				...group.items.map(
 					(item): PaletteItem => ({
-						id: `nav:${item.href}`,
+						id: `nav:${item.href}:${navIndex++}`,
 						label: item.label,
 						group: group.group ?? undefined,
 						icon: item.icon,
@@ -57,7 +58,7 @@ export function buildPaletteItems(nav: NavGroup[], data: CommandPaletteData): Pa
 	}
 	(data.commands ?? []).forEach((cmd, i) => {
 		items.push({
-			id: `cmd:${cmd.handler ?? cmd.href ?? i}`,
+			id: `cmd:${cmd.handler ?? cmd.href ?? "command"}:${i}`,
 			label: cmd.label,
 			group: cmd.group,
 			icon: cmd.icon,
