@@ -106,7 +106,7 @@ export function NavItemLink({
 	ref,
 	...linkProps
 }: NavItemLinkProps) {
-	const active = currentUrl.startsWith(item.href);
+	const active = isActiveUrl(item.href, currentUrl);
 	const density = useDensity();
 	const icon = item.icon ? <NodeIcon icon={item.icon} className="size-4 shrink-0" /> : null;
 	const className = cn(
@@ -145,9 +145,15 @@ export function NavItemLink({
 	);
 }
 
+function isActiveUrl(itemUrl: string, currentUrl: string): boolean {
+	const itemPath = itemUrl.split(/[?#]/, 1)[0]?.replace(/\/+$/, "") || "/";
+	const currentPath = currentUrl.split(/[?#]/, 1)[0]?.replace(/\/+$/, "") || "/";
+	return currentPath === itemPath || (itemPath !== "/" && currentPath.startsWith(`${itemPath}/`));
+}
+
 /** True when the item or any nested descendant matches the current URL. */
 export function containsActive(item: NavItem, currentUrl: string): boolean {
-	if (currentUrl.startsWith(item.href)) {
+	if (isActiveUrl(item.href, currentUrl)) {
 		return true;
 	}
 	return (item.children ?? []).some((child) => containsActive(child, currentUrl));
