@@ -112,6 +112,17 @@ describe("NavGroupSection", () => {
 		expect(getByText("Settings")).toBeTruthy();
 	});
 
+	test.each([
+		"null",
+		"[]",
+		JSON.stringify({ System: "yes" }),
+	])("ignores invalid stored collapse state %s and uses the server default", (stored) => {
+		window.localStorage.setItem("tbtop:nav-collapsed", stored);
+
+		const { queryByText } = renderNav();
+		expect(queryByText("Settings")).toBeNull();
+	});
+
 	test("when key differs from the localized group label, the label renders but the testid and persistence key follow the stable key", () => {
 		window.localStorage.clear();
 		const localizedNav: NavGroup[] = [
