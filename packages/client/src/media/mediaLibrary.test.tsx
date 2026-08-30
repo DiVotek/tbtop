@@ -544,6 +544,41 @@ describe("MediaGrid: pagination", () => {
 // ─── MediaDetail: PATCH on save ───────────────────────────────────────────────
 
 describe("MediaDetail: PATCH on save", () => {
+	test("clearing existing alt text sends null", async () => {
+		const user = userEvent.setup({ delay: null });
+		const patches: unknown[] = [];
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "PATCH" && req.url.includes("/media/img1")) {
+				patches.push(await req.json());
+				return new Response(JSON.stringify({ ...ITEM_IMG, alt: null }), { status: 200 });
+			}
+			return new Response("{}");
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId } = render(
+			<Wrap>
+				<MediaDetail
+					item={ITEM_IMG}
+					folders={[FOLDER_A]}
+					onClose={() => {}}
+					onUpdated={() => {}}
+					onDeleted={() => {}}
+				/>
+			</Wrap>,
+		);
+
+		await act(async () => {
+			await user.click(getByTestId("detail-alt-input"));
+			await user.keyboard("{Control>}a{/Control}{Backspace}");
+		});
+		await act(async () => {
+			await user.click(getByTestId("detail-save-btn"));
+		});
+
+		await waitFor(() => expect(patches).toHaveLength(1));
+		expect(patches[0]).toMatchObject({ alt: null });
+	});
+
 	test("switching items resets the form before saving the new item", async () => {
 		const user = userEvent.setup({ delay: null });
 		const patches: Array<{ url: string; body: unknown }> = [];
