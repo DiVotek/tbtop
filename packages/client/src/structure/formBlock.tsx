@@ -397,11 +397,7 @@ function mergeName(node: StructureNode): Bag {
 
 function normalize(data: unknown): Bag {
 	if (data && typeof data === "object" && !Array.isArray(data)) {
-		const obj = data as Bag;
-		if ("data" in obj && typeof obj.data === "object" && obj.data !== null) {
-			return obj.data as Bag;
-		}
-		return obj;
+		return data as Bag;
 	}
 	return {};
 }
