@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { ClientProvider, createAdminClient } from "../data/client";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
-import { type FetchHandler, makeTestFetch } from "../testFixtures";
+import { type FetchHandler, makeTestFetch, makeTestXhr } from "../testFixtures";
 import { ImportUrlDialog } from "./importUrlDialog";
 import { MediaDetail } from "./mediaDetail";
 import { MediaGrid } from "./mediaGrid";
@@ -66,7 +66,11 @@ const FOLDER_A: MediaFolder = { id: "f1", name: "Photos", parentId: null };
 // ─── Wrapper ──────────────────────────────────────────────────────────────────
 
 function wrap(handler: FetchHandler) {
-	const client = createAdminClient({ baseUrl: "http://test", fetch: makeTestFetch(handler) });
+	const client = createAdminClient({
+		baseUrl: "http://test",
+		fetch: makeTestFetch(handler),
+		xhr: makeTestXhr(handler),
+	});
 	return function Wrapper({ children }: { children: ReactNode }) {
 		return <ClientProvider client={client}>{children}</ClientProvider>;
 	};
@@ -577,6 +581,65 @@ describe("MediaDetail: PATCH on save", () => {
 
 		await waitFor(() => expect(patches).toHaveLength(1));
 		expect(patches[0]).toMatchObject({ alt: null });
+	});
+
+	test("saving after replacement uses metadata returned for the same item", async () => {
+		const user = userEvent.setup({ delay: null });
+		const patches: unknown[] = [];
+		const replacedItem: MediaItem = {
+			...ITEM_IMG,
+			name: "replacement.jpg",
+			alt: "Replacement alt",
+			description: "Replacement description",
+			tags: ["replacement"],
+			folderId: FOLDER_A.id,
+		};
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "POST" && req.url.includes("/media/img1/replace")) {
+				return new Response(JSON.stringify(replacedItem), { status: 200 });
+			}
+			if (req.method === "PATCH") {
+				patches.push(await req.json());
+				return new Response(JSON.stringify(replacedItem), { status: 200 });
+			}
+			return new Response("{}");
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId } = render(
+			<Wrap>
+				<MediaDetail
+					item={ITEM_IMG}
+					folders={[FOLDER_A]}
+					onClose={() => {}}
+					onUpdated={() => {}}
+					onDeleted={() => {}}
+				/>
+			</Wrap>,
+		);
+
+		await act(async () => {
+			await user.upload(
+				getByTestId("detail-replace-input"),
+				new File(["replacement"], "replacement.jpg", { type: "image/jpeg" }),
+			);
+		});
+		await waitFor(() =>
+			expect((getByTestId("detail-name-input") as HTMLInputElement).value).toBe(
+				replacedItem.name,
+			),
+		);
+
+		await act(async () => {
+			await user.click(getByTestId("detail-save-btn"));
+		});
+		await waitFor(() => expect(patches).toHaveLength(1));
+		expect(patches[0]).toMatchObject({
+			name: replacedItem.name,
+			alt: replacedItem.alt,
+			description: replacedItem.description,
+			tags: replacedItem.tags,
+			folderId: replacedItem.folderId,
+		});
 	});
 
 	test("switching items resets the form before saving the new item", async () => {

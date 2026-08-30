@@ -140,6 +140,11 @@ function DetailShell({
 		setError(null);
 		try {
 			const updated = await replaceMediaItem(client, item.id, file);
+			setName(updated.name);
+			setAlt(updated.alt ?? "");
+			setDescription(updated.description ?? "");
+			setTags(updated.tags ?? []);
+			setFolderId(updated.folderId ?? "__root__");
 			onUpdated(updated);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t("state.error"));
