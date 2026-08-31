@@ -44,6 +44,23 @@ function useShouldUseDialog(): boolean {
 	return useResponsiveDialog().useDialog;
 }
 
+const DialogPopupContainerContext = createContext<HTMLElement | null>(null);
+
+/**
+ * The in-dialog layer that floating popups (select, combobox, dropdown) should
+ * portal into, or null when there is no dialog above.
+ *
+ * Radix Dialog's scroll lock only whitelists its own content node
+ * (`shards: [contentRef]`), and react-remove-scroll unconditionally cancels
+ * wheel events whose target sits outside every shard. A popup portalled to
+ * `document.body` is therefore unscrollable by mouse while a dialog is open.
+ * Rendering it inside the content subtree puts it back under the shard, which
+ * restores wheel scrolling *and* keeps proper overscroll containment.
+ */
+export function useDialogPopupContainer(): HTMLElement | null {
+	return useContext(DialogPopupContainerContext);
+}
+
 export type ResponsiveDialogProps = ComponentProps<typeof DrawerPrimitive.Root> & {
 	onlyDrawer?: boolean;
 	onlyDialog?: boolean;
@@ -248,6 +265,9 @@ export const ResponsiveDialogContent = forwardRef<
 		const t = useTranslation();
 		const shouldUseDialog = useShouldUseDialog();
 		const Content = shouldUseDialog ? DialogPrimitive.Content : DrawerPrimitive.Content;
+		// State, not a ref: consumers portal into this node during render, so
+		// they must re-render once it exists.
+		const [popupContainer, setPopupContainer] = useState<HTMLElement | null>(null);
 
 		const shouldShowCloseButton = !alert && showCloseButton;
 		const shouldPreventOutsideInteraction = !modal || (!dismissible && !alert) || alert;
@@ -279,7 +299,12 @@ export const ResponsiveDialogContent = forwardRef<
 							)}
 						/>
 					)}
-					{children}
+					<DialogPopupContainerContext.Provider value={popupContainer}>
+						{children}
+					</DialogPopupContainerContext.Provider>
+					{/* Out of flow so the popups portalled here never become grid/flex
+					    items of the content layout. */}
+					<div ref={setPopupContainer} className="absolute" />
 					{shouldShowCloseButton && (
 						<ResponsiveDialogClose
 							className={cn(

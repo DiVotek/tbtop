@@ -5,6 +5,7 @@ import type * as React from "react";
 import { useDensity } from "../app/densityContext";
 import { cn } from "../lib/cn";
 import { inputCompactFontClass, inputFontClass } from "./input";
+import { useDialogPopupContainer } from "./revola";
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
 	return <SelectPrimitive.Root data-slot="select" {...props} />;
@@ -58,8 +59,9 @@ function SelectContent({
 	align = "center",
 	...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+	const popupContainer = useDialogPopupContainer();
 	return (
-		<SelectPrimitive.Portal>
+		<SelectPrimitive.Portal container={popupContainer ?? undefined}>
 			<SelectPrimitive.Content
 				data-slot="select-content"
 				className={cn(

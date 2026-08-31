@@ -226,6 +226,26 @@ describe("Select field — static searchable", () => {
 		expect(getByTestId("select-label-fruit").textContent).toBe("Apple");
 	});
 
+	test("Select searchable: the option list scrolls by wheel inside a modal", async () => {
+		const user = userEvent.setup();
+		const { getByTestId } = render(<ModalSearchableSelect />);
+
+		await user.click(getByTestId("select-search-fruit"));
+		const option = await waitFor(
+			() => document.querySelector('[data-testid="select-option-fruit"]') as HTMLElement,
+		);
+		const list = option.closest(".overflow-y-auto") as HTMLElement;
+		// happy-dom has no layout, so the overflow the dialog's scroll lock
+		// measures has to be declared explicitly.
+		Object.defineProperty(list, "scrollHeight", { value: 600, configurable: true });
+		Object.defineProperty(list, "clientHeight", { value: 200, configurable: true });
+
+		const wheel = new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: 100 });
+		option.dispatchEvent(wheel);
+
+		expect(wheel.defaultPrevented).toBe(false);
+	});
+
 	test("Select searchable: a query-backed select keeps the async adapter", async () => {
 		const query = mock(async () => [{ value: "remote", label: "Remote option" }]);
 		const Wrap = wrap(() => new Response("{}"));
