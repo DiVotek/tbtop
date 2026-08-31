@@ -10,6 +10,25 @@ beforeEach(function (): void {
     ChartParamsPage::$capturedParams = null;
 });
 
+it('emits static chart data without a query source', function (): void {
+    $s = new S;
+    $node = $s->chart('static', 'line', [
+        'data' => [['day' => 'mon', 'count' => 3]],
+        'xKey' => 'day',
+    ])->toNode();
+    $json = json_decode(json_encode($node), true);
+
+    expect($json['options']['data'])->toBe([['day' => 'mon', 'count' => 3]])
+        ->and($json['options'])->not->toHaveKey('source');
+});
+
+it('rejects an included chart without static data or a query', function (): void {
+    $chart = (new S)->chart('empty', 'line');
+
+    expect(fn () => $chart->toNode())
+        ->toThrow(InvalidArgumentException::class, 'Chart "empty" requires static data or a query.');
+});
+
 it('emits param nodes under options.params in the wire structure', function (): void {
     $s = new S;
     $chart = $s->chart('test', 'bar')

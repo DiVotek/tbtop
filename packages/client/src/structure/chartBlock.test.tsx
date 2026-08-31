@@ -1,13 +1,111 @@
 import { describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { renderNode } from "../render/structureRenderer";
-import type { ChartPoint, ChartType } from "./chartBlock";
+import {
+	type ChartBlockOptions,
+	type ChartPoint,
+	type ChartType,
+	createChartBlock,
+} from "./chartBlock";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 
 const series = [{ dataKey: "count", label: "Posts" }];
 
 describe("Chart integration", () => {
+	test("Chart renders static data without a query", async () => {
+		const StaticChart = createChartBlock((data) => (
+			<output data-testid="chart-data">{JSON.stringify(data)}</output>
+		));
+		const options = {
+			type: "line",
+			data: [{ day: "mon", count: 3 }],
+			xKey: "day",
+			series,
+		} satisfies ChartBlockOptions;
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(
+			<Wrap>
+				<StaticChart
+					options={options}
+					meta={{}}
+					ctx={{ surface: "form" }}
+					renderChild={() => null}
+				/>
+			</Wrap>,
+		);
+
+		expect((await findByTestId("chart-data")).textContent).toBe('[{"day":"mon","count":3}]');
+	});
+
+	test("Chart query result replaces static data", async () => {
+		const StaticChart = createChartBlock((data) => (
+			<output data-testid="chart-data">{JSON.stringify(data)}</output>
+		));
+		let resolveQuery: (data: ChartPoint[]) => void = () => {};
+		const options = {
+			type: "line",
+			data: [{ day: "static", count: 1 }],
+			query: () =>
+				new Promise<ChartPoint[]>((resolve) => {
+					resolveQuery = resolve;
+				}),
+			xKey: "day",
+			series,
+		} satisfies ChartBlockOptions;
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText, getByTestId } = render(
+			<Wrap>
+				<StaticChart
+					options={options}
+					meta={{}}
+					ctx={{ surface: "form" }}
+					renderChild={() => null}
+				/>
+			</Wrap>,
+		);
+
+		expect(getByTestId("chart-data").textContent).toBe('[{"day":"static","count":1}]');
+		await act(async () => {
+			resolveQuery([{ day: "dynamic", count: 2 }]);
+		});
+		expect(await findByText('[{"day":"dynamic","count":2}]')).toBeTruthy();
+	});
+
+	test("Chart safely switches between dynamic and static sources", () => {
+		const StaticChart = createChartBlock((data) => (
+			<output data-testid="chart-data">{JSON.stringify(data)}</output>
+		));
+		const Wrap = wrap(() => new Response("{}"));
+		const renderChart = (options: ChartBlockOptions) => (
+			<Wrap>
+				<StaticChart
+					options={options}
+					meta={{}}
+					ctx={{ surface: "form" }}
+					renderChild={() => null}
+				/>
+			</Wrap>
+		);
+		const pending = () => new Promise<ChartPoint[]>(() => {});
+		const dynamic = { type: "line", query: pending } satisfies ChartBlockOptions;
+		const staticData = {
+			type: "line",
+			data: [{ day: "static", count: 1 }],
+		} satisfies ChartBlockOptions;
+		const first = render(renderChart(dynamic));
+
+		expect(first.getByTestId("chart-skeleton")).toBeTruthy();
+		first.rerender(renderChart(staticData));
+		expect(first.getByTestId("chart-data").textContent).toBe('[{"day":"static","count":1}]');
+		expect(first.queryByTestId("chart-skeleton")).toBeNull();
+		first.unmount();
+
+		const second = render(renderChart(staticData));
+		second.rerender(renderChart(dynamic));
+		expect(second.getByTestId("chart-data").textContent).toBe("[]");
+	});
+
 	test("Chart loaded state renders the chart container", async () => {
 		const node = s.chart({
 			type: "line",

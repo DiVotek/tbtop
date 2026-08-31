@@ -597,9 +597,17 @@
 					"then": {
 						"properties": {
 							"options": {
+								"anyOf": [{ "required": ["data"] }, { "required": ["source"] }],
 								"properties": {
 									"type": { "type": "string" },
 									"source": { "type": "string" },
+									"data": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"additionalProperties": { "type": ["string", "number", "null"] }
+										}
+									},
 									"poll": { "type": "integer", "minimum": 5 }
 								}
 							}

@@ -102,6 +102,11 @@ final class ChartBuilder implements JsonSerializable
     public function toNode(): Node
     {
         [$options, $optMeta] = Meta::split($this->opts);
+        if ($this->isIncluded() && ! array_key_exists('data', $options) && $this->queryClosure === null) {
+            throw new \InvalidArgumentException(
+                "Chart \"{$this->name}\" requires static data or a query."
+            );
+        }
         $meta = [...$optMeta, ...$this->metaBag];
         if ($this->paramFields !== []) {
             $options['params'] = array_map(fn (Field $f) => $f->toNode(), $this->paramFields);

@@ -215,6 +215,16 @@ it('chart with poll conforms to the wire grammar schema', function () {
     validateAgainstSchema(json_decode(json_encode($chart)));
 });
 
+it('chart with static data conforms to the wire grammar schema', function () {
+    $s = new S;
+    $chart = $s->chart('load', 'line', [
+        'data' => [['period' => '2026-08', 'count' => 12]],
+        'xKey' => 'period',
+    ]);
+
+    validateAgainstSchema(json_decode(json_encode($chart)));
+});
+
 it('liveRegion ships dependsOn and record-seeded initial, never the closure', function () {
     $s = new S;
     $form = $s->form('post', [

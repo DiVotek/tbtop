@@ -3,6 +3,7 @@ import { act, render } from "@testing-library/react";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
+import { createChartBlock } from "./chartBlock";
 import { wrapForStructure } from "./testFixtures";
 import type { StructureNode } from "./types";
 
@@ -47,6 +48,25 @@ async function advance(ms: number) {
 }
 
 describe("chart polling", () => {
+	test("static data ignores a declared poll interval", () => {
+		const StaticChart = createChartBlock((data) => <output>{JSON.stringify(data)}</output>);
+		const Wrap = wrapForStructure(() => new Response("{}"));
+		const timersBefore = jest.getTimerCount();
+
+		render(
+			<Wrap>
+				<StaticChart
+					options={{ type: "line", data: [{ x: 1, y: 2 }], poll: 10 }}
+					meta={{}}
+					ctx={{ surface: "form" }}
+					renderChild={() => null}
+				/>
+			</Wrap>,
+		);
+
+		expect(jest.getTimerCount()).toBe(timersBefore);
+	});
+
 	test("poll refetches the query on each interval tick", async () => {
 		const { state, query } = countingQuery();
 		const Wrap = wrapForStructure(() => new Response("{}"));
