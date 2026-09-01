@@ -73,7 +73,11 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 `Tbtop\Admin\Dsl\Fields\Date`
 
-No methods beyond the shared base — see [Every field](#every-field).
+| Method | What it does |
+|---|---|
+| `maxDate(DateTimeInterface\|string $date): static` | Latest selectable day; also the last year offered by yearPicker(). |
+| `minDate(DateTimeInterface\|string $date): static` | Earliest selectable day; also the first year offered by yearPicker(). |
+| `yearPicker(bool $state = true): static` | Swaps the calendar caption's year label for a year dropdown. Offers only years within minDate()/maxDate() — without them, a narrow band around today. |
 
 ## Daterange (daterange)
 
