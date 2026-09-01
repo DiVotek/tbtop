@@ -119,6 +119,8 @@ export function createChartBlock(
 		if (query && state.kind === "loading" && options.data === undefined) {
 			return <>{options.loading ?? <ChartSkeleton />}</>;
 		}
+		// Unlike the loading branch above, a failed query does NOT fall back to
+		// options.data: stale numbers with no failure signal read as current.
 		if (query && state.kind === "error") {
 			const fallback = <ChartError message={state.message} />;
 			return <>{renderAsyncError(options.error, state.message, fallback)}</>;

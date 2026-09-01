@@ -107,6 +107,9 @@ final class ChartBuilder implements JsonSerializable
                 "Chart \"{$this->name}\" requires static data or a query."
             );
         }
+        if (array_key_exists('data', $options)) {
+            $this->assertScalarRows($options['data']);
+        }
         $meta = [...$optMeta, ...$this->metaBag];
         if ($this->paramFields !== []) {
             $options['params'] = array_map(fn (Field $f) => $f->toNode(), $this->paramFields);
@@ -114,6 +117,35 @@ final class ChartBuilder implements JsonSerializable
 
         return (new Node("chart:{$this->type}", [...$options, 'type' => $this->type], $this->name, $meta))
             ->when($this->isIncluded());
+    }
+
+    /**
+     * The wire grammar restricts static rows to flat string/number/null cells
+     * (structure.schema.json, chart options.data); anything else ships silently.
+     */
+    private function assertScalarRows(mixed $data): void
+    {
+        if (! is_array($data)) {
+            throw new \InvalidArgumentException(
+                "Chart \"{$this->name}\" data must be a list of rows."
+            );
+        }
+        foreach ($data as $row) {
+            if (! is_array($row)) {
+                throw new \InvalidArgumentException(
+                    "Chart \"{$this->name}\" data must be a list of rows."
+                );
+            }
+            foreach ($row as $key => $value) {
+                if ($value === null || is_string($value) || is_int($value) || is_float($value)) {
+                    continue;
+                }
+                $type = get_debug_type($value);
+                throw new \InvalidArgumentException(
+                    "Chart \"{$this->name}\" data column \"{$key}\" must be a string, number or null, got {$type}."
+                );
+            }
+        }
     }
 
     /** @return array<string, mixed> */
