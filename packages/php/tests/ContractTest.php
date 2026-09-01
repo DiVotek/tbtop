@@ -131,6 +131,25 @@ it('field affixes conform to the wire grammar schema', function () {
     validateAgainstSchema(json_decode(json_encode($form)));
 });
 
+it('date year picker and bounds conform to the wire grammar schema', function () {
+    $s = new S;
+    $form = $s->form('profile', [
+        $s->date('birthday')->yearPicker()->minDate('1920-01-01')->maxDate('2026-09-01'),
+        $s->date('plain'),
+    ]);
+
+    $json = json_decode(json_encode($form), true);
+    validateAgainstSchema(json_decode(json_encode($form)));
+
+    $birthday = $json['options']['children'][0]['options'];
+    expect($birthday)->toMatchArray([
+        'yearPicker' => true,
+        'minDate' => '1920-01-01',
+        'maxDate' => '2026-09-01',
+    ]);
+    expect($json['options']['children'][1]['options'])->not->toHaveKey('yearPicker');
+});
+
 it('table embedded option conforms to the wire grammar schema', function () {
     $s = new S;
     $table = $s->table('posts')

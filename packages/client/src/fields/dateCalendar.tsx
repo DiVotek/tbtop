@@ -8,10 +8,20 @@ interface DateCalendarProps {
 	selected: Date | undefined;
 	onSelect: (day: Date | undefined) => void;
 	disabled?: Matcher[];
+	yearPicker?: boolean;
+	startMonth?: Date;
+	endMonth?: Date;
 }
 
 /** The popover body, loaded on demand. A single month — there is only one day to pick. */
-export function DateCalendar({ selected, onSelect, disabled }: DateCalendarProps) {
+export function DateCalendar({
+	selected,
+	onSelect,
+	disabled,
+	yearPicker,
+	startMonth,
+	endMonth,
+}: DateCalendarProps) {
 	const { locale } = useLocale();
 	const formatters = useMemo(() => intlFormatters(locale), [locale]);
 
@@ -23,6 +33,9 @@ export function DateCalendar({ selected, onSelect, disabled }: DateCalendarProps
 			lang={locale}
 			formatters={formatters}
 			weekStartsOn={weekStartsOn}
+			captionLayout={yearPicker ? "dropdown-years" : "label"}
+			startMonth={startMonth}
+			endMonth={endMonth}
 			defaultMonth={selected ?? new Date()}
 			selected={selected}
 			onSelect={onSelect}
