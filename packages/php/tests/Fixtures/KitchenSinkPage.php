@@ -72,7 +72,11 @@ class KitchenSinkPage extends Page
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
                     ->icon('dollar-sign')->tooltip('Monthly revenue')
                     ->hiddenIf('period', '=', 'all')->toNode(),
-                $s->chart('byMonth', 'line', ['xKey' => 'month'])->query(fn () => [])->toNode(),
+                $s->chart('byMonth', 'line', [
+                    'data' => [['month' => 'Jan', 'count' => 3]],
+                    'series' => [['dataKey' => 'count', 'label' => 'Posts']],
+                    'xKey' => 'month',
+                ])->toNode(),
                 $s->chart('byStatus', 'donut', ['nameKey' => 'status'])
                     ->query(fn () => [])
                     ->hiddenIf('view', '!=', 'status')

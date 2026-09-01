@@ -4,7 +4,7 @@
  */
 import type { ComponentType } from "react";
 import type { IconDef } from "../ui/node-icon";
-import type { ChartBlockOptions, ChartPoint } from "./chartBlock";
+import type { ChartBlockInput, ChartPoint } from "./chartBlock";
 import type { ColumnsSpec } from "./columnsSpec";
 import type {
 	CheckboxListOpts,
@@ -101,7 +101,7 @@ export interface StructureBuilders<TForm = unknown> {
 		opts: NodeMeta & TableOptions<TRow, StructureBuilders>,
 	) => StructureNode;
 	chart: <TPoint extends ChartPoint = ChartPoint>(
-		opts: NodeMeta & ChartBlockOptions<TPoint>,
+		opts: NodeMeta & ChartBlockInput<TPoint>,
 	) => StructureNode;
 	text: (input: FieldInputFor<TForm, TextOpts>) => StructureNode;
 	textarea: (input: FieldInputFor<TForm, TextareaOpts>) => StructureNode;

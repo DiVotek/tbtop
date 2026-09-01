@@ -762,6 +762,14 @@ describe("materialize form", () => {
 });
 
 describe("materialize chart", () => {
+	it("preserves static data without injecting a query", () => {
+		const data = [{ month: "Jan", count: 3 }];
+		const out = materialize(node("chart:line", { data, xKey: "month" }, "byMonth"), BASE);
+
+		expect(opts(out).data).toEqual(data);
+		expect(opts(out).query).toBeUndefined();
+	});
+
 	it("queries the data endpoint without params for a zero-param chart", async () => {
 		let captured = null as { path: string; query: unknown } | null;
 		const client = {

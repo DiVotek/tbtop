@@ -64,6 +64,7 @@ export { defineFieldClient } from "./render/defineFieldClient";
 export { ensureBuiltinsRegistered } from "./render/registerBuiltins";
 export { renderNode } from "./render/structureRenderer";
 export type {
+	ChartBlockInput,
 	ChartBlockOptions,
 	ChartPoint,
 	ChartSeries,
