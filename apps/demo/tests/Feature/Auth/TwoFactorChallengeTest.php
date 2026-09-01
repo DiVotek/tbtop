@@ -75,4 +75,53 @@ class TwoFactorChallengeTest extends TestCase
 
         $response->assertRedirect(route('dashboard'));
     }
+
+    public function test_admin_dsl_challenge_accepts_a_recovery_code(): void
+    {
+        [$user] = $this->userWithTwoFactor();
+        $codes = json_decode(decrypt($user->two_factor_recovery_codes), true);
+
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => $codes[0],
+        ])->assertRedirect('/admin/dashboard');
+
+        $this->assertAuthenticatedAs($user);
+
+        $user->refresh();
+        $remaining = json_decode(decrypt($user->two_factor_recovery_codes), true);
+        $this->assertNotContains($codes[0], $remaining);
+        $this->assertContains($codes[1], $remaining);
+    }
+
+    public function test_admin_dsl_challenge_accepts_a_totp_code(): void
+    {
+        [$user, $g2fa, $secret] = $this->userWithTwoFactor();
+
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => $g2fa->getCurrentOtp($secret),
+        ])->assertRedirect('/admin/dashboard');
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_admin_dsl_challenge_returns_to_the_intended_url_after_a_recovery_code(): void
+    {
+        [$user] = $this->userWithTwoFactor();
+        $codes = json_decode(decrypt($user->two_factor_recovery_codes), true);
+
+        $this->get('/admin/posts')->assertRedirect('/admin/login');
+
+        $this->post('/admin/login/forms/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertRedirect('/admin/two-factor-challenge');
+
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => $codes[0],
+        ])->assertRedirect('/admin/posts');
+    }
 }
