@@ -2,6 +2,7 @@
 
 namespace App\Admin\Pages;
 
+use App\Auth\RedirectsToIntended;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Tbtop\Admin\Actions\ActionCtx;
@@ -21,6 +22,8 @@ use Tbtop\Admin\Panels\PanelConfig;
  */
 class LoginPage extends Page
 {
+    use RedirectsToIntended;
+
     public static function path(): string
     {
         return 'login';
@@ -80,7 +83,7 @@ class LoginPage extends Page
 
         $ctx->request->session()->regenerate();
 
-        return route('tbtop.admin.dashboard-page', absolute: false);
+        return $this->intendedUrl($ctx->request);
     }
 
     /** Log out, stash the pending user in session, send to the challenge page. */
