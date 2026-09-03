@@ -2,6 +2,7 @@
 
 namespace App\Admin\Pages;
 
+use App\Auth\RedirectsToIntended;
 use App\Auth\TwoFactorVerifier;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,8 @@ use Tbtop\Admin\Panels\PanelConfig;
  */
 class TwoFactorChallengePage extends Page
 {
+    use RedirectsToIntended;
+
     public static function path(): string
     {
         return 'two-factor-challenge';
@@ -90,6 +93,6 @@ class TwoFactorChallengePage extends Page
         $ctx->request->session()->put('auth.2fa.completed', true);
         $ctx->request->session()->regenerate();
 
-        return route('tbtop.admin.dashboard-page', absolute: false);
+        return $this->intendedUrl($ctx->request);
     }
 }

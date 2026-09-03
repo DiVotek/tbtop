@@ -10,6 +10,55 @@ beforeEach(function (): void {
     ChartParamsPage::$capturedParams = null;
 });
 
+it('emits static chart data without a query source', function (): void {
+    $s = new S;
+    $node = $s->chart('static', 'line', [
+        'data' => [['day' => 'mon', 'count' => 3]],
+        'xKey' => 'day',
+    ])->toNode();
+    $json = json_decode(json_encode($node), true);
+
+    expect($json['options']['data'])->toBe([['day' => 'mon', 'count' => 3]])
+        ->and($json['options'])->not->toHaveKey('source');
+});
+
+it('rejects an included chart without static data or a query', function (): void {
+    $chart = (new S)->chart('empty', 'line');
+
+    expect(fn () => $chart->toNode())
+        ->toThrow(InvalidArgumentException::class, 'Chart "empty" requires static data or a query.');
+});
+
+it('rejects a static data cell the wire grammar cannot carry', function (mixed $cell, string $type): void {
+    $chart = (new S)->chart('bad', 'line', ['data' => [['day' => 'mon', 'count' => $cell]]]);
+
+    expect(fn () => $chart->toNode())
+        ->toThrow(
+            InvalidArgumentException::class,
+            "Chart \"bad\" data column \"count\" must be a string, number or null, got {$type}."
+        );
+})->with([
+    'bool' => [true, 'bool'],
+    'nested array' => [[1, 2], 'array'],
+    'object' => [new stdClass, 'stdClass'],
+]);
+
+it('accepts string, number and null static data cells', function (): void {
+    $chart = (new S)->chart('ok', 'line', [
+        'data' => [['day' => 'mon', 'count' => 3, 'avg' => 1.5, 'note' => null]],
+    ]);
+
+    expect($chart->toNode()->jsonSerialize()['options']['data'])
+        ->toBe([['day' => 'mon', 'count' => 3, 'avg' => 1.5, 'note' => null]]);
+});
+
+it('rejects static chart data that is not a list of rows', function (): void {
+    $chart = (new S)->chart('flat', 'line', ['data' => ['day' => 'mon']]);
+
+    expect(fn () => $chart->toNode())
+        ->toThrow(InvalidArgumentException::class, 'Chart "flat" data must be a list of rows.');
+});
+
 it('emits param nodes under options.params in the wire structure', function (): void {
     $s = new S;
     $chart = $s->chart('test', 'bar')

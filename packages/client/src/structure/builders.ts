@@ -1,5 +1,5 @@
 import type { IconDef } from "../ui/node-icon";
-import type { ChartBlockOptions } from "./chartBlock";
+import type { ChartBlockInput } from "./chartBlock";
 import type { FormOptions, NodeMeta, StructureNode, TabItem, TableOptions } from "./types";
 
 const META_KEYS = new Set(["id", "hidden", "disabled"]);
@@ -111,7 +111,7 @@ export function buildTable(opts: Bag & TableOptions<unknown>): StructureNode {
 	return { kind: "table", options: split.options, meta: split.meta };
 }
 
-export function buildChart(opts: Bag & ChartBlockOptions): StructureNode {
+export function buildChart(opts: Bag & ChartBlockInput): StructureNode {
 	const split = splitMeta(opts);
 	return { kind: `chart:${opts.type}`, options: split.options, meta: split.meta };
 }

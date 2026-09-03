@@ -1,24 +1,54 @@
 import { CalendarIcon } from "lucide-react";
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useLocale, useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { LazyDateCalendar } from "./dateCalendarLazy";
-import { parseDay } from "./daterangeDisabled";
+import { type DisabledRange, navClamp, parseDay, rangeMatchers } from "./daterangeDisabled";
 import { toIsoDay } from "./daterangeValue";
 import { formatDay } from "./dateValue";
 import { type FieldFormProps, fieldId } from "./fieldProps";
+
+export interface DateOptionsBag {
+	yearPicker?: boolean;
+	minDate?: string;
+	maxDate?: string;
+}
 
 /**
  * Date field control: a Popover + Calendar in single-day mode. Unlike
  * daterange, one click both selects and closes — there is no second bound to
  * wait for, so no draft/picking state is needed.
  */
-export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
+export function DateForm({
+	id,
+	name,
+	value,
+	onChange,
+	disabled,
+	options,
+}: FieldFormProps<string, DateOptionsBag>) {
 	const t = useTranslation();
 	const { locale } = useLocale();
 	const selected = parseDay(value ?? undefined);
 	const [open, setOpen] = useState(false);
+
+	const { minDate, maxDate, yearPicker } = options ?? {};
+	// min/max as open-ended disabled ranges reuses daterange's inclusive-end
+	// semantics, so both the matchers and the nav clamp stay consistent.
+	const bounds = useMemo<DisabledRange[]>(() => {
+		const out: DisabledRange[] = [];
+		if (minDate) {
+			out.push({ from: null, to: shiftDay(minDate, -1) });
+		}
+		if (maxDate) {
+			out.push({ from: shiftDay(maxDate, 1), to: null });
+		}
+		return out;
+	}, [minDate, maxDate]);
+
+	const matchers = useMemo(() => rangeMatchers(bounds), [bounds]);
+	const clamp = useMemo(() => navClamp(bounds), [bounds]);
 
 	function handleSelect(day: Date | undefined): void {
 		if (!day) {
@@ -53,7 +83,14 @@ export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps
 				<Suspense
 					fallback={<div className="h-72 w-72 animate-pulse rounded-md bg-muted" />}
 				>
-					<LazyDateCalendar selected={selected} onSelect={handleSelect} />
+					<LazyDateCalendar
+						selected={selected}
+						onSelect={handleSelect}
+						disabled={matchers}
+						yearPicker={yearPicker}
+						startMonth={clamp.startMonth}
+						endMonth={clamp.endMonth}
+					/>
 				</Suspense>
 				{selected ? (
 					<div className="border-t p-2">
@@ -72,4 +109,13 @@ export function DateForm({ id, name, value, onChange, disabled }: FieldFormProps
 			</PopoverContent>
 		</Popover>
 	);
+}
+
+/** Shifts an ISO day by whole days, returning ISO again; passes malformed input through. */
+function shiftDay(iso: string, delta: number): string {
+	const date = parseDay(iso);
+	if (!date) {
+		return iso;
+	}
+	return toIsoDay(new Date(date.getFullYear(), date.getMonth(), date.getDate() + delta));
 }

@@ -28,7 +28,8 @@ export interface ChartSeries {
 
 export interface ChartBlockOptions<TPoint extends ChartPoint = ChartPoint> {
 	type: ChartType;
-	query: (ctx: ClientActionContext, params?: Record<string, string>) => Promise<TPoint[]>;
+	data?: TPoint[];
+	query?: (ctx: ClientActionContext, params?: Record<string, string>) => Promise<TPoint[]>;
 	xKey?: keyof TPoint & string;
 	nameKey?: keyof TPoint & string;
 	series?: ChartSeries[];
@@ -41,6 +42,10 @@ export interface ChartBlockOptions<TPoint extends ChartPoint = ChartPoint> {
 	loading?: ReactNode;
 	error?: ReactNode | ((err: Error) => ReactNode);
 }
+
+export type ChartBlockInput<TPoint extends ChartPoint = ChartPoint> =
+	| (ChartBlockOptions<TPoint> & { data: TPoint[] })
+	| (ChartBlockOptions<TPoint> & { query: NonNullable<ChartBlockOptions<TPoint>["query"]> });
 
 type ChartRenderer = (
 	data: ChartPoint[],
@@ -86,10 +91,13 @@ export function createChartBlock(
 			defaultsFromParamNodes(paramNodes),
 		);
 
-		const boundQuery = useCallback(
-			(actionCtx: ClientActionContext) => options.query(actionCtx, paramValues),
-			// eslint-disable-next-line react-hooks/exhaustive-deps
-			[options.query, paramValues],
+		const query = options.query;
+		const boundQuery = useMemo(
+			() =>
+				query
+					? (actionCtx: ClientActionContext) => query(actionCtx, paramValues)
+					: undefined,
+			[query, paramValues],
 		);
 
 		// non-node entries in params are treated as raw deps for backward-compat
@@ -102,19 +110,24 @@ export function createChartBlock(
 		});
 
 		// Server-declared poll: refetch on an interval (cleanup handled by the hook).
-		usePolling(refetch, pollIntervalMs(options.poll));
+		usePolling(refetch, pollIntervalMs(query ? options.poll : undefined));
 
 		const onChange = useCallback((name: string, value: unknown) => {
 			setParamValues((prev) => ({ ...prev, [name]: String(value ?? "") }));
 		}, []);
 
-		if (state.kind === "loading") {
+		if (query && state.kind === "loading" && options.data === undefined) {
 			return <>{options.loading ?? <ChartSkeleton />}</>;
 		}
-		if (state.kind === "error") {
+		// Unlike the loading branch above, a failed query does NOT fall back to
+		// options.data: stale numbers with no failure signal read as current.
+		if (query && state.kind === "error") {
 			const fallback = <ChartError message={state.message} />;
 			return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 		}
+		const queryData =
+			state.kind === "loaded" || state.kind === "reloading" ? state.data : undefined;
+		const data = query ? (queryData ?? options.data ?? []) : (options.data ?? []);
 		// Params render via ChartCard's toolbar slot, ABOVE the fixed-height
 		// canvas — inside it they steal height and push the legend out of the card.
 		const toolbar = hasParams ? (
@@ -137,7 +150,7 @@ export function createChartBlock(
 				height={options.height}
 				toolbar={toolbar}
 			>
-				{renderFn(state.data, options, colors)}
+				{renderFn(data, options, colors)}
 			</ChartCard>
 		);
 	};

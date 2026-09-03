@@ -4,6 +4,7 @@ import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { inputCompactFontClass, inputFontClass } from "../ui/input";
+import { useDialogPopupContainer } from "../ui/revola";
 import type { OptionMap } from "./asyncOptions";
 import { fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
@@ -53,6 +54,7 @@ export function MultiComboboxShell({
 	const displayValues = visibleValues ?? value;
 	const density = useDensity();
 	const t = useTranslation();
+	const popupContainer = useDialogPopupContainer();
 	const [query, setQuery] = useState("");
 	const [createOpen, setCreateOpen] = useState(false);
 	const chipsRef = useRef<HTMLDivElement>(null);
@@ -142,7 +144,7 @@ export function MultiComboboxShell({
 					/>
 				</Combobox.Chips>
 
-				<Combobox.Portal>
+				<Combobox.Portal container={popupContainer ?? undefined}>
 					{/* Without this the popup anchors to the input, which the chips
 					    shrink as selections accumulate. */}
 					<Combobox.Positioner className="z-50" sideOffset={4} anchor={chipsRef}>

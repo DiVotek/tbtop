@@ -222,8 +222,19 @@
                         {
                             "kind": "chart:line",
                             "options": {
+                                "data": [
+                                    {
+                                        "month": "Jan",
+                                        "count": 3
+                                    }
+                                ],
+                                "series": [
+                                    {
+                                        "dataKey": "count",
+                                        "label": "Posts"
+                                    }
+                                ],
                                 "xKey": "month",
-                                "source": "byMonth",
                                 "type": "line"
                             },
                             "meta": {},
