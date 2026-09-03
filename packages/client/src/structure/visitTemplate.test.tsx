@@ -115,6 +115,31 @@ describe("Visit-template interpolation", () => {
 		expect(warns.length).toBeGreaterThan(0);
 	});
 
+	test("serialized {row.*} template with an empty string: action hidden, no malformed href", async () => {
+		const serialized = {
+			kind: "action",
+			name: "delete",
+			meta: {},
+			options: {
+				label: "Delete",
+				spec: { type: "visit", href: "/admin/posts/{row.id}/delete" },
+			},
+		} as unknown as StructureNode;
+		const node = materialize(serialized, { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(() => new Response("{}"));
+		const warns: unknown[] = [];
+		const origWarn = console.warn;
+		console.warn = (...args: unknown[]) => warns.push(args);
+		const { queryByTestId } = render(
+			<Wrap>
+				<RowProvider value={{ id: "", title: "empty id" }}>{renderNode(node)}</RowProvider>
+			</Wrap>,
+		);
+		console.warn = origWarn;
+		expect(queryByTestId("action-delete")).toBeNull();
+		expect(warns.length).toBeGreaterThan(0);
+	});
+
 	test("template visit with missing row key: action hidden + console.warn in dev", async () => {
 		const node = s.action({ name: "edit", label: "Edit", url: "/admin/posts/{slug}/edit" });
 		const Wrap = wrap(() => new Response("{}"));

@@ -140,11 +140,9 @@ function DetailShell({
 		setError(null);
 		try {
 			const updated = await replaceMediaItem(client, item.id, file);
+			// The replace endpoint rewrites the file and `name` only. Copying
+			// persisted alt/description/tags/folder would wipe a dirty draft.
 			setName(updated.name);
-			setAlt(updated.alt ?? "");
-			setDescription(updated.description ?? "");
-			setTags(updated.tags ?? []);
-			setFolderId(updated.folderId ?? "__root__");
 			onUpdated(updated);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t("state.error"));

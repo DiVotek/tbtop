@@ -43,6 +43,7 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 			valueRef.current = serverValue;
 			dirtyRef.current = false;
 			setValue(serverValue);
+			setError(null);
 		}
 	}
 

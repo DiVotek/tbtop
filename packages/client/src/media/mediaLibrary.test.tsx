@@ -583,16 +583,13 @@ describe("MediaDetail: PATCH on save", () => {
 		expect(patches[0]).toMatchObject({ alt: null });
 	});
 
-	test("saving after replacement uses metadata returned for the same item", async () => {
+	test("saving after replacement keeps dirty metadata and uses the new file name", async () => {
 		const user = userEvent.setup({ delay: null });
 		const patches: unknown[] = [];
 		const replacedItem: MediaItem = {
 			...ITEM_IMG,
 			name: "replacement.jpg",
-			alt: "Replacement alt",
-			description: "Replacement description",
-			tags: ["replacement"],
-			folderId: FOLDER_A.id,
+			url: "/storage/replacement.jpg",
 		};
 		const handler: FetchHandler = async (req) => {
 			if (req.method === "POST" && req.url.includes("/media/img1/replace")) {
@@ -618,6 +615,12 @@ describe("MediaDetail: PATCH on save", () => {
 		);
 
 		await act(async () => {
+			await user.click(getByTestId("detail-alt-input"));
+			await user.keyboard("{Control>}a{/Control}Draft alt");
+		});
+		expect((getByTestId("detail-alt-input") as HTMLTextAreaElement).value).toBe("Draft alt");
+
+		await act(async () => {
 			await user.upload(
 				getByTestId("detail-replace-input"),
 				new File(["replacement"], "replacement.jpg", { type: "image/jpeg" }),
@@ -628,6 +631,7 @@ describe("MediaDetail: PATCH on save", () => {
 				replacedItem.name,
 			),
 		);
+		expect((getByTestId("detail-alt-input") as HTMLTextAreaElement).value).toBe("Draft alt");
 
 		await act(async () => {
 			await user.click(getByTestId("detail-save-btn"));
@@ -635,10 +639,10 @@ describe("MediaDetail: PATCH on save", () => {
 		await waitFor(() => expect(patches).toHaveLength(1));
 		expect(patches[0]).toMatchObject({
 			name: replacedItem.name,
-			alt: replacedItem.alt,
-			description: replacedItem.description,
-			tags: replacedItem.tags,
-			folderId: replacedItem.folderId,
+			alt: "Draft alt",
+			description: ITEM_IMG.description,
+			tags: ITEM_IMG.tags,
+			folderId: ITEM_IMG.folderId,
 		});
 	});
 
