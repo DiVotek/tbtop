@@ -7,7 +7,7 @@ import { materialize } from "../src/inertia/materialize";
 import { ensureBuiltinsRegistered } from "../src/render/registerBuiltins";
 import { renderNode } from "../src/render/structureRenderer";
 import type { StructureNode } from "../src/structure/types";
-import { actionSpecSchema, structureNodeSchema } from "./grammar";
+import { actionSpecSchema, effectSchema, structureNodeSchema } from "./grammar";
 
 const fixture = kitchenSink as StructureNode;
 
@@ -27,6 +27,15 @@ describe("wire grammar contract (client side)", () => {
 		});
 
 		expect(parsed).toEqual({ type: "visit", href: "/admin/posts/preview", newTab: true });
+	});
+
+	it("accepts setFormData effects and rejects malformed payloads", () => {
+		expect(
+			effectSchema.safeParse({ kind: "setFormData", data: { title: "New" } }).success,
+		).toBe(true);
+		expect(effectSchema.safeParse({ kind: "setFormData", data: "invalid" }).success).toBe(
+			false,
+		);
 	});
 
 	it("the fixture materializes and renders without crashing", async () => {

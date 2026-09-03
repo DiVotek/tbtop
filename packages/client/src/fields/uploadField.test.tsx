@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { describe, expect, mock, test } from "bun:test";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { RowProvider } from "../structure/rowContext";
@@ -93,6 +93,34 @@ describe("UploadForm", () => {
 		expect(captured).toHaveLength(0);
 	});
 
+	test("Upload retries when the same file is selected after an error", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		let attempts = 0;
+		const { container, getByRole } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={null}
+					onChange={() => {}}
+					options={{
+						upload: async () => {
+							attempts += 1;
+							throw new Error("Upload failed");
+						},
+					}}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		const file = new File(["x"], "retry.png", { type: "image/png" });
+
+		await userEvent.upload(input, file);
+		await waitFor(() => expect(getByRole("alert").textContent).toContain("Upload failed"));
+		await userEvent.upload(input, file);
+
+		await waitFor(() => expect(attempts).toBe(2));
+	});
+
 	test("Upload with a value renders preview and clears to null on remove", async () => {
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
@@ -174,6 +202,28 @@ describe("UploadForm", () => {
 		);
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		expect(input.getAttribute("accept")).toBe("image/*");
+	});
+
+	test("Upload forwards validation and blur props to the file input", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const onBlur = mock(() => {});
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={null}
+					onChange={() => {}}
+					onBlur={onBlur}
+					invalid
+					describedBy="file-error"
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(input.getAttribute("aria-describedby")).toBe("file-error");
+		fireEvent.blur(input);
+		expect(onBlur).toHaveBeenCalledTimes(1);
 	});
 
 	test("Upload tolerates a plain string value without crashing", () => {

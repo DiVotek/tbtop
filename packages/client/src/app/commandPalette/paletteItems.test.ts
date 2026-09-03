@@ -40,10 +40,34 @@ describe("buildPaletteItems", () => {
 		const items = buildPaletteItems(NAV, { hotkey: "mod+k" });
 		expect(items.map((i) => i.label)).toEqual(["Dashboard", "Posts", "Brands"]);
 		expect(items[0]).toMatchObject({
-			id: "nav:/admin",
+			id: "nav:/admin:0",
 			group: "Overview",
 			icon: { name: "star" },
 		});
+	});
+
+	test("assigns unique IDs to repeated nav destinations and commands", () => {
+		const nav: NavGroup[] = [
+			{
+				key: "Repeated",
+				group: "Repeated",
+				items: [
+					{ label: "First nav", href: "/same" },
+					{ label: "Second nav", href: "/same" },
+				],
+			},
+		];
+		const items = buildPaletteItems(nav, {
+			hotkey: "mod+k",
+			commands: [
+				{ label: "First href", href: "/same" },
+				{ label: "Second href", href: "/same" },
+				{ label: "First handler", handler: "same" },
+				{ label: "Second handler", handler: "same" },
+			],
+		});
+
+		expect(new Set(items.map((item) => item.id)).size).toBe(items.length);
 	});
 
 	test("lists ungrouped nav items (group: null) without a group label", () => {
@@ -91,7 +115,7 @@ describe("buildPaletteItems", () => {
 		expect(routerVisit).toHaveBeenCalledWith("/admin");
 	});
 
-	test("a handler command run invokes the registered client handler", () => {
+	test("a handler command run invokes the registered client handler", async () => {
 		const handler = mock(() => {});
 		definePaletteCommand("ping", handler);
 		const data: CommandPaletteData = {
@@ -100,7 +124,32 @@ describe("buildPaletteItems", () => {
 			commands: [{ label: "Ping", handler: "ping" }],
 		};
 		buildPaletteItems(NAV, data)[0]?.run();
+		await Promise.resolve();
 		expect(handler).toHaveBeenCalled();
+	});
+
+	test("a synchronously throwing handler is caught and logged", async () => {
+		const error = new Error("boom");
+		definePaletteCommand("sync-failing", () => {
+			throw error;
+		});
+		const consoleError = spyOn(console, "error").mockImplementation(() => {});
+		const data: CommandPaletteData = {
+			hotkey: "mod+k",
+			includeNav: false,
+			commands: [{ label: "Fails", handler: "sync-failing" }],
+		};
+		const run = buildPaletteItems(NAV, data)[0]?.run;
+
+		expect(() => run?.()).not.toThrow();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(consoleError).toHaveBeenCalledWith(
+			"[command-palette] handler error",
+			"sync-failing",
+			error,
+		);
+		consoleError.mockRestore();
 	});
 
 	test("a rejecting async handler is caught and logged, not left unhandled", async () => {
@@ -115,6 +164,8 @@ describe("buildPaletteItems", () => {
 			commands: [{ label: "Fails", handler: "failing" }],
 		};
 		buildPaletteItems(NAV, data)[0]?.run();
+		await Promise.resolve();
+		await Promise.resolve();
 		await Promise.resolve();
 		await Promise.resolve();
 		expect(consoleError).toHaveBeenCalledWith(

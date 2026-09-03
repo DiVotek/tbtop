@@ -27,7 +27,19 @@ final class MethodReader
         $return = $method->getReturnType();
 
         return $method->getName().'('.implode(', ', $params).')'
-            .($return ? ': '.$this->typeName($return) : '');
+            .($return ? ': '.$this->returnTypeName($method, $return) : '');
+    }
+
+    // PHP 8.5 resolves a `self` return type to the declaring class name; 8.4 and
+    // earlier reported the literal "self". Keep the docs identical on both.
+    private function returnTypeName(ReflectionMethod $method, \ReflectionType $type): string
+    {
+        if ($type instanceof ReflectionNamedType
+            && $type->getName() === $method->getDeclaringClass()->getName()) {
+            return 'self';
+        }
+
+        return $this->typeName($type);
     }
 
     private function parameter(ReflectionParameter $param): string

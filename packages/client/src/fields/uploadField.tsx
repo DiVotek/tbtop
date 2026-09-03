@@ -49,7 +49,10 @@ function UploadSingleForm({
 	name,
 	value,
 	onChange,
+	onBlur,
 	disabled,
+	invalid,
+	describedBy,
 	options,
 }: FieldFormProps<UploadValue | string, UploadOptionsBag>) {
 	const { t, ctx, client } = useUploadDependencies();
@@ -58,7 +61,7 @@ function UploadSingleForm({
 	const [error, setError] = useState<string | null>(null);
 	const preview = normalizeUploadValue(value);
 
-	const onFiles = async (files: FileList | null) => {
+	const onFiles = async (files: File[]) => {
 		const file = files?.[0];
 		if (!file) {
 			return;
@@ -99,6 +102,9 @@ function UploadSingleForm({
 			busy={busy}
 			disabled={disabled}
 			error={error}
+			onBlur={onBlur}
+			invalid={invalid}
+			describedBy={describedBy}
 			onFiles={onFiles}
 		/>
 	);
@@ -143,7 +149,10 @@ interface PickerProps {
 	busy: boolean;
 	disabled?: boolean;
 	error: string | null;
-	onFiles: (files: FileList | null) => void;
+	onBlur?: () => void;
+	invalid?: boolean;
+	describedBy?: string;
+	onFiles: (files: File[]) => void;
 }
 
 export function UploadPicker({
@@ -154,6 +163,9 @@ export function UploadPicker({
 	busy,
 	disabled,
 	error,
+	onBlur,
+	invalid,
+	describedBy,
 	onFiles,
 }: PickerProps) {
 	const t = useTranslation();
@@ -173,7 +185,14 @@ export function UploadPicker({
 					multiple={multiple}
 					className="sr-only"
 					disabled={busy || disabled}
-					onChange={(e) => onFiles(e.target.files)}
+					onBlur={onBlur}
+					aria-invalid={invalid || undefined}
+					aria-describedby={describedBy}
+					onChange={(e) => {
+						const files = Array.from(e.currentTarget.files ?? []);
+						e.currentTarget.value = "";
+						onFiles(files);
+					}}
 				/>
 			</label>
 			{error ? (

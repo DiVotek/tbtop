@@ -32,6 +32,9 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 	const server = useReconciled(serverValue, { key: `${id ?? ""}:${col.name}` });
 
 	if (server.changed) {
+		if (server.keyChanged) {
+			run.cancel();
+		}
 		server.accept();
 		confirmedValueRef.current = serverValue;
 		// A different cell always wins; the same cell yields only when the
@@ -40,6 +43,7 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 			valueRef.current = serverValue;
 			dirtyRef.current = false;
 			setValue(serverValue);
+			setError(null);
 		}
 	}
 

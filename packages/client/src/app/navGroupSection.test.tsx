@@ -3,7 +3,7 @@ import { fireEvent, render } from "@testing-library/react";
 import { AdminLayoutShell } from "./AdminLayout";
 import type { NavGroup } from "./chromeContext";
 import { DensityContext } from "./densityContext";
-import { NavItemLink } from "./navGroupSection";
+import { containsActive, NavItemLink } from "./navGroupSection";
 
 const USER = { name: "Alice", email: "alice@example.com" };
 
@@ -112,6 +112,17 @@ describe("NavGroupSection", () => {
 		expect(getByText("Settings")).toBeTruthy();
 	});
 
+	test.each([
+		"null",
+		"[]",
+		JSON.stringify({ System: "yes" }),
+	])("ignores invalid stored collapse state %s and uses the server default", (stored) => {
+		window.localStorage.setItem("tbtop:nav-collapsed", stored);
+
+		const { queryByText } = renderNav();
+		expect(queryByText("Settings")).toBeNull();
+	});
+
 	test("when key differs from the localized group label, the label renders but the testid and persistence key follow the stable key", () => {
 		window.localStorage.clear();
 		const localizedNav: NavGroup[] = [
@@ -205,6 +216,33 @@ describe("NavItemLink density", () => {
 	});
 });
 
+describe("navigation active URL matching", () => {
+	const item = { label: "Post", href: "/admin/post" };
+
+	test("does not highlight a link that only shares a pathname prefix", () => {
+		const { getByText } = render(<NavItemLink item={item} currentUrl="/admin/posts" />);
+		expect(getByText("Post").closest("a")?.className).not.toContain("bg-accent font-medium");
+	});
+
+	test("treats the root link as exact-only", () => {
+		expect(containsActive({ label: "Home", href: "/" }, "/admin/posts")).toBe(false);
+	});
+
+	test("matches nested pathname segments and ignores query strings and hashes", () => {
+		const posts = { label: "Posts", href: "/admin/posts?view=all" };
+		expect(containsActive(posts, "/admin/posts/42?tab=edit#content")).toBe(true);
+	});
+
+	test("does not expand an ancestor for an unrelated prefix match", () => {
+		const parent = {
+			label: "Content",
+			href: "/admin/content",
+			children: [item],
+		};
+		expect(containsActive(parent, "/admin/posts")).toBe(false);
+	});
+});
+
 describe("NavItemNode (nested nav)", () => {
 	const NESTED_NAV: NavGroup[] = [
 		{
@@ -247,6 +285,21 @@ describe("NavItemNode (nested nav)", () => {
 	test("auto-expands when the current URL matches a descendant", () => {
 		const { getByText } = renderNested("/admin/settings/general");
 		expect(getByText("General")).toBeTruthy();
+	});
+
+	test("reopens when navigation changes to a descendant URL", () => {
+		const { getByTestId, getByText, queryByText, rerender } = renderNested();
+		const toggle = getByTestId("nav-item-toggle-/admin/settings");
+		expect(queryByText("General")).toBeNull();
+
+		rerender(
+			<AdminLayoutShell nav={NESTED_NAV} user={USER} currentUrl="/admin/settings/general">
+				<div />
+			</AdminLayoutShell>,
+		);
+
+		expect(getByText("General")).toBeTruthy();
+		expect(toggle.getAttribute("aria-expanded")).toBe("true");
 	});
 
 	test("the parent row itself still links to its own page", () => {

@@ -516,6 +516,20 @@ describe("TableCell: copyable", () => {
 });
 
 describe("TableCell: link kind", () => {
+	test.each([
+		"javascript:alert(document.domain)",
+		"data:text/html,<script>alert(1)</script>",
+	])("does not render an anchor for unsafe URL %s", async (view) => {
+		const node = s.table({
+			query: async () => [{ id: "1", view }],
+			columns: [{ name: "view", label: "View", kind: "link" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector("td a")).toBeNull();
+	});
+
 	test("renders an anchor with the resolved URL as href", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", view: "/admin/posts/1" }],

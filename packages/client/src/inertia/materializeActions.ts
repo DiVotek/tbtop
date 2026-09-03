@@ -107,9 +107,14 @@ function handlerBag({ base, node, spec, ctx, confirm }: HandlerBagInput): Bag {
  * template's own URL structure — encode it so it fills exactly one segment.
  */
 function fillRowTemplate(template: string, ctx: ClientActionContext): string {
-	return template.replaceAll(/\{row\.([a-zA-Z0-9_]+)\}/g, (_, key: string) =>
-		encodeURIComponent(toWellFormedString(String(ctx.row?.[key] ?? ""))),
-	);
+	return template.replaceAll(/\{row\.([a-zA-Z0-9_]+)\}/g, (placeholder, key: string) => {
+		const value = ctx.row?.[key];
+		return value === undefined ||
+			value === null ||
+			(typeof value === "string" && value.trim() === "")
+			? placeholder
+			: encodeURIComponent(toWellFormedString(String(value)));
+	});
 }
 
 /**

@@ -13,7 +13,10 @@ function readAll(): Record<string, boolean> {
 	}
 	try {
 		const raw = window.localStorage.getItem(NAV_COLLAPSE_KEY);
-		return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+		const parsed: unknown = raw ? JSON.parse(raw) : {};
+		return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+			? (parsed as Record<string, boolean>)
+			: {};
 	} catch {
 		return {};
 	}
@@ -21,7 +24,8 @@ function readAll(): Record<string, boolean> {
 
 /** The stored open/closed state for a group, or undefined when unset. */
 export function readGroupExpanded(key: string): boolean | undefined {
-	return readAll()[key];
+	const value = readAll()[key];
+	return typeof value === "boolean" ? value : undefined;
 }
 
 /** Persist a group's open/closed state under its stable key. */
