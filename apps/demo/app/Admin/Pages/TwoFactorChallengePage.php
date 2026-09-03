@@ -55,7 +55,12 @@ class TwoFactorChallengePage extends Page
             $s->displayText('Enter the code from your authenticator app, or a recovery code.')
                 ->variant('muted'),
             $s->form('challenge', [
-                $s->otp('code')->label('Code')->length(6)->required(),
+                // Text, not otp: recovery codes are 10-10 alphanumeric (e.g.
+                // abcdEFGHij-KLMNopqrST), and otp()->length(6) both renders six
+                // digit slots and adds a digits:6 rule, so a lost authenticator
+                // could not be recovered from this page.
+                $s->text('code')->label('Code')->required()
+                    ->placeholder('000000 or recovery code'),
                 $s->actionsRow([
                     $s->action('submit')->label('Verify')->color('primary')->submit(),
                 ]),
