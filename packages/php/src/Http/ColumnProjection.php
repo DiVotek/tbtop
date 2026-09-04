@@ -35,6 +35,7 @@ final class ColumnProjection
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
             self::attachTooltips($projected, $row, $columns);
+            self::attachDescriptions($projected, $row, $columns);
             $out[] = $projected;
         }
 
@@ -64,6 +65,32 @@ final class ColumnProjection
         }
         if ($tooltips !== []) {
             data_set($projected, '_tooltips', $tooltips);
+        }
+    }
+
+    /**
+     * Per-row meta: for each visible column with a closure description, resolve
+     * it against the original row and collect non-empty scalars under a flat
+     * `_descriptions` map keyed by (possibly dotted) column name. Omitted
+     * entirely when nothing resolves. Does not write into `row[name]`.
+     *
+     * @param  list<Column>  $columns
+     */
+    private static function attachDescriptions(mixed &$projected, mixed $row, array $columns): void
+    {
+        $descriptions = [];
+        foreach ($columns as $col) {
+            $resolver = $col->descriptionResolver();
+            if ($resolver === null) {
+                continue;
+            }
+            $value = $resolver($row);
+            if (is_scalar($value) && $value !== '') {
+                $descriptions[$col->name] = (string) $value;
+            }
+        }
+        if ($descriptions !== []) {
+            data_set($projected, '_descriptions', $descriptions);
         }
     }
 

@@ -62,6 +62,8 @@ export interface TableColumn<TRow = unknown> {
 	/** Keeps the complete cell content on one line without truncating it. */
 	noWrap?: boolean;
 	tooltip?: string;
+	/** Muted secondary line under the cell's primary content. */
+	description?: string;
 	/** Emphasized primary link-style cell text (e.g. a title column driving rowClick). */
 	emphasized?: boolean;
 	/** Small muted cell text — secondary metadata columns (dates, parents, counts). */

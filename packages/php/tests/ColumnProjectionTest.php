@@ -315,6 +315,50 @@ it('ColumnProjection: a static string tooltip alone does not attach _tooltips', 
 });
 
 // ---------------------------------------------------------------------------
+// description(Closure) — per-row description meta
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: description(Closure) attaches a resolved _descriptions map', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('title')->kind('text'),
+            Column::make('status')->kind('text')->description(fn ($row) => "Status: {$row->status}"),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->_descriptions)->toBe(['status' => 'Status: published'])
+        ->and($result[0]->status)->toBe('published');
+});
+
+it('ColumnProjection: a resolver returning null or empty string omits that column from _descriptions', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('title')->kind('text')->description(fn () => null),
+            Column::make('status')->kind('text')->description(fn () => ''),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_descriptions'))->toBeFalse();
+});
+
+it('ColumnProjection: a static string description alone does not attach _descriptions', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->kind('text')->description('Headline')])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_descriptions'))->toBeFalse();
+});
+
+// ---------------------------------------------------------------------------
 // Per-column search (colSearch) allowlist
 // ---------------------------------------------------------------------------
 

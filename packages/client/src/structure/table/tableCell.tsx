@@ -24,14 +24,36 @@ function rowColAlignClass(align: TableColumn["align"]): string {
 	return "";
 }
 
-/** Non-empty string per-row tooltip resolved server-side into `row._tooltips[col.name]`. */
-function readRowTooltip(row: Record<string, unknown>, col: TableColumn): string | undefined {
-	const tooltips = row._tooltips;
-	if (!tooltips || typeof tooltips !== "object") {
+function readRowMap(
+	row: Record<string, unknown>,
+	col: TableColumn,
+	key: "_tooltips" | "_descriptions",
+): string | undefined {
+	const map = row[key];
+	if (!map || typeof map !== "object") {
 		return undefined;
 	}
-	const value = (tooltips as Record<string, unknown>)[col.name];
+	const value = (map as Record<string, unknown>)[col.name];
 	return typeof value === "string" && value !== "" ? value : undefined;
+}
+
+/** Non-empty string per-row tooltip resolved server-side into `row._tooltips[col.name]`. */
+function readRowTooltip(row: Record<string, unknown>, col: TableColumn): string | undefined {
+	return readRowMap(row, col, "_tooltips");
+}
+
+function cellDescription(row: Record<string, unknown>, col: TableColumn): string | undefined {
+	const perRow = readRowMap(row, col, "_descriptions");
+	if (perRow !== undefined) {
+		return perRow;
+	}
+	return typeof col.description === "string" && col.description !== ""
+		? col.description
+		: undefined;
+}
+
+function DescriptionLine({ text }: { text: string }) {
+	return <div className="text-xs text-muted-foreground">{text}</div>;
 }
 
 function CellTooltip({ tooltip, children }: { tooltip?: string; children: ReactNode }) {
@@ -73,6 +95,7 @@ export function RowDataCell({
 	);
 	const content = textClass ? <span className={textClass}>{rendered}</span> : rendered;
 	const withTooltip = <CellTooltip tooltip={tooltip}>{content}</CellTooltip>;
+	const description = cellDescription(row, col);
 	return (
 		<td
 			className={cn("px-3 py-2", alignClass, wrapClass)}
@@ -86,6 +109,7 @@ export function RowDataCell({
 			) : (
 				withTooltip
 			)}
+			{description ? <DescriptionLine text={description} /> : null}
 		</td>
 	);
 }

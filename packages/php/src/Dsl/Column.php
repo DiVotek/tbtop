@@ -61,6 +61,11 @@ final class Column implements JsonSerializable
     /** Server-only: per-row tooltip resolver — never serialized. Receives the row, returns a scalar or null. */
     private ?Closure $tooltipResolver = null;
 
+    private ?string $description = null;
+
+    /** Server-only: per-row description resolver — never serialized. Receives the row, returns a scalar or null. */
+    private ?Closure $descriptionResolver = null;
+
     /** Renders the cell text as an emphasized primary-colored link-style label. */
     private ?bool $emphasized = null;
 
@@ -312,6 +317,29 @@ final class Column implements JsonSerializable
     public function tooltipResolver(): ?Closure
     {
         return $this->tooltipResolver;
+    }
+
+    /**
+     * Muted secondary line under the cell's primary content. String → static
+     * description, serialized as-is. Closure → per-row resolver, run
+     * server-side in ColumnProjection and never serialized (mirrors tooltip()).
+     */
+    public function description(string|Closure $description): static
+    {
+        if ($description instanceof Closure) {
+            $this->descriptionResolver = $description;
+
+            return $this;
+        }
+        $this->description = $description;
+
+        return $this;
+    }
+
+    /** Server-only: per-row description resolver, or null when description() wasn't called with a closure. */
+    public function descriptionResolver(): ?Closure
+    {
+        return $this->descriptionResolver;
     }
 
     /** Read the cell value from the record's per-locale map for the active locale, instead of a scalar. */
@@ -825,6 +853,9 @@ final class Column implements JsonSerializable
         }
         if ($this->tooltip !== null) {
             $out['tooltip'] = $this->tooltip;
+        }
+        if ($this->description !== null) {
+            $out['description'] = $this->description;
         }
         if ($this->emphasized === true) {
             $out['emphasized'] = true;

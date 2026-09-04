@@ -692,3 +692,19 @@ it('Column: step() accepts a positive int, float, numeric string, or "any"', fun
         ->and(fn () => Column::make('qty')->step('0.01'))->not->toThrow(InvalidArgumentException::class)
         ->and(fn () => Column::make('qty')->step('any'))->not->toThrow(InvalidArgumentException::class);
 });
+
+// ---------------------------------------------------------------------------
+// description
+// ---------------------------------------------------------------------------
+
+it('Column: static description serializes on the column def', function (): void {
+    $json = encodeColumn(Column::make('title')->description('Headline'));
+
+    expect($json['description'])->toBe('Headline');
+});
+
+it('Column: description(Closure) does not emit a description key', function (): void {
+    $json = encodeColumn(Column::make('title')->description(fn ($row) => $row->title));
+
+    expect(array_key_exists('description', $json))->toBeFalse();
+});
