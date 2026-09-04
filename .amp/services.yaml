@@ -7,3 +7,4 @@ services:
     portal:
       title: Tabletop Demo
       description: "Seeded login: admin@admin.com / password"
+      review: false
