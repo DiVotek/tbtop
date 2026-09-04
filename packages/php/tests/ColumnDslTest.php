@@ -3,6 +3,7 @@
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\TableBuilder;
 
 function encodeColumn(Column $col): array
 {
@@ -691,4 +692,142 @@ it('Column: step() accepts a positive int, float, numeric string, or "any"', fun
         ->and(fn () => Column::make('qty')->step(0.5))->not->toThrow(InvalidArgumentException::class)
         ->and(fn () => Column::make('qty')->step('0.01'))->not->toThrow(InvalidArgumentException::class)
         ->and(fn () => Column::make('qty')->step('any'))->not->toThrow(InvalidArgumentException::class);
+});
+
+// ---------------------------------------------------------------------------
+// description
+// ---------------------------------------------------------------------------
+
+it('Column: static description serializes on the column def', function (): void {
+    $json = encodeColumn(Column::make('title')->description('Headline'));
+
+    expect($json['description'])->toBe('Headline');
+});
+
+it('Column: description(Closure) does not emit a description key', function (): void {
+    $json = encodeColumn(Column::make('title')->description(fn ($row) => $row->title));
+
+    expect(array_key_exists('description', $json))->toBeFalse();
+});
+
+// ---------------------------------------------------------------------------
+// group
+// ---------------------------------------------------------------------------
+
+it('Column: group serializes kind and nested columns', function (): void {
+    $json = encodeColumn(
+        Column::make('car')->label('Авто')->group([
+            Column::make('car_name')->emphasized(),
+            Column::make('car_plate')->muted(),
+        ])
+    );
+
+    expect($json['name'])->toBe('car')
+        ->and($json['label'])->toBe('Авто')
+        ->and($json['kind'])->toBe('group')
+        ->and($json['columns'])->toHaveCount(2)
+        ->and($json['columns'][0])->toMatchArray(['name' => 'car_name', 'emphasized' => true])
+        ->and($json['columns'][1])->toMatchArray(['name' => 'car_plate', 'muted' => true]);
+});
+
+it('Column: empty group throws at serialize', function (): void {
+    expect(fn () => encodeColumn(Column::make('car')->group([])))
+        ->toThrow(InvalidArgumentException::class, 'car');
+});
+
+it('Column: nested group throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->group([
+            Column::make('inner')->group([Column::make('leaf')]),
+        ])
+    ))->toThrow(InvalidArgumentException::class, 'inner');
+});
+
+it('Column: individuallySearchable on a group child throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->group([
+            Column::make('car_name')->individuallySearchable(),
+        ])
+    ))->toThrow(InvalidArgumentException::class, 'car_name');
+});
+
+it('Column: editable on a group parent throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->textInput()->onSave(fn () => null)->group([
+            Column::make('car_name'),
+        ])
+    ))->toThrow(InvalidArgumentException::class, 'car');
+});
+
+it('Column: editable on a group child throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->group([
+            Column::make('car_name')->textInput()->onSave(fn () => null),
+        ])
+    ))->toThrow(InvalidArgumentException::class, 'car_name');
+});
+
+it('Column: copyable on a group parent throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->copyable()->group([
+            Column::make('car_name'),
+        ])
+    ))->toThrow(InvalidArgumentException::class, 'car');
+});
+
+it('Column: duplicate leaf name vs a top-level column throws', function (): void {
+    expect(fn () => (new TableBuilder('posts'))->columns([
+        Column::make('title'),
+        Column::make('car')->group([
+            Column::make('title'),
+        ]),
+    ]))->toThrow(InvalidArgumentException::class, 'title');
+});
+
+it('Column: searchable child appears in searchableFields', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->group([
+                Column::make('car_name')->searchable(),
+                Column::make('car_plate'),
+            ]),
+        ]);
+
+    expect($table->searchableFields())->toBe(['car_name']);
+});
+
+it('Column: searchable group parent includes every child name, not the parent', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->searchable()->group([
+                Column::make('car_name'),
+                Column::make('car_plate'),
+            ]),
+        ]);
+
+    expect($table->searchableFields())->toBe(['car_name', 'car_plate']);
+});
+
+it('Column: sortable() on a group parent throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->sortable()->group([Column::make('car_name')])
+    ))->toThrow(InvalidArgumentException::class, 'car');
+});
+
+it('Column: individuallySearchable() on a group parent throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->individuallySearchable()->group([Column::make('car_name')])
+    ))->toThrow(InvalidArgumentException::class, 'car');
+});
+
+it('Column: sortable() on a group child throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->group([Column::make('car_name')->sortable()])
+    ))->toThrow(InvalidArgumentException::class, 'car_name');
+});
+
+it('Column: translatable() on a group child throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->group([Column::make('car_name')->translatable()])
+    ))->toThrow(InvalidArgumentException::class, 'car_name');
 });

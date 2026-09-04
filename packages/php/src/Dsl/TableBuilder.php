@@ -92,6 +92,7 @@ final class TableBuilder implements JsonSerializable
                 );
             }
         }
+        $this->assertUniqueColumnNames();
 
         return $this;
     }
@@ -521,12 +522,34 @@ final class TableBuilder implements JsonSerializable
     {
         $fields = $this->searchable;
         foreach ($this->columnObjects as $col) {
-            if ($col->isSearchable() && ! in_array($col->name, $fields, true)) {
-                $fields[] = $col->name;
+            foreach ($this->searchableNamesFor($col) as $name) {
+                if (! in_array($name, $fields, true)) {
+                    $fields[] = $name;
+                }
             }
         }
 
         return $fields;
+    }
+
+    /** @return list<string> */
+    private function searchableNamesFor(Column $col): array
+    {
+        $children = $col->groupColumns();
+        if ($children === []) {
+            return $col->isSearchable() ? [$col->name] : [];
+        }
+        if ($col->isSearchable()) {
+            return array_map(fn (Column $child) => $child->name, $children);
+        }
+        $names = [];
+        foreach ($children as $child) {
+            if ($child->isSearchable()) {
+                $names[] = $child->name;
+            }
+        }
+
+        return $names;
     }
 
     /** @return list<string> Column names with individuallySearchable() enabled. */
@@ -663,6 +686,26 @@ final class TableBuilder implements JsonSerializable
     // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------
+
+    /** @param  array<string, true>  $seen */
+    private function claimColumnName(array &$seen, string $name): void
+    {
+        if (isset($seen[$name])) {
+            throw new InvalidArgumentException("Duplicate column name \"{$name}\".");
+        }
+        $seen[$name] = true;
+    }
+
+    private function assertUniqueColumnNames(): void
+    {
+        $seen = [];
+        foreach ($this->columnObjects as $col) {
+            $this->claimColumnName($seen, $col->name);
+            foreach ($col->groupColumns() as $child) {
+                $this->claimColumnName($seen, $child->name);
+            }
+        }
+    }
 
     /**
      * Build a Column from a legacy raw array like

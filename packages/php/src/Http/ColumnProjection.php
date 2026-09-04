@@ -27,14 +27,17 @@ final class ColumnProjection
     {
         $columns = $table->visibleColumns();
         $recordUrl = $table->recordUrlResolver();
+        $valueColumns = self::valueColumns($columns);
+        $meta = self::metaColumns($columns);
 
         $out = [];
         foreach ($rows as $row) {
-            $projected = $columns === [] ? $row : self::projectRow($row, $columns);
+            $projected = $valueColumns === [] ? $row : self::projectRow($row, $valueColumns);
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
-            self::attachTooltips($projected, $row, $columns);
+            self::attachTooltips($projected, $row, $meta);
+            self::attachDescriptions($projected, $row, $meta);
             $out[] = $projected;
         }
 
@@ -65,6 +68,75 @@ final class ColumnProjection
         if ($tooltips !== []) {
             data_set($projected, '_tooltips', $tooltips);
         }
+    }
+
+    /**
+     * Per-row meta: for each visible column with a closure description, resolve
+     * it against the original row and collect non-empty scalars under a flat
+     * `_descriptions` map keyed by (possibly dotted) column name. Omitted
+     * entirely when nothing resolves. Does not write into `row[name]`.
+     *
+     * @param  list<Column>  $columns
+     */
+    private static function attachDescriptions(mixed &$projected, mixed $row, array $columns): void
+    {
+        $descriptions = [];
+        foreach ($columns as $col) {
+            $resolver = $col->descriptionResolver();
+            if ($resolver === null) {
+                continue;
+            }
+            $value = $resolver($row);
+            if (is_scalar($value) && $value !== '') {
+                $descriptions[$col->name] = (string) $value;
+            }
+        }
+        if ($descriptions !== []) {
+            data_set($projected, '_descriptions', $descriptions);
+        }
+    }
+
+    /**
+     * Group parents are display-only: project their children instead.
+     *
+     * @param  list<Column>  $columns
+     * @return list<Column>
+     */
+    private static function valueColumns(array $columns): array
+    {
+        $out = [];
+        foreach ($columns as $col) {
+            $children = $col->groupColumns();
+            if ($children !== []) {
+                foreach ($children as $child) {
+                    $out[] = $child;
+                }
+
+                continue;
+            }
+            $out[] = $col;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Tooltip/description resolvers live on parents and on group children.
+     *
+     * @param  list<Column>  $columns
+     * @return list<Column>
+     */
+    private static function metaColumns(array $columns): array
+    {
+        $out = [];
+        foreach ($columns as $col) {
+            $out[] = $col;
+            foreach ($col->groupColumns() as $child) {
+                $out[] = $child;
+            }
+        }
+
+        return $out;
     }
 
     /**

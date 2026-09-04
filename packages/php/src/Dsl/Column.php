@@ -61,6 +61,11 @@ final class Column implements JsonSerializable
     /** Server-only: per-row tooltip resolver — never serialized. Receives the row, returns a scalar or null. */
     private ?Closure $tooltipResolver = null;
 
+    private ?string $description = null;
+
+    /** Server-only: per-row description resolver — never serialized. Receives the row, returns a scalar or null. */
+    private ?Closure $descriptionResolver = null;
+
     /** Renders the cell text as an emphasized primary-colored link-style label. */
     private ?bool $emphasized = null;
 
@@ -80,6 +85,10 @@ final class Column implements JsonSerializable
     /** Extra kind-specific payload (badge, boolean, iconMap, format, decimals, currency…). */
     /** @var array<string, mixed> */
     private array $kindMeta = [];
+
+    /** Nested leaf columns when kind is group. */
+    /** @var list<Column> */
+    private array $groupColumns = [];
 
     /** @var array<string, JsonSerializable> Display nodes rendered around the value (prefix/suffix), in display and edit mode alike. */
     private array $affixes = [];
@@ -314,6 +323,29 @@ final class Column implements JsonSerializable
         return $this->tooltipResolver;
     }
 
+    /**
+     * Muted secondary line under the cell's primary content. String → static
+     * description, serialized as-is. Closure → per-row resolver, run
+     * server-side in ColumnProjection and never serialized (mirrors tooltip()).
+     */
+    public function description(string|Closure $description): static
+    {
+        if ($description instanceof Closure) {
+            $this->descriptionResolver = $description;
+
+            return $this;
+        }
+        $this->description = $description;
+
+        return $this;
+    }
+
+    /** Server-only: per-row description resolver, or null when description() wasn't called with a closure. */
+    public function descriptionResolver(): ?Closure
+    {
+        return $this->descriptionResolver;
+    }
+
     /** Read the cell value from the record's per-locale map for the active locale, instead of a scalar. */
     public function translatable(bool $value = true): static
     {
@@ -517,6 +549,33 @@ final class Column implements JsonSerializable
     public function linkResolver(): ?Closure
     {
         return $this->linkResolver;
+    }
+
+    /**
+     * Glue several leaf columns into one header and one cell (vertical stack).
+     * Children remain query fields; the parent is display-only, so sortable()
+     * and individuallySearchable() are rejected on it — put them on a child.
+     * searchable() unfolds into the children; sortable()/translatable() on a
+     * child are rejected until unfolding covers them too.
+     *
+     * @param  list<Column>  $columns
+     */
+    public function group(array $columns): static
+    {
+        $this->kind = 'group';
+        $this->groupColumns = $columns;
+
+        return $this;
+    }
+
+    /**
+     * Nested leaf columns when this column is a group; empty otherwise.
+     *
+     * @return list<Column>
+     */
+    public function groupColumns(): array
+    {
+        return $this->groupColumns;
     }
 
     /** Square shape (sharp corners). Last shape call wins. */
@@ -826,6 +885,9 @@ final class Column implements JsonSerializable
         if ($this->tooltip !== null) {
             $out['tooltip'] = $this->tooltip;
         }
+        if ($this->description !== null) {
+            $out['description'] = $this->description;
+        }
         if ($this->emphasized === true) {
             $out['emphasized'] = true;
         }
@@ -848,6 +910,14 @@ final class Column implements JsonSerializable
         }
         foreach ($this->affixes as $key => $node) {
             $out[$key] = $node;
+        }
+
+        if ($this->kind === 'group') {
+            $this->assertGroupSerializable();
+            $out['columns'] = array_map(
+                fn (Column $child) => $child->jsonSerialize(),
+                $this->groupColumns,
+            );
         }
 
         if ($this->editInput !== [] && $this->editAs === null) {
@@ -878,5 +948,67 @@ final class Column implements JsonSerializable
         }
 
         return $out;
+    }
+
+    private function assertGroupSerializable(): void
+    {
+        if ($this->groupColumns === []) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": group() requires at least one child column.",
+            );
+        }
+        if ($this->copyableOption() !== []) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": copyable() is not supported on a group column.",
+            );
+        }
+        if ($this->isEditable()) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": editable is not supported on a group column.",
+            );
+        }
+        // A group has no value of its own — sorting or searching it would hit
+        // the query by the parent name, which is not a field. Sort and search
+        // belong on the children.
+        if ($this->isSortable()) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": sortable() is not supported on a group column — put it on a child.",
+            );
+        }
+        if ($this->isIndividuallySearchable()) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": individuallySearchable() is not supported on a group column — put it on a child.",
+            );
+        }
+        foreach ($this->groupColumns as $child) {
+            if ($child->getKind() === 'group' || $child->groupColumns() !== []) {
+                throw new InvalidArgumentException(
+                    "Column \"{$this->name}\": nested group is not supported (child \"{$child->name}\").",
+                );
+            }
+            if ($child->isEditable()) {
+                throw new InvalidArgumentException(
+                    "Column \"{$child->name}\": editable is not supported inside a group.",
+                );
+            }
+            if ($child->isIndividuallySearchable()) {
+                throw new InvalidArgumentException(
+                    "Column \"{$child->name}\": individuallySearchable() is not supported inside a group.",
+                );
+            }
+            // Unlike searchable(), these are not unfolded into the query yet:
+            // sortableColumnNames()/translatableColumns() walk top-level
+            // columns only, so accepting them here would silently do nothing.
+            if ($child->isSortable()) {
+                throw new InvalidArgumentException(
+                    "Column \"{$child->name}\": sortable() inside a group is not implemented yet.",
+                );
+            }
+            if ($child->isTranslatable()) {
+                throw new InvalidArgumentException(
+                    "Column \"{$child->name}\": translatable() inside a group is not implemented yet.",
+                );
+            }
+        }
     }
 }

@@ -649,3 +649,63 @@ describe("TableCell: time kind", () => {
 		expect(await findByText("—")).toBeTruthy();
 	});
 });
+
+describe("TableCell: description", () => {
+	test("renders a muted line under the cell body", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Hello" }],
+			columns: [{ name: "title", label: "Title", description: "Headline" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.textContent).toContain("Hello");
+		const line = td?.querySelector(".text-xs.text-muted-foreground");
+		expect(line?.textContent).toBe("Headline");
+	});
+
+	test("row _descriptions value wins over the static col.description", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Hello", _descriptions: { title: "From row" } }],
+			columns: [{ name: "title", label: "Title", description: "Headline" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.textContent).toContain("From row");
+		expect(td?.textContent).not.toContain("Headline");
+	});
+});
+
+describe("TableCell: group", () => {
+	test("renders one td with stacked children of their kinds", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", car_photo: "/img/civic.png", car_name: "Civic" }],
+			columns: [
+				{
+					name: "car",
+					label: "Car",
+					kind: "group",
+					description: "Vehicle",
+					columns: [
+						{ name: "car_photo", kind: "image" },
+						{ name: "car_name", emphasized: true },
+					],
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const tds = container.querySelectorAll("tbody td");
+		expect(tds.length).toBe(1);
+		const td = tds[0];
+		expect(td?.querySelector("img")?.getAttribute("src")).toBe("/img/civic.png");
+		expect(td?.textContent).toContain("Civic");
+		expect(td?.textContent).toContain("Vehicle");
+		expect(td?.querySelector(".flex.flex-col")).toBeTruthy();
+		expect(container.querySelectorAll("thead th").length).toBe(1);
+	});
+});

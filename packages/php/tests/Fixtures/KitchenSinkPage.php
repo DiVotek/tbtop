@@ -222,7 +222,7 @@ class KitchenSinkPage extends Page
             ], ['name' => 'content']),
             $s->table('posts')
                 ->columns([
-                    Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap(),
+                    Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap()->description('Headline'),
                     'views' => 'Views',
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
@@ -256,6 +256,10 @@ class KitchenSinkPage extends Page
                     Column::make('view')
                         ->label('View')
                         ->link(fn ($row) => '/admin/posts/'.data_get($row, 'id'), external: true, icon: 'external-link'),
+                    Column::make('car')->label('Авто')->group([
+                        Column::make('car_name')->emphasized(),
+                        Column::make('car_plate')->muted(),
+                    ]),
                 ])
                 ->searchable(['title'])
                 ->filters([
