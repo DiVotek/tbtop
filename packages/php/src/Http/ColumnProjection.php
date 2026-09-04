@@ -111,6 +111,7 @@ final class ColumnProjection
                 foreach ($children as $child) {
                     $out[] = $child;
                 }
+
                 continue;
             }
             $out[] = $col;

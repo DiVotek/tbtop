@@ -1179,7 +1179,8 @@
                             "label": "Title",
                             "kind": "text",
                             "columnSearchable": true,
-                            "noWrap": true
+                            "noWrap": true,
+                            "description": "Headline"
                         },
                         {
                             "name": "views",
@@ -1293,6 +1294,21 @@
                                 "external": true,
                                 "icon": "external-link"
                             }
+                        },
+                        {
+                            "name": "car",
+                            "label": "\u0410\u0432\u0442\u043e",
+                            "kind": "group",
+                            "columns": [
+                                {
+                                    "name": "car_name",
+                                    "emphasized": true
+                                },
+                                {
+                                    "name": "car_plate",
+                                    "muted": true
+                                }
+                            ]
                         }
                     ]
                 },

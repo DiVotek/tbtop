@@ -788,6 +788,7 @@
 					"wrap": { "type": "boolean" },
 					"noWrap": { "type": "boolean" },
 					"tooltip": { "type": "string" },
+					"description": { "type": "string" },
 					"emphasized": { "type": "boolean" },
 					"muted": { "type": "boolean" },
 					"uppercase": { "type": "boolean" },
@@ -857,7 +858,8 @@
 							}
 						},
 						"additionalProperties": false
-					}
+					},
+					"columns": { "$ref": "#/$defs/columns" }
 				}
 			}
 		},

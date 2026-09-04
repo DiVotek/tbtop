@@ -560,7 +560,7 @@ final class Column implements JsonSerializable
     public function group(array $columns): static
     {
         $this->kind = 'group';
-        $this->groupColumns = array_values($columns);
+        $this->groupColumns = $columns;
 
         return $this;
     }

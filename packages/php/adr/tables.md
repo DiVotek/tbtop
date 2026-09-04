@@ -33,6 +33,9 @@ domain: tables
   in column-level `prefix`/`suffix` display nodes (shared `AffixNode` normalization with
   form fields), rendered in display mode and inside the editor's `InputGroup`. `money()`
   stays output-only; decimals edit through `numberInput()->step('0.01')`.
+- **Group glues existing columns into one cell.** `Column::group()` is display glue, not
+  a structured composite value: children remain query fields (search, format, tooltip,
+  description), and the parent occupies one header and one stacked cell.
 
 ## Why
 
