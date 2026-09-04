@@ -860,7 +860,17 @@
 						"additionalProperties": false
 					},
 					"columns": { "$ref": "#/$defs/columns" }
-				}
+				},
+				"allOf": [
+					{
+						"if": { "properties": { "kind": { "const": "group" } }, "required": ["kind"] },
+						"then": { "required": ["columns"], "properties": { "columns": { "minItems": 1 } } }
+					},
+					{
+						"if": { "required": ["columns"] },
+						"then": { "properties": { "kind": { "const": "group" } }, "required": ["kind"] }
+					}
+				]
 			}
 		},
 		"icon": {

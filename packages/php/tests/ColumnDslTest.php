@@ -807,3 +807,27 @@ it('Column: searchable group parent includes every child name, not the parent', 
 
     expect($table->searchableFields())->toBe(['car_name', 'car_plate']);
 });
+
+it('Column: sortable() on a group parent throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->sortable()->group([Column::make('car_name')])
+    ))->toThrow(InvalidArgumentException::class, 'car');
+});
+
+it('Column: individuallySearchable() on a group parent throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->individuallySearchable()->group([Column::make('car_name')])
+    ))->toThrow(InvalidArgumentException::class, 'car');
+});
+
+it('Column: sortable() on a group child throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->group([Column::make('car_name')->sortable()])
+    ))->toThrow(InvalidArgumentException::class, 'car_name');
+});
+
+it('Column: translatable() on a group child throws at serialize', function (): void {
+    expect(fn () => encodeColumn(
+        Column::make('car')->group([Column::make('car_name')->translatable()])
+    ))->toThrow(InvalidArgumentException::class, 'car_name');
+});
