@@ -64,6 +64,8 @@ export interface TableColumn<TRow = unknown> {
 	tooltip?: string;
 	/** Muted secondary line under the cell's primary content. */
 	description?: string;
+	/** Nested leaf columns when kind is "group". */
+	columns?: TableColumn[];
 	/** Emphasized primary link-style cell text (e.g. a title column driving rowClick). */
 	emphasized?: boolean;
 	/** Small muted cell text — secondary metadata columns (dates, parents, counts). */

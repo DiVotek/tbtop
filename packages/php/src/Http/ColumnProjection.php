@@ -27,15 +27,17 @@ final class ColumnProjection
     {
         $columns = $table->visibleColumns();
         $recordUrl = $table->recordUrlResolver();
+        $valueColumns = self::valueColumns($columns);
+        $meta = self::metaColumns($columns);
 
         $out = [];
         foreach ($rows as $row) {
-            $projected = $columns === [] ? $row : self::projectRow($row, $columns);
+            $projected = $valueColumns === [] ? $row : self::projectRow($row, $valueColumns);
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
-            self::attachTooltips($projected, $row, $columns);
-            self::attachDescriptions($projected, $row, $columns);
+            self::attachTooltips($projected, $row, $meta);
+            self::attachDescriptions($projected, $row, $meta);
             $out[] = $projected;
         }
 
@@ -92,6 +94,48 @@ final class ColumnProjection
         if ($descriptions !== []) {
             data_set($projected, '_descriptions', $descriptions);
         }
+    }
+
+    /**
+     * Group parents are display-only: project their children instead.
+     *
+     * @param  list<Column>  $columns
+     * @return list<Column>
+     */
+    private static function valueColumns(array $columns): array
+    {
+        $out = [];
+        foreach ($columns as $col) {
+            $children = $col->groupColumns();
+            if ($children !== []) {
+                foreach ($children as $child) {
+                    $out[] = $child;
+                }
+                continue;
+            }
+            $out[] = $col;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Tooltip/description resolvers live on parents and on group children.
+     *
+     * @param  list<Column>  $columns
+     * @return list<Column>
+     */
+    private static function metaColumns(array $columns): array
+    {
+        $out = [];
+        foreach ($columns as $col) {
+            $out[] = $col;
+            foreach ($col->groupColumns() as $child) {
+                $out[] = $child;
+            }
+        }
+
+        return $out;
     }
 
     /**

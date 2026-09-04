@@ -84,10 +84,55 @@ export function RowDataCell({
 		col.wrap === false && "truncate max-w-0",
 		col.noWrap && "whitespace-nowrap",
 	);
+	return (
+		<td
+			className={cn("px-3 py-2", alignClass, wrapClass)}
+			style={col.width ? { width: col.width } : undefined}
+		>
+			{col.kind === "group" ? (
+				<GroupCell col={col} row={row} saveCell={saveCell} />
+			) : (
+				<CellInner col={col} row={row} saveCell={saveCell} />
+			)}
+		</td>
+	);
+}
+
+function GroupCell({
+	col,
+	row,
+	saveCell,
+}: {
+	col: TableColumn;
+	row: Record<string, unknown>;
+	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+}) {
+	const description = cellDescription(row, col);
+	return (
+		<>
+			<div className="flex flex-col gap-0.5">
+				{(col.columns ?? []).map((child) => (
+					<div key={child.name}>
+						<CellInner col={child} row={row} saveCell={saveCell} />
+					</div>
+				))}
+			</div>
+			{description ? <DescriptionLine text={description} /> : null}
+		</>
+	);
+}
+
+function CellInner({
+	col,
+	row,
+	saveCell,
+}: {
+	col: TableColumn;
+	row: Record<string, unknown>;
+	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+}) {
 	const tooltip = readRowTooltip(row, col) ?? col.tooltip;
 	const rendered = renderCell({ col, row, tooltip, saveCell });
-	// Text-style flags: emphasized = primary link-style label (pairs with
-	// rowClick), muted = small secondary metadata, uppercase = code-like values.
 	const textClass = cn(
 		col.emphasized && "font-medium text-primary hover:underline",
 		col.muted && "text-xs text-muted-foreground",
@@ -97,10 +142,7 @@ export function RowDataCell({
 	const withTooltip = <CellTooltip tooltip={tooltip}>{content}</CellTooltip>;
 	const description = cellDescription(row, col);
 	return (
-		<td
-			className={cn("px-3 py-2", alignClass, wrapClass)}
-			style={col.width ? { width: col.width } : undefined}
-		>
+		<>
 			{col.copyable ? (
 				<span className="inline-flex items-center gap-1">
 					{withTooltip}
@@ -110,7 +152,7 @@ export function RowDataCell({
 				withTooltip
 			)}
 			{description ? <DescriptionLine text={description} /> : null}
-		</td>
+		</>
 	);
 }
 

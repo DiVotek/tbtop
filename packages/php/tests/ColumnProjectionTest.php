@@ -359,6 +359,45 @@ it('ColumnProjection: a static string description alone does not attach _descrip
 });
 
 // ---------------------------------------------------------------------------
+// group — project children, skip parent
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: group writes child values and does not computeValue the parent', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('car')->group([
+                Column::make('title')->formatUsing(fn ($v) => strtoupper((string) $v)),
+                Column::make('status'),
+            ]),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->title)->toBe('POST A')
+        ->and($result[0]->status)->toBe('published')
+        ->and(property_exists($result[0], 'car'))->toBeFalse();
+});
+
+it('ColumnProjection: group child tooltip and description attach under the child name', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('car')->group([
+                Column::make('title')->tooltip(fn ($row) => "Tip: {$row->title}"),
+                Column::make('status')->description(fn ($row) => "Desc: {$row->status}"),
+            ]),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->_tooltips)->toBe(['title' => 'Tip: Post A'])
+        ->and($result[0]->_descriptions)->toBe(['status' => 'Desc: published']);
+});
+
+// ---------------------------------------------------------------------------
 // Per-column search (colSearch) allowlist
 // ---------------------------------------------------------------------------
 

@@ -86,6 +86,10 @@ final class Column implements JsonSerializable
     /** @var array<string, mixed> */
     private array $kindMeta = [];
 
+    /** Nested leaf columns when kind is group. */
+    /** @var list<Column> */
+    private array $groupColumns = [];
+
     /** @var array<string, JsonSerializable> Display nodes rendered around the value (prefix/suffix), in display and edit mode alike. */
     private array $affixes = [];
 
@@ -547,6 +551,30 @@ final class Column implements JsonSerializable
         return $this->linkResolver;
     }
 
+    /**
+     * Glue several leaf columns into one header and one cell (vertical stack).
+     * Children remain query fields; the parent is display-only.
+     *
+     * @param  list<Column>  $columns
+     */
+    public function group(array $columns): static
+    {
+        $this->kind = 'group';
+        $this->groupColumns = array_values($columns);
+
+        return $this;
+    }
+
+    /**
+     * Nested leaf columns when this column is a group; empty otherwise.
+     *
+     * @return list<Column>
+     */
+    public function groupColumns(): array
+    {
+        return $this->groupColumns;
+    }
+
     /** Square shape (sharp corners). Last shape call wins. */
     public function square(): static
     {
@@ -881,6 +909,14 @@ final class Column implements JsonSerializable
             $out[$key] = $node;
         }
 
+        if ($this->kind === 'group') {
+            $this->assertGroupSerializable();
+            $out['columns'] = array_map(
+                fn (Column $child) => $child->jsonSerialize(),
+                $this->groupColumns,
+            );
+        }
+
         if ($this->editInput !== [] && $this->editAs === null) {
             throw new InvalidArgumentException(
                 "Column \"{$this->name}\": step() requires numberInput().",
@@ -909,5 +945,41 @@ final class Column implements JsonSerializable
         }
 
         return $out;
+    }
+
+    private function assertGroupSerializable(): void
+    {
+        if ($this->groupColumns === []) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": group() requires at least one child column.",
+            );
+        }
+        if ($this->copyableOption() !== []) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": copyable() is not supported on a group column.",
+            );
+        }
+        if ($this->isEditable()) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": editable is not supported on a group column.",
+            );
+        }
+        foreach ($this->groupColumns as $child) {
+            if ($child->getKind() === 'group' || $child->groupColumns() !== []) {
+                throw new InvalidArgumentException(
+                    "Column \"{$this->name}\": nested group is not supported (child \"{$child->name}\").",
+                );
+            }
+            if ($child->isEditable()) {
+                throw new InvalidArgumentException(
+                    "Column \"{$child->name}\": editable is not supported inside a group.",
+                );
+            }
+            if ($child->isIndividuallySearchable()) {
+                throw new InvalidArgumentException(
+                    "Column \"{$child->name}\": individuallySearchable() is not supported inside a group.",
+                );
+            }
+        }
     }
 }
