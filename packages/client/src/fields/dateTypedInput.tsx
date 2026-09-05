@@ -47,9 +47,9 @@ export function DateTypedInput({
 	const format = useMemo<DateFormat>(
 		() =>
 			localeDateFormat(locale, {
-				day: t("field.date.placeholder.day"),
-				month: t("field.date.placeholder.month"),
-				year: t("field.date.placeholder.year"),
+				day: t("field.date.hint.day"),
+				month: t("field.date.hint.month"),
+				year: t("field.date.hint.year"),
 			}),
 		[locale, t],
 	);

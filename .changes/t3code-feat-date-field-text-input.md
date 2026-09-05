@@ -1,6 +1,6 @@
 # feat(fields): typed date entry in the date and daterange popovers
 
-touches: typed entry, date field, daterange field, admin messages
+touches: typed entry, date field, daterange field, admin messages, admin locales
 
 Base is `HEAD` (b2f9aa5) — the work is uncommitted on a branch cut from it, so the
 merge-base with `main` is HEAD itself.
@@ -22,12 +22,16 @@ flowchart LR
         calendar["Calendar<br/>-autoFocus<br/><small>dateCalendar.tsx, daterangeCalendar.tsx</small>"]:::changed
         messages["Admin messages<br/>+7 keys<br/><small>defaultMessages.ts</small>"]:::changed
     end
+    subgraph server["tbtop/admin"]
+        locales["Admin locales<br/>+en and uk translations<br/><small>lang/{en,uk}/admin.php</small>"]:::changed
+    end
 
     form -.-> trigger
     trigger ==>|"typed text → applied ISO day"| typed
     typed --> parsing
     trigger --> calendar
     typed -.-> messages
+    messages --> locales
     calendar -.-> parsing
 
     classDef changed fill:#0d3b1e,stroke:#2ea043,color:#fff
@@ -37,7 +41,14 @@ flowchart LR
 ```
 
 Wiring: `CONTEXT.md` gains *typed entry* and *applied value*; `docs/backlog.md` records
-the deferred `Field::format()` override under Fields / forms.
+the deferred `Field::format()` override under Fields / forms; `packages/client/package.json`
+goes to 0.5.0 — the popover now opens focused on its input rather than the calendar, which
+is a visible behaviour change rather than a fix.
+
+The seven new client keys ship with `en` and `uk` translations, which
+`ClientLocaleContractTest` requires. They live under `field.date.hint.*` rather than
+`field.date.placeholder.*`: `placeholder` is already a leaf string, and `Arr::dot` cannot
+flatten a branch and a leaf at the same key.
 
 Two fixes fell out of building this, both reachable before the change:
 
@@ -58,6 +69,7 @@ still not wired into submit, and PHP remains the validation boundary.
 - `packages/client/src/fields/dateTypedInput.tsx`
 - `packages/client/src/fields/dateForm.tsx`
 - `packages/client/src/fields/daterangeField.tsx`
+- `packages/php/resources/lang/uk/admin.php` (translations only)
 
 **Assumptions:**
 - Admin locales resolve to a Gregorian numeric format ICU can lay out; a locale whose

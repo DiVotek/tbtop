@@ -296,10 +296,17 @@ return [
             'tooLarge' => 'Файл перевищує максимальний розмір',
         ],
         'colorpicker' => ['palette' => 'Палітра кольорів'],
-        'date' => ['placeholder' => 'Виберіть дату'],
+        'date' => [
+            'placeholder' => 'Виберіть дату',
+            'invalid' => 'Некоректна дата',
+            'typed_label' => 'Дата',
+            'hint' => ['day' => 'дд', 'month' => 'мм', 'year' => 'рррр'],
+        ],
         'daterange' => [
             'placeholder' => 'Виберіть діапазон дат',
             'clear' => 'Очистити',
+            'from_label' => 'З',
+            'to_label' => 'До',
         ],
         'tags' => ['placeholder' => 'Додати тег…'],
         'search' => ['placeholder' => 'Пошук…'],
