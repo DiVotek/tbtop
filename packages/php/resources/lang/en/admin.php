@@ -296,10 +296,17 @@ return [
             'tooLarge' => 'File exceeds the maximum size',
         ],
         'colorpicker' => ['palette' => 'Color palette'],
-        'date' => ['placeholder' => 'Pick a date'],
+        'date' => [
+            'placeholder' => 'Pick a date',
+            'invalid' => 'Not a valid date',
+            'typed_label' => 'Date',
+            'hint' => ['day' => 'dd', 'month' => 'mm', 'year' => 'yyyy'],
+        ],
         'daterange' => [
             'placeholder' => 'Pick a date range',
             'clear' => 'Clear',
+            'from_label' => 'From',
+            'to_label' => 'To',
         ],
         'tags' => ['placeholder' => 'Add tag…'],
         'search' => ['placeholder' => 'Search…'],
