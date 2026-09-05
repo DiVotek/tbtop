@@ -55,6 +55,13 @@
   security boundary), form state needs appear/disappear semantics, region swap must
   reconcile by field name instead of remounting. Park until a consumer need survives
   contact with `hiddenIf` + deps-driven field data (which cover the known cases).
+- **`Field::format()` for typed date entry** — date/daterange accept typed input in the
+  admin locale's numeric format (derived from `Intl.formatToParts`), with ISO `Y-m-d`
+  always accepted as a paste fallback. A `format()` on the field would let a consumer
+  override that per field. Wire-grammar change: PHP builder + schema + kitchen-sink in one
+  step, plus a client parser for PHP date tokens (`d/m/Y`), which does not exist — the
+  existing `format()` on `Column`/`DisplayValue` is server-applied by `KindFormat` and
+  never reaches the client. Promote when a consumer needs a format the locale does not give.
 
 ## Display / layout
 
