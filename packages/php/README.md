@@ -34,9 +34,45 @@ automatically — no separate `migrate` step is required. If you need to
 customize them first, publish with `--tag="tbtop-admin-migrations"` before
 running `php artisan migrate`.
 
-Register your admin panel and pages in `config/tbtop-admin.php` (see the
-`panels` key), then wire up the React entry point using
-`@tbtop/inertia-admin` on the client side.
+Then publish the host wiring:
+
+```bash
+php artisan admin:install
+```
+
+This writes three files into your app — `resources/views/admin.blade.php`
+(the root view), `resources/js/admin.tsx` (the admin entry) and
+`resources/css/admin.css`. Existing files are left untouched unless you pass
+`--force`. The panel renders on its **own** Inertia entry rather than your
+app's main one: the bundle is large (the richtext chunk alone is ~270KB) and a
+public frontend shouldn't pay for it.
+
+Four steps remain, in files the package deliberately does not patch:
+
+1. Add the admin entry to the Vite input list in `vite.config.ts`:
+
+   ```js
+   input: ['resources/css/app.css', 'resources/js/app.tsx', 'resources/js/admin.tsx'],
+   ```
+
+2. Point the panel at the published root view — `->rootView('admin')` in your
+   `Panel::configure()`.
+
+3. Make sure the host compiles **Tailwind v4** — the client ships a Tailwind
+   source, not built CSS:
+
+   ```bash
+   npm install -D tailwindcss @tailwindcss/vite   # and add tailwindcss() to the Vite plugins
+   ```
+
+4. Build the client:
+
+   ```bash
+   npm run build
+   ```
+
+Finally, register your admin panel and pages in `config/tbtop-admin.php` (see
+the `panels` key).
 
 ## A page, in PHP
 
@@ -83,7 +119,7 @@ in the monorepo for larger, real examples (forms, actions, filters, uploads).
 - **Laravel** owns the backend: validation rules, queues, migrations, auth,
   notifications. The DSL never reinvents these — it wires into them.
 - **React client** (`@tbtop/inertia-admin`) owns rendering: it interprets the
-  JSON and renders the ~20 field kinds, tables, forms, and layout blocks.
+  JSON and renders the 26 field kinds, tables, forms, and layout blocks.
 
 A JSON Schema (`packages/contracts/structure.schema.json` in the monorepo) is
 the wire contract both sides are tested against, so the DSL and the client
