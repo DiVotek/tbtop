@@ -45,7 +45,7 @@ this stack.
 the React component's zod schema."* **Wrong.** The client zod is **on-blur UX only and never
 trusted** — a request can skip the client entirely. Validation is *always* a Laravel rule on
 the PHP field: `$s->text('title')->required()->rules('max:200')`
-(`Concerns/PostFormFields.php:22`). The zod mirror is generated *from* the PHP rules, not the
+(`Concerns/PostFormFields.php`). The zod mirror is generated *from* the PHP rules, not the
 other way around.
 
 **Mis-placement 2 — inventing a new effect to navigate.** *"I need the form to redirect
@@ -58,7 +58,7 @@ effect kind edits the package for something the contract already covers.
 filter, restore action, and scoping inline on every index page."* **Wrong by default.** The
 backend behavior (the `SoftDeletes` trait, the scoping) is plain Laravel on the *model*; the
 table affordance is a one-call macro: `->softDeletes($s, Post::class)`
-(`SoftDeletesDemoPage.php:55`). Re-deriving it per page is reinventing what the framework
+(`SoftDeletesDemoPage.php`). Re-deriving it per page is reinventing what the framework
 ships.
 
 This decision tree expands the placement table in the repo's `CLAUDE.md`; when in doubt,
@@ -639,8 +639,8 @@ for a server action; always go through `$s->action()` or a preset that does.
 
 | Preset | Signature | Shape |
 |---|---|---|
-| `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', string $title = 'Edit record', ?string $saveName = null): ActionBuilder` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
-| `CreateAction` | `make(S $s, FormBuilder $form, Closure $storeUsing, array $defaultRecord = [], string $name = 'create', string $title = 'Create record'): ActionBuilder` | Modal, no `query` — the form's own defaults reach the client via the normal `collectedForms()` path. `$form` holds fields only; the helper appends an inner Store+Cancel `actionsRow`. `$storeUsing` runs the insert (void → notify+closeModal+refreshTable) |
+| `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', ?string $title = null, ?string $saveName = null): ActionBuilder` — `null` title falls back to the translated `tbtop-admin::admin.edit.title` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
+| `CreateAction` | `make(S $s, FormBuilder $form, Closure $storeUsing, array $defaultRecord = [], string $name = 'create', ?string $title = null): ActionBuilder` — `null` title falls back to the translated `tbtop-admin::admin.create.title` | Modal, no `query` — the form's own defaults reach the client via the normal `collectedForms()` path. `$form` holds fields only; the helper appends an inner Store+Cancel `actionsRow`. `$storeUsing` runs the insert (void → notify+closeModal+refreshTable) |
 | `ViewAction` | `make(S $s, Closure $loadUsing, Closure $render, string $name = 'view', string $title = 'View record'): ActionBuilder` | Modal + `query` (preload); close-only, no save. `$render` builds the body **once at author time** — bind live per-row values with `S::displayValue(null)->field($name)` nodes resolved client-side from `$loadUsing`'s result |
 | `DeleteAction` | `make(S $s, Closure $using, string $name = 'delete', bool $bulk = false): ActionBuilder` | Danger + confirm server action; `$using` deletes. `bulk: true` switches to `needs: ['selection']` (empty selection → benign notify) |
 | `ReplicateAction` | `make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder` | Server action; `$using` clones. No auto-redirect — return a `redirect` effect from `$using` for edit-after-clone |
@@ -650,7 +650,7 @@ for a server action; always go through `$s->action()` or a preset that does.
 `DeleteAction` in a row and a bulk action, straight from the demo:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:213-226
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
     Post::whereKey($ctx->row['id'] ?? null)->delete();
 }),
@@ -665,7 +665,7 @@ DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (Act
 `ReplicateAction` returns a `redirect` from its own closure to edit the clone:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:202-211
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
     $clone = Post::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->replicate();
     $clone->slug = $clone->slug.'-copy-'.uniqid();
@@ -679,7 +679,7 @@ ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
 `->slideOver()`:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:52-71
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 CreateAction::make(
     $s,
     form: $s->form('quickCreatePost', [
@@ -703,7 +703,7 @@ CreateAction::make(
 `field()`-bound `displayValue` blocks that resolve against `loadUsing`'s result per row:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:154-170
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 ViewAction::make(
     $s,
     name: 'viewPost',
@@ -743,9 +743,10 @@ $s->form('post', [
 ])
 ```
 
-The hand-rolled version this replaces is `PostCreatePage.php:31-35` (a `save` submit + a
-`cancel` visit inside an `actionsRow`). Because `FormActions::save` routes through `$s`, the
-submit action is registered like any other — the registry mandate above holds.
+What this replaces is a hand-rolled `actionsRow` holding a `save` submit and a `cancel`
+visit; the demo pages have all migrated to the helper. Because `FormActions::save` routes
+through `$s`, the submit action is registered like any other — the registry mandate above
+holds.
 
 `RecordAction` (same namespace) is the shared internal the server presets build on:
 `server()` / `bulk()` wire the server-action-with-default-tail, and a void/null closure
@@ -754,7 +755,7 @@ falls back to that tail. You rarely call it directly.
 #### Worked example — `EditAction` modal with load/save
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:174-200
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 EditAction::make(
     $s,
     name: 'editPublication',
@@ -934,7 +935,7 @@ The two redirect forms are not interchangeable:
 the freshly-created record:
 
 ```php
-// apps/demo/app/Admin/Pages/PostCreatePage.php:49-53
+// apps/demo/app/Admin/Pages/PostCreatePage.php
 ->onSubmit(function (ActionCtx $ctx): string {
     $post = Post::create($ctx->form);
 
@@ -943,13 +944,13 @@ the freshly-created record:
 ```
 
 `MediaNewPage` returns a string the same way (`return '/admin/media';`,
-`apps/demo/app/Admin/Pages/MediaNewPage.php:51`).
+`apps/demo/app/Admin/Pages/MediaNewPage.php`).
 
 **A handler returning a `redirect` effect** — used by the edit page's delete action, which
 notifies *and* navigates:
 
 ```php
-// apps/demo/app/Admin/Pages/PostEditPage.php:52-56
+// apps/demo/app/Admin/Pages/PostEditPage.php
 ->handle(function (ActionCtx $ctx): Effects {
     Post::whereKey($ctx->request->route('post'))->delete();
 
@@ -974,13 +975,13 @@ the same wire shape:
 Use for a single comparison. The operators are `=` `!=` `>` `>=` `<` `<=`:
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:34-35
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 $s->date('published_at')->label('Published at')->rules('nullable|date')
     ->hiddenIf('published', '=', false),   // hide the date until "published" is on
 ```
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:74-75 (inside a repeater)
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php (inside a repeater)
 $s->text('url')->label('URL')
     ->hiddenIf('type', '!=', 'link'),      // only show URL when type === 'link'
 ```
@@ -989,7 +990,7 @@ The same shorthand drives a row action's visibility — the demo hides the publi
 on rows that are already drafts:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:152
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 ->label('Publication')->hiddenIf('published', '=', false)
 ```
 
@@ -999,7 +1000,7 @@ Use when you need a combinator (AND / OR / NOT) or a leaf the shorthand has no s
 (`truthy`, `empty`, `notEmpty`, `in`, `notIn`):
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:36-39
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 Rating::make('rating')->label('Rating')->max(5)
     ->set('min', 0)->set('step', 0.1)
     ->rules('nullable|numeric|min:0|max:5')

@@ -1,7 +1,7 @@
 # Tabletop Admin
 
 PHP-DSL admin pages, rendered by a React client over Inertia. **No Livewire.**
-See `docs/roadmap.md` for release plan, `PROJECT.md` for vision (note: vision was written
+See `docs/backlog.md` for open work, `PROJECT.md` for vision (note: vision was written
 for the Node stack — philosophy holds, the runtime is now Laravel; re-read with that lens).
 
 > **Public docs are English-only.** This repo is going open-source. README, docs,
@@ -22,7 +22,7 @@ page composition. The client owns rendering. **These three boundaries are the ar
 Monorepo. Two published packages + a demo app.
 
 - `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, auth, media. **Laravel package.**
-- `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, ~20 field components, layout shell, data clients.
+- `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, 28 field components, layout shell, data clients.
 - `packages/contracts/` → generated `structure.schema.json` + `fixtures/kitchen-sink.json` — the wire-grammar contract shared by both sides.
 - `apps/demo/` → Laravel app wiring both packages end-to-end. **The reference consumer — read its `app/Admin/Pages/` to see real DSL usage.**
 
@@ -91,7 +91,7 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   family (displayValue/Image/Richtext/KeyValue — the read-only detail story). In `S.php`. For
   content that must re-render on form-field changes: `liveRegion(name)->dependsOn(...)->render(fn)`
   — server re-renders display nodes per change, no custom client code.
-- **Table features:** sort, pagination, global search, per-column search, per-field filters
+- **Table features:** sort, pagination, table-wide search, per-column search, per-field filters
   (modal/inline), filter tabs, row grouping, drag-reorder, inline-editable cells, row actions,
   bulk actions, header actions, row-click, record URLs, column visibility, empty state,
   soft-delete macro, URL-state. In `TableBuilder.php` / `Column.php`.
@@ -104,14 +104,15 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   backend. The screens are DSL pages using `layout(): 'center'` plus a `middleware()`
   override to stay public (`LoginPage`, `TwoFactorChallengePage`, `TwoFactorSetupPage`,
   `ApiTokensPage`). Don't rebuild the flows to learn them; the open gap is a package-side
-  backend story, not the layout (see roadmap §1.1).
+  backend story, not the layout.
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
   `apps/demo/resources/js/admin.tsx` for the rating-field example. Use this for app-specific
   fields instead of editing the packages.
 
 Known stubs/gaps (don't assume these work): no package-side auth backend, no CSV
-export/import, no global search. Full list in `docs/roadmap.md` and
-`docs/backlog.md` — both lag the code, so verify against source before trusting a "gap".
+export/import, no **cross-model** record search (per-table search ships; the ⌘K palette
+searches nav items and declared commands, not rows), no multi-tenancy. Full list in
+`docs/backlog.md` — it lags the code, so verify against source before trusting a "gap".
 
 ## Commands
 
@@ -188,4 +189,4 @@ npm ≥ 11.5.1** for OIDC — the release job sets up both. The published npm pa
 
 One per PR, only when public API changes (anything reachable from a package's `exports` /
 composer autoload). Skip for internal refactors, tests, docs. **Currently off** until first real
-consumer (EasyCar) — flips on at the internal release (see roadmap §1.3).
+consumer (EasyCar) — flips on at the internal release.

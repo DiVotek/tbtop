@@ -372,7 +372,7 @@ Three controls added in M-89. All three are exercised end-to-end in
 values:
 
 ```php
-// apps/demo/app/Admin/Pages/NewFeaturesPage.php:35-43
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php
 $s->checkboxlist('channels')
     ->label('Notification channels (CheckboxList)')
     ->options([
@@ -388,7 +388,7 @@ $s->checkboxlist('channels')
 `->multiple()` to switch it to an array value:
 
 ```php
-// apps/demo/app/Admin/Pages/NewFeaturesPage.php:45-61
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php
 $s->togglebuttons('plan')                 // single → scalar value, e.g. 'pro'
     ->label('Plan (ToggleButtons, single)')
     ->options([
@@ -412,7 +412,7 @@ $s->togglebuttons('tags')                 // multiple → array value, e.g. ['ne
 because they are structural — they drive the track range and snapping:
 
 ```php
-// apps/demo/app/Admin/Pages/NewFeaturesPage.php:63-68
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php
 $s->slider('volume')
     ->label('Volume (Slider)')
     ->min(0)
@@ -424,7 +424,7 @@ $s->slider('volume')
 `options()` on these fields takes the same `{value, label}` list every option-driven field
 uses — the values are string-normalized on the wire, so seed defaults as strings (e.g.
 `->record(['plan' => 'pro', 'channels' => ['email']])`,
-`NewFeaturesPage.php:74-79`). Validation is PHP as always — `rules('array')` for the
+`NewFeaturesPage.php`). Validation is PHP as always — `rules('array')` for the
 multi-value ones, numeric range rules for the slider.
 
 ---
@@ -438,7 +438,7 @@ rung you need; each adds capability over the one above.
 `->set('options', [...])`):
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:69-73 (inside a repeater)
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php (inside a repeater)
 $s->select('type')->label('Type')
     ->set('options', [
         ['value' => 'text', 'label' => 'Text'],
@@ -450,7 +450,7 @@ $s->select('type')->label('Type')
 `->searchable()`:
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:43-46
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 $s->select('author_id')->label('Author')
     ->searchable()
     ->set('options', $this->authorOptions())
@@ -463,7 +463,7 @@ $s->select('author_id')->label('Author')
 field is usually the cleaner choice:
 
 ```php
-// apps/demo/app/Admin/Pages/RelationDemoPage.php:39-43
+// apps/demo/app/Admin/Pages/RelationDemoPage.php
 $s->relation('author_id')->label('Author')
     ->query(fn () => User::query()->orderBy('name'))
     ->labelKey('name')
@@ -476,7 +476,7 @@ a mini-form (`$fields`) renders in the dropdown, and submitting it runs `$using`
 to mint the new `{value, label}`. Needs the select-create endpoint:
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:43-60
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 $s->select('author_id')->label('Author')
     ->searchable()
     ->set('options', $this->authorOptions())
@@ -574,7 +574,7 @@ A public-disk upload that re-encodes to webp, and a private-disk one served only
 app:
 
 ```php
-// apps/demo/app/Admin/Pages/UploadDemoPage.php:40-49
+// apps/demo/app/Admin/Pages/UploadDemoPage.php
 // Public disk: stored under public:docs, publicly linkable.
 $s->upload('doc')->label('Public document')->required()
     ->disk('public')->directory('docs')->visibility('public')
