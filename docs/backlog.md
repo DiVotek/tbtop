@@ -1,7 +1,11 @@
 # Backlog
 
-> Detail pool behind `roadmap.md`. Items promote into a roadmap phase when a real
-> consumer (EasyCar first) or adoption pain demands them. Last revised: 2026-08-27.
+> The open-work list for this repo. Items get built when a real consumer (EasyCar
+> first) or adoption pain demands them. Last revised: 2026-09-09.
+>
+> Supersedes `docs/roadmap.md`, deleted 2026-09-09: its gap tables had drifted
+> ~12 weeks and listed shipped features (soft-delete, infolist, relation managers,
+> auth pages) as open. Phase/release sequencing now lives in git history and PRs.
 >
 > **This file lags the code.** Shipped items are struck through as they land, but the
 > sweep is manual — never conclude a feature is missing from this file alone. The
