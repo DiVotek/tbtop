@@ -147,7 +147,9 @@ array via `Inertia::flash`. The effect set is closed; see
 
 ## Package configuration
 
-`packages/php/config/tbtop-admin.php` (publish with `php artisan admin:install`).
+`packages/php/config/tbtop-admin.php` (publish with
+`php artisan vendor:publish --tag="tbtop-admin-config"` — **not** `admin:install`,
+which publishes only the host wiring files).
 It is heavily commented — read it directly for the authoritative detail. What
 matters when authoring:
 
@@ -169,7 +171,8 @@ matters when authoring:
 
 | Command | What it does |
 |---|---|
-| `php artisan admin:install` | Publishes the host wiring: config, the root Blade view, and the admin JS entry. `--force` overwrites existing files. |
+| `php artisan admin:install` | Publishes three host files — `resources/views/admin.blade.php`, `resources/js/admin.tsx`, `resources/css/admin.css` — and prints the four steps it deliberately does **not** patch (Vite input list, `->rootView('admin')`, Tailwind v4, `npm install`). It does **not** publish the config; that is `vendor:publish --tag="tbtop-admin-config"`. `--force` overwrites existing files. |
+| `php artisan vendor:publish --tag="tbtop-admin-config"` | Publishes `config/tbtop-admin.php`. Migrations need no step — the provider declares `runsMigrations()`; publish them with `--tag="tbtop-admin-migrations"` only to customize them first. |
 | `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. |
 
 ---
@@ -247,7 +250,7 @@ For the full picture of adding a new field kind to both sides, see
 
 `tbtop.nav` (`$defs/nav`) and `tbtop.userMenuItems` (`$defs/userMenuItems`) are shared
 Inertia props built by `NavBuilder::build($panel)` and `PanelConfig::userMenuItems()`
-respectively (`packages/php/src/AdminServiceProvider.php:52-53`). Three `$defs` in
+respectively (`packages/php/src/AdminServiceProvider.php`). Three `$defs` in
 `structure.schema.json` cover them:
 
 - **`navItem`** — `{label, href, order, icon?, badge?, badgeColor?, newTab?, children?}`.
@@ -330,32 +333,41 @@ function defineFieldClient<T extends string, P>(
 
 ### Canonical example: rating field in the demo consumer
 
-The demo (`apps/demo/resources/js/admin.tsx`) registers a custom `rating`
-field using `registerBlock` directly. This is the pattern to follow in a
-consumer project:
+The demo registers a custom `rating` field on **both** sides. This is the
+pattern to follow in a consumer project.
+
+Client (`apps/demo/resources/js/admin.tsx`) — `defineFieldClient` takes a
+separate `form` and `cell` component, so you don't branch on `ctx.surface`
+yourself:
 
 ```tsx
-registerBlock<"rating", { max?: number; min?: number; step?: number }>({
-  kind: "rating",
-  behavior: "field",
-  render: function RatingRender({ options, ctx }) {
-    const max = options.max ?? 5;
-    if (ctx.surface === "cell") {
-      const val = ctx.binding?.value as number | null;
-      return <span>{val ?? "–"}</span>;
+defineFieldClient<"rating", number>("rating", { form: RatingForm, cell: RatingCell });
+```
+
+PHP (`apps/demo/app/Admin/Fields/Rating.php`) — a `Field` subclass whose
+`kind()` returns the same wire string, with fluent setters for its options:
+
+```php
+final class Rating extends Field
+{
+    protected function kind(): string
+    {
+        return 'rating';
     }
-    return (
-      <Input
-        type="number"
-        min={options.min ?? 1}
-        max={max}
-        step={options.step ?? 1}
-        defaultValue={(ctx.binding?.value as number | undefined) ?? ""}
-        onChange={(e) => ctx.binding?.onChange(Number(e.target.value))}
-      />
-    );
-  },
-});
+
+    public function max(int $max): static
+    {
+        return $this->set('max', $max);
+    }
+}
+```
+
+Registered in the consumer's service provider
+(`apps/demo/app/Providers/AppServiceProvider.php`), which is what makes
+`$s->rating('score')` resolve:
+
+```php
+S::register('rating', Rating::class);
 ```
 
 Call `registerBlock` (or `defineBlock` / `defineFieldClient`) **before**
@@ -364,14 +376,20 @@ populated before the first render.
 
 ### Cross-wire note
 
-A field registered this way is **client-only** — the kind string is not in the
-schema and the PHP side has no builder for it. That is fine for fields whose
-options originate client-side (hardcoded or from a non-DSL source). If the
-field must be composed in the PHP DSL (e.g. `$s->rating('score')`) and
-transmitted over the wire, it also needs:
+Registering only on the client gives you a **client-only** field: the React
+side can render the kind, but no PHP builder emits it. That is fine for fields
+whose options originate client-side (hardcoded or from a non-DSL source).
 
-1. A PHP field class in `packages/php/src/Dsl/Fields/` (or the consumer app).
-2. A schema entry in `packages/contracts/structure.schema.json`.
-3. The contract gate to be run and the kitchen-sink snapshot updated.
+To compose the field in the PHP DSL (e.g. `$s->rating('score')`) you need the
+PHP half too — a `Field` subclass plus `S::register()`, as shown above. The
+demo's `rating` has both, which is why it works end to end.
+
+Two things you do **not** need for a consumer-app field like this:
+
+- **No schema entry.** `packages/contracts/structure.schema.json` takes an open
+  kind string; only structurally distinct kinds need a schema branch.
+- **No core registry edit.** `S::register()` is the two-phase escape hatch —
+  `S::BUILT_IN_KINDS` and `kindMap()` are for kinds shipped *by the package*.
+  A consumer field never touches `packages/php/src/Dsl/S.php`.
 
 See [./fields.md](./fields.md) for the full new-field checklist.

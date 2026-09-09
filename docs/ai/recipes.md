@@ -26,7 +26,7 @@ more tables scoped to the related rows via `->query()`.
 ### Proof that N tables render
 
 `apps/demo/app/Admin/Pages/PostsIndexPage.php` renders **two tables on one page** — a
-`posts` table (lines 43-137) followed by a `users` table (line 138-147) — both wired through
+`posts` table followed by a `users` table — both wired through
 a single `$s->stack([...])` call. The maintainer has manually confirmed that both tables
 render and function. Note: the second table in that file has wrong columns for the `User`
 model (a known bug in the demo) — it is cited here only as proof of the N-table mechanism,
@@ -78,10 +78,11 @@ public function view(S $s): Node
 
 The key methods are verified in source:
 
-- `->query(Closure $query)` — `TableBuilder.php` line 71; the closure returns any Eloquent
-  builder, including a relation query from a loaded record.
-- `->rowActions(array $actions)` — `TableBuilder.php` line 195.
-- `->bulkActions(array $actions)` — `TableBuilder.php` line 214.
+- `->query(Closure $query)` — inherited from `packages/php/src/Dsl/Concerns/HasServerQuery.php`,
+  not declared on `TableBuilder` itself; the closure returns any Eloquent builder, including
+  a relation query from a loaded record.
+- `->rowActions(array $actions)` — `packages/php/src/Dsl/TableBuilder.php`.
+- `->bulkActions(array $actions)` — `packages/php/src/Dsl/TableBuilder.php`.
 
 This snippet is illustrative. No demo page wires a real relation yet (maintainer decision for
 this wave) — but the primitives that make it work are confirmed present and functional.
@@ -220,17 +221,13 @@ complete worked version; every snippet below is copied from it.
 demo uses this to land on the new record's edit page after create.
 
 ```php
-// apps/demo/app/Admin/Pages/PostCreatePage.php:26-55
+// apps/demo/app/Admin/Pages/PostCreatePage.php
 public function view(S $s): Node
 {
     return $s->stack([
         $s->form('post', [
             ...$this->postFormSections($s, 'unique:posts,slug'),
-            $s->actionsRow([
-                $s->action('save')->label('Create')->color('primary')
-                    ->keybinding('mod+s')->submit(),
-                $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
-            ]),
+            FormActions::saveCancel($s, '/admin/posts', saveLabel: 'Create'),
         ])
             ->record([
                 'title' => null, 'slug' => '', 'published' => false,
@@ -245,13 +242,30 @@ public function view(S $s): Node
 }
 ```
 
+`FormActions::saveCancel()` is the preset for the common footer; its `extra:` argument
+splices additional actions **between** save and cancel (that is how `PostEditPage` adds
+its Delete). When you need a shape the preset doesn't give — a different order, a
+keybinding, no cancel at all — build the row yourself; the preset is sugar over exactly
+this:
+
+```php
+$s->actionsRow([
+    $s->action('save')->label('Create')->color('primary')
+        ->keybinding('mod+s')->submit(),
+    $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
+]),
+```
+
+Both forms are equivalent to the client — `FormActions::save` routes through `$s`, so its
+submit action is registered like any other.
+
 The form fields live in a shared trait (`PostFormFields`) so create and edit reuse one
 definition — the only difference is the slug's `unique` rule, passed in as an argument.
 
 ### 2. Index page — table with tabs, filters, sort, pagination, row + bulk actions
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:41-247 (abridged)
+// apps/demo/app/Admin/Pages/PostsIndexPage.php (abridged)
 $s->table('posts')
     ->rowClick('edit')
     ->columns([
@@ -324,7 +338,7 @@ The edit page reads the route param, prefills the form via `->record()`, and its
 action returns a `redirect` effect to bounce back to the index.
 
 ```php
-// apps/demo/app/Admin/Pages/PostEditPage.php:27-66 (abridged)
+// apps/demo/app/Admin/Pages/PostEditPage.php (abridged)
 public function view(S $s): Node
 {
     $post = Post::findOrFail(request()->route('post'));
@@ -332,9 +346,7 @@ public function view(S $s): Node
     return $s->stack([
         $s->form('post', [
             ...$this->postFormSections($s, "unique:posts,slug,{$post->id}"),
-            $s->actionsRow([
-                $s->action('save')->label('Save')->color('primary')
-                    ->keybinding('mod+s')->submit(),
+            FormActions::saveCancel($s, '/admin/posts', extra: [
                 $s->action('delete')->label('Delete')->color('danger')
                     ->confirm('Delete post?', 'This cannot be undone.')
                     ->handle(function (ActionCtx $ctx): Effects {
@@ -342,7 +354,6 @@ public function view(S $s): Node
 
                         return Effects::make()->notify('Post deleted')->redirect('/admin/posts');
                     }),
-                $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
             ]),
         ])
             ->record($post->toArray())
@@ -364,7 +375,7 @@ Drop trashed-row management onto any table whose model uses the `SoftDeletes` tr
 `->softDeletes($s, Model::class)` **after** your own `rowActions()`/`tabs()` so it merges:
 
 ```php
-// apps/demo/app/Admin/Pages/SoftDeletesDemoPage.php:38-56
+// apps/demo/app/Admin/Pages/SoftDeletesDemoPage.php
 $s->table('posts')
     ->columns([
         Column::make('title')->label('Title')->kind('text')->translatable()->searchable(),
@@ -374,13 +385,12 @@ $s->table('posts')
     ->defaultSort('id', 'desc')
     ->query(fn () => Post::query())
     ->rowActions([
-        $s->action('delete')->label('Delete')->color('danger')
-            ->confirm('Delete post?', 'It moves to the Trashed tab.')
-            ->handle(function (ActionCtx $ctx): Effects {
-                Post::whereKey($ctx->row['id'] ?? null)->delete();
+        // Closure-returned Effects override DeleteAction's default tail.
+        DeleteAction::make($s, using: function (ActionCtx $ctx): Effects {
+            Post::whereKey($ctx->row['id'] ?? null)->delete();
 
-                return Effects::make()->notify('Post deleted')->refreshTable('posts');
-            }, needs: ['row']),
+            return Effects::make()->notify('Post deleted')->refreshTable('posts');
+        })->confirm('Delete post?', 'It moves to the Trashed tab.'),
     ])
     ->softDeletes($s, Post::class) // tabs + restore/forceDelete, merged after delete
     ->toNode()
@@ -406,7 +416,7 @@ The two closures you supply are the round-trip:
   `void` to accept the preset's default tail (notify + closeModal + refreshTable).
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:174-200
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 EditAction::make(
     $s,
     name: 'editPublication',
@@ -459,7 +469,7 @@ The `onSave` closure is special: it receives the **resolved model** and the **ne
 not an `ActionCtx`. It runs the persistence and returns `Effects`.
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:57-69
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 Column::make('published')
     ->label('Published')
     ->toggle()
@@ -528,14 +538,15 @@ modes. The demo applies a sample blue-accent preset this way.
 
 ### Appearance knobs (the parts CSS can't express)
 
-Three knobs live on `PanelConfig` because they drive client behavior or layout, not tokens:
+Four knobs live on `PanelConfig` because they drive client behavior or layout, not tokens:
 
 ```php
 // apps/demo/app/Admin/AdminPanel.php
 return $panel
     ->maxContentWidth('7xl')        // center page content (Tailwind max-w token)
     ->darkMode(true)                // false hides the theme toggle; shell stays light
-    ->defaultThemeMode('system');   // initial theme when the visitor has no saved choice
+    ->defaultThemeMode('system')    // initial theme when the visitor has no saved choice
+    ->density('compact');           // tighter control heights, spacing, sidebar
 ```
 
 - `maxContentWidth($token)` — `sm`…`7xl`, `full`, or `prose`; omit for full-bleed.
@@ -544,9 +555,11 @@ return $panel
 - `defaultThemeMode($mode)` — `light` | `dark` | `system`, applied when there is no
   `tbtop_theme` cookie yet. To also kill the first-paint flash, mirror it in your root
   Blade's inline theme script (the host owns that `<head>`).
+- `density($mode)` — `default` | `compact`; `compact` tightens control heights, spacing
+  and the sidebar width. Any other value throws `InvalidArgumentException`.
 
-All three serialize sparsely into the `tbtop.appearance` shared prop — an unconfigured panel
-ships nothing.
+All four serialize **sparsely** into the `tbtop.appearance` shared prop — a knob left at
+its default is omitted from the wire entirely, so an empty `appearance` is normal.
 
 ---
 
@@ -562,7 +575,7 @@ page-derived items.
 ### Nested nav (a page under another page)
 
 A page's `nav()` array takes a `parent` key pointing at another `nav()`-eligible page class
-in the same panel. `NavBuilder::build()` (`packages/php/src/Navigation/NavBuilder.php:17-19`)
+in the same panel. `NavBuilder::build()` (`packages/php/src/Navigation/NavBuilder.php`)
 nests it under the parent's item instead of listing it at the group's top level:
 
 ```php
@@ -578,19 +591,19 @@ same way for every visitor rather than silently vanishing for some:
 
 - **Unknown or cyclic `parent`** — a `parent` outside the panel's nav-eligible page set, or a
   parent cycle, throws `InvalidArgumentException`/`LogicException`
-  (`NavBuilder.php:88-91` — `assertValidParents`).
+  (`NavBuilder.php` — `assertValidParents`).
 - **Gated-out parent** — if the current user's gate fails the parent's `can()` but passes the
   child's, the child promotes to its own group's top level instead of disappearing
-  (`NavBuilder.php:46-48`).
+  (`NavBuilder.php`).
 
-The client (`packages/client/src/app/navGroupSection.tsx:120-162`, `NavItemNode`) renders a
+The client (`packages/client/src/app/navGroupSection.tsx`, `NavItemNode`) renders a
 leaf item as a plain link; a parent (has `children`) renders its own link plus a chevron
 that expands to indented children — the same collapse affordance as a group header. The
 topbar layout nests the same way via a `DropdownMenuSub` (`navGroupDropdown.tsx`).
 
 ### Custom nav items (no page, no gate)
 
-`PanelConfig::navigationItems()` (`packages/php/src/Panels/PanelConfig.php:211-223`) adds
+`PanelConfig::navigationItems()` (`packages/php/src/Panels/PanelConfig.php`) adds
 always-shown entries — typically external links — merged into the built tree alongside
 page-derived items and grouped by label the same way `navigationGroups()` matches groups.
 Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class and no per-request gate:
@@ -605,9 +618,9 @@ Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class and no per-
 
 ### User-menu items (profile dropdown)
 
-`PanelConfig::userMenuItems()` (`PanelConfig.php:225-238`) takes the same `NavItem` links,
+`PanelConfig::userMenuItems()` (`PanelConfig.php`) takes the same `NavItem` links,
 rendered in the profile dropdown between the identity header and the fixed theme/locale/logout
-controls (`packages/client/src/app/ProfileDropdown.tsx:133-148`). Link-only — no server
+controls (`packages/client/src/app/ProfileDropdown.tsx`). Link-only — no server
 closure — because chrome trees are page-independent, with no per-request endpoint for a
 closure to resolve against (the same constraint `NotificationAction` has):
 
@@ -622,7 +635,7 @@ closure to resolve against (the same constraint `NotificationAction` has):
 
 `navigationGroups()`'s declaration order controls the group order in the built tree — a
 group not mentioned there keeps its first-seen (page-registration) order and sorts after
-every declared group (`NavBuilder.php:225-229`, `assemble()`). Per-group icon/collapsible
+every declared group (`NavBuilder.php`, `assemble()`). Per-group icon/collapsible
 metadata is matched by label the same way.
 
 ### Ungrouped items
@@ -807,8 +820,8 @@ primitives — the result will be incomplete or broken.
 |---|---|
 | ~~Relation managers with inline editing~~ | **This composes now.** `EditAction::make($s, $form, $loadUsing, $saveUsing)` is the convention — a modal form on a relation row action, loaded via the action-data endpoint and saved through `$saveUsing`. See Recipe 6. For a single cell, `Column::textInput()/toggle()/selectColumn()` + `onSave()` is lighter still (Recipe 7). |
 | **Infolist field *binding* declarations** | The *auto-binding* form (`TextEntry::make('title')` that resolves `$record->title` itself) does not exist and is not planned — by design. Read-only record detail is covered instead by the display-value family (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`, M-96): the author passes each value directly (Recipe 2). One narrow exception: inside a **modal**, `displayValue(...)->field('name')` binds by name to the modal's query result — but it resolves from modal data, not from a page record, and is incompatible with the server-baked kinds (date/datetime/number/money). |
-| **CSV export / import** | No export action kind exists. Filament uses queued jobs for large exports. This needs a new effect kind or a direct download endpoint — neither is in the closed effect set today. Listed as backlog 🟡 in the roadmap. |
-| **Global search over records** | Table-level `->searchable()` and per-column `->searchable()` work within a single table; there is no cross-model record search. Note the **⌘K command palette does exist** (`PanelConfig::commandPalette()`, `Command::make()`) — it searches nav items and author-declared commands, not table rows. Record-level global search remains a roadmap gap. |
-| **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in the roadmap. |
+| **CSV export / import** | No export action kind exists. Filament uses queued jobs for large exports. This needs a new effect kind or a direct download endpoint — neither is in the closed effect set today. Listed as backlog 🟡 in `docs/backlog.md`. |
+| **Global search over records** | Table-level `->searchable()` and per-column `->searchable()` work within a single table; there is no cross-model record search. Note the **⌘K command palette does exist** (`PanelConfig::commandPalette()`, `Command::make()`) — it searches nav items and author-declared commands, not table rows. Record-level global search remains an open gap. |
+| **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in `docs/backlog.md`. |
 | **Saved filters / filter presets** | No persistence layer for user-saved filter states. Listed as backlog 🟡. |
-| **Package-side auth backend** | The *screens* compose today: the demo's `LoginPage`, `TwoFactorChallengePage`, `TwoFactorSetupPage` and `ApiTokensPage` are ordinary DSL pages using `layout(): 'center'` plus a `middleware()` override to stay public — copy them. What the **package** does not ship is the backend: the demo posts to Laravel Breeze controllers, and there is no Fortify. Standing up auth in a new consumer means bringing your own controllers (see roadmap §1.1). |
+| **Package-side auth backend** | The *screens* compose today: the demo's `LoginPage`, `TwoFactorChallengePage`, `TwoFactorSetupPage` and `ApiTokensPage` are ordinary DSL pages using `layout(): 'center'` plus a `middleware()` override to stay public — copy them. What the **package** does not ship is the backend: the demo posts to Laravel Breeze controllers, and there is no Fortify. Standing up auth in a new consumer means bringing your own controllers (see `docs/backlog.md`). |

@@ -5,10 +5,11 @@
 > material: short, lookup-shaped, and verified against source. Read the doc that matches
 > your task; you do not need to read all four front-to-back.
 
-> **No installation section yet — deliberate.** The packages aren't published (composer +
-> npm release lands in roadmap 1.3). These docs cover building *on* the framework inside this
-> repo, where it's already wired. A quickstart/install guide is a Phase-2 concern, gated on
-> the real release.
+> **Installing into a host app is documented elsewhere.** Both packages are published
+> (`composer require tbtop/admin`, `npm install @tbtop/inertia-admin`); `php artisan
+> admin:install` publishes the host wiring, and `docs/ai/wiring.md` carries the command
+> table. These docs cover building *on* the framework inside this repo, where it's
+> already wired.
 
 ## What you are building on
 
@@ -120,5 +121,5 @@ Built from PHP docblocks by `ApiReferenceTest`, so they cannot drift from the co
 > describing **client** behavior is unverified prose like any other: when a claim about
 > rendering matters, check `packages/client/src/`. These prose files are hand-maintained
 > and source-verified; `CLAUDE.md` is the contributor guide and lags more easily.
-> `docs/roadmap.md` and `docs/backlog.md` lag furthest — they list shipped features as
-> pending, so never conclude a feature is missing from them alone.
+> `docs/backlog.md` lags furthest — it lists shipped features as pending, so never
+> conclude a feature is missing from it alone.
