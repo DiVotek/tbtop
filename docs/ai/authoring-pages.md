@@ -137,9 +137,11 @@ are keyed relative to its base path, so an index built in one release directory 
 after an atomic-symlink deploy swaps the release path. Manual registrations,
 authorization, and page output remain live. Rebuild after adding, moving, removing, or changing
 the discovery eligibility of a page. An unindexed set of roots scans normally. Index publication
-is atomic; a failed rebuild leaves the previous index intact. The two page-cache commands do
-not register panel routes during CLI bootstrap, so they can repair an index referencing deleted
-classes. Restart long-lived application workers after deployment to discard in-memory page lists.
+is atomic; a failed rebuild leaves the previous index intact. An index naming a class that no
+longer exists is ignored and rescanned, so deleting a page without rebuilding degrades to a scan
+rather than breaking every reader of the panel registry — including other packages that register
+routes from it. Restart long-lived application workers after deployment to discard in-memory
+page lists.
 
 To return to uncached development:
 

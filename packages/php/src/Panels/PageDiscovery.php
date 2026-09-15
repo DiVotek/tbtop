@@ -20,12 +20,29 @@ final class PageDiscovery
         if ($this->files->exists($path)) {
             $index = $this->files->getRequire($path);
             $key = $this->key($roots);
-            if (isset($index[$key])) {
+            if (isset($index[$key]) && $this->isResolvable($index[$key])) {
                 return $index[$key];
             }
         }
 
         return $this->scan($roots);
+    }
+
+    /**
+     * A page deleted since the last rebuild would fatal every reader of the registry — including
+     * the commands that rebuild it, leaving no way out. A stale index is rescanned instead.
+     *
+     * @param  list<class-string<Page>>  $pages
+     */
+    private function isResolvable(array $pages): bool
+    {
+        foreach ($pages as $class) {
+            if (! class_exists($class)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** @param array<string, PanelConfig> $panels */

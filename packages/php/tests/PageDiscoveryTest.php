@@ -118,7 +118,6 @@ it('repairs a stale index without resolving deleted classes during CLI route boo
     // Simulate a class removed in a new release, without PHP's already-loaded classes masking the failure.
     $this->files->put($path, str_replace('\\\\A', '\\\\Deleted', $this->files->get($path)));
     $this->app->forgetInstance(PanelRegistry::class);
-    expect(fn () => $this->panel()->getPages())->toThrow(Error::class);
     $argv = $_SERVER['argv'];
     try {
         $_SERVER['argv'] = ['artisan', ...$options, $command];
@@ -171,4 +170,24 @@ it('reuses the cached index after the release directory changes', function () {
     } finally {
         $this->files->deleteDirectory($release);
     }
+});
+
+it('rescans when the index references a class deleted since the last rebuild', function () {
+    $a = $this->writePage('A');
+    Artisan::call('tbtop:cache-pages');
+    // Names a class that was never loaded, as a fresh process would see a page deleted in a release.
+    $path = $this->directory.'/bootstrap/cache/tbtop-pages.php';
+    $this->files->put($path, str_replace('\\\\A', '\\\\Deleted', $this->files->get($path)));
+
+    expect($this->panel()->getPages())->toBe([$a]);
+});
+
+it('recovers through the cache commands after a page is deleted', function () {
+    $a = $this->writePage('A');
+    $this->writePage('Gone');
+    Artisan::call('tbtop:cache-pages');
+    $this->files->delete($this->directory.'/pages/Gone.php');
+
+    expect(Artisan::call('tbtop:cache-pages'))->toBe(0);
+    expect($this->panel()->getPages())->toBe([$a]);
 });
