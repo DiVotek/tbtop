@@ -23,7 +23,7 @@ afterEach(function () {
 it('generates the correct file and class for a given name', function () {
     $this->artisan('make:tbtop-page', ['name' => 'Orders'])
         ->assertSuccessful()
-        ->expectsOutputToContain('Register OrdersPage in your panel/config pages list.');
+        ->expectsOutputToContain('Register OrdersPage with pages() unless its directory is covered by discoverPages().');
 
     $path = expectedPagePath('OrdersPage');
     expect(file_exists($path))->toBeTrue();

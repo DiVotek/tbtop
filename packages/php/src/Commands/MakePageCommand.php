@@ -45,7 +45,7 @@ class MakePageCommand extends Command
         file_put_contents($targetPath, $this->buildContents($class, $namespace, $name));
 
         $this->components->info("Created: {$targetPath}");
-        $this->components->warn("Register {$class} in your panel/config pages list.");
+        $this->components->warn("Register {$class} with pages() unless its directory is covered by discoverPages(). Rebuild page and route caches if enabled.");
 
         return self::SUCCESS;
     }

@@ -24,6 +24,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `defaultLocale(string $locale): static` | Default admin UI locale, overriding the first entry of locales(). |
 | `defaultThemeMode(string $mode): static` | Initial theme when the visitor has no saved preference. |
 | `density(string $mode): static` | Shell density: 'compact' tightens control heights, spacing, and the sidebar width. |
+| `discoverPages(string $in, string $for): static` | Adds a recursive page discovery directory and its Composer-autoloadable namespace; rebuild the page cache after adding pages. |
 | `guard(string $guard): static` | Auth guard checked by authStack(). Defaults to 'web'. |
 | `id(string $id): static` | Feeds the route-name namespace (`tbtop.{id}.*`) — changing it on an existing panel renames every route. |
 | `locales(array $locales): static` | Admin UI locales. First entry is the default unless defaultLocale() is set. |
@@ -33,7 +34,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `navigationGroups(array $groups): static` | Per-group nav metadata as a list of NavGroup::make('Content')->icon('file-text') ->collapsible(), matched to a page's nav()['group'] by that label. |
 | `navigationItems(array $items): static` | Extra always-shown nav entries with no page/gate (e.g. an external link), merged into the built tree alongside page-derived items, grouped by label the same way navigationGroups() matches groups. |
 | `notificationsPolling(?int $seconds): static` | Seconds between header-bell polls for new notifications. null disables auto-polling (the bell still fetches when opened). Mirrors Filament's databaseNotificationsPolling(); only active when the chrome renders a notifications bell. |
-| `pages(array $pages): static` | Page classes that get routes registered for this panel. |
+| `pages(array $pages): static` | Replaces manual pages; discovery merges them first and removes duplicate classes. |
 | `prefix(string $prefix): static` | URL path prefix the panel is mounted under. Defaults to the panel id when unset — see getPrefix(). |
 | `rootView(string $view): static` | Blade root view rendered on first visit (per-panel Vite entry escape hatch). |
 | `unsavedGuard(bool $enabled = true): static` | Default for the unsaved-changes navigation guard on forms. |
