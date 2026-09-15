@@ -94,6 +94,64 @@ class AdminPanel extends Panel
 }
 ```
 
+### Discovering host pages
+
+Opt in per panel with an existing directory and its Composer-autoloadable namespace:
+
+```php
+$panel
+    ->discoverPages(
+        in: app_path('Admin/Pages'),
+        for: 'App\\Admin\\Pages',
+    )
+    ->pages([DashboardPage::class, MediaLibraryPage::class]);
+```
+
+Discovery recursively registers concrete `Page` subclasses whose filename and namespace
+match their relative path. Repeat `discoverPages()` for additional roots. Missing directories
+throw; unrelated classes and abstract pages are ignored. Nothing scans the whole application
+unless you explicitly configure that scope.
+
+Manual pages come first; discovered classes follow in alphabetical fully qualified class-name
+order, with duplicates removed. `pages()` replaces only the manual list, regardless of its
+position relative to `discoverPages()`. Keep the dashboard first in `pages()` to retain the
+panel-root redirect: absent a page owning the root, the first static page path is the destination.
+Discovery-enabled panels reject duplicate slugs and identical normalized paths. Distinct
+parameterized patterns can still overlap: order those pages explicitly in `pages()`.
+
+To exclude a concrete page from discovery, override `public static function isDiscovered(): bool`
+and return `false`. Explicit `pages()` registration still includes it. `nav() === null` only hides
+navigation; detail/edit pages and public auth pages still need routes. Existing gates and
+page middleware overrides apply unchanged, including to each page's endpoint cluster.
+
+For production, cache the discovered class index **before** caching routes:
+
+```sh
+php artisan tbtop:cache-pages
+php artisan route:cache
+```
+
+The index lives in `bootstrap/cache/tbtop-pages.php`, serves both HTTP and console consumers,
+and contains only discovered class names keyed by discovery roots. Roots inside the application
+are keyed relative to its base path, so an index built in one release directory still applies
+after an atomic-symlink deploy swaps the release path. Manual registrations,
+authorization, and page output remain live. Rebuild after adding, moving, removing, or changing
+the discovery eligibility of a page. An unindexed set of roots scans normally. Index publication
+is atomic; a failed rebuild leaves the previous index intact. An index naming a class that no
+longer exists is ignored and rescanned, so deleting a page without rebuilding degrades to a scan
+rather than breaking every reader of the panel registry — including other packages that register
+routes from it. Restart long-lived application workers after deployment to discard in-memory
+page lists.
+
+To return to uncached development:
+
+```sh
+php artisan tbtop:clear-cached-pages
+php artisan route:clear
+```
+
+These commands are explicit; Laravel's `optimize` / `optimize:clear` do not manage this index.
+
 ```php
 use Tbtop\Admin\Dsl\{Node, S};
 use Tbtop\Admin\Panels\Chrome;

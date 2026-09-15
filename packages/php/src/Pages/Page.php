@@ -15,6 +15,12 @@ abstract class Page
 
     abstract public function view(S $s): Node;
 
+    /** Return false to exclude this page from discovery; explicit pages() registration still works. */
+    public static function isDiscovered(): bool
+    {
+        return true;
+    }
+
     /** Stable identifier used in action/form endpoint URLs. */
     public static function slug(): string
     {

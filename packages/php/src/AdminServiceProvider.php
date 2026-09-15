@@ -10,6 +10,8 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tbtop\Admin\Commands\CachePagesCommand;
+use Tbtop\Admin\Commands\ClearCachedPagesCommand;
 use Tbtop\Admin\Commands\InstallCommand;
 use Tbtop\Admin\Commands\MakePageCommand;
 use Tbtop\Admin\Http\PanelErrorPage;
@@ -35,6 +37,8 @@ class AdminServiceProvider extends PackageServiceProvider
             ->runsMigrations()
             ->hasRoute('admin')
             ->hasTranslations()
+            ->hasCommand(CachePagesCommand::class)
+            ->hasCommand(ClearCachedPagesCommand::class)
             ->hasCommand(MakePageCommand::class)
             ->hasCommand(InstallCommand::class);
     }
