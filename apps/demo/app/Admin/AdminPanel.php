@@ -2,33 +2,7 @@
 
 namespace App\Admin;
 
-use App\Admin\Pages\ApiTokensPage;
-use App\Admin\Pages\BrandsIndexPage;
 use App\Admin\Pages\DashboardPage;
-use App\Admin\Pages\DependentFieldsDemoPage;
-use App\Admin\Pages\LiveRegionDemoPage;
-use App\Admin\Pages\LoginPage;
-use App\Admin\Pages\LoginPreviewPage;
-use App\Admin\Pages\MediaEditPage;
-use App\Admin\Pages\MediaIndexPage;
-use App\Admin\Pages\MediaNewPage;
-use App\Admin\Pages\NewFeaturesPage;
-use App\Admin\Pages\PlaygroundPage;
-use App\Admin\Pages\PostCreatePage;
-use App\Admin\Pages\PostDocumentsPage;
-use App\Admin\Pages\PostEditPage;
-use App\Admin\Pages\PostsIndexPage;
-use App\Admin\Pages\RecordDetailPage;
-use App\Admin\Pages\RelationDemoPage;
-use App\Admin\Pages\ReorderablePostsPage;
-use App\Admin\Pages\SettingsGeneralPage;
-use App\Admin\Pages\SettingsMailPage;
-use App\Admin\Pages\SettingsPage;
-use App\Admin\Pages\SoftDeletesDemoPage;
-use App\Admin\Pages\TwoFactorChallengePage;
-use App\Admin\Pages\TwoFactorSetupPage;
-use App\Admin\Pages\UploadDemoPage;
-use App\Admin\Pages\ValidationRulesPage;
 use App\Http\Middleware\RequireFullAuth;
 use Tbtop\Admin\CommandPalette\Command;
 use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
@@ -47,36 +21,16 @@ class AdminPanel extends Panel
             ->prefix('admin')
             ->guard('web')
             ->middleware(['web', RequireFullAuth::class])
+            // DashboardPage stays first: no page owns '/', so the panel root redirects to the
+            // first static path. MediaLibraryPage is package-owned and outside the discovery root.
             ->pages([
                 DashboardPage::class,
-                PostsIndexPage::class,
-                BrandsIndexPage::class,
-                ReorderablePostsPage::class,
-                PostCreatePage::class,
-                PostEditPage::class,
-                PostDocumentsPage::class,
-                MediaIndexPage::class,
-                MediaNewPage::class,
-                MediaEditPage::class,
-                UploadDemoPage::class,
-                SettingsPage::class,
-                SettingsGeneralPage::class,
-                SettingsMailPage::class,
-                SoftDeletesDemoPage::class,
-                PlaygroundPage::class,
-                NewFeaturesPage::class,
-                ValidationRulesPage::class,
-                RecordDetailPage::class,
                 MediaLibraryPage::class,
-                LoginPreviewPage::class,
-                RelationDemoPage::class,
-                DependentFieldsDemoPage::class,
-                LiveRegionDemoPage::class,
-                TwoFactorSetupPage::class,
-                LoginPage::class,
-                TwoFactorChallengePage::class,
-                ApiTokensPage::class,
             ])
+            ->discoverPages(
+                in: app_path('Admin/Pages'),
+                for: 'App\\Admin\\Pages',
+            )
             ->navigationGroups([
                 NavGroup::make('Overview')->icon('home'),
                 NavGroup::make('Content')->icon('file-text')->collapsible(),
