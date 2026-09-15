@@ -151,3 +151,24 @@ it('registers routes for other CLI commands even when an option or argument name
     'command-specific option' => [['route:list', '--path=discovery']],
     'command-specific argument' => [['make:command', 'tbtop:cache-pages']],
 ]);
+
+it('reuses the cached index after the release directory changes', function () {
+    // Atomic-symlink deploy: the same relative root resolves under a new absolute release path.
+    $a = $this->writePage('A');
+    $this->app->setBasePath($this->directory);
+    app(PageDiscovery::class)->cache(['discovery' => $this->panel()]);
+
+    $release = $this->directory.'-r2';
+    $this->files->ensureDirectoryExists($release);
+    $this->files->copyDirectory($this->directory.'/bootstrap', $release.'/bootstrap');
+    $this->app->setBasePath($release);
+    $this->app->useBootstrapPath($release.'/bootstrap');
+
+    try {
+        $panel = (new PanelConfig)->id('discovery')->discoverPages($release.'/pages', $this->namespace);
+        // $release/pages does not exist, so a cache miss would throw instead of returning the index.
+        expect($panel->getPages())->toBe([$a]);
+    } finally {
+        $this->files->deleteDirectory($release);
+    }
+});

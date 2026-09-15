@@ -132,7 +132,9 @@ php artisan route:cache
 ```
 
 The index lives in `bootstrap/cache/tbtop-pages.php`, serves both HTTP and console consumers,
-and contains only discovered class names keyed by discovery roots. Manual registrations,
+and contains only discovered class names keyed by discovery roots. Roots inside the application
+are keyed relative to its base path, so an index built in one release directory still applies
+after an atomic-symlink deploy swaps the release path. Manual registrations,
 authorization, and page output remain live. Rebuild after adding, moving, removing, or changing
 the discovery eligibility of a page. An unindexed set of roots scans normally. Index publication
 is atomic; a failed rebuild leaves the previous index intact. The two page-cache commands do

@@ -173,7 +173,7 @@ matters when authoring:
 |---|---|
 | `php artisan admin:install` | Publishes three host files — `resources/views/admin.blade.php`, `resources/js/admin.tsx`, `resources/css/admin.css` — and prints the four steps it deliberately does **not** patch (Vite input list, `->rootView('admin')`, Tailwind v4, `npm install`). It does **not** publish the config; that is `vendor:publish --tag="tbtop-admin-config"`. `--force` overwrites existing files. |
 | `php artisan vendor:publish --tag="tbtop-admin-config"` | Publishes `config/tbtop-admin.php`. Migrations need no step — the provider declares `runsMigrations()`; publish them with `--tag="tbtop-admin-migrations"` only to customize them first. |
-| `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. |
+| `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. Reports which panel discovers the new page, or tells you to register it with `pages()` when none does. |
 | `php artisan tbtop:cache-pages` | Atomically rebuilds the discovered page index for all configured panels. Run before `route:cache`; rebuild both after changing discovered pages. |
 | `php artisan tbtop:clear-cached-pages` | Removes the discovered page index. Also run `route:clear` to return to uncached routing. |
 

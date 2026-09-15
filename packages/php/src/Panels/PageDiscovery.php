@@ -102,10 +102,24 @@ final class PageDiscovery
         return $pages;
     }
 
-    /** @param list<array{in: string, for: string}> $roots */
+    /** Keyed relative to the app root: symlink deploys change it per release and would miss the index. @param list<array{in: string, for: string}> $roots */
     private function key(array $roots): string
     {
-        return hash('sha256', serialize($roots));
+        $relative = array_map(
+            fn (array $root): array => ['in' => $this->relativeRoot($root['in']), 'for' => $root['for']],
+            $roots,
+        );
+
+        return hash('sha256', serialize($relative));
+    }
+
+    /** Roots outside the application root keep their absolute path — they do not move between releases. */
+    private function relativeRoot(string $in): string
+    {
+        $base = rtrim(str_replace('\\', '/', app()->basePath()), '/').'/';
+        $path = str_replace('\\', '/', $in);
+
+        return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
     }
 
     private function invalidateOpcodeCache(string $path): void

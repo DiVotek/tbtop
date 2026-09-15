@@ -4,6 +4,8 @@ namespace Tbtop\Admin\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+use Tbtop\Admin\Panels\PanelRegistry;
+use Throwable;
 
 class MakePageCommand extends Command
 {
@@ -45,9 +47,36 @@ class MakePageCommand extends Command
         file_put_contents($targetPath, $this->buildContents($class, $namespace, $name));
 
         $this->components->info("Created: {$targetPath}");
-        $this->components->warn("Register {$class} with pages() unless its directory is covered by discoverPages(). Rebuild page and route caches if enabled.");
+
+        $panelId = $this->discoveringPanel($targetPath);
+        if ($panelId === null) {
+            $this->components->warn("Register {$class} with pages() — no panel discovers [{$targetDir}].");
+        } else {
+            $this->components->info("Panel [{$panelId}] discovers {$class}. Run tbtop:cache-pages if the page index is cached.");
+        }
 
         return self::SUCCESS;
+    }
+
+    /** Panel id whose discovery roots contain the new file, or null when it needs manual registration. */
+    private function discoveringPanel(string $targetPath): ?string
+    {
+        try {
+            $panels = PanelRegistry::fromConfig()->all();
+        } catch (Throwable) {
+            // A panel that cannot be configured is not this command's failure to report.
+            return null;
+        }
+
+        foreach ($panels as $id => $panel) {
+            foreach ($panel->getPageDiscoveryRoots() as $root) {
+                if (str_starts_with($targetPath, rtrim($root['in'], '/').'/')) {
+                    return $id;
+                }
+            }
+        }
+
+        return null;
     }
 
     private function normalisedName(): string
