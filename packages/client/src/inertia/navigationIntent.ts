@@ -19,12 +19,19 @@
  * marks the flag immediately before calling router.visit; useUnsavedGuard's
  * 'before' handler consumes it first, before ever looking at isDirty.
  */
-let serverRedirectPending = false;
+let serverRedirectGeneration = 0;
+let pendingServerRedirectGeneration: number | null = null;
 let serverRedirectVisit: object | null = null;
 
 /** Call immediately before router.visit() for a server-authored redirect effect. */
 export function markServerRedirect(): void {
-	serverRedirectPending = true;
+	const generation = ++serverRedirectGeneration;
+	pendingServerRedirectGeneration = generation;
+	queueMicrotask(() => {
+		if (pendingServerRedirectGeneration === generation) {
+			pendingServerRedirectGeneration = null;
+		}
+	});
 }
 
 /**
@@ -37,8 +44,8 @@ export function consumeServerRedirect(visit?: object): boolean {
 	if (visit && visit === serverRedirectVisit) {
 		return true;
 	}
-	const pending = serverRedirectPending;
-	serverRedirectPending = false;
+	const pending = pendingServerRedirectGeneration !== null;
+	pendingServerRedirectGeneration = null;
 	serverRedirectVisit = pending && visit ? visit : null;
 	if (serverRedirectVisit) {
 		queueMicrotask(() => {
