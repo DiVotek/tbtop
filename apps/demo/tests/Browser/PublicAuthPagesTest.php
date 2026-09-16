@@ -18,12 +18,13 @@ it('smokes the public login page while logged out', function () {
         ->assertNoSmoke();             // no console logs + no JavaScript errors
 });
 
-it('renders six OTP slots on the public two-factor challenge page', function () {
+it('renders a code field on the public two-factor challenge page', function () {
     // The challenge page is public (middleware ['web']); the session check
-    // only fires on submit. A direct visit must render the OTP field.
+    // only fires on submit. A direct visit must render the code field — a
+    // text input so both a 6-digit TOTP and a recovery code can be entered.
     visit('/admin/two-factor-challenge')
         ->assertVisible('#app form')
-        ->assertCount('[data-slot="input-otp-slot"]', 6) // otp()->length(6)
+        ->assertVisible('code')
         ->assertNoSmoke();
 });
 
