@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { act, render } from "@testing-library/react";
+import { materialize } from "../inertia/materialize";
 import { renderNode } from "../render/structureRenderer";
 import {
 	type ChartBlockOptions,
@@ -9,6 +10,7 @@ import {
 } from "./chartBlock";
 import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
+import type { StructureNode } from "./types";
 
 const series = [{ dataKey: "count", label: "Posts" }];
 
@@ -174,6 +176,40 @@ describe("Chart integration", () => {
 		rerender(<Wrap>{renderNode(second)}</Wrap>);
 		await findByTestId("chart-block");
 		expect(calls).toBe(2);
+	});
+
+	test("Chart does not refetch when unchanged wire data is materialized again", async () => {
+		let requests = 0;
+		const Wrap = wrap(() => {
+			requests += 1;
+			return Response.json({ data: [{ day: "mon", count: 3 }] });
+		});
+		const renderChart = () => {
+			const wireNode: StructureNode = {
+				kind: "chart:line",
+				name: "postsByDay",
+				options: {
+					source: "postsByDay",
+					type: "line",
+					xKey: "day",
+					series: [{ dataKey: "count", label: "Posts" }],
+				},
+				meta: {},
+			};
+			return (
+				<Wrap>
+					{renderNode(materialize(wireNode, { basePath: "/admin/dashboard", data: {} }))}
+				</Wrap>
+			);
+		};
+		const view = render(renderChart());
+
+		await view.findByTestId("chart-block");
+		expect(requests).toBe(1);
+		view.rerender(renderChart());
+		await act(async () => {});
+
+		expect(requests).toBe(1);
 	});
 
 	// -------------------------------------------------------------------------

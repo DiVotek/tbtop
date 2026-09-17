@@ -2,6 +2,7 @@ import type { QueryParams } from "../data/client";
 import { unwrapData } from "../data/envelope";
 import type { OptionDisplay, StaticOption } from "../fields/selectShared";
 import type { ClientActionContext, ListQueryParams, StructureNode } from "../structure/types";
+import { chartQueryFor } from "./chartQueryCache";
 
 type Bag = Record<string, unknown>;
 
@@ -167,8 +168,7 @@ export function materializeChart(node: StructureNode, basePath: string): Structu
 		...node,
 		options: {
 			...opts,
-			query: (actionCtx: ClientActionContext, paramValues: Record<string, string> = {}) =>
-				actionCtx.client.get(`${basePath}/data/${source}`, paramValues).then(unwrapData),
+			query: chartQueryFor(basePath, source),
 		},
 	};
 }
