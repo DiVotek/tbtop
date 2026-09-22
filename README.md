@@ -128,8 +128,9 @@ resolve by name per-request — they never travel over the wire.
 
 **Effects** (a closed set): `notify | redirect | refreshTable | resetForm |
 closeModal | haltModal | copyToClipboard | setFormData`.
-Extending the set is a minor contract bump; anything non-standard goes through
-`custom`.
+The set is closed: anything non-standard goes through `custom` or a server
+redirect. Adding an effect means changing the schema, the PHP builder and the
+client interpreter together, so it is a contract change, not an extension point.
 
 ## Uploads
 

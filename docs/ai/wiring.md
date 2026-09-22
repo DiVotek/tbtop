@@ -38,6 +38,7 @@ Route file: `packages/php/routes/admin.php`
 
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
+| `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
 
@@ -54,7 +55,7 @@ panel keep the app's own 404. The client resolves `admin/error` to the exported
 
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
-| `GET` | `/api/media` | `media.index` | `MediaController@index` | JSON | `{data: MediaItem[], total, page, perPage}` |
+| `GET` | `/api/media` | `media.index` | `MediaController@index` | JSON | `{data: MediaItem[], folders: MediaFolder[], total, page, perPage}` — query: `perPage` (≤200), `page`, `search`, `folder` (empty = root), `sort`, `dir`. `folders` lists the child folders of the current level, never paginated |
 | `POST` | `/api/media/upload` | `media.upload` | `MediaUploadController` | JSON | `MediaItem` (201) |
 | `POST` | `/api/media/import-url` | `media.import-url` | `MediaImportController` | JSON | `MediaItem` (201) |
 | `GET` | `/api/media/{id}` | `media.show` | `MediaController@show` | JSON | `MediaItem` |
@@ -106,7 +107,7 @@ notification action is a **link only** — it can never carry a server closure.
 | `GET` | `{page-path}/tables/{tbtopTable}` | `{slug}.table` | `TableController` | JSON | `{data: {data: Row[], total, page, perPage, tabCounts?}}` |
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
-| `POST` | `{page-path}/select-options/{tbtopField}` | `{slug}.selectOptions` | `SelectOptionsController` | JSON | search mode: `{options: [{value, label, display?}]}` · resolve mode: `{option: {value, label}\|null}` |
+| `POST` | `{page-path}/select-options/{tbtopField}` | `{slug}.selectOptions` | `SelectOptionsController` | JSON | three modes, picked by the body: `{search}` → `{options: [{value, label, display?}]}` · `{value}` → `{option: {value, label}\|null}` · `{values: []}` → `{options: [...]}` (resolve many saved values in one round-trip) |
 | `POST` | `{page-path}/tables/{tbtopTable}/filters/{tbtopFilter}/options` | `{slug}.tableFilterOptions` | `TableFilterOptionsController` | JSON | same responder and shape as `selectOptions`, for an async `select()->query()` used as a table filter |
 | `POST` | `{page-path}/daterange-ranges/{tbtopField}` | `{slug}.daterangeRanges` | `DaterangeRangesController` | JSON | `{ranges: [{from?, to?}]}` — re-runs `disabledRanges()` with the posted `{deps}` |
 | `POST` | `{page-path}/relation-search/{tbtopField}` | `{slug}.relationSearch` | `RelationSearchController` | JSON | search mode: `{options: [{value, label}]}` · resolve mode: `{option: {value, label}\|null}` |
