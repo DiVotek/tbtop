@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -42,11 +43,11 @@ class UploadDemoPageTest extends TestCase
             'file' => UploadedFile::fake()->image('sample.png', 300, 200),
         ])->assertOk()->json('data');
 
-        // Original filename is preserved; the stored object is converted to webp.
-        $this->assertSame('sample.png', $data['filename']);
-        $this->assertSame('image/webp', $data['mimeType']);
+        $this->assertSame(['path', 'url'], array_keys($data));
+        $this->assertStringStartsWith('docs/', $data['path']);
+        $this->assertStringEndsWith('.webp', $data['path']);
         $this->assertStringEndsWith('.webp', $data['url']);
-        Storage::disk('public')->assertExists('docs/'.$data['id']);
+        Storage::disk('public')->assertExists($data['path']);
     }
 
     public function test_private_field_stores_on_the_local_disk_as_webp(): void
@@ -59,11 +60,11 @@ class UploadDemoPageTest extends TestCase
             'file' => UploadedFile::fake()->image('confidential.png', 300, 200),
         ])->assertOk()->json('data');
 
-        // Stored on the private `local` disk, converted to webp — never written
-        // to the public disk.
-        $this->assertSame('image/webp', $data['mimeType']);
-        Storage::disk('local')->assertExists('private-docs/'.$data['id']);
-        Storage::disk('public')->assertMissing('private-docs/'.$data['id']);
+        $this->assertSame(['path', 'url'], array_keys($data));
+        $this->assertStringStartsWith('private-docs/', $data['path']);
+        $this->assertStringEndsWith('.webp', $data['path']);
+        Storage::disk('local')->assertExists($data['path']);
+        Storage::disk('public')->assertMissing($data['path']);
     }
 
     public function test_upload_rejects_a_mime_outside_the_accept_allowlist(): void
@@ -76,13 +77,13 @@ class UploadDemoPageTest extends TestCase
     public function test_form_submit_redirects_back_to_the_demo_page(): void
     {
         $this->postJson('/admin/upload-demo/forms/upload', [
-            'doc' => ['filename' => 'sample.png', 'url' => '/storage/docs/x.webp'],
+            'doc' => 'docs/x.webp',
         ])->assertRedirect('/admin/upload-demo');
     }
 
     public function test_private_saved_value_renders_a_signed_view_url(): void
     {
-        $url = $this->get('/admin/upload-demo', ['X-Inertia' => 'true'])
+        $url = $this->get('/admin/upload-demo', $this->inertiaHeaders())
             ->assertOk()
             ->json('props.data.upload.secret.url');
 
@@ -92,11 +93,20 @@ class UploadDemoPageTest extends TestCase
 
     public function test_public_saved_value_renders_a_storage_url(): void
     {
-        $url = $this->get('/admin/upload-demo', ['X-Inertia' => 'true'])
+        $url = $this->get('/admin/upload-demo', $this->inertiaHeaders())
             ->assertOk()
             ->json('props.data.upload.doc.url');
 
         $this->assertStringStartsWith('/storage', $url);
         $this->assertStringNotContainsString('signature=', $url);
+    }
+
+    /** @return array<string, string|null> */
+    private function inertiaHeaders(): array
+    {
+        return [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => app(HandleInertiaRequests::class)->version($this->app['request']),
+        ];
     }
 }
