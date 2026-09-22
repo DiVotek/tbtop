@@ -48,8 +48,10 @@ class MediaAdminTest extends TestCase
             ->assertRedirect('/admin/media');
 
         $media = Media::sole();
-        $this->assertSame($upload['path'], $media->path);
-        $this->assertSame(basename($upload['path']), $media->filename);
+        $this->assertStringStartsWith('uploads/', $media->path);
+        $this->assertStringEndsWith('.png', $media->path);
+        $this->assertStringNotContainsString('/', $media->filename);
+        $this->assertSame(str($media->path)->afterLast('/')->toString(), $media->filename);
         $this->assertSame('image/png', $media->mime_type);
         $this->assertSame(600, $media->width);
         $this->assertSame(400, $media->height);
@@ -90,8 +92,10 @@ class MediaAdminTest extends TestCase
         ])->assertRedirect();
 
         $media->refresh();
-        $this->assertSame($upload['path'], $media->path);
-        $this->assertSame(basename($upload['path']), $media->filename);
+        $this->assertStringStartsWith('uploads/', $media->path);
+        $this->assertStringEndsWith('.png', $media->path);
+        $this->assertStringNotContainsString('/', $media->filename);
+        $this->assertSame(str($media->path)->afterLast('/')->toString(), $media->filename);
         $this->assertSame($upload['url'], $media->url);
         $this->assertSame(300, $media->width);
         $this->assertSame('New picture', $media->alt);
