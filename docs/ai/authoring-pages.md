@@ -242,7 +242,7 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8); `$opts['gap']` is 0-12 (default 4); `$opts['class']` is an escape-hatch |
 | `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'action'` (`['label' => …, 'url' => …]` — a quiet right-aligned link in the header row), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch), plus `colSpan`/`colStart` and the meta keys |
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
-| `aside` | `aside(array $children, array $opts = []): Node` | Right-column sticky panel on wide screens; `$opts` supports `'class'` (escape-hatch) |
+| `aside` | `aside(array $children, array $opts = []): Node` | Fixed-width (`w-80`) right column that does not shrink. It does **not** stick on scroll — pass `'class' => 'sticky top-4'` via `$opts` if you want that |
 
 A section's `'aside'` is a persistent context slot: when a `section` sets both
 `'aside'` and `'collapsible'`, collapsing hides only the main body — the aside stays visible.
@@ -447,7 +447,7 @@ Returned by `$s->form(string $name, array $children)`.
 | Method | Signature | Purpose |
 |---|---|---|
 | `record` | `record(array $record): self` | Pre-fills the form with initial data (lands in page props) |
-| `onSubmit` | `onSubmit(Closure $handler): self` | Handler called on form submit; receives `ActionCtx`, returns `Effects` |
+| `onSubmit` | `onSubmit(Closure $handler): self` | Handler called on form submit; receives `ActionCtx` and returns `Effects` — or a URL string, which becomes a plain redirect (see [Effects vs server redirect vs string href](#effects-vs-server-redirect-vs-string-href--which-to-return)) |
 | `guardUnsaved` | `guardUnsaved(bool $enabled): self` | Per-form override of the unsaved-changes navigation guard (panel default applies when not called) |
 
 The `onSubmit` handler follows the same signature as action handlers — see **Action handler context** below.

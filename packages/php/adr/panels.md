@@ -13,8 +13,11 @@ domain: panels
   ever needed.
 - **Clean break from flat config.** Legacy keys (`pages`, `prefix`, `middleware`,
   `locales`, `default_locale`, `unsaved_guard`, `breadcrumbs`) move into `PanelConfig`.
-  Config keeps only: `panels`, global `media`, `content_locales`. No compat shim — zero
+  Config keeps only what is global rather than per-panel: `panels`, `media`,
+  `content_locales`, `default_content_locale`, `relation`. No compat shim — zero
   consumers at decision time.
+  > Replaces previous decision (see git history) — the key list said three keys; the
+  > published config has five.
 - **Route names gain a panel segment**: `tbtop.{panel}.{slug}` (+ `.form` / `.action` /
   `.table` / `.data` / `.selectCreate`). Media/upload/locale routes register under every
   panel's prefix, so the panel's guard applies to them automatically.
@@ -48,7 +51,9 @@ domain: panels
   schema + kitchen-sink fixture + contract tests in the same change (contract gate).
   Client React `slots` remain the last-resort escape hatch.
 - **Navigation layout is a panel flag, not a chrome shape.** `PanelConfig::navigation('sidebar'
-  |'topbar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop; the client
+  |'topbar'|'topbar-sidebar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop;
+  `topbar-sidebar` is a full-width bar with the sidebar beneath it, a third frame added after
+  this decision landed. The client
   rearranges the *same* chrome trees rather than serializing a different one — so a custom
   Chrome class works under either layout. `sidebar` keeps the persistent left column; `topbar`
   renders one horizontal bar (logo + nav group dropdowns + header items) that collapses to the
