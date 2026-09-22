@@ -40,21 +40,22 @@ class MediaAdminTest extends TestCase
 
     public function test_upload_form_submit_creates_a_media_row_from_the_upload_endpoint_payload(): void
     {
-        $upload = $this->postJson('/admin/uploads/media', [
+        $upload = $this->postJson('/admin/media/new/uploads/file', [
             'file' => UploadedFile::fake()->image('photo.png', 600, 400),
         ])->assertOk()->json('data');
 
-        $this->postJson('/admin/media/new/forms/upload', ['file' => $upload])
+        $this->postJson('/admin/media/new/forms/upload', ['file' => $upload['path']])
             ->assertRedirect('/admin/media');
 
         $media = Media::sole();
-        $this->assertSame('photo.png', $media->filename);
+        $this->assertSame($upload['path'], $media->path);
+        $this->assertSame(basename($upload['path']), $media->filename);
         $this->assertSame('image/png', $media->mime_type);
         $this->assertSame(600, $media->width);
         $this->assertSame(400, $media->height);
         $this->assertGreaterThan(0, $media->filesize);
-        $this->assertSame('thumb', $media->sizes[0]['name']);
-        Storage::disk('public')->assertExists('uploads/'.basename($media->url));
+        $this->assertSame([], $media->sizes);
+        Storage::disk('public')->assertExists($media->path);
     }
 
     public function test_upload_form_submit_requires_a_file(): void
@@ -70,7 +71,7 @@ class MediaAdminTest extends TestCase
 
         $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
             'alt' => 'A mountain',
-            'file' => ['filename' => $media->filename, 'url' => $media->url],
+            'file' => $media->path,
         ])->assertRedirect();
 
         $this->assertSame('A mountain', $media->refresh()->alt);
@@ -79,17 +80,18 @@ class MediaAdminTest extends TestCase
     public function test_edit_form_submit_replaces_the_image_with_a_fresh_upload(): void
     {
         $media = $this->makeMedia();
-        $upload = $this->postJson('/admin/uploads/media', [
+        $upload = $this->postJson("/admin/media/{$media->id}/edit/uploads/file", [
             'file' => UploadedFile::fake()->image('replacement.png', 300, 200),
         ])->assertOk()->json('data');
 
         $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
             'alt' => 'New picture',
-            'file' => $upload,
+            'file' => $upload['path'],
         ])->assertRedirect();
 
         $media->refresh();
-        $this->assertSame('replacement.png', $media->filename);
+        $this->assertSame($upload['path'], $media->path);
+        $this->assertSame(basename($upload['path']), $media->filename);
         $this->assertSame($upload['url'], $media->url);
         $this->assertSame(300, $media->width);
         $this->assertSame('New picture', $media->alt);
@@ -101,7 +103,7 @@ class MediaAdminTest extends TestCase
 
         $this->postJson("/admin/media/{$media->id}/edit/forms/media", [
             'alt' => 'Only alt changed',
-            'file' => ['filename' => $media->filename, 'url' => $media->url],
+            'file' => $media->path,
         ])->assertRedirect();
 
         $media->refresh();
@@ -125,6 +127,7 @@ class MediaAdminTest extends TestCase
     private function makeMedia(array $overrides = []): Media
     {
         return Media::create([
+            'path' => 'uploads/photo.png',
             'filename' => 'photo.png',
             'url' => '/storage/uploads/photo.png',
             'mime_type' => 'image/png',

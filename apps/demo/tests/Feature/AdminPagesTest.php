@@ -180,7 +180,7 @@ class AdminPagesTest extends TestCase
             'payload' => ['row' => ['id' => $post->id]],
         ])->assertOk()->assertJsonPath('effects.0.kind', 'notify');
 
-        $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+        $this->assertSoftDeleted('posts', ['id' => $post->id]);
     }
 
     public function test_bulk_delete_action_deletes_the_selection(): void
@@ -237,7 +237,7 @@ class AdminPagesTest extends TestCase
             'href' => '/admin/posts',
         ]);
 
-        $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+        $this->assertSoftDeleted('posts', ['id' => $post->id]);
     }
 
     public function test_settings_form_submit_updates_the_singleton(): void
