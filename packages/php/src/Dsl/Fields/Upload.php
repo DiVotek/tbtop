@@ -47,11 +47,14 @@ final class Upload extends Field
      * Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list
      * ['application/pdf', 'image/*'] to allow several.
      *
+     * A list is joined with commas: the wire grammar types `accept` as a
+     * string, and the client passes it straight to the DOM attribute.
+     *
      * @param  string|list<string>  $accept
      */
     public function accept(string|array $accept): static
     {
-        return $this->set('accept', $accept);
+        return $this->set('accept', is_array($accept) ? implode(',', $accept) : $accept);
     }
 
     /** Laravel filesystem disk name (default 'public'). */

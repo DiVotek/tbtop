@@ -1,7 +1,7 @@
 # Backlog
 
 > The open-work list for this repo. Items get built when a real consumer (EasyCar
-> first) or adoption pain demands them. Last revised: 2026-09-09.
+> first) or adoption pain demands them. Last revised: 2026-09-22.
 >
 > Supersedes `docs/roadmap.md`, deleted 2026-09-09: its gap tables had drifted
 > ~12 weeks and listed shipped features (soft-delete, infolist, relation managers,
@@ -20,7 +20,8 @@
   ids. Reorder disabled while sort/filters active (Filament behavior). **Shipped (M-94)** —
   wire shape `reorder: {column}`, endpoint scopes ids to the table query. See
   [./ai/wiring.md](./ai/wiring.md).
-- Sticky table header, filter chips, saved filters.
+- ~~Sticky table header~~ **Shipped** — `sticky top-0` on the grid `thead`.
+- Filter chips, saved filters.
 - **Sidebar filter placement** — `filtersIn()` is `modal|inline` (validated). A left
   sidebar variant needs the filter panel outside the toolbar row: a two-column shell in
   `tableBlock`, collapsing to `modal` under `md`. Wanted for attribute filters on catalog
@@ -39,6 +40,11 @@
 - ~~Infolist / read-only detail view~~ **Shipped** — the display-value family
   (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`); see
   `RecordDetailPage` in the demo.
+- **`UploadPreview` misses the validation props** — a filled upload field renders
+  `UploadPreview`, which receives neither `onBlur`, `invalid` nor `describedBy`
+  (`uploadField.tsx`); only the empty-state `UploadPicker` gets them. So a populated
+  but invalid upload never blur-validates and announces nothing to a screen reader.
+  Narrow, real, and cheap — same contract as the picker.
 - **Declarative autofill (`S::autofill`)** — third typed consumer of deps-driven
   server-computed field data (after liveRegion → display nodes, disabledRanges → widget
   params; here → field values): `autofill('car_defaults')->dependsOn('car_id')->fill(fn)`.
@@ -85,7 +91,8 @@
   dialog fades and scales in from center (`enter` keyframes carry no translate).
   DEMO-4 also wired `slideOver()`/`modalWidth()` through wire materialization
   (they were serialized but dropped client-side).
-- Hide scrollbar on the scrollable body (shadcn dialog parity).
+- ~~Hide scrollbar on the scrollable body (shadcn dialog parity)~~ **Shipped** —
+  `scrollbar-none` on the `ModalShell` body.
 - **Footer actions slot** — `ModalShell` supports a sticky footer (every built-in dialog
   uses it) but the DSL modal renders one body only; an `actionsRow` at the end of the body
   scrolls with the content. Design: `ActionBuilder::footer([...])` → `spec.footer`, the
@@ -107,10 +114,22 @@
   design session.
 - **Log viewer** — separate package: pretty log browser inside the admin, so nobody
   tails files over SSH. Not urgent.
+- **Package-side auth backend** — the package ships the auth *screens* as DSL pages
+  (`LoginPage`, `TwoFactorChallengePage`, …) and integrates with a guard, but every
+  controller and route lives in the demo as Laravel Breeze
+  (`apps/demo/routes/auth.php`). A consumer installing `tbtop/admin` gets no working
+  login. Decide what the package owns: its own controllers, a Fortify bridge, or a
+  documented "bring your own Breeze" path.
 - Multi-tenancy (post-panels; panels ≠ tenancy).
-- Global search (needs a layout-slot design session).
-- Mobile sidebar (drawer); dark-mode completeness (recharts + Lexical theme tokens).
+- **Cross-model record search** — the ⌘K palette ships and searches nav items plus
+  declared commands (`CommandPaletteConfig::commands()`); what is missing is searching
+  *records* across models from one box. Needs a layout-slot design session.
+- ~~Mobile sidebar (drawer)~~ **Shipped** — `SidebarDrawer`, wired into both shell
+  frames, auto-closes on Inertia navigate.
+- Dark-mode completeness — recharts is done (`useChartColors` re-resolves the
+  `--chart-N` tokens on theme flip); the Lexical richtext theme is unverified.
 
 ## Media
 
-- Media v2 ideas — TBD (carried from pre-extraction backlog).
+- Media v2 ideas — TBD (carried from the pre-extraction backlog). No acceptance
+  criteria, so nothing here can be called done or missing: write them or drop the entry.
