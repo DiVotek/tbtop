@@ -1,8 +1,7 @@
 # Tabletop Admin
 
 PHP-DSL admin pages, rendered by a React client over Inertia. **No Livewire.**
-See `docs/backlog.md` for open work, `PROJECT.md` for vision (note: vision was written
-for the Node stack — philosophy holds, the runtime is now Laravel; re-read with that lens).
+See `docs/backlog.md` for open work.
 
 > **Public docs are English-only.** This repo is going open-source. README, docs,
 > code comments, commit messages, and any consumer-facing text are written in
@@ -21,8 +20,8 @@ page composition. The client owns rendering. **These three boundaries are the ar
 
 Monorepo. Two published packages + a demo app.
 
-- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, auth, media. **Laravel package.**
-- `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, 28 field components, layout shell, data clients.
+- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, guard/middleware integration, media. **Laravel package.** (Auth *screens* are DSL pages; the auth backend lives in the demo — see the auth note below.)
+- `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, 26 wire field kinds plus 2 client-only registrations (`json`/`unknown`), layout shell, data clients.
 - `packages/contracts/` → generated `structure.schema.json` + `fixtures/kitchen-sink.json` — the wire-grammar contract shared by both sides.
 - `apps/demo/` → Laravel app wiring both packages end-to-end. **The reference consumer — read its `app/Admin/Pages/` to see real DSL usage.**
 
@@ -128,7 +127,10 @@ Client package (`cd packages/client`):
 Demo (`cd apps/demo`): standard Laravel — `php artisan serve`, `npm run dev` (Vite for the
 admin entry). Browser e2e for walking-skeleton flows lives here.
 
-**Run only tests for what you changed.** CI runs the full suite.
+**Run only tests for what you changed.** CI covers the two packages — `packages/php`
+(pest, phpstan, contract-fixture drift), `packages/client` (bun test, tsc) and lint.
+**`apps/demo` is not in CI**, so its Pest and browser suites only ever run locally:
+touch the demo and you have to run them yourself.
 
 ## Stack
 

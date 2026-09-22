@@ -212,192 +212,23 @@ delta, sparkline, icon, color; line/bar/area/pie/donut chart types with runtime 
 ## Recipe 5 — Full CRUD resource family (create → index → edit → soft-delete)
 
 **What you want:** the four pages that make up a typical resource — a create form, an
-index table, an edit form, and trashed-row management. The demo's `Post` resource is the
-complete worked version; every snippet below is copied from it.
+index table, an edit form, and trashed-row management.
 
-### 1. Create page — a form whose `onSubmit` returns a redirect string
+Read the demo's `Post` resource instead of a snippet here; it is the complete, running
+version and cannot drift from the code:
 
-`onSubmit` may return **a string** (an Inertia redirect URL) instead of `Effects`. The
-demo uses this to land on the new record's edit page after create.
+- [`PostCreatePage`](../../apps/demo/app/Admin/Pages/PostCreatePage.php) — a form whose
+  `onSubmit` returns a redirect **string** instead of `Effects`, landing on the new
+  record's edit page.
+- [`PostsIndexPage`](../../apps/demo/app/Admin/Pages/PostsIndexPage.php) — the table, its
+  row actions and the `softDeletes()` macro.
+- [`PostEditPage`](../../apps/demo/app/Admin/Pages/PostEditPage.php) — the edit form and
+  its record binding.
+- [`Concerns/PostFormFields`](../../apps/demo/app/Admin/Pages/Concerns/PostFormFields.php)
+  — the field list both forms share, including `translatable()` usage.
 
-```php
-// apps/demo/app/Admin/Pages/PostCreatePage.php
-public function view(S $s): Node
-{
-    return $s->stack([
-        $s->form('post', [
-            ...$this->postFormSections($s, 'unique:posts,slug'),
-            FormActions::saveCancel($s, '/admin/posts', saveLabel: 'Create'),
-        ])
-            ->record([
-                'title' => null, 'slug' => '', 'published' => false,
-                'author_id' => null, 'sections' => [],
-            ])
-            ->onSubmit(function (ActionCtx $ctx): string {
-                $post = Post::create($ctx->form);
-
-                return "/admin/posts/{$post->id}/edit";
-            }),
-    ]);
-}
-```
-
-`FormActions::saveCancel()` is the preset for the common footer; its `extra:` argument
-splices additional actions **between** save and cancel (that is how `PostEditPage` adds
-its Delete). When you need a shape the preset doesn't give — a different order, a
-keybinding, no cancel at all — build the row yourself; the preset is sugar over exactly
-this:
-
-```php
-$s->actionsRow([
-    $s->action('save')->label('Create')->color('primary')
-        ->keybinding('mod+s')->submit(),
-    $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
-]),
-```
-
-Both forms are equivalent to the client — `FormActions::save` routes through `$s`, so its
-submit action is registered like any other.
-
-The form fields live in a shared trait (`PostFormFields`) so create and edit reuse one
-definition — the only difference is the slug's `unique` rule, passed in as an argument.
-
-### 2. Index page — table with tabs, filters, sort, pagination, row + bulk actions
-
-```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php (abridged)
-$s->table('posts')
-    ->rowClick('edit')
-    ->columns([
-        Column::make('title')->label('Title')->kind('text')
-            ->translatable()->sortable()->searchable()->individuallySearchable(),
-        Column::make('published')->label('Published')->badge([
-            '1' => Color::Success, '0' => Color::Gray,
-        ])->toggleable(),
-        Column::make('published_time')->time('H:i')->label('Published time'),
-        Column::make('views')->label('Views')->number()->sortable()->align('right'),
-    ])
-    ->filters([
-        InFilter::make('published')->label('Status')->options([
-            ['value' => '1', 'label' => 'Published'],
-            ['value' => '0', 'label' => 'Draft'],
-        ]),
-        Daterange::make('published_at')->label('Published date'),
-    ])
-    ->filtersIn('modal')
-    ->deferFilters()
-    ->filtersFormColumns(2)
-    ->tabs([
-        Tab::make('all')->label('All'),
-        Tab::make('published')->label('Published')
-            ->query(fn ($q) => $q->where('published', true)),
-        Tab::make('draft')->label('Draft')
-            ->query(fn ($q) => $q->where('published', false))->count(),
-    ])
-    ->defaultSort('published', 'desc')
-    ->groups('published')
-    ->paginate(25, [10, 25, 50, 100])
-    ->query(fn () => Post::query())
-    ->rowActions([
-        // Per-row edit needs the row id, so it is a redirect effect, not visit().
-        $s->action('edit')->label('Edit')->handle(
-            fn (ActionCtx $ctx): Effects => Effects::make()
-                ->redirect("/admin/posts/{$ctx->row['id']}/edit"),
-            needs: ['row'],
-        ),
-        DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
-            Post::whereKey($ctx->row['id'] ?? null)->delete();
-        }),
-    ])
-    ->bulkActions([
-        DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): Effects {
-            $count = Post::whereKey($ctx->selection)->delete();
-
-            return Effects::make()->notify("Deleted {$count} post(s)")->refreshTable('posts');
-        }),
-    ])
-    ->toNode()
-```
-
-`rowClick('edit')` makes a whole-row click fire the `edit` row action — note a per-row
-URL cannot use `visit()` (a static string), so `edit` is a server `handle()` returning a
-`redirect` effect built from `$ctx->row['id']`. `DeleteAction` is a prebuilt preset
-(see [authoring-pages.md](./authoring-pages.md) presets section).
-
-`individuallySearchable()` adds a per-column search box (independent debounce, own URL
-state — see [authoring-pages.md](./authoring-pages.md#individuallysearchable--per-column-search)).
-`deferFilters()->filtersFormColumns(2)` requires an explicit Apply before filter changes
-narrow the query, laid out in a 2-column grid. `groups('published')` partitions rows into
-group headers by that column's value — **single-page client-side partitioning only**, not
-a cross-page aggregate; see [authoring-pages.md](./authoring-pages.md#groups--row-grouping)
-for the full scope note.
-
-### 3. Edit page — route param, save, delete-with-redirect
-
-The edit page reads the route param, prefills the form via `->record()`, and its delete
-action returns a `redirect` effect to bounce back to the index.
-
-```php
-// apps/demo/app/Admin/Pages/PostEditPage.php (abridged)
-public function view(S $s): Node
-{
-    $post = Post::findOrFail(request()->route('post'));
-
-    return $s->stack([
-        $s->form('post', [
-            ...$this->postFormSections($s, "unique:posts,slug,{$post->id}"),
-            FormActions::saveCancel($s, '/admin/posts', extra: [
-                $s->action('delete')->label('Delete')->color('danger')
-                    ->confirm('Delete post?', 'This cannot be undone.')
-                    ->handle(function (ActionCtx $ctx): Effects {
-                        Post::whereKey($ctx->request->route('post'))->delete();
-
-                        return Effects::make()->notify('Post deleted')->redirect('/admin/posts');
-                    }),
-            ]),
-        ])
-            ->record($post->toArray())
-            ->onSubmit(function (ActionCtx $ctx): Effects {
-                Post::findOrFail($ctx->params['post'] ?? null)->update($ctx->form);
-
-                return Effects::make()->notify('Saved');
-            }),
-    ]);
-}
-```
-
-The route param is available two ways inside a handler: `$ctx->request->route('post')`
-and `$ctx->params['post']`. Both are server-derived and trusted; the demo uses each.
-
-### 4. Soft-delete tab — the `->softDeletes()` macro
-
-Drop trashed-row management onto any table whose model uses the `SoftDeletes` trait. Call
-`->softDeletes($s, Model::class)` **after** your own `rowActions()`/`tabs()` so it merges:
-
-```php
-// apps/demo/app/Admin/Pages/SoftDeletesDemoPage.php
-$s->table('posts')
-    ->columns([
-        Column::make('title')->label('Title')->kind('text')->translatable()->searchable(),
-        Column::make('published')->label('Published')->boolean(),
-    ])
-    ->searchable(['title'])
-    ->defaultSort('id', 'desc')
-    ->query(fn () => Post::query())
-    ->rowActions([
-        // Closure-returned Effects override DeleteAction's default tail.
-        DeleteAction::make($s, using: function (ActionCtx $ctx): Effects {
-            Post::whereKey($ctx->row['id'] ?? null)->delete();
-
-            return Effects::make()->notify('Post deleted')->refreshTable('posts');
-        })->confirm('Delete post?', 'It moves to the Trashed tab.'),
-    ])
-    ->softDeletes($s, Post::class) // tabs + restore/forceDelete, merged after delete
-    ->toNode()
-```
-
-The macro prepends Active / Trashed / All tabs and appends restore + force-delete (row and
-bulk) actions. Full behavior in the `softDeletes()` section of
+The `softDeletes()` macro prepends Active / Trashed / All tabs and appends restore +
+force-delete actions (row and bulk); full behavior in the `softDeletes()` section of
 [authoring-pages.md](./authoring-pages.md).
 
 ---
