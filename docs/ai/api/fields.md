@@ -338,7 +338,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 | Method | What it does |
 |---|---|
-| `accept(array\|string $accept): static` | Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list ['application/pdf', 'image/*'] to allow several. |
+| `accept(array\|string $accept): static` | Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list ['application/pdf', 'image/*'] to allow several. A list is joined with commas: the wire grammar types `accept` as a string, and the client passes it straight to the DOM attribute. |
 | `convertTo(string $format): static` | Convert the stored image to this format ('webp'\|'jpeg'\|'png'). |
 | `directory(string $dir): static` | Subdirectory the file is stored under (default 'uploads'). |
 | `disk(string $disk): static` | Laravel filesystem disk name (default 'public'). |

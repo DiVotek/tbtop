@@ -16,10 +16,19 @@ authoring model, without Livewire.
 ## Run the demo
 
 ```bash
+# the demo aliases @tbtop/inertia-admin to packages/client/src, whose Tailwind
+# source pulls its own deps — install them first
+(cd packages/client && bun install)
+
 cd apps/demo
 composer install && npm install
+cp .env.example .env && php artisan key:generate
+touch database/database.sqlite
 php artisan migrate --seed && php artisan storage:link
-php artisan serve --port=8090   # + npm run dev (vite)
+npm run dev                     # keep running: without a Vite dev server or a
+                                # prior `npm run build`, admin pages 500 on the
+                                # missing manifest
+php artisan serve --port=8090   # in a second terminal
 # http://127.0.0.1:8090/admin/posts — admin@admin.com / password
 ```
 
@@ -59,16 +68,27 @@ class PostsIndexPage extends Page
 }
 ```
 
-Registration: add the class to `config/tbtop-admin.php` → `'pages'`. Routes and
-the table/data/form/action endpoints are wired automatically under the
-configured `prefix` + `middleware`.
+Registration: nothing per page. A panel (listed once in
+`config/tbtop-admin.php` → `'panels'`) declares a discovery root in its
+`configure()` —
+`->discoverPages(in: app_path('Admin/Pages'), for: 'App\\Admin\\Pages')` — and
+every page class under it is found and routed automatically. Adding a screen is
+`php artisan make:tbtop-page Posts` and nothing else. Pages outside that root
+(package-owned ones such as the media library) and any page that must come
+first are listed explicitly with `->pages([...])`; discovery merges them and
+drops duplicates. Routes and the table/data/form/action endpoints are wired
+under the panel's `prefix` + `middleware`.
+
+Discovery results are cached: run `php artisan tbtop:cache-pages` in
+deployment, and `php artisan tbtop:clear-cached-pages` after adding a page
+locally if the cache is warm.
 
 ## Forms
 
 ```php
 $s->form('post', [
     $s->text('title')->label('Title')->required()->rules('max:200'),
-    $s->translatable('intro')->set('locales', ['en', 'uk']),
+    $s->text('intro')->label('Intro')->translatable(),   // per content locale
     $s->repeater('sections')->rules('array|max:10')->set('fields', [
         $s->text('heading')->required(),
     ]),
@@ -106,20 +126,37 @@ $s->form('post', [
 `->confirm(title)` wraps a server action in a confirm modal. Server closures
 resolve by name per-request — they never travel over the wire.
 
-**Effects** (a closed set): `notify | redirect | refreshTable | resetForm | closeModal`.
+**Effects** (a closed set): `notify | redirect | refreshTable | resetForm |
+closeModal | haltModal | copyToClipboard | setFormData`.
 Extending the set is a minor contract bump; anything non-standard goes through
 `custom`.
 
 ## Uploads
 
-Profiles live in config (`'uploads' => ['media' => [disk, dir, accept, maxSize, sizes]]`),
-the endpoint is `POST {prefix}/uploads/{profile}`, with GD fit-inside variants.
-The field `$s->upload('file')->set('entity', 'media')` delivers a full UploadRow
-to `$ctx->form['file']` (url, mimeType, filesize, width/height, sizes).
+An upload field carries its own storage config — there is no global profile
+registry, and the client cannot override any of it:
+
+```php
+$s->upload('doc')->label('Document')
+    ->disk('public')->directory('docs')->visibility('public')
+    ->accept('image/*')->maxSize(5 * 1024 * 1024)
+    ->convertTo('webp')->quality(80),          // optional GD conversion
+$s->upload('gallery')->multiple()->maxFiles(8)->reorderable(),
+```
+
+The endpoint is page-scoped — `POST {page-path}/uploads/{field}` — and inherits
+the page's gate. It answers `{data: {path, url}}`, and **the form value is the
+path string** (a list of them when `multiple()`), so `$ctx->form['doc']` is
+what you persist. A `private` field's `url` comes back signed and short-lived,
+so the preview renders without exposing the file publicly. `saveUsing()`
+replaces the storage step when you need your own.
+
+The media library is a separate feature with its own manager, tables and
+config (`'media'` in `config/tbtop-admin.php`) — use `$s->media()` for it.
 
 ## The contract
 
-`contracts/structure.schema.json` is the wire grammar. Gates:
+`packages/contracts/structure.schema.json` is the wire grammar. Gates:
 - PHP: the kitchen-sink page validates against the schema + a snapshot
   (`UPDATE_FIXTURES=1 vendor/bin/pest` to regenerate);
 - client: the same fixture passes the zod mirror and a render smoke test.
