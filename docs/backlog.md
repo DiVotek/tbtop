@@ -40,6 +40,11 @@
 - ~~Infolist / read-only detail view~~ **Shipped** — the display-value family
   (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`); see
   `RecordDetailPage` in the demo.
+- **`UploadPreview` misses the validation props** — a filled upload field renders
+  `UploadPreview`, which receives neither `onBlur`, `invalid` nor `describedBy`
+  (`uploadField.tsx`); only the empty-state `UploadPicker` gets them. So a populated
+  but invalid upload never blur-validates and announces nothing to a screen reader.
+  Narrow, real, and cheap — same contract as the picker.
 - **Declarative autofill (`S::autofill`)** — third typed consumer of deps-driven
   server-computed field data (after liveRegion → display nodes, disabledRanges → widget
   params; here → field values): `autofill('car_defaults')->dependsOn('car_id')->fill(fn)`.

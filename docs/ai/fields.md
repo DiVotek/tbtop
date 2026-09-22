@@ -114,7 +114,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
 | **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes. Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
-| **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
+| **Date** | `$s->date('x')` / `Date::make('x')` | `date` | `yearPicker(bool $state = true)` — swaps the calendar caption's year label for a year dropdown, offering the years within the bounds below (a narrow band around today without them); `minDate(DateTimeInterface\|string $date)` / `maxDate(...)` — earliest/latest selectable day | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
 | **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS`; call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | `disabledRanges(Closure $fn)` — server closure `fn (array $deps): array` returning a list of `['from' => ?string, 'to' => ?string]` ISO-day ranges (both ends inclusive-disabled; a null end makes the range open, i.e. min/max-date semantics); `dependsOn(string\|array $fields)` — parent field(s) whose changes refetch the ranges. Value shape: `{from?: string, to?: string}` | Only with `disabledRanges()` + `dependsOn()` → daterange-ranges endpoint |
@@ -133,33 +133,9 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Richtext** | `$s->richtext('x')` / `Richtext::make('x')` | `richtext` | `placeholder(string $text)` | No |
 | **In filter** | `$s->inFilter('x')` / `Tbtop\Admin\Dsl\Fields\InFilter::make('x')` | `in` | `options(list<{value, label}> $options)` — fixed option list. **Filter context only** — use in `table()->filters()`, not in forms | No |
 
-### Client component mapping
-
-| Wire `kind` | Client component file |
-|---|---|
-| `text` | `fields/textField.tsx` |
-| `textarea` | `fields/textareaField.tsx` |
-| `password` | `fields/passwordField.tsx` |
-| `otp` | `fields/otpField.tsx` |
-| `number` | `fields/numberField.tsx` |
-| `date` | `fields/dateField.tsx` |
-| `datetime` | `fields/dateField.tsx` (DateTimeForm/DateTimeCell) |
-| `time` | `fields/timeField.tsx` |
-| `daterange` | `fields/daterangeField.tsx` |
-| `boolean` | `fields/booleanField.tsx` |
-| `checkbox` | `fields/checkboxField.tsx` |
-| `radio` | `fields/radioField.tsx` |
-| `select` | `fields/selectField.tsx` |
-| `tags` | `fields/tagsField.tsx` |
-| `in` | `fields/tagsField.tsx` (reused for filter rendering) |
-| `colorpicker` | `fields/colorpickerField.tsx` |
-| `keyvalue` | `fields/keyvalueField.tsx` |
-| `slug` | `fields/slugField.tsx` |
-| `upload` | `fields/uploadField.tsx` |
-| `media` | `media/mediaPickerField.tsx` (lives outside `fields/`) |
-| `relation` | `fields/relationField.tsx` |
-| `repeater` | `fields/repeaterField.tsx` |
-| `richtext` | `fields/richtext/` (lazy-loaded; Lexical editor) |
+See the [canonical inventory](#canonical-field-kind-inventory-php--client--schema) below
+for the client component each kind renders through — it is the one table kept in sync with
+`registerFields.ts`.
 
 ---
 
@@ -179,7 +155,7 @@ identifier list, used by test datasets) and the bootstrapped `S::kindMap()` (kin
 class). `FieldKindParityTest` asserts every `BUILT_IN_KINDS` entry is registered in `kindMap()`,
 so a built-in present in the list but missing from the map fails CI. Add a kind → append to
 **both** PHP lists (keep them in sync), the inventory table below, the
-client `registerBuiltins.ts`, and exercise it in `KitchenSinkPage` (the contract gate). Rows
+client `registerFields.ts` (which `registerBuiltins.ts` calls), and exercise it in `KitchenSinkPage` (the contract gate). Rows
 are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder existing ones.
 
 | # | PHP builder | `S` factory | Wire `kind` | Client kind | Client file |
@@ -217,7 +193,7 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 
 ### Client-only kinds (intentional asymmetry)
 
-These two wire kinds are registered on the client (`registerBuiltins.ts`) with **no PHP
+These two wire kinds are registered on the client (`registerFields.ts`) with **no PHP
 builder** — deliberately. They are not drift to "fix" by adding a builder; a builder is a new
 field type and must go through the contract gate (schema + kitchen-sink + contract test) in
 its own change.
@@ -296,8 +272,10 @@ See [./wiring.md](./wiring.md) for the endpoint request/response shape.
 
 ### Select with `creatable()` — `select-create` endpoint
 
-When `creatable(array $fields, callable $using)` is called, the client shows a
-mini-form inside the select dropdown. Submitting it hits the select-create endpoint,
+When `creatable(array $fields, callable $using)` is called, the client renders a
+`+ Create` button under a **single** select, which opens a dialog holding the `$fields`
+mini-form; a **multiple** select instead offers an inline create row in the combobox when
+the typed query matches no option. Either way, submitting hits the select-create endpoint,
 which runs the `$using` closure server-side and returns the new option's `{value, label}`.
 
 ```php
@@ -472,8 +450,9 @@ $s->relation('author_id')->label('Author')
 ```
 
 **4. Creatable** — let the user add a new option inline. Call `->creatable($fields, $using)`:
-a mini-form (`$fields`) renders in the dropdown, and submitting it runs `$using` server-side
-to mint the new `{value, label}`. Needs the select-create endpoint:
+a `+ Create` button under a single select opens a dialog with the `$fields` mini-form (a
+multiple select offers the create row inside the combobox instead), and submitting it runs
+`$using` server-side to mint the new `{value, label}`. Needs the select-create endpoint:
 
 ```php
 // apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
