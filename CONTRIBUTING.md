@@ -45,7 +45,9 @@ cd apps/demo
 php artisan test
 ```
 
-Run only the tests for what you changed locally; CI runs the full suite.
+Run only the tests for what you changed locally. CI runs the two packages and lint;
+**it does not run `apps/demo`**, so if your change touches the demo, run its suite
+yourself before opening the PR.
 
 ## The contract is a hard gate
 
