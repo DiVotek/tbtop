@@ -19,6 +19,11 @@ domain: blocks
   the single source of date/datetime/number/money formatting. `ColumnProjection` delegates
   to it (table tests unchanged); `DisplayValueBlock` calls the same method. A value formats
   identically in a table cell and a detail view.
+- **`time` is a column kind only.** `Column::time()` and `KindFormat`'s `'time'` case ship,
+  but `DisplayValueBlock` has no `time()` sugar — a detail view formats a time value by
+  passing the already-formatted string, or by `datetime()` with an explicit format. The
+  asymmetry is unintended, not a decision; closing it is a one-method change plus a schema
+  and fixture pass, and nothing asked for it yet.
 - **Wire split mirrors the table.** `displayValue` with `money`/`date`/`datetime`/`number`
   bakes the formatted string into `options.value` server-side and emits **no** format meta
   (currency/format/decimals would be dead weight on the wire). With `badge`/`boolean`/`icon`
