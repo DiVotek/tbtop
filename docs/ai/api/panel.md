@@ -29,6 +29,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `id(string $id): static` | Feeds the route-name namespace (`tbtop.{id}.*`) — changing it on an existing panel renames every route. |
 | `locales(array $locales): static` | Admin UI locales. First entry is the default unless defaultLocale() is set. |
 | `maxContentWidth(string $width): static` | Center page content to a Tailwind max-w token (e.g. '7xl'). |
+| `mcp(array $middleware = ['auth:sanctum']): static` | Expose this panel to AI agents over MCP at `POST {prefix}/mcp` (needs `composer require laravel/mcp`). $middleware REPLACES the panel's middleware on that route — use stateless token auth (the default is `auth:sanctum`), and repeat any access check the panel or its pages keep in middleware, since those do not run for MCP calls. |
 | `middleware(array $middleware): static` | Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}` on top at read time. |
 | `navigation(string $navigation): static` | Shell navigation layout: 'sidebar' (default), 'topbar', or 'topbar-sidebar' (full-width bar with a sidebar beneath it). The client renders the same chrome blocks; only their arrangement changes. All layouts collapse to a burger drawer on mobile. |
 | `navigationGroups(array $groups): static` | Per-group nav metadata as a list of NavGroup::make('Content')->icon('file-text') ->collapsible(), matched to a page's nav()['group'] by that label. |

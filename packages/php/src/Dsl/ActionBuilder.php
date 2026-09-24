@@ -46,6 +46,8 @@ final class ActionBuilder implements JsonSerializable
 
     private mixed $authorizeArg = null;
 
+    private bool $mcp = true;
+
     private const MODAL_SIZES = [
         'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full',
     ];
@@ -295,6 +297,35 @@ final class ActionBuilder implements JsonSerializable
     public function handler(): ?Closure
     {
         return $this->handler;
+    }
+
+    /**
+     * Hide this action from the panel's MCP server (PanelConfig::mcp()): it is
+     * neither listed by `search` nor runnable through `execute`. Server-only —
+     * the browser UI is unaffected and nothing reaches the wire.
+     */
+    public function mcp(bool $enabled = true): self
+    {
+        $this->mcp = $enabled;
+
+        return $this;
+    }
+
+    /** False when ->mcp(false) hid the action from the MCP server. */
+    public function isMcpEnabled(): bool
+    {
+        return $this->mcp;
+    }
+
+    /**
+     * The action's spec (type visit|submit|server|modal|custom plus its keys),
+     * or null before one is set. Read by the MCP catalog; never the wire path.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getSpec(): ?array
+    {
+        return $this->spec;
     }
 
     /**

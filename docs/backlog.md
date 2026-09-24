@@ -113,9 +113,10 @@
 - ~~**Database notifications center**~~ **Shipped (polling)** — `$s->notifications()` bell,
   `Notification::make()->sendToDatabase()`, `PanelConfig::notificationsPolling()`.
   Broadcasting still open.
-- **MCP server** — `laravel/mcp`; tools generated from the page registry. Gates must
-  apply. Phase 1 read-only (table queries/filters/search), phase 2 actions. Needs its own
-  design session.
+- ~~**MCP server**~~ **Shipped** — `PanelConfig::mcp()` (laravel/mcp, suggested):
+  `search`/`query`/`execute` over the page registry, gates and validation via the page
+  controllers; `->mcp(false)` opt-out. Design in `packages/php/adr/mcp.md`. Open: a token
+  auth story in the demo (no Sanctum there yet).
 - **Log viewer** — separate package: pretty log browser inside the admin, so nobody
   tails files over SSH. Not urgent.
 - **Auth backend is a non-goal** — the host app owns authentication (guard, controllers,

@@ -28,6 +28,7 @@ Action authoring and the closed effect vocabulary an action handler returns.
 | `keybinding(string $keys): self` | Keyboard shortcut that triggers the action (e.g. 'mod+s'). |
 | `label(string $label): self` | Button/link text. |
 | `link(): self` | Render the trigger styled as a link. |
+| `mcp(bool $enabled = true): self` | Hide this action from the panel's MCP server (PanelConfig::mcp()): it is neither listed by `search` nor runnable through `execute`. Server-only — the browser UI is unaffected and nothing reaches the wire. |
 | `meta(string $key, mixed $value): static` | Sets one of the node meta keys directly: id, hidden, disabled, hiddenIf, disabledIf. Unvalidated — any other key ships and the client ignores it. For an arbitrary wire *option* use set() instead. |
 | `modal(string $title, Node\|FormBuilder\|JsonSerializable\|null $body = null, ?string $description = null): self` | Modal spec: one of the mutually exclusive action specs (visit/submit/ handle/modal/custom) — calling a second spec method on the same action throws. $body renders inside the dialog; pass a FormBuilder to collect input, or omit it for a plain content/confirmation modal. |
 | `modalWidth(string $width): self` | Set the modal dialog width. Only valid on modal actions. |
