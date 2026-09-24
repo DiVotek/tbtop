@@ -33,6 +33,7 @@ use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Http\TableController;
 use Tbtop\Admin\Http\TableFilterOptionsController;
 use Tbtop\Admin\Http\TableReorderController;
+use Tbtop\Admin\Mcp\McpRoute;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Panels\PanelRegistry;
@@ -224,5 +225,10 @@ foreach (app(PanelRegistry::class)->all() as $panel) {
 
                 $registerPageRoutes($bucket['pages']);
             });
+    }
+
+    // Opt-in agent endpoint with its own middleware stack, not the panel's.
+    if ($panel->hasMcp()) {
+        McpRoute::register($panel);
     }
 }

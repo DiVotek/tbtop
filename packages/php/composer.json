@@ -24,6 +24,7 @@
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
+        "laravel/mcp": "^1.0",
         "laravel/pint": "^1.14",
         "nunomaduro/collision": "^8.8",
         "opis/json-schema": "^2.4",
@@ -35,6 +36,9 @@
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "spatie/laravel-ray": "^1.35"
+    },
+    "suggest": {
+        "laravel/mcp": "^1.0 — enables PanelConfig::mcp(), an MCP server exposing the panel's pages to agents"
     },
     "autoload": {
         "psr-4": {
