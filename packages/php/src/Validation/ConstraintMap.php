@@ -44,7 +44,9 @@ final class ConstraintMap
     private static function cast(string $name, string $value): mixed
     {
         if ($name === 'in') {
-            return explode(',', $value);
+            // Rule::in() stringifies to CSV with quoted values; parse it the way
+            // Laravel's ValidationRuleParser does so the client gets bare values.
+            return str_getcsv($value, escape: '\\');
         }
         if ($name === 'min' || $name === 'max') {
             return is_numeric($value) ? $value + 0 : $value;
