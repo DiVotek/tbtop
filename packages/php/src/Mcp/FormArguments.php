@@ -2,10 +2,8 @@
 
 namespace Tbtop\Admin\Mcp;
 
-use Tbtop\Admin\Dsl\ChildInclusion;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\FormBuilder;
-use Tbtop\Admin\Dsl\StructureWalk;
 
 /**
  * Describes a form's input for an agent: kind, label, options and Laravel rules
@@ -22,7 +20,7 @@ final class FormArguments
         $rules = $form->collectRules();
         $fields = [];
         $excluded = [];
-        foreach (self::topLevelFields($form->toNode()) as $field) {
+        foreach ($form->getFields() as $field) {
             $node = $field->toNode();
             if (in_array($node->kind, self::UNSUPPORTED_KINDS, true)) {
                 $excluded[] = ['name' => $field->name, 'kind' => $node->kind, 'reason' => "{$node->kind} fields cannot be filled over MCP"];
@@ -55,17 +53,27 @@ final class FormArguments
             'label' => $label,
             'rules' => $rules[$name] ?? [],
             'nestedRules' => $nested,
-            'options' => self::options($kind, $options),
+            'options' => self::optionsOf($kind, $options),
         ], static fn (mixed $v): bool => $v !== null && $v !== []);
     }
 
     /**
-     * Static options as value => label; 'dynamic' when the list is fetched per search.
+     * $field's choices: value => label, 'dynamic' when fetched per search, null when free-form.
      *
+     * @return array<string, string>|string|null
+     */
+    public static function options(Field $field): array|string|null
+    {
+        $node = $field->toNode();
+
+        return self::optionsOf($node->kind, $node->options);
+    }
+
+    /**
      * @param  array<string, mixed>  $options
      * @return array<string, string>|string|null
      */
-    private static function options(string $kind, array $options): array|string|null
+    private static function optionsOf(string $kind, array $options): array|string|null
     {
         if (is_array($options['options'] ?? null)) {
             $out = [];
@@ -80,26 +88,5 @@ final class FormArguments
         }
 
         return null;
-    }
-
-    /**
-     * Fields as the form submits them: a container field (repeater, keyvalue)
-     * is one entry — its sub-fields show up in its nestedRules.
-     *
-     * @return list<Field>
-     */
-    private static function topLevelFields(mixed $node): array
-    {
-        if ($node instanceof Field) {
-            return [$node];
-        }
-        $out = [];
-        foreach (StructureWalk::descendants($node) as $child) {
-            if (ChildInclusion::isConditionMet($child)) {
-                $out = [...$out, ...self::topLevelFields($child)];
-            }
-        }
-
-        return $out;
     }
 }

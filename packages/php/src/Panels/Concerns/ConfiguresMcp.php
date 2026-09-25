@@ -11,8 +11,10 @@ trait ConfiguresMcp
     /** @var list<string>|null */
     private ?array $mcpMiddleware = null;
 
+    private string $mcpPath = 'mcp';
+
     /**
-     * Expose this panel to AI agents over MCP at `POST {prefix}/mcp` (needs
+     * Expose this panel to AI agents over MCP at `POST {prefix}/{$path}` (needs
      * `composer require laravel/mcp`). $middleware REPLACES the panel's
      * middleware on that route — use stateless token auth (the default is
      * `auth:sanctum`), and repeat any access check the panel or its pages keep
@@ -20,9 +22,10 @@ trait ConfiguresMcp
      *
      * @param  list<string>  $middleware
      */
-    public function mcp(array $middleware = ['auth:sanctum']): static
+    public function mcp(array $middleware = ['auth:sanctum'], string $path = 'mcp'): static
     {
         $this->mcpMiddleware = $middleware;
+        $this->mcpPath = trim($path, '/');
 
         return $this;
     }
@@ -36,5 +39,11 @@ trait ConfiguresMcp
     public function getMcpMiddleware(): ?array
     {
         return $this->mcpMiddleware;
+    }
+
+    /** URI of the MCP route under the panel prefix. */
+    public function getMcpPath(): string
+    {
+        return $this->mcpPath;
     }
 }

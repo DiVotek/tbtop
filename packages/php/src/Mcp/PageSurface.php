@@ -10,6 +10,7 @@ use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\Http\ActionFormRules;
 use Tbtop\Admin\Http\ResolvedPage;
+use Tbtop\Admin\Http\TableFilterApplier;
 
 /**
  * What a built page offers an agent: executables (server actions and onSubmit
@@ -100,7 +101,13 @@ final class PageSurface
             'search' => $table->searchableFields(),
             'columnSearch' => $table->individuallySearchableColumns(),
             'filters' => array_map(
-                static fn (Field $f): array => array_filter(['name' => $f->name, 'kind' => $f->toNode()->kind, 'label' => $f->labelText()]),
+                static fn (Field $f): array => array_filter([
+                    'name' => $f->name,
+                    'kind' => $f->toNode()->kind,
+                    'label' => $f->labelText(),
+                    'value' => TableFilterApplier::valueShape($f),
+                    'options' => FormArguments::options($f),
+                ]),
                 $table->filterFields(),
             ),
             'tabs' => array_map(static fn (Tab $t): string => $t->name, $table->tabObjects()),

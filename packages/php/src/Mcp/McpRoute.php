@@ -10,19 +10,18 @@ use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Panels\PanelConfig;
 
-/** Registers `{prefix}/mcp` for a panel with mcp() on; its stack replaces the panel's (adr/mcp.md). */
+/** Registers `{prefix}/{mcp path}` for a panel with mcp() on; its stack replaces the panel's (adr/mcp.md). */
 final class McpRoute
 {
-    public const PATH = 'mcp';
-
     public static function register(PanelConfig $panel): void
     {
         if (! class_exists(Registrar::class)) {
             throw new LogicException("Panel \"{$panel->getId()}\" enables mcp(), which needs laravel/mcp: composer require laravel/mcp");
         }
+        $path = $panel->getMcpPath();
         foreach ($panel->getPages() as $class) {
-            if (trim($class::path(), '/') === self::PATH || $class::slug() === self::PATH) {
-                throw new LogicException("Page {$class} uses the path or slug \"".self::PATH."\", reserved for the panel's MCP server.");
+            if (trim($class::path(), '/') === $path || $class::slug() === 'mcp') {
+                throw new LogicException("Page {$class} collides with the panel's MCP server (path \"{$path}\", route name \"mcp\").");
             }
         }
 
@@ -33,8 +32,8 @@ final class McpRoute
         ])
             ->prefix($panel->getPrefix())
             ->name('tbtop.'.$panel->getId().'.')
-            ->group(static function (): void {
-                Mcp::web(self::PATH, TbtopMcpServer::class)->name('mcp');
+            ->group(static function () use ($path): void {
+                Mcp::web($path, TbtopMcpServer::class)->name('mcp');
             });
     }
 }
