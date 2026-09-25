@@ -17,9 +17,16 @@ domain: mcp
 - **Auth is the host's; the MCP stack replaces the panel's.** The MCP route runs
   `[SetCurrentPanel, ...PanelConfig::mcp($middleware), SetAdminLocale]` — not the panel's
   `web` + session-guard stack, which rejects bearer tokens (401) and non-browser POSTs
-  (419). The host picks stateless token auth (e.g. `auth:sanctum`) and issues tokens. Any
-  access check the host keeps in panel or page middleware must be repeated in `mcp()`.
-  > Replaces previous decision (see git history)
+  (419). The host picks stateless token auth (e.g. `auth:sanctum`) and issues tokens.
+- **The MCP stack is explicit, never inherited.** `mcp($middleware)` has no default and
+  rejects an empty list: the host writes the whole stack, role checks included
+  (`['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin']`). A page's own restriction
+  belongs in `Page::can()`, which MCP enforces; `Page::middleware()` is transport only.
+  Inheriting the panel's middleware minus "transport" (`web`, `auth:*`) was rejected: it
+  fails closed, but the package cannot tell transport from access (a custom group, a
+  session-bound 2FA check), so the heuristic breaks on the first non-standard host. A
+  default of `['auth:sanctum']` was rejected: `->mcp()` read as "configured" while it
+  checked no role.
 - **Three tools: `search`, `query`, `execute`.** `query` is read-only by construction
   (package code), annotated `readOnlyHint`. `execute` is always `destructiveHint`: actions
   are author-written, so the package cannot tell a delete from an edit and does not try.

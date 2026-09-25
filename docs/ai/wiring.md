@@ -154,18 +154,22 @@ without the package throws at route registration.
 ```php
 return $panel
     ->id('admin')
-    ->mcp(['auth:sanctum']); // the default; the host issues the tokens
-    // ->mcp(['auth:sanctum'], path: 'agent') serves it at {prefix}/agent instead
+    // required: the route's whole auth + access stack; the host issues the tokens
+    ->mcp(['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin']);
+    // ->mcp([...], path: 'agent') serves it at {prefix}/agent instead
 ```
 
 - **Auth is yours, and the stack is separate.** The MCP route runs
   `SetCurrentPanel`, then exactly the middleware you pass, then `SetAdminLocale`. The
   panel's `web` + `auth:{guard}` stack does not run: it would reject a bearer token (401)
   and a non-browser POST (419). Use stateless token auth (Sanctum, or Passport with
-  `Mcp::oauthRoutes()`). **Any access check the panel or a page keeps in middleware
-  (`PanelConfig::middleware()`, `Page::middleware()`) must be repeated in `mcp()`** — it
-  does not run for MCP calls. Page gates (`Page::can()`), `->authorize()` on actions and
-  `when()` visibility do run: they live in the controllers.
+  `Mcp::oauthRoutes()`); a Sanctum ability (`abilities:tbtop-mcp`) keeps the user's other
+  tokens, such as a mobile app's, out of the admin. `mcp()` has no default and an empty
+  list throws. **Repeat the panel's role checks in `mcp()`** — panel middleware does not
+  run for MCP calls. **Put a page's own restriction in `Page::can()`, not
+  `Page::middleware()`**: gates (`Page::can()`, `->authorize()` on actions, `when()`)
+  live in the controllers and run for MCP; page middleware is for transport (public
+  pages, sessions) and does not.
 - **Three tools.** `search` lists pages, and for each page without route params its
   executables and tables; `search(page, params)` describes one record page. `query` reads
   a table's rows (the table endpoint's payload: formatted visible columns plus the record's
