@@ -14,7 +14,12 @@ final class FormArguments
     /** Kinds whose value is a server-side upload or editor state an agent cannot produce. */
     private const UNSUPPORTED_KINDS = ['upload', 'media', 'richtext'];
 
-    /** @return array{form: string, fields: list<array<string, mixed>>, excludedFields?: list<array<string, string>>} */
+    /**
+     * `values` are the form's current data as the UI prefills it — an edit that
+     * omits a field may clear it, depending on the page's handler.
+     *
+     * @return array{form: string, fields: list<array<string, mixed>>, excludedFields?: list<array<string, string>>, values?: array<string, mixed>}
+     */
     public static function describe(FormBuilder $form): array
     {
         $rules = $form->collectRules();
@@ -27,15 +32,29 @@ final class FormArguments
 
                 continue;
             }
-            $fields[] = self::field($field->name, $node->kind, $field->labelText(), $node->options, $rules);
+            $fields[] = [
+                ...self::field($field->name, $node->kind, $field->labelText(), $node->options, $rules),
+                ...($field->isTranslatableField() ? ['translatable' => true] : []),
+            ];
         }
 
         $out = ['form' => $form->name, 'fields' => $fields];
         if ($excluded !== []) {
             $out['excludedFields'] = $excluded;
         }
+        $shown = array_column(array_filter($fields, static fn (array $f): bool => $f['kind'] !== 'password'), 'name');
+        $values = array_intersect_key($form->recordData(), array_flip($shown));
+        if ($values !== []) {
+            $out['values'] = $values;
+        }
 
         return $out;
+    }
+
+    /** A form whose every field is excluded cannot be submitted over MCP. @param  array<string, mixed>  $described  describe() output */
+    public static function isFillable(array $described): bool
+    {
+        return $described['fields'] !== [] || ! isset($described['excludedFields']);
     }
 
     /**
@@ -58,9 +77,10 @@ final class FormArguments
     }
 
     /**
-     * $field's choices: value => label, 'dynamic' when fetched per search, null when free-form.
+     * $field's choices as {value, label} with the value's own type, 'dynamic'
+     * when fetched per search, null when free-form.
      *
-     * @return array<string, string>|string|null
+     * @return list<array{value: mixed, label: string}>|string|null
      */
     public static function options(Field $field): array|string|null
     {
@@ -71,17 +91,15 @@ final class FormArguments
 
     /**
      * @param  array<string, mixed>  $options
-     * @return array<string, string>|string|null
+     * @return list<array{value: mixed, label: string}>|string|null
      */
     private static function optionsOf(string $kind, array $options): array|string|null
     {
         if (is_array($options['options'] ?? null)) {
-            $out = [];
-            foreach ($options['options'] as $option) {
-                $out[(string) ($option['value'] ?? '')] = (string) ($option['label'] ?? '');
-            }
-
-            return $out;
+            return array_map(
+                static fn (array $option): array => ['value' => $option['value'] ?? null, 'label' => (string) ($option['label'] ?? '')],
+                array_values($options['options']),
+            );
         }
         if (($options['async'] ?? false) === true || $kind === 'relation') {
             return 'dynamic';

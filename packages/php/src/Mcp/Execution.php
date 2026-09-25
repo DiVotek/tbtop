@@ -37,15 +37,26 @@ final class Execution
             static fn ($request): JsonResponse => app(ActionController::class)($request),
         );
 
-        return ['ok' => true, 'effects' => $response->getData(true)['effects'] ?? []];
+        return ['ok' => true, 'effects' => array_map($this->locateRedirect(...), $response->getData(true)['effects'] ?? [])];
+    }
+
+    /** A redirect effect gains the page/params it opens, like a form's redirect. */
+    private function locateRedirect(mixed $effect): mixed
+    {
+        if (! is_array($effect) || ($effect['kind'] ?? null) !== 'redirect' || ! is_string($effect['href'] ?? null)) {
+            return $effect;
+        }
+
+        return [...$effect, ...$this->pages->locate(url($effect['href']))];
     }
 
     /**
      * Effects arrive as the Inertia flash FormSubmitController sets; a handler
-     * that returns a URL redirects instead and flashes nothing.
+     * that returns a URL redirects instead and flashes nothing — reported with
+     * the page and params it opens when it is one of this panel's pages.
      *
      * @param  array<string, mixed>  $data
-     * @return array{ok: true, effects?: mixed, redirect?: string}
+     * @return array{ok: true, effects?: mixed, redirect?: string, page?: string, params?: array<string, string>}
      */
     public function form(string $name, array $data): array
     {
@@ -65,7 +76,9 @@ final class Execution
             return ['ok' => true, 'effects' => $flash['tbtop.effects']];
         }
 
-        return ['ok' => true, 'redirect' => $response->getTargetUrl()];
+        $url = $response->getTargetUrl();
+
+        return ['ok' => true, 'redirect' => $url, ...$this->pages->locate($url)];
     }
 
     /** The store Inertia::flash() writes to: session()'s default driver, started or not. */

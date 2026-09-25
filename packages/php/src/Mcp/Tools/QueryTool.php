@@ -21,9 +21,11 @@ final class QueryTool extends Tool
     protected string $name = 'query';
 
     protected string $description = <<<'TXT'
-        Read rows of a table found by search(). Rows are shaped as the admin UI shows them and carry the
-        record key; pass a row unchanged as `row` to execute() for a row action. Filters, search, tabs,
-        sort and perPage accept only what search() listed for that table.
+        Read rows of a table found by search(). A row is what the admin table receives: its visible
+        columns, formatted, plus the record's other attributes and its key (`id` for Eloquent models).
+        Pass a row unchanged as `row` to execute() for a row action, or keys as `selection`. Filters take
+        the value shape search() states per filter; search, tabs, sort and perPage accept only what
+        search() listed for that table.
         TXT;
 
     /** Tool argument => the table endpoint's query key. */
@@ -37,7 +39,7 @@ final class QueryTool extends Tool
         return [
             'page' => $schema->string()->description('Page slug.')->required(),
             'table' => $schema->string()->description('Table name from search().')->required(),
-            'params' => $schema->object()->description('Route params of the page.'),
+            'params' => $schema->object()->description('Route params of the page, values as strings.'),
             'pageNumber' => $schema->integer()->description('1-based page of results.'),
             'perPage' => $schema->integer()->description('One of the table\'s pagination options.'),
             'search' => $schema->string()->description('Table-wide search.'),

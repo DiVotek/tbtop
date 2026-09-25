@@ -2,6 +2,8 @@
 
 namespace Tbtop\Admin\Mcp;
 
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tbtop\Admin\Http\PageGate;
 use Tbtop\Admin\Http\ResolvedPage;
 use Tbtop\Admin\Pages\Page;
@@ -74,6 +76,30 @@ final class PanelPages
                 return ResolvedPage::fromRequest($request);
             },
         );
+    }
+
+    /**
+     * The page and params a panel URL opens, so an agent can search() it next;
+     * [] when the URL is not one of this panel's MCP-visible pages.
+     *
+     * @return array{page?: string, params?: array<string, string>}
+     */
+    public function locate(string $url): array
+    {
+        $request = Request::create($url);
+        try {
+            $route = app('router')->getRoutes()->match($request)->bind($request);
+        } catch (HttpExceptionInterface) {
+            return [];
+        }
+        $class = $route->parameter('tbtopPage');
+        if (! is_string($class) || ! in_array($class, $this->all(), true) || $route->getName() !== $this->routeName($class)) {
+            return [];
+        }
+
+        $params = ResolvedPage::routeParams($request->setRouteResolver(static fn () => $route));
+
+        return $params === [] ? ['page' => $class::slug()] : ['page' => $class::slug(), 'params' => $params];
     }
 
     /**
