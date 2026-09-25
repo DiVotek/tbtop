@@ -41,6 +41,7 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
+| `POST` | `{prefix}/{mcp path}` (default `mcp`) | `tbtop.{panel}.mcp` | `TbtopMcpServer` (laravel/mcp) | JSON-RPC (MCP streamable HTTP) | MCP `tools/call` results for `search` / `query` / `execute`. Only when the panel calls `mcp()`; runs `[SetCurrentPanel, ...mcp($middleware), SetAdminLocale]` instead of the panel stack. `GET`/`DELETE` on the same path answer 405 — see [MCP server](#mcp-server) |
 
 **Panel 404s.** Two paths lead to the `admin/error` page, both rendered by
 `PanelErrorPage` inside the panel chrome: the per-panel `Route::fallback()` above (an
@@ -143,6 +144,56 @@ transaction. Hitting a non-reorderable table is a 422.
 **Form submit effects** — `FormSubmitController` flashes a `tbtop.effects`
 array via `Inertia::flash`. The effect set is closed; see
 [./authoring-pages.md](./authoring-pages.md) for the full catalog.
+
+### MCP server
+
+`PanelConfig::mcp()` exposes a panel to AI agents (Claude Desktop, OpenAI, …) over
+[MCP](https://modelcontextprotocol.io). It needs `composer require laravel/mcp`; enabling it
+without the package throws at route registration.
+
+```php
+return $panel
+    ->id('admin')
+    // required: the route's whole auth + access stack; the host issues the tokens
+    ->mcp(['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin']);
+    // ->mcp([...], path: 'agent') serves it at {prefix}/agent instead
+```
+
+- **Auth is yours, and the stack is separate.** The MCP route runs
+  `SetCurrentPanel`, then exactly the middleware you pass, then `SetAdminLocale`. The
+  panel's `web` + `auth:{guard}` stack does not run: it would reject a bearer token (401)
+  and a non-browser POST (419). Use stateless token auth (Sanctum, or Passport with
+  `Mcp::oauthRoutes()`); a Sanctum ability (`abilities:tbtop-mcp`) keeps the user's other
+  tokens, such as a mobile app's, out of the admin. `mcp()` has no default and an empty
+  list throws. **Repeat the panel's role checks in `mcp()`** — panel middleware does not
+  run for MCP calls. **Put a page's own restriction in `Page::can()`, not
+  `Page::middleware()`**: gates (`Page::can()`, `->authorize()` on actions, `when()`)
+  live in the controllers and run for MCP; page middleware is for transport (public
+  pages, sessions) and does not.
+- **Three tools.** `search` lists pages, and for each page without route params its
+  executables and tables; `search(page, params)` describes one record page. `query` reads
+  a table's rows (the table endpoint's payload: formatted visible columns plus the record's
+  other attributes and key) — read-only. `execute` runs an
+  executable by id `{page-slug}:{name}` — always annotated destructive, so the MCP client
+  asks for confirmation.
+- **Same controllers, no middleware.** `query`/`execute` call `TableController`,
+  `ActionController` and `FormSubmitController` in-process with a request bound to the
+  page's own route, so gates, reachability and validation are the UI's. Validation
+  failures come back as errors keyed by field; nothing runs. Every tool error is JSON
+  `{message, errors?}`. A form's effects are read from its `tbtop.effects` flash; a handler
+  that returns a URL reports `redirect`, plus the `page`/`params` it opens when it is a page
+  of this panel. A described form carries its current `values` (what the UI prefills), so an
+  agent can resend the fields it keeps.
+- **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
+  `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
+  actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason; so
+  is a form (or an action submitting it) whose every field is excluded.
+- **Curate what the agent sees.** Every server action is an executable, including UI
+  plumbing: a modal's Cancel/Close handlers, a quick-create next to the full create page.
+  Mark those `->mcp(false)` — the agent picks from the list, and noise costs it context
+  and choice. Public pages (login, 2FA challenge) stay listed; hide them with
+  `Page::mcp(): false` if an agent has no use for them.
+- A page may not use the MCP path, or the slug `mcp` (the route name), in a panel with MCP on.
 
 ---
 

@@ -101,6 +101,12 @@ final class FormBuilder implements JsonSerializable
         return RuleWalker::collectAttributes($this->includedChildren());
     }
 
+    /** The fields this form submits, in order — see RuleWalker::fields(). @return list<Field> */
+    public function getFields(): array
+    {
+        return RuleWalker::fields($this->includedChildren());
+    }
+
     /**
      * The children that exist, for the walkers that read the list directly
      * instead of going through toNode(). An excluded field must not contribute

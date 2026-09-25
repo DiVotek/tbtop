@@ -21,6 +21,15 @@ abstract class Page
         return true;
     }
 
+    /**
+     * Return false to hide this page — its actions, forms and tables — from the
+     * panel's MCP server (PanelConfig::mcp()). The browser UI is unaffected.
+     */
+    public static function mcp(): bool
+    {
+        return true;
+    }
+
     /** Stable identifier used in action/form endpoint URLs. */
     public static function slug(): string
     {

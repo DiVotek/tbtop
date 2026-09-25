@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Http;
 
+use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\StructureWalk;
 
@@ -40,6 +41,14 @@ final class ActionFormRules
     {
         return self::search($tree, $actionName, null)
             ?? self::searchList($additionalRoots, $actionName, null);
+    }
+
+    /** The reachable form $actionName submits into on $resolved, or null — see enclosingFormName(). */
+    public static function enclosingForm(ResolvedPage $resolved, string $actionName): ?FormBuilder
+    {
+        $name = self::enclosingFormName($resolved->tree, $actionName, $resolved->headerActionSources);
+
+        return $name === null ? null : $resolved->s->reachableForm($name);
     }
 
     private static function readsForm(Node $node): bool
