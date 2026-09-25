@@ -24,15 +24,19 @@ final class SearchTool extends Tool
     protected string $description = <<<'TXT'
         Discover what you can do in this admin panel. Without arguments: every page you may open, plus the
         executables (actions/forms) and tables of pages that take no params. With `page` (+ `params` for a
-        page whose path has params, e.g. a record id): that page's executables and tables. Each executable
-        lists its `needs` (form/row/selection) and form fields with Laravel validation rules.
+        page whose path has params, e.g. a record id, as strings): that page's executables and tables. Each
+        executable lists its `needs` (form/row/selection) and form fields with Laravel validation rules;
+        a `translatable` field takes an object keyed by locale (see its nestedRules). A form's `values` are
+        its current data — build edits from them, not from query() rows, which are formatted for display.
+        A field you omit is absent from the handler's input; resend `values` for fields you keep.
+        `excludedFields` cannot be sent and are never part of the input.
         TXT;
 
     public function schema(JsonSchema $schema): array
     {
         return [
             'page' => $schema->string()->description('Page slug from a previous search().'),
-            'params' => $schema->object()->description('Route params of the page, e.g. {"post": "12"}.'),
+            'params' => $schema->object()->description('Route params of the page as strings, e.g. {"post": "12"}.'),
         ];
     }
 

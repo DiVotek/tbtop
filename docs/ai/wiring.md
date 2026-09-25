@@ -168,17 +168,27 @@ return $panel
   `when()` visibility do run: they live in the controllers.
 - **Three tools.** `search` lists pages, and for each page without route params its
   executables and tables; `search(page, params)` describes one record page. `query` reads
-  a table's rows (UI-shaped, with the record key) — read-only. `execute` runs an
+  a table's rows (the table endpoint's payload: formatted visible columns plus the record's
+  other attributes and key) — read-only. `execute` runs an
   executable by id `{page-slug}:{name}` — always annotated destructive, so the MCP client
   asks for confirmation.
 - **Same controllers, no middleware.** `query`/`execute` call `TableController`,
   `ActionController` and `FormSubmitController` in-process with a request bound to the
   page's own route, so gates, reachability and validation are the UI's. Validation
-  failures come back as errors keyed by field; nothing runs. A form's effects are read from
-  its `tbtop.effects` flash; a handler that returns a URL reports `redirect`.
+  failures come back as errors keyed by field; nothing runs. Every tool error is JSON
+  `{message, errors?}`. A form's effects are read from its `tbtop.effects` flash; a handler
+  that returns a URL reports `redirect`, plus the `page`/`params` it opens when it is a page
+  of this panel. A described form carries its current `values` (what the UI prefills), so an
+  agent can resend the fields it keeps.
 - **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
   `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
-  actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason.
+  actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason; so
+  is a form (or an action submitting it) whose every field is excluded.
+- **Curate what the agent sees.** Every server action is an executable, including UI
+  plumbing: a modal's Cancel/Close handlers, a quick-create next to the full create page.
+  Mark those `->mcp(false)` — the agent picks from the list, and noise costs it context
+  and choice. Public pages (login, 2FA challenge) stay listed; hide them with
+  `Page::mcp(): false` if an agent has no use for them.
 - A page may not use the MCP path, or the slug `mcp` (the route name), in a panel with MCP on.
 
 ---

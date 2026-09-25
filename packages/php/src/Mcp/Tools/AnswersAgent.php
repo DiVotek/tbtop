@@ -22,19 +22,25 @@ trait AnswersAgent
         try {
             return Response::json($work());
         } catch (ValidationException $e) {
-            return Response::error((string) json_encode(
-                ['message' => 'Validation failed; nothing was run.', 'errors' => $e->errors()],
-                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-            ));
+            return self::error('Validation failed; nothing was run.', ['errors' => $e->errors()]);
         } catch (AuthorizationException $e) {
-            return Response::error('Forbidden: '.$e->getMessage());
-        } catch (ModelNotFoundException) {
-            return Response::error('Record not found.');
+            return self::error('Forbidden: '.$e->getMessage());
+        } catch (ModelNotFoundException $e) {
+            return self::error('Record not found: '.class_basename($e->getModel()).' '.implode(', ', $e->getIds()).'.');
         } catch (HttpExceptionInterface $e) {
-            return Response::error($e->getMessage() !== '' ? $e->getMessage() : "HTTP {$e->getStatusCode()}");
+            return self::error($e->getMessage() !== '' ? $e->getMessage() : "HTTP {$e->getStatusCode()}");
         } catch (AgentError $e) {
-            return Response::error($e->getMessage());
+            return self::error($e->getMessage());
         }
+    }
+
+    /** Every tool error has one shape: {message, errors?}. @param  array<string, mixed>  $extra */
+    private static function error(string $message, array $extra = []): Response
+    {
+        return Response::error((string) json_encode(
+            ['message' => $message, ...$extra],
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        ));
     }
 
     /** @return array<string, mixed> */
