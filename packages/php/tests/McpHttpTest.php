@@ -63,3 +63,16 @@ it('refuses params that would steer a call onto an opted-out sibling page', func
     'search' => ['search', ['page' => 'mcp-record-page', 'params' => ['record' => '7/secret']]],
     'execute' => ['execute', ['id' => 'mcp-record-page:archive', 'params' => ['record' => '7/secret']]],
 ]);
+
+it('hides a page from search and refuses query on it when the user fails its gate', function (): void {
+    DB::table('items')->insert(['name' => 'Widget']);
+    McpHttpTestCase::$pageAllowed = false;
+
+    $pages = array_column($this->toolResult($this->callTool('search'))['json']['pages'], 'page');
+    $query = $this->toolResult($this->callTool('query', ['page' => 'mcp-page', 'table' => 'items']));
+
+    expect($pages)->not->toContain('mcp-page')
+        ->and($pages)->toContain('mcp-record-page')
+        ->and($query['isError'])->toBeTrue()
+        ->and($query['text'])->not->toContain('Widget');
+});

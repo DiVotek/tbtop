@@ -41,6 +41,27 @@ final class TableFilterApplier
         }
     }
 
+    /**
+     * How a caller writes $field's filter value — kept beside applyField() so
+     * the description cannot drift from what the query does with it.
+     */
+    public static function valueShape(Field $field): string
+    {
+        if ($field->filterClosure() !== null) {
+            return 'custom filter: value is passed as-is to the page\'s closure';
+        }
+        $kind = self::resolveKind($field);
+
+        return match (true) {
+            in_array($kind, self::LIKE_KINDS, true) => 'string, matched as a substring',
+            in_array($kind, self::EQUALITY_KINDS, true) => 'exact value',
+            $kind === 'boolean' => 'boolean',
+            $kind === 'tags', $kind === 'in' => 'array of values, a row matches any of them',
+            $kind === 'daterange' => '{"from": "Y-m-d", "to": "Y-m-d"}, either bound optional',
+            default => "unsupported kind \"{$kind}\"",
+        };
+    }
+
     private static function applyField(
         Field $field,
         mixed $value,
