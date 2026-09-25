@@ -7,6 +7,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
+use Tbtop\Admin\Http\ActionFormRules;
 use Tbtop\Admin\Mcp\AgentError;
 use Tbtop\Admin\Mcp\Execution;
 use Tbtop\Admin\Mcp\PageSurface;
@@ -51,7 +52,8 @@ final class ExecuteTool extends Tool
 
             if (isset($resolved->s->collectedActions()[$name])) {
                 $action = PageSurface::exposedAction($resolved, $name);
-                if ($action === null || $action->handler() === null) {
+                if ($action === null || $action->handler() === null
+                    || PageSurface::isUnfillableForm(ActionFormRules::enclosingForm($resolved, $name))) {
                     throw new AgentError("\"{$slug}:{$name}\" is not executable here. Call search() for this page.");
                 }
 
@@ -61,7 +63,12 @@ final class ExecuteTool extends Tool
                     'selection' => array_values(self::objectArg($request->get('selection'))),
                 ]));
             }
-            if ($resolved->s->reachableForm($name)?->submitHandler() !== null) {
+            $form = $resolved->s->reachableForm($name);
+            if ($form?->submitHandler() !== null) {
+                if (PageSurface::isUnfillableForm($form)) {
+                    throw new AgentError("\"{$slug}:{$name}\" is not executable here. Call search() for this page.");
+                }
+
                 return $execution->form($name, self::objectArg($request->get('form')));
             }
 

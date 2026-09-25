@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Mcp;
 use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\StructureWalk;
 use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Dsl\TableBuilder;
@@ -65,6 +66,12 @@ final class PageSurface
     private static function isUnfillable(?array $form): bool
     {
         return $form !== null && ! FormArguments::isFillable($form);
+    }
+
+    /** Whether search() lists $form as unfillable, so execute refuses it too. */
+    public static function isUnfillableForm(?FormBuilder $form): bool
+    {
+        return $form !== null && self::isUnfillable(FormArguments::describe($form));
     }
 
     /** The action behind $name when this user may run it over MCP, else null. */
