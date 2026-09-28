@@ -5,6 +5,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuSub,
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
@@ -14,6 +15,7 @@ import { NodeIcon } from "../ui/node-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import type { ChromeData, NavGroup, NavItem } from "./chromeContext";
 import { containsActive, NavItemLink } from "./navGroupSection";
+import { sectionRuns } from "./navSections";
 
 interface NavGroupDropdownProps {
 	group: NavGroup;
@@ -67,9 +69,20 @@ export function NavGroupDropdown({ group, currentUrl, rail = false }: NavGroupDr
 				className="min-w-44"
 				data-testid={`nav-group-menu-${group.key}`}
 			>
-				{group.items.map((item) => (
-					<DropdownNavItem key={item.href} item={item} currentUrl={currentUrl} />
-				))}
+				{sectionRuns(group).map((run) => [
+					run.heading !== null && (
+						<DropdownMenuLabel
+							key={`section-${run.key}`}
+							className="text-xs text-muted-foreground"
+							data-testid={`nav-section-${group.key}-${run.key}`}
+						>
+							{run.heading}
+						</DropdownMenuLabel>
+					),
+					...run.items.map((item) => (
+						<DropdownNavItem key={item.href} item={item} currentUrl={currentUrl} />
+					)),
+				])}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

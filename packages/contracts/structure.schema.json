@@ -893,6 +893,7 @@
 				"badge": { "type": "string" },
 				"badgeColor": { "type": "string" },
 				"newTab": { "type": "boolean" },
+				"section": { "type": "string" },
 				"children": { "type": "array", "items": { "$ref": "#/$defs/navItem" } }
 			},
 			"additionalProperties": false
@@ -906,7 +907,19 @@
 				"items": { "type": "array", "items": { "$ref": "#/$defs/navItem" } },
 				"icon": { "$ref": "#/$defs/icon" },
 				"collapsible": { "type": "boolean" },
-				"collapsed": { "type": "boolean" }
+				"collapsed": { "type": "boolean" },
+				"sections": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"required": ["key", "label"],
+						"properties": {
+							"key": { "type": "string" },
+							"label": { "type": "string" }
+						},
+						"additionalProperties": false
+					}
+				}
 			},
 			"additionalProperties": false
 		},

@@ -18,6 +18,7 @@ use Tbtop\Admin\Tests\Fixtures\NavCyclePageB;
 use Tbtop\Admin\Tests\Fixtures\NavOrphanChildPage;
 use Tbtop\Admin\Tests\Fixtures\NavPage;
 use Tbtop\Admin\Tests\Fixtures\NavParentPage;
+use Tbtop\Admin\Tests\Fixtures\NavSectionedChildPage;
 use Tbtop\Admin\Tests\Fixtures\PostEditPage;
 use Tbtop\Admin\Tests\Fixtures\PostsIndexPage;
 use Tbtop\Admin\Tests\Fixtures\UngroupedNavPage;
@@ -345,3 +346,55 @@ it('NavItem: a Closure label resolves at serialization time, not construction', 
     expect($item->toArray()['label'])->toBe('Профіль')
         ->and($item->label())->toBe('Профіль');
 });
+
+it('NavBuilder: orders a group by section — unsectioned, declared, then undeclared — and heads only non-empty sections', function () {
+    $item = fn (string $label, int $order) => NavItem::make($label)->url("/{$label}")->group('Content')->sort($order);
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->navigationGroups([
+                NavGroup::make('Content')->sections(['work' => fn () => 'Work', 'reports' => 'Reports', 'empty' => 'Empty']),
+            ])
+            ->navigationItems([
+                $item('loose', 5),
+                $item('report', 1)->section('reports'),
+                $item('late-task', 2)->section('work'),
+                $item('adhoc', 0)->section('misc'),
+                $item('early-task', 1)->section('work'),
+            ])
+    );
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect(array_column($group['items'], 'label'))->toBe(['loose', 'early-task', 'late-task', 'report', 'adhoc'])
+        ->and(array_key_exists('section', $group['items'][0]))->toBeFalse()
+        ->and($group['sections'])->toBe([
+            ['key' => 'work', 'label' => 'Work'],
+            ['key' => 'reports', 'label' => 'Reports'],
+            ['key' => 'misc', 'label' => 'misc'],
+        ]);
+});
+
+it('NavBuilder: ignores a section on an ungrouped item', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)->navigationItems([NavItem::make('Loose')->url('/loose')->section('work')])
+    );
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect($group)->not->toHaveKey('sections')
+        ->and($group['items'][0])->not->toHaveKey('section');
+});
+
+it('NavBuilder: a nested child drops its section, a child promoted past a gated parent keeps it', function (bool $parentVisible, array $expected) {
+    $panel = panelWithPages([GatedNavParentPage::class, NavSectionedChildPage::class]);
+    Gate::define('view-gated-parent', fn (?object $user) => $parentVisible);
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect($group['sections'] ?? [])->toBe($expected);
+})->with([
+    'nested' => [true, []],
+    'promoted' => [false, [['key' => 'reports', 'label' => 'reports']]],
+]);

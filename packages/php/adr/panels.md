@@ -66,6 +66,12 @@ domain: panels
   ships as `navGroup.group: null` (key `''`) and renders without heading or indent; it sorts
   like any undeclared group. The old implicit `General` group forced consumers to wrap a
   Dashboard entry in a group just to see it. An explicit `'General'` still works as a label.
+- **Nav sections are headings inside a group, in every layout.** `NavGroup::sections()` declares
+  keyed, translatable headings; items reference them via `nav()['section']` /
+  `NavItem::section()`. The server emits items already in section order plus the group's
+  `sections` labels, so the client only groups adjacent items. Not a nested group: sections
+  do not collapse and carry no icon. Rail-only sections were rejected — the key would be
+  silently ignored in the other layouts.
 - **404s render inside the panel chrome.** Each panel's default route group ends with a
   `Route::fallback()` → `PanelErrorController`, and the provider registers a
   `NotFoundHttpException` renderable that fires only while `CurrentPanel` is bound and the

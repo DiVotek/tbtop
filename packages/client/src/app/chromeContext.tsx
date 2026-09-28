@@ -9,6 +9,8 @@ export interface NavItem {
 	badge?: string;
 	badgeColor?: string;
 	newTab?: boolean;
+	/** Section key within the group; only top-level items of a named group carry one. */
+	section?: string;
 	children?: NavItem[];
 }
 
@@ -21,6 +23,8 @@ export interface NavGroup {
 	icon?: IconDef;
 	collapsible?: boolean;
 	collapsed?: boolean;
+	/** Headings for the section keys its items carry, in render order. */
+	sections?: { key: string; label: string }[];
 }
 
 export interface ChromeUser {

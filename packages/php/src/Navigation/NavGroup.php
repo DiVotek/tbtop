@@ -25,6 +25,9 @@ final class NavGroup
     /** @var string|(\Closure(): string)|null */
     private string|\Closure|null $label = null;
 
+    /** @var array<string, string|(\Closure(): string)> */
+    private array $sections = [];
+
     private function __construct(private readonly string $key) {}
 
     public static function make(string $key): self
@@ -42,6 +45,21 @@ final class NavGroup
     public function label(string|\Closure $label): self
     {
         $this->label = $label;
+
+        return $this;
+    }
+
+    /**
+     * Named sections inside the group, in render order, as key => heading.
+     * Pages opt in with nav()['section'] => key; items without a section
+     * render first, unheaded. Pass Closure labels for the same request-time
+     * translation reason as label().
+     *
+     * @param  array<string, string|(\Closure(): string)>  $sections
+     */
+    public function sections(array $sections): self
+    {
+        $this->sections = $sections;
 
         return $this;
     }
@@ -79,6 +97,19 @@ final class NavGroup
         }
 
         return $this->label ?? $this->key;
+    }
+
+    /**
+     * Declared section headings, translated, in declaration order.
+     *
+     * @return array<string, string>
+     */
+    public function getSectionLabels(): array
+    {
+        return array_map(
+            static fn (string|\Closure $label): string => $label instanceof \Closure ? $label() : $label,
+            $this->sections,
+        );
     }
 
     /**
