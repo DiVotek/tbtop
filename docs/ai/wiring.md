@@ -256,12 +256,15 @@ Inertia props built by `NavBuilder::build($panel)` and `PanelConfig::userMenuIte
 respectively (`packages/php/src/AdminServiceProvider.php`). Three `$defs` in
 `structure.schema.json` cover them:
 
-- **`navItem`** — `{label, href, order, icon?, badge?, badgeColor?, newTab?, children?}`.
+- **`navItem`** — `{label, href, order, icon?, badge?, badgeColor?, newTab?, section?, children?}`.
   `children` is a self-referencing array of `navItem` — the nesting mechanism for
   `nav()['parent']` (see [./recipes.md](./recipes.md#recipe-9--navigation-configuration)).
-- **`navGroup`** — `{key, group, items: navItem[], icon?, collapsible?, collapsed?}`; `nav` is
+  `section` appears only on top-level items of a named group.
+- **`navGroup`** — `{key, group, items: navItem[], icon?, collapsible?, collapsed?, sections?}`; `nav` is
   `navGroup[]`. `group` is the display label or `null` for the single ungrouped bucket
   (items that declared no group), which the client renders without heading or indent.
+  `sections` is `{key, label}[]` for the non-empty sections, in render order; the server
+  already emits `items` in that order, so the client only groups adjacent items by `section`.
 - **`userMenuItem`** — `{label, href, icon?, newTab?}`; no `order`/`children` — user-menu
   entries are a flat list, not grouped or nested.
 

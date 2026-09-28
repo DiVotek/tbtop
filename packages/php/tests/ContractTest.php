@@ -4,6 +4,7 @@ use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\NavBuilder;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Panels\CurrentPanel;
@@ -264,15 +265,16 @@ it('liveRegion ships dependsOn and record-seeded initial, never the closure', fu
         ->and($region->options->initial[0]->options->content)->toBe('Hello');
 });
 
-it('nested nav tree with a merged custom item conforms to the nav contract', function () {
+it('nested nav tree with a merged, sectioned custom item conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)
             ->id('admin')
             ->prefix('admin')
             ->pages([NavParentPage::class, NavChildPage::class])
+            ->navigationGroups([NavGroup::make('Content')->sections(['help' => 'Help'])])
             ->navigationItems([
                 NavItem::make('Documentation')->url('https://example.test')->icon('globe')
-                    ->group('Content')->sort(5)->newTab(),
+                    ->group('Content')->section('help')->sort(5)->newTab(),
             ])
     );
 
@@ -282,7 +284,7 @@ it('nested nav tree with a merged custom item conforms to the nav contract', fun
 it('userMenuItems serialization conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)->userMenuItems([
-            NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key'),
+            NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key')->section('account'),
         ])
     );
 

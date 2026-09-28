@@ -33,7 +33,7 @@ class RelationDemoPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'System', 'label' => 'Relation field demo', 'order' => 98, 'icon' => 'globe'];
+        return ['group' => 'System', 'section' => 'demos', 'label' => 'Relation field demo', 'order' => 98, 'icon' => 'globe'];
     }
 
     public function title(): string

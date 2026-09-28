@@ -34,7 +34,8 @@ class AdminPanel extends Panel
             ->navigationGroups([
                 NavGroup::make('Overview')->icon('home'),
                 NavGroup::make('Content')->icon('file-text')->collapsible(),
-                NavGroup::make('System')->icon('settings')->collapsible()->collapsed(),
+                NavGroup::make('System')->icon('settings')->collapsible()->collapsed()
+                    ->sections(['settings' => 'Settings', 'demos' => 'Demos']),
             ])
             ->navigation('topbar')
             ->navigationItems([

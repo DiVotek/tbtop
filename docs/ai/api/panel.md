@@ -60,6 +60,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `collapsible(bool $collapsible = true): self` | Render the group header as a collapse toggle. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
 | `label(Closure\|string $label): self` | Translated header text shown in the sidebar. Pass a Closure to defer translation to request time — panel config is built once (singleton), so a bare __() there would freeze on the first request's locale. |
+| `sections(array $sections): self` | Named sections inside the group, in render order, as key => heading. Pages opt in with nav()['section'] => key; items without a section render first, unheaded. Pass Closure labels for the same request-time translation reason as label(). |
 
 ## NavItem
 
@@ -70,6 +71,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `group(string $group): self` | Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
 | `newTab(bool $newTab = true): self` | Open url() in a new browser tab instead of navigating in place. |
+| `section(string $section): self` | Section key within its group, declared on NavGroup::sections() (nav context only). Ignored for ungrouped items and in the user menu. |
 | `sort(int $order): self` | Sort position within its group (nav context only). |
 | `url(string $url): self` | Destination URL — an internal path or an external link. |
 

@@ -469,6 +469,18 @@ group not mentioned there keeps its first-seen (page-registration) order and sor
 every declared group (`NavBuilder.php`, `assemble()`). Per-group icon/collapsible
 metadata is matched by label the same way.
 
+### Sections inside a group
+
+`NavGroup::make('crm')->sections(['work' => fn () => __('Work'), 'reports' => 'Reports'])`
+declares plain, non-collapsible headings inside a group; a page opts in with
+`nav()['section'] => 'work'`, a custom item with `NavItem::...->section('work')`. Inside the
+group, unsectioned items come first without a heading, then declared sections in
+declaration order, then undeclared keys in first-seen order (labelled by the key). A section
+with no visible items renders no heading. `section` is ignored on a nested child (it
+follows its parent — unless a gated-out parent promoted it to top level), on ungrouped
+items, and in the user menu. Headings render in every navigation layout: inside the
+sidebar group, and as menu labels in topbar and rail dropdowns.
+
 ### Ungrouped items
 
 A page whose `nav()` omits `group` (or a `NavItem` without `->group()`) is **not** put in a
