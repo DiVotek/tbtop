@@ -212,7 +212,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | Method | What it does |
 |---|---|
 | `embeds(array $embeds): static` | Block kinds the editor can insert as cards (slash menu "Blocks" group and the toolbar "Block" button). Each embed's data is validated against its fields on save, in every locale of a translatable field. |
-| `maxEmbeds(int $max): static` | Server-side cap on embeds per document; a save with more fails on the field. No limit by default. |
+| `maxEmbeds(int $max): static` | Server-side cap on embeds per document (at least 1); a save with more fails on the field. No limit by default. |
 | `placeholder(string $text): static` | Placeholder text shown in the empty editor. |
 
 ## Select (select)

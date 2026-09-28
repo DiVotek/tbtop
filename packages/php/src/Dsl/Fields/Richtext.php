@@ -43,9 +43,12 @@ final class Richtext extends Field
         return $this->set('embeds', $this->embeds);
     }
 
-    /** Server-side cap on embeds per document; a save with more fails on the field. No limit by default. */
+    /** Server-side cap on embeds per document (at least 1); a save with more fails on the field. No limit by default. */
     public function maxEmbeds(int $max): static
     {
+        if ($max < 1) {
+            throw new InvalidArgumentException("Richtext \"{$this->name}\": maxEmbeds must be at least 1, got {$max}.");
+        }
         $this->maxEmbeds = $max;
 
         return $this;
