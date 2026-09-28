@@ -398,3 +398,14 @@ it('NavBuilder: a nested child drops its section, a child promoted past a gated 
     'nested' => [true, []],
     'promoted' => [false, [['key' => 'reports', 'label' => 'reports']]],
 ]);
+
+it('NavBuilder: treats an empty section key as unsectioned', function () {
+    $panel = new CurrentPanel(
+        (new PanelConfig)->navigationItems([NavItem::make('Blank')->url('/blank')->group('Content')->section('')])
+    );
+
+    $group = NavBuilder::build($panel)[0];
+
+    expect($group)->not->toHaveKey('sections')
+        ->and($group['items'][0])->not->toHaveKey('section');
+});

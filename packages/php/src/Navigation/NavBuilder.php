@@ -169,14 +169,15 @@ final class NavBuilder
 
     /**
      * Tags a top-level item with its section. Nested children never get one
-     * (they follow their parent), and the ungrouped bucket has no sections.
+     * (they follow their parent), the ungrouped bucket has no sections, and an
+     * empty key means unsectioned — the client keys the unsectioned run by ''.
      *
      * @param  array<string, mixed>  $node
      * @return array<string, mixed>
      */
     private static function withSection(array $node, ?string $group, ?string $section): array
     {
-        if ($group === null || $section === null) {
+        if ($group === null || $section === null || $section === '') {
             return $node;
         }
 
