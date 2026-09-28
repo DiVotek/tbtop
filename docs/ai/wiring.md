@@ -273,6 +273,10 @@ wire shape: `ContractTest.php` asserts a nested-nav tree and a `userMenuItems` p
 against these `$defs` directly (not via the kitchen-sink snapshot, since nav depends on
 panel/page wiring the kitchen-sink fixture doesn't exercise).
 
+The page prop `navGroup` (not a shared prop, no `$def`) carries the current page's
+`nav()['group']` key, sent only when declared. The `rail-sidebar` layout uses it to pick the
+active group on pages no nav item's URL covers.
+
 ---
 
 ## Client extension points

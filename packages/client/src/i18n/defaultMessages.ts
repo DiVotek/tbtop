@@ -120,6 +120,7 @@ export const defaultMessages: Messages = {
 	"field.repeater.item_singular": "1 item",
 	"nav.title": "Tabletop",
 	"nav.open_sidebar": "Open navigation menu",
+	"nav.home_entry": "Home",
 	"palette.title": "Command palette",
 	"palette.description": "Search and jump to a page or command",
 	"palette.placeholder": "Search…",

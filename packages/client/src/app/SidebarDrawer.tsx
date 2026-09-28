@@ -1,6 +1,6 @@
 import { router } from "@inertiajs/react";
 import { MenuIcon } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 import { ResponsiveDialog, ResponsiveDialogContent } from "../ui/revola";
@@ -17,6 +17,9 @@ interface SidebarDrawerProps {
 export function SidebarDrawer({ sidebar }: SidebarDrawerProps) {
 	const t = useTranslation();
 	const [open, setOpen] = useState(false);
+	// Remounts the content on every opening, so per-opening state (the rail
+	// drawer's group choice) starts fresh even when the drawer stays mounted.
+	const [openings, setOpenings] = useState(0);
 
 	useEffect(() => {
 		// Guard: outside an Inertia app `router.on` may be unavailable. No-op cleanly.
@@ -35,13 +38,16 @@ export function SidebarDrawer({ sidebar }: SidebarDrawerProps) {
 				className="-ml-1 mr-auto lg:hidden"
 				data-testid="sidebar-trigger"
 				aria-label={t("nav.open_sidebar")}
-				onClick={() => setOpen(true)}
+				onClick={() => {
+					setOpenings((count) => count + 1);
+					setOpen(true);
+				}}
 			>
 				<MenuIcon />
 			</Button>
 			<ResponsiveDialog onlyDrawer direction="left" open={open} onOpenChange={setOpen}>
 				<ResponsiveDialogContent className="flex flex-col gap-4 overflow-y-auto rounded-lg border p-4">
-					{sidebar}
+					<Fragment key={openings}>{sidebar}</Fragment>
 				</ResponsiveDialogContent>
 			</ResponsiveDialog>
 		</>

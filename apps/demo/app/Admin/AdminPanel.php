@@ -3,6 +3,7 @@
 namespace App\Admin;
 
 use App\Admin\Pages\DashboardPage;
+use App\Http\Middleware\DemoNavigationLayout;
 use App\Http\Middleware\RequireFullAuth;
 use Tbtop\Admin\CommandPalette\Command;
 use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
@@ -20,7 +21,7 @@ class AdminPanel extends Panel
             ->id('admin')
             ->prefix('admin')
             ->guard('web')
-            ->middleware(['web', RequireFullAuth::class])
+            ->middleware(['web', RequireFullAuth::class, DemoNavigationLayout::class])
             // DashboardPage stays first: no page owns '/', so the panel root redirects to the
             // first static path. MediaLibraryPage is package-owned and outside the discovery root.
             ->pages([

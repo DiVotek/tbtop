@@ -18,7 +18,7 @@ final class PanelConfig
     use ConfiguresAppearance;
 
     /** Shell navigation layouts the client can render. */
-    public const NAVIGATIONS = ['sidebar', 'topbar', 'topbar-sidebar'];
+    public const NAVIGATIONS = ['sidebar', 'topbar', 'topbar-sidebar', 'rail-sidebar'];
 
     private string $id = '';
 
@@ -164,12 +164,13 @@ final class PanelConfig
     }
 
     /**
-     * Shell navigation layout: 'sidebar' (default), 'topbar', or
-     * 'topbar-sidebar' (full-width bar with a sidebar beneath it). The client
-     * renders the same chrome blocks; only their arrangement changes. All
-     * layouts collapse to a burger drawer on mobile.
+     * Shell navigation layout: 'sidebar' (default), 'topbar',
+     * 'topbar-sidebar' (full-width bar with a sidebar beneath it), or
+     * 'rail-sidebar' (a rail of nav-group icons beside a sidebar listing only
+     * the active group). The client renders the same chrome blocks; only their
+     * arrangement changes. All layouts collapse to a burger drawer on mobile.
      *
-     * @param  string  $navigation  One of self::NAVIGATIONS ('sidebar'|'topbar'|'topbar-sidebar')
+     * @param  string  $navigation  One of self::NAVIGATIONS ('sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar')
      */
     public function navigation(string $navigation): static
     {
@@ -378,10 +379,10 @@ final class PanelConfig
         return $this->brand;
     }
 
-    /** @return 'sidebar'|'topbar'|'topbar-sidebar' */
+    /** @return 'sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar' */
     public function getNavigation(): string
     {
-        /** @var 'sidebar'|'topbar'|'topbar-sidebar' */
+        /** @var 'sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar' */
         return $this->navigation;
     }
 

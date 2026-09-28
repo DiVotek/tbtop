@@ -13,6 +13,7 @@ import { useChromeData } from "./chromeContext";
 import { NavGroupDropdown } from "./navGroupDropdown";
 import { NavGroupSection } from "./navGroupSection";
 import { ProfileDropdown } from "./ProfileDropdown";
+import { RailDrawerNav, RailStrip } from "./railNav";
 
 // The predefined chrome block kinds (navMenu / userMenu / logo /
 // localeSwitcher / spacer). Option-less on the wire — all data flows
@@ -31,6 +32,12 @@ export function NavMenuBlock() {
 				))}
 			</nav>
 		);
+	}
+	if (orientation === "rail-sidebar") {
+		return <RailStrip />;
+	}
+	if (orientation === "rail-drawer") {
+		return <RailDrawerNav />;
 	}
 	// Rail (collapsed sidebar): a vertical strip of group icons, each opening
 	// its items in a dropdown to the right.
@@ -66,8 +73,18 @@ export function UserMenuBlock({ options }: { options?: UserMenuOptions }) {
 
 export function LogoBlock() {
 	const t = useTranslation();
-	const { brand, logoSlot, homeUrl } = useChromeData();
-	const content = logoSlot ?? brand ?? t("nav.title");
+	const { brand, logoSlot, homeUrl, orientation } = useChromeData();
+	const title = brand ?? t("nav.title");
+	// The rail-sidebar column is icon-wide: a brand name would overflow it.
+	const content =
+		logoSlot ??
+		(orientation === "rail-sidebar" ? (
+			<span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+				{title.charAt(0)}
+			</span>
+		) : (
+			title
+		));
 	if (homeUrl) {
 		return (
 			<Link href={homeUrl} className="text-lg font-semibold">

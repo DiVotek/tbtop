@@ -5,8 +5,8 @@ import type { NavGroup } from "./chromeContext";
 
 const NAV: NavGroup[] = [
 	{
-		key: "crm",
-		group: "CRM",
+		key: "sales",
+		group: "Sales",
 		sections: [
 			{ key: "work", label: "Work" },
 			{ key: "reports", label: "Reports" },
@@ -48,17 +48,17 @@ describe("nav sections", () => {
 		const sidebar = getAllByTestId("admin-sidebar")[0] as HTMLElement;
 
 		expect(textOrder(sidebar, EXPECTED)).toEqual(EXPECTED);
-		expect(getAllByTestId("nav-section-crm-work")).toHaveLength(1);
+		expect(getAllByTestId("nav-section-sales-work")).toHaveLength(1);
 	});
 
 	test("a topbar dropdown labels its sections in the same order", async () => {
 		const { getByTestId, findByTestId } = renderNav("topbar");
-		const trigger = getByTestId("nav-group-trigger-crm");
+		const trigger = getByTestId("nav-group-trigger-sales");
 		await act(async () => {
 			fireEvent.pointerDown(trigger, { bubbles: true, cancelable: true, isPrimary: true });
 			fireEvent.click(trigger);
 		});
-		const menu = await findByTestId("nav-group-menu-crm");
+		const menu = await findByTestId("nav-group-menu-sales");
 
 		expect(textOrder(menu, EXPECTED)).toEqual(EXPECTED);
 	});

@@ -235,7 +235,7 @@ function RailItemLink({ item, currentUrl }: { item: NavItem; currentUrl: string 
 }
 
 /** Fallback glyph for a rail item with no icon: its label's first letter. */
-function RailItemGlyph({ label }: { label: string }) {
+export function RailItemGlyph({ label }: { label: string }) {
 	return (
 		<span
 			className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-muted text-[10px] font-medium uppercase"

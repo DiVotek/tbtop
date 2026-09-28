@@ -471,7 +471,7 @@ metadata is matched by label the same way.
 
 ### Sections inside a group
 
-`NavGroup::make('crm')->sections(['work' => fn () => __('Work'), 'reports' => 'Reports'])`
+`NavGroup::make('sales')->sections(['work' => fn () => __('Work'), 'reports' => 'Reports'])`
 declares plain, non-collapsible headings inside a group; a page opts in with
 `nav()['section'] => 'work'`, a custom item with `NavItem::...->section('work')`. Inside the
 group, unsectioned items come first without a heading, then declared sections in
@@ -480,6 +480,18 @@ with no visible items renders no heading. `section` is ignored on a nested child
 follows its parent — unless a gated-out parent promoted it to top level), on ungrouped
 items, and in the user menu. Headings render in every navigation layout: inside the
 sidebar group, and as menu labels in topbar and rail dropdowns.
+
+### Rail + sidebar layout
+
+`->navigation('rail-sidebar')` shows each nav group as an icon in a narrow rail and lists only
+the active group's items (with sections, badges and `parent` nesting) beside it. A rail icon
+opens the group's first internal, same-tab item, so a group holding only external or `newTab`
+links gets no icon. Ungrouped items live under a Home icon, and a group without `icon()` shows
+its label's first letter. Group `collapsible`/`collapsed` have no effect here. On a page the
+sidebar cannot list — a route-param record page, or one whose URL sits under no nav item —
+declare `nav(): ['group' => 'orders']` so the rail keeps that group active. On mobile the
+burger drawer shows the group icons in a row that swaps the list below without navigating.
+The demo panel switches layouts per session with `?nav=rail-sidebar` (or any other layout).
 
 ### Ungrouped items
 

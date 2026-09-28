@@ -51,9 +51,12 @@ domain: panels
   schema + kitchen-sink fixture + contract tests in the same change (contract gate).
   Client React `slots` remain the last-resort escape hatch.
 - **Navigation layout is a panel flag, not a chrome shape.** `PanelConfig::navigation('sidebar'
-  |'topbar'|'topbar-sidebar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop;
+  |'topbar'|'topbar-sidebar'|'rail-sidebar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop;
   `topbar-sidebar` is a full-width bar with the sidebar beneath it, a third frame added after
-  this decision landed. The client
+  this decision landed. `rail-sidebar` renders the sidebar tree in an icon-wide rail (one icon per
+  group, navigating to its first internal item) beside a column listing only the active group; the
+  client resolves that group by longest URL match, then the page's `navGroup` prop (its `nav()`
+  group), then the last group this panel showed, then the first. The client
   rearranges the *same* chrome trees rather than serializing a different one — so a custom
   Chrome class works under either layout. `sidebar` keeps the persistent left column; `topbar`
   renders one horizontal bar (logo + nav group dropdowns + header items) that collapses to the

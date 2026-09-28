@@ -71,25 +71,30 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 				// Indent items by the group icon + its gap (size-3.5 + gap-1.5 = 20px)
 				// so item text lines up under the group label, showing the nesting.
 				<div className="flex flex-col gap-1 pl-5">
-					{sectionRuns(group).map((run) => (
-						<Fragment key={run.key}>
-							{run.heading !== null && (
-								<div
-									className="px-2 pt-2 text-xs font-medium text-muted-foreground"
-									data-testid={`nav-section-${group.key}-${run.key}`}
-								>
-									{run.heading}
-								</div>
-							)}
-							{run.items.map((item) => (
-								<NavItemNode key={item.href} item={item} currentUrl={currentUrl} />
-							))}
-						</Fragment>
-					))}
+					<NavGroupItems group={group} currentUrl={currentUrl} />
 				</div>
 			)}
 		</div>
 	);
+}
+
+/** A group's items split into section runs, each under its plain heading. */
+export function NavGroupItems({ group, currentUrl }: NavGroupSectionProps) {
+	return sectionRuns(group).map((run) => (
+		<Fragment key={run.key}>
+			{run.heading !== null && (
+				<div
+					className="px-2 pt-2 text-xs font-medium text-muted-foreground"
+					data-testid={`nav-section-${group.key}-${run.key}`}
+				>
+					{run.heading}
+				</div>
+			)}
+			{run.items.map((item) => (
+				<NavItemNode key={item.href} item={item} currentUrl={currentUrl} />
+			))}
+		</Fragment>
+	));
 }
 
 function GroupHeading({ group }: { group: NavGroup }) {
@@ -158,7 +163,7 @@ export function NavItemLink({
 	);
 }
 
-function isActiveUrl(itemUrl: string, currentUrl: string): boolean {
+export function isActiveUrl(itemUrl: string, currentUrl: string): boolean {
 	const itemPath = itemUrl.split(/[?#]/, 1)[0]?.replace(/\/+$/, "") || "/";
 	const currentPath = currentUrl.split(/[?#]/, 1)[0]?.replace(/\/+$/, "") || "/";
 	return currentPath === itemPath || (itemPath !== "/" && currentPath.startsWith(`${itemPath}/`));
