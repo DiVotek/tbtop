@@ -159,6 +159,7 @@ return [
         'home' => ['welcome' => 'Ласкаво просимо'],
         'title' => 'Tabletop',
         'open_sidebar' => 'Відкрити меню навігації',
+        'home_entry' => 'Головна',
         'language' => 'Мова',
         'theme' => 'Перемкнути тему',
         'breadcrumb' => 'Навігаційний ланцюжок',

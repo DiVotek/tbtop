@@ -159,6 +159,7 @@ return [
         'home' => ['welcome' => 'Welcome'],
         'title' => 'Tabletop',
         'open_sidebar' => 'Open navigation menu',
+        'home_entry' => 'Home',
         'language' => 'Language',
         'theme' => 'Toggle theme',
         'breadcrumb' => 'Breadcrumb',

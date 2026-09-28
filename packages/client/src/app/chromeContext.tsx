@@ -47,7 +47,13 @@ export interface ChromeData {
 	 * "horizontal" is the topbar layout; "rail" is the collapsed sidebar — a
 	 * narrow strip of group icons, each opening its items in a side dropdown.
 	 */
-	orientation: "vertical" | "horizontal" | "rail";
+	orientation: "vertical" | "horizontal" | "rail" | "rail-sidebar" | "rail-drawer";
+	/**
+	 * rail-sidebar layout only: the resolved active group key. "rail-sidebar"
+	 * renders the icon strip that navigates between groups; "rail-drawer" is
+	 * its mobile form — an icon row that swaps the list below without navigating.
+	 */
+	activeGroup?: string;
 	/** React `slots.logo` escape hatch, threaded into the logo block. */
 	logoSlot?: ReactNode;
 	/** Panel home URL (tbtop.prefix); the logo links here when present. */
