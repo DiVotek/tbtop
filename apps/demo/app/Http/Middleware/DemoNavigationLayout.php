@@ -9,14 +9,12 @@ use Symfony\Component\HttpFoundation\Response;
 use Tbtop\Admin\Panels\PanelConfig;
 
 /**
- * Demo showcase only, not a package feature: `?nav=<layout>` switches the
- * panel's navigation layout for this session, so one panel shows every
- * layout. PanelConfig is built once per process, hence the shared-prop
- * override instead of reconfiguring the panel.
+ * Demo-only: `?nav=<layout>` picks the navigation layout for the session.
+ * PanelConfig is built once per process, so the shared prop is overridden instead.
  */
 class DemoNavigationLayout
 {
-    private const SESSION_KEY = 'demo.navigation';
+    public const SESSION_KEY = 'demo.navigation';
 
     public function handle(Request $request, Closure $next): Response
     {
