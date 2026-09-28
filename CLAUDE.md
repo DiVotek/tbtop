@@ -94,7 +94,8 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   (modal/inline), filter tabs, row grouping, drag-reorder, inline-editable cells, row actions,
   bulk actions, header actions, row-click, record URLs, column visibility, empty state,
   soft-delete macro, URL-state. In `TableBuilder.php` / `Column.php`.
-- **Panel-level:** multi-panel config, navigation (sidebar/topbar), chrome-as-DSL, command
+- **Panel-level:** multi-panel config, navigation (layouts sidebar/topbar/topbar-sidebar/rail-sidebar,
+  groups with sections, nested items), chrome-as-DSL, command
   palette, database notifications (header bell), appearance (theme/density/max-width),
   UI + content locales. In `Panels/PanelConfig.php`; see `docs/ai/api/panel.md`.
 - **Auth:** login, register, password reset, email verification, 2FA, passkeys, password

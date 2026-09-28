@@ -64,8 +64,10 @@ domain: panels
   same burger drawer as the sidebar on mobile. Orientation is a client-only `ChromeData` concern:
   in `horizontal` the `navMenu` renders each group as a dropdown (reusing the sidebar item
   renderer, so item icons/badges carry over), while the mobile drawer keeps `vertical` so the
-  same tree stacks as collapsible groups — no new wire kind, no schema/contract change. Both
-  layouts reuse `SidebarDrawer` for mobile.
+  same tree stacks as collapsible groups — no new wire kind, no schema/contract change. Every
+  layout reuses `SidebarDrawer` for mobile; under `rail-sidebar` it shows the rail entries in a
+  row that swaps the list without navigating. The only wire addition for the rail is the
+  optional `navGroup` page prop.
 - **No default nav group.** Items that declare no group land in one ungrouped bucket that
   ships as `navGroup.group: null` (key `''`) and renders without heading or indent; it sorts
   like any undeclared group. The old implicit `General` group forced consumers to wrap a
