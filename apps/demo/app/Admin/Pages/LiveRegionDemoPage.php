@@ -21,7 +21,7 @@ class LiveRegionDemoPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'System', 'label' => 'Live region demo', 'order' => 98, 'icon' => 'refresh-cw'];
+        return ['group' => 'System', 'section' => 'demos', 'label' => 'Live region demo', 'order' => 98, 'icon' => 'refresh-cw'];
     }
 
     public function title(): string
