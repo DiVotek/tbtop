@@ -10,6 +10,7 @@ use Tbtop\Admin\Dsl\Fields\Colorpicker;
 use Tbtop\Admin\Dsl\Fields\Date;
 use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Datetime;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\InFilter;
 use Tbtop\Admin\Dsl\Fields\Keyvalue;
@@ -977,6 +978,16 @@ final class S
     }
 
     /**
+     * Find the embed of $kind declared by richtext field $fieldName, walking all registered forms.
+     */
+    public function findEmbed(string $fieldName, string $kind): ?Embed
+    {
+        return $this->searchIncludedForms(
+            static fn (FormBuilder $form): ?Embed => $form->findEmbed($fieldName, $kind),
+        );
+    }
+
+    /**
      * Find a liveRegion by name, walking all registered forms.
      */
     public function findLiveRegion(string $regionName): ?LiveRegionBuilder
@@ -1001,12 +1012,12 @@ final class S
      * or the field endpoints (upload, select options/create, relation search)
      * keep serving data for a form the user never received.
      *
-     * @template TField of Field
+     * @template TFound of object
      *
-     * @param  callable(FormBuilder): ?TField  $search
-     * @return TField|null
+     * @param  callable(FormBuilder): ?TFound  $search
+     * @return TFound|null
      */
-    private function searchIncludedForms(callable $search): ?Field
+    private function searchIncludedForms(callable $search): ?object
     {
         foreach ($this->forms as $form) {
             if (! $form->isIncluded()) {

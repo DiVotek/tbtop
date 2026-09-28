@@ -5,6 +5,7 @@ namespace App\Admin\Pages\Concerns;
 use App\Admin\Fields\Rating;
 use App\Models\User;
 use Tbtop\Admin\Dsl\Cond;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
@@ -27,7 +28,11 @@ trait PostFormFields
                     ->helperText('Auto-generated from the title. Lowercase letters and hyphens only.')
                     ->tooltip('This appears in the post URL, e.g. /posts/my-post-slug.'),
                 $s->richtext('body')->label('Body')
-                    ->set('placeholder', 'Write something…')->translatable(),
+                    ->set('placeholder', 'Write something…')->translatable()
+                    ->embeds([
+                        Embed::make('callout')->label('Callout')->icon('info')->summary('title')
+                            ->fields([$s->text('title')->label('Title')->required(), $s->textarea('text')->label('Text')]),
+                    ]),
             ]),
             $s->section(['title' => 'Publishing'], [
                 $s->boolean('published')->label('Published')->rules('boolean'),

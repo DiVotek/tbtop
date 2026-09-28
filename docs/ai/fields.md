@@ -130,7 +130,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Media picker** | `$s->media('x')` / `MediaPicker::make('x')` | `media` | `multiple(bool)` — allow selecting more than one; `reorderable(bool)` — opt-in drag handles in multiple mode; the submitted ID array follows the preview order, so consumers that treat the first ID as the cover receive the chosen cover; `accept(list<string> $mimes)` — filter visible/uploadable types; `variant('inline'\|'preview')` — single-select display: 'inline' (default) is a Choose button with a read-only filename field, 'preview' is a fully clickable preview block (dashed placeholder when empty, large image/typed file card when filled); multiple mode always renders preview chips regardless of variant | Media-library endpoint — see [./wiring.md](./wiring.md) |
 | **Relation** | `$s->relation('x')` / `Relation::make('x')` | `relation` | `query(callable)` — Eloquent query builder for related records; `labelKey(string $column)` — display column (default `'name'`); `searchable(bool)` | Yes — relation-search endpoint. See [./wiring.md](./wiring.md) |
 | **Repeater** | `$s->repeater('x')` / `Repeater::make('x')` | `repeater` | `fields(list<Field> $fields)` — child field list, **may contain another `repeater` to nest rows** (validation rules prefix through every level as `x.*.child.*.field`) — a `unique()` on a row field is checked per row against the table, not against the other submitted rows, so two new rows with the same value pass; `minItems(int)` / `maxItems(int)` — item bounds; `defaultItems(int)` — empty rows to seed when the value is absent; `collapsible(bool = true)` — render each row as a one-line summary that expands to its edit form on click (off by default; existing repeaters stay fully expanded); `summary(string $field)` — sub-field whose value titles the collapsed row (falls back to "Untitled") | No |
-| **Richtext** | `$s->richtext('x')` / `Richtext::make('x')` | `richtext` | `placeholder(string $text)` | No |
+| **Richtext** | `$s->richtext('x')` / `Richtext::make('x')` | `richtext` | `placeholder(string $text)`; `embeds(list<Embed> $embeds)` — structured blocks inside the text, see [richtext embeds](#richtext-with-embeds--embed-apply-action); `maxEmbeds(int $max)` — server-side cap | Only with `embeds()` → the reserved `__embed` action |
 | **In filter** | `$s->inFilter('x')` / `Tbtop\Admin\Dsl\Fields\InFilter::make('x')` | `in` | `options(list<{value, label}> $options)` — fixed option list. **Filter context only** — use in `table()->filters()`, not in forms | No |
 
 See the [canonical inventory](#canonical-field-kind-inventory-php--client--schema) below
@@ -332,6 +332,42 @@ An open end disables everything past the closed one: `['from' => null, 'to' => X
 disables every day up to and including X; `['from' => Y, 'to' => null]` disables Y and
 everything after. The client also clamps calendar navigation to the months an open
 end leaves reachable.
+
+### Richtext with `embeds()` — embed apply action
+
+`embeds()` lets editors drop structured blocks between paragraphs, from the slash
+menu ("Blocks" group) or the toolbar "Block" menu. Each block kind is an `Embed`
+with an ordinary DSL field list, edited in a modal:
+
+```php
+use Tbtop\Admin\Dsl\Fields\Embed;
+
+$s->richtext('body')->embeds([
+    Embed::make('callout')->label('Callout')->icon('info')->summary('title')->fields([
+        $s->text('title')->required(),
+        $s->textarea('text'),
+    ]),
+])->maxEmbeds(10);
+```
+
+- **Stored shape (frozen):** a top-level Lexical node
+  `{type: 'embed', version: 1, id, kind, data}`. `id` is a UUID assigned on insert
+  and on paste; `data` holds only the declared, validated keys.
+- **Modal apply** posts the modal form to the page's action endpoint under the
+  reserved action name `__embed` (`payload.embed = {field, kind}`), which validates
+  against the embed's fields and answers `{effects, data}`; a 422 shows inline in
+  the modal.
+- **Save** re-validates every embed of a declared kind (field rules, `maxEmbeds`,
+  unique ids, root-level placement) and fails on the richtext key — per locale key
+  for a `translatable()` richtext. Undeclared kinds pass through untouched, render
+  as "Unknown block" and are dropped when pasted into a field that does not declare them.
+- **Limits:** `richtext()->embeds()` inside `Embed::fields()` throws (no nesting);
+  `translatable()` on an embed field is ignored — the richtext itself is the
+  translated unit. Field endpoints (select options/create, relation search, upload,
+  daterange ranges) resolve a field by class and name, so a `select`/`relation`/`upload`/
+  `daterange` inside an embed that shares its name with one of the form (or of another
+  embed) makes the form throw a `LogicException` on render — rename one of them.
+- A document holding only embeds is not empty: `required()` passes.
 
 ---
 

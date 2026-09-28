@@ -11,6 +11,7 @@ use Tbtop\Admin\Dsl\Actions\ViewAction;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Cond;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Tab;
@@ -164,7 +165,12 @@ class KitchenSinkPage extends Page
                     ]),
                     $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
-                    $s->richtext('content')->set('placeholder', 'Start typing…'),
+                    $s->richtext('content')->set('placeholder', 'Start typing…')->embeds([
+                        Embed::make('callout')->label('Callout')->icon('info')->summary('title')->fields([
+                            $s->text('title')->required(),
+                            $s->textarea('text'),
+                        ]),
+                    ]),
                     $s->upload('attachment')->label('Attachment')
                         ->disk('public')->directory('docs')->visibility('public')
                         ->accept('image/*')->maxSize(5 * 1024 * 1024)

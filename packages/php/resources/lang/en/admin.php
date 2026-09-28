@@ -365,6 +365,18 @@ return [
             'quote' => 'Quote',
             'undo' => 'Undo',
             'redo' => 'Redo',
+            'embeds_group' => 'Blocks',
+            'embed_button' => 'Block',
+            'embed_apply' => 'Apply',
+            'embed_cancel' => 'Cancel',
+            'embed_remove' => 'Remove',
+            'embed_unknown' => 'Unknown block: {kind}',
+            'embed_errors' => [
+                'invalid' => 'Block «:label» #:n: :message',
+                'malformed' => 'Block #:n: malformed node',
+                'duplicate_id' => 'Block #:n: duplicate id',
+                'too_many' => 'No more than :max blocks',
+            ],
         ],
     ],
 ];

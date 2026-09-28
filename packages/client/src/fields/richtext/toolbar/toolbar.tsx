@@ -33,6 +33,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "../../../i18n/i18n";
 import { LinkDialog, type LinkDialogRequest } from "../linkDialog";
+import { EmbedMenu } from "./embedMenu";
 import { ToolbarButton } from "./ToolbarButton";
 import { useToolbarState } from "./useToolbarState";
 
@@ -170,6 +171,8 @@ export function Toolbar() {
 			>
 				<Quote />
 			</ToolbarButton>
+
+			<EmbedMenu />
 
 			<Separator />
 

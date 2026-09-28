@@ -365,6 +365,18 @@ return [
             'quote' => 'Цитата',
             'undo' => 'Скасувати',
             'redo' => 'Повторити',
+            'embeds_group' => 'Блоки',
+            'embed_button' => 'Блок',
+            'embed_apply' => 'Застосувати',
+            'embed_cancel' => 'Скасувати',
+            'embed_remove' => 'Видалити',
+            'embed_unknown' => 'Невідомий блок: {kind}',
+            'embed_errors' => [
+                'invalid' => 'Блок «:label» №:n: :message',
+                'malformed' => 'Блок №:n: пошкоджений вузол',
+                'duplicate_id' => 'Блок №:n: дубльований id',
+                'too_many' => 'Не більше :max блоків',
+            ],
         ],
     ],
 ];

@@ -677,7 +677,34 @@
                                     {
                                         "kind": "richtext",
                                         "options": {
-                                            "placeholder": "Start typing\u2026"
+                                            "placeholder": "Start typing\u2026",
+                                            "embeds": [
+                                                {
+                                                    "kind": "callout",
+                                                    "label": "Callout",
+                                                    "icon": "info",
+                                                    "summary": "title",
+                                                    "fields": [
+                                                        {
+                                                            "kind": "text",
+                                                            "options": {
+                                                                "required": true,
+                                                                "constraints": {
+                                                                    "required": true
+                                                                }
+                                                            },
+                                                            "meta": {},
+                                                            "name": "title"
+                                                        },
+                                                        {
+                                                            "kind": "textarea",
+                                                            "options": {},
+                                                            "meta": {},
+                                                            "name": "text"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
                                         },
                                         "meta": {},
                                         "name": "content"

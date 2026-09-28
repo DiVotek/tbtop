@@ -79,6 +79,34 @@ class DatabaseSeeder extends Seeder
         ];
     }
 
+    /**
+     * A richtext document with a `callout` embed the body field declares and a
+     * `legacy` one it does not — the latter renders as an "Unknown block" card
+     * and must survive a save unchanged.
+     *
+     * @return array<string, mixed>
+     */
+    private function bodyWithEmbeds(): array
+    {
+        $paragraph = fn (string $text): array => [
+            'type' => 'paragraph', 'version' => 1, 'direction' => null, 'format' => '', 'indent' => 0,
+            'children' => [['type' => 'text', 'version' => 1, 'text' => $text, 'detail' => 0, 'format' => 0, 'mode' => 'normal', 'style' => '']],
+        ];
+        $embed = fn (string $id, string $kind, array $data): array => [
+            'type' => 'embed', 'version' => 1, 'id' => $id, 'kind' => $kind, 'data' => $data,
+        ];
+
+        return ['root' => [
+            'type' => 'root', 'version' => 1, 'direction' => null, 'format' => '', 'indent' => 0,
+            'children' => [
+                $paragraph('Blocks sit between paragraphs.'),
+                $embed('3f6c0f7e-8d2a-4c1b-9e5f-1a2b3c4d5e6f', 'callout', ['title' => 'Heads up', 'text' => 'Click the card to edit it.']),
+                $embed('9b1d2c3e-4f5a-4b6c-8d7e-0f1a2b3c4d5e', 'legacy', ['note' => 'kept as-is']),
+                $paragraph('The legacy block above is not declared by this field.'),
+            ],
+        ]];
+    }
+
     /** @return list<array<string, mixed>> */
     private function posts(int $authorId): array
     {
@@ -103,6 +131,7 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Designing the admin DSL',
                 'slug' => 'designing-the-admin-dsl',
                 'intro' => ['en' => 'How the structure DSL works', 'uk' => 'Як працює DSL структури'],
+                'body' => ['en' => $this->bodyWithEmbeds(), 'uk' => null],
                 'published' => true,
                 'published_at' => $now->copy()->subMonths(4),
                 'views' => 210,

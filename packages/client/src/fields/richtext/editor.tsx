@@ -12,6 +12,8 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, SerializedEditorState } from "lexical";
 import { useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
+import type { EmbedDef } from "./embedContext";
+import { EmbedsPlugin } from "./embedsPlugin";
 import { RICHTEXT_NODES, RICHTEXT_THEME } from "./richtextConfig";
 import { resolveInitialEditorState } from "./richtextInitialState";
 import { SlashMenuPlugin } from "./slashMenuPlugin";
@@ -21,13 +23,17 @@ interface RichtextEditorProps {
 	initialState: SerializedEditorState | string | null;
 	placeholder?: string;
 	disabled?: boolean;
+	embeds?: EmbedDef[];
 	onChange: (state: SerializedEditorState) => void;
 }
+
+const NO_EMBEDS: EmbedDef[] = [];
 
 export function RichtextEditor({
 	initialState,
 	placeholder,
 	disabled,
+	embeds = NO_EMBEDS,
 	onChange,
 }: RichtextEditorProps) {
 	const t = useTranslation();
@@ -49,32 +55,34 @@ export function RichtextEditor({
 
 	return (
 		<LexicalComposer initialConfig={initialConfig}>
-			<div className="relative rounded-md border transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
-				<Toolbar />
-				<div className="relative">
-					<RichTextPlugin
-						contentEditable={<ContentEditable />}
-						placeholder={
-							<div className="tabletop-editor-placeholder">
-								{placeholder ?? t("field.richtext.placeholder")}
-							</div>
-						}
-						ErrorBoundary={LexicalErrorBoundary}
-					/>
-				</div>
-				<HistoryPlugin />
-				<ListPlugin />
-				<LinkPlugin />
-				<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-				{/* Both ignore-flags keep mount-time updates (history-merge,
+			<EmbedsPlugin defs={embeds} disabled={disabled === true}>
+				<div className="relative rounded-md border transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
+					<Toolbar />
+					<div className="relative">
+						<RichTextPlugin
+							contentEditable={<ContentEditable />}
+							placeholder={
+								<div className="tabletop-editor-placeholder">
+									{placeholder ?? t("field.richtext.placeholder")}
+								</div>
+							}
+							ErrorBoundary={LexicalErrorBoundary}
+						/>
+					</div>
+					<HistoryPlugin />
+					<ListPlugin />
+					<LinkPlugin />
+					<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+					{/* Both ignore-flags keep mount-time updates (history-merge,
 				    selection) from writing back and falsely dirtying the form. */}
-				<OnChangePlugin
-					onChange={(state: EditorState) => onChange(state.toJSON())}
-					ignoreSelectionChange
-					ignoreHistoryMergeTagChange
-				/>
-				<SlashMenuPlugin />
-			</div>
+					<OnChangePlugin
+						onChange={(state: EditorState) => onChange(state.toJSON())}
+						ignoreSelectionChange
+						ignoreHistoryMergeTagChange
+					/>
+					<SlashMenuPlugin />
+				</div>
+			</EmbedsPlugin>
 		</LexicalComposer>
 	);
 }

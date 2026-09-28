@@ -2,6 +2,7 @@
 
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\NavBuilder;
 use Tbtop\Admin\Navigation\NavGroup;
@@ -35,6 +36,25 @@ it('kitchen-sink serialization matches the committed fixture snapshot', function
     }
 
     expect($current."\n")->toBe((string) file_get_contents(FIXTURE_PATH));
+});
+
+it('a richtext with embeds serializes its embeds as options.embeds, outside the child lists', function () {
+    $s = new S;
+    $field = $s->richtext('body')->embeds([
+        Embed::make('callout')->label('Callout')->icon('info')->summary('title')->fields([
+            $s->text('title')->required()->translatable(),
+        ]),
+        Embed::make('divider'),
+    ]);
+    $json = json_decode(json_encode($field));
+
+    validateAgainstSchema($json);
+    expect(json_decode(json_encode($field), true)['options']['embeds'])->toMatchArray([
+        ['kind' => 'callout', 'label' => 'Callout', 'icon' => 'info', 'summary' => 'title', 'fields' => [
+            ['kind' => 'text', 'options' => ['required' => true, 'constraints' => ['required' => true]], 'meta' => [], 'name' => 'title'],
+        ]],
+        ['kind' => 'divider', 'label' => 'divider', 'icon' => null, 'summary' => null, 'fields' => []],
+    ]);
 });
 
 it('default chrome serialization conforms to the chrome contract', function () {

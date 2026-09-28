@@ -1,4 +1,5 @@
 import { Link } from "@inertiajs/react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Translate } from "../i18n/i18n";
 import { fieldErrorsFromZodIssues, liftNestedErrors } from "../inertia/fieldErrors";
@@ -144,6 +145,9 @@ function PlainActionBlock({
 				onClick={onClick}
 				data-testid={`action-${actionKey(opts)}`}
 			>
+				{pending && opts.pendingIndicator && (
+					<Loader2 className="animate-spin" aria-hidden />
+				)}
 				<ActionLabel opts={opts} />
 			</Button>
 		</MaybeTooltip>

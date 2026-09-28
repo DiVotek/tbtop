@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Richtext;
 
 /**
  * The structure tree's one traversal: which option keys hold children, and
@@ -86,11 +87,10 @@ final class StructureWalk
     }
 
     /**
-     * Depth-first search for the first descendant (starting with $root itself)
-     * that $matches accepts. Excluded subtrees are skipped whole — every
-     * caller of this resolves a field or block by name for an endpoint, so a
-     * when(false) branch must be unreachable here or that endpoint stays live
-     * for content that never reached the wire.
+     * Depth-first search for the first descendant (from $root itself, embed fields
+     * included) that $matches accepts. Excluded subtrees are skipped whole: every
+     * caller resolves a field or block by name for an endpoint, so a when(false)
+     * branch must be unreachable here or its endpoint stays live off the wire.
      *
      * @param  callable(mixed): bool  $matches
      */
@@ -102,7 +102,7 @@ final class StructureWalk
         if ($matches($root)) {
             return $root;
         }
-        foreach (self::descendants($root) as $child) {
+        foreach ([...self::descendants($root), ...($root instanceof Richtext ? $root->embedFields() : [])] as $child) {
             $found = self::find($child, $matches);
             if ($found !== null) {
                 return $found;

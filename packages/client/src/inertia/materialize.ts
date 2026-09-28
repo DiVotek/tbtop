@@ -131,6 +131,18 @@ function actionOptions(node: StructureNode, ctx: WalkCtx): Bag {
 	});
 }
 
+/** Richtext embed fields render as a form in the embed modal, so they compile like any form's. */
+function walkEmbeds(next: Bag, ctx: WalkCtx): void {
+	if (!Array.isArray(next.embeds)) {
+		return;
+	}
+	next.embeds = next.embeds.map((e) => {
+		const embed = e as Bag;
+		const fields = Array.isArray(embed.fields) ? embed.fields : [];
+		return { ...embed, fields: fields.map((f) => walk(f as StructureNode, ctx)) };
+	});
+}
+
 function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 	const next = { ...options };
 	if (Array.isArray(next.children)) {
@@ -152,6 +164,7 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 	if (Array.isArray(next.fields)) {
 		next.fields = next.fields.map((f) => walk(f as StructureNode, ctx));
 	}
+	walkEmbeds(next, ctx);
 	// Walk table filter field nodes so their meta (hiddenIf/disabledIf) is compiled.
 	if (Array.isArray(next.filters)) {
 		next.filters = next.filters.map((f) => walk(f as StructureNode, ctx));
