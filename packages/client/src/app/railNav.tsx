@@ -6,7 +6,7 @@ import { NodeIcon } from "../ui/node-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { type NavGroup, useChromeData } from "./chromeContext";
 import { RailItemGlyph } from "./navGroupDropdown";
-import { NavGroupItems } from "./navGroupSection";
+import { GroupDescription, NavGroupItems } from "./navGroupSection";
 import { railGroups, railTarget } from "./navRail";
 
 const HOME_ICON = { name: "home", position: "left" } as const;
@@ -152,7 +152,12 @@ function GroupList({
 }) {
 	return (
 		<div className="flex flex-col gap-1" data-testid="nav-active-group">
-			<div className="px-2 pb-1 text-sm font-semibold">{title}</div>
+			<div className="pb-1">
+				<div className="px-2 text-sm font-semibold">{title}</div>
+				{group.description !== undefined && (
+					<GroupDescription description={group.description} />
+				)}
+			</div>
 			<NavGroupItems group={group} currentUrl={currentUrl} />
 		</div>
 	);

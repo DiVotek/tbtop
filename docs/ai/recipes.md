@@ -481,6 +481,14 @@ follows its parent — unless a gated-out parent promoted it to top level), on u
 items, and in the user menu. Headings render in every navigation layout: inside the
 sidebar group, and as menu labels in topbar and rail dropdowns.
 
+### Group description
+
+`NavGroup::make('sales')->description(fn () => __('Deals, tasks and reports'))` adds one muted,
+truncated line under the group's title — what the group is for, not another heading. It
+renders in every layout: under the title in the rail-sidebar column, under the heading in the
+sidebar (also while the group is collapsed), and as the first line of a topbar or rail
+dropdown. Pass a Closure for request-time translation, as with `label()`.
+
 ### Rail + sidebar layout
 
 `->navigation('rail-sidebar')` shows each nav group as an icon with its label under it in a

@@ -76,6 +76,10 @@ domain: panels
   `sections` labels, so the client only groups adjacent items. Not a nested group: sections
   do not collapse and carry no icon. Rail-only sections were rejected — the key would be
   silently ignored in the other layouts.
+- **A nav group description renders in every layout.** `NavGroup::description()` ships as
+  `navGroup.description` and shows as one muted line under the group title: the rail-sidebar
+  column, the sidebar heading, and the first line of a topbar/rail dropdown. Same reason as
+  sections: a rail-only key would be silently ignored when a panel switches layout.
 - **404s render inside the panel chrome.** Each panel's default route group ends with a
   `Route::fallback()` → `PanelErrorController`, and the provider registers a
   `NotFoundHttpException` renderable that fires only while `CurrentPanel` is bound and the

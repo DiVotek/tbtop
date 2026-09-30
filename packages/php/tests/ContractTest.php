@@ -265,13 +265,13 @@ it('liveRegion ships dependsOn and record-seeded initial, never the closure', fu
         ->and($region->options->initial[0]->options->content)->toBe('Hello');
 });
 
-it('nested nav tree with a merged, sectioned custom item conforms to the nav contract', function () {
+it('nested nav tree with a merged, sectioned custom item and a group description conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)
             ->id('admin')
             ->prefix('admin')
             ->pages([NavParentPage::class, NavChildPage::class])
-            ->navigationGroups([NavGroup::make('Content')->sections(['help' => 'Help'])])
+            ->navigationGroups([NavGroup::make('Content')->description('Articles and pages')->sections(['help' => 'Help'])])
             ->navigationItems([
                 NavItem::make('Documentation')->url('https://example.test')->icon('globe')
                     ->group('Content')->section('help')->sort(5)->newTab(),

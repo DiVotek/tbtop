@@ -69,6 +69,15 @@ export function NavGroupDropdown({ group, currentUrl, rail = false }: NavGroupDr
 				className="min-w-44"
 				data-testid={`nav-group-menu-${group.key}`}
 			>
+				{group.description !== undefined && (
+					<DropdownMenuLabel
+						className="max-w-64 truncate text-xs font-normal text-muted-foreground"
+						title={group.description}
+						data-testid="nav-group-description"
+					>
+						{group.description}
+					</DropdownMenuLabel>
+				)}
 				{sectionRuns(group).map((run) => [
 					run.heading !== null && (
 						<DropdownMenuLabel

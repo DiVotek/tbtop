@@ -149,6 +149,29 @@ it('NavBuilder: resolves a Closure label at build time, not config time', functi
     expect(NavBuilder::build($panel)[0]['group'])->toBe('Контент');
 });
 
+it('NavBuilder: emits a group description resolved per build, and none when unset', function () {
+    $locale = 'en';
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([NavPage::class, NavAlphaGroupPage::class])
+            ->navigationGroups([
+                NavGroup::make('Content')->description(function () use (&$locale): string {
+                    return $locale === 'uk' ? 'Статті та сторінки' : 'Articles and pages';
+                }),
+            ])
+    );
+
+    $byKey = fn (): array => array_column(NavBuilder::build($panel), null, 'key');
+
+    expect($byKey()['Content']['description'])->toBe('Articles and pages')
+        ->and($byKey()['Alpha'])->not->toHaveKey('description');
+
+    $locale = 'uk';
+    expect($byKey()['Content']['description'])->toBe('Статті та сторінки');
+});
+
 it('NavBuilder: a collapsible-only group omits collapsed and icon flags', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)

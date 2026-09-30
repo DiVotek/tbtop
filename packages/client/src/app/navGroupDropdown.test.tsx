@@ -40,6 +40,7 @@ const NAV: NavGroup[] = [
 	{
 		key: "Content",
 		group: "Content",
+		description: "Articles and pages",
 		items: [
 			{
 				label: "Iconic",
@@ -72,6 +73,13 @@ describe("NavGroupDropdown (topbar)", () => {
 	test("a group becomes a trigger button carrying its group icon", () => {
 		const { getByTestId } = renderTopbarNav();
 		expect(getByTestId("nav-group-trigger-Overview").querySelector("svg")).toBeTruthy();
+	});
+
+	test("an opened group's menu starts with its description", async () => {
+		const { getByTestId } = renderTopbarNav();
+		await openGroup(getByTestId("nav-group-trigger-Content"));
+
+		expect(getByTestId("nav-group-menu-Content").textContent).toStartWith("Articles and pages");
 	});
 
 	test("group items stay hidden until the dropdown is opened", () => {

@@ -908,6 +908,7 @@
 				"icon": { "$ref": "#/$defs/icon" },
 				"collapsible": { "type": "boolean" },
 				"collapsed": { "type": "boolean" },
+				"description": { "type": "string" },
 				"sections": {
 					"type": "array",
 					"items": {

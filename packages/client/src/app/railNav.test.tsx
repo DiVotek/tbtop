@@ -9,6 +9,7 @@ const NAV: NavGroup[] = [
 	{
 		key: "sales",
 		group: "Sales",
+		description: "Deals and daily work",
 		icon: { name: "funnel", position: "left" },
 		items: [
 			{ label: "Board", href: "/app/board", badge: "46" },
@@ -64,6 +65,14 @@ describe("rail-sidebar shell", () => {
 		expect(getByTestId("nav-rail-sales").textContent).toBe("Sales");
 		expect(getByTestId("nav-rail-home").textContent).toBe("Home");
 		expect(getByRole("link", { name: "Orders" }).getAttribute("href")).toBe("/app/orders");
+	});
+
+	test("the column shows the active group's description under its title", () => {
+		const { getByTestId } = renderRail("/app/tasks");
+
+		expect(getByTestId("nav-active-group").textContent).toStartWith(
+			"SalesDeals and daily work",
+		);
 	});
 
 	test("a rail icon opens its group's first internal, same-tab item", () => {
