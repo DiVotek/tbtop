@@ -409,7 +409,13 @@
 									},
 									"badge": {
 										"type": "object",
-										"properties": { "colors": { "type": "object" } }
+										"properties": {
+											"colors": { "type": "object" },
+											"labels": {
+												"type": "object",
+												"additionalProperties": { "type": "string" }
+											}
+										}
 									},
 									"boolean": {
 										"type": "object",
@@ -808,7 +814,8 @@
 					"badge": {
 						"type": "object",
 						"properties": {
-							"colors": { "type": "object" }
+							"colors": { "type": "object" },
+							"labels": { "type": "object", "additionalProperties": { "type": "string" } }
 						}
 					},
 					"boolean": {

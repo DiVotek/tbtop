@@ -15,6 +15,8 @@ export interface TableColumnIcon {
 
 export interface TableColumnBadgeOptions {
 	colors?: Record<string, string>;
+	/** Display text per stored value; colors still key by the stored value. */
+	labels?: Record<string, string>;
 }
 
 export interface TableColumnBooleanOptions {

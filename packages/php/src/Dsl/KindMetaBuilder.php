@@ -41,19 +41,21 @@ final class KindMetaBuilder
     }
 
     /**
-     * Build the badge kind meta: each value's Color is coerced to its wire string.
+     * Build the badge kind meta: each value's Color is coerced to its wire string;
+     * labels ship only when given.
      *
      * @param  array<string, Color|string>  $colors  value → Color|string
-     * @return array{colors: array<string, string>}
+     * @param  array<string, string>  $labels  value → display text
+     * @return array{colors: array<string, string>, labels?: array<string, string>}
      */
-    public static function badgeMeta(array $colors): array
+    public static function badgeMeta(array $colors, array $labels = []): array
     {
         $mapped = [];
         foreach ($colors as $value => $color) {
             $mapped[$value] = self::coerceColor($color);
         }
 
-        return ['colors' => $mapped];
+        return $labels === [] ? ['colors' => $mapped] : ['colors' => $mapped, 'labels' => $labels];
     }
 
     /** Coerce a Color enum to its wire string; pass a plain string through. */

@@ -43,6 +43,9 @@
                                 "badge": {
                                     "colors": {
                                         "active": "success"
+                                    },
+                                    "labels": {
+                                        "active": "Active"
                                     }
                                 }
                             },
@@ -1205,6 +1208,18 @@
                             "label": "Color",
                             "kind": "color",
                             "shape": "rounded"
+                        },
+                        {
+                            "name": "status",
+                            "kind": "badge",
+                            "badge": {
+                                "colors": {
+                                    "in_progress": "warning"
+                                },
+                                "labels": {
+                                    "in_progress": "In progress"
+                                }
+                            }
                         },
                         {
                             "name": "published",

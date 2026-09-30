@@ -42,7 +42,7 @@ class KitchenSinkPage extends Page
                 'collapsible' => true,
                 'columns' => 2,
             ], [
-                $s->displayValue('active')->badge(['active' => Color::Success]),
+                $s->displayValue('active')->badge(['active' => Color::Success], labels: ['active' => 'Active']),
                 $s->displayValue(true)->boolean(trueColor: Color::Success),
                 $s->displayValue('shipped')->icon(['shipped' => ['icon' => 'truck', 'color' => 'success']]),
                 $s->displayValue(12345)->money('USD'),
@@ -227,6 +227,7 @@ class KitchenSinkPage extends Page
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
                     Column::make('brand_color')->color()->rounded()->label('Color'),
+                    Column::make('status')->badge(['in_progress' => 'warning'], labels: ['in_progress' => 'In progress']),
                     Column::make('published')
                         ->label('Published')
                         ->toggle()

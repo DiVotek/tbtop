@@ -194,6 +194,18 @@ it('Column: badge() sets kind=badge with colors map', function (): void {
         ->and($json['badge']['colors'])->toBe(['draft' => 'gray', 'published' => 'success']);
 });
 
+it('Column: badge() ships a labels map only when one is given', function (): void {
+    $labelled = encodeColumn(
+        Column::make('status')->badge(['in_progress' => 'warning'], labels: ['in_progress' => 'In progress'])
+    );
+    $plain = encodeColumn(Column::make('status')->badge(['in_progress' => 'warning']));
+
+    expect($labelled['badge'])->toBe([
+        'colors' => ['in_progress' => 'warning'],
+        'labels' => ['in_progress' => 'In progress'],
+    ])->and($plain['badge'])->not->toHaveKey('labels');
+});
+
 it('Column: iconMap() sets kind=icon with map', function (): void {
     $json = encodeColumn(
         Column::make('status')->iconMap(['draft' => ['icon' => 'pencil', 'color' => 'gray']])
