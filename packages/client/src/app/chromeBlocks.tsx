@@ -75,7 +75,7 @@ export function LogoBlock() {
 	const t = useTranslation();
 	const { brand, logoSlot, homeUrl, orientation } = useChromeData();
 	const title = brand ?? t("nav.title");
-	// The rail-sidebar column is icon-wide: a brand name would overflow it.
+	// The rail-sidebar column is narrow: a brand name would overflow it.
 	const content =
 		logoSlot ??
 		(orientation === "rail-sidebar" ? (

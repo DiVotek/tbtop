@@ -67,6 +67,10 @@ export function NavGroupSection({ group, currentUrl }: NavGroupSectionProps) {
 					<GroupHeading group={group} />
 				</div>
 			)}
+			{group.description !== undefined && (
+				// Aligned with the item text below (pl-5 indent + item px-2).
+				<GroupDescription description={group.description} className="pl-7" />
+			)}
 			{expanded && (
 				// Indent items by the group icon + its gap (size-3.5 + gap-1.5 = 20px)
 				// so item text lines up under the group label, showing the nesting.
@@ -95,6 +99,25 @@ export function NavGroupItems({ group, currentUrl }: NavGroupSectionProps) {
 			))}
 		</Fragment>
 	));
+}
+
+/** The group's one-line description: muted, truncated, full text on hover. */
+export function GroupDescription({
+	description,
+	className,
+}: {
+	description: string;
+	className?: string;
+}) {
+	return (
+		<p
+			className={cn("truncate px-2 text-xs text-muted-foreground", className)}
+			title={description}
+			data-testid="nav-group-description"
+		>
+			{description}
+		</p>
+	);
 }
 
 function GroupHeading({ group }: { group: NavGroup }) {

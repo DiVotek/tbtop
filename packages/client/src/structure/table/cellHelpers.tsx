@@ -22,8 +22,9 @@ export function BadgeCell({ value, col }: BadgeCellProps): ReactNode {
 	const str = value != null ? String(value) : "";
 	const colorName = col.badge?.colors?.[str];
 	const classes = resolveColorClasses(colorName);
+	const text = col.badge?.labels?.[str] ?? str;
 	return (
-		<Badge className={cn(classes.bg, classes.text, "border-transparent")}>{str || "—"}</Badge>
+		<Badge className={cn(classes.bg, classes.text, "border-transparent")}>{text || "—"}</Badge>
 	);
 }
 

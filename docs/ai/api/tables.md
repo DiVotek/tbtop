@@ -53,7 +53,7 @@ The table builder, its columns, and filter tabs.
 |---|---|
 | `align(string $align): static` | Horizontal alignment of the cell content and header. |
 | `alt(string $alt): static` | Alt text for the image thumbnail. |
-| `badge(array $colors): static` | Render the cell as a colored badge; sets kind = 'badge'. A value with no entry in $colors still renders (gray/default badge styling), it just doesn't get its own color. |
+| `badge(array $colors, array $labels = []): static` | Render the cell as a colored badge; sets kind = 'badge'. A value with no entry in $colors still renders (gray/default badge styling), it just doesn't get its own color. $labels maps a stored value to the text the badge shows; a value without a label shows as stored. Both maps key by the raw value. |
 | `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): static` | Kind sugar: sets kind = 'boolean' with optional icon/color overrides for true/false; the client renders the icon, no server formatting involved. |
 | `circular(): static` | Circular shape. Last shape call wins. |
 | `color(): static` | Render the column value as a color swatch; sets kind = 'color'. |

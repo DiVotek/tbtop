@@ -409,7 +409,13 @@
 									},
 									"badge": {
 										"type": "object",
-										"properties": { "colors": { "type": "object" } }
+										"properties": {
+											"colors": { "type": "object" },
+											"labels": {
+												"type": "object",
+												"additionalProperties": { "type": "string" }
+											}
+										}
 									},
 									"boolean": {
 										"type": "object",
@@ -599,6 +605,8 @@
 									},
 									"poll": { "type": "integer", "minimum": 5 },
 									"source": { "type": "string" },
+									"url": { "type": "string" },
+									"newTab": { "type": "boolean" },
 									"icon": { "$ref": "#/$defs/icon" },
 									"tooltip": { "type": "string" }
 								}
@@ -806,7 +814,8 @@
 					"badge": {
 						"type": "object",
 						"properties": {
-							"colors": { "type": "object" }
+							"colors": { "type": "object" },
+							"labels": { "type": "object", "additionalProperties": { "type": "string" } }
 						}
 					},
 					"boolean": {
@@ -908,6 +917,7 @@
 				"icon": { "$ref": "#/$defs/icon" },
 				"collapsible": { "type": "boolean" },
 				"collapsed": { "type": "boolean" },
+				"description": { "type": "string" },
 				"sections": {
 					"type": "array",
 					"items": {

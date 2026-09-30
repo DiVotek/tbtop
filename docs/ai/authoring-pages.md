@@ -598,6 +598,11 @@ to the cell value in display mode for any kind (boolean ignores them), and insid
 inline editor for text / number / select columns. Typical use:
 `Column::make('price')->numberInput()->step('0.01')->suffix('USD')`.
 
+**Badge labels.** `badge($colors, labels: [...])` shows a stored value as readable text —
+`->badge(['in_progress' => Color::Warning], labels: ['in_progress' => __('In progress')])`.
+Colors and labels both key by the raw value; a value without a label shows as stored. The
+same parameter exists on `displayValue(...)->badge()`.
+
 ```php
 // from apps/demo/app/Admin/Pages/PostsIndexPage.php
 Column::make('published')
@@ -878,7 +883,8 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 `value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
-clamped again client-side**. Call `->toNode()` to embed a `Stat` in a layout node.
+clamped again client-side**. `url($href, newTab: false)` makes the whole card a link (a
+dashboard KPI that opens its list). Call `->toNode()` to embed a `Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php

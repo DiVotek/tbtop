@@ -23,6 +23,8 @@ export interface NavGroup {
 	icon?: IconDef;
 	collapsible?: boolean;
 	collapsed?: boolean;
+	/** One muted line under the group's title, in every layout. */
+	description?: string;
 	/** Headings for the section keys its items carry, in render order. */
 	sections?: { key: string; label: string }[];
 }

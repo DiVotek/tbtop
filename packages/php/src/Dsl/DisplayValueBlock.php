@@ -152,17 +152,18 @@ final class DisplayValueBlock implements JsonSerializable
     }
 
     /**
-     * Ships the raw value plus its color map and lets the client render the
-     * badge — unlike date/money, nothing is baked server-side. An unmatched
-     * value still renders, in the default gray.
+     * Ships the raw value plus its color and label maps and lets the client
+     * render the badge — unlike date/money, nothing is baked server-side. An
+     * unmatched value still renders, in the default gray and as stored.
      *
      * @param  array<string, Color|string>  $colors  value → Color|string
+     * @param  array<string, string>  $labels  value → display text
      */
-    public function badge(array $colors): self
+    public function badge(array $colors, array $labels = []): self
     {
         $clone = clone $this;
         $clone->kind = 'badge';
-        $clone->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors);
+        $clone->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors, $labels);
 
         return $clone;
     }

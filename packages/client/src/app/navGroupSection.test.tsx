@@ -38,6 +38,7 @@ const NAV: NavGroup[] = [
 	{
 		key: "System",
 		group: "System",
+		description: "Settings and tools",
 		collapsible: true,
 		collapsed: true,
 		items: [{ label: "Settings", href: "/admin/settings" }],
@@ -73,6 +74,15 @@ describe("NavGroupSection", () => {
 		const { getByText } = renderNav();
 		// Overview is a plain group: the only svg in its heading is the group icon.
 		expect(getByText("Overview").parentElement?.querySelector("svg")).toBeTruthy();
+	});
+
+	test("a group's description stays under its heading while the group is collapsed", () => {
+		const { getByTestId, queryByText } = renderNav();
+
+		expect(queryByText("Settings")).toBeNull();
+		expect(getByTestId("nav-group-toggle-System").nextElementSibling?.textContent).toBe(
+			"Settings and tools",
+		);
 	});
 
 	test("a collapsible group toggles its items on click", () => {

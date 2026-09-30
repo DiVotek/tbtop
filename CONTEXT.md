@@ -5,7 +5,8 @@ PHP-DSL admin pages rendered by a React client over Inertia.
 ## Language
 
 **Description**:
-A muted secondary line rendered under a table cell's primary content.
+A muted secondary line rendered under a table cell's primary content, or under a
+nav group's title.
 _Avoid_: subtitle, helper text, stacked text
 
 **Group**:
