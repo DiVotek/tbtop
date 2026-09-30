@@ -53,8 +53,9 @@ domain: panels
 - **Navigation layout is a panel flag, not a chrome shape.** `PanelConfig::navigation('sidebar'
   |'topbar'|'topbar-sidebar'|'rail-sidebar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop;
   `topbar-sidebar` is a full-width bar with the sidebar beneath it, a third frame added after
-  this decision landed. `rail-sidebar` renders the sidebar tree in an icon-wide rail (one icon per
-  group, navigating to its first internal item) beside a column listing only the active group; the
+  this decision landed. `rail-sidebar` renders the sidebar tree in a narrow rail (one icon-over-label
+  entry per group, navigating to its first internal item — an icon-only rail is hard
+  to learn for non-technical admins) beside a column listing only the active group; the
   client resolves that group by longest URL match, then the page's `navGroup` prop (its `nav()`
   group), then the last group this panel showed, then the first. The client
   rearranges the *same* chrome trees rather than serializing a different one — so a custom

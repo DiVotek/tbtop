@@ -1,5 +1,5 @@
 import { Link } from "@inertiajs/react";
-import { useState } from "react";
+import { type Ref, type RefObject, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { NodeIcon } from "../ui/node-icon";
@@ -29,37 +29,68 @@ function GroupGlyph({ group, label }: { group: NavGroup; label: string }) {
 	);
 }
 
-/** Desktop rail: one icon per group, each navigating to the group's first page. */
+/**
+ * Desktop rail: one icon-over-label entry per group, each navigating to the
+ * group's first page. The label is the entry's accessible name; a tooltip
+ * repeats it only when the rail width truncates it.
+ */
 export function RailStrip() {
 	const { nav, activeGroup } = useChromeData();
 	const labelOf = useGroupLabel();
 	return (
-		<nav className="flex flex-col items-center gap-1" data-testid="admin-rail">
-			{railGroups(nav).map((group) => {
-				const label = labelOf(group);
-				const active = group.key === activeGroup;
-				return (
-					<Tooltip key={group.key}>
-						<TooltipTrigger asChild>
-							<Link
-								href={railTarget(group)?.href ?? ""}
-								aria-label={label}
-								aria-current={active ? "true" : undefined}
-								data-testid={railTestId("nav-rail", group)}
-								className={cn(
-									"flex size-9 items-center justify-center rounded-md hover:bg-accent",
-									active && "bg-accent",
-								)}
-							>
-								<GroupGlyph group={group} label={label} />
-							</Link>
-						</TooltipTrigger>
-						<TooltipContent side="right">{label}</TooltipContent>
-					</Tooltip>
-				);
-			})}
+		<nav className="flex w-full flex-col items-center gap-1 px-1" data-testid="admin-rail">
+			{railGroups(nav).map((group) => (
+				<RailEntry
+					key={group.key}
+					group={group}
+					label={labelOf(group)}
+					active={group.key === activeGroup}
+				/>
+			))}
 		</nav>
 	);
+}
+
+function RailEntry({ group, label, active }: { group: NavGroup; label: string; active: boolean }) {
+	const labelRef = useRef<HTMLSpanElement>(null);
+	const truncated = useIsTruncated(labelRef, label);
+	return (
+		<Tooltip open={truncated ? undefined : false}>
+			<TooltipTrigger asChild>
+				<Link
+					href={railTarget(group)?.href ?? ""}
+					aria-current={active ? "true" : undefined}
+					data-testid={railTestId("nav-rail", group)}
+					className={cn(RAIL_ENTRY_CLASS, "w-full", active && "bg-accent")}
+				>
+					<GroupGlyph group={group} label={label} />
+					<RailLabel ref={labelRef} label={label} />
+				</Link>
+			</TooltipTrigger>
+			<TooltipContent side="right">{label}</TooltipContent>
+		</Tooltip>
+	);
+}
+
+const RAIL_ENTRY_CLASS =
+	"flex min-w-0 flex-col items-center gap-1 rounded-md px-1 py-1.5 hover:bg-accent";
+
+function RailLabel({ label, ref }: { label: string; ref?: Ref<HTMLSpanElement> }) {
+	return (
+		<span ref={ref} className="w-full truncate text-center text-[11px] leading-tight">
+			{label}
+		</span>
+	);
+}
+
+/** Measured once per label: the rail has a fixed width, so it only changes with the text. */
+function useIsTruncated(ref: RefObject<HTMLElement | null>, text: string): boolean {
+	const [truncated, setTruncated] = useState(false);
+	useLayoutEffect(() => {
+		const element = ref.current;
+		setTruncated(element !== null && text !== "" && element.scrollWidth > element.clientWidth);
+	}, [ref, text]);
+	return truncated;
 }
 
 /** Desktop sidebar column: the active group's title and items. */
@@ -74,7 +105,8 @@ export function ActiveGroupPanel() {
 }
 
 /**
- * Mobile drawer: an icon row that swaps the list below without navigating.
+ * Mobile drawer: a row of the same icon-over-label entries that swaps the
+ * list below without navigating.
  * SidebarDrawer remounts it per opening, so each one starts from the page's group.
  */
 export function RailDrawerNav() {
@@ -90,16 +122,17 @@ export function RailDrawerNav() {
 					<button
 						key={candidate.key}
 						type="button"
-						aria-label={labelOf(candidate)}
 						aria-pressed={candidate.key === group?.key}
 						data-testid={railTestId("nav-drawer-group", candidate)}
 						onClick={() => setSelected(candidate.key)}
 						className={cn(
-							"flex size-9 shrink-0 items-center justify-center rounded-md hover:bg-accent",
+							RAIL_ENTRY_CLASS,
+							"w-16 shrink-0",
 							candidate.key === group?.key && "bg-accent",
 						)}
 					>
 						<GroupGlyph group={candidate} label={labelOf(candidate)} />
+						<RailLabel label={labelOf(candidate)} />
 					</button>
 				))}
 			</div>

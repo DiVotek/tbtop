@@ -483,14 +483,16 @@ sidebar group, and as menu labels in topbar and rail dropdowns.
 
 ### Rail + sidebar layout
 
-`->navigation('rail-sidebar')` shows each nav group as an icon in a narrow rail and lists only
-the active group's items (with sections, badges and `parent` nesting) beside it. A rail icon
+`->navigation('rail-sidebar')` shows each nav group as an icon with its label under it in a
+narrow rail and lists only the active group's items (with sections, badges and `parent`
+nesting) beside it. A label too long for the rail is truncated and repeated in a tooltip. A rail icon
 opens the group's first internal, same-tab item, so a group holding only external or `newTab`
 links gets no icon. Ungrouped items live under a Home icon, and a group without `icon()` shows
 its label's first letter. Group `collapsible`/`collapsed` have no effect here. On a page the
 sidebar cannot list — a route-param record page, or one whose URL sits under no nav item —
 declare `nav(): ['group' => 'orders']` so the rail keeps that group active. On mobile the
-burger drawer shows the group icons in a row that swaps the list below without navigating.
+burger drawer shows the same icon-and-label entries in a row that swaps the list below
+without navigating.
 The demo panel switches layouts per session with `?nav=rail-sidebar` (or any other layout).
 
 ### Ungrouped items

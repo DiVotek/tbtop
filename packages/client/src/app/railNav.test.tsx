@@ -58,6 +58,14 @@ describe("rail-sidebar shell", () => {
 		expect(getByTestId("nav-rail-orders").getAttribute("aria-current")).toBeNull();
 	});
 
+	test("every rail entry names its group in text under the icon, Home included", () => {
+		const { getByTestId, getByRole } = renderRail("/app/board");
+
+		expect(getByTestId("nav-rail-sales").textContent).toBe("Sales");
+		expect(getByTestId("nav-rail-home").textContent).toBe("Home");
+		expect(getByRole("link", { name: "Orders" }).getAttribute("href")).toBe("/app/orders");
+	});
+
 	test("a rail icon opens its group's first internal, same-tab item", () => {
 		const { getByTestId, queryByTestId } = renderRail("/app/board");
 
