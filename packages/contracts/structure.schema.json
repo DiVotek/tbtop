@@ -599,6 +599,8 @@
 									},
 									"poll": { "type": "integer", "minimum": 5 },
 									"source": { "type": "string" },
+									"url": { "type": "string" },
+									"newTab": { "type": "boolean" },
 									"icon": { "$ref": "#/$defs/icon" },
 									"tooltip": { "type": "string" }
 								}

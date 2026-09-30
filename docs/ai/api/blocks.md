@@ -86,6 +86,7 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 | `sparklineColor(string $color): self` | Tint applied to the sparkline chart. |
 | `tooltip(string $text): static` | Tooltip text shown on hover. |
 | `trend(string $direction): self` | Small trend arrow rendered after the description, inheriting its color. |
+| `url(string $url, bool $newTab = false): self` | Make the whole card a link — an internal path navigates in place, an external URL opens as a plain link. Pass $newTab to open a new browser tab. |
 | `value(mixed $value): self` | The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick). |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
 

@@ -878,7 +878,8 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 `value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
-clamped again client-side**. Call `->toNode()` to embed a `Stat` in a layout node.
+clamped again client-side**. `url($href, newTab: false)` makes the whole card a link (a
+dashboard KPI that opens its list). Call `->toNode()` to embed a `Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php

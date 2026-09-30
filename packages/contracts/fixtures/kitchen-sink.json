@@ -205,6 +205,7 @@
                                     "text": "+8%",
                                     "direction": "up"
                                 },
+                                "url": "/admin/orders",
                                 "icon": {
                                     "name": "dollar-sign",
                                     "position": "left"

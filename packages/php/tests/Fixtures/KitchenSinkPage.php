@@ -70,7 +70,7 @@ class KitchenSinkPage extends Page
             ]),
             $s->grid(['cols' => ['sm' => 1, 'md' => 2, 'lg' => 4]], [
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
-                    ->icon('dollar-sign')->tooltip('Monthly revenue')
+                    ->icon('dollar-sign')->tooltip('Monthly revenue')->url('/admin/orders')
                     ->hiddenIf('period', '=', 'all')->toNode(),
                 $s->chart('byMonth', 'line', [
                     'data' => [['month' => 'Jan', 'count' => 3]],
