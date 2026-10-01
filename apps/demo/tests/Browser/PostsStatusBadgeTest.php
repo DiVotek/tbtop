@@ -5,9 +5,6 @@ declare(strict_types=1);
 use App\Models\Post;
 use App\Models\User;
 
-// The posts table's computed "Status" column uses the inline badge map:
-// a mapped value shows its label in its color — a client paint, browser-only.
-
 beforeEach(function () {
     $this->actingAs(User::factory()->create(['role' => 'admin']));
 });
