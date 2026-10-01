@@ -51,6 +51,10 @@ final class Stat implements JsonSerializable
 
     private ?int $pollSeconds = null;
 
+    private ?string $url = null;
+
+    private bool $newTab = false;
+
     public function __construct(
         private readonly string $label,
     ) {}
@@ -156,6 +160,18 @@ final class Stat implements JsonSerializable
     }
 
     /**
+     * Make the whole card a link — an internal path navigates in place, an
+     * external URL opens as a plain link. Pass $newTab to open a new browser tab.
+     */
+    public function url(string $url, bool $newTab = false): self
+    {
+        $this->url = $url;
+        $this->newTab = $newTab;
+
+        return $this;
+    }
+
+    /**
      * Poll the stat's data endpoint every $seconds, re-invoking the value
      * closure on each tick instead of once at page render. The 5-second floor
      * is enforced twice: below it this throws, and the client clamps whatever
@@ -232,6 +248,12 @@ final class Stat implements JsonSerializable
         }
         if ($this->sparklineColor !== null) {
             $options['sparklineColor'] = $this->sparklineColor;
+        }
+        if ($this->url !== null) {
+            $options['url'] = $this->url;
+            if ($this->newTab) {
+                $options['newTab'] = true;
+            }
         }
         if ($this->pollSeconds !== null) {
             $options['poll'] = $this->pollSeconds;

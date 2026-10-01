@@ -7,17 +7,17 @@ import type { ShellFrameProps } from "./shellFrames";
 import { ShellMain } from "./shellMain";
 
 /**
- * Rail + sidebar layout: the sidebar chrome tree renders in an icon-wide
- * rail (its navMenu as group icons), the active group's items fill the
+ * Rail + sidebar layout: the sidebar chrome tree renders in a narrow rail
+ * (its navMenu as group icons with their labels), the active group's items fill the
  * column beside it, and the header sits over the page. On mobile the same
- * tree drops into the burger drawer as an icon row above the group's list.
+ * tree drops into the burger drawer as an entry row above the group's list.
  */
 export function RailSidebarFrame({ sidebar, header, footer, children, maxWidth }: ShellFrameProps) {
 	const density = useDensity();
 	const { activeGroup } = useChromeData();
 	return (
 		<div className="flex min-h-screen bg-background text-foreground">
-			<aside className="sticky top-0 hidden h-screen w-16 shrink-0 flex-col items-center gap-4 overflow-y-auto border-r py-4 lg:flex">
+			<aside className="sticky top-0 hidden h-screen w-20 shrink-0 flex-col items-center gap-4 overflow-y-auto border-r py-4 lg:flex">
 				<OrientationProvider orientation="rail-sidebar">{sidebar}</OrientationProvider>
 			</aside>
 			{activeGroup !== undefined && (

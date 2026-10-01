@@ -482,14 +482,17 @@ final class Column implements JsonSerializable
     /**
      * Render the cell as a colored badge; sets kind = 'badge'. A value with no
      * entry in $colors still renders (gray/default badge styling), it just
-     * doesn't get its own color.
+     * doesn't get its own color. $labels maps a stored value to the text the
+     * badge shows; a value without a label shows as stored. Both maps key by
+     * the raw value.
      *
      * @param  array<string, Color|string>  $colors  value → Color|string
+     * @param  array<string, string>  $labels  value → display text
      */
-    public function badge(array $colors): static
+    public function badge(array $colors, array $labels = []): static
     {
         $this->kind = 'badge';
-        $this->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors);
+        $this->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors, $labels);
 
         return $this;
     }

@@ -9,6 +9,7 @@ const NAV: NavGroup[] = [
 	{
 		key: "sales",
 		group: "Sales",
+		description: "Deals and daily work",
 		icon: { name: "funnel", position: "left" },
 		items: [
 			{ label: "Board", href: "/app/board", badge: "46" },
@@ -56,6 +57,22 @@ describe("rail-sidebar shell", () => {
 		expect(panel.textContent).not.toContain("All orders");
 		expect(getByTestId("nav-rail-sales").getAttribute("aria-current")).toBe("true");
 		expect(getByTestId("nav-rail-orders").getAttribute("aria-current")).toBeNull();
+	});
+
+	test("every rail entry names its group in text under the icon, Home included", () => {
+		const { getByTestId, getByRole } = renderRail("/app/board");
+
+		expect(getByTestId("nav-rail-sales").textContent).toBe("Sales");
+		expect(getByTestId("nav-rail-home").textContent).toBe("Home");
+		expect(getByRole("link", { name: "Orders" }).getAttribute("href")).toBe("/app/orders");
+	});
+
+	test("the column shows the active group's description under its title", () => {
+		const { getByTestId } = renderRail("/app/tasks");
+
+		expect(getByTestId("nav-active-group").textContent).toStartWith(
+			"SalesDeals and daily work",
+		);
 	});
 
 	test("a rail icon opens its group's first internal, same-tab item", () => {

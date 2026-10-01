@@ -43,6 +43,9 @@
                                 "badge": {
                                     "colors": {
                                         "active": "success"
+                                    },
+                                    "labels": {
+                                        "active": "Active"
                                     }
                                 }
                             },
@@ -205,6 +208,7 @@
                                     "text": "+8%",
                                     "direction": "up"
                                 },
+                                "url": "/admin/orders",
                                 "icon": {
                                     "name": "dollar-sign",
                                     "position": "left"
@@ -1231,6 +1235,18 @@
                             "label": "Color",
                             "kind": "color",
                             "shape": "rounded"
+                        },
+                        {
+                            "name": "status",
+                            "kind": "badge",
+                            "badge": {
+                                "colors": {
+                                    "in_progress": "warning"
+                                },
+                                "labels": {
+                                    "in_progress": "In progress"
+                                }
+                            }
                         },
                         {
                             "name": "published",

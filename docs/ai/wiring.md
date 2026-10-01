@@ -260,11 +260,12 @@ respectively (`packages/php/src/AdminServiceProvider.php`). Three `$defs` in
   `children` is a self-referencing array of `navItem` — the nesting mechanism for
   `nav()['parent']` (see [./recipes.md](./recipes.md#recipe-9--navigation-configuration)).
   `section` appears only on top-level items of a named group.
-- **`navGroup`** — `{key, group, items: navItem[], icon?, collapsible?, collapsed?, sections?}`; `nav` is
+- **`navGroup`** — `{key, group, items: navItem[], icon?, collapsible?, collapsed?, description?, sections?}`; `nav` is
   `navGroup[]`. `group` is the display label or `null` for the single ungrouped bucket
   (items that declared no group), which the client renders without heading or indent.
   `sections` is `{key, label}[]` for the non-empty sections, in render order; the server
   already emits `items` in that order, so the client only groups adjacent items by `section`.
+  `description` is the resolved `NavGroup::description()` text, absent when unset.
 - **`userMenuItem`** — `{label, href, icon?, newTab?}`; no `order`/`children` — user-menu
   entries are a flat list, not grouped or nested.
 

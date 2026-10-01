@@ -27,6 +27,34 @@ describe("TableCell: badge kind", () => {
 	});
 });
 
+describe("TableCell: badge labels", () => {
+	test("shows a value's label, coloured by the stored value; an unlabelled value shows as stored", async () => {
+		const node = s.table({
+			query: async () => [
+				{ id: "1", status: "in_progress" },
+				{ id: "2", status: "done" },
+			],
+			columns: [
+				{
+					name: "status",
+					label: "Status",
+					kind: "badge",
+					badge: {
+						colors: { in_progress: "success" },
+						labels: { in_progress: "In progress" },
+					},
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText, queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		expect((await findByText("In progress")).className).toContain("bg-success");
+		expect(queryByText("in_progress")).toBeNull();
+		expect(await findByText("done")).toBeTruthy();
+	});
+});
+
 describe("TableCell: boolean kind", () => {
 	test("renders check icon for truthy value", async () => {
 		const node = s.table({
