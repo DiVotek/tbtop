@@ -307,6 +307,52 @@
             {
                 "kind": "section",
                 "options": {
+                    "title": "Recently updated",
+                    "url": "https://example.com/changelog",
+                    "newTab": true,
+                    "actions": [
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Open pages",
+                                "as": "link",
+                                "spec": {
+                                    "type": "visit",
+                                    "href": "/admin/pages"
+                                }
+                            },
+                            "meta": {},
+                            "name": "openRecent"
+                        }
+                    ],
+                    "children": [
+                        {
+                            "kind": "list",
+                            "options": {
+                                "items": [
+                                    {
+                                        "title": "Home",
+                                        "meta": "2h",
+                                        "url": "/admin/pages/1",
+                                        "newTab": true
+                                    },
+                                    {
+                                        "title": "About",
+                                        "color": "success",
+                                        "url": "/admin/pages/2"
+                                    }
+                                ]
+                            },
+                            "meta": {},
+                            "name": "recent"
+                        }
+                    ]
+                },
+                "meta": {}
+            },
+            {
+                "kind": "section",
+                "options": {
                     "title": "Form",
                     "icon": {
                         "name": "file-text",

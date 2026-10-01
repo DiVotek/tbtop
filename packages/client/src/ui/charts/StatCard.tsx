@@ -1,11 +1,9 @@
-import { Link } from "@inertiajs/react";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
-import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { useChartColors } from "../../lib/useChartColors";
-import { isExternalUrl } from "../../structure/actionBlock";
 import { resolveColorClasses } from "../../structure/table/colorRegistry";
 import { resolveIcon } from "../../structure/table/iconRegistry";
+import { CardLink } from "../cardLink";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 import { Sparkline } from "./Sparkline";
 import { type DescriptionColor, StatDescription, type TrendDirection } from "./StatDescription";
@@ -120,42 +118,9 @@ export function StatCard({ options }: StatCardProps) {
 	return options.url === undefined ? (
 		content
 	) : (
-		<StatLink url={options.url} newTab={options.newTab === true}>
+		<CardLink url={options.url} newTab={options.newTab === true} testId="stat-link">
 			{content}
-		</StatLink>
-	);
-}
-
-/**
- * Wraps the card when the stat declares url(). A grid box, so the card still
- * stretches to its grid row's height as it does unwrapped.
- */
-function StatLink({
-	url,
-	newTab,
-	children,
-}: {
-	url: string;
-	newTab: boolean;
-	children: ReactNode;
-}) {
-	const className = "grid rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring";
-	if (newTab || isExternalUrl(url)) {
-		return (
-			<a
-				href={url}
-				className={className}
-				data-testid="stat-link"
-				{...(newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-			>
-				{children}
-			</a>
-		);
-	}
-	return (
-		<Link href={url} className={className} data-testid="stat-link">
-			{children}
-		</Link>
+		</CardLink>
 	);
 }
 

@@ -182,10 +182,15 @@ it('table embedded option conforms to the wire grammar schema', function () {
     validateAgainstSchema(json_decode(json_encode($table)));
 });
 
-it('section action option conforms to the wire grammar schema', function () {
+it('section link and header actions conform to the wire grammar schema', function () {
     $s = new S;
     $node = $s->section(
-        ['title' => 'Recently updated pages', 'action' => ['label' => 'Open pages', 'url' => '/admin/pages']],
+        [
+            'title' => 'Recently updated pages',
+            'url' => '/admin/pages',
+            'openUrlInNewTab' => true,
+            'actions' => [$s->action('open')->label('Open pages')->url('/admin/pages')->link()],
+        ],
         [$s->displayText('...')]
     );
 
@@ -195,7 +200,7 @@ it('section action option conforms to the wire grammar schema', function () {
 it('list node conforms to the wire grammar schema', function () {
     $s = new S;
     $node = $s->list('recent')->items(fn () => [
-        ['title' => 'Home', 'meta' => '2 min ago', 'color' => 'success', 'url' => '/admin/pages/1'],
+        ['title' => 'Home', 'meta' => '2 min ago', 'color' => 'success', 'url' => '/admin/pages/1', 'openUrlInNewTab' => true],
         ['title' => 'About'],
     ]);
 
@@ -210,7 +215,7 @@ it('section card and plain variants conform to the wire grammar schema', functio
             'variant' => 'card',
             'collapsible' => true,
             'collapsed' => true,
-            'action' => ['label' => 'Open', 'url' => '/x'],
+            'actions' => [$s->action('open')->label('Open')->url('/x')->link()],
         ],
         [$s->displayText('...')]
     );

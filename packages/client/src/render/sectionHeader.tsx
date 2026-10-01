@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { isExternalUrl } from "../lib/externalUrl";
 import { type IconDef, NodeIcon } from "../ui/node-icon";
 
@@ -12,7 +13,10 @@ interface SectionHeaderProps {
 	title?: string;
 	description?: string;
 	icon?: IconDef;
+	/** @deprecated Legacy hand-built payloads only; rendered before `actions`. Removed in 1.0. */
 	action?: SectionHeaderAction;
+	/** Already-rendered header-row actions (options.actions). */
+	actions?: ReactNode;
 	collapsible?: boolean;
 	open: boolean;
 	onToggle: () => void;
@@ -24,18 +28,19 @@ const VARIANT_HEADING_CLASS = {
 	plain: "text-sm font-semibold uppercase tracking-wide text-muted-foreground",
 } as const;
 
-/** Section title/description/icon row, optionally a chevron-toggle button and a right-aligned action link. */
+/** Section title/description/icon row, optionally a chevron-toggle button and right-aligned actions. */
 export function SectionHeader({
 	title,
 	description,
 	icon,
 	action,
+	actions,
 	collapsible,
 	open,
 	onToggle,
 	variant,
 }: SectionHeaderProps) {
-	if (!title && !description && !icon && !action) {
+	if (!title && !description && !icon && !action && actions === undefined) {
 		return null;
 	}
 	const Heading = variant === undefined ? "h2" : "h3";
@@ -68,10 +73,13 @@ export function SectionHeader({
 	);
 	return (
 		<div className="flex flex-col gap-1">
-			{action ? (
+			{action || actions !== undefined ? (
 				<div className="flex items-center justify-between gap-2">
 					{titleRow}
-					<SectionActionLink action={action} />
+					<div className="flex shrink-0 items-center gap-2" data-testid="section-actions">
+						{action && <SectionActionLink action={action} />}
+						{actions}
+					</div>
 				</div>
 			) : (
 				titleRow

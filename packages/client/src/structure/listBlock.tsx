@@ -10,6 +10,7 @@ export interface ListItem {
 	meta?: string;
 	color?: ListItemColor;
 	url?: string;
+	newTab?: boolean;
 }
 
 export interface ListBlockOptions {
@@ -63,9 +64,14 @@ function ListRow({ item }: { item: ListItem }) {
 			</div>
 		);
 	}
-	if (isExternalUrl(item.url)) {
+	if (item.newTab === true || isExternalUrl(item.url)) {
 		return (
-			<a href={item.url} className={ROW_CLASS} data-testid="list-item">
+			<a
+				href={item.url}
+				className={ROW_CLASS}
+				data-testid="list-item"
+				{...(item.newTab === true ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+			>
 				{body}
 			</a>
 		);

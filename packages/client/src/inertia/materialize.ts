@@ -143,10 +143,22 @@ function walkEmbeds(next: Bag, ctx: WalkCtx): void {
 	});
 }
 
+/**
+ * Option keys holding a plain list of nodes: layout children, repeater
+ * sub-fields and table filter fields (so their hiddenIf/disabledIf compiles),
+ * and a section's header actions (so they bind endpoint and formName). Only
+ * entries that are nodes are walked: a consumer block may use `actions` for
+ * its own plain objects.
+ */
+const NODE_LIST_KEYS = ["children", "fields", "filters", "actions"] as const;
+
 function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 	const next = { ...options };
-	if (Array.isArray(next.children)) {
-		next.children = next.children.map((c) => walk(c as StructureNode, ctx));
+	for (const key of NODE_LIST_KEYS) {
+		const list = next[key];
+		if (Array.isArray(list)) {
+			next[key] = list.map((n) => (isStructureNode(n) ? walk(n, ctx) : n));
+		}
 	}
 	if (isStructureNode(next.prefix)) {
 		next.prefix = walk(next.prefix, ctx);
@@ -160,15 +172,7 @@ function walkChildren(options: Bag, ctx: WalkCtx): Bag {
 			return { ...t, body: walk(t.body, ctx) };
 		});
 	}
-	// Walk repeater sub-field nodes so their meta (hiddenIf/disabledIf) is compiled.
-	if (Array.isArray(next.fields)) {
-		next.fields = next.fields.map((f) => walk(f as StructureNode, ctx));
-	}
 	walkEmbeds(next, ctx);
-	// Walk table filter field nodes so their meta (hiddenIf/disabledIf) is compiled.
-	if (Array.isArray(next.filters)) {
-		next.filters = next.filters.map((f) => walk(f as StructureNode, ctx));
-	}
 	// Walk select create mini-form fields so hiddenIf/disabledIf is compiled.
 	if (next.create !== null && typeof next.create === "object") {
 		const create = next.create as Bag;

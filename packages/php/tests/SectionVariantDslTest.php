@@ -20,7 +20,7 @@ it('section variant card serializes options.variant', function (): void {
             'variant' => 'card',
             'collapsible' => true,
             'collapsed' => true,
-            'action' => ['label' => 'Open', 'url' => '/x'],
+            'actions' => [$s->action('open')->label('Open')->url('/x')->link()],
         ],
         [$s->displayText('...')],
     ));
@@ -29,7 +29,7 @@ it('section variant card serializes options.variant', function (): void {
         ->and($json['options']['title'])->toBe('Recently updated')
         ->and($json['options']['collapsible'])->toBeTrue()
         ->and($json['options']['collapsed'])->toBeTrue()
-        ->and($json['options']['action'])->toBe(['label' => 'Open', 'url' => '/x']);
+        ->and($json['options']['actions'][0]['name'])->toBe('open');
 });
 
 it('section variant plain serializes options.variant', function (): void {
@@ -79,7 +79,9 @@ it('section accepts every whitelisted option key', function (): void {
         'collapsible' => true,
         'collapsed' => false,
         'columns' => 2,
-        'action' => ['label' => 'Open', 'url' => '/x'],
+        'actions' => [$s->action('open')->label('Open')->url('/x')->link()],
+        'url' => '/admin/pages',
+        'openUrlInNewTab' => true,
         'variant' => 'card',
         'class' => 'shadow-lg',
         'colSpan' => 2,

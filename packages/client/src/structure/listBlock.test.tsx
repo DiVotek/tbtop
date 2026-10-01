@@ -77,4 +77,14 @@ describe("ListBlock", () => {
 		const { getByTestId } = renderList([{ title: "GitHub", url: "https://github.com/x" }]);
 		expect(clickIsNative(getByTestId("list-item"))).toBe(true);
 	});
+
+	test("a newTab item opens in a new tab natively, even for a same-origin url", () => {
+		const { getByTestId } = renderList([
+			{ title: "Post", url: "/admin/posts/1", newTab: true },
+		]);
+		const row = getByTestId("list-item");
+		expect(row.getAttribute("target")).toBe("_blank");
+		expect(row.getAttribute("rel")).toBe("noopener noreferrer");
+		expect(clickIsNative(row)).toBe(true);
+	});
 });

@@ -95,6 +95,19 @@ class KitchenSinkPage extends Page
                     ->toNode(),
             ]),
             $s->section([
+                'title' => 'Recently updated',
+                'url' => 'https://example.com/changelog',
+                'openUrlInNewTab' => true,
+                'actions' => [
+                    $s->action('openRecent')->label('Open pages')->url('/admin/pages')->link(),
+                ],
+            ], [
+                $s->list('recent')->items(fn (): array => [
+                    ['title' => 'Home', 'meta' => '2h', 'url' => '/admin/pages/1', 'openUrlInNewTab' => true],
+                    $s->listItem('About')->color('success')->url('/admin/pages/2'),
+                ])->toNode(),
+            ]),
+            $s->section([
                 'title' => 'Form',
                 'icon' => ['name' => 'file-text', 'position' => 'right'],
                 'aside' => $s->displayText('Fill every field to see full validation coverage.')->variant('muted'),

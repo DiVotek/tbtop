@@ -73,7 +73,14 @@ export interface StructureBuilders<TForm = unknown> {
 			description?: string;
 			icon?: string | IconDef;
 			aside?: StructureNode;
+			/** @deprecated Use `actions` with a link-styled url action. Removed in 1.0. */
 			action?: { label: string; url: string };
+			/** Header-row action nodes, right-aligned. */
+			actions?: StructureNode[];
+			/** Makes the whole section one link. */
+			url?: string;
+			/** Opens `url` in a new tab. Wire key; no effect without `url`. */
+			newTab?: boolean;
 			collapsible?: boolean;
 			collapsed?: boolean;
 			columns?: ColumnsSpec;
