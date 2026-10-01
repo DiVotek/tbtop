@@ -51,7 +51,7 @@ class PostEditPage extends Page
                     },
                     needs: ['row'],
                 ),
-            $s->action('open-list')->label('Back')->visit('/admin/posts'),
+            $s->action('open-list')->label('Back')->url('/admin/posts'),
         ]);
     }
 }

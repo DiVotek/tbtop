@@ -54,7 +54,7 @@ class PostsIndexPage extends Page
                 ->query(fn () => Post::query())
                 ->rowActions([
                     $s->action('edit')->label('Edit')
-                        ->visit('/admin/posts/{row.id}/edit'),   // row template
+                        ->url('/admin/posts/{row.id}/edit'),   // row template
                     $s->action('delete')->label('Delete')->color('danger')
                         ->confirm('Delete this post?')
                         ->handle(function (ActionCtx $ctx): Effects {
@@ -117,7 +117,7 @@ $s->form('post', [
 
 | Spec | What it does |
 |---|---|
-| `->visit(url)` | Inertia visit; supports `{row.id}` templates |
+| `->url(url)` | Inertia visit; supports `{row.id}` templates |
 | `->submit()` | submit the nearest (or a named) form |
 | `->handle(fn, needs: [...])` | POST to a server closure; payload by `needs`: form/row/selection |
 | `->modal(title, $node)` | client modal with a StructureNode body |

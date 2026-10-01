@@ -186,7 +186,7 @@ final class StructureWalk
 
     /**
      * 'body' is a subtree directly; 'spec' is an action's spec array, which
-     * carries its own 'body' for the modal variant (visit/submit/handle/custom
+     * carries its own 'body' for the modal variant (url/submit/handle/custom
      * specs have none).
      */
     private static function actionNestedChild(mixed $option): mixed

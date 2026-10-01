@@ -15,7 +15,7 @@ it('serializes body, icon, color, and actions', function () {
         ->color('success')
         ->actions([
             NotificationAction::make('View')->url('/admin/bookings/42'),
-            NotificationAction::make('Docs')->url('https://x.test')->openInNewTab(),
+            NotificationAction::make('Docs')->url('https://x.test')->openUrlInNewTab(),
         ])
         ->toArray();
 

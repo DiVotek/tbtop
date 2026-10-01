@@ -12,8 +12,8 @@ class GatedActionChrome extends Chrome
     {
         return [
             ...parent::headerItems($s),
-            $s->action('inbox')->label('Inbox')->visit('/admin/form-submissions')->authorize('chrome-gated-inbox'),
-            $s->action('view-site')->label('View site')->visit('/'),
+            $s->action('inbox')->label('Inbox')->url('/admin/form-submissions')->authorize('chrome-gated-inbox'),
+            $s->action('view-site')->label('View site')->url('/'),
         ];
     }
 }

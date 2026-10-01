@@ -39,7 +39,7 @@ class HeaderActionsPage extends Page
         Gate::define('header-actions-export', fn (?object $user): bool => false);
 
         return [
-            $s->action('create')->label('New item')->visit('/admin/header-actions/create'),
+            $s->action('create')->label('New item')->url('/admin/header-actions/create'),
             CreateAction::make(
                 $s,
                 form: $s->form('createHeaderItem', [$s->text('title')->required()]),
@@ -50,7 +50,7 @@ class HeaderActionsPage extends Page
                 },
                 name: 'modalCreate',
             ),
-            $s->action('export')->label('Export')->authorize('header-actions-export')->visit('/admin/header-actions/export'),
+            $s->action('export')->label('Export')->authorize('header-actions-export')->url('/admin/header-actions/export'),
             $s->action('refresh')->label('Refresh')->handle(function (ActionCtx $ctx): Effects {
                 static::$refreshed = true;
 

@@ -214,7 +214,7 @@ class KitchenSinkPage extends Page
                     $s->actionsRow([
                         $s->action('save')->label('Save')->color('primary')
                             ->keybinding('mod+s')->submit(),
-                        $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
+                        $s->action('cancel')->label('Cancel')->url('/admin/posts'),
                     ]),
                 ])->record(['title' => 'Hello'])->onSubmit(fn () => Effects::make()),
             ]),
@@ -282,7 +282,7 @@ class KitchenSinkPage extends Page
                 ->columnToggle(false)
                 ->emptyState('No posts yet', 'Create your first post to get started.', 'file-text')
                 ->headerActions([
-                    $s->action('createPost')->label('New post')->icon('pencil')->visit('/admin/posts/create'),
+                    $s->action('createPost')->label('New post')->icon('pencil')->url('/admin/posts/create'),
                 ])
                 ->recordUrl(fn () => '/admin/posts/1')
                 ->openRecordUrlInNewTab()
@@ -361,8 +361,8 @@ class KitchenSinkPage extends Page
                 $s->text('sidebar_note')->label('Note'),
             ]),
             $s->actionGroup('Publish actions', [
-                $s->action('publish')->label('Publish')->visit('/admin/posts/publish'),
-                $s->action('preview')->label('Preview')->visit('/admin/posts/preview', newTab: true),
+                $s->action('publish')->label('Publish')->url('/admin/posts/publish'),
+                $s->action('preview')->label('Preview')->url('/admin/posts/preview')->openUrlInNewTab(),
                 $s->action('archive')->label('Archive')
                     ->handle(fn () => Effects::make(), needs: ['row']),
             ]),

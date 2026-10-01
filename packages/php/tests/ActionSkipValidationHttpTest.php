@@ -141,7 +141,7 @@ it('serializes validate:false only when the action opted out of a form gate', fu
 it('ignores withoutValidation() on actions with no form gate to lift', function (): void {
     $s = new S;
     $rowOnly = $s->action('delete')->handle(fn () => null, needs: ['row'])->withoutValidation();
-    $visit = $s->action('open')->visit('/x')->withoutValidation();
+    $visit = $s->action('open')->url('/x')->withoutValidation();
 
     expect(json_decode(json_encode($rowOnly), true)['options']['spec'])
         ->not->toHaveKey('validate')

@@ -14,7 +14,7 @@ function encodeActionForIconTest(ActionBuilder $action): array
 
 it('Action: icon serializes as structured shape', function (): void {
     $json = encodeActionForIconTest(
-        (new ActionBuilder('save'))->label('Save')->icon('save')->visit('/save')
+        (new ActionBuilder('save'))->label('Save')->icon('save')->url('/save')
     );
 
     expect($json['options']['icon'])->toBe(['name' => 'save', 'position' => 'left']);
@@ -22,7 +22,7 @@ it('Action: icon serializes as structured shape', function (): void {
 
 it('Action: icon with right position', function (): void {
     $json = encodeActionForIconTest(
-        (new ActionBuilder('next'))->label('Next')->icon('arrow-right', 'right')->visit('/next')
+        (new ActionBuilder('next'))->label('Next')->icon('arrow-right', 'right')->url('/next')
     );
 
     expect($json['options']['icon'])->toBe(['name' => 'arrow-right', 'position' => 'right']);
@@ -30,7 +30,7 @@ it('Action: icon with right position', function (): void {
 
 it('Action: tooltip serializes in options', function (): void {
     $json = encodeActionForIconTest(
-        (new ActionBuilder('save'))->label('Save')->tooltip('Save your changes')->visit('/save')
+        (new ActionBuilder('save'))->label('Save')->tooltip('Save your changes')->url('/save')
     );
 
     expect($json['options']['tooltip'])->toBe('Save your changes');
@@ -38,7 +38,7 @@ it('Action: tooltip serializes in options', function (): void {
 
 it('Action: icon and tooltip together', function (): void {
     $json = encodeActionForIconTest(
-        (new ActionBuilder('delete'))->icon('trash')->tooltip('Delete record')->visit('/del')
+        (new ActionBuilder('delete'))->icon('trash')->tooltip('Delete record')->url('/del')
     );
 
     expect($json['options']['icon'])->toBe(['name' => 'trash', 'position' => 'left'])
@@ -47,7 +47,7 @@ it('Action: icon and tooltip together', function (): void {
 
 it('Action: without icon/tooltip omits both keys', function (): void {
     $json = encodeActionForIconTest(
-        (new ActionBuilder('save'))->label('Save')->visit('/save')
+        (new ActionBuilder('save'))->label('Save')->url('/save')
     );
 
     expect($json['options'])->not->toHaveKey('icon')

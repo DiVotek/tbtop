@@ -35,7 +35,7 @@ class ActionDataPage extends Page
                     ];
                 }, needs: ['row']),
             // A plain action with no query — its data endpoint must 404.
-            $s->action('noQuery')->label('No query')->visit('/x'),
+            $s->action('noQuery')->label('No query')->url('/x'),
         ]);
     }
 }

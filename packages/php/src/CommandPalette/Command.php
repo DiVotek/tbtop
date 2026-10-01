@@ -55,11 +55,26 @@ final class Command
     }
 
     /** Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). */
-    public function openInNewTab(bool $newTab = true): self
+    public function openUrlInNewTab(bool $condition = true): self
     {
-        $this->newTab = $newTab;
+        $this->newTab = $condition;
 
         return $this;
+    }
+
+    /**
+     * Deprecated (removed in 1.0): use url()->openUrlInNewTab().
+     *
+     * @deprecated Use openUrlInNewTab().
+     */
+    public function openInNewTab(bool $newTab = true): self
+    {
+        trigger_error(
+            'Command::openInNewTab() is deprecated and will be removed in 1.0. Use url()->openUrlInNewTab() instead.',
+            E_USER_DEPRECATED,
+        );
+
+        return $this->openUrlInNewTab($newTab);
     }
 
     /** Extra search terms beyond the label. @param  list<string>  $keywords */

@@ -15,7 +15,7 @@ function gatedCollectedAction(S $s, string $name): mixed
 {
     Gate::define('never', fn (?object $user) => false);
 
-    return $s->action($name)->label('Hidden')->visit('/')->authorize('never');
+    return $s->action($name)->label('Hidden')->url('/')->authorize('never');
 }
 
 // ---------------------------------------------------------------------------
@@ -29,7 +29,7 @@ function gatedCollectedAction(S $s, string $name): mixed
 it('drops an unauthorized child from a hand-built Node', function () {
     $s = new S;
 
-    $node = new Node('row', ['children' => [gatedCollectedAction($s, 'hidden'), $s->action('shown')->visit('/')]]);
+    $node = new Node('row', ['children' => [gatedCollectedAction($s, 'hidden'), $s->action('shown')->url('/')]]);
 
     $names = array_column(encodeCollected($node)['options']['children'], 'name');
     expect($names)->toBe(['shown']);
@@ -47,7 +47,7 @@ it('drops an unauthorized field from a hand-built Node', function () {
 it('drops an unauthorized child from a layout factory', function () {
     $s = new S;
 
-    $node = $s->stack([gatedCollectedAction($s, 'hidden'), $s->action('shown')->visit('/')]);
+    $node = $s->stack([gatedCollectedAction($s, 'hidden'), $s->action('shown')->url('/')]);
 
     $names = array_column(encodeCollected($node)['options']['children'], 'name');
     expect($names)->toBe(['shown']);
@@ -57,7 +57,7 @@ it('leaves an authorized child list untouched', function () {
     Gate::define('always', fn (?object $user) => true);
     $s = new S;
 
-    $node = new Node('row', ['children' => [$s->action('a')->visit('/')->authorize('always'), $s->action('b')->visit('/')]]);
+    $node = new Node('row', ['children' => [$s->action('a')->url('/')->authorize('always'), $s->action('b')->url('/')]]);
 
     $names = array_column(encodeCollected($node)['options']['children'], 'name');
     expect($names)->toBe(['a', 'b']);
@@ -66,7 +66,7 @@ it('leaves an authorized child list untouched', function () {
 it('reindexes the surviving children so the wire carries a JSON array', function () {
     $s = new S;
 
-    $node = new Node('row', ['children' => [gatedCollectedAction($s, 'hidden'), $s->action('shown')->visit('/')]]);
+    $node = new Node('row', ['children' => [gatedCollectedAction($s, 'hidden'), $s->action('shown')->url('/')]]);
 
     expect(encodeCollected($node)['options']['children'])->toBeArray()
         ->and(json_encode($node))->toContain('"children":[{');
@@ -74,7 +74,7 @@ it('reindexes the surviving children so the wire carries a JSON array', function
 
 it('filters an already-filtered list to the same list', function () {
     $s = new S;
-    $children = [gatedCollectedAction($s, 'hidden'), $s->action('shown')->visit('/')];
+    $children = [gatedCollectedAction($s, 'hidden'), $s->action('shown')->url('/')];
 
     $once = S::normalizeChildren($children);
     $twice = S::normalizeChildren($once);
@@ -115,7 +115,7 @@ it('keeps a tab whose body the user may see', function () {
     Gate::define('always', fn (?object $user) => true);
     $s = new S;
 
-    $node = $s->tabs([['label' => 'One', 'body' => $s->action('shown')->visit('/')->authorize('always')]]);
+    $node = $s->tabs([['label' => 'One', 'body' => $s->action('shown')->url('/')->authorize('always')]]);
 
     $tab = encodeCollected($node)['options']['tabs'][0];
     expect($tab['body']['name'])->toBe('shown');
@@ -132,7 +132,7 @@ it('drops unauthorized table actions at serialization', function (string $method
     $s = new S;
     $table = (new TableBuilder('t'))->$method([
         gatedCollectedAction($s, 'hidden'),
-        $s->action('shown')->visit('/'),
+        $s->action('shown')->url('/'),
     ]);
 
     $names = array_column(encodeCollected($table->toNode())['options'][$key], 'name');
