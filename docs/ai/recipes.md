@@ -125,7 +125,7 @@ public function view(S $s): Node
     return $s->stack([
         $s->displayText("Order #{$order->id}")->variant('heading'),
         $s->section(['title' => 'Summary'], [
-            $s->displayValue($order->status)->badge(['paid' => Color::Success]),
+            $s->displayValue($order->status)->badge(['paid' => ['label' => __('Paid'), 'color' => Color::Success]]),
             $s->displayValue($order->shipped)->boolean(),
             $s->displayValue($order->total_cents)->money('USD'),
             $s->displayValue($order->placed_at)->date('Y-m-d'),
@@ -665,8 +665,8 @@ public function view(S $s): Node
                 $s->section(['title' => 'Summary'], [
                     $s->displayValue($product->price_cents)->money('USD'),
                     $s->displayValue($product->status)->badge([
-                        'draft' => Color::Gray,
-                        'published' => Color::Success,
+                        'draft' => ['label' => __('Draft'), 'color' => Color::Gray],
+                        'published' => ['label' => __('Published'), 'color' => Color::Success],
                     ]),
                 ]),
             ]),
