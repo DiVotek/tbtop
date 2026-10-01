@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Validation\EmbedsRule;
 
 final class ActionController
 {
@@ -21,6 +22,9 @@ final class ActionController
 
         $tbtopAction = (string) $request->route('tbtopAction');
         $resolved = ResolvedPage::fromRequest($request);
+        if ($tbtopAction === EmbedApply::ACTION) {
+            return EmbedApply::respond($request, $resolved->s);
+        }
         $action = $resolved->s->reachableAction($tbtopAction);
         $handler = $action?->handler();
         if ($handler === null) {
@@ -67,14 +71,12 @@ final class ActionController
         $input = $request->input('payload.form', []);
         $input = is_array($input) ? $input : [];
 
-        return $gate
-            ? Validator::make(
-                $input,
-                $rules,
-                [],
-                $form->collectAttributes(),
-            )->validate()
-            : self::declaredKeysOnly($input, $rules);
+        if (! $gate) {
+            return self::declaredKeysOnly($input, $rules);
+        }
+        $validator = Validator::make($input, $rules, [], $form->collectAttributes());
+
+        return EmbedsRule::applyDeclaredKeys($validator->getRules(), $validator->validate());
     }
 
     /**

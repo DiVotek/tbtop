@@ -25,9 +25,17 @@ export function SlashMenuList({
 			className="absolute z-50 w-56 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
 			style={{ top: position.top, left: position.left }}
 		>
-			{commands.map((cmd, index) => (
+			{commands.map((cmd, index) => [
+				cmd.group && cmd.group !== commands[index - 1]?.group && (
+					<div
+						key={`group-${cmd.group}`}
+						className="px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground"
+					>
+						{cmd.group}
+					</div>
+				),
 				<button
-					key={cmd.label}
+					key={`${cmd.group ?? ""}:${cmd.label}`}
 					type="button"
 					className={cn(
 						"relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors",
@@ -45,8 +53,8 @@ export function SlashMenuList({
 						{cmd.icon}
 					</span>
 					{cmd.label}
-				</button>
-			))}
+				</button>,
+			])}
 		</div>,
 		portalTarget,
 	);

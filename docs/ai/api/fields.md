@@ -211,6 +211,8 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 | Method | What it does |
 |---|---|
+| `embeds(array $embeds): static` | Block kinds the editor can insert as cards (slash menu "Blocks" group and the toolbar "Block" button). Each embed's data is validated against its fields on save, in every locale of a translatable field. |
+| `maxEmbeds(int $max): static` | Server-side cap on embeds per document (at least 1); a save with more fails on the field. No limit by default. |
 | `placeholder(string $text): static` | Placeholder text shown in the empty editor. |
 
 ## Select (select)
@@ -349,3 +351,14 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `reorderable(bool $value = true): static` | Allow drag-to-reorder when multiple is enabled. |
 | `saveUsing(Closure $fn): static` | Override how an uploaded file is stored. The closure receives the UploadedFile and the resolved UploadFieldConfig and must return the wire shape `{path, url}`. Default stores to the configured disk. Never serialized to the client. Bypasses UploadStorer::store() entirely, so SVG sanitization is skipped — the mime-guard (accept + text/html rejection) still runs first, but a custom closure that stores SVGs must sanitize them itself. |
 | `visibility(string $v): static` | Storage visibility: 'public' (default) or 'private'. |
+
+## Embed (richtext embeds)
+
+`Tbtop\Admin\Dsl\Fields\Embed`
+
+| Method | What it does |
+|---|---|
+| `fields(array $fields): static` | The modal form's fields; the embed's `data` is exactly what they return. ->translatable() on them is ignored (a document is already per-locale), and a richtext with its own embeds() is rejected — embeds do not nest. |
+| `icon(string $icon): static` | Icon shown on the card and in the insert menus (same icon names as elsewhere in the admin). |
+| `label(string $label): static` | Name shown on the card, in the slash menu, the "Block" dropdown and as the modal title; defaults to the kind. |
+| `summary(string $field): static` | Name of the field whose value is the card's one-line summary. A value that is not a non-empty string falls back to the label. |

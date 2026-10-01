@@ -4,15 +4,19 @@ import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lex
 import { $createHeadingNode, $createQuoteNode } from "@lexical/rich-text";
 import { $setBlocksType } from "@lexical/selection";
 import { $getSelection, $isRangeSelection, type ElementNode, type LexicalEditor } from "lexical";
-import { Code, Heading1, Heading2, Heading3, List, ListOrdered, Quote } from "lucide-react";
+import { Box, Code, Heading1, Heading2, Heading3, List, ListOrdered, Quote } from "lucide-react";
 import { useMemo } from "react";
-import { useTranslation } from "../../i18n/i18n";
+import { type Translate, useTranslation } from "../../i18n/i18n";
+import { NodeIcon } from "../../ui/node-icon";
+import { type EmbedController, useEmbedController } from "./embedContext";
 
 export interface SlashCommand {
 	label: string;
 	keywords: string[];
 	icon: React.ReactNode;
 	action: () => void;
+	/** Heading shown above the first command of a group. */
+	group?: string;
 }
 
 const ICON_SIZE = 16;
@@ -73,10 +77,27 @@ function buildCommands(editor: LexicalEditor, t: (key: string) => string): Slash
 	];
 }
 
+function embedCommands(ctrl: EmbedController | null, t: Translate): SlashCommand[] {
+	if (!ctrl || ctrl.disabled) {
+		return [];
+	}
+	return ctrl.defs.map((def) => ({
+		label: def.label,
+		keywords: [def.kind.toLowerCase(), def.label.toLowerCase()],
+		icon: def.icon ? <NodeIcon icon={{ name: def.icon }} /> : <Box size={ICON_SIZE} />,
+		action: () => ctrl.requestInsert(def),
+		group: t("field.richtext.embeds_group"),
+	}));
+}
+
 export function useSlashCommands(editor: LexicalEditor, query: string): SlashCommand[] {
 	const t = useTranslation();
+	const embeds = useEmbedController();
 
-	const commands = useMemo(() => buildCommands(editor, t), [editor, t]);
+	const commands = useMemo(
+		() => [...buildCommands(editor, t), ...embedCommands(embeds, t)],
+		[editor, t, embeds],
+	);
 
 	return useMemo(() => {
 		if (!query) {

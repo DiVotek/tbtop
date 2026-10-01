@@ -1,4 +1,4 @@
-import { afterEach } from "bun:test";
+import { afterEach, mock } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { cleanup } from "@testing-library/react";
 // Bun 1.3.14 links the circular @lexical/* ESM graph non-deterministically:
@@ -7,6 +7,15 @@ import { cleanup } from "@testing-library/react";
 // core here pins the init order for every test file. It is SSR-safe, so
 // running before the happy-dom registration below is fine.
 import "lexical";
+
+// @lexical/markdown never finishes linking under bun ("Cannot access
+// 'HeadingNode' before initialization"), and a failed link is cached for the
+// whole run — so it is stubbed here, before any file can load the editor.
+// No test exercises markdown shortcuts; browser bundlers link it fine.
+mock.module("@lexical/markdown", () => ({ TRANSFORMERS: [] }));
+mock.module("@lexical/react/LexicalMarkdownShortcutPlugin", () => ({
+	MarkdownShortcutPlugin: () => null,
+}));
 
 GlobalRegistrator.register({ url: "http://localhost/" });
 afterEach(() => cleanup());
