@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
+import { isExternalUrl } from "../lib/externalUrl";
 import { type IconDef, NodeIcon } from "../ui/node-icon";
 
 interface SectionHeaderAction {
@@ -70,18 +71,30 @@ export function SectionHeader({
 			{action ? (
 				<div className="flex items-center justify-between gap-2">
 					{titleRow}
-					<Link
-						href={action.url}
-						className="shrink-0 text-sm text-muted-foreground hover:text-foreground"
-						data-testid="section-action"
-					>
-						{action.label}
-					</Link>
+					<SectionActionLink action={action} />
 				</div>
 			) : (
 				titleRow
 			)}
 			{description && <p className="text-sm text-muted-foreground">{description}</p>}
 		</div>
+	);
+}
+
+const ACTION_CLASS = "shrink-0 text-sm text-muted-foreground hover:text-foreground";
+
+// Inertia's <Link> only handles same-origin routes; anything else is a normal browser navigation.
+function SectionActionLink({ action }: { action: SectionHeaderAction }) {
+	if (isExternalUrl(action.url)) {
+		return (
+			<a href={action.url} className={ACTION_CLASS} data-testid="section-action">
+				{action.label}
+			</a>
+		);
+	}
+	return (
+		<Link href={action.url} className={ACTION_CLASS} data-testid="section-action">
+			{action.label}
+		</Link>
 	);
 }

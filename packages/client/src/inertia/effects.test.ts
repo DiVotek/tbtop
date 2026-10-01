@@ -95,6 +95,22 @@ describe("executeEffects: redirect", () => {
 		});
 	});
 
+	test("an off-origin redirect is a browser navigation, not an Inertia visit", () => {
+		routerVisit.mockClear();
+		const assign = spyOn(window.location, "assign").mockImplementation(() => {});
+		try {
+			executeEffects(
+				[{ kind: "redirect", href: "https://pay.example.com/checkout" }],
+				fakeCtx(),
+			);
+			expect(assign).toHaveBeenCalledWith("https://pay.example.com/checkout");
+			expect(routerVisit).not.toHaveBeenCalled();
+		} finally {
+			assign.mockRestore();
+			consumeServerRedirect();
+		}
+	});
+
 	test("does not mark a server redirect when the effect has no href", () => {
 		consumeServerRedirect();
 		routerVisit.mockClear();

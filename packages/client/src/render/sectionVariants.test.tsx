@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { s } from "../structure/structure";
 import { wrapForStructure } from "../structure/testFixtures";
 import type { StructureNode } from "../structure/types";
+import { clickIsNative } from "../testing/clickIsNative";
 import { clearBlockRegistry } from "./blockRegistry";
 import { ensureBuiltinsRegistered } from "./registerBuiltins";
 import { renderNode } from "./structureRenderer";
@@ -58,6 +59,19 @@ describe("section variant card", () => {
 		const link = getByTestId("section-action");
 		expect(link.getAttribute("href")).toBe("/admin/pages");
 		expect(link.className).toContain("text-muted-foreground");
+	});
+
+	test("an off-origin action url is a native link, not an Inertia visit", () => {
+		const { getByTestId } = render(
+			renderNode(
+				node("section", {
+					title: "Docs",
+					action: { label: "GitHub", url: "https://github.com/x" },
+					children: [],
+				}),
+			),
+		);
+		expect(clickIsNative(getByTestId("section-action"))).toBe(true);
 	});
 
 	test("starts collapsed and toggles by pointer or keyboard with the shared header content", async () => {

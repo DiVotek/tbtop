@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { cn } from "../lib/cn";
+import { isExternalUrl } from "../lib/externalUrl";
 import type { RenderProps } from "../render/blockRegistry";
 
 type ListItemColor = "success" | "warning" | "danger" | "muted";
@@ -55,13 +56,23 @@ function ListRow({ item }: { item: ListItem }) {
 		</>
 	);
 
-	return item.url !== undefined ? (
+	if (item.url === undefined) {
+		return (
+			<div className={ROW_CLASS} data-testid="list-item">
+				{body}
+			</div>
+		);
+	}
+	if (isExternalUrl(item.url)) {
+		return (
+			<a href={item.url} className={ROW_CLASS} data-testid="list-item">
+				{body}
+			</a>
+		);
+	}
+	return (
 		<Link href={item.url} className={ROW_CLASS} data-testid="list-item">
 			{body}
 		</Link>
-	) : (
-		<div className={ROW_CLASS} data-testid="list-item">
-			{body}
-		</div>
 	);
 }
