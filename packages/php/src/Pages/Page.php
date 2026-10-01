@@ -40,7 +40,7 @@ abstract class Page
 
     /**
      * Actions rendered right of the title/subtitle block. Reuses the action
-     * DSL (S::action()), so visit/server/modal actions all work as on any
+     * DSL (S::action()), so url/handle/modal actions all work as on any
      * other page. Empty by default — renders nothing extra.
      *
      * @return list<ActionBuilder|Node>

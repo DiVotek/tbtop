@@ -73,11 +73,26 @@ final class NavItem
     }
 
     /** Open url() in a new browser tab instead of navigating in place. */
-    public function newTab(bool $newTab = true): self
+    public function openUrlInNewTab(bool $condition = true): self
     {
-        $this->newTab = $newTab;
+        $this->newTab = $condition;
 
         return $this;
+    }
+
+    /**
+     * Deprecated (removed in 1.0): use url()->openUrlInNewTab().
+     *
+     * @deprecated Use openUrlInNewTab().
+     */
+    public function newTab(bool $newTab = true): self
+    {
+        trigger_error(
+            'NavItem::newTab() is deprecated and will be removed in 1.0. Use url()->openUrlInNewTab() instead.',
+            E_USER_DEPRECATED,
+        );
+
+        return $this->openUrlInNewTab($newTab);
     }
 
     public function label(): string

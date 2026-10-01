@@ -71,7 +71,8 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 |---|---|
 | `group(string $group): self` | Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
-| `newTab(bool $newTab = true): self` | Open url() in a new browser tab instead of navigating in place. |
+| `newTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
+| `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. |
 | `section(string $section): self` | Section key within its group, declared on NavGroup::sections() (nav context only). Ignored for ungrouped items and in the user menu. |
 | `sort(int $order): self` | Sort position within its group (nav context only). |
 | `url(string $url): self` | Destination URL — an internal path or an external link. |
@@ -99,5 +100,6 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `handler(string $name): self` | Run a client handler registered via definePaletteCommand() instead of navigating. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
 | `keywords(array $keywords): self` | Extra search terms beyond the label. |
-| `openInNewTab(bool $newTab = true): self` | Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). |
+| `openInNewTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
+| `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). |
 | `url(string $url): self` | Navigate to a URL — an internal path (Inertia visit) or an external link. |
