@@ -268,7 +268,7 @@ it('Stat: queryClosure re-invokes the value closure and returns the descriptor s
 
 it('Stat: url makes the card a link, newTab only when requested', function (): void {
     $inPlace = encodeStat(Stat::make('Orders')->value(3)->url('/admin/orders'));
-    $newTab = encodeStat(Stat::make('Orders')->value(3)->url('https://example.test', newTab: true));
+    $newTab = encodeStat(Stat::make('Orders')->value(3)->url('https://example.test')->openInNewTab());
 
     expect($inPlace['options']['url'])->toBe('/admin/orders')
         ->and($inPlace['options'])->not->toHaveKey('newTab')

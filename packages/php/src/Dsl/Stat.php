@@ -161,11 +161,18 @@ final class Stat implements JsonSerializable
 
     /**
      * Make the whole card a link — an internal path navigates in place, an
-     * external URL opens as a plain link. Pass $newTab to open a new browser tab.
+     * external URL opens as a plain link.
      */
-    public function url(string $url, bool $newTab = false): self
+    public function url(string $url): self
     {
         $this->url = $url;
+
+        return $this;
+    }
+
+    /** Open url() in a new browser tab instead of navigating in place. No effect without url(). */
+    public function openInNewTab(bool $newTab = true): self
+    {
         $this->newTab = $newTab;
 
         return $this;
