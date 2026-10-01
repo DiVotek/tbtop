@@ -166,9 +166,10 @@ final class PanelConfig
     /**
      * Shell navigation layout: 'sidebar' (default), 'topbar',
      * 'topbar-sidebar' (full-width bar with a sidebar beneath it), or
-     * 'rail-sidebar' (a rail of nav-group icons beside a sidebar listing only
-     * the active group). The client renders the same chrome blocks; only their
-     * arrangement changes. All layouts collapse to a burger drawer on mobile.
+     * 'rail-sidebar' (a rail of labeled nav-group icons beside a sidebar
+     * listing only the active group). The client renders the same chrome
+     * blocks; only their arrangement changes. All layouts collapse to a burger
+     * drawer on mobile.
      *
      * @param  string  $navigation  One of self::NAVIGATIONS ('sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar')
      */
