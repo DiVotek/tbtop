@@ -115,8 +115,19 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 |---|---|
 | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side evaluation: the field still ships on the wire and its value still submits — only the input's interactivity is disabled. Contrast with when(), which drops the node from the wire entirely. Pass a Cond, or the shorthand ($field, $op, $value). |
 | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side visibility: the node still ships on the wire and its value still submits with the form even while hidden. Contrast with when(), which drops the node from the wire entirely and 404s its endpoints. Pass a Cond, or the shorthand ($field, $op, $value) — e.g. hiddenIf('type', '=', 'guest'). $field resolves against the enclosing form's values; on a table row action it resolves against the row's columns instead (hiddenIf('status', '!=', 'pending')). |
-| `items(callable $fn): self` | Row source for the list. $fn runs server-side at serialization time (no request payload — same lazy-resolution shape as Stat::value) and returns each row as ['title' => ..., 'meta'?, 'color'?, 'url'?]; 'title' is required, 'color' is one of success\|warning\|danger\|muted. |
+| `items(callable $fn): self` | Row source for the list. $fn runs server-side at serialization time (no request payload — same lazy-resolution shape as Stat::value) and returns each row either as ['title' => ..., 'meta'?, 'color'?, 'url'?, 'openUrlInNewTab'?] or as $s->listItem(...); the two forms mix freely. 'title' is required, 'color' is one of success\|warning\|danger\|muted, 'openUrlInNewTab' is a bool with no effect without 'url'. Unknown array keys are ignored. |
 | `meta(string $key, mixed $value): static` | Sets one of the node meta keys directly: id, hidden, disabled, hiddenIf, disabledIf. Unvalidated — any other key ships and the client ignores it. For an arbitrary wire *option* use set() instead. |
+
+## ListItem
+
+`Tbtop\Admin\Dsl\ListItem`
+
+| Method | What it does |
+|---|---|
+| `color(string $color): self` | Status dot color: success\|warning\|danger\|muted (validated at serialization). |
+| `meta(string $meta): self` | Muted secondary text on the right of the row (e.g. "2h ago"). |
+| `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. No effect without url(). |
+| `url(string $url): self` | Make the row a link — an internal path navigates in place, an external URL opens as a plain link. |
 
 ## LiveRegionBuilder
 

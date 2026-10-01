@@ -516,7 +516,11 @@
 									"collapsible": { "type": "boolean" },
 									"collapsed": { "type": "boolean" },
 									"columns": { "$ref": "#/$defs/columnsSpec" },
+									"url": { "type": "string", "minLength": 1 },
+									"newTab": { "type": "boolean" },
+									"actions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
 									"action": {
+										"deprecated": true,
 										"type": "object",
 										"required": ["label", "url"],
 										"properties": {
@@ -971,7 +975,8 @@
 					"type": "string",
 					"enum": ["success", "warning", "danger", "muted"]
 				},
-				"url": { "type": "string" }
+				"url": { "type": "string" },
+				"newTab": { "type": "boolean" }
 			},
 			"additionalProperties": false
 		},

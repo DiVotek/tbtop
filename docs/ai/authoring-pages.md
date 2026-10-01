@@ -240,15 +240,49 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `row` | `row(array $children, array $opts = []): Node` | Horizontal row of children |
 | `flex` | `flex(array $children, string $direction = 'row', ?string $justify = null, ?string $align = null, ?int $gap = null, bool $wrap = false, ?string $variant = null, ?string $class = null): Node` | Flex container with explicit direction (`'row'`\|`'col'`), justify, align, gap, wrap, an optional `'card'` variant, and an escape-hatch `class` |
 | `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8); `$opts['gap']` is 0-12 (default 4); `$opts['class']` is an escape-hatch |
-| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'action'` (`['label' => …, 'url' => …]` — a quiet right-aligned link in the header row), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch), plus `colSpan`/`colStart` and the meta keys |
+| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'actions'` (list of `ActionBuilder` — right-aligned buttons in the header row), `'url'` + `'openUrlInNewTab'` (the whole section as one link), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch), plus `colSpan`/`colStart` and the meta keys |
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
 | `aside` | `aside(array $children, array $opts = []): Node` | Fixed-width (`w-80`) right column that does not shrink. It does **not** stick on scroll — pass `'class' => 'sticky top-4'` via `$opts` if you want that |
 
 A section's `'aside'` is a persistent context slot: when a `section` sets both
 `'aside'` and `'collapsible'`, collapsing hides only the main body — the aside stays visible.
 The default, `'card'`, and `'plain'` variants share the same header behavior: description,
-icon, action, chevron, keyboard toggle, and initial `'collapsed'` state all remain available;
+icon, actions, chevron, keyboard toggle, and initial `'collapsed'` state all remain available;
 the variant changes visual chrome only.
+
+**Header actions vs aside.** `'actions'` is the header-row slot for buttons: any
+`ActionBuilder` (`url()`, `handle()`, `modal()`…), right-aligned where the title sits. A
+section with `'actions'` and no `'title'` still renders a header row. Entries go through
+the usual `when()`/`authorize()` filtering; an empty list after filtering is dropped from
+the wire. A `handle($fn, needs: ['form'])` header action inside a `form` receives that form's
+validated payload, like any action nested in the form. `'aside'` is a different thing — the
+body's side column for context content; put interactive actions in `'actions'`, not in
+`'aside'`. Both may be set.
+
+```php
+$s->section([
+    'title' => 'Pages',
+    'actions' => [
+        $s->action('open')->label('Open pages')->url('/admin/pages')->link(),
+        $s->action('export')->label('Export')->handle(fn () => Effects::make()->notify('Queued')),
+    ],
+], $children);
+```
+
+**A linked section.** `'url' => '/admin/orders'` makes the whole section one link, like a
+linked `Stat`: a same-origin path is an Inertia visit, an off-origin URL or `mailto:` a
+native navigation, and `'openUrlInNewTab' => true` opens it in a new tab (no effect without
+`'url'`). `'url'` must be a non-empty string and `'openUrlInNewTab'` a bool, or `section()`
+throws. Meant for informational cards: anything interactive inside a linked section —
+header `'actions'`, a `'collapsible'` toggle, fields, tables — sits inside the link, so a
+click on it also navigates. Nested interactive content inside a link is standard HTML
+behavior and is not guarded; keep linked sections read-only.
+
+**Deprecated `'action'`.** The old `'action' => ['label' => …, 'url' => …]` still works
+until 1.0: it raises one `E_USER_DEPRECATED` and is rewritten server-side into
+`'actions'` holding one `url()->link()->size('sm')` action. The look changes — it renders
+with action-link styling (primary color) instead of the old muted link. Combining
+`'action'` and `'actions'` throws; migrate to `'actions' => [$s->action(...)->url(...)->link()]`.
 
 `->columnSpan(int|array $span)` / `->columnStart(int|array $start)` are fluent
 methods on `Field` only (same int-or-breakpoint-object shape, 1-8) — `Node`
@@ -380,8 +414,27 @@ from shared Inertia props.
 | `stat` | `stat(string $label): Stat` | KPI stat card |
 | `chart` | `chart(string $name, string $type, array $opts = []): ChartBuilder` | Creates and registers a chart |
 | `list` | `list(string $name): ListBuilder` | Server-rendered list block — `->items(fn)` returns the rows |
+| `listItem` | `listItem(string $title): ListItem` | Fluent list row for `->items(fn)` — equivalent to the array form |
 | `liveRegion` | `liveRegion(string $name): LiveRegionBuilder` | Display content re-rendered server-side when a form field changes (see below) |
 | `actionsRow` | `actionsRow(array $actions, array $opts = []): Node` | Wraps a list of `ActionBuilder` instances in a `row` node |
+
+#### `list` rows — arrays or `listItem()`
+
+`->items(fn)` returns rows in either form, mixed freely; both serialize to the same item:
+
+```php
+$s->list('recent')->items(fn () => [
+    ['title' => 'Post 1', 'meta' => '2h', 'url' => '/admin/posts/1', 'openUrlInNewTab' => true],
+    $s->listItem('Post 2')->meta('5h')->color('success')->url('/admin/posts/2')->openUrlInNewTab(),
+]);
+```
+
+`'title'` is required, `'color'` is one of `success`/`warning`/`danger`/`muted` (checked at
+serialization for both forms), and `'openUrlInNewTab'` is a bool with no effect without
+`'url'`. Links follow the usual rule: a same-origin path is an Inertia visit, an off-origin
+URL a native navigation. Arrays suit rows mapped from a query; `listItem()` reads better for
+hand-written rows. **Unknown array keys are silently ignored** — a mistyped
+`'newTab'` (the wire key, not the authoring key) does nothing.
 
 #### `liveRegion` — server-rendered content that reacts to form input
 

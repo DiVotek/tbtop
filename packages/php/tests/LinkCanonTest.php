@@ -1,6 +1,7 @@
 <?php
 
 use Tbtop\Admin\CommandPalette\Command;
+use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Stat;
 use Tbtop\Admin\Navigation\NavItem;
@@ -57,6 +58,15 @@ dataset('deprecated link aliases', [
         fn () => (new S)->action('a')->visit('/x')->toNode()->jsonSerialize(),
         fn () => (new S)->action('a')->url('/x')->toNode()->jsonSerialize(),
         'ActionBuilder::visit() is deprecated and will be removed in 1.0. Use url() instead.',
+    ],
+    'section action array' => [
+        fn () => (new S)->section(['title' => 'Pages', 'action' => ['label' => 'Open pages', 'url' => '/admin/pages']], [])->jsonSerialize(),
+        fn () => (new S)->section(['title' => 'Pages', 'actions' => [
+            (new ActionBuilder('section-action'))->label('Open pages')->url('/admin/pages')->link()->size('sm'),
+        ]], [])->jsonSerialize(),
+        "section(): the 'action' option is deprecated and will be removed in 1.0. "
+            ."Use 'actions' => [\$s->action(...)->url(...)->link()] instead. "
+            .'The header link now renders with action-link styling (primary color).',
     ],
 ]);
 

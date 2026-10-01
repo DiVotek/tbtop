@@ -23,8 +23,8 @@ use Tbtop\Admin\Dsl\Fields\Richtext;
  */
 final class StructureWalk
 {
-    /** Option keys holding a list of table actions — descended only by the action-form search. */
-    private const ACTION_LIST_KEYS = ['headerActions', 'rowActions', 'bulkActions'];
+    /** Option keys holding a list of actions (a table's action lists, a section's header 'actions') — descended only by the action-form search. */
+    private const ACTION_LIST_KEYS = ['headerActions', 'rowActions', 'bulkActions', 'actions'];
 
     /** Option keys that can carry a nested subtree beyond the plain child lists — action-form search only. */
     private const ACTION_NESTED_KEYS = ['body', 'spec'];
@@ -74,10 +74,10 @@ final class StructureWalk
     }
 
     /**
-     * descendants(), widened for the action-form search: also follows table
-     * action lists (headerActions/rowActions/bulkActions) and an action's
-     * modal body (spec.body). Takes an already-resolved Node — see
-     * resolveActionNode().
+     * descendants(), widened for the action-form search: also follows action
+     * lists (a table's headerActions/rowActions/bulkActions, a section's
+     * actions) and an action's modal body (spec.body). Takes an
+     * already-resolved Node — see resolveActionNode().
      *
      * @return list<mixed>
      */

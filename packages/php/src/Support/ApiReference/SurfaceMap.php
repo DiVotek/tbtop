@@ -15,6 +15,7 @@ use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\ListBuilder;
+use Tbtop\Admin\Dsl\ListItem;
 use Tbtop\Admin\Dsl\LiveRegionBuilder;
 use Tbtop\Admin\Dsl\MarkdownBlock;
 use Tbtop\Admin\Dsl\S;
@@ -96,6 +97,7 @@ final class SurfaceMap
                     'Stat' => Stat::class,
                     'ChartBuilder' => ChartBuilder::class,
                     'ListBuilder' => ListBuilder::class,
+                    'ListItem' => ListItem::class,
                     'LiveRegionBuilder' => LiveRegionBuilder::class,
                 ],
             ],

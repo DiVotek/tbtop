@@ -84,25 +84,28 @@ it('serializes actionGroup node with label and action children', function () {
 // S::section — header action
 // ---------------------------------------------------------------------------
 
-it('serializes section action with label and url', function () {
+it('serializes section header actions as action nodes', function () {
     $s = new S;
     $node = $s->section(
-        ['title' => 'Recently updated pages', 'action' => ['label' => 'Open pages', 'url' => '/admin/pages']],
+        ['title' => 'Recently updated pages', 'actions' => [$s->action('open')->label('Open pages')->url('/admin/pages')->link()]],
         [$s->displayText('...')]
     );
 
     $json = encodeNode($node);
 
-    expect($json['options']['action'])->toBe(['label' => 'Open pages', 'url' => '/admin/pages']);
+    expect($json['options'])->not->toHaveKey('action')
+        ->and($json['options']['actions'][0]['kind'])->toBe('action')
+        ->and($json['options']['actions'][0]['options']['spec'])->toBe(['type' => 'visit', 'href' => '/admin/pages']);
 });
 
-it('section without an action key omits it from the wire', function () {
+it('section without action keys omits them from the wire', function () {
     $s = new S;
     $node = $s->section(['title' => 'Plain'], [$s->displayText('...')]);
 
     $json = encodeNode($node);
 
-    expect($json['options'])->not->toHaveKey('action');
+    expect($json['options'])->not->toHaveKey('action')
+        ->and($json['options'])->not->toHaveKey('actions');
 });
 
 it('section action missing "url" throws', function () {
