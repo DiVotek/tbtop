@@ -108,9 +108,9 @@ function splitTopLevel(string $args): array
         $c = $args[$i];
         if ($c === '\'' || $c === '"') {
             $i = stringEnd($args, $i);
-        } elseif ($c === '(' || $c === '[') {
+        } elseif ($c === '(' || $c === '[' || $c === '{') {
             $depth++;
-        } elseif ($c === ')' || $c === ']') {
+        } elseif ($c === ')' || $c === ']' || $c === '}') {
             $depth--;
         } elseif ($c === ',' && $depth === 0) {
             $parts[] = trim(substr($args, $last, $i - $last));
