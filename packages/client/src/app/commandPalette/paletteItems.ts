@@ -19,7 +19,12 @@ function runCommand(cmd: PaletteCommand): () => void {
 	if (!href) {
 		return () => {};
 	}
-	if (cmd.newTab) {
+	return openHref(href, cmd.newTab === true);
+}
+
+// Inertia's router only handles same-origin routes; anything else is a browser navigation.
+function openHref(href: string, newTab: boolean): () => void {
+	if (newTab) {
 		return () => {
 			window.open(href, "_blank", "noopener");
 		};
@@ -48,9 +53,7 @@ export function buildPaletteItems(nav: NavGroup[], data: CommandPaletteData): Pa
 						group: group.group ?? undefined,
 						icon: item.icon,
 						keywords: [],
-						run: () => {
-							router.visit(item.href);
-						},
+						run: openHref(item.href, item.newTab === true),
 					}),
 				),
 			);

@@ -115,6 +115,32 @@ describe("buildPaletteItems", () => {
 		expect(routerVisit).toHaveBeenCalledWith("/admin");
 	});
 
+	test("an off-origin nav item leaves the SPA; a new-tab one opens a tab", () => {
+		const assign = spyOn(window.location, "assign").mockImplementation(() => {});
+		const open = spyOn(window, "open").mockImplementation(() => null);
+		const nav: NavGroup[] = [
+			{
+				key: "Links",
+				group: "Links",
+				items: [
+					{ label: "Docs", href: "https://github.com/x" },
+					{ label: "Status", href: "/admin/status", newTab: true },
+				],
+			},
+		];
+		try {
+			const [external, newTab] = buildPaletteItems(nav, { hotkey: "mod+k" });
+			external?.run();
+			newTab?.run();
+			expect(assign).toHaveBeenCalledWith("https://github.com/x");
+			expect(open).toHaveBeenCalledWith("/admin/status", "_blank", "noopener");
+			expect(routerVisit).not.toHaveBeenCalled();
+		} finally {
+			assign.mockRestore();
+			open.mockRestore();
+		}
+	});
+
 	test("a handler command run invokes the registered client handler", async () => {
 		const handler = mock(() => {});
 		definePaletteCommand("ping", handler);

@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import { ChevronDownIcon } from "lucide-react";
 import { cn } from "../lib/cn";
+import { isExternalUrl } from "../lib/externalUrl";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -220,24 +221,35 @@ function DropdownNavItem({ item, currentUrl }: { item: NavItem; currentUrl: stri
  */
 function RailItemLink({ item, currentUrl }: { item: NavItem; currentUrl: string }) {
 	const active = containsActive(item, currentUrl);
+	const className = cn(
+		"flex size-9 items-center justify-center rounded-md hover:bg-accent",
+		active && "bg-accent",
+	);
+	const glyph = item.icon ? (
+		<NodeIcon icon={item.icon} className="size-4 shrink-0" />
+	) : (
+		<RailItemGlyph label={item.label} />
+	);
+	// Same rule as NavItemLink: new-tab and off-origin hrefs bypass Inertia's router.
+	const link =
+		item.newTab || isExternalUrl(item.href) ? (
+			<a
+				href={item.href}
+				aria-label={item.label}
+				className={className}
+				target={item.newTab ? "_blank" : undefined}
+				rel={item.newTab ? "noopener noreferrer" : undefined}
+			>
+				{glyph}
+			</a>
+		) : (
+			<Link href={item.href} aria-label={item.label} className={className}>
+				{glyph}
+			</Link>
+		);
 	return (
 		<Tooltip>
-			<TooltipTrigger asChild>
-				<Link
-					href={item.href}
-					aria-label={item.label}
-					className={cn(
-						"flex size-9 items-center justify-center rounded-md hover:bg-accent",
-						active && "bg-accent",
-					)}
-				>
-					{item.icon ? (
-						<NodeIcon icon={item.icon} className="size-4 shrink-0" />
-					) : (
-						<RailItemGlyph label={item.label} />
-					)}
-				</Link>
-			</TooltipTrigger>
+			<TooltipTrigger asChild>{link}</TooltipTrigger>
 			<TooltipContent side="right">{item.label}</TooltipContent>
 		</Tooltip>
 	);

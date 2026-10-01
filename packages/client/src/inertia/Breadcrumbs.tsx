@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "../i18n/i18n";
+import { isExternalUrl } from "../lib/externalUrl";
 
 export interface BreadcrumbItem {
 	label: string;
@@ -15,6 +16,8 @@ interface BreadcrumbsProps {
  * Page chrome breadcrumbs. Renders nothing when there is only one item
  * (current page title alone adds no navigational value).
  */
+const CRUMB_LINK_CLASS = "hover:text-foreground transition-colors";
+
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
 	const t = useTranslation();
 	if (items.length <= 1) {
@@ -39,17 +42,28 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
 									{item.label}
 								</span>
 							) : (
-								<Link
-									href={item.url}
-									className="hover:text-foreground transition-colors"
-								>
-									{item.label}
-								</Link>
+								<CrumbLink url={item.url} label={item.label} />
 							)}
 						</li>
 					);
 				})}
 			</ol>
 		</nav>
+	);
+}
+
+// Inertia's <Link> only handles same-origin routes; anything else is a normal browser navigation.
+function CrumbLink({ url, label }: { url: string; label: string }) {
+	if (isExternalUrl(url)) {
+		return (
+			<a href={url} className={CRUMB_LINK_CLASS}>
+				{label}
+			</a>
+		);
+	}
+	return (
+		<Link href={url} className={CRUMB_LINK_CLASS}>
+			{label}
+		</Link>
 	);
 }

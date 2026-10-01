@@ -3,6 +3,7 @@ import { render } from "@testing-library/react";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
+import { clickIsNative } from "../testing/clickIsNative";
 import type { ListItem } from "./listBlock";
 import type { StructureNode } from "./types";
 
@@ -70,5 +71,10 @@ describe("ListBlock", () => {
 	test("item without a url is not a link", () => {
 		const { getByTestId } = renderList([{ title: "Static" }]);
 		expect(getByTestId("list-item").tagName).not.toBe("A");
+	});
+
+	test("an off-origin url is a native link, not an Inertia visit", () => {
+		const { getByTestId } = renderList([{ title: "GitHub", url: "https://github.com/x" }]);
+		expect(clickIsNative(getByTestId("list-item"))).toBe(true);
 	});
 });

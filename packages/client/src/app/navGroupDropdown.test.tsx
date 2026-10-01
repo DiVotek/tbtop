@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import { clickIsNative } from "../testing/clickIsNative";
 import { AdminLayoutShell } from "./AdminLayout";
 import type { NavGroup } from "./chromeContext";
 
@@ -304,6 +305,21 @@ describe("NavGroupDropdown (rail)", () => {
 	test("the rail trigger for the group holding the current page is highlighted", () => {
 		const { getByTestId } = renderRail("/admin/iconic");
 		expect(getByTestId("nav-group-trigger-Content").className).toContain("bg-accent");
+	});
+
+	test("an off-origin ungrouped rail item is a native link, not an Inertia visit", () => {
+		const nav: NavGroup[] = [
+			{ key: "", group: null, items: [{ label: "Docs", href: "https://github.com/x" }] },
+		];
+		const { getByLabelText, getByTestId } = render(
+			<AdminLayoutShell nav={nav} user={USER} currentUrl="/admin" navigation="topbar-sidebar">
+				<div />
+			</AdminLayoutShell>,
+		);
+		fireEvent.click(getByTestId("sidebar-collapse"));
+
+		expect(clickIsNative(getByLabelText("Docs"))).toBe(true);
+		expect(visitMock).not.toHaveBeenCalled();
 	});
 
 	test("the rail renders a fallback letter glyph for an ungrouped item without an icon", () => {
