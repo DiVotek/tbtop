@@ -187,7 +187,7 @@ it('Column: boolean() sets kind=boolean with icon and color params', function ()
 
 it('Column: badge() sets kind=badge with colors map', function (): void {
     $json = encodeColumn(
-        Column::make('status')->badge(['draft' => 'gray', 'published' => 'success'])
+        Column::make('status')->badge(['draft' => ['color' => 'gray'], 'published' => ['color' => 'success']])
     );
 
     expect($json['kind'])->toBe('badge')
@@ -196,9 +196,9 @@ it('Column: badge() sets kind=badge with colors map', function (): void {
 
 it('Column: badge() ships a labels map only when one is given', function (): void {
     $labelled = encodeColumn(
-        Column::make('status')->badge(['in_progress' => 'warning'], labels: ['in_progress' => 'In progress'])
+        Column::make('status')->badge(['in_progress' => ['label' => 'In progress', 'color' => 'warning']])
     );
-    $plain = encodeColumn(Column::make('status')->badge(['in_progress' => 'warning']));
+    $plain = encodeColumn(Column::make('status')->badge(['in_progress' => ['color' => 'warning']]));
 
     expect($labelled['badge'])->toBe([
         'colors' => ['in_progress' => 'warning'],

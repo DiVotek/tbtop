@@ -43,7 +43,7 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 
 | Method | What it does |
 |---|---|
-| `badge(array $colors, array $labels = []): self` | Ships the raw value plus its color and label maps and lets the client render the badge — unlike date/money, nothing is baked server-side. An unmatched value still renders, in the default gray and as stored. |
+| `badge(array\|string $map): self` | Ships the raw value plus its color and label maps and lets the client render the badge — unlike date/money, nothing is baked server-side. $map is an inline map ['new' => ['label' => 'New', 'color' => Color::Info]] (both keys optional) or an enum class (HasLabel/HasColor, keyed by ->value, ->name for a pure enum). An unmatched value renders as stored, in gray. The color-only map ['paid' => Color::Success] is deprecated (removed in 1.0). |
 | `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): self` | Kind sugar: renders the value as a boolean icon (mirrors Column::boolean()); the raw value ships, the client renders the icon. |
 | `copyable(string $copyMessage = 'Copied', int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
 | `date(?string $format = null): self` | Formats server-side and bakes the string into the wire — no format meta ships. |

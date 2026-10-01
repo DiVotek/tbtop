@@ -192,7 +192,7 @@ it('DisplayValueBlock serializes a plain value with no kind', function () {
 
 it('DisplayValueBlock badge emits the raw value plus colors meta', function () {
     $json = encodeDisplay(
-        DisplayValueBlock::make('active')->badge(['active' => Color::Success, 'paused' => 'gray']),
+        DisplayValueBlock::make('active')->badge(['active' => ['color' => Color::Success], 'paused' => ['color' => 'gray']]),
     );
 
     expect($json['options']['value'])->toBe('active')
@@ -244,7 +244,7 @@ it('DisplayValueBlock number bakes the formatted string into value', function ()
 
 it('DisplayValueBlock is accessible via S::displayValue', function () {
     $s = new S;
-    $json = encodeDisplay($s->displayValue('draft')->badge(['draft' => Color::Gray]));
+    $json = encodeDisplay($s->displayValue('draft')->badge(['draft' => ['color' => Color::Gray]]));
 
     expect($json['kind'])->toBe('displayValue')
         ->and($json['options']['kind'])->toBe('badge');

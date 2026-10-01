@@ -53,7 +53,7 @@ The table builder, its columns, and filter tabs.
 |---|---|
 | `align(string $align): static` | Horizontal alignment of the cell content and header. |
 | `alt(string $alt): static` | Alt text for the image thumbnail. |
-| `badge(array $colors, array $labels = []): static` | Render the cell as a colored badge; sets kind = 'badge'. A value with no entry in $colors still renders (gray/default badge styling), it just doesn't get its own color. $labels maps a stored value to the text the badge shows; a value without a label shows as stored. Both maps key by the raw value. |
+| `badge(array\|string $map): static` | Render the cell as a colored badge; sets kind = 'badge'. $map keys by the stored value: an inline map ['new' => ['label' => 'New', 'color' => Color::Info]] (both keys optional), or an enum class (HasLabel/HasColor, keyed by ->value, ->name for a pure enum; no label → the case name). A value without a label shows as stored, without a color in gray. The color-only map ['paid' => Color::Success] is deprecated (removed in 1.0). |
 | `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): static` | Kind sugar: sets kind = 'boolean' with optional icon/color overrides for true/false; the client renders the icon, no server formatting involved. |
 | `circular(): static` | Circular shape. Last shape call wins. |
 | `color(): static` | Render the column value as a color swatch; sets kind = 'color'. |
@@ -78,7 +78,7 @@ The table builder, its columns, and filter tabs.
 | `number(?int $decimals = null): static` | Kind sugar: sets kind = 'number' and stores $decimals; formatting (number_format) is applied server-side by KindFormat, not here. Omitting $decimals leaves the raw value unformatted. |
 | `numberInput(): static` | Make the column an inline number input; sets kind = 'number' when no kind is already set. The cell ships the stored value raw (no number_format) so the editor can round-trip it; add prefix()/suffix() for a unit and step() for decimals. Incompatible with formatUsing() — throws at serialization. |
 | `onSave(Closure $fn): static` | Consumer-provided save closure — REQUIRED when column is editable. |
-| `options(array $options): static` | Static options for an editable select column. Uses the same {value, label} normalization the Select field emits so the wire shape matches. |
+| `options(array\|string $options): static` | Static options for an editable select column. Uses the same {value, label} normalization the Select field emits so the wire shape matches. An enum class expands to its cases (value = ->value, ->name for a pure enum; label from HasLabel, else the case name); descriptions are dropped. No validation is implied: add Rule::enum() (backed) or Rule::in(array_column(X::cases(), 'name')) (pure) via rules(). |
 | `prefix(JsonSerializable\|string $content): static` | Display node rendered before the cell value — in display mode for any kind (boolean ignores it) and inside the inline editor for text / number / select columns. A string becomes a TextBlock; a nested Field throws. |
 | `rounded(): static` | Rounded-corner shape. Last shape call wins. |
 | `rules(array\|string $rules): static` | Laravel validation rules applied before the save closure runs. Accepts pipe-delimited string or an array; deduplicates entries. |

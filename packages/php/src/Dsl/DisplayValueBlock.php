@@ -6,6 +6,7 @@ use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Http\KindFormat;
+use UnitEnum;
 
 /**
  * Read-only display of a single value, formatted like a table column. Date/
@@ -153,17 +154,20 @@ final class DisplayValueBlock implements JsonSerializable
 
     /**
      * Ships the raw value plus its color and label maps and lets the client
-     * render the badge — unlike date/money, nothing is baked server-side. An
-     * unmatched value still renders, in the default gray and as stored.
+     * render the badge — unlike date/money, nothing is baked server-side. $map
+     * is an inline map ['new' => ['label' => 'New', 'color' => Color::Info]]
+     * (both keys optional) or an enum class (HasLabel/HasColor, keyed by
+     * ->value, ->name for a pure enum). An unmatched value renders as stored,
+     * in gray. The color-only map ['paid' => Color::Success] is deprecated
+     * (removed in 1.0).
      *
-     * @param  array<string, Color|string>  $colors  value → Color|string
-     * @param  array<string, string>  $labels  value → display text
+     * @param  array<array-key, array{label?: string|null, color?: Color|string|null}|Color|string>|class-string<UnitEnum>  $map  value → descriptor (or a deprecated bare color), or an enum class
      */
-    public function badge(array $colors, array $labels = []): self
+    public function badge(array|string $map): self
     {
         $clone = clone $this;
         $clone->kind = 'badge';
-        $clone->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors, $labels);
+        $clone->kindMeta['badge'] = KindMetaBuilder::badgeMeta($map);
 
         return $clone;
     }
@@ -220,10 +224,13 @@ final class DisplayValueBlock implements JsonSerializable
 
     /**
      * Bake the formatted string for date/datetime/number/money; leave the raw
-     * value for badge/boolean/icon (the client renders those).
+     * value for badge/boolean/icon (the client renders those). An enum case
+     * becomes its stored value first (->value, ->name for a pure enum).
      */
     private function displayValue(): mixed
     {
-        return KindFormat::apply($this->kind ?? '', $this->kindMeta, $this->value);
+        $value = $this->value instanceof UnitEnum ? EnumOptions::scalar($this->value) : $this->value;
+
+        return KindFormat::apply($this->kind ?? '', $this->kindMeta, $value);
     }
 }
