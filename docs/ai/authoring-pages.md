@@ -598,16 +598,33 @@ to the cell value in display mode for any kind (boolean ignores them), and insid
 inline editor for text / number / select columns. Typical use:
 `Column::make('price')->numberInput()->step('0.01')->suffix('USD')`.
 
-**Badge labels.** `badge($colors, labels: [...])` shows a stored value as readable text —
-`->badge(['in_progress' => Color::Warning], labels: ['in_progress' => __('In progress')])`.
-Colors and labels both key by the raw value; a value without a label shows as stored. The
-same parameter exists on `displayValue(...)->badge()`.
+**Badges.** `badge()` maps a stored value to its text and color, keyed by the raw value. It
+takes one of three forms, on `Column` and on `displayValue(...)` alike:
+
+- an inline map — `['in_progress' => ['label' => __('In progress'), 'color' => Color::Warning]]`.
+  Both keys are optional, so `['color' => ...]` or `['label' => ...]` alone works;
+- an enum class — `badge(OrderStatus::class)` reads `HasLabel`/`HasColor` from
+  `Tbtop\Admin\Contracts\` (Filament-compatible signatures), keys by `->value` (`->name` for a
+  pure enum) and falls back to the case name for the label. `displayValue($order->status)`
+  accepts the enum instance directly;
+- the color-only map `['paid' => Color::Success]` — **deprecated, removed in 1.0**. Each call
+  using it raises one `E_USER_DEPRECATED` (Laravel logs it to the `deprecations` channel).
+  Write `['paid' => ['color' => Color::Success]]` instead.
+
+A value missing from the map shows as stored, in gray. An unknown descriptor key (`'colour'`),
+an empty label or a non-string color throws `InvalidArgumentException`. Keys must match what
+the row serializes to: a boolean cast arrives as `true`/`false`, so map a computed value
+instead:
 
 ```php
 // from apps/demo/app/Admin/Pages/PostsIndexPage.php
-Column::make('published')
+Column::make('status')
     ->label('Status')
-    ->badge(['1' => Color::Success, '0' => Color::Gray])
+    ->formatUsing(fn ($value, Post $post) => $post->published ? 'published' : 'draft')
+    ->badge([
+        'published' => ['label' => 'Live', 'color' => Color::Success],
+        'draft' => ['label' => 'Draft'],
+    ])
     ->toggleable(),
 
 Column::make('published_at')
@@ -883,8 +900,8 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 `value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
-clamped again client-side**. `url($href, newTab: false)` makes the whole card a link (a
-dashboard KPI that opens its list). Call `->toNode()` to embed a `Stat` in a layout node.
+clamped again client-side**. `url($href)` makes the whole card a link (a dashboard KPI
+that opens its list); `openInNewTab()` opens it in a new browser tab. Call `->toNode()` to embed a `Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php

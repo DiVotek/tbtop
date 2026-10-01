@@ -441,6 +441,45 @@ uses — the values are string-normalized on the wire, so seed defaults as strin
 `NewFeaturesPage.php`). Validation is PHP as always — `rules('array')` for the
 multi-value ones, numeric range rules for the slider.
 
+### Options from an enum
+
+Every `options()` (Select, Radio, CheckboxList, ToggleButtons, InFilter, and an editable
+`Column::options()`) also takes an enum class. The cases expand to the same
+`{value, label, description?}` list:
+
+```php
+enum OrderStatus: string implements HasLabel, HasDescription
+{
+    case Pending = 'pending';
+    case Paid = 'paid';
+
+    public function getLabel(): ?string { return __(ucfirst($this->value)); }
+    public function getDescription(): ?string { return $this === self::Paid ? __('Money received') : null; }
+}
+
+$s->radio('status')->options(OrderStatus::class)->default(OrderStatus::Pending)
+    ->rules(['required', Rule::enum(OrderStatus::class)]);
+```
+
+- `value` is `->value`, or `->name` for a pure enum. `label` comes from `getLabel()`; with no
+  `HasLabel`, or a `null` label, it is the case name. `description` comes from
+  `getDescription()` and is left out when null. `Column::options()` emits `{value, label}` only.
+- The interfaces live in `Tbtop\Admin\Contracts\` (`HasLabel`, `HasColor`, `HasDescription`)
+  and carry Filament 4's return types, so a Filament enum ports by swapping its `use` lines.
+  An `Htmlable` label or description ships as plain text (`strip_tags`); a label that is
+  `null` or empty falls back to the case name.
+- `default()` accepts a case, or a list of cases for multi-value fields, and stores the
+  string option values. Values passed through `record()` are not converted.
+- **Int-backed enums**: option values are strings on the wire, so string-cast the form data
+  (`record(['priority' => (string) $order->priority->value])`). The Radio, ToggleButtons and
+  CheckboxList clients compare strings, so an int value shows no selection.
+- **No validation is implied**, for the enum form as for the array form. Add
+  `Rule::enum(OrderStatus::class)` for a backed enum. `Rule::enum()` needs `tryFrom`, so validate a
+  pure enum with `Rule::in(array_column(Draft::cases(), 'name'))`.
+
+The same enum drives a badge: `Column::make('status')->badge(OrderStatus::class)` (see the
+badge paragraph in [authoring-pages.md](./authoring-pages.md)).
+
 ---
 
 ## Select progression — static → searchable → async → creatable
