@@ -41,14 +41,14 @@ class AdminPanel extends Panel
             ->navigation('topbar')
             ->navigationItems([
                 NavItem::make('Documentation')->url('https://github.com/DiVotek/tbtop')
-                    ->icon('globe')->group('Resources')->newTab(),
+                    ->icon('globe')->group('Resources')->openUrlInNewTab(),
             ])
             ->userMenuItems([
                 NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key'),
             ])
             ->commandPalette(fn (CommandPaletteConfig $p) => $p->commands([
                 Command::make('Create post')->icon('file-text')->url('/admin/posts/new')->group('Actions'),
-                Command::make('tbtop on GitHub')->icon('globe')->url('https://github.com/DiVotek/tbtop')->openInNewTab()->group('Links'),
+                Command::make('tbtop on GitHub')->icon('globe')->url('https://github.com/DiVotek/tbtop')->openUrlInNewTab()->group('Links'),
             ]))
             ->maxContentWidth('7xl')
             ->locales(['en', 'uk'])

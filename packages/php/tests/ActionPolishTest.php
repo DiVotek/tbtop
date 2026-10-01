@@ -24,8 +24,8 @@ it('authorize: a failing ability drops the action from actionsRow serialization'
     Gate::define('never', fn (?object $user) => false);
     $s = new S;
     $row = $s->actionsRow([
-        $s->action('visible')->visit('/x'),
-        $s->action('hidden')->visit('/y')->authorize('never'),
+        $s->action('visible')->url('/x'),
+        $s->action('hidden')->url('/y')->authorize('never'),
     ]);
 
     $json = json_decode(json_encode($row), true);
@@ -41,8 +41,8 @@ it('authorize: a failing ability drops the action from table rowActions serializ
         ->columns(['title' => 'Title'])
         ->query(fn () => null)
         ->rowActions([
-            $s->action('visible')->visit('/x'),
-            $s->action('hidden')->visit('/y')->authorize('never-row'),
+            $s->action('visible')->url('/x'),
+            $s->action('hidden')->url('/y')->authorize('never-row'),
         ]);
 
     $json = json_decode(json_encode($table), true);
@@ -64,7 +64,7 @@ it('slideOver: serializes slideOver:true into the modal spec', function (): void
 
 it('slideOver: throws when used on a non-modal action', function (): void {
     $s = new S;
-    $action = $s->action('go')->visit('/x')->slideOver();
+    $action = $s->action('go')->url('/x')->slideOver();
 
     expect(fn () => $action->toNode())->toThrow(LogicException::class);
 });

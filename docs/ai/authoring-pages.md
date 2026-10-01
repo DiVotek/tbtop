@@ -649,7 +649,7 @@ persist in the URL under `t[{table}][colSearch][{column}]`, alongside `filters`/
 ### ActionBuilder
 
 Instantiate via `$s->action(string $name)`. Every action needs exactly one spec method
-(`visit`, `submit`, `handle`, `modal`, or `custom`) — calling two throws.
+(`url`, `submit`, `handle`, `modal`, or `custom`) — calling two throws.
 
 > **Full method list: [api/actions.md](./api/actions.md)** — generated from source. The
 > table below covers the spec methods and the ones with real gotchas; styling helpers
@@ -660,7 +660,8 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `label` | `label(string $label): self` | Button label |
 | `color` | `color(string $color): self` | Button color, e.g. `'primary'`, `'danger'` |
 | `keybinding` | `keybinding(string $keys): self` | Keyboard shortcut, e.g. `'mod+s'` |
-| `visit` | `visit(string $href, bool $newTab = false): self` | **Spec.** Client-side navigation to a static URL; `$newTab` opens it in a new browser tab instead |
+| `url` | `url(string $href): self` | **Spec.** Client-side navigation to a static URL (`{row.*}` templates resolve per row). Unlike `url()` on nav items, commands and stats it is not a setter: a second spec throws. Not `link()`, which only styles the trigger |
+| `openUrlInNewTab` | `openUrlInNewTab(bool $condition = true): self` | Opens the `url()` target in a new browser tab; call order does not matter, no effect without `url()` |
 | `submit` | `submit(?string $form = null): self` | **Spec.** Submit a form; optional form name (defaults to the enclosing form) |
 | `handle` | `handle(Closure $handler, array $needs = []): self` | **Spec.** Server action handler; `$needs` declares payload sources (`'form'`\|`'row'`\|`'selection'`) |
 | `modal` | `modal(string $title, Node\|FormBuilder\|JsonSerializable\|null $body = null, ?string $description = null): self` | **Spec.** Opens a modal dialog |
@@ -804,15 +805,15 @@ ViewAction::make(
 
 #### `FormActions` — form-footer button presets
 
-`FormActions` removes the boilerplate `actionsRow([... submit() ..., ... visit() ...])` at
+`FormActions` removes the boilerplate `actionsRow([... submit() ..., ... url() ...])` at
 the bottom of a form. Two entry points:
 
 - **`FormActions::save($s, $label = 'Save'): ActionBuilder`** — a single primary submit
   button (with the `mod+s` keybinding). Returns a chainable `ActionBuilder`, so wrap it in
   your own `actionsRow` or chain more on it.
 - **`FormActions::saveCancel($s, $cancelUrl, $saveLabel = 'Save', $extra = []): Node`** — a
-  complete footer `Node`: a primary Save submit plus a Cancel button that `visit()`s
-  `$cancelUrl`. `$extra` is a list of additional `ActionBuilder`s appended to the row. Drop
+  complete footer `Node`: a primary Save submit plus a Cancel button that navigates
+  to `$cancelUrl` via `url()`. `$extra` is a list of additional `ActionBuilder`s appended to the row. Drop
   the returned `Node` straight into the form's children.
 
 ```php
@@ -824,7 +825,7 @@ $s->form('post', [
 ```
 
 What this replaces is a hand-rolled `actionsRow` holding a `save` submit and a `cancel`
-visit; the demo pages have all migrated to the helper. Because `FormActions::save` routes
+`url()` action; the demo pages have all migrated to the helper. Because `FormActions::save` routes
 through `$s`, the submit action is registered like any other — the registry mandate above
 holds.
 
@@ -901,7 +902,7 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
 clamped again client-side**. `url($href)` makes the whole card a link (a dashboard KPI
-that opens its list); `openInNewTab()` opens it in a new browser tab. Call `->toNode()` to embed a `Stat` in a layout node.
+that opens its list); `openUrlInNewTab()` opens it in a new browser tab. Call `->toNode()` to embed a `Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php
@@ -1007,7 +1008,7 @@ navigation decision is made**:
 |---|---|---|
 | Stay on the page, show a toast / refresh a table | `Effects::make()->notify(...)` (no redirect) | The common case — save in place |
 | Navigate after a server decision | `Effects::make()->redirect($url)` | You computed the URL from data only the server has (the new record's id) |
-| Navigate to a fixed, known URL on a **button** (no server work) | `->visit($url)` on the action (a spec, not a handler) | A Cancel/Back button — pure client navigation, no round-trip |
+| Navigate to a fixed, known URL on a **button** (no server work) | `->url($url)` on the action (a spec, not a handler) | A Cancel/Back button — pure client navigation, no round-trip |
 | Redirect straight out of `onSubmit` | **return a string** (the URL) | A create form that lands on the new edit page |
 
 The two redirect forms are not interchangeable:
@@ -1040,7 +1041,7 @@ notifies *and* navigates:
 ```
 
 Rule of thumb: a **string return** is a bare redirect (no toast). An **`Effects` redirect**
-lets you chain a `notify` (or `refreshTable`) alongside the navigation. A **`visit()` spec**
+lets you chain a `notify` (or `refreshTable`) alongside the navigation. A **`url()` spec**
 is for buttons that never touch the server. Do not invent a new effect to navigate — the
 three forms above cover every case (the effect set is closed).
 

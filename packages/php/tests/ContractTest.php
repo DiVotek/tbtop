@@ -228,7 +228,7 @@ it('section card and plain variants conform to the wire grammar schema', functio
 it('actionsRow grid variant conforms to the wire grammar schema', function () {
     $s = new S;
     $node = $s->actionsRow(
-        [$s->action('pages')->label('Pages')->visit('/admin/pages')],
+        [$s->action('pages')->label('Pages')->url('/admin/pages')],
         ['variant' => 'grid']
     );
 
@@ -294,7 +294,7 @@ it('nested nav tree with a merged, sectioned custom item and a group description
             ->navigationGroups([NavGroup::make('Content')->description('Articles and pages')->sections(['help' => 'Help'])])
             ->navigationItems([
                 NavItem::make('Documentation')->url('https://example.test')->icon('globe')
-                    ->group('Content')->section('help')->sort(5)->newTab(),
+                    ->group('Content')->section('help')->sort(5)->openUrlInNewTab(),
             ])
     );
 

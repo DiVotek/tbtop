@@ -270,7 +270,7 @@ it('NavBuilder: merges panel navigationItems() into their declared group alongsi
             ->pages([NavPage::class])
             ->navigationItems([
                 NavItem::make('Documentation')->url('https://example.test/docs')->icon('globe')
-                    ->group('Content')->sort(1)->newTab(),
+                    ->group('Content')->sort(1)->openUrlInNewTab(),
             ])
     );
 

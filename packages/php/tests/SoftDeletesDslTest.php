@@ -56,7 +56,7 @@ it('appends restore + forceDelete bulk actions needing the selection', function 
 it('merges with tabs/rowActions the consumer already set, keeping both', function (): void {
     $opts = softDeletesTableOptions(function ($s, $table): void {
         $table->tabs([Tab::make('mine')->label('Mine')]);
-        $table->rowActions([$s->action('edit')->label('Edit')->visit('/x')]);
+        $table->rowActions([$s->action('edit')->label('Edit')->url('/x')]);
         $table->bulkActions([$s->action('publish')->label('Publish')->handle(fn () => null, needs: ['selection'])]);
     });
 

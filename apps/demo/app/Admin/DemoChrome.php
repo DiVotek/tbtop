@@ -21,7 +21,7 @@ class DemoChrome extends Chrome
             $s->notifications(),
             $this->layoutSwitcher($s),
             ...parent::headerItems($s),
-            $s->action('view-site')->label('View site')->visit('/'),
+            $s->action('view-site')->label('View site')->url('/'),
         ];
     }
 
@@ -32,7 +32,7 @@ class DemoChrome extends Chrome
         $actions = array_map(
             fn (string $layout) => $s->action("layout-{$layout}")
                 ->label($layout === $current ? "✓ {$layout}" : $layout)
-                ->visit(request()->url().'?nav='.$layout),
+                ->url(request()->url().'?nav='.$layout),
             PanelConfig::NAVIGATIONS,
         );
 

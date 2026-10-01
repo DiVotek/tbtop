@@ -113,7 +113,7 @@ it('section hiddenIf serializes the condition under meta, not options', function
 it('actionsRow grid variant serializes options.variant on the row node', function (): void {
     $s = new S;
     $json = encodeVariantNode($s->actionsRow(
-        [$s->action('pages')->label('Pages')->visit('/admin/pages')],
+        [$s->action('pages')->label('Pages')->url('/admin/pages')],
         ['variant' => 'grid'],
     ));
 
@@ -124,12 +124,12 @@ it('actionsRow grid variant serializes options.variant on the row node', functio
 
 it('actionsRow without variant emits no variant key (back-compat)', function (): void {
     $s = new S;
-    $json = encodeVariantNode($s->actionsRow([$s->action('a')->label('A')->visit('/a')]));
+    $json = encodeVariantNode($s->actionsRow([$s->action('a')->label('A')->url('/a')]));
 
     expect($json['options'])->not->toHaveKey('variant');
 });
 
 it('actionsRow with an invalid variant throws', function (): void {
     $s = new S;
-    $s->actionsRow([$s->action('a')->label('A')->visit('/a')], ['variant' => 'masonry']);
+    $s->actionsRow([$s->action('a')->label('A')->url('/a')], ['variant' => 'masonry']);
 })->throws(InvalidArgumentException::class);

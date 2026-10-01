@@ -66,7 +66,7 @@ it('serializes aside node with children', function () {
 it('serializes actionGroup node with label and action children', function () {
     $s = new S;
     $actions = [
-        $s->action('publish')->label('Publish')->visit('/publish'),
+        $s->action('publish')->label('Publish')->url('/publish'),
         $s->action('archive')->label('Archive')->handle(fn () => null, needs: ['row']),
     ];
     $node = $s->actionGroup('More actions', $actions);

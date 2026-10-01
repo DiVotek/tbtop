@@ -25,7 +25,7 @@ it('FormActions::save keeps the label overridable via argument', function (): vo
 
 it('FormActions::saveCancel rows Save, extras, then a Cancel visit', function (): void {
     $s = new S;
-    $extra = $s->action('delete')->label('Delete')->color('danger')->visit('/admin/x');
+    $extra = $s->action('delete')->label('Delete')->color('danger')->url('/admin/x');
 
     $row = json_decode(json_encode(FormActions::saveCancel($s, '/admin/posts', extra: [$extra])), true);
     $children = $row['options']['children'];

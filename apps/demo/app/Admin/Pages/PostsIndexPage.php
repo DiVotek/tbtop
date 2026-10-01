@@ -43,7 +43,7 @@ class PostsIndexPage extends Page
     {
         return $s->stack([
             $s->actionsRow([
-                $s->action('new')->label('New post')->color('primary')->visit('/admin/posts/new'),
+                $s->action('new')->label('New post')->color('primary')->url('/admin/posts/new'),
             ]),
             $s->table('posts')
                 ->rowClick('edit')

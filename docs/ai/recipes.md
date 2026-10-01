@@ -445,7 +445,7 @@ Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class and no per-
 // apps/demo/app/Admin/AdminPanel.php
 ->navigationItems([
     NavItem::make('Documentation')->url('https://github.com/DiVotek/tbtop')
-        ->icon('globe')->group('Resources')->newTab(),
+        ->icon('globe')->group('Resources')->openUrlInNewTab(),
 ])
 ```
 
@@ -496,7 +496,7 @@ dropdown. Pass a Closure for request-time translation, as with `label()`.
 `->navigation('rail-sidebar')` shows each nav group as an icon with its label under it in a
 narrow rail and lists only the active group's items (with sections, badges and `parent`
 nesting) beside it. A label too long for the rail is truncated and repeated in a tooltip. A rail icon
-opens the group's first internal, same-tab item, so a group holding only external or `newTab`
+opens the group's first internal, same-tab item, so a group holding only external or new-tab
 links gets no icon. Ungrouped items live under a Home icon, and a group without `icon()` shows
 its label's first letter. Group `collapsible`/`collapsed` have no effect here. On a page the
 sidebar cannot list — a route-param record page, or one whose URL sits under no nav item —
