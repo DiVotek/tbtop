@@ -2,6 +2,8 @@
 
 // Rewrites ->visit()/->newTab()/->openInNewTab() to the url() + openUrlInNewTab() canon; idempotent.
 // Only `->` calls match: Pest browser tests call a bare visit(). Run: php scripts/codemods/link-canon.php
+// Text-level on purpose: docblocks, error strings and Markdown in this repo must move too. Repo-only, not a
+// consumer tool: it cannot tell a link builder from another API (e.g. Dusk $browser->visit()).
 
 $root = dirname(__DIR__, 2);
 $excluded = ['packages/php/tests/LinkCanonTest.php'];
