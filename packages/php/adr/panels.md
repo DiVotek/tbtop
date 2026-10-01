@@ -57,7 +57,7 @@ domain: panels
   entry per group, navigating to its first internal item — an icon-only rail is hard
   to learn for non-technical admins) beside a column listing only the active group; the
   client resolves that group by longest URL match, then the page's `navGroup` prop (its `nav()`
-  group), then the last group this panel showed, then the first. The client
+  group), then the last group a URL or `nav()` resolved on this panel, then the first. The client
   rearranges the *same* chrome trees rather than serializing a different one — so a custom
   Chrome class works under either layout. `sidebar` keeps the persistent left column; `topbar`
   renders one horizontal bar (logo + nav group dropdowns + header items) that collapses to the
@@ -69,8 +69,8 @@ domain: panels
   row that swaps the list without navigating. The only wire addition for the rail is the
   optional `navGroup` page prop.
 - **No default nav group.** Items that declare no group land in one ungrouped bucket that
-  ships as `navGroup.group: null` (key `''`) and renders without heading or indent; it sorts
-  like any undeclared group. The old implicit `General` group forced consumers to wrap a
+  ships as `navGroup.group: null` (key `''`) and renders without heading or indent; it always renders
+  first, ahead of every declared and undeclared group. The old implicit `General` group forced consumers to wrap a
   Dashboard entry in a group just to see it. An explicit `'General'` still works as a label.
 - **Nav sections are headings inside a group, in every layout.** `NavGroup::sections()` declares
   keyed, translatable headings; items reference them via `nav()['section']` /

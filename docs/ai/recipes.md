@@ -504,7 +504,7 @@ declare `nav(): ['group' => 'orders']` so the rail keeps that group active. On m
 burger drawer shows the same icon-and-label entries in a row that swaps the list below
 without navigating, and restarts from the page's group each time it opens. The active group
 resolves by the longest nav-item URL matching the current URL, then the page's `nav()` group
-(the `navGroup` page prop), then the last group this panel showed (kept in `localStorage`),
+(the `navGroup` page prop), then the last group a URL or `nav()` resolved on this panel (kept in `localStorage`),
 then the first rail group. In the rail the stock `logo` block shows the brand's first letter,
 since a brand name would not fit the narrow column; a client `logo` slot still replaces it.
 The demo panel switches layouts per session with `?nav=rail-sidebar` (or any other layout).
