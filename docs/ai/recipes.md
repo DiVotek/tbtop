@@ -401,7 +401,9 @@ its default is omitted from the wire entirely, so an empty `appearance` is norma
 
 **How it works here:** three independent mechanisms, all resolved by
 `Tbtop\Admin\Navigation\NavBuilder` and rendered by the same nav components as
-page-derived items.
+page-derived items. Grouping, sections and the choice of navigation layout
+(`sidebar` / `topbar` / `topbar-sidebar` / `rail-sidebar`, set by `PanelConfig::navigation()`)
+are covered at the end of this recipe.
 
 ### Nested nav (a page under another page)
 
@@ -500,7 +502,11 @@ its label's first letter. Group `collapsible`/`collapsed` have no effect here. O
 sidebar cannot list — a route-param record page, or one whose URL sits under no nav item —
 declare `nav(): ['group' => 'orders']` so the rail keeps that group active. On mobile the
 burger drawer shows the same icon-and-label entries in a row that swaps the list below
-without navigating.
+without navigating, and restarts from the page's group each time it opens. The active group
+resolves by the longest nav-item URL matching the current URL, then the page's `nav()` group
+(the `navGroup` page prop), then the last group a URL or `nav()` resolved on this panel (kept in `localStorage`),
+then the first rail group. In the rail the stock `logo` block shows the brand's first letter,
+since a brand name would not fit the narrow column; a client `logo` slot still replaces it.
 The demo panel switches layouts per session with `?nav=rail-sidebar` (or any other layout).
 
 ### Ungrouped items
@@ -509,7 +515,7 @@ A page whose `nav()` omits `group` (or a `NavItem` without `->group()`) is **not
 default group. All such items form one ungrouped bucket that ships as `group: null` and
 renders without a heading and without the group indent — sidebar links at the level of the
 other groups' headings, inline links in the topbar, icon-only links in the collapsed rail,
-and no group label in the command palette. The bucket has no `navigationGroups()` entry, so
+a Home icon (label `nav.home_entry`) in the `rail-sidebar` layout, and no group label in the command palette. The bucket has no `navigationGroups()` entry, so
 it always renders first, ahead of every declared and undeclared group. Use it
 for a Dashboard-style entry that should not sit under a "General" label; a page that wants
 a heading declares `'group' => 'General'` (and may label it via `NavGroup::make('General')`).
