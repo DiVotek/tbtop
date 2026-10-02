@@ -204,6 +204,15 @@ Per-package `packages/<pkg>/adr/<domain>.md`, one file per domain. Frontmatter +
 bullets (append as they land) + short `## Why`. ~100 lines target, 200 cap. Edit superseded
 decisions in place with `> Replaces previous decision (see git history)`.
 
+## PRs
+
+Merging to `main` needs the PHP, Client and Lint checks green. Auto-merge is off: merge
+with `gh pr merge --squash` (the branch is deleted on merge). Auto-review is
+`pr-agent-pilot[bot]`: its verdict is the `triage` check-run, its findings are inline review
+comments. A clean re-run posts no new review, so poll the check-run, not reviews. Validate
+each finding, fix or reply, then resolve the thread (GraphQL `resolveReviewThread`). The
+`Devin Review` check passes without reviewing (no credits left).
+
 ## Releasing
 
 Both packages ship **lockstep** from one tag — `@tbtop/inertia-admin` (npm) and `tbtop/admin`
