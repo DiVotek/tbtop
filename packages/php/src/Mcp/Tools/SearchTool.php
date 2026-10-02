@@ -29,7 +29,7 @@ final class SearchTool extends Tool
         a `translatable` field takes an object keyed by locale (see its nestedRules). A form's `values` are
         its current data — build edits from them, not from query() rows, which are formatted for display.
         A field you omit is absent from the handler's input; resend `values` for fields you keep.
-        `excludedFields` cannot be sent and are never part of the input.
+        `excludedFields` cannot be sent: execute() refuses input that sets one.
         TXT;
 
     public function schema(JsonSchema $schema): array

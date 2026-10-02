@@ -58,6 +58,27 @@ final class FormArguments
     }
 
     /**
+     * Refuses $input that sets a field describe() lists as excluded: the form's
+     * rules would otherwise let an agent-made value through to the handler.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    public static function assertSendable(FormBuilder $form, array $input): void
+    {
+        $sent = array_values(array_filter(
+            $form->getFields(),
+            static fn (Field $field): bool => array_key_exists($field->name, $input)
+                && in_array($field->toNode()->kind, self::UNSUPPORTED_KINDS, true),
+        ));
+        if ($sent === []) {
+            return;
+        }
+        $names = implode(', ', array_map(static fn (Field $field): string => $field->name, $sent));
+
+        throw new AgentError("Fields {$names} are in excludedFields and cannot be sent over MCP; omit them.");
+    }
+
+    /**
      * @param  array<string, mixed>  $options
      * @param  array<string, list<string>>  $rules
      * @return array<string, mixed>

@@ -10,6 +10,7 @@ use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 use Tbtop\Admin\Http\ActionFormRules;
 use Tbtop\Admin\Mcp\AgentError;
 use Tbtop\Admin\Mcp\Execution;
+use Tbtop\Admin\Mcp\FormArguments;
 use Tbtop\Admin\Mcp\PageSurface;
 use Tbtop\Admin\Mcp\PanelPages;
 
@@ -52,13 +53,17 @@ final class ExecuteTool extends Tool
 
             if (isset($resolved->s->collectedActions()[$name])) {
                 $action = PageSurface::exposedAction($resolved, $name);
-                if ($action === null || $action->handler() === null
-                    || PageSurface::isUnfillableForm(ActionFormRules::enclosingForm($resolved, $name))) {
+                $enclosing = ActionFormRules::enclosingForm($resolved, $name);
+                if ($action === null || $action->handler() === null || PageSurface::isUnfillableForm($enclosing)) {
                     throw new AgentError("\"{$slug}:{$name}\" is not executable here. Call search() for this page.");
+                }
+                $input = self::objectArg($request->get('form'));
+                if ($enclosing !== null) {
+                    FormArguments::assertSendable($enclosing, $input);
                 }
 
                 return $execution->action($name, array_filter([
-                    'form' => self::objectArg($request->get('form')),
+                    'form' => $input,
                     'row' => self::objectArg($request->get('row')),
                     'selection' => array_values(self::objectArg($request->get('selection'))),
                 ]));
@@ -69,7 +74,10 @@ final class ExecuteTool extends Tool
                     throw new AgentError("\"{$slug}:{$name}\" is not executable here. Call search() for this page.");
                 }
 
-                return $execution->form($name, self::objectArg($request->get('form')));
+                $input = self::objectArg($request->get('form'));
+                FormArguments::assertSendable($form, $input);
+
+                return $execution->form($name, $input);
             }
 
             throw new AgentError("Unknown executable \"{$slug}:{$name}\". Call search() for this page.");

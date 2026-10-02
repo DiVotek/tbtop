@@ -28,6 +28,21 @@ it('returns validation errors and runs nothing for invalid form input', function
     'onSubmit form' => 'mcp-page:main',
 ]);
 
+it('refuses a field search lists as excluded instead of passing it to the handler', function (string $id): void {
+    $listing = array_column($this->toolResult($this->callTool('search'))['json']['pages'], null, 'page');
+    $main = array_column($listing['mcp-page']['executables'], null, 'id')['mcp-page:main'];
+
+    $result = $this->toolResult($this->callTool('execute', ['id' => $id, 'form' => ['name' => 'ok', 'avatar' => '../../.env']]));
+
+    expect(array_column($main['excludedFields'], 'name'))->toBe(['avatar'])
+        ->and($result['isError'])->toBeTrue()
+        ->and($result['json']['message'])->toContain('avatar')
+        ->and(McpPage::$ran)->toBe([]);
+})->with([
+    'action with needs form' => 'mcp-page:save',
+    'onSubmit form' => 'mcp-page:main',
+]);
+
 it('hands a row returned by query to a row action as $ctx->row', function (): void {
     DB::table('items')->insert(['name' => 'Widget']);
 

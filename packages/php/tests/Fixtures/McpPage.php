@@ -31,6 +31,7 @@ class McpPage extends Page
         return $s->stack([
             $s->form('main', [
                 $s->text('name')->label('Name')->required(),
+                $s->upload('avatar'),
                 $s->action('save')->handle(function (ActionCtx $ctx): Effects {
                     static::$ran['save'] = $ctx->form;
 
