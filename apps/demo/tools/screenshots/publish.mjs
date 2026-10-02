@@ -11,8 +11,13 @@ const dir = resolve(dirname(fileURLToPath(import.meta.url)), '../../screenshots'
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 
 const root = git('rev-parse', '--show-toplevel');
-const files = (process.argv.length > 2 ? process.argv.slice(2).map((f) => resolve(f)) : listShots())
-    .map((f) => relative(root, f));
+const shots = process.argv.length > 2 ? process.argv.slice(2).map((f) => resolve(f)) : listShots();
+const stray = shots.filter((f) => dirname(f) !== dir || !isShot(f));
+if (stray.length > 0) {
+    console.error(`not a screenshot in ${relative(root, dir)}: ${stray.join(', ')}`);
+    process.exit(2);
+}
+const files = shots.map((f) => relative(root, f));
 
 if (files.length === 0) {
     console.error(`no screenshots in ${relative(root, dir)}; run capture.mjs first`);
@@ -33,6 +38,10 @@ console.error('\nPush the branch for the links to resolve. Do not rebase past th
 
 function listShots() {
     return readdirSync(dir)
-        .filter((f) => /\.(png|gif)$/.test(f))
+        .filter(isShot)
         .map((f) => resolve(dir, f));
+}
+
+function isShot(file) {
+    return /\.(png|gif)$/.test(file);
 }
