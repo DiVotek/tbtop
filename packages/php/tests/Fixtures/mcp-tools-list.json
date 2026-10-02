@@ -1,0 +1,126 @@
+[
+    {
+        "name": "search",
+        "title": "Search Tool",
+        "description": "Discover what you can do in this admin panel. Without arguments: every page you may open, plus the\nexecutables (actions/forms) and tables of pages that take no params. With `page` (+ `params` for a\npage whose path has params, e.g. a record id, as strings): that page's executables and tables. Each\nexecutable lists its `needs` (form/row/selection) and form fields with Laravel validation rules;\na `translatable` field takes an object keyed by locale (see its nestedRules). A form's `values` are\nits current data — build edits from them, not from query() rows, which are formatted for display.\nA field you omit is absent from the handler's input; resend `values` for fields you keep.\n`excludedFields` cannot be sent: execute() refuses input that sets one.",
+        "inputSchema": {
+            "properties": {
+                "page": {
+                    "description": "Page slug from a previous search().",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "Route params of the page as strings, e.g. {\"post\": \"12\"}.",
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "annotations": {
+            "readOnlyHint": true
+        }
+    },
+    {
+        "name": "query",
+        "title": "Query Tool",
+        "description": "Read rows of a table found by search(). A row is what the admin table receives: its visible\ncolumns, formatted, plus the record's other attributes and its key (`id` for Eloquent models).\nPass a row unchanged as `row` to execute() for a row action, or keys as `selection`. Filters take\nthe value shape search() states per filter; search, tabs, sort and perPage accept only what\nsearch() listed for that table.",
+        "inputSchema": {
+            "properties": {
+                "page": {
+                    "description": "Page slug.",
+                    "type": "string"
+                },
+                "table": {
+                    "description": "Table name from search().",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "Route params of the page, values as strings.",
+                    "type": "object"
+                },
+                "pageNumber": {
+                    "description": "1-based page of results.",
+                    "type": "integer"
+                },
+                "perPage": {
+                    "description": "One of the table's pagination options.",
+                    "type": "integer"
+                },
+                "search": {
+                    "description": "Table-wide search.",
+                    "type": "string"
+                },
+                "columnSearch": {
+                    "description": "Per-column search: {column: text}.",
+                    "type": "object"
+                },
+                "filters": {
+                    "description": "Filter values keyed by filter name.",
+                    "type": "object"
+                },
+                "tab": {
+                    "description": "Filter tab name.",
+                    "type": "string"
+                },
+                "sort": {
+                    "description": "Sortable column name.",
+                    "type": "string"
+                },
+                "dir": {
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object",
+            "required": [
+                "page",
+                "table"
+            ]
+        },
+        "annotations": {
+            "readOnlyHint": true
+        }
+    },
+    {
+        "name": "execute",
+        "title": "Execute Tool",
+        "description": "Run an executable found by search(), with the user's own permissions. Pass `params` — the route\nparams of the page the executable lives on, for every executable of that page — and what it `needs`: `form` (field values), `row` (a row from query(),\nunchanged) or `selection` (row keys). Invalid input returns validation errors and runs nothing;\nevery error is JSON {message, errors?}. Returns the effects the UI would show; a redirect (form\n`redirect`, or a `redirect` effect) carries the `page`/`params` it opens so you can search() it next.",
+        "inputSchema": {
+            "properties": {
+                "id": {
+                    "description": "Executable id \"{page}:{name}\" from search().",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "Route params of the page, values as strings.",
+                    "type": "object"
+                },
+                "form": {
+                    "description": "Field values, for a form or an action that needs form.",
+                    "type": "object"
+                },
+                "row": {
+                    "description": "A row returned by query(), for a row action.",
+                    "type": "object"
+                },
+                "selection": {
+                    "description": "Row keys as strings, for a bulk action; integer keys are passed on as integers.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object",
+            "required": [
+                "id"
+            ]
+        },
+        "annotations": {
+            "destructiveHint": true
+        }
+    }
+]
