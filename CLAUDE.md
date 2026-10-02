@@ -122,8 +122,8 @@ searches nav items and declared commands, not rows), no multi-tenancy. Full list
 `docs/ai` is written for consumers; this is the contributor's map. Paths are under
 `packages/php/src/` and `packages/client/src/`.
 
-- **Existence check first:** `grep -ril <name> docs/ai/api/` — generated from source, so it is
-  never stale.
+- **Existence check first:** `grep -ril <name> docs/ai/api/` — generated from source and
+  CI-gated by the `ApiReference` test, so on `main` it matches the code.
 - **Request lifecycle (PHP):** `routes/admin.php` → `Http/ResolvedPage` → `Http/AuthorizesPage`
   → the `Http/*Controller` → `Http/RespondsWithEffects`. Effects: `Actions/Effects.php`.
 - **Tree traversal (PHP):** `Dsl/StructureWalk.php` is the one child-walk; `Dsl/RuleWalker.php`
