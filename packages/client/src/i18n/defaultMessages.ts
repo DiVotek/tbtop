@@ -60,6 +60,7 @@ export const defaultMessages: Messages = {
 	"field.upload.uploading": "Uploading…",
 	"field.upload.prompt": "Click or drop a file",
 	"field.upload.remove": "Remove",
+	"field.upload.replace": "Replace",
 	"field.upload.reorder": "Reorder",
 	"field.upload.tooLarge": "File exceeds the maximum size",
 	"field.colorpicker.palette": "Color palette",
