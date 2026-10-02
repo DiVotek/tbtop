@@ -93,11 +93,13 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
 - **Table features:** sort, pagination, table-wide search, per-column search, per-field filters
   (modal/inline), filter tabs, row grouping, drag-reorder, inline-editable cells, row actions,
   bulk actions, header actions, row-click, record URLs, column visibility, empty state,
-  soft-delete macro, URL-state. In `TableBuilder.php` / `Column.php`.
+  soft-delete macro. In `TableBuilder.php` / `Column.php`. URL-state is client-only and always
+  on (`packages/client/src/structure/tableUrlState.ts`) — there is no PHP API for it.
 - **Panel-level:** multi-panel config, navigation (layouts sidebar/topbar/topbar-sidebar/rail-sidebar,
   groups with sections, nested items), chrome-as-DSL, command
   palette, database notifications (header bell), appearance (theme/density/max-width),
-  UI + content locales. In `Panels/PanelConfig.php`; see `docs/ai/api/panel.md`.
+  UI + content locales. In `Panels/PanelConfig.php` and its traits in `Panels/Concerns/`
+  (appearance: `ConfiguresAppearance.php`); see `docs/ai/api/panel.md`.
 - **Auth:** login, register, password reset, email verification, 2FA, passkeys, password
   confirmation — the **backend lives in the demo via Laravel Breeze controllers**
   (test-covered), **not** in the package. There is NO Fortify and no package-side auth
@@ -106,13 +108,40 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   `ApiTokensPage`). Don't rebuild the flows to learn them; the open gap is a package-side
   backend story, not the layout.
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
-  `apps/demo/resources/js/admin.tsx` for the rating-field example. Use this for app-specific
-  fields instead of editing the packages.
+  `apps/demo/resources/js/admin.tsx` for the rating-field example (PHP half:
+  `apps/demo/app/Admin/Fields/Rating.php`, registered via `S::register` in
+  `AppServiceProvider`). Use this for app-specific fields instead of editing the packages.
 
 Known stubs/gaps (don't assume these work): no package-side auth backend, no CSV
 export/import, no **cross-model** record search (per-table search ships; the ⌘K palette
 searches nav items and declared commands, not rows), no multi-tenancy. Full list in
 `docs/backlog.md` — it lags the code, so verify against source before trusting a "gap".
+
+## Source map (package internals)
+
+`docs/ai` is written for consumers; this is the contributor's map. Paths are under
+`packages/php/src/` and `packages/client/src/`.
+
+- **Existence check first:** `grep -ril <name> docs/ai/api/` — generated from source and
+  CI-gated by the `ApiReference` test, so on `main` it matches the code.
+- **Request lifecycle (PHP):** `routes/admin.php` → `Http/ResolvedPage` → `Http/AuthorizesPage`
+  → the `Http/*Controller` → `Http/RespondsWithEffects`. Effects: `Actions/Effects.php`.
+- **Tree traversal (PHP):** `Dsl/StructureWalk.php` is the one child-walk; `Dsl/RuleWalker.php`
+  collects field rules on top of it. Reuse them — never write a second field walk.
+- **Shared field behaviour (PHP):** `Dsl/Concerns/` (`HasOptions`, `Has*Rules`, …); enum
+  options in `Dsl/EnumOptions.php` / `Dsl/OptionList.php`; server cell formatting in
+  `Http/ColumnProjection.php`. API-reference generator: `Support/ApiReference/`.
+- **Client blocks:** `structure/<kind>Block.tsx`; tables in `structure/table/`
+  (`cellHelpers`, `columnValueFormat`, `iconRegistry`, `colorRegistry`, `toolbar`).
+- **Client plumbing:** `render/` (block registry, `defineFieldClient`, section header);
+  `inertia/` (page, effects, `materialize*`); `app/` (shell frames, chrome, nav, palette,
+  notifications); `data/` (`client.tsx` = `apiBase`, `entityRoutes.ts`).
+- **Links:** every client href goes through `lib/externalUrl.ts` (`isExternalUrl`).
+- **Deprecating a public PHP method:** `@deprecated` docblock + `trigger_error(...,
+  E_USER_DEPRECATED)` (see `Navigation/NavItem.php`). Laravel drops deprecations in tests —
+  assert them with the `set_error_handler` capture in `packages/php/tests/LinkCanonTest.php`.
+
+Most client files are `.tsx` even without JSX — glob `name.ts*` rather than guessing.
 
 ## Commands
 
@@ -123,10 +152,18 @@ PHP package (`cd packages/php`):
 
 Client package (`cd packages/client`):
 - `bun test` — tests · `bun test <path>` — one file
-- `tsc --noEmit` — typecheck
+- `bun run typecheck` — typecheck (no global `tsc`; CI runs `bunx tsc --noEmit`)
 
-Demo (`cd apps/demo`): standard Laravel — `php artisan serve`, `npm run dev` (Vite for the
-admin entry). Browser e2e for walking-skeleton flows lives here.
+Repo root: `bun run lint` (oxlint), `bun run format:check` (biome) — CI's lint job.
+
+Demo (`cd apps/demo`, setup in the README quickstart):
+- `composer dev` — server + queue + logs + Vite. Pages render a blank shell without Vite or a
+  prior `npm run build` (`public/build/manifest.json`).
+- Login `admin@admin.com` / `password` (seeded). SQLite at `database/database.sqlite`.
+  `.env` is deny-listed for agents — don't read it.
+- `composer smoke` — browser suite (builds first). On a "Playwright outdated" error run
+  `npx playwright install chromium`. Bare `vendor/bin/pest` skips `tests/Browser`.
+- Page → URL: `grep -H -A2 'function path' app/Admin/Pages/*.php` (paths sit under `/admin/`).
 
 **Run only tests for what you changed.** CI covers the two packages — `packages/php`
 (pest, phpstan, contract-fixture drift), `packages/client` (bun test, tsc) and lint.
@@ -166,6 +203,16 @@ PHP follows Pint + the same size/bucket/naming principles. Key carry-overs:
 Per-package `packages/<pkg>/adr/<domain>.md`, one file per domain. Frontmatter + `## Decisions`
 bullets (append as they land) + short `## Why`. ~100 lines target, 200 cap. Edit superseded
 decisions in place with `> Replaces previous decision (see git history)`.
+
+## PRs
+
+Merging to `main` needs the PHP, Client and Lint checks green. Auto-merge is off: merge
+with `gh pr merge --squash` (the branch is deleted on merge). Auto-review is
+`pr-agent-pilot[bot]`: its verdict is the `triage` check-run, its findings are inline review
+comments. After a fix, a clean re-run leaves no new review — the old review and its threads
+stay; the verdict for the new commit is only the `triage` check-run, so poll that. Validate
+each finding, fix or reply, then resolve the thread (GraphQL `resolveReviewThread`). The
+`Devin Review` check passes without reviewing (no credits left).
 
 ## Releasing
 
