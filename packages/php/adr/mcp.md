@@ -62,6 +62,11 @@ domain: mcp
 - **Visibility: everything the user can do, minus `->mcp(false)`.** Opt-out on an action
   or a page, server-only — never serialized to the wire. Client-only `custom` handlers
   and `upload`/`media`/`richtext` fields are excluded from `search` with a stated reason.
+- **Row and selection stay client input; the threat model is documented, not enforced.**
+  `execute` passes `row`/`selection` to the handler as the browser path does. Re-loading
+  them would need the table's query scope inside the action, which the package does not
+  know for author-written handlers. `docs/ai/wiring.md` → Threat model tells authors to
+  re-load and authorize by key, and clients to confirm `execute`.
 - **Read and write ship together.** A read-only first phase exists to limit an untrusted
   agent; this one is trusted.
 

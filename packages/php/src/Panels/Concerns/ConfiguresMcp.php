@@ -23,7 +23,7 @@ trait ConfiguresMcp
      * `composer require laravel/mcp`). $middleware is the route's whole auth and
      * access stack — it REPLACES the panel's middleware, which does not run for
      * MCP calls: name stateless token auth and repeat the panel's role checks,
-     * e.g. `['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin']`. A page's own
+     * e.g. `['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin', 'throttle:60,1']`. A page's own
      * restriction belongs in Page::can(), which MCP enforces. An empty list
      * throws: it would serve the panel without authentication.
      *

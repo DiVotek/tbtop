@@ -156,8 +156,9 @@ Laravel 11, which the rest of `tbtop/admin` still supports.
 ```php
 return $panel
     ->id('admin')
-    // required: the route's whole auth + access stack; the host issues the tokens
-    ->mcp(['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin']);
+    // required: the route's whole auth + access stack; the host issues the tokens.
+    // throttle after auth limits per user, not per IP.
+    ->mcp(['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin', 'throttle:60,1']);
     // ->mcp([...], path: 'agent') serves it at {prefix}/agent instead
 ```
 
@@ -190,7 +191,8 @@ return $panel
 - **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
   `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
   actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason; so
-  is a form (or an action submitting it) whose every field is excluded.
+  is a form (or an action submitting it) whose every field is excluded. `execute` refuses
+  input that sets an excluded field instead of passing it to the handler.
 - **Curate what the agent sees.** Every server action is an executable, including UI
   plumbing: a modal's Cancel/Close handlers, a quick-create next to the full create page.
   Mark those `->mcp(false)` — the agent picks from the list, and noise costs it context
@@ -201,6 +203,98 @@ return $panel
   app's own or listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other
   gets `403` before auth runs, which stops DNS-rebinding and cross-site calls.
 - A page may not use the MCP path, or the slug `mcp` (the route name), in a panel with MCP on.
+
+#### Threat model
+
+The agent is trusted to act for its user, but what it reads and what it is sent are not.
+
+- **It has the user's whole reach.** A token can do everything its user can do in the UI,
+  and every `query` row and `search` value goes into the context of the agent's model
+  provider. Issue a dedicated, least-privileged user or role for agents when the full
+  admin role is too much, one token per client, with an expiry
+  (`sanctum.expiration`), and revoke it when the client goes away.
+- **`$ctx->row` and `$ctx->selection` are client input** — from the browser and from an
+  agent alike: the agent can send any row it likes, not just one `query` returned. A row
+  or bulk handler must re-load records by key through the same scope the table queries
+  (tenant, owner, soft-delete) and authorize them, and must not trust any other row field:
+
+  ```php
+  $s->action('archive')->handle(function (ActionCtx $ctx): Effects {
+      $post = Post::query()->whereBelongsTo($ctx->user, 'author')->findOrFail($ctx->row['id']);
+      Gate::forUser($ctx->user)->authorize('update', $post);
+      $post->update(['archived_at' => now()]);
+
+      return Effects::make()->notify('Archived');
+  }, needs: ['row']);
+  ```
+
+- **Data can carry instructions (prompt injection).** A record's text — a customer
+  message, a product description — reaches the model as tool output and may tell it to
+  run something. `execute` is always annotated destructive: keep confirmation on in the
+  client for every `execute` call (no "always allow"), hide actions an agent should never
+  run with `->mcp(false)`, and keep irreversible ones behind `->authorize()` for roles
+  agents do not get.
+
+#### Connect a client
+
+1. **Token auth in the host.** Install Sanctum (`php artisan install:api`), add
+   `HasApiTokens` to the user model, and alias the ability middleware, which Laravel does
+   not register by default:
+
+   ```php
+   // bootstrap/app.php
+   ->withMiddleware(function (Middleware $middleware): void {
+       $middleware->alias(['abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class]);
+   })
+   ```
+
+2. **Issue a token** with the ability the stack checks, and give its plain-text value to
+   the user once (tinker, a console command, or a page action):
+
+   ```php
+   $token = $user->createToken('claude-desktop', ['tbtop-mcp'])->plainTextToken; // "1|…"
+   ```
+
+3. **Check the endpoint** before wiring a client — expect a JSON-RPC result, and `401`
+   without the header:
+
+   ```bash
+   curl -s https://app.test/admin/mcp -H "Authorization: Bearer $TBTOP_TOKEN" \
+     -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
+   ```
+
+4. **Cursor** reads HTTP servers with headers from `~/.cursor/mcp.json` (or the
+   project's `.cursor/mcp.json`); `${env:…}` keeps the token out of the file:
+
+   ```json
+   {
+     "mcpServers": {
+       "tbtop": {
+         "url": "https://app.test/admin/mcp",
+         "headers": { "Authorization": "Bearer ${env:TBTOP_TOKEN}" }
+       }
+     }
+   }
+   ```
+
+5. **Claude Desktop** starts local (stdio) servers from `claude_desktop_config.json`, so
+   bridge to the HTTP endpoint with `mcp-remote` (Node ≥ 18). Keep the header value in
+   `env` — a space inside `args` breaks on some platforms:
+
+   ```json
+   {
+     "mcpServers": {
+       "tbtop": {
+         "command": "npx",
+         "args": ["-y", "mcp-remote", "https://app.test/admin/mcp", "--header", "Authorization:${TBTOP_AUTH}"],
+         "env": { "TBTOP_AUTH": "Bearer 1|your-token" }
+       }
+     }
+   }
+   ```
+
+   Restart Claude Desktop; the server shows up with the `search`, `query` and `execute` tools.
 
 ---
 
