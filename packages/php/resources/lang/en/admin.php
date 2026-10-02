@@ -293,6 +293,7 @@ return [
             'uploading' => 'Uploading…',
             'prompt' => 'Click or drop a file',
             'remove' => 'Remove',
+            'replace' => 'Replace',
             'reorder' => 'Reorder',
             'tooLarge' => 'File exceeds the maximum size',
         ],
