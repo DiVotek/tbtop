@@ -54,6 +54,7 @@ class AdminPanel extends Panel
             ->locales(['en', 'uk'])
             ->defaultLocale('en')
             ->chrome(DemoChrome::class)
+            ->mcp(['auth:sanctum', 'abilities:tbtop-mcp'])
             ->rootView('admin');
     }
 }

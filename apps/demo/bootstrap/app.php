@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Admin panel is the canonical surface: the auth middleware (priority-sorted
         // ahead of RequireFullAuth) sends all guests to the DSL login page.
+        $middleware->alias(['abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class]);
+
         $middleware->redirectGuestsTo(fn (Request $request): string => route('tbtop.admin.login-page'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
