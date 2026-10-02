@@ -87,6 +87,9 @@ function UploadSingleForm({
 			<UploadPreview
 				value={preview}
 				disabled={disabled}
+				onBlur={onBlur}
+				invalid={invalid}
+				describedBy={describedBy}
 				onRemove={() => {
 					setError(null);
 					onChange(null);
@@ -113,10 +116,13 @@ function UploadSingleForm({
 interface PreviewProps {
 	value: UploadValue;
 	disabled?: boolean;
+	onBlur?: () => void;
+	invalid?: boolean;
+	describedBy?: string;
 	onRemove: () => void;
 }
 
-function UploadPreview({ value, disabled, onRemove }: PreviewProps) {
+function UploadPreview({ value, disabled, onBlur, invalid, describedBy, onRemove }: PreviewProps) {
 	const t = useTranslation();
 	const filename = basename(value.path);
 	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
@@ -132,7 +138,10 @@ function UploadPreview({ value, disabled, onRemove }: PreviewProps) {
 				type="button"
 				className="rounded p-1 hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
 				aria-label={t("field.upload.remove")}
+				aria-invalid={invalid || undefined}
+				aria-describedby={describedBy}
 				disabled={disabled}
+				onBlur={onBlur}
 				onClick={onRemove}
 			>
 				<XIcon className="h-4 w-4" />
