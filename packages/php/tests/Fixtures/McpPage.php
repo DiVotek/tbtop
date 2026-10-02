@@ -58,6 +58,13 @@ class McpPage extends Page
                         return Effects::make();
                     }, needs: ['row']),
                 ])
+                ->bulkActions([
+                    $s->action('archiveMany')->handle(function (ActionCtx $ctx): Effects {
+                        static::$ran['archiveMany'] = $ctx->selection;
+
+                        return Effects::make();
+                    }, needs: ['selection']),
+                ])
                 ->query(fn () => DB::table('items'))
                 ->toNode(),
         ]);

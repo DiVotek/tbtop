@@ -37,7 +37,8 @@ final class ExecuteTool extends Tool
             'params' => $schema->object()->description('Route params of the page, values as strings.'),
             'form' => $schema->object()->description('Field values, for a form or an action that needs form.'),
             'row' => $schema->object()->description('A row returned by query(), for a row action.'),
-            'selection' => $schema->array()->description('Row keys, for a bulk action.'),
+            'selection' => $schema->array()->items($schema->string())
+                ->description('Row keys as strings, for a bulk action; integer keys are passed on as integers.'),
         ];
     }
 
@@ -65,7 +66,7 @@ final class ExecuteTool extends Tool
                 return $execution->action($name, array_filter([
                     'form' => $input,
                     'row' => self::objectArg($request->get('row')),
-                    'selection' => array_values(self::objectArg($request->get('selection'))),
+                    'selection' => self::selection($request->get('selection')),
                 ]));
             }
             $form = $resolved->s->reachableForm($name);
@@ -82,5 +83,19 @@ final class ExecuteTool extends Tool
 
             throw new AgentError("Unknown executable \"{$slug}:{$name}\". Call search() for this page.");
         });
+    }
+
+    /**
+     * Row keys as the browser sends them: the schema asks for strings, so a
+     * canonical integer string ("12", not "012") goes back to an int.
+     *
+     * @return list<mixed>
+     */
+    private static function selection(mixed $value): array
+    {
+        return array_map(
+            static fn (mixed $key): mixed => is_string($key) && (string) (int) $key === $key ? (int) $key : $key,
+            array_values(self::objectArg($value)),
+        );
     }
 }

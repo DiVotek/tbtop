@@ -55,6 +55,13 @@ it('hands a row returned by query to a row action as $ctx->row', function (): vo
         ->and(McpPage::$ran['rename'])->toBe($row);
 });
 
+it('passes string row keys to a bulk action as the browser would: integers stay integers', function (): void {
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-page:archiveMany', 'selection' => ['1', '012', 'abc']]));
+
+    expect($result['isError'])->toBeFalse()
+        ->and(McpPage::$ran['archiveMany'])->toBe([1, '012', 'abc']);
+});
+
 it('lists a parameterised page\'s actions only with params, and hides opted-out and client-only actions', function (): void {
     $listing = $this->toolResult($this->callTool('search'))['json']['pages'];
     $bySlug = array_column($listing, null, 'page');
