@@ -35,6 +35,12 @@ class LoginPage extends Page
         return ['web'];
     }
 
+    /** Not for agents: signing in needs a browser session, which MCP calls do not carry. */
+    public static function mcp(): bool
+    {
+        return false;
+    }
+
     public function layout(): string
     {
         return 'center';

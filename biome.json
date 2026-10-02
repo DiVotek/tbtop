@@ -17,6 +17,7 @@
 			"!**/composer.lock",
 			"!apps/**",
 			"!packages/contracts/fixtures/**",
+			"!packages/php/tests/Fixtures/mcp-tools-list.json",
 			"!packages/contracts/structure.schema.json"
 		]
 	},

@@ -34,8 +34,8 @@ final class RuleWalker
     public static function collect(array $children, string $prefix = ''): array
     {
         $rules = [];
-        foreach ($children as $child) {
-            foreach (self::fromChild($child, $prefix) as $key => $entry) {
+        foreach (self::fields($children) as $field) {
+            foreach (self::fromField($field, $prefix) as $key => $entry) {
                 $rules[$key] = $entry;
             }
         }
@@ -43,22 +43,29 @@ final class RuleWalker
         return $rules;
     }
 
-    /** @return array<string, list<string|ValidationRule>> */
-    private static function fromChild(mixed $child, string $prefix): array
+    /**
+     * The fields a form submits, in order: included ones only, layout nodes
+     * walked through, a container field (repeater, keyvalue) as one entry.
+     *
+     * @param  list<mixed>  $children
+     * @return list<Field>
+     */
+    public static function fields(array $children): array
     {
-        if (! ChildInclusion::isConditionMet($child)) {
-            return [];
+        $fields = [];
+        foreach ($children as $child) {
+            if (! ChildInclusion::isConditionMet($child)) {
+                continue;
+            }
+            if ($child instanceof Field) {
+                $fields[] = $child;
+            } elseif ($child instanceof Node) {
+                self::assertNotSerializedField($child);
+                $fields = [...$fields, ...self::fields(StructureWalk::descendants($child))];
+            }
         }
-        if ($child instanceof Field) {
-            return self::fromField($child, $prefix);
-        }
-        if ($child instanceof Node) {
-            self::assertNotSerializedField($child);
 
-            return self::collect(StructureWalk::descendants($child), $prefix);
-        }
-
-        return [];
+        return $fields;
     }
 
     /**
@@ -320,31 +327,13 @@ final class RuleWalker
     public static function collectAttributes(array $children, string $prefix = ''): array
     {
         $attributes = [];
-        foreach ($children as $child) {
-            foreach (self::attributesFromChild($child, $prefix) as $key => $label) {
+        foreach (self::fields($children) as $field) {
+            foreach (self::attributesFromField($field, $prefix) as $key => $label) {
                 $attributes[$key] = $label;
             }
         }
 
         return $attributes;
-    }
-
-    /** @return array<string, string> */
-    private static function attributesFromChild(mixed $child, string $prefix): array
-    {
-        if (! ChildInclusion::isConditionMet($child)) {
-            return [];
-        }
-        if ($child instanceof Field) {
-            return self::attributesFromField($child, $prefix);
-        }
-        if ($child instanceof Node) {
-            self::assertNotSerializedField($child);
-
-            return self::collectAttributes(StructureWalk::descendants($child), $prefix);
-        }
-
-        return [];
     }
 
     /** @return array<string, string> */

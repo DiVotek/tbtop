@@ -103,23 +103,25 @@
 
 - ~~**`tbtop:page` scaffold command**~~ **Shipped** — `make:tbtop-page`, alongside
   `admin:install` (publishes the host wiring).
+- **Consumer testing kit** — Pest/PHPUnit helpers for host apps to test their own pages
+  through the wire contract, e.g. `page(CarsPage::class)->assertColumn('vin')
+  ->callAction('delete', $car)->assertEffect('refreshTable')`. Filament-parity adoption
+  item; parked 2026-09-24.
 
 ## Platform
 
 - ~~**Database notifications center**~~ **Shipped (polling)** — `$s->notifications()` bell,
   `Notification::make()->sendToDatabase()`, `PanelConfig::notificationsPolling()`.
   Broadcasting still open.
-- **MCP server** — `laravel/mcp`; tools generated from the page registry. Gates must
-  apply. Phase 1 read-only (table queries/filters/search), phase 2 actions. Needs its own
-  design session.
+- ~~**MCP server**~~ **Shipped** — `PanelConfig::mcp()` (laravel/mcp, suggested):
+  `search`/`query`/`execute` over the page registry, gates and validation via the page
+  controllers; `->mcp(false)` opt-out. Design in `packages/php/adr/mcp.md`. Open: a token
+  auth story in the demo (no Sanctum there yet).
 - **Log viewer** — separate package: pretty log browser inside the admin, so nobody
   tails files over SSH. Not urgent.
-- **Package-side auth backend** — the package ships the auth *screens* as DSL pages
-  (`LoginPage`, `TwoFactorChallengePage`, …) and integrates with a guard, but every
-  controller and route lives in the demo as Laravel Breeze
-  (`apps/demo/routes/auth.php`). A consumer installing `tbtop/admin` gets no working
-  login. Decide what the package owns: its own controllers, a Fortify bridge, or a
-  documented "bring your own Breeze" path.
+- **Auth backend is a non-goal** — the host app owns authentication (guard, controllers,
+  routes); the package ships only the auth *screens* as DSL pages and integrates with the
+  host's guard. The demo wires Laravel Breeze as one example. Decided 2026-09-24.
 - Multi-tenancy (post-panels; panels ≠ tenancy).
 - **Cross-model record search** — the ⌘K palette ships and searches nav items plus
   declared commands (`CommandPaletteConfig::commands()`); what is missing is searching
