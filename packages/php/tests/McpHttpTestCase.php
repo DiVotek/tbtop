@@ -44,15 +44,16 @@ class McpHttpTestCase extends TestCase
      * A tools/call through the panel's MCP endpoint (legacy JSON-RPC body: no initialize needed).
      *
      * @param  array<string, mixed>  $arguments
+     * @param  array<string, string>  $headers
      */
-    public function callTool(string $tool, array $arguments = []): TestResponse
+    public function callTool(string $tool, array $arguments = [], array $headers = []): TestResponse
     {
         return $this->postJson('/admin/mcp', [
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'tools/call',
             'params' => ['name' => $tool, 'arguments' => (object) $arguments],
-        ]);
+        ], $headers);
     }
 
     /** @return array{isError: bool, text: string, json: mixed} */

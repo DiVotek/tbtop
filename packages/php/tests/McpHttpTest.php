@@ -98,3 +98,15 @@ it('hides a page from search and refuses query on it when the user fails its gat
         ->and($query['isError'])->toBeTrue()
         ->and($query['text'])->not->toContain('Widget');
 });
+
+it('accepts no Origin, the app\'s own and an allowed one; refuses any other with 403', function (): void {
+    $call = fn (array $headers) => $this->callTool('execute', ['id' => 'mcp-page:ping'], $headers);
+
+    $call([])->assertOk();
+    $call(['Origin' => 'http://localhost'])->assertOk();
+    $call(['Origin' => 'https://agent.example.com'])->assertOk();
+    McpPage::$ran = [];
+
+    $call(['Origin' => 'https://evil.example'])->assertForbidden()->assertJsonPath('error.code', -32600);
+    expect(McpPage::$ran)->toBe([]);
+});

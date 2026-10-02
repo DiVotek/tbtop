@@ -15,6 +15,9 @@ trait ConfiguresMcp
 
     private string $mcpPath = 'mcp';
 
+    /** @var list<string> */
+    private array $mcpAllowedOrigins = [];
+
     /**
      * Expose this panel to AI agents over MCP at `POST {prefix}/{$path}` (needs
      * `composer require laravel/mcp`). $middleware is the route's whole auth and
@@ -37,6 +40,20 @@ trait ConfiguresMcp
         return $this;
     }
 
+    /**
+     * Browser origins, besides the app's own, that may call the MCP endpoint
+     * (`https://agent.example.com`). A request whose Origin is neither gets
+     * 403; one with no Origin — a desktop or CLI client — is not affected.
+     *
+     * @param  list<string>  $origins
+     */
+    public function mcpAllowedOrigins(array $origins): static
+    {
+        $this->mcpAllowedOrigins = $origins;
+
+        return $this;
+    }
+
     public function hasMcp(): bool
     {
         return $this->mcpMiddleware !== null;
@@ -52,5 +69,11 @@ trait ConfiguresMcp
     public function getMcpPath(): string
     {
         return $this->mcpPath;
+    }
+
+    /** Extra browser origins the MCP endpoint accepts. @return list<string> */
+    public function getMcpAllowedOrigins(): array
+    {
+        return $this->mcpAllowedOrigins;
     }
 }

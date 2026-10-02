@@ -11,7 +11,8 @@ class McpPanel extends TestPanel
 {
     public function configure(PanelConfig $panel): PanelConfig
     {
-        return parent::configure($panel)->mcp(['auth:web']);
+        return parent::configure($panel)->mcp(['auth:web'])
+            ->mcpAllowedOrigins(['https://agent.example.com']);
     }
 
     protected function pages(): array

@@ -15,7 +15,7 @@ domain: mcp
   freeze `ResolvedPage`, the page registry and the action resolvers as public API for one
   consumer.
 - **Auth is the host's; the MCP stack replaces the panel's.** The MCP route runs
-  `[SetCurrentPanel, ...PanelConfig::mcp($middleware), SetAdminLocale]` — not the panel's
+  `[SetCurrentPanel, ValidateMcpOrigin, ...PanelConfig::mcp($middleware), SetAdminLocale]` — not the panel's
   `web` + session-guard stack, which rejects bearer tokens (401) and non-browser POSTs
   (419). The host picks stateless token auth (e.g. `auth:sanctum`) and issues tokens.
 - **The MCP stack is explicit, never inherited.** `mcp($middleware)` has no default and
@@ -44,6 +44,9 @@ domain: mcp
   middleware can bounce) and is reported as a `redirect` URL; form effects come from the
   `tbtop.effects` flash.
   > Replaces previous decision (see git history)
+- **Origin is validated by the package, not left to the host.** The streamable HTTP
+  transport requires it and laravel/mcp does not do it. No `Origin` passes (non-browser
+  clients); the app's own origin and `mcpAllowedOrigins()` pass; anything else is 403.
 - **Actions and `onSubmit` forms are one executable kind to the agent.** Ids are
   `{page-slug}:{name}`; route params travel separately as `params`.
 - **Two-level discovery.** `search()` lists pages and the actions/forms of parameterless

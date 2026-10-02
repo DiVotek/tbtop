@@ -41,7 +41,7 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
-| `POST` | `{prefix}/{mcp path}` (default `mcp`) | `tbtop.{panel}.mcp` | `TbtopMcpServer` (laravel/mcp) | JSON-RPC (MCP streamable HTTP) | MCP `tools/call` results for `search` / `query` / `execute`. Only when the panel calls `mcp()`; runs `[SetCurrentPanel, ...mcp($middleware), SetAdminLocale]` instead of the panel stack. `GET`/`DELETE` on the same path answer 405 — see [MCP server](#mcp-server) |
+| `POST` | `{prefix}/{mcp path}` (default `mcp`) | `tbtop.{panel}.mcp` | `TbtopMcpServer` (laravel/mcp) | JSON-RPC (MCP streamable HTTP) | MCP `tools/call` results for `search` / `query` / `execute`. Only when the panel calls `mcp()`; runs `[SetCurrentPanel, ValidateMcpOrigin, ...mcp($middleware), SetAdminLocale]` instead of the panel stack. `GET`/`DELETE` on the same path answer 405 — see [MCP server](#mcp-server) |
 
 **Panel 404s.** Two paths lead to the `admin/error` page, both rendered by
 `PanelErrorPage` inside the panel chrome: the per-panel `Route::fallback()` above (an
@@ -160,7 +160,8 @@ return $panel
 ```
 
 - **Auth is yours, and the stack is separate.** The MCP route runs
-  `SetCurrentPanel`, then exactly the middleware you pass, then `SetAdminLocale`. The
+  `SetCurrentPanel` and `ValidateMcpOrigin`, then exactly the middleware you pass, then
+  `SetAdminLocale`. The
   panel's `web` + `auth:{guard}` stack does not run: it would reject a bearer token (401)
   and a non-browser POST (419). Use stateless token auth (Sanctum, or Passport with
   `Mcp::oauthRoutes()`); a Sanctum ability (`abilities:tbtop-mcp`) keeps the user's other
@@ -193,6 +194,10 @@ return $panel
   Mark those `->mcp(false)` — the agent picks from the list, and noise costs it context
   and choice. Public pages (login, 2FA challenge) stay listed; hide them with
   `Page::mcp(): false` if an agent has no use for them.
+- **Origin is checked, as the MCP transport requires.** A request without an `Origin`
+  header (Claude Desktop, Cursor, CLI clients) passes. A browser `Origin` must be the
+  app's own or listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other
+  gets `403` before auth runs, which stops DNS-rebinding and cross-site calls.
 - A page may not use the MCP path, or the slug `mcp` (the route name), in a panel with MCP on.
 
 ---

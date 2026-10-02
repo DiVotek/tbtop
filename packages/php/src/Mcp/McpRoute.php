@@ -27,6 +27,7 @@ final class McpRoute
 
         Route::middleware([
             SetCurrentPanel::class.':'.$panel->getId(),
+            ValidateMcpOrigin::class.':'.$panel->getId(),
             ...($panel->getMcpMiddleware() ?? []),
             SetAdminLocale::class,
         ])
