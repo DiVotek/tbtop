@@ -184,20 +184,32 @@ return $panel
   `ActionController` and `FormSubmitController` in-process with a request bound to the
   page's own route, so gates, reachability and validation are the UI's. Validation
   failures come back as errors keyed by field; nothing runs. Every tool error is JSON
-  `{message, errors?}`. A form's effects are read from its `tbtop.effects` flash; a handler
+  `{message, errors?}`; an unexpected exception, or an HTTP status >= 500, is reported to
+  the log and answered `Server error; see the application log.` without its text, while an
+  HTTP 4xx message is passed on. A form's effects are read from its `tbtop.effects` flash; a handler
   that returns a URL reports `redirect`, plus the `page`/`params` it opens when it is a page
   of this panel. A described form carries its current `values` (what the UI prefills), so an
   agent can resend the fields it keeps.
 - **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
   `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
   actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason; so
-  is a form (or an action submitting it) whose every field is excluded. `execute` refuses
-  input that sets an excluded field instead of passing it to the handler.
+  is a form (or an action submitting it) whose every field is excluded, or — when the form
+  is validated (an `onSubmit` form, an action without `->withoutValidation()`) — one with a
+  required excluded field: a rule key of the field holding `required` without `sometimes`.
+  An edit form whose file already exists stays executable with `->required()->rules('sometimes')`.
+  `execute` refuses input that sets an excluded field instead of passing it to the handler.
+- **Refusals, not silent ignores.** `execute` refuses a call missing what the action
+  `needs` (`selection: []` counts as missing, `form: {}` as sent) and a `row` without its
+  `id` — a key is an int or a non-empty string, in `row` and in `selection` alike. `query` checks the page gate first, then refuses a `sort`, `perPage`,
+  filter, `columnSearch` column or table-wide `search` that `search()` does not list for the
+  table (`sortable` there includes the default-sort field), a `dir` other than `asc`/`desc`,
+  and search text that is not a string or number; `dir` alone sorts by the default-sort field. Extra arguments that change nothing (`row` on a form) pass.
 - **Curate what the agent sees.** Every server action is an executable, including UI
   plumbing: a modal's Cancel/Close handlers, a quick-create next to the full create page.
   Mark those `->mcp(false)` — the agent picks from the list, and noise costs it context
   and choice. Public pages (login, 2FA challenge) stay listed; hide them with
-  `Page::mcp(): false` if an agent has no use for them.
+  `Page::mcp(): false` — a sign-in flow that needs a browser session fails over MCP's
+  stateless token auth (the demo hides `LoginPage` and `TwoFactorChallengePage`).
 - **Origin is checked, as the MCP transport requires.** A request without an `Origin`
   header (Claude Desktop, Cursor, CLI clients) passes. A browser `Origin` must be the
   app's own or listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other

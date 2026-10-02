@@ -14,6 +14,8 @@ final class FormArguments
     /** Kinds whose value is a server-side upload or editor state an agent cannot produce. */
     private const UNSUPPORTED_KINDS = ['upload', 'media', 'richtext'];
 
+    private const ALL_EXCLUDED = 'every field of its form is one MCP cannot fill (upload/media/richtext)';
+
     /**
      * `values` are the form's current data as the UI prefills it — an edit that
      * omits a field may clear it, depending on the page's handler.
@@ -22,13 +24,49 @@ final class FormArguments
      */
     public static function describe(FormBuilder $form): array
     {
+        return self::analyse($form)[0];
+    }
+
+    /**
+     * Why an executable submitting $form cannot pass over MCP, or null when it
+     * can: every field is excluded, or — when the executable validates the
+     * form — an excluded field is required.
+     */
+    public static function unfillableReason(FormBuilder $form, bool $validated): ?string
+    {
+        [$described, $required] = self::analyse($form);
+        if ($described['fields'] === [] && isset($described['excludedFields'])) {
+            return self::ALL_EXCLUDED;
+        }
+        if (! $validated || $required === []) {
+            return null;
+        }
+        $names = implode(', ', array_map(static fn (array $f): string => "\"{$f['name']}\"", $required));
+        $kinds = implode(', ', array_unique(array_column($required, 'kind')));
+
+        return count($required) === 1
+            ? "field {$names} is required and cannot be filled over MCP ({$kinds})"
+            : "fields {$names} are required and cannot be filled over MCP ({$kinds})";
+    }
+
+    /**
+     * describe()'s output plus the excluded fields whose rules require a value.
+     *
+     * @return array{0: array{form: string, fields: list<array<string, mixed>>, excludedFields?: list<array<string, string>>, values?: array<string, mixed>}, 1: list<array<string, string>>}
+     */
+    private static function analyse(FormBuilder $form): array
+    {
         $rules = $form->collectRules();
         $fields = [];
         $excluded = [];
+        $required = [];
         foreach ($form->getFields() as $field) {
             $node = $field->toNode();
             if (in_array($node->kind, self::UNSUPPORTED_KINDS, true)) {
                 $excluded[] = ['name' => $field->name, 'kind' => $node->kind, 'reason' => "{$node->kind} fields cannot be filled over MCP"];
+                if (self::isRequired($field->name, $rules)) {
+                    $required[] = ['name' => $field->name, 'kind' => $node->kind];
+                }
 
                 continue;
             }
@@ -48,13 +86,27 @@ final class FormArguments
             $out['values'] = $values;
         }
 
-        return $out;
+        return [$out, $required];
     }
 
-    /** A form whose every field is excluded cannot be submitted over MCP. @param  array<string, mixed>  $described  describe() output */
-    public static function isFillable(array $described): bool
+    /**
+     * Whether a key of $name (`name` itself or `name.*`, `name.en`) holds the
+     * string rule `required` without `sometimes` on that same key — checked per
+     * key, as a multiple upload puts `required` on `name` and `sometimes` on
+     * `name.*`. Rule objects and the required_if family do not count.
+     *
+     * @param  array<string, list<mixed>>  $rules
+     */
+    private static function isRequired(string $name, array $rules): bool
     {
-        return $described['fields'] !== [] || ! isset($described['excludedFields']);
+        foreach ($rules as $key => $list) {
+            $own = $key === $name || str_starts_with($key, $name.'.');
+            if ($own && in_array('required', $list, true) && ! in_array('sometimes', $list, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

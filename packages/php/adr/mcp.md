@@ -53,7 +53,8 @@ domain: mcp
   pages. `search(page, params)` builds that record's tree and lists its actions/forms. The
   tree is built per call with no cache — gates are per-user.
 - **Arguments are described, not schematised.** Per field: kind, label, options and the
-  Laravel rules as strings (`collectRules()` yields strings only). The server validates
+  Laravel rules (strings; a rule object such as richtext's `EmbedsRule` is passed through
+  as `collectRules()` yields it). The server validates
   and returns errors as text; a generated JSON Schema would add a lossy mapping layer the
   agent does not need.
 - **`query` returns UI-shaped rows** via `ColumnProjection` (visible columns, formatting,
@@ -62,6 +63,30 @@ domain: mcp
 - **Visibility: everything the user can do, minus `->mcp(false)`.** Opt-out on an action
   or a page, server-only — never serialized to the wire. Client-only `custom` handlers
   and `upload`/`media`/`richtext` fields are excluded from `search` with a stated reason.
+- **A form is unfillable when every field is excluded or a required one is.** Required is
+  checked per rule key (`name` or `name.*`): the string `required` without `sometimes` on
+  that same key — a multiple upload has `required` on `name` and `sometimes` on `name.*`,
+  and still fails without a file. It applies only where the form is validated (`onSubmit`,
+  an action without `->withoutValidation()`). `search()` never advertises an executable
+  that cannot pass validation; a demo-only fix was rejected. Excluded kinds nested in a
+  container (an upload in a repeater) are not walked yet.
+- **`needs` is enforced in `ExecuteTool`, not `ActionController`.** A missing `row`,
+  `selection` (empty, or holding anything but keys, counts as missing) or `form`, or a row
+  without its `id` (the key the client reads), is refused before the handler runs —
+  otherwise `whereKey(null)` reports success. A key is an int or a non-empty string: an
+  array `id` would make `whereKey()` a `whereIn` on other rows. The browser always sends what the UI wired; enforcing it in the
+  controller would change the HTTP contract for every client.
+- **`query` refuses what `search()` does not list.** sort (plus the default-sort field,
+  which `search()` lists in `sortable`), perPage, filter names, `columnSearch` columns and
+  table-wide search are checked against the same description `search()` produces, after
+  the page gate; `dir` must be `asc`/`desc` and search text a string or number, which
+  `TableQuery` would otherwise cast or ignore. Checking inside `TableController` was rejected: it would change browser
+  behavior for stale URL state. Only arguments that distort the result are refused.
+- **Unexpected failures answer generically.** `AnswersAgent` maps validation, authorization,
+  authentication, not-found, HTTP 4xx and `AgentError`; anything else and HTTP >= 500 are
+  reported and answered `Server error; see the application log.` — laravel/mcp would echo
+  the message (SQL, paths) when `app.debug` is on. HTTP exceptions are reported through a
+  wrapper, as Laravel never reports them itself.
 - **Row and selection stay client input; the threat model is documented, not enforced.**
   `execute` passes `row`/`selection` to the handler as the browser path does. Re-loading
   them would need the table's query scope inside the action, which the package does not

@@ -3,15 +3,10 @@
 namespace Tbtop\Admin\Mcp;
 
 use Tbtop\Admin\Dsl\ActionBuilder;
-use Tbtop\Admin\Dsl\Column;
-use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\StructureWalk;
-use Tbtop\Admin\Dsl\Tab;
-use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\Http\ActionFormRules;
 use Tbtop\Admin\Http\ResolvedPage;
-use Tbtop\Admin\Http\TableFilterApplier;
 
 /**
  * What a built page offers an agent: executables (server actions and onSubmit
@@ -19,8 +14,6 @@ use Tbtop\Admin\Http\TableFilterApplier;
  */
 final class PageSurface
 {
-    private const UNFILLABLE = 'every field of its form is one MCP cannot fill (upload/media/richtext)';
-
     /** @return array{executables: list<array<string, mixed>>, tables: list<array<string, mixed>>, excluded: list<array<string, string>>} */
     public static function describe(ResolvedPage $resolved): array
     {
@@ -37,11 +30,12 @@ final class PageSurface
             if (($action->getSpec()['type'] ?? null) === 'custom') {
                 $excluded[] = ['id' => "{$slug}:{$name}", 'reason' => 'client-only custom action: it runs in the browser'];
             } elseif ($action->handler() !== null) {
-                $described = self::action($resolved, $slug, $action, $tableOf[$name] ?? null);
-                if (self::isUnfillable($described['form'] ?? null)) {
-                    $excluded[] = ['id' => $described['id'], 'reason' => self::UNFILLABLE];
+                $form = ActionFormRules::enclosingForm($resolved, $name);
+                $reason = self::unfillableReason($form, ! $action->skipsFormValidation());
+                if ($reason !== null) {
+                    $excluded[] = ['id' => "{$slug}:{$name}", 'reason' => $reason];
                 } else {
-                    $executables[] = $described;
+                    $executables[] = self::action($slug, $action, $form, $tableOf[$name] ?? null);
                 }
             }
         }
@@ -51,27 +45,31 @@ final class PageSurface
             if ($form?->submitHandler() === null || isset($resolved->s->collectedActions()[$name])) {
                 continue;
             }
-            $described = ['id' => "{$slug}:{$name}", 'kind' => 'form', ...FormArguments::describe($form)];
-            if (self::isUnfillable($described)) {
-                $excluded[] = ['id' => $described['id'], 'reason' => self::UNFILLABLE];
+            $reason = self::unfillableReason($form, true);
+            if ($reason !== null) {
+                $excluded[] = ['id' => "{$slug}:{$name}", 'reason' => $reason];
             } else {
-                $executables[] = $described;
+                $executables[] = ['id' => "{$slug}:{$name}", 'kind' => 'form', ...FormArguments::describe($form)];
             }
         }
 
         return ['executables' => $executables, 'tables' => self::tables($resolved), 'excluded' => $excluded];
     }
 
-    /** An executable whose form has fields, none of which an agent can fill. @param  array<string, mixed>|null  $form */
-    private static function isUnfillable(?array $form): bool
+    /** Why an executable submitting $form is excluded, or null — see FormArguments::unfillableReason(). */
+    private static function unfillableReason(?FormBuilder $form, bool $validated): ?string
     {
-        return $form !== null && ! FormArguments::isFillable($form);
+        return $form === null ? null : FormArguments::unfillableReason($form, $validated);
     }
 
-    /** Whether search() lists $form as unfillable, so execute refuses it too. */
-    public static function isUnfillableForm(?FormBuilder $form): bool
+    /**
+     * Whether search() lists an executable submitting $form as excluded, so
+     * execute refuses it too. $validated: the executable validates the form
+     * (an onSubmit form, or an action without ->withoutValidation()).
+     */
+    public static function isUnfillableForm(?FormBuilder $form, bool $validated): bool
     {
-        return $form !== null && self::isUnfillable(FormArguments::describe($form));
+        return self::unfillableReason($form, $validated) !== null;
     }
 
     /** The action behind $name when this user may run it over MCP, else null. */
@@ -83,11 +81,10 @@ final class PageSurface
     }
 
     /** @return array<string, mixed> */
-    private static function action(ResolvedPage $resolved, string $slug, ActionBuilder $action, ?string $table): array
+    private static function action(string $slug, ActionBuilder $action, ?FormBuilder $form, ?string $table): array
     {
         $node = StructureWalk::resolveActionNode($action);
         $needs = $action->getSpec()['needs'] ?? [];
-        $form = ActionFormRules::enclosingForm($resolved, $action->name);
 
         return array_filter([
             'id' => "{$slug}:{$action->name}",
@@ -107,38 +104,11 @@ final class PageSurface
         foreach (array_keys($resolved->s->collectedTables()) as $name) {
             $table = $resolved->s->reachableTable($name);
             if ($table?->queryClosure() !== null) {
-                $out[] = self::table($table);
+                $out[] = TableArguments::describe($table);
             }
         }
 
         return $out;
-    }
-
-    /** @return array<string, mixed> */
-    private static function table(TableBuilder $table): array
-    {
-        return array_filter([
-            'table' => $table->name,
-            'columns' => array_map(
-                static fn (Column $c): array => array_filter(['name' => $c->name, 'label' => $c->labelText()]),
-                $table->visibleColumns(),
-            ),
-            'search' => $table->searchableFields(),
-            'columnSearch' => $table->individuallySearchableColumns(),
-            'filters' => array_map(
-                static fn (Field $f): array => array_filter([
-                    'name' => $f->name,
-                    'kind' => $f->toNode()->kind,
-                    'label' => $f->labelText(),
-                    'value' => TableFilterApplier::valueShape($f),
-                    'options' => FormArguments::options($f),
-                ]),
-                $table->filterFields(),
-            ),
-            'tabs' => array_map(static fn (Tab $t): string => $t->name, $table->tabObjects()),
-            'sortable' => $table->sortableColumnNames(),
-            'pagination' => $table->paginationSpec(),
-        ], static fn (mixed $v): bool => $v !== []);
     }
 
     /**

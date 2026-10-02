@@ -8,6 +8,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 use Tbtop\Admin\Http\ActionFormRules;
+use Tbtop\Admin\Mcp\ActionNeeds;
 use Tbtop\Admin\Mcp\AgentError;
 use Tbtop\Admin\Mcp\Execution;
 use Tbtop\Admin\Mcp\FormArguments;
@@ -25,7 +26,8 @@ final class ExecuteTool extends Tool
     protected string $description = <<<'TXT'
         Run an executable found by search(), with the user's own permissions. Pass `params` — the route
         params of the page the executable lives on, for every executable of that page — and what it `needs`: `form` (field values), `row` (a row from query(),
-        unchanged) or `selection` (row keys). Invalid input returns validation errors and runs nothing;
+        unchanged: it must keep its `id`) or `selection` (row keys). A call missing what it needs is
+        refused. Invalid input returns validation errors and runs nothing;
         every error is JSON {message, errors?}. Returns the effects the UI would show; a redirect (form
         `redirect`, or a `redirect` effect) carries the `page`/`params` it opens so you can search() it next.
         TXT;
@@ -55,9 +57,11 @@ final class ExecuteTool extends Tool
             if (isset($resolved->s->collectedActions()[$name])) {
                 $action = PageSurface::exposedAction($resolved, $name);
                 $enclosing = ActionFormRules::enclosingForm($resolved, $name);
-                if ($action === null || $action->handler() === null || PageSurface::isUnfillableForm($enclosing)) {
-                    throw new AgentError("\"{$slug}:{$name}\" is not executable here. Call search() for this page.");
+                if ($action === null || $action->handler() === null || PageSurface::isUnfillableForm($enclosing, ! $action->skipsFormValidation())) {
+                    throw self::notExecutable("{$slug}:{$name}");
                 }
+                $needs = $action->getSpec()['needs'] ?? [];
+                ActionNeeds::assertSent("{$slug}:{$name}", $needs, $request->get('form'), $request->get('row'), $request->get('selection'));
                 $input = self::objectArg($request->get('form'));
                 if ($enclosing !== null) {
                     FormArguments::assertSendable($enclosing, $input);
@@ -71,8 +75,8 @@ final class ExecuteTool extends Tool
             }
             $form = $resolved->s->reachableForm($name);
             if ($form?->submitHandler() !== null) {
-                if (PageSurface::isUnfillableForm($form)) {
-                    throw new AgentError("\"{$slug}:{$name}\" is not executable here. Call search() for this page.");
+                if (PageSurface::isUnfillableForm($form, true)) {
+                    throw self::notExecutable("{$slug}:{$name}");
                 }
 
                 $input = self::objectArg($request->get('form'));
@@ -83,6 +87,12 @@ final class ExecuteTool extends Tool
 
             throw new AgentError("Unknown executable \"{$slug}:{$name}\". Call search() for this page.");
         });
+    }
+
+    /** The refusal for an executable search() does not list as one. */
+    private static function notExecutable(string $id): AgentError
+    {
+        return new AgentError("\"{$id}\" is not executable here. Call search() for this page.");
     }
 
     /**
