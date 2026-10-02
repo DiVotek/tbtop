@@ -253,12 +253,11 @@ class PostsIndexPage extends Page
                 ->toNode(),
             $s->table('users')
                 ->columns([
+                    'name' => 'Name',
                     'email' => 'Email',
-                    'slug' => 'Slug',
-                    'published' => 'Published',
-                    'views' => 'Views',
+                    'created_at' => 'Created',
                 ])
-                ->searchable(['title'])
+                ->searchable(['name', 'email'])
                 ->defaultSort('created_at', 'desc')
                 ->query(fn () => User::query()),
         ]);

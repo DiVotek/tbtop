@@ -29,7 +29,7 @@ class MediaEditPage extends Page
         return $s->stack([
             $s->form('media', [
                 $s->section(['title' => 'Image'], [
-                    $s->upload('file')->label('Image')->required()
+                    $s->upload('file')->label('Image')->required()->rules('sometimes')
                         ->disk('public')->directory('uploads')->accept('image/*'),
                 ]),
                 $s->section(['title' => 'Details'], [
