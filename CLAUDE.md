@@ -214,6 +214,25 @@ stay; the verdict for the new commit is only the `triage` check-run, so poll tha
 each finding, fix or reply, then resolve the thread (GraphQL `resolveReviewThread`). The
 `Devin Review` check passes without reviewing (no credits left).
 
+**Screenshots.** A PR that changes non-test `packages/client/src/**/*.{tsx,css}`, or a DSL
+change that renders differently, carries before/after shots — a GIF when the change is a flow.
+Wire-only, backend, docs and test PRs carry none. From `apps/demo`, with the demo served:
+
+```bash
+bunx playwright install chromium                          # once
+bun tools/screenshots/capture.mjs posts-after /admin/posts   # full-page PNG at 2x
+bun tools/screenshots/capture.mjs edit-flow /admin/posts --steps steps.mjs  # GIF
+bun tools/screenshots/publish.mjs                         # commits, prints the PR markdown
+```
+
+`--steps` is a module whose default export is `async (page, frame) => {}`; each
+`await frame()` adds a GIF frame. Other flags: `--base` (default `http://127.0.0.1:8000`),
+`--theme light|dark`, `--as`, `--width`, `--height`. For the "before" shot, stash the change
+while the server keeps running (PHP is reread per request); a client change needs
+`npm run build` on each side. `publish.mjs` adds the shots in one commit and deletes them in
+the next, so the squash leaves `main` clean while the PR keeps the links — paste its output
+into the PR body, push, and don't rebase past those two commits.
+
 ## Releasing
 
 Both packages ship **lockstep** from one tag — `@tbtop/inertia-admin` (npm) and `tbtop/admin`
