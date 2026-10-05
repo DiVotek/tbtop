@@ -9,11 +9,13 @@ import { LazyRangeCalendar } from "./daterangeCalendarLazy";
 import {
 	type DisabledRange,
 	navClamp,
+	parseDay,
 	type QueryRanges,
 	rangeMatchers,
 	useDisabledRanges,
 } from "./daterangeDisabled";
 import { type DaterangeValue, formatRange, toDateRange, toIsoDay } from "./daterangeValue";
+import { DateTypedInput, focusTypedInput } from "./dateTypedInput";
 import { useFieldDependencies } from "./fieldDependencies";
 import type { FieldFormProps } from "./fieldProps";
 
@@ -114,6 +116,33 @@ function DaterangeControl({
 		}
 	}
 
+	// Typed bounds land in the same draft the clicks build, so the calendar
+	// shows them; the range only leaves the field once both ends are known.
+	function handleTyped(edge: "from" | "to", iso: string): void {
+		const day = parseDay(iso);
+		if (!day) {
+			return;
+		}
+		// day-picker's DateRange requires a `from`, so a lone end bound is held
+		// with from === to for display; it must not be emitted as a real range.
+		const from = edge === "from" ? day : draft?.from;
+		const to = edge === "to" ? day : draft?.to;
+		setDraft({ from: from ?? day, to });
+		setPicking(false);
+		if (from && to && from <= to) {
+			onChange({ from: toIsoDay(from), to: toIsoDay(to) });
+		}
+	}
+
+	// A typed bound the calendar would refuse must not slip in through text.
+	// Compared against the wire ranges (inclusive ends, ISO days sort as strings)
+	// rather than the day-picker matchers, which are exclusive and shifted.
+	function acceptTyped(iso: string): boolean {
+		return !ranges.some(
+			(range) => (!range.from || iso >= range.from) && (!range.to || iso <= range.to),
+		);
+	}
+
 	// The native inputs this replaced cleared by emptying them; without this a
 	// form-rendered daterange has no way back to empty (the filter bar has Reset).
 	function handleClear(): void {
@@ -141,7 +170,30 @@ function DaterangeControl({
 					{formatRange(applied, locale) || t("field.daterange.placeholder")}
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0" align="start">
+			<PopoverContent
+				className="w-auto p-0"
+				align="start"
+				onOpenAutoFocus={(event) => {
+					event.preventDefault();
+					focusTypedInput(event.currentTarget);
+				}}
+			>
+				<div className="flex gap-2 border-b p-2">
+					<DateTypedInput
+						value={draft?.from ? toIsoDay(draft.from) : null}
+						onCommit={(iso) => handleTyped("from", iso)}
+						accept={acceptTyped}
+						label={t("field.daterange.from_label")}
+						testId="daterange-input-from"
+					/>
+					<DateTypedInput
+						value={draft?.to ? toIsoDay(draft.to) : null}
+						onCommit={(iso) => handleTyped("to", iso)}
+						accept={acceptTyped}
+						label={t("field.daterange.to_label")}
+						testId="daterange-input-to"
+					/>
+				</div>
 				<Suspense
 					fallback={
 						fallback ?? <div className="h-72 w-72 animate-pulse rounded-md bg-muted" />

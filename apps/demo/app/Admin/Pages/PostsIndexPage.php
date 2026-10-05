@@ -11,6 +11,7 @@ use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
 use Tbtop\Admin\Dsl\Actions\ReplicateAction;
 use Tbtop\Admin\Dsl\Actions\ViewAction;
+use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
@@ -42,7 +43,7 @@ class PostsIndexPage extends Page
     {
         return $s->stack([
             $s->actionsRow([
-                $s->action('new')->label('New post')->color('primary')->visit('/admin/posts/new'),
+                $s->action('new')->label('New post')->color('primary')->url('/admin/posts/new'),
             ]),
             $s->table('posts')
                 ->rowClick('edit')
@@ -98,6 +99,14 @@ class PostsIndexPage extends Page
                                 ->notify($value ? 'Post published' : 'Post unpublished')
                                 ->refreshTable('posts');
                         }),
+                    Column::make('status')
+                        ->label('Status')
+                        ->formatUsing(fn ($value, Post $post) => $post->published ? 'published' : 'draft')
+                        ->badge([
+                            'published' => ['label' => 'Live', 'color' => Color::Success],
+                            'draft' => ['label' => 'Draft'],
+                        ])
+                        ->toggleable(),
                     Column::make('published_at')
                         ->label('Published')
                         ->date('Y-m-d')

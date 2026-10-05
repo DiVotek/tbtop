@@ -31,7 +31,7 @@ class MediaIndexPage extends Page
     {
         return $s->stack([
             $s->actionsRow([
-                $s->action('upload')->label('Upload')->color('primary')->visit('/admin/media/new'),
+                $s->action('upload')->label('Upload')->color('primary')->url('/admin/media/new'),
             ]),
             $s->table('media')
                 ->columns([
@@ -44,7 +44,7 @@ class MediaIndexPage extends Page
                 // alias it alongside the snake_case model attributes.
                 ->query(fn () => Media::query()->selectRaw('media.*, mime_type as mimeType'))
                 ->rowActions([
-                    $s->action('edit')->label('Edit')->visit('/admin/media/{row.id}/edit'),
+                    $s->action('edit')->label('Edit')->url('/admin/media/{row.id}/edit'),
                     // Prebuilt delete; the using closure returns the page's own
                     // copy + named refreshTable, overriding the helper's tail.
                     DeleteAction::make($s, using: function (ActionCtx $ctx): Effects {

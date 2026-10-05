@@ -12,7 +12,7 @@ class HeaderActionChrome extends Chrome
     {
         return [
             ...parent::headerItems($s),
-            $s->action('view-site')->label('View site')->visit('/'),
+            $s->action('view-site')->label('View site')->url('/'),
         ];
     }
 }

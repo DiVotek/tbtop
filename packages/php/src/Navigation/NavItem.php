@@ -16,6 +16,8 @@ final class NavItem
 
     private ?string $group = null;
 
+    private ?string $section = null;
+
     private int $order = 0;
 
     private bool $newTab = false;
@@ -51,6 +53,17 @@ final class NavItem
         return $this;
     }
 
+    /**
+     * Section key within its group, declared on NavGroup::sections() (nav
+     * context only). Ignored for ungrouped items and in the user menu.
+     */
+    public function section(string $section): self
+    {
+        $this->section = $section;
+
+        return $this;
+    }
+
     /** Sort position within its group (nav context only). */
     public function sort(int $order): self
     {
@@ -60,11 +73,26 @@ final class NavItem
     }
 
     /** Open url() in a new browser tab instead of navigating in place. */
-    public function newTab(bool $newTab = true): self
+    public function openUrlInNewTab(bool $condition = true): self
     {
-        $this->newTab = $newTab;
+        $this->newTab = $condition;
 
         return $this;
+    }
+
+    /**
+     * Deprecated (removed in 1.0): use url()->openUrlInNewTab().
+     *
+     * @deprecated Use openUrlInNewTab().
+     */
+    public function newTab(bool $newTab = true): self
+    {
+        trigger_error(
+            'NavItem::newTab() is deprecated and will be removed in 1.0. Use url()->openUrlInNewTab() instead.',
+            E_USER_DEPRECATED,
+        );
+
+        return $this->openUrlInNewTab($newTab);
     }
 
     public function label(): string
@@ -82,6 +110,11 @@ final class NavItem
         return $this->group;
     }
 
+    public function getSection(): ?string
+    {
+        return $this->section;
+    }
+
     public function getOrder(): int
     {
         return $this->order;
@@ -89,7 +122,7 @@ final class NavItem
 
     /**
      * Sparse link payload: label/href always; icon/newTab only when set.
-     * Shared by nav items and user-menu items — group/order are nav-only
+     * Shared by nav items and user-menu items — group/section/order are nav-only
      * placement concerns the caller applies separately.
      *
      * @return array<string, mixed>

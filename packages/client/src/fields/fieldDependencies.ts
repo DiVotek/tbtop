@@ -24,6 +24,13 @@ export function FieldDependencyProvider({
 	return createElement(DependencyValuesContext.Provider, { value: { data, initial } }, children);
 }
 
+/** Row/filter-local field values when scoped, otherwise the nearest form's data. */
+export function useFieldSourceData(): Record<string, unknown> {
+	const ctrl = useNearestFormController();
+	const provided = useContext(DependencyValuesContext);
+	return dependencyValues(provided, ctrl).data;
+}
+
 export interface DependencyConfig {
 	dependsOn?: string[];
 	keepValue?: boolean;

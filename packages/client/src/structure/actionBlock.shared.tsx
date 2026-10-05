@@ -51,6 +51,8 @@ export interface ActionOptionsBag {
 	outlined?: boolean;
 	/** Render the trigger styled as a link vs a button (default). */
 	as?: "link" | "button";
+	/** Show a spinner in the button while its handler runs. */
+	pendingIndicator?: boolean;
 }
 
 export interface ActionRenderProps {

@@ -24,7 +24,7 @@ describe("PageContentErrorBoundary", () => {
 
 	test("renders children normally when nothing throws", () => {
 		const { getByText, queryByTestId } = render(
-			<PageContentErrorBoundary>
+			<PageContentErrorBoundary resetKey="page-a">
 				<div>All good</div>
 			</PageContentErrorBoundary>,
 		);
@@ -34,7 +34,7 @@ describe("PageContentErrorBoundary", () => {
 
 	test("a crashing child renders the fallback card instead of throwing past the boundary", () => {
 		const { getByTestId, getByText } = render(
-			<PageContentErrorBoundary>
+			<PageContentErrorBoundary resetKey="page-a">
 				<Bomb />
 			</PageContentErrorBoundary>,
 		);
@@ -45,7 +45,7 @@ describe("PageContentErrorBoundary", () => {
 
 	test("fallback card carries the destructive card classes", () => {
 		const { getByTestId } = render(
-			<PageContentErrorBoundary>
+			<PageContentErrorBoundary resetKey="page-a">
 				<Bomb />
 			</PageContentErrorBoundary>,
 		);
@@ -69,7 +69,7 @@ describe("PageContentErrorBoundary", () => {
 		});
 
 		const { getByTestId } = render(
-			<PageContentErrorBoundary>
+			<PageContentErrorBoundary resetKey="page-a">
 				<Bomb />
 			</PageContentErrorBoundary>,
 		);
@@ -83,7 +83,7 @@ describe("PageContentErrorBoundary", () => {
 		const { getByText, getByTestId } = render(
 			<div>
 				<div data-testid="sidebar">Sidebar</div>
-				<PageContentErrorBoundary>
+				<PageContentErrorBoundary resetKey="page-a">
 					<Bomb />
 				</PageContentErrorBoundary>
 			</div>,
@@ -91,5 +91,23 @@ describe("PageContentErrorBoundary", () => {
 		expect(getByTestId("sidebar")).toBeTruthy();
 		expect(getByText("Sidebar")).toBeTruthy();
 		expect(getByTestId("page-content-error-boundary")).toBeTruthy();
+	});
+
+	test("recovers when navigation changes the reset key", () => {
+		const { getByText, queryByTestId, rerender } = render(
+			<PageContentErrorBoundary resetKey="page-a">
+				<Bomb />
+			</PageContentErrorBoundary>,
+		);
+		expect(queryByTestId("page-content-error-boundary")).toBeTruthy();
+
+		rerender(
+			<PageContentErrorBoundary resetKey="page-b">
+				<div>Replacement content</div>
+			</PageContentErrorBoundary>,
+		);
+
+		expect(queryByTestId("page-content-error-boundary")).toBeNull();
+		expect(getByText("Replacement content")).toBeTruthy();
 	});
 });

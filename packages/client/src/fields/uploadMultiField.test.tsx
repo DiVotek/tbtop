@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { describe, expect, mock, test } from "bun:test";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { clientWrapper } from "../testFixtures";
 import { UploadForm, type UploadValue } from "./uploadField";
@@ -189,6 +189,29 @@ describe("UploadForm multi", () => {
 		);
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		expect(input.multiple).toBe(true);
+	});
+
+	test("forwards validation and blur props to the multiple file input", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const onBlur = mock(() => {});
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="files"
+					value={null}
+					onChange={() => {}}
+					onBlur={onBlur}
+					invalid
+					describedBy="files-error"
+					options={{ multiple: true }}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(input.getAttribute("aria-describedby")).toBe("files-error");
+		fireEvent.blur(input);
+		expect(onBlur).toHaveBeenCalledTimes(1);
 	});
 });
 

@@ -71,7 +71,7 @@ it('emits field constraints from fluent rules', function () {
 });
 
 it('rejects an action with two specs', function () {
-    (new ActionBuilder('save'))->submit()->visit('/x');
+    (new ActionBuilder('save'))->submit()->url('/x');
 })->throws(LogicException::class);
 
 it('rejects serializing an action without a spec', function () {
@@ -117,12 +117,12 @@ it('rejects invalid modal size value', function () {
 })->throws(InvalidArgumentException::class);
 
 it('rejects modalWidth() on non-modal action', function () {
-    (new ActionBuilder('go'))->visit('/x')->modalWidth('sm')->toNode();
+    (new ActionBuilder('go'))->url('/x')->modalWidth('sm')->toNode();
 })->throws(LogicException::class);
 
 it('serializes trigger variants (size, outlined, as) into action options', function () {
     $s = new S;
-    $action = $s->action('go')->label('Go')->visit('/x')->size('sm')->outlined()->link();
+    $action = $s->action('go')->label('Go')->url('/x')->size('sm')->outlined()->link();
 
     $opts = encode($action)['options'];
     expect($opts['size'])->toBe('sm')
@@ -136,7 +136,7 @@ it('rejects an invalid trigger button size', function () {
 
 it('serializes a dropdown as an actionGroup rendered as a menu', function () {
     $s = new S;
-    $node = encode($s->dropdown('More', [$s->action('edit')->label('Edit')->visit('/x')]));
+    $node = encode($s->dropdown('More', [$s->action('edit')->label('Edit')->url('/x')]));
 
     expect($node['kind'])->toBe('actionGroup')
         ->and($node['options']['as'])->toBe('dropdown')

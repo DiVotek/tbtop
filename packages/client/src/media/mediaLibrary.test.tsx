@@ -18,10 +18,11 @@ import { toast } from "sonner";
 import { ClientProvider, createAdminClient } from "../data/client";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
-import { type FetchHandler, makeTestFetch } from "../testFixtures";
+import { type FetchHandler, makeTestFetch, makeTestXhr } from "../testFixtures";
 import { ImportUrlDialog } from "./importUrlDialog";
 import { MediaDetail } from "./mediaDetail";
 import { MediaGrid } from "./mediaGrid";
+import { MediaLibraryBlock } from "./mediaLibraryBlock";
 import type { MediaFolder, MediaItem } from "./types";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -65,7 +66,11 @@ const FOLDER_A: MediaFolder = { id: "f1", name: "Photos", parentId: null };
 // ─── Wrapper ──────────────────────────────────────────────────────────────────
 
 function wrap(handler: FetchHandler) {
-	const client = createAdminClient({ baseUrl: "http://test", fetch: makeTestFetch(handler) });
+	const client = createAdminClient({
+		baseUrl: "http://test",
+		fetch: makeTestFetch(handler),
+		xhr: makeTestXhr(handler),
+	});
 	return function Wrapper({ children }: { children: ReactNode }) {
 		return <ClientProvider client={client}>{children}</ClientProvider>;
 	};
@@ -85,6 +90,58 @@ beforeEach(() => {
 
 afterEach(() => {
 	clearBlockRegistry();
+});
+
+// ─── MediaLibraryBlock: folder mutations refresh both views ──────────────────
+
+describe("MediaLibraryBlock: folder mutations", () => {
+	test("creating a folder refreshes both the tree and grid folder cards", async () => {
+		const user = userEvent.setup({ delay: null });
+		const folders: MediaFolder[] = [];
+		let folderFetches = 0;
+		let itemFetches = 0;
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "POST" && req.url.includes("/media/folders")) {
+				const body = (await req.json()) as { name: string };
+				const folder = { id: "f2", name: body.name, parentId: null };
+				folders.push(folder);
+				return new Response(JSON.stringify(folder), { status: 201 });
+			}
+			if (req.url.includes("/media/folders")) {
+				folderFetches += 1;
+				return new Response(JSON.stringify(folders), { status: 200 });
+			}
+			itemFetches += 1;
+			return new Response(
+				JSON.stringify({ data: [], folders, total: 0, page: 1, perPage: 24 }),
+				{ status: 200 },
+			);
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId, findByTestId } = render(
+			<Wrap>
+				<MediaLibraryBlock
+					options={{}}
+					meta={{}}
+					ctx={{ surface: "form" }}
+					renderChild={() => null}
+				/>
+			</Wrap>,
+		);
+
+		await waitFor(() => expect(folderFetches).toBe(1));
+		await waitFor(() => expect(itemFetches).toBe(1));
+		await act(async () => {
+			await user.click(getByTestId("folder-new"));
+			await user.type(getByTestId("folder-name-input"), "Contracts");
+			await user.click(getByTestId("folder-name-confirm"));
+		});
+
+		expect(await findByTestId("folder-item-f2")).toBeTruthy();
+		expect(await findByTestId("folder-card-f2")).toBeTruthy();
+		expect(folderFetches).toBe(2);
+		expect(itemFetches).toBe(2);
+	});
 });
 
 // ─── MediaGrid: renders items ─────────────────────────────────────────────────
@@ -491,6 +548,104 @@ describe("MediaGrid: pagination", () => {
 // ─── MediaDetail: PATCH on save ───────────────────────────────────────────────
 
 describe("MediaDetail: PATCH on save", () => {
+	test("clearing existing alt text sends null", async () => {
+		const user = userEvent.setup({ delay: null });
+		const patches: unknown[] = [];
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "PATCH" && req.url.includes("/media/img1")) {
+				patches.push(await req.json());
+				return new Response(JSON.stringify({ ...ITEM_IMG, alt: null }), { status: 200 });
+			}
+			return new Response("{}");
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId } = render(
+			<Wrap>
+				<MediaDetail
+					item={ITEM_IMG}
+					folders={[FOLDER_A]}
+					onClose={() => {}}
+					onUpdated={() => {}}
+					onDeleted={() => {}}
+				/>
+			</Wrap>,
+		);
+
+		await act(async () => {
+			await user.click(getByTestId("detail-alt-input"));
+			await user.keyboard("{Control>}a{/Control}{Backspace}");
+		});
+		await act(async () => {
+			await user.click(getByTestId("detail-save-btn"));
+		});
+
+		await waitFor(() => expect(patches).toHaveLength(1));
+		expect(patches[0]).toMatchObject({ alt: null });
+	});
+
+	test("saving after replacement keeps dirty metadata and uses the new file name", async () => {
+		const user = userEvent.setup({ delay: null });
+		const patches: unknown[] = [];
+		const replacedItem: MediaItem = {
+			...ITEM_IMG,
+			name: "replacement.jpg",
+			url: "/storage/replacement.jpg",
+		};
+		const handler: FetchHandler = async (req) => {
+			if (req.method === "POST" && req.url.includes("/media/img1/replace")) {
+				return new Response(JSON.stringify(replacedItem), { status: 200 });
+			}
+			if (req.method === "PATCH") {
+				patches.push(await req.json());
+				return new Response(JSON.stringify(replacedItem), { status: 200 });
+			}
+			return new Response("{}");
+		};
+		const Wrap = wrap(handler);
+		const { getByTestId } = render(
+			<Wrap>
+				<MediaDetail
+					item={ITEM_IMG}
+					folders={[FOLDER_A]}
+					onClose={() => {}}
+					onUpdated={() => {}}
+					onDeleted={() => {}}
+				/>
+			</Wrap>,
+		);
+
+		await act(async () => {
+			await user.click(getByTestId("detail-alt-input"));
+			await user.keyboard("{Control>}a{/Control}Draft alt");
+		});
+		expect((getByTestId("detail-alt-input") as HTMLTextAreaElement).value).toBe("Draft alt");
+
+		await act(async () => {
+			await user.upload(
+				getByTestId("detail-replace-input"),
+				new File(["replacement"], "replacement.jpg", { type: "image/jpeg" }),
+			);
+		});
+		await waitFor(() =>
+			expect((getByTestId("detail-name-input") as HTMLInputElement).value).toBe(
+				replacedItem.name,
+			),
+		);
+		expect((getByTestId("detail-alt-input") as HTMLTextAreaElement).value).toBe("Draft alt");
+
+		await act(async () => {
+			await user.click(getByTestId("detail-save-btn"));
+		});
+		await waitFor(() => expect(patches).toHaveLength(1));
+		expect(patches[0]).toMatchObject({
+			name: replacedItem.name,
+			alt: "Draft alt",
+			description: ITEM_IMG.description,
+			tags: ITEM_IMG.tags,
+			folderId: ITEM_IMG.folderId,
+		});
+	});
+
 	test("switching items resets the form before saving the new item", async () => {
 		const user = userEvent.setup({ delay: null });
 		const patches: Array<{ url: string; body: unknown }> = [];

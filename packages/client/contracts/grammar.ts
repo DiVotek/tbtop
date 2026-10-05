@@ -34,6 +34,12 @@ export const effectSchema = z.discriminatedUnion("kind", [
 		level: z.enum(["info", "success", "error", "warning"]).optional(),
 	}),
 	z.object({ kind: z.literal("copyToClipboard"), text: z.string() }),
+	z
+		.object({
+			kind: z.literal("setFormData"),
+			data: z.record(z.string(), z.unknown()),
+		})
+		.strict(),
 ]);
 
 export const effectsSchema = z.array(effectSchema);

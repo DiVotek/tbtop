@@ -25,7 +25,7 @@ final class MethodClassifier
             'markdown', 'displayDivider', 'displayAlert', 'displayValue',
             'displayImage', 'displayRichtext', 'displayKeyValue', 'navMenu',
             'userMenu', 'logo', 'localeSwitcher', 'spacer', 'unsavedIndicator',
-            'notifications', 'themeToggle', 'form', 'table', 'stat', 'list',
+            'notifications', 'themeToggle', 'form', 'table', 'stat', 'list', 'listItem',
             'chart', 'action', 'liveRegion', 'actionsRow', 'inFilter', 'register',
         ],
         'Tbtop\Admin\Notifications\Notification' => ['sendToDatabase'],
@@ -130,12 +130,18 @@ final class MethodClassifier
         return 'unclassified';
     }
 
+    // PHP 8.5 resolves a `self` return type to the declaring class name;
+    // 8.4 and earlier reported the literal "self".
     private function isFluent(ReflectionMethod $method): bool
     {
         $type = $method->getReturnType();
 
-        return $type instanceof ReflectionNamedType
-            && in_array($type->getName(), ['self', 'static'], true);
+        if (! $type instanceof ReflectionNamedType) {
+            return false;
+        }
+
+        return in_array($type->getName(), ['self', 'static'], true)
+            || $type->getName() === $method->getDeclaringClass()->getName();
     }
 
     private function matchesInternalPattern(string $name): bool

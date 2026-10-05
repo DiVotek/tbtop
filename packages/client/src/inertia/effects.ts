@@ -1,6 +1,7 @@
 import { router } from "@inertiajs/react";
 import { defaultMessages } from "../i18n/i18n";
 import { copyToClipboard as writeClipboard } from "../lib/clipboard";
+import { isExternalUrl } from "../lib/externalUrl";
 import {
 	getAllRegisteredTableControllers,
 	getRegisteredTableController,
@@ -83,6 +84,12 @@ export function applyRedirect(effect: ServerEffect): void {
 		// accidental page leave — see navigationIntent.ts for why the
 		// unsaved-changes guard must not block it regardless of ordering.
 		markServerRedirect();
+		// Inertia's router only handles same-origin routes (an OAuth or payment
+		// provider URL would fail as a cross-origin XHR).
+		if (isExternalUrl(effect.href)) {
+			window.location.assign(effect.href);
+			return;
+		}
 		const samePage = new URL(effect.href, location.origin).pathname === location.pathname;
 		router.visit(effect.href, { preserveState: samePage, preserveScroll: samePage });
 	}

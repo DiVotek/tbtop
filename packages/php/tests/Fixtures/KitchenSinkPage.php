@@ -11,6 +11,7 @@ use Tbtop\Admin\Dsl\Actions\ViewAction;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Cond;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Tab;
@@ -42,7 +43,7 @@ class KitchenSinkPage extends Page
                 'collapsible' => true,
                 'columns' => 2,
             ], [
-                $s->displayValue('active')->badge(['active' => Color::Success]),
+                $s->displayValue('active')->badge(['active' => ['label' => 'Active', 'color' => Color::Success]]),
                 $s->displayValue(true)->boolean(trueColor: Color::Success),
                 $s->displayValue('shipped')->icon(['shipped' => ['icon' => 'truck', 'color' => 'success']]),
                 $s->displayValue(12345)->money('USD'),
@@ -70,7 +71,7 @@ class KitchenSinkPage extends Page
             ]),
             $s->grid(['cols' => ['sm' => 1, 'md' => 2, 'lg' => 4]], [
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
-                    ->icon('dollar-sign')->tooltip('Monthly revenue')
+                    ->icon('dollar-sign')->tooltip('Monthly revenue')->url('/admin/orders')
                     ->hiddenIf('period', '=', 'all')->toNode(),
                 $s->chart('byMonth', 'line', [
                     'data' => [['month' => 'Jan', 'count' => 3]],
@@ -92,6 +93,19 @@ class KitchenSinkPage extends Page
                         $s->date('from'),
                     ])
                     ->toNode(),
+            ]),
+            $s->section([
+                'title' => 'Recently updated',
+                'url' => 'https://example.com/changelog',
+                'openUrlInNewTab' => true,
+                'actions' => [
+                    $s->action('openRecent')->label('Open pages')->url('/admin/pages')->link(),
+                ],
+            ], [
+                $s->list('recent')->items(fn (): array => [
+                    ['title' => 'Home', 'meta' => '2h', 'url' => '/admin/pages/1', 'openUrlInNewTab' => true],
+                    $s->listItem('About')->color('success')->url('/admin/pages/2'),
+                ])->toNode(),
             ]),
             $s->section([
                 'title' => 'Form',
@@ -164,7 +178,12 @@ class KitchenSinkPage extends Page
                     ]),
                     $s->text('intro')->translatable(),
                     $s->slug('slug')->set('fromField', 'title')->rules(['regex:/^[a-z0-9-]+$/']),
-                    $s->richtext('content')->set('placeholder', 'Start typing…'),
+                    $s->richtext('content')->set('placeholder', 'Start typing…')->embeds([
+                        Embed::make('callout')->label('Callout')->icon('info')->summary('title')->fields([
+                            $s->text('title')->required(),
+                            $s->textarea('text'),
+                        ]),
+                    ]),
                     $s->upload('attachment')->label('Attachment')
                         ->disk('public')->directory('docs')->visibility('public')
                         ->accept('image/*')->maxSize(5 * 1024 * 1024)
@@ -208,7 +227,7 @@ class KitchenSinkPage extends Page
                     $s->actionsRow([
                         $s->action('save')->label('Save')->color('primary')
                             ->keybinding('mod+s')->submit(),
-                        $s->action('cancel')->label('Cancel')->visit('/admin/posts'),
+                        $s->action('cancel')->label('Cancel')->url('/admin/posts'),
                     ]),
                 ])->record(['title' => 'Hello'])->onSubmit(fn () => Effects::make()),
             ]),
@@ -222,11 +241,12 @@ class KitchenSinkPage extends Page
             ], ['name' => 'content']),
             $s->table('posts')
                 ->columns([
-                    Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap(),
+                    Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap()->description('Headline'),
                     'views' => 'Views',
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
                     Column::make('brand_color')->color()->rounded()->label('Color'),
+                    Column::make('status')->badge(['in_progress' => ['label' => 'In progress', 'color' => 'warning']]),
                     Column::make('published')
                         ->label('Published')
                         ->toggle()
@@ -256,6 +276,10 @@ class KitchenSinkPage extends Page
                     Column::make('view')
                         ->label('View')
                         ->link(fn ($row) => '/admin/posts/'.data_get($row, 'id'), external: true, icon: 'external-link'),
+                    Column::make('car')->label('Авто')->group([
+                        Column::make('car_name')->emphasized(),
+                        Column::make('car_plate')->muted(),
+                    ]),
                 ])
                 ->searchable(['title'])
                 ->filters([
@@ -271,7 +295,7 @@ class KitchenSinkPage extends Page
                 ->columnToggle(false)
                 ->emptyState('No posts yet', 'Create your first post to get started.', 'file-text')
                 ->headerActions([
-                    $s->action('createPost')->label('New post')->icon('pencil')->visit('/admin/posts/create'),
+                    $s->action('createPost')->label('New post')->icon('pencil')->url('/admin/posts/create'),
                 ])
                 ->recordUrl(fn () => '/admin/posts/1')
                 ->openRecordUrlInNewTab()
@@ -350,8 +374,8 @@ class KitchenSinkPage extends Page
                 $s->text('sidebar_note')->label('Note'),
             ]),
             $s->actionGroup('Publish actions', [
-                $s->action('publish')->label('Publish')->visit('/admin/posts/publish'),
-                $s->action('preview')->label('Preview')->visit('/admin/posts/preview', newTab: true),
+                $s->action('publish')->label('Publish')->url('/admin/posts/publish'),
+                $s->action('preview')->label('Preview')->url('/admin/posts/preview')->openUrlInNewTab(),
                 $s->action('archive')->label('Archive')
                     ->handle(fn () => Effects::make(), needs: ['row']),
             ]),

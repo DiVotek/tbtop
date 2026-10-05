@@ -12,10 +12,12 @@ use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\CondToRequiredRule;
+use Tbtop\Admin\Dsl\EnumOptions;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\OptionList;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Validation\ConstraintMap;
+use UnitEnum;
 
 /**
  * Abstract base for all field builders.
@@ -196,11 +198,16 @@ abstract class Field implements JsonSerializable
     /**
      * Seeds the form value when the record has no key for this field. An
      * explicit key in the form's record() always wins — even
-     * record(['x' => null]) keeps the null instead of this default.
+     * record(['x' => null]) keeps the null instead of this default. An enum
+     * case, or each case in a list (multi-value fields), is stored as its
+     * string option value (->value, ->name for a pure enum), matching
+     * options(Enum::class).
      */
     public function default(mixed $value): static
     {
-        return $this->set('default', $value);
+        $toKey = fn (mixed $v) => $v instanceof UnitEnum ? EnumOptions::key($v) : $v;
+
+        return $this->set('default', is_array($value) ? array_map($toKey, $value) : $toKey($value));
     }
 
     /** Grid column span: int (1-8) or a breakpoint object {sm?, md?, lg?, xl?}. */

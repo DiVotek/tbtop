@@ -22,7 +22,7 @@ class DependentFieldsDemoPage extends Page
 
     public static function nav(): ?array
     {
-        return ['group' => 'System', 'label' => 'Dependent fields demo', 'order' => 97, 'icon' => 'globe'];
+        return ['group' => 'System', 'section' => 'demos', 'label' => 'Dependent fields demo', 'order' => 97, 'icon' => 'globe'];
     }
 
     public function title(): string

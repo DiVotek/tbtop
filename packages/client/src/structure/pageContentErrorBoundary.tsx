@@ -6,7 +6,7 @@
  * translate function as a prop so it can still read i18n messages despite
  * not being able to call hooks itself.
  */
-import { Component, type ReactNode } from "react";
+import { Component, type Key, type ReactNode } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Button } from "../ui/button";
 
@@ -71,7 +71,17 @@ export function PageContentErrorPanel({
 }
 
 /** Functional wrapper so the class boundary can still read i18n via the hook. */
-export function PageContentErrorBoundary({ children }: { children: ReactNode }) {
+export function PageContentErrorBoundary({
+	children,
+	resetKey,
+}: {
+	children: ReactNode;
+	resetKey: Key;
+}) {
 	const t = useTranslation();
-	return <ErrorBoundaryBase t={t}>{children}</ErrorBoundaryBase>;
+	return (
+		<ErrorBoundaryBase key={resetKey} t={t}>
+			{children}
+		</ErrorBoundaryBase>
+	);
 }

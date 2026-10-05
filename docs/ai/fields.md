@@ -114,7 +114,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
 | **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes. Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
-| **Date** | `$s->date('x')` / `Date::make('x')` | `date` | none | No |
+| **Date** | `$s->date('x')` / `Date::make('x')` | `date` | `yearPicker(bool $state = true)` — swaps the calendar caption's year label for a year dropdown, offering the years within the bounds below (a narrow band around today without them); `minDate(DateTimeInterface\|string $date)` / `maxDate(...)` — earliest/latest selectable day | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
 | **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS`; call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | `disabledRanges(Closure $fn)` — server closure `fn (array $deps): array` returning a list of `['from' => ?string, 'to' => ?string]` ISO-day ranges (both ends inclusive-disabled; a null end makes the range open, i.e. min/max-date semantics); `dependsOn(string\|array $fields)` — parent field(s) whose changes refetch the ranges. Value shape: `{from?: string, to?: string}` | Only with `disabledRanges()` + `dependsOn()` → daterange-ranges endpoint |
@@ -130,36 +130,12 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Media picker** | `$s->media('x')` / `MediaPicker::make('x')` | `media` | `multiple(bool)` — allow selecting more than one; `reorderable(bool)` — opt-in drag handles in multiple mode; the submitted ID array follows the preview order, so consumers that treat the first ID as the cover receive the chosen cover; `accept(list<string> $mimes)` — filter visible/uploadable types; `variant('inline'\|'preview')` — single-select display: 'inline' (default) is a Choose button with a read-only filename field, 'preview' is a fully clickable preview block (dashed placeholder when empty, large image/typed file card when filled); multiple mode always renders preview chips regardless of variant | Media-library endpoint — see [./wiring.md](./wiring.md) |
 | **Relation** | `$s->relation('x')` / `Relation::make('x')` | `relation` | `query(callable)` — Eloquent query builder for related records; `labelKey(string $column)` — display column (default `'name'`); `searchable(bool)` | Yes — relation-search endpoint. See [./wiring.md](./wiring.md) |
 | **Repeater** | `$s->repeater('x')` / `Repeater::make('x')` | `repeater` | `fields(list<Field> $fields)` — child field list, **may contain another `repeater` to nest rows** (validation rules prefix through every level as `x.*.child.*.field`) — a `unique()` on a row field is checked per row against the table, not against the other submitted rows, so two new rows with the same value pass; `minItems(int)` / `maxItems(int)` — item bounds; `defaultItems(int)` — empty rows to seed when the value is absent; `collapsible(bool = true)` — render each row as a one-line summary that expands to its edit form on click (off by default; existing repeaters stay fully expanded); `summary(string $field)` — sub-field whose value titles the collapsed row (falls back to "Untitled") | No |
-| **Richtext** | `$s->richtext('x')` / `Richtext::make('x')` | `richtext` | `placeholder(string $text)` | No |
+| **Richtext** | `$s->richtext('x')` / `Richtext::make('x')` | `richtext` | `placeholder(string $text)`; `embeds(list<Embed> $embeds)` — structured blocks inside the text, see [richtext embeds](#richtext-with-embeds--embed-apply-action); `maxEmbeds(int $max)` — server-side cap | Only with `embeds()` → the reserved `__embed` action |
 | **In filter** | `$s->inFilter('x')` / `Tbtop\Admin\Dsl\Fields\InFilter::make('x')` | `in` | `options(list<{value, label}> $options)` — fixed option list. **Filter context only** — use in `table()->filters()`, not in forms | No |
 
-### Client component mapping
-
-| Wire `kind` | Client component file |
-|---|---|
-| `text` | `fields/textField.tsx` |
-| `textarea` | `fields/textareaField.tsx` |
-| `password` | `fields/passwordField.tsx` |
-| `otp` | `fields/otpField.tsx` |
-| `number` | `fields/numberField.tsx` |
-| `date` | `fields/dateField.tsx` |
-| `datetime` | `fields/dateField.tsx` (DateTimeForm/DateTimeCell) |
-| `time` | `fields/timeField.tsx` |
-| `daterange` | `fields/daterangeField.tsx` |
-| `boolean` | `fields/booleanField.tsx` |
-| `checkbox` | `fields/checkboxField.tsx` |
-| `radio` | `fields/radioField.tsx` |
-| `select` | `fields/selectField.tsx` |
-| `tags` | `fields/tagsField.tsx` |
-| `in` | `fields/tagsField.tsx` (reused for filter rendering) |
-| `colorpicker` | `fields/colorpickerField.tsx` |
-| `keyvalue` | `fields/keyvalueField.tsx` |
-| `slug` | `fields/slugField.tsx` |
-| `upload` | `fields/uploadField.tsx` |
-| `media` | `media/mediaPickerField.tsx` (lives outside `fields/`) |
-| `relation` | `fields/relationField.tsx` |
-| `repeater` | `fields/repeaterField.tsx` |
-| `richtext` | `fields/richtext/` (lazy-loaded; Lexical editor) |
+See the [canonical inventory](#canonical-field-kind-inventory-php--client--schema) below
+for the client component each kind renders through — it is the one table kept in sync with
+`registerFields.ts`.
 
 ---
 
@@ -179,7 +155,7 @@ identifier list, used by test datasets) and the bootstrapped `S::kindMap()` (kin
 class). `FieldKindParityTest` asserts every `BUILT_IN_KINDS` entry is registered in `kindMap()`,
 so a built-in present in the list but missing from the map fails CI. Add a kind → append to
 **both** PHP lists (keep them in sync), the inventory table below, the
-client `registerBuiltins.ts`, and exercise it in `KitchenSinkPage` (the contract gate). Rows
+client `registerFields.ts` (which `registerBuiltins.ts` calls), and exercise it in `KitchenSinkPage` (the contract gate). Rows
 are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder existing ones.
 
 | # | PHP builder | `S` factory | Wire `kind` | Client kind | Client file |
@@ -217,7 +193,7 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 
 ### Client-only kinds (intentional asymmetry)
 
-These two wire kinds are registered on the client (`registerBuiltins.ts`) with **no PHP
+These two wire kinds are registered on the client (`registerFields.ts`) with **no PHP
 builder** — deliberately. They are not drift to "fix" by adding a builder; a builder is a new
 field type and must go through the contract gate (schema + kitchen-sink + contract test) in
 its own change.
@@ -296,8 +272,10 @@ See [./wiring.md](./wiring.md) for the endpoint request/response shape.
 
 ### Select with `creatable()` — `select-create` endpoint
 
-When `creatable(array $fields, callable $using)` is called, the client shows a
-mini-form inside the select dropdown. Submitting it hits the select-create endpoint,
+When `creatable(array $fields, callable $using)` is called, the client renders a
+`+ Create` button under a **single** select, which opens a dialog holding the `$fields`
+mini-form; a **multiple** select instead offers an inline create row in the combobox when
+the typed query matches no option. Either way, submitting hits the select-create endpoint,
 which runs the `$using` closure server-side and returns the new option's `{value, label}`.
 
 ```php
@@ -355,6 +333,42 @@ disables every day up to and including X; `['from' => Y, 'to' => null]` disables
 everything after. The client also clamps calendar navigation to the months an open
 end leaves reachable.
 
+### Richtext with `embeds()` — embed apply action
+
+`embeds()` lets editors drop structured blocks between paragraphs, from the slash
+menu ("Blocks" group) or the toolbar "Block" menu. Each block kind is an `Embed`
+with an ordinary DSL field list, edited in a modal:
+
+```php
+use Tbtop\Admin\Dsl\Fields\Embed;
+
+$s->richtext('body')->embeds([
+    Embed::make('callout')->label('Callout')->icon('info')->summary('title')->fields([
+        $s->text('title')->required(),
+        $s->textarea('text'),
+    ]),
+])->maxEmbeds(10);
+```
+
+- **Stored shape (frozen):** a top-level Lexical node
+  `{type: 'embed', version: 1, id, kind, data}`. `id` is a UUID assigned on insert
+  and on paste; `data` holds only the declared, validated keys.
+- **Modal apply** posts the modal form to the page's action endpoint under the
+  reserved action name `__embed` (`payload.embed = {field, kind}`), which validates
+  against the embed's fields and answers `{effects, data}`; a 422 shows inline in
+  the modal.
+- **Save** re-validates every embed of a declared kind (field rules, `maxEmbeds`,
+  unique ids, root-level placement) and fails on the richtext key — per locale key
+  for a `translatable()` richtext. Undeclared kinds pass through untouched, render
+  as "Unknown block" and are dropped when pasted into a field that does not declare them.
+- **Limits:** `richtext()->embeds()` inside `Embed::fields()` throws (no nesting);
+  `translatable()` on an embed field is ignored — the richtext itself is the
+  translated unit. Field endpoints (select options/create, relation search, upload,
+  daterange ranges) resolve a field by class and name, so a `select`/`relation`/`upload`/
+  `daterange` inside an embed that shares its name with one of the form (or of another
+  embed) makes the form throw a `LogicException` on render — rename one of them.
+- A document holding only embeds is not empty: `required()` passes.
+
 ---
 
 ## M-89 fields — CheckboxList, ToggleButtons, Slider
@@ -372,7 +386,7 @@ Three controls added in M-89. All three are exercised end-to-end in
 values:
 
 ```php
-// apps/demo/app/Admin/Pages/NewFeaturesPage.php:35-43
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php
 $s->checkboxlist('channels')
     ->label('Notification channels (CheckboxList)')
     ->options([
@@ -388,7 +402,7 @@ $s->checkboxlist('channels')
 `->multiple()` to switch it to an array value:
 
 ```php
-// apps/demo/app/Admin/Pages/NewFeaturesPage.php:45-61
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php
 $s->togglebuttons('plan')                 // single → scalar value, e.g. 'pro'
     ->label('Plan (ToggleButtons, single)')
     ->options([
@@ -412,7 +426,7 @@ $s->togglebuttons('tags')                 // multiple → array value, e.g. ['ne
 because they are structural — they drive the track range and snapping:
 
 ```php
-// apps/demo/app/Admin/Pages/NewFeaturesPage.php:63-68
+// apps/demo/app/Admin/Pages/NewFeaturesPage.php
 $s->slider('volume')
     ->label('Volume (Slider)')
     ->min(0)
@@ -424,8 +438,47 @@ $s->slider('volume')
 `options()` on these fields takes the same `{value, label}` list every option-driven field
 uses — the values are string-normalized on the wire, so seed defaults as strings (e.g.
 `->record(['plan' => 'pro', 'channels' => ['email']])`,
-`NewFeaturesPage.php:74-79`). Validation is PHP as always — `rules('array')` for the
+`NewFeaturesPage.php`). Validation is PHP as always — `rules('array')` for the
 multi-value ones, numeric range rules for the slider.
+
+### Options from an enum
+
+Every `options()` (Select, Radio, CheckboxList, ToggleButtons, InFilter, and an editable
+`Column::options()`) also takes an enum class. The cases expand to the same
+`{value, label, description?}` list:
+
+```php
+enum OrderStatus: string implements HasLabel, HasDescription
+{
+    case Pending = 'pending';
+    case Paid = 'paid';
+
+    public function getLabel(): ?string { return __(ucfirst($this->value)); }
+    public function getDescription(): ?string { return $this === self::Paid ? __('Money received') : null; }
+}
+
+$s->radio('status')->options(OrderStatus::class)->default(OrderStatus::Pending)
+    ->rules(['required', Rule::enum(OrderStatus::class)]);
+```
+
+- `value` is `->value`, or `->name` for a pure enum. `label` comes from `getLabel()`; with no
+  `HasLabel`, or a `null` label, it is the case name. `description` comes from
+  `getDescription()` and is left out when null. `Column::options()` emits `{value, label}` only.
+- The interfaces live in `Tbtop\Admin\Contracts\` (`HasLabel`, `HasColor`, `HasDescription`)
+  and carry Filament 4's return types, so a Filament enum ports by swapping its `use` lines.
+  An `Htmlable` label or description ships as plain text (`strip_tags`); a label that is
+  `null` or empty falls back to the case name.
+- `default()` accepts a case, or a list of cases for multi-value fields, and stores the
+  string option values. Values passed through `record()` are not converted.
+- **Int-backed enums**: option values are strings on the wire, so string-cast the form data
+  (`record(['priority' => (string) $order->priority->value])`). The Radio, ToggleButtons and
+  CheckboxList clients compare strings, so an int value shows no selection.
+- **No validation is implied**, for the enum form as for the array form. Add
+  `Rule::enum(OrderStatus::class)` for a backed enum. `Rule::enum()` needs `tryFrom`, so validate a
+  pure enum with `Rule::in(array_column(Draft::cases(), 'name'))`.
+
+The same enum drives a badge: `Column::make('status')->badge(OrderStatus::class)` (see the
+badge paragraph in [authoring-pages.md](./authoring-pages.md)).
 
 ---
 
@@ -438,7 +491,7 @@ rung you need; each adds capability over the one above.
 `->set('options', [...])`):
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:69-73 (inside a repeater)
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php (inside a repeater)
 $s->select('type')->label('Type')
     ->set('options', [
         ['value' => 'text', 'label' => 'Text'],
@@ -450,7 +503,7 @@ $s->select('type')->label('Type')
 `->searchable()`:
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:43-46
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 $s->select('author_id')->label('Author')
     ->searchable()
     ->set('options', $this->authorOptions())
@@ -463,7 +516,7 @@ $s->select('author_id')->label('Author')
 field is usually the cleaner choice:
 
 ```php
-// apps/demo/app/Admin/Pages/RelationDemoPage.php:39-43
+// apps/demo/app/Admin/Pages/RelationDemoPage.php
 $s->relation('author_id')->label('Author')
     ->query(fn () => User::query()->orderBy('name'))
     ->labelKey('name')
@@ -472,11 +525,12 @@ $s->relation('author_id')->label('Author')
 ```
 
 **4. Creatable** — let the user add a new option inline. Call `->creatable($fields, $using)`:
-a mini-form (`$fields`) renders in the dropdown, and submitting it runs `$using` server-side
-to mint the new `{value, label}`. Needs the select-create endpoint:
+a `+ Create` button under a single select opens a dialog with the `$fields` mini-form (a
+multiple select offers the create row inside the combobox instead), and submitting it runs
+`$using` server-side to mint the new `{value, label}`. Needs the select-create endpoint:
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:43-60
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 $s->select('author_id')->label('Author')
     ->searchable()
     ->set('options', $this->authorOptions())
@@ -574,7 +628,7 @@ A public-disk upload that re-encodes to webp, and a private-disk one served only
 app:
 
 ```php
-// apps/demo/app/Admin/Pages/UploadDemoPage.php:40-49
+// apps/demo/app/Admin/Pages/UploadDemoPage.php
 // Public disk: stored under public:docs, publicly linkable.
 $s->upload('doc')->label('Public document')->required()
     ->disk('public')->directory('docs')->visibility('public')

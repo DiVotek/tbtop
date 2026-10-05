@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { describe, expect, mock, test } from "bun:test";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { RowProvider } from "../structure/rowContext";
@@ -93,6 +93,34 @@ describe("UploadForm", () => {
 		expect(captured).toHaveLength(0);
 	});
 
+	test("Upload retries when the same file is selected after an error", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		let attempts = 0;
+		const { container, getByRole } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={null}
+					onChange={() => {}}
+					options={{
+						upload: async () => {
+							attempts += 1;
+							throw new Error("Upload failed");
+						},
+					}}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		const file = new File(["x"], "retry.png", { type: "image/png" });
+
+		await userEvent.upload(input, file);
+		await waitFor(() => expect(getByRole("alert").textContent).toContain("Upload failed"));
+		await userEvent.upload(input, file);
+
+		await waitFor(() => expect(attempts).toBe(2));
+	});
+
 	test("Upload with a value renders preview and clears to null on remove", async () => {
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
@@ -174,6 +202,82 @@ describe("UploadForm", () => {
 		);
 		const input = container.querySelector("input[type=file]") as HTMLInputElement;
 		expect(input.getAttribute("accept")).toBe("image/*");
+	});
+
+	test("Upload forwards validation and blur props to the file input", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const onBlur = mock(() => {});
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={null}
+					onChange={() => {}}
+					onBlur={onBlur}
+					invalid
+					describedBy="file-error"
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(input.getAttribute("aria-describedby")).toBe("file-error");
+		fireEvent.blur(input);
+		expect(onBlur).toHaveBeenCalledTimes(1);
+	});
+
+	test("Upload with a value keeps a labelled file input that owns validation state", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const onBlur = mock(() => {});
+		const { container, getByLabelText, getByRole } = render(
+			<Wrap>
+				<label htmlFor="file">Attachment</label>
+				<UploadForm
+					name="file"
+					value={SAMPLE}
+					onChange={() => {}}
+					onBlur={onBlur}
+					invalid
+					describedBy="file-error"
+					options={{ accept: "image/*", upload: async () => uploadResponse() }}
+				/>
+				<p id="file-error">File is required</p>
+			</Wrap>,
+		);
+		const input = getByLabelText("Attachment") as HTMLInputElement;
+		expect(getByLabelText("Replace")).toBe(input);
+		expect(input.type).toBe("file");
+		expect(input.getAttribute("accept")).toBe("image/*");
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(input.getAttribute("aria-describedby")).toBe("file-filename file-error");
+		expect(container.querySelector("#file-filename")?.textContent).toBe("pic.png");
+		fireEvent.blur(input);
+		expect(onBlur).toHaveBeenCalledTimes(1);
+
+		const removeButton = getByRole("button", { name: /remove/i });
+		expect(removeButton.hasAttribute("aria-invalid")).toBe(false);
+		expect(removeButton.hasAttribute("aria-describedby")).toBe(false);
+	});
+
+	test("Upload with a value replaces the file through the preview input", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={SAMPLE}
+					onChange={(v) => captured.push(v)}
+					options={{
+						upload: async () => uploadResponse("uploads/next.png", "/uploads/next.png"),
+					}}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		await userEvent.upload(input, new File(["x"], "next.png", { type: "image/png" }));
+		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
+		expect(captured.at(-1)).toEqual({ path: "uploads/next.png", url: "/uploads/next.png" });
 	});
 
 	test("Upload tolerates a plain string value without crashing", () => {

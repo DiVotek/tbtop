@@ -27,6 +27,34 @@ describe("TableCell: badge kind", () => {
 	});
 });
 
+describe("TableCell: badge labels", () => {
+	test("shows a value's label, coloured by the stored value; an unlabelled value shows as stored", async () => {
+		const node = s.table({
+			query: async () => [
+				{ id: "1", status: "in_progress" },
+				{ id: "2", status: "done" },
+			],
+			columns: [
+				{
+					name: "status",
+					label: "Status",
+					kind: "badge",
+					badge: {
+						colors: { in_progress: "success" },
+						labels: { in_progress: "In progress" },
+					},
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText, queryByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		expect((await findByText("In progress")).className).toContain("bg-success");
+		expect(queryByText("in_progress")).toBeNull();
+		expect(await findByText("done")).toBeTruthy();
+	});
+});
+
 describe("TableCell: boolean kind", () => {
 	test("renders check icon for truthy value", async () => {
 		const node = s.table({
@@ -516,6 +544,20 @@ describe("TableCell: copyable", () => {
 });
 
 describe("TableCell: link kind", () => {
+	test.each([
+		"javascript:alert(document.domain)",
+		"data:text/html,<script>alert(1)</script>",
+	])("does not render an anchor for unsafe URL %s", async (view) => {
+		const node = s.table({
+			query: async () => [{ id: "1", view }],
+			columns: [{ name: "view", label: "View", kind: "link" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		expect(container.querySelector("td a")).toBeNull();
+	});
+
 	test("renders an anchor with the resolved URL as href", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", view: "/admin/posts/1" }],
@@ -633,5 +675,65 @@ describe("TableCell: time kind", () => {
 		const Wrap = wrap(() => new Response("{}"));
 		const { findByText } = render(<Wrap>{renderNode(node)}</Wrap>);
 		expect(await findByText("—")).toBeTruthy();
+	});
+});
+
+describe("TableCell: description", () => {
+	test("renders a muted line under the cell body", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Hello" }],
+			columns: [{ name: "title", label: "Title", description: "Headline" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.textContent).toContain("Hello");
+		const line = td?.querySelector(".text-xs.text-muted-foreground");
+		expect(line?.textContent).toBe("Headline");
+	});
+
+	test("row _descriptions value wins over the static col.description", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Hello", _descriptions: { title: "From row" } }],
+			columns: [{ name: "title", label: "Title", description: "Headline" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const td = container.querySelector("td");
+		expect(td?.textContent).toContain("From row");
+		expect(td?.textContent).not.toContain("Headline");
+	});
+});
+
+describe("TableCell: group", () => {
+	test("renders one td with stacked children of their kinds", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", car_photo: "/img/civic.png", car_name: "Civic" }],
+			columns: [
+				{
+					name: "car",
+					label: "Car",
+					kind: "group",
+					description: "Vehicle",
+					columns: [
+						{ name: "car_photo", kind: "image" },
+						{ name: "car_name", emphasized: true },
+					],
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const tds = container.querySelectorAll("tbody td");
+		expect(tds.length).toBe(1);
+		const td = tds[0];
+		expect(td?.querySelector("img")?.getAttribute("src")).toBe("/img/civic.png");
+		expect(td?.textContent).toContain("Civic");
+		expect(td?.textContent).toContain("Vehicle");
+		expect(td?.querySelector(".flex.flex-col")).toBeTruthy();
+		expect(container.querySelectorAll("thead th").length).toBe(1);
 	});
 });

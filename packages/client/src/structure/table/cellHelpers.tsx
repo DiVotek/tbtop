@@ -22,8 +22,9 @@ export function BadgeCell({ value, col }: BadgeCellProps): ReactNode {
 	const str = value != null ? String(value) : "";
 	const colorName = col.badge?.colors?.[str];
 	const classes = resolveColorClasses(colorName);
+	const text = col.badge?.labels?.[str] ?? str;
 	return (
-		<Badge className={cn(classes.bg, classes.text, "border-transparent")}>{str || "—"}</Badge>
+		<Badge className={cn(classes.bg, classes.text, "border-transparent")}>{text || "—"}</Badge>
 	);
 }
 
@@ -163,6 +164,20 @@ interface LinkCellProps {
 	col: TableColumn;
 }
 
+const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:", "tel:"]);
+
+function normalizeLinkUrl(value: unknown): string | undefined {
+	if (typeof value !== "string" || value.trim() === "") {
+		return undefined;
+	}
+	try {
+		const parsed = new URL(value, "https://tabletop.invalid");
+		return SAFE_LINK_PROTOCOLS.has(parsed.protocol) ? value : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 /**
  * Renders the per-row URL resolved server-side (Column::link()). A null/empty
  * value renders nothing. stopPropagation keeps the click from also firing the
@@ -170,7 +185,7 @@ interface LinkCellProps {
  * shows the icon only (no link text); otherwise it falls back to the URL.
  */
 export function LinkCell({ value, col }: LinkCellProps): ReactNode {
-	const url = typeof value === "string" && value !== "" ? value : undefined;
+	const url = normalizeLinkUrl(value);
 	if (!url) {
 		return null;
 	}

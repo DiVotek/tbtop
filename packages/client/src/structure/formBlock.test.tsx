@@ -72,6 +72,28 @@ describe("Form integration", () => {
 		expect(seenData).toEqual({ title: "Hello" });
 	});
 
+	test("Form preserves a record with an object-valued data field", async () => {
+		let seenInitial: unknown = null;
+		const record = { id: 1, title: "Example", data: { theme: "dark" } };
+		const node = s.form({ query: async () => record }, [
+			s.text({ name: "title" }),
+			s.action({
+				name: "save",
+				handler: async (c) => {
+					seenInitial = c.form?.initial;
+				},
+			}),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const view = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		expect(await view.findByDisplayValue("Example")).toBeTruthy();
+		await act(async () => {
+			fireEvent.click(await view.findByTestId("action-save"));
+		});
+		expect(seenInitial).toEqual(record);
+	});
+
 	test("Form set updates data, isDirty flips, changedFields reflects the diff", async () => {
 		let seenInitial: unknown = null;
 		let seenData: unknown = null;

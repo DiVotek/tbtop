@@ -6,8 +6,10 @@ use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Fields\Daterange;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Relation;
+use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Panels\CurrentPanel;
@@ -89,7 +91,7 @@ final class FormBuilder implements JsonSerializable
         return TranslatableRecord::normalize($seeded, $children);
     }
 
-    /** Laravel validation rules collected from descendant fields. @return array<string, list<string>> */
+    /** Laravel validation rules collected from descendant fields. @return array<string, list<string|\Illuminate\Contracts\Validation\ValidationRule>> */
     public function collectRules(): array
     {
         return RuleWalker::collect($this->includedChildren());
@@ -160,6 +162,22 @@ final class FormBuilder implements JsonSerializable
         );
 
         return $found instanceof Daterange ? $found : null;
+    }
+
+    /**
+     * Find the embed of $kind on the richtext field named $name, walking nested children.
+     * Returns null when not found.
+     */
+    public function findEmbed(string $name, string $kind): ?Embed
+    {
+        $found = self::searchField(
+            $this->children,
+            static fn (Field $f): bool => $f instanceof Richtext
+                && $f->name === $name
+                && $f->findEmbed($kind) !== null,
+        );
+
+        return $found instanceof Richtext ? $found->findEmbed($kind) : null;
     }
 
     /**
@@ -335,6 +353,7 @@ final class FormBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
+        EmbedFieldCollisions::assertNone($this->includedChildren());
         $this->seedRecordDependents();
         $options = ['name' => $this->name, 'children' => $this->children];
 

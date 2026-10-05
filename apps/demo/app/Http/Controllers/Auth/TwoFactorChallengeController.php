@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,7 +43,9 @@ class TwoFactorChallengeController extends Controller
             throw ValidationException::withMessages(['code' => 'Invalid verification code.']);
         }
 
+        Auth::guard('web')->login($user);
         $request->session()->forget('auth.2fa.user_id');
+        $request->session()->regenerate();
         $request->session()->put('auth.2fa.completed', true);
 
         return redirect()->intended(route('dashboard', absolute: false));

@@ -2,6 +2,10 @@
 
 use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\Console\Application as ConsoleApplication;
+use Symfony\Component\Console\Exception\ExceptionInterface as InputException;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Input\InputOption;
 use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\ActionDataController;
 use Tbtop\Admin\Http\DataController;
@@ -32,6 +36,22 @@ use Tbtop\Admin\Http\TableReorderController;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Panels\PanelRegistry;
+
+// Cache maintenance must boot even when the old index references deleted page classes.
+if (app()->runningInConsole()) {
+    // Use Symfony's global options plus Laravel's --env without bootstrapping Artisan recursively.
+    $definition = (new ConsoleApplication)->getDefinition();
+    $definition->addOption(new InputOption('env', null, InputOption::VALUE_OPTIONAL));
+    $input = new ArgvInput;
+    try {
+        $input->bind($definition);
+        if (in_array($input->getArgument('command'), ['tbtop:cache-pages', 'tbtop:clear-cached-pages'], true)) {
+            return;
+        }
+    } catch (InputException) {
+        // Other commands may have their own arguments/options; Artisan owns their validation.
+    }
+}
 
 /**
  * Register the full endpoint cluster for each page in the given subset. The

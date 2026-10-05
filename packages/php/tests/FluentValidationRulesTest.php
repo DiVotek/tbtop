@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Validation\Rule;
 use Tbtop\Admin\Dsl\Fields\Number;
 use Tbtop\Admin\Dsl\Fields\Otp;
 use Tbtop\Admin\Dsl\Fields\Relation;
@@ -122,6 +123,15 @@ it('min/max helpers surface as client wire constraints', function () {
     $node = Text::make('title')->minLength(3)->maxLength(10)->toNode()->jsonSerialize();
 
     expect($node['options']['constraints'] ?? [])->toBe(['min' => 3, 'max' => 10]);
+});
+
+it('Rule::in surfaces bare values as the client in constraint', function () {
+    // Rule::in stringifies to quoted CSV; the client must receive the values
+    // Laravel itself validates against, or every valid choice is rejected.
+    $rule = (string) Rule::in(['WebPage', 'a,b', 'say "hi"']);
+    $node = Select::make('type')->rules([$rule])->toNode()->jsonSerialize();
+
+    expect($node['options']['constraints']['in'])->toBe(['WebPage', 'a,b', 'say "hi"']);
 });
 
 it('server-only helpers do not leak into wire constraints', function () {

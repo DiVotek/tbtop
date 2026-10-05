@@ -2,10 +2,13 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use InvalidArgumentException;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Fields\Upload;
+use Tbtop\Admin\Validation\EmbedsRule;
 
 final class RuleWalker
 {
@@ -23,9 +26,10 @@ final class RuleWalker
      * throws, since a Node no longer carries the rules to collect.
      * Repeater sub-fields become `parent.*.child` rules.
      * Translatable fields become `field.locale` dotted rules per locale.
+     * A richtext with embeds() adds one EmbedsRule object to each of its keys.
      *
      * @param  list<mixed>  $children
-     * @return array<string, list<string>>
+     * @return array<string, list<string|ValidationRule>>
      */
     public static function collect(array $children, string $prefix = ''): array
     {
@@ -39,7 +43,7 @@ final class RuleWalker
         return $rules;
     }
 
-    /** @return array<string, list<string>> */
+    /** @return array<string, list<string|ValidationRule>> */
     private static function fromChild(mixed $child, string $prefix): array
     {
         if (! ChildInclusion::isConditionMet($child)) {
@@ -81,7 +85,7 @@ final class RuleWalker
         );
     }
 
-    /** @param  Field  $field @return array<string, list<string>> */
+    /** @param  Field  $field @return array<string, list<string|ValidationRule>> */
     private static function fromField(Field $field, string $prefix): array
     {
         if ($field instanceof Upload && $field->isTranslatableField()) {
@@ -101,7 +105,7 @@ final class RuleWalker
         // Rule-less fields get a permissive baseline so validate()
         // still includes them in the validated payload.
         $entries = $field->ruleEntries();
-        $rules = [$key => $entries === [] ? ['nullable'] : $entries];
+        $rules = [$key => self::withEmbedsRule($field, $entries === [] ? ['nullable'] : $entries)];
         $subFields = $field->childFields();
         if ($subFields !== []) {
             $rules += self::collect($subFields, $key.'.*.');
@@ -259,9 +263,9 @@ final class RuleWalker
     /**
      * Expand a translatable field into per-locale dotted rules.
      * Default locale gets the field's own rules; others get 'nullable' baseline
-     * unless overridden via rulesForLocale().
+     * unless overridden via rulesForLocale(). The embeds rule joins every locale.
      *
-     * @return array<string, list<string>>
+     * @return array<string, list<string|ValidationRule>>
      */
     private static function fromTranslatableField(Field $field, string $prefix): array
     {
@@ -275,15 +279,32 @@ final class RuleWalker
         foreach ($locales as $locale) {
             $dotKey = "{$key}.{$locale}";
             if (isset($overrides[$locale])) {
-                $rules[$dotKey] = $overrides[$locale];
+                $entries = $overrides[$locale];
             } elseif ($locale === $default) {
-                $rules[$dotKey] = $fieldRules === [] ? ['nullable'] : $fieldRules;
+                $entries = $fieldRules === [] ? ['nullable'] : $fieldRules;
             } else {
-                $rules[$dotKey] = ['nullable'];
+                $entries = ['nullable'];
             }
+            $rules[$dotKey] = self::withEmbedsRule($field, $entries);
         }
 
         return $rules;
+    }
+
+    /**
+     * One rule object per key, never dotted wildcard keys into the document:
+     * those would turn the field into a container for declaredKeysOnly().
+     *
+     * @param  list<string>  $entries
+     * @return list<string|ValidationRule>
+     */
+    private static function withEmbedsRule(Field $field, array $entries): array
+    {
+        if (! $field instanceof Richtext || $field->getEmbeds() === []) {
+            return $entries;
+        }
+
+        return [...$entries, new EmbedsRule($field)];
     }
 
     /**

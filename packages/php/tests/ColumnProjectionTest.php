@@ -100,7 +100,7 @@ it('ColumnProjection: time() formats timestamps with default H:i format', functi
 // hidden columns excluded from projection
 // ---------------------------------------------------------------------------
 
-it('ColumnProjection: hidden column not processed', function (): void {
+it('ColumnProjection: hidden and undeclared columns are not exposed', function (): void {
     // Use a format that would change the value if processed
     $processed = false;
     $table = (new TableBuilder('cposts'))
@@ -115,9 +115,13 @@ it('ColumnProjection: hidden column not processed', function (): void {
         ->query(fn () => DB::table('cposts'));
 
     $rows = DB::table('cposts')->orderBy('id')->get()->all();
-    ColumnProjection::apply($table, $rows);
+    $result = ColumnProjection::apply($table, $rows);
 
-    expect($processed)->toBeFalse();
+    expect($processed)->toBeFalse()
+        ->and($result[0])->toHaveProperty('id')
+        ->and($result[0])->toHaveProperty('title', 'Post A')
+        ->and($result[0])->not->toHaveProperty('status')
+        ->and($result[0])->not->toHaveProperty('price');
 });
 
 // ---------------------------------------------------------------------------
@@ -312,6 +316,89 @@ it('ColumnProjection: a static string tooltip alone does not attach _tooltips', 
     $result = ColumnProjection::apply($table, $rows);
 
     expect(property_exists($result[0], '_tooltips'))->toBeFalse();
+});
+
+// ---------------------------------------------------------------------------
+// description(Closure) — per-row description meta
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: description(Closure) attaches a resolved _descriptions map', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('title')->kind('text'),
+            Column::make('status')->kind('text')->description(fn ($row) => "Status: {$row->status}"),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->_descriptions)->toBe(['status' => 'Status: published'])
+        ->and($result[0]->status)->toBe('published');
+});
+
+it('ColumnProjection: a resolver returning null or empty string omits that column from _descriptions', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('title')->kind('text')->description(fn () => null),
+            Column::make('status')->kind('text')->description(fn () => ''),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_descriptions'))->toBeFalse();
+});
+
+it('ColumnProjection: a static string description alone does not attach _descriptions', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title')->kind('text')->description('Headline')])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect(property_exists($result[0], '_descriptions'))->toBeFalse();
+});
+
+// ---------------------------------------------------------------------------
+// group — project children, skip parent
+// ---------------------------------------------------------------------------
+
+it('ColumnProjection: group writes child values and does not computeValue the parent', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('car')->group([
+                Column::make('title')->formatUsing(fn ($v) => strtoupper((string) $v)),
+                Column::make('status'),
+            ]),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->title)->toBe('POST A')
+        ->and($result[0]->status)->toBe('published')
+        ->and(property_exists($result[0], 'car'))->toBeFalse();
+});
+
+it('ColumnProjection: group child tooltip and description attach under the child name', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([
+            Column::make('car')->group([
+                Column::make('title')->tooltip(fn ($row) => "Tip: {$row->title}"),
+                Column::make('status')->description(fn ($row) => "Desc: {$row->status}"),
+            ]),
+        ])
+        ->query(fn () => DB::table('cposts'));
+
+    $rows = DB::table('cposts')->orderBy('id')->get()->all();
+    $result = ColumnProjection::apply($table, $rows);
+
+    expect($result[0]->_tooltips)->toBe(['title' => 'Tip: Post A'])
+        ->and($result[0]->_descriptions)->toBe(['status' => 'Desc: published']);
 });
 
 // ---------------------------------------------------------------------------

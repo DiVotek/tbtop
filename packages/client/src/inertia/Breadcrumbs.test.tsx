@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
+import { clickIsNative } from "../testing/clickIsNative";
 import { Breadcrumbs } from "./Breadcrumbs";
 
 describe("Breadcrumbs", () => {
@@ -84,5 +85,14 @@ describe("Breadcrumbs", () => {
 		// lucide ChevronRight renders as an svg
 		const chevrons = container.querySelectorAll("svg");
 		expect(chevrons.length).toBeGreaterThan(0);
+	});
+
+	test("Breadcrumbs: an off-origin crumb is a native link, not an Inertia visit", () => {
+		const { getByText } = render(
+			<Breadcrumbs
+				items={[{ label: "Docs", url: "https://github.com/x" }, { label: "Here" }]}
+			/>,
+		);
+		expect(clickIsNative(getByText("Docs"))).toBe(true);
 	});
 });

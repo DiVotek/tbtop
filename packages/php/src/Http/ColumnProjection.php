@@ -27,18 +27,43 @@ final class ColumnProjection
     {
         $columns = $table->visibleColumns();
         $recordUrl = $table->recordUrlResolver();
+        $valueColumns = self::valueColumns($columns);
+        $meta = self::metaColumns($columns);
+        $groupsColumn = $table->getGroupsColumn();
 
         $out = [];
         foreach ($rows as $row) {
-            $projected = $columns === [] ? $row : self::projectRow($row, $columns);
+            $projected = self::projectRow($row, $valueColumns);
+            self::attachGroupKey($projected, $row, $groupsColumn);
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
-            self::attachTooltips($projected, $row, $columns);
+            self::attachTooltips($projected, $row, $meta);
+            self::attachDescriptions($projected, $row, $meta);
             $out[] = $projected;
         }
 
         return $out;
+    }
+
+    /**
+     * groups() may name a column that is hidden or never declared; the client
+     * partitions rows by row[column], so the allowlist must still carry its raw
+     * value. The author named it in the DSL, which is what authorizes it.
+     */
+    private static function attachGroupKey(mixed &$projected, mixed $row, ?string $column): void
+    {
+        if ($column === null) {
+            return;
+        }
+        if (is_array($projected)) {
+            $projected[$column] ??= data_get($row, $column);
+
+            return;
+        }
+        if (data_get($projected, $column) === null) {
+            data_set($projected, $column, data_get($row, $column));
+        }
     }
 
     /**
@@ -68,10 +93,78 @@ final class ColumnProjection
     }
 
     /**
-     * Eloquent models project to a plain array (so toArray() casts/accessors
-     * — incl. Spatie locale re-expansion — never re-run after us); other rows
-     * (stdClass from query builder) mutate in place. Mixed return is fine:
-     * response()->json serializes both the same.
+     * Per-row meta: for each visible column with a closure description, resolve
+     * it against the original row and collect non-empty scalars under a flat
+     * `_descriptions` map keyed by (possibly dotted) column name. Omitted
+     * entirely when nothing resolves. Does not write into `row[name]`.
+     *
+     * @param  list<Column>  $columns
+     */
+    private static function attachDescriptions(mixed &$projected, mixed $row, array $columns): void
+    {
+        $descriptions = [];
+        foreach ($columns as $col) {
+            $resolver = $col->descriptionResolver();
+            if ($resolver === null) {
+                continue;
+            }
+            $value = $resolver($row);
+            if (is_scalar($value) && $value !== '') {
+                $descriptions[$col->name] = (string) $value;
+            }
+        }
+        if ($descriptions !== []) {
+            data_set($projected, '_descriptions', $descriptions);
+        }
+    }
+
+    /**
+     * Group parents are display-only: project their children instead.
+     *
+     * @param  list<Column>  $columns
+     * @return list<Column>
+     */
+    private static function valueColumns(array $columns): array
+    {
+        $out = [];
+        foreach ($columns as $col) {
+            $children = $col->groupColumns();
+            if ($children !== []) {
+                foreach ($children as $child) {
+                    $out[] = $child;
+                }
+
+                continue;
+            }
+            $out[] = $col;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Tooltip/description resolvers live on parents and on group children.
+     *
+     * @param  list<Column>  $columns
+     * @return list<Column>
+     */
+    private static function metaColumns(array $columns): array
+    {
+        $out = [];
+        foreach ($columns as $col) {
+            $out[] = $col;
+            foreach ($col->groupColumns() as $child) {
+                $out[] = $child;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Eloquent models project to a plain array; other rows project to a fresh
+     * object. In both cases the output is an allowlist of the record key and
+     * visible declared columns, never the complete database row.
      *
      * @param  list<Column>  $columns
      */
@@ -81,12 +174,11 @@ final class ColumnProjection
             return self::projectModelToArray($row, $columns);
         }
 
-        return self::projectInPlace($row, $columns);
+        return self::projectToObject($row, $columns);
     }
 
     /**
-     * Build output from the model's array form and overwrite each declared
-     * column; the model is never mutated. Translatable columns read the raw
+     * Build output from the model's array form. Translatable columns read the raw
      * locale map (bypassing the flattening accessor); the rest read from the
      * toArray result via data_get, so dotted relation columns (location.name)
      * resolve the nested value, matching the query-builder path. The resolved
@@ -97,7 +189,9 @@ final class ColumnProjection
      */
     private static function projectModelToArray(Model $row, array $columns): array
     {
-        $out = $row->toArray();
+        $sourceRow = $row->toArray();
+        $keyName = $row->getKeyName();
+        $out = [$keyName => $row->getKey()];
         foreach ($columns as $col) {
             $name = $col->name;
             $linkResolver = $col->linkResolver();
@@ -108,7 +202,7 @@ final class ColumnProjection
             }
             $source = $col->isTranslatable()
                 ? self::rawAttribute($row, $name)
-                : data_get($out, $name);
+                : data_get($sourceRow, $name);
             $out[$name] = self::computeValue($col, $source, $row);
         }
 
@@ -118,24 +212,27 @@ final class ColumnProjection
     /**
      * @param  list<Column>  $columns
      */
-    private static function projectInPlace(mixed $row, array $columns): mixed
+    private static function projectToObject(mixed $row, array $columns): mixed
     {
+        $out = new \stdClass;
+        $id = data_get($row, 'id');
+        if ($id !== null) {
+            $out->id = $id;
+        }
         foreach ($columns as $col) {
             $name = $col->name;
             $linkResolver = $col->linkResolver();
             if ($linkResolver !== null) {
-                data_set($row, $name, $linkResolver($row));
+                data_set($out, $name, $linkResolver($row));
 
                 continue;
             }
             $raw = data_get($row, $name);
             $value = self::computeValue($col, $raw, $row);
-            if ($value !== $raw) {
-                data_set($row, $name, $value);
-            }
+            data_set($out, $name, $value);
         }
 
-        return $row;
+        return $out;
     }
 
     /**

@@ -37,7 +37,7 @@ final class FormActions
         return $s->actionsRow([
             self::save($s, $saveLabel),
             ...$extra,
-            $s->action('cancel')->label('Cancel')->visit($cancelUrl),
+            $s->action('cancel')->label('Cancel')->url($cancelUrl),
         ]);
     }
 }

@@ -66,6 +66,7 @@ class TwoFactorChallengeTest extends TestCase
         [$user, $g2fa, $secret] = $this->userWithTwoFactor();
 
         $this->withSession(['auth.2fa.user_id' => $user->id]);
+        $previousSessionId = session()->getId();
 
         $validOtp = $g2fa->getCurrentOtp($secret);
 
@@ -74,6 +75,10 @@ class TwoFactorChallengeTest extends TestCase
         ]);
 
         $response->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($user);
+        $response->assertSessionMissing('auth.2fa.user_id');
+        $response->assertSessionHas('auth.2fa.completed', true);
+        $this->assertNotSame($previousSessionId, session()->getId());
     }
 
     public function test_admin_dsl_challenge_accepts_a_recovery_code(): void

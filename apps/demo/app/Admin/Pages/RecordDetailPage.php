@@ -39,7 +39,10 @@ class RecordDetailPage extends Page
             $s->displayText('Order #1042')->variant('heading'),
             $s->displayText('A read-only detail view composed from display primitives.')->variant('muted'),
             $s->section(['title' => 'Summary'], [
-                $s->displayValue($record['status'])->badge(['paid' => Color::Success, 'pending' => Color::Warning]),
+                $s->displayValue($record['status'])->badge([
+                    'paid' => ['color' => Color::Success],
+                    'pending' => ['color' => Color::Warning],
+                ]),
                 $s->displayValue($record['shipped'])->boolean(trueColor: Color::Success, falseColor: 'gray'),
                 $s->displayValue($record['fulfillment'])->icon([
                     'shipped' => ['icon' => 'truck', 'color' => 'success'],

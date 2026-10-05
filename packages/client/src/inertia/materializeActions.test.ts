@@ -23,7 +23,7 @@ function visitNode(href: string): StructureNode {
 	};
 }
 
-function resolveUrl(href: string, row: Record<string, unknown>): string {
+function resolveUrl(href: string, row?: Record<string, unknown>): string {
 	const options = materializeActionOptions(visitNode(href), {
 		basePath: "/admin",
 		materializeNode: (node) => node,
@@ -101,8 +101,29 @@ describe("fillRowTemplate", () => {
 		);
 	});
 
-	test("a missing row key still substitutes an empty string", () => {
-		expect(resolveUrl("/posts/{row.slug}/edit", {})).toBe("/posts//edit");
+	test("a missing row leaves the placeholder for the renderer to reject", () => {
+		expect(resolveUrl("/posts/{row.slug}/edit")).toBe("/posts/{row.slug}/edit");
+	});
+
+	test("a missing row key leaves the placeholder for the renderer to reject", () => {
+		expect(resolveUrl("/posts/{row.slug}/edit", {})).toBe("/posts/{row.slug}/edit");
+	});
+
+	test("a null row value leaves the placeholder for the renderer to reject", () => {
+		expect(resolveUrl("/posts/{row.slug}/edit", { slug: null })).toBe("/posts/{row.slug}/edit");
+	});
+
+	test("an empty string leaves the placeholder for the renderer to reject", () => {
+		expect(resolveUrl("/posts/{row.id}/delete", { id: "" })).toBe("/posts/{row.id}/delete");
+	});
+
+	test("a whitespace-only string leaves the placeholder for the renderer to reject", () => {
+		expect(resolveUrl("/posts/{row.id}/delete", { id: "  " })).toBe("/posts/{row.id}/delete");
+	});
+
+	test("0 and false still fill the segment", () => {
+		expect(resolveUrl("/posts/{row.id}/delete", { id: 0 })).toBe("/posts/0/delete");
+		expect(resolveUrl("/posts/{row.flag}/delete", { flag: false })).toBe("/posts/false/delete");
 	});
 
 	test("a lone surrogate does not crash the url resolver", () => {

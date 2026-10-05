@@ -113,7 +113,7 @@ function DetailShell({
 		try {
 			const updated = await patchMediaItem(client, item.id, {
 				name: name.trim() || item.name,
-				alt: alt || undefined,
+				alt: alt.trim() === "" ? null : alt,
 				description: description.trim() === "" ? null : description,
 				tags,
 				folderId: folderId === "__root__" ? null : folderId,
@@ -140,6 +140,9 @@ function DetailShell({
 		setError(null);
 		try {
 			const updated = await replaceMediaItem(client, item.id, file);
+			// The replace endpoint rewrites the file and `name` only. Copying
+			// persisted alt/description/tags/folder would wipe a dirty draft.
+			setName(updated.name);
 			onUpdated(updated);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t("state.error"));

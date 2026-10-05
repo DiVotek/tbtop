@@ -17,10 +17,12 @@ class BulkPostsSeederTest extends TestCase
 
         $this->seed(BulkPostsSeeder::class);
         $this->assertSame(50, Post::where('slug', 'like', 'perf-post-%')->count());
+        $this->assertSame(50, Post::withTrashed()->where('slug', 'like', 'perf-post-%')->count());
 
         // Re-run: cleanup + re-insert; still exactly 50.
         $this->seed(BulkPostsSeeder::class);
         $this->assertSame(50, Post::where('slug', 'like', 'perf-post-%')->count());
+        $this->assertSame(50, Post::withTrashed()->where('slug', 'like', 'perf-post-%')->count());
 
         putenv('BULK_POSTS');
     }

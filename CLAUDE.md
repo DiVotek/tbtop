@@ -1,8 +1,7 @@
 # Tabletop Admin
 
 PHP-DSL admin pages, rendered by a React client over Inertia. **No Livewire.**
-See `docs/roadmap.md` for release plan, `PROJECT.md` for vision (note: vision was written
-for the Node stack — philosophy holds, the runtime is now Laravel; re-read with that lens).
+See `docs/backlog.md` for open work.
 
 > **Public docs are English-only.** This repo is going open-source. README, docs,
 > code comments, commit messages, and any consumer-facing text are written in
@@ -21,8 +20,8 @@ page composition. The client owns rendering. **These three boundaries are the ar
 
 Monorepo. Two published packages + a demo app.
 
-- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, auth, media. **Laravel package.**
-- `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, ~20 field components, layout shell, data clients.
+- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, guard/middleware integration, media. **Laravel package.** (Auth *screens* are DSL pages; the auth backend lives in the demo — see the auth note below.)
+- `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, 26 wire field kinds plus 2 client-only registrations (`json`/`unknown`), layout shell, data clients.
 - `packages/contracts/` → generated `structure.schema.json` + `fixtures/kitchen-sink.json` — the wire-grammar contract shared by both sides.
 - `apps/demo/` → Laravel app wiring both packages end-to-end. **The reference consumer — read its `app/Admin/Pages/` to see real DSL usage.**
 
@@ -91,27 +90,58 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   family (displayValue/Image/Richtext/KeyValue — the read-only detail story). In `S.php`. For
   content that must re-render on form-field changes: `liveRegion(name)->dependsOn(...)->render(fn)`
   — server re-renders display nodes per change, no custom client code.
-- **Table features:** sort, pagination, global search, per-column search, per-field filters
+- **Table features:** sort, pagination, table-wide search, per-column search, per-field filters
   (modal/inline), filter tabs, row grouping, drag-reorder, inline-editable cells, row actions,
   bulk actions, header actions, row-click, record URLs, column visibility, empty state,
-  soft-delete macro, URL-state. In `TableBuilder.php` / `Column.php`.
-- **Panel-level:** multi-panel config, navigation (sidebar/topbar), chrome-as-DSL, command
+  soft-delete macro. In `TableBuilder.php` / `Column.php`. URL-state is client-only and always
+  on (`packages/client/src/structure/tableUrlState.ts`) — there is no PHP API for it.
+- **Panel-level:** multi-panel config, navigation (layouts sidebar/topbar/topbar-sidebar/rail-sidebar,
+  groups with sections, nested items), chrome-as-DSL, command
   palette, database notifications (header bell), appearance (theme/density/max-width),
-  UI + content locales. In `Panels/PanelConfig.php`; see `docs/ai/api/panel.md`.
+  UI + content locales. In `Panels/PanelConfig.php` and its traits in `Panels/Concerns/`
+  (appearance: `ConfiguresAppearance.php`); see `docs/ai/api/panel.md`.
 - **Auth:** login, register, password reset, email verification, 2FA, passkeys, password
   confirmation — the **backend lives in the demo via Laravel Breeze controllers**
   (test-covered), **not** in the package. There is NO Fortify and no package-side auth
   backend. The screens are DSL pages using `layout(): 'center'` plus a `middleware()`
   override to stay public (`LoginPage`, `TwoFactorChallengePage`, `TwoFactorSetupPage`,
   `ApiTokensPage`). Don't rebuild the flows to learn them; the open gap is a package-side
-  backend story, not the layout (see roadmap §1.1).
+  backend story, not the layout.
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
-  `apps/demo/resources/js/admin.tsx` for the rating-field example. Use this for app-specific
-  fields instead of editing the packages.
+  `apps/demo/resources/js/admin.tsx` for the rating-field example (PHP half:
+  `apps/demo/app/Admin/Fields/Rating.php`, registered via `S::register` in
+  `AppServiceProvider`). Use this for app-specific fields instead of editing the packages.
 
 Known stubs/gaps (don't assume these work): no package-side auth backend, no CSV
-export/import, no global search. Full list in `docs/roadmap.md` and
-`docs/backlog.md` — both lag the code, so verify against source before trusting a "gap".
+export/import, no **cross-model** record search (per-table search ships; the ⌘K palette
+searches nav items and declared commands, not rows), no multi-tenancy. Full list in
+`docs/backlog.md` — it lags the code, so verify against source before trusting a "gap".
+
+## Source map (package internals)
+
+`docs/ai` is written for consumers; this is the contributor's map. Paths are under
+`packages/php/src/` and `packages/client/src/`.
+
+- **Existence check first:** `grep -ril <name> docs/ai/api/` — generated from source and
+  CI-gated by the `ApiReference` test, so on `main` it matches the code.
+- **Request lifecycle (PHP):** `routes/admin.php` → `Http/ResolvedPage` → `Http/AuthorizesPage`
+  → the `Http/*Controller` → `Http/RespondsWithEffects`. Effects: `Actions/Effects.php`.
+- **Tree traversal (PHP):** `Dsl/StructureWalk.php` is the one child-walk; `Dsl/RuleWalker.php`
+  collects field rules on top of it. Reuse them — never write a second field walk.
+- **Shared field behaviour (PHP):** `Dsl/Concerns/` (`HasOptions`, `Has*Rules`, …); enum
+  options in `Dsl/EnumOptions.php` / `Dsl/OptionList.php`; server cell formatting in
+  `Http/ColumnProjection.php`. API-reference generator: `Support/ApiReference/`.
+- **Client blocks:** `structure/<kind>Block.tsx`; tables in `structure/table/`
+  (`cellHelpers`, `columnValueFormat`, `iconRegistry`, `colorRegistry`, `toolbar`).
+- **Client plumbing:** `render/` (block registry, `defineFieldClient`, section header);
+  `inertia/` (page, effects, `materialize*`); `app/` (shell frames, chrome, nav, palette,
+  notifications); `data/` (`client.tsx` = `apiBase`, `entityRoutes.ts`).
+- **Links:** every client href goes through `lib/externalUrl.ts` (`isExternalUrl`).
+- **Deprecating a public PHP method:** `@deprecated` docblock + `trigger_error(...,
+  E_USER_DEPRECATED)` (see `Navigation/NavItem.php`). Laravel drops deprecations in tests —
+  assert them with the `set_error_handler` capture in `packages/php/tests/LinkCanonTest.php`.
+
+Most client files are `.tsx` even without JSX — glob `name.ts*` rather than guessing.
 
 ## Commands
 
@@ -122,12 +152,23 @@ PHP package (`cd packages/php`):
 
 Client package (`cd packages/client`):
 - `bun test` — tests · `bun test <path>` — one file
-- `tsc --noEmit` — typecheck
+- `bun run typecheck` — typecheck (no global `tsc`; CI runs `bunx tsc --noEmit`)
 
-Demo (`cd apps/demo`): standard Laravel — `php artisan serve`, `npm run dev` (Vite for the
-admin entry). Browser e2e for walking-skeleton flows lives here.
+Repo root: `bun run lint` (oxlint), `bun run format:check` (biome) — CI's lint job.
 
-**Run only tests for what you changed.** CI runs the full suite.
+Demo (`cd apps/demo`, setup in the README quickstart):
+- `composer dev` — server + queue + logs + Vite. Pages render a blank shell without Vite or a
+  prior `npm run build` (`public/build/manifest.json`).
+- Login `admin@admin.com` / `password` (seeded). SQLite at `database/database.sqlite`.
+  `.env` is deny-listed for agents — don't read it.
+- `composer smoke` — browser suite (builds first). On a "Playwright outdated" error run
+  `npx playwright install chromium`. Bare `vendor/bin/pest` skips `tests/Browser`.
+- Page → URL: `grep -H -A2 'function path' app/Admin/Pages/*.php` (paths sit under `/admin/`).
+
+**Run only tests for what you changed.** CI covers the two packages — `packages/php`
+(pest, phpstan, contract-fixture drift), `packages/client` (bun test, tsc) and lint.
+**`apps/demo` is not in CI**, so its Pest and browser suites only ever run locally:
+touch the demo and you have to run them yourself.
 
 ## Stack
 
@@ -163,6 +204,35 @@ Per-package `packages/<pkg>/adr/<domain>.md`, one file per domain. Frontmatter +
 bullets (append as they land) + short `## Why`. ~100 lines target, 200 cap. Edit superseded
 decisions in place with `> Replaces previous decision (see git history)`.
 
+## PRs
+
+Merging to `main` needs the PHP, Client and Lint checks green. Auto-merge is off: merge
+with `gh pr merge --squash` (the branch is deleted on merge). Auto-review is
+`pr-agent-pilot[bot]`: its verdict is the `triage` check-run, its findings are inline review
+comments. After a fix, a clean re-run leaves no new review — the old review and its threads
+stay; the verdict for the new commit is only the `triage` check-run, so poll that. Validate
+each finding, fix or reply, then resolve the thread (GraphQL `resolveReviewThread`). The
+`Devin Review` check passes without reviewing (no credits left).
+
+**Screenshots.** A PR that changes non-test `packages/client/src/**/*.{tsx,css}`, or a DSL
+change that renders differently, carries before/after shots — a GIF when the change is a flow.
+Wire-only, backend, docs and test PRs carry none. From `apps/demo`, with the demo served:
+
+```bash
+bunx playwright install chromium                          # once
+bun tools/screenshots/capture.mjs posts-after /admin/posts   # full-page PNG at 2x
+bun tools/screenshots/capture.mjs edit-flow /admin/posts --steps steps.mjs  # GIF
+bun tools/screenshots/publish.mjs                         # commits, prints the PR markdown
+```
+
+`--steps` is a module whose default export is `async (page, frame) => {}`; each
+`await frame()` adds a GIF frame. Other flags: `--base` (default `http://127.0.0.1:8000`),
+`--theme light|dark`, `--as`, `--width`, `--height`. For the "before" shot, stash the change
+while the server keeps running (PHP is reread per request); a client change needs
+`npm run build` on each side. `publish.mjs` adds the shots in one commit and deletes them in
+the next, so the squash leaves `main` clean while the PR keeps the links — paste its output
+into the PR body, push, and don't rebase past those two commits.
+
 ## Releasing
 
 Both packages ship **lockstep** from one tag — `@tbtop/inertia-admin` (npm) and `tbtop/admin`
@@ -188,4 +258,4 @@ npm ≥ 11.5.1** for OIDC — the release job sets up both. The published npm pa
 
 One per PR, only when public API changes (anything reachable from a package's `exports` /
 composer autoload). Skip for internal refactors, tests, docs. **Currently off** until first real
-consumer (EasyCar) — flips on at the internal release (see roadmap §1.3).
+consumer (EasyCar) — flips on at the internal release.

@@ -17,22 +17,25 @@ export interface ToolbarState {
 	blockType: string;
 }
 
+const INITIAL_TOOLBAR_STATE: ToolbarState = {
+	isBold: false,
+	isItalic: false,
+	isUnderline: false,
+	isStrikethrough: false,
+	isLink: false,
+	blockType: "paragraph",
+};
+
 // Extracted from the toolbar component: derives active/pressed button state
 // from the current Lexical selection on every editor update.
 export function useToolbarState(editor: LexicalEditor): ToolbarState {
-	const [state, setState] = useState<ToolbarState>({
-		isBold: false,
-		isItalic: false,
-		isUnderline: false,
-		isStrikethrough: false,
-		isLink: false,
-		blockType: "paragraph",
-	});
+	const [state, setState] = useState<ToolbarState>(INITIAL_TOOLBAR_STATE);
 
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Lexical selection-state wiring
 	const updateToolbar = useCallback(() => {
 		const selection = $getSelection();
 		if (!$isRangeSelection(selection)) {
+			setState(INITIAL_TOOLBAR_STATE);
 			return;
 		}
 
@@ -68,6 +71,8 @@ export function useToolbarState(editor: LexicalEditor): ToolbarState {
 	}, []);
 
 	useEffect(() => {
+		editor.getEditorState().read(() => updateToolbar());
+
 		return editor.registerUpdateListener(({ editorState }) => {
 			editorState.read(() => updateToolbar());
 		});

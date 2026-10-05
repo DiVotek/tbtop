@@ -21,7 +21,9 @@ class BulkPostsSeeder extends Seeder
         $count = max(1, (int) env('BULK_POSTS', 5000));
         $authorId = User::where('email', 'admin@admin.com')->value('id');
 
-        Post::where('slug', 'like', 'perf-post-%')->delete();
+        Post::withTrashed()
+            ->where('slug', 'like', 'perf-post-%')
+            ->forceDelete();
 
         $index = 0;
         foreach (array_chunk(range(1, $count), self::CHUNK) as $chunk) {

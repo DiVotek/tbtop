@@ -33,6 +33,21 @@ domain: tables
   in column-level `prefix`/`suffix` display nodes (shared `AffixNode` normalization with
   form fields), rendered in display mode and inside the editor's `InputGroup`. `money()`
   stays output-only; decimals edit through `numberInput()->step('0.01')`.
+- **Group glues existing columns into one cell.** `Column::group()` is display glue, not
+  a structured composite value: children remain query fields (search, format, tooltip,
+  description), and the parent occupies one header and one stacked cell.
+- **Group rejects what it cannot honor.** The parent has no value, so `sortable()` and
+  `individuallySearchable()` on it throw permanently — they belong on a child. On a child,
+  `sortable()`/`translatable()` throw as not-yet: only `searchable()` unfolds into the query
+  today, and accepting the others would silently do nothing (unfolding: DiVotek/tbtop#295). The schema pins the pairing
+  both ways — `kind: "group"` requires a non-empty `columns`, and `columns` requires
+  `kind: "group"`.
+- **Table rows are an allowlist.** `ColumnProjection` builds each row fresh: the record
+  key, visible declared columns, the `groups()` column and `_recordUrl`/`_tooltips`/
+  `_descriptions`. It used to start from the full row (`toArray()` / the query-builder
+  `stdClass`), which shipped undeclared attributes, loaded relations, `->hidden()` columns
+  and, on query-builder tables, every selected column. Declaring a column is the only way
+  to put a field on the wire; there is deliberately no data-only escape hatch.
 
 ## Why
 

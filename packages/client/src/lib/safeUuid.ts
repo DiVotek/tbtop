@@ -1,5 +1,6 @@
 // crypto.randomUUID is secure-context-only; falls back for plain-HTTP LANs.
-// IDs are client-only React keys, never persisted — non-crypto entropy is fine.
+// Also persisted as richtext embed ids, which need only be unique per document
+// (the server rejects duplicates) — non-crypto entropy is fine.
 export function safeUuid(): string {
 	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
 		return crypto.randomUUID();

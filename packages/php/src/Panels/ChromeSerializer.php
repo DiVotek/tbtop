@@ -73,7 +73,7 @@ final class ChromeSerializer
             $name = is_string($value->name ?? null) ? $value->name : 'unnamed';
             throw new LogicException(
                 "Chrome trees are page-independent: server action \"{$name}\" in {$chromeClass}::{$area}() "
-                .'cannot resolve outside a page. Use ->visit() or ->custom() instead of ->handle().',
+                .'cannot resolve outside a page. Use ->url() or ->custom() instead of ->handle().',
             );
         }
         foreach (get_object_vars($value) as $prop) {

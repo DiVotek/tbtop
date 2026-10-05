@@ -84,6 +84,7 @@ export function MediaLibraryBlock({
 						onSelect={handleFolderSelect}
 						onMutated={() => {
 							refetchFolders();
+							refetch();
 						}}
 					/>
 				</aside>

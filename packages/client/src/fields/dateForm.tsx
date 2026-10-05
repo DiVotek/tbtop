@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { LazyDateCalendar } from "./dateCalendarLazy";
 import { type DisabledRange, navClamp, parseDay, rangeMatchers } from "./daterangeDisabled";
 import { toIsoDay } from "./daterangeValue";
+import { DateTypedInput, focusTypedInput } from "./dateTypedInput";
 import { formatDay } from "./dateValue";
 import { type FieldFormProps, fieldId } from "./fieldProps";
 
@@ -58,6 +59,13 @@ export function DateForm({
 		setOpen(false);
 	}
 
+	// Typed entry bypasses the calendar's own disabling, so min/max is enforced
+	// here too — otherwise text could set a day the calendar refuses to offer.
+	// ISO days compare correctly as strings.
+	function acceptTyped(iso: string): boolean {
+		return !((minDate && iso < minDate) || (maxDate && iso > maxDate));
+	}
+
 	function handleClear(): void {
 		setOpen(false);
 		onChange(null);
@@ -79,7 +87,23 @@ export function DateForm({
 					{formatDay(selected, locale) || t("field.date.placeholder")}
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0" align="start">
+			<PopoverContent
+				className="w-auto p-0"
+				align="start"
+				onOpenAutoFocus={(event) => {
+					event.preventDefault();
+					focusTypedInput(event.currentTarget);
+				}}
+			>
+				<div className="border-b p-2">
+					<DateTypedInput
+						value={value}
+						onCommit={onChange}
+						accept={acceptTyped}
+						label={t("field.date.typed_label")}
+						testId="date-input"
+					/>
+				</div>
 				<Suspense
 					fallback={<div className="h-72 w-72 animate-pulse rounded-md bg-muted" />}
 				>

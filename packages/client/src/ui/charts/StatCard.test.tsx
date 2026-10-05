@@ -303,3 +303,35 @@ describe("resolveSparklineColor", () => {
 		}
 	});
 });
+
+describe("StatCard url", () => {
+	test("a stat with a url is one link around the whole card, tooltip included", () => {
+		const { getByTestId } = renderStat({
+			label: "Orders",
+			value: 3,
+			tooltip: "Open orders",
+			url: "/admin/orders",
+		});
+
+		const link = getByTestId("stat-link");
+		expect(link.getAttribute("href")).toBe("/admin/orders");
+		expect(link.getAttribute("target")).toBeNull();
+		expect(link.contains(getByTestId("stat-card"))).toBe(true);
+	});
+
+	test("newTab opens the link in a new tab", () => {
+		const { getByTestId } = renderStat({
+			label: "Docs",
+			value: 1,
+			url: "/admin/help",
+			newTab: true,
+		});
+
+		expect(getByTestId("stat-link").getAttribute("target")).toBe("_blank");
+	});
+
+	test("a stat without a url renders no link", () => {
+		const { queryByTestId } = renderStat({ label: "Orders", value: 3 });
+		expect(queryByTestId("stat-link")).toBeNull();
+	});
+});

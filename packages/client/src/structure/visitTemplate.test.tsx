@@ -4,11 +4,12 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
+import { materialize } from "../inertia/materialize";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
 import { RowProvider } from "./rowContext";
-import { s } from "./structure";
+import { type StructureNode, s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 
 beforeEach(() => {
@@ -83,6 +84,59 @@ describe("Visit-template interpolation", () => {
 		const { queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		console.warn = origWarn;
 		expect(queryByTestId("action-edit")).toBeNull();
+		expect(warns.length).toBeGreaterThan(0);
+	});
+
+	// A serialized {row.*} template keeps its placeholder when the value is missing.
+	// The hidden-action outcome is the security property: an empty substitution would
+	// have produced a live link to /admin/posts//delete.
+	test("serialized {row.*} template with a missing value: action hidden, no malformed href", async () => {
+		const serialized = {
+			kind: "action",
+			name: "delete",
+			meta: {},
+			options: {
+				label: "Delete",
+				spec: { type: "visit", href: "/admin/posts/{row.id}/delete" },
+			},
+		} as unknown as StructureNode;
+		const node = materialize(serialized, { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(() => new Response("{}"));
+		const warns: unknown[] = [];
+		const origWarn = console.warn;
+		console.warn = (...args: unknown[]) => warns.push(args);
+		const { queryByTestId } = render(
+			<Wrap>
+				<RowProvider value={{ title: "row without an id" }}>{renderNode(node)}</RowProvider>
+			</Wrap>,
+		);
+		console.warn = origWarn;
+		expect(queryByTestId("action-delete")).toBeNull();
+		expect(warns.length).toBeGreaterThan(0);
+	});
+
+	test("serialized {row.*} template with an empty string: action hidden, no malformed href", async () => {
+		const serialized = {
+			kind: "action",
+			name: "delete",
+			meta: {},
+			options: {
+				label: "Delete",
+				spec: { type: "visit", href: "/admin/posts/{row.id}/delete" },
+			},
+		} as unknown as StructureNode;
+		const node = materialize(serialized, { basePath: "/admin/posts", data: {} });
+		const Wrap = wrap(() => new Response("{}"));
+		const warns: unknown[] = [];
+		const origWarn = console.warn;
+		console.warn = (...args: unknown[]) => warns.push(args);
+		const { queryByTestId } = render(
+			<Wrap>
+				<RowProvider value={{ id: "", title: "empty id" }}>{renderNode(node)}</RowProvider>
+			</Wrap>,
+		);
+		console.warn = origWarn;
+		expect(queryByTestId("action-delete")).toBeNull();
 		expect(warns.length).toBeGreaterThan(0);
 	});
 

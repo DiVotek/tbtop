@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Dsl;
 
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Richtext;
 
 /**
  * The structure tree's one traversal: which option keys hold children, and
@@ -22,8 +23,8 @@ use Tbtop\Admin\Dsl\Fields\Field;
  */
 final class StructureWalk
 {
-    /** Option keys holding a list of table actions — descended only by the action-form search. */
-    private const ACTION_LIST_KEYS = ['headerActions', 'rowActions', 'bulkActions'];
+    /** Option keys holding a list of actions (a table's action lists, a section's header 'actions') — descended only by the action-form search. */
+    private const ACTION_LIST_KEYS = ['headerActions', 'rowActions', 'bulkActions', 'actions'];
 
     /** Option keys that can carry a nested subtree beyond the plain child lists — action-form search only. */
     private const ACTION_NESTED_KEYS = ['body', 'spec'];
@@ -73,10 +74,10 @@ final class StructureWalk
     }
 
     /**
-     * descendants(), widened for the action-form search: also follows table
-     * action lists (headerActions/rowActions/bulkActions) and an action's
-     * modal body (spec.body). Takes an already-resolved Node — see
-     * resolveActionNode().
+     * descendants(), widened for the action-form search: also follows action
+     * lists (a table's headerActions/rowActions/bulkActions, a section's
+     * actions) and an action's modal body (spec.body). Takes an
+     * already-resolved Node — see resolveActionNode().
      *
      * @return list<mixed>
      */
@@ -86,11 +87,10 @@ final class StructureWalk
     }
 
     /**
-     * Depth-first search for the first descendant (starting with $root itself)
-     * that $matches accepts. Excluded subtrees are skipped whole — every
-     * caller of this resolves a field or block by name for an endpoint, so a
-     * when(false) branch must be unreachable here or that endpoint stays live
-     * for content that never reached the wire.
+     * Depth-first search for the first descendant (from $root itself, embed fields
+     * included) that $matches accepts. Excluded subtrees are skipped whole: every
+     * caller resolves a field or block by name for an endpoint, so a when(false)
+     * branch must be unreachable here or its endpoint stays live off the wire.
      *
      * @param  callable(mixed): bool  $matches
      */
@@ -102,7 +102,7 @@ final class StructureWalk
         if ($matches($root)) {
             return $root;
         }
-        foreach (self::descendants($root) as $child) {
+        foreach ([...self::descendants($root), ...($root instanceof Richtext ? $root->embedFields() : [])] as $child) {
             $found = self::find($child, $matches);
             if ($found !== null) {
                 return $found;
@@ -186,7 +186,7 @@ final class StructureWalk
 
     /**
      * 'body' is a subtree directly; 'spec' is an action's spec array, which
-     * carries its own 'body' for the modal variant (visit/submit/handle/custom
+     * carries its own 'body' for the modal variant (url/submit/handle/custom
      * specs have none).
      */
     private static function actionNestedChild(mixed $option): mixed

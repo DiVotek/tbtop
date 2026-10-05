@@ -4,6 +4,7 @@ import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import type { Klass, LexicalNode } from "lexical";
+import { EmbedNode } from "./embedNode";
 
 // Shared node set + theme for both the editor (form) and the read-only view.
 // Keeping one list avoids the editor and view drifting on which nodes they
@@ -18,6 +19,8 @@ export const RICHTEXT_NODES: Array<Klass<LexicalNode>> = [
 	CodeHighlightNode,
 	LinkNode,
 	AutoLinkNode,
+	// Always registered: a stored embed of any kind must load, not throw.
+	EmbedNode,
 ];
 
 export const RICHTEXT_THEME = {

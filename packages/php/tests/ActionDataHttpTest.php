@@ -54,7 +54,7 @@ it('serializes query:true and queryNeeds onto the modal spec', function (): void
 
 it('rejects query() on a non-modal action', function (): void {
     $s = new S;
-    $action = $s->action('edit')->visit('/x')->query(fn () => []);
+    $action = $s->action('edit')->url('/x')->query(fn () => []);
 
     expect(fn () => $action->toNode())->toThrow(LogicException::class);
 });
