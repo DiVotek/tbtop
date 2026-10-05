@@ -29,10 +29,12 @@ final class ColumnProjection
         $recordUrl = $table->recordUrlResolver();
         $valueColumns = self::valueColumns($columns);
         $meta = self::metaColumns($columns);
+        $groupsColumn = $table->getGroupsColumn();
 
         $out = [];
         foreach ($rows as $row) {
             $projected = self::projectRow($row, $valueColumns);
+            self::attachGroupKey($projected, $row, $groupsColumn);
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
             }
@@ -42,6 +44,26 @@ final class ColumnProjection
         }
 
         return $out;
+    }
+
+    /**
+     * groups() may name a column that is hidden or never declared; the client
+     * partitions rows by row[column], so the allowlist must still carry its raw
+     * value. The author named it in the DSL, which is what authorizes it.
+     */
+    private static function attachGroupKey(mixed &$projected, mixed $row, ?string $column): void
+    {
+        if ($column === null) {
+            return;
+        }
+        if (is_array($projected)) {
+            $projected[$column] ??= data_get($row, $column);
+
+            return;
+        }
+        if (data_get($projected, $column) === null) {
+            data_set($projected, $column, data_get($row, $column));
+        }
     }
 
     /**
@@ -152,7 +174,7 @@ final class ColumnProjection
             return self::projectModelToArray($row, $columns);
         }
 
-        return self::projectInPlace($row, $columns);
+        return self::projectToObject($row, $columns);
     }
 
     /**
@@ -190,7 +212,7 @@ final class ColumnProjection
     /**
      * @param  list<Column>  $columns
      */
-    private static function projectInPlace(mixed $row, array $columns): mixed
+    private static function projectToObject(mixed $row, array $columns): mixed
     {
         $out = new \stdClass;
         $id = data_get($row, 'id');

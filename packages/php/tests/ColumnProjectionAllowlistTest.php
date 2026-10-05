@@ -68,3 +68,44 @@ it('ColumnProjection: Eloquent rows only expose the key and declared visible col
         ->and($result[0])->not->toHaveKey('location_id')
         ->and($result[0])->not->toHaveKey('location');
 });
+
+it('ColumnProjection: carries the groups() column even when it is not a visible declared column', function (): void {
+    Schema::create('grouped_posts', function ($table): void {
+        $table->id();
+        $table->string('title');
+        $table->string('status');
+        $table->string('secret')->default('s');
+    });
+    DB::table('grouped_posts')->insert(['title' => 'Post A', 'status' => 'published']);
+
+    $table = (new TableBuilder('grouped_posts'))
+        ->columns([Column::make('title')])
+        ->defaultSort('status')
+        ->groups('status')
+        ->query(fn () => DB::table('grouped_posts'));
+
+    $rows = DB::table('grouped_posts')->get()->all();
+    $wire = json_decode(json_encode(ColumnProjection::apply($table, $rows)[0]), true);
+
+    expect($wire)->toHaveKey('status', 'published')
+        ->and($wire)->not->toHaveKey('secret');
+});
+
+it('ColumnProjection: carries the groups() column for Eloquent rows', function (): void {
+    Schema::create('cars', function ($table): void {
+        $table->id();
+        $table->string('name');
+        $table->foreignId('location_id')->nullable();
+    });
+    CarModel::create(['name' => 'A', 'location_id' => 7]);
+
+    $table = (new TableBuilder('cars'))
+        ->columns([Column::make('name')])
+        ->defaultSort('location_id')
+        ->groups('location_id')
+        ->query(fn () => CarModel::query());
+
+    $result = ColumnProjection::apply($table, CarModel::query()->get());
+
+    expect($result[0])->toHaveKey('location_id', 7);
+});
