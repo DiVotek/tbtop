@@ -27,8 +27,8 @@ final class QueryTool extends Tool
     protected string $name = 'query';
 
     protected string $description = <<<'TXT'
-        Read rows of a table found by search(). A row is what the admin table receives: its visible
-        columns, formatted, plus the record's other attributes and its key (`id` for Eloquent models).
+        Read rows of a table found by search(). A row is what the admin table receives: its key
+        (`id` for Eloquent models) and its visible columns, formatted; no other record attributes.
         Pass a row unchanged as `row` to execute() for a row action, or keys as `selection`. Filters take
         the value shape search() states per filter; search, columnSearch, filters, tabs, sort and perPage
         accept only what search() listed for that table, and anything else is refused.

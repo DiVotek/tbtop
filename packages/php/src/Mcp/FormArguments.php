@@ -127,7 +127,7 @@ final class FormArguments
         }
         $names = implode(', ', array_map(static fn (Field $field): string => $field->name, $sent));
 
-        throw new AgentError("excludedFields cannot be sent over MCP; omit: {$names}.");
+        throw new AgentError("Fields listed in excludedFields cannot be sent over MCP; omit: {$names}.");
     }
 
     /**

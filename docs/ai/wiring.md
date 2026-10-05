@@ -181,8 +181,8 @@ return $panel
   pages, sessions) and does not.
 - **Three tools.** `search` lists pages, and for each page without route params its
   executables and tables; `search(page, params)` describes one record page. `query` reads
-  a table's rows (the table endpoint's payload: formatted visible columns plus the record's
-  other attributes and key) — read-only. `execute` runs an
+  a table's rows (the table endpoint's payload: the record key and the formatted visible
+  columns) — read-only. `execute` runs an
   executable by id `{page-slug}:{name}` — always annotated destructive, so the MCP client
   asks for confirmation.
 - **Same controllers, no middleware.** `query`/`execute` call `TableController`,
