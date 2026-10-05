@@ -200,12 +200,18 @@ return $panel
   agent can resend the fields it keeps.
 - **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
   `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
-  actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason; so
+  actions, and `upload`/`media` fields, are listed as excluded with a reason — inside a
+  repeater too, under the row name (`sections.*.image`); so
   is a form (or an action submitting it) whose every field is excluded, or — when the form
   is validated (an `onSubmit` form, an action without `->withoutValidation()`) — one with a
-  required excluded field: a rule key of the field holding `required` without `sometimes`.
+  required excluded field: a rule key of the field holding `required` without `sometimes`
+  (in a repeater, only when the repeater is required or has `minItems`).
   An edit form whose file already exists stays executable with `->required()->rules('sometimes')`.
-  `execute` refuses input that sets an excluded field instead of passing it to the handler.
+  `execute` refuses input that changes an excluded field instead of passing it to the handler;
+  the stored value sent back unchanged (a repeater row resent whole) passes.
+  A `richtext` value is checked before the handler: a Lexical state `{root: …}` whose nodes
+  are the editor's own types with the keys Lexical reads on import, per locale and per row.
+  `search()` lists the node types and each embed kind with its `data` fields.
   The media library block and drag-reorder tables run in the browser; `search()` lists
   them as excluded (`{page}:mediaLibrary`, `{page}:{table}.reorder`) and `execute` refuses them.
 - **Refusals, not silent ignores.** `execute` refuses a call missing what the action

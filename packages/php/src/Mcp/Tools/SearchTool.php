@@ -29,7 +29,13 @@ final class SearchTool extends Tool
         a `translatable` field takes an object keyed by locale (see its nestedRules). A form's `values` are
         its current data — build edits from them, not from query() rows, which are formatted for display.
         A field you omit is absent from the handler's input; resend `values` for fields you keep.
-        Fields listed in a form's `excludedFields` cannot be sent: execute() refuses input that sets any.
+        A container's row fields follow it as `name.*.child`; send rows as a list of objects.
+        Fields listed in a form's `excludedFields` cannot be changed: omit them, or send the value `values`
+        holds (a repeater row resent whole, at its stored position); execute() refuses any other value.
+        A richtext value is a Lexical editor state {root: {type: "root", children: [...]}} built from the
+        node types in its `nodes`; copy the node shape from `values`, the error names a missing key. An
+        `embeds` entry is a root child {type: "embed", version: 1, id (unique), kind, data} whose
+        `data` fills that kind's `fields`.
         A field with `options: "dynamic"` lists its choices through query() (`executable` + `field`, with
         `deps` for the names in its `dependsOn`). A `mask` formats a text value: 9 digit, a letter, * letter
         or digit, any other character literal; send the value as the mask formats it, literals included.

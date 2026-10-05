@@ -62,14 +62,23 @@ domain: mcp
   row back as `$ctx->row`, exactly as from the browser.
 - **Visibility: everything the user can do, minus `->mcp(false)`.** Opt-out on an action
   or a page, server-only — never serialized to the wire. Client-only `custom` handlers
-  and `upload`/`media`/`richtext` fields are excluded from `search` with a stated reason.
+  and `upload`/`media` fields are excluded from `search` with a stated reason.
 - **A form is unfillable when every field is excluded or a required one is.** Required is
   checked per rule key (`name` or `name.*`): the string `required` without `sometimes` on
   that same key — a multiple upload has `required` on `name` and `sometimes` on `name.*`,
   and still fails without a file. It applies only where the form is validated (`onSubmit`,
   an action without `->withoutValidation()`). `search()` never advertises an executable
-  that cannot pass validation; a demo-only fix was rejected. Excluded kinds nested in a
-  container (an upload in a repeater) are not walked yet.
+  that cannot pass validation; a demo-only fix was rejected. A container's children are
+  described and refused under their row name (`sections.*.image`); a required child blocks
+  the form only when the container is required or has `minItems`.
+- **An excluded field accepts its stored value unchanged.** `values` hands a repeater row
+  back whole, upload included; refusing that echo would force the agent to strip keys per
+  row. Only a value that differs from `recordData()` at the same path is refused.
+- **Richtext is raw Lexical JSON, checked by a node allowlist.** The agent writes what the
+  editor stores, copying shapes from `values`. `RichtextDocument` refuses an unknown node
+  type or a missing key Lexical reads on import — the browser would drop or fail on them,
+  so the save would succeed and the editor break. No defaults are filled in; HTML strings
+  are refused (no stored HTML exists). Embed data stays with `EmbedsRule`.
 - **`needs` is enforced in `ExecuteTool`, not `ActionController`.** A missing `row`,
   `selection` (empty, or holding anything but keys, counts as missing) or `form`, or a row
   without its `id` (the key the client reads), is refused before the handler runs —
