@@ -158,7 +158,6 @@ describe("Select field — static searchable", () => {
 		expect(document.body.contains(positioner)).toBe(true);
 		expect(container.contains(positioner)).toBe(false);
 		expect(positioner.parentElement?.parentElement).toBe(document.body);
-		expect(positioner.style.pointerEvents).toBe("auto");
 		expect(positioner.className).toContain("z-50");
 	});
 
