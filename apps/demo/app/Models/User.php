@@ -9,11 +9,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passkeys\Contracts\PasskeyUser;
 use Laravel\Passkeys\PasskeyAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable;
+    use HasApiTokens, HasFactory, Notifiable, PasskeyAuthenticatable;
 
     /**
      * The attributes that are mass assignable.

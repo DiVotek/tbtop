@@ -38,6 +38,12 @@ class TwoFactorChallengePage extends Page
         return ['web'];
     }
 
+    /** Not for agents: the challenge reads the pending sign-in from a browser session. */
+    public static function mcp(): bool
+    {
+        return false;
+    }
+
     public function layout(): string
     {
         return 'center';

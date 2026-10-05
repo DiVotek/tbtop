@@ -65,7 +65,7 @@ class NewFeaturesPage extends Page
                     ->min(0)
                     ->max(100)
                     ->step(5)
-                    ->rules('min:0|max:100'),
+                    ->rules('numeric|min:0|max:100'),
 
                 $s->actionsRow([
                     $s->action('save')->label('Save')->color('primary')->submit(),

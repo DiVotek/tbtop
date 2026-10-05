@@ -41,6 +41,7 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
+| `POST` | `{prefix}/{mcp path}` (default `mcp`) | `tbtop.{panel}.mcp` | `TbtopMcpServer` (laravel/mcp) | JSON-RPC (MCP streamable HTTP) | MCP `tools/call` results for `search` / `query` / `execute`. Only when the panel calls `mcp()`; runs `[SetCurrentPanel, ValidateMcpOrigin, ...mcp($middleware), SetAdminLocale]` instead of the panel stack. `GET`/`DELETE` on the same path answer 405 — see [MCP server](#mcp-server) |
 
 **Panel 404s.** Two paths lead to the `admin/error` page, both rendered by
 `PanelErrorPage` inside the panel chrome: the per-panel `Route::fallback()` above (an
@@ -148,6 +149,169 @@ transaction. Hitting a non-reorderable table is a 422.
 **Form submit effects** — `FormSubmitController` flashes a `tbtop.effects`
 array via `Inertia::flash`. The effect set is closed; see
 [./authoring-pages.md](./authoring-pages.md) for the full catalog.
+
+### MCP server
+
+`PanelConfig::mcp()` exposes a panel to AI agents (Claude Desktop, OpenAI, …) over
+[MCP](https://modelcontextprotocol.io). It needs `composer require laravel/mcp`; enabling it
+without the package throws at route registration. **The MCP server needs Laravel ≥ 12.41**:
+laravel/mcp 1.x requires `illuminate/json-schema ^12.41.1`, so it cannot be installed on
+Laravel 11, which the rest of `tbtop/admin` still supports.
+
+```php
+return $panel
+    ->id('admin')
+    // required: the route's whole auth + access stack; the host issues the tokens.
+    // throttle after auth limits per user, not per IP.
+    ->mcp(['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin', 'throttle:60,1']);
+    // ->mcp([...], path: 'agent') serves it at {prefix}/agent instead
+```
+
+- **Auth is yours, and the stack is separate.** The MCP route runs
+  `SetCurrentPanel` and `ValidateMcpOrigin`, then exactly the middleware you pass, then
+  `SetAdminLocale`. The
+  panel's `web` + `auth:{guard}` stack does not run: it would reject a bearer token (401)
+  and a non-browser POST (419). Use stateless token auth (Sanctum, or Passport with
+  `Mcp::oauthRoutes()`); a Sanctum ability (`abilities:tbtop-mcp`) keeps the user's other
+  tokens, such as a mobile app's, out of the admin. `mcp()` has no default and an empty
+  list throws. **Repeat the panel's role checks in `mcp()`** — panel middleware does not
+  run for MCP calls. **Put a page's own restriction in `Page::can()`, not
+  `Page::middleware()`**: gates (`Page::can()`, `->authorize()` on actions, `when()`)
+  live in the controllers and run for MCP; page middleware is for transport (public
+  pages, sessions) and does not.
+- **Three tools.** `search` lists pages, and for each page without route params its
+  executables and tables; `search(page, params)` describes one record page. `query` reads
+  a table's rows (the table endpoint's payload: the record key and the formatted visible
+  columns) — read-only. `execute` runs an
+  executable by id `{page-slug}:{name}` — always annotated destructive, so the MCP client
+  asks for confirmation.
+- **Same controllers, no middleware.** `query`/`execute` call `TableController`,
+  `ActionController` and `FormSubmitController` in-process with a request bound to the
+  page's own route, so gates, reachability and validation are the UI's. Validation
+  failures come back as errors keyed by field; nothing runs. Every tool error is JSON
+  `{message, errors?}`; an unexpected exception, or an HTTP status >= 500, is reported to
+  the log and answered `Server error; see the application log.` without its text, while an
+  HTTP 4xx message is passed on. A form's effects are read from its `tbtop.effects` flash; a handler
+  that returns a URL reports `redirect`, plus the `page`/`params` it opens when it is a page
+  of this panel. A described form carries its current `values` (what the UI prefills), so an
+  agent can resend the fields it keeps.
+- **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
+  `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
+  actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason; so
+  is a form (or an action submitting it) whose every field is excluded, or — when the form
+  is validated (an `onSubmit` form, an action without `->withoutValidation()`) — one with a
+  required excluded field: a rule key of the field holding `required` without `sometimes`.
+  An edit form whose file already exists stays executable with `->required()->rules('sometimes')`.
+  `execute` refuses input that sets an excluded field instead of passing it to the handler.
+- **Refusals, not silent ignores.** `execute` refuses a call missing what the action
+  `needs` (`selection: []` counts as missing, `form: {}` as sent) and a `row` without its
+  `id` — a key is an int or a non-empty string, in `row` and in `selection` alike. `query` checks the page gate first, then refuses a `sort`, `perPage`,
+  filter, `columnSearch` column or table-wide `search` that `search()` does not list for the
+  table (`sortable` there includes the default-sort field), a `dir` other than `asc`/`desc`,
+  and search text that is not a string or number; `dir` alone sorts by the default-sort field. Extra arguments that change nothing (`row` on a form) pass.
+- **Curate what the agent sees.** Every server action is an executable, including UI
+  plumbing: a modal's Cancel/Close handlers, a quick-create next to the full create page.
+  Mark those `->mcp(false)` — the agent picks from the list, and noise costs it context
+  and choice. Public pages (login, 2FA challenge) stay listed; hide them with
+  `Page::mcp(): false` — a sign-in flow that needs a browser session fails over MCP's
+  stateless token auth (the demo hides `LoginPage` and `TwoFactorChallengePage`).
+- **Origin is checked, as the MCP transport requires.** A request without an `Origin`
+  header (Claude Desktop, Cursor, CLI clients) passes. A browser `Origin` must be the
+  app's own or listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other
+  gets `403` before auth runs, which stops DNS-rebinding and cross-site calls.
+- A page may not use the MCP path, or the slug `mcp` (the route name), in a panel with MCP on.
+
+#### Threat model
+
+The agent is trusted to act for its user, but what it reads and what it is sent are not.
+
+- **It has the user's whole reach.** A token can do everything its user can do in the UI,
+  and every `query` row and `search` value goes into the context of the agent's model
+  provider. Issue a dedicated, least-privileged user or role for agents when the full
+  admin role is too much, one token per client, with an expiry
+  (`sanctum.expiration`), and revoke it when the client goes away.
+- **`$ctx->row` and `$ctx->selection` are client input** — from the browser and from an
+  agent alike: the agent can send any row it likes, not just one `query` returned. A row
+  or bulk handler must re-load records by key through the same scope the table queries
+  (tenant, owner, soft-delete) and authorize them, and must not trust any other row field:
+
+  ```php
+  $s->action('archive')->handle(function (ActionCtx $ctx): Effects {
+      $post = Post::query()->whereBelongsTo($ctx->user, 'author')->findOrFail($ctx->row['id']);
+      Gate::forUser($ctx->user)->authorize('update', $post);
+      $post->update(['archived_at' => now()]);
+
+      return Effects::make()->notify('Archived');
+  }, needs: ['row']);
+  ```
+
+- **Data can carry instructions (prompt injection).** A record's text — a customer
+  message, a product description — reaches the model as tool output and may tell it to
+  run something. `execute` is always annotated destructive: keep confirmation on in the
+  client for every `execute` call (no "always allow"), hide actions an agent should never
+  run with `->mcp(false)`, and keep irreversible ones behind `->authorize()` for roles
+  agents do not get.
+
+#### Connect a client
+
+1. **Token auth in the host.** Install Sanctum (`php artisan install:api`), add
+   `HasApiTokens` to the user model, and alias the ability middleware, which Laravel does
+   not register by default:
+
+   ```php
+   // bootstrap/app.php
+   ->withMiddleware(function (Middleware $middleware): void {
+       $middleware->alias(['abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class]);
+   })
+   ```
+
+2. **Issue a token** with the ability the stack checks, and give its plain-text value to
+   the user once (tinker, a console command, or a page action):
+
+   ```php
+   $token = $user->createToken('claude-desktop', ['tbtop-mcp'])->plainTextToken; // "1|…"
+   ```
+
+3. **Check the endpoint** before wiring a client — expect a JSON-RPC result, and `401`
+   without the header:
+
+   ```bash
+   curl -s https://app.test/admin/mcp -H "Authorization: Bearer $TBTOP_TOKEN" \
+     -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
+   ```
+
+4. **Cursor** reads HTTP servers with headers from `~/.cursor/mcp.json` (or the
+   project's `.cursor/mcp.json`); `${env:…}` keeps the token out of the file:
+
+   ```json
+   {
+     "mcpServers": {
+       "tbtop": {
+         "url": "https://app.test/admin/mcp",
+         "headers": { "Authorization": "Bearer ${env:TBTOP_TOKEN}" }
+       }
+     }
+   }
+   ```
+
+5. **Claude Desktop** starts local (stdio) servers from `claude_desktop_config.json`, so
+   bridge to the HTTP endpoint with `mcp-remote` (Node ≥ 18). Keep the header value in
+   `env` — a space inside `args` breaks on some platforms:
+
+   ```json
+   {
+     "mcpServers": {
+       "tbtop": {
+         "command": "npx",
+         "args": ["-y", "mcp-remote", "https://app.test/admin/mcp", "--header", "Authorization:${TBTOP_AUTH}"],
+         "env": { "TBTOP_AUTH": "Bearer 1|your-token" }
+       }
+     }
+   }
+   ```
+
+   Restart Claude Desktop; the server shows up with the `search`, `query` and `execute` tools.
 
 ---
 
