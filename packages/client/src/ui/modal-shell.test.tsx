@@ -11,7 +11,7 @@
  *   - onConfirm fires when the confirm button is clicked
  *   - dialog closes (onOpenChange(false)) when cancel is clicked
  *   - confirm button receives focus on open, so Enter confirms immediately
- *   - Esc cancels (Radix Dialog default; covered here, not reimplemented)
+ *   - Esc cancels (dialog engine default; covered here, not reimplemented)
  */
 import { describe, expect, mock, test } from "bun:test";
 import { act, render } from "@testing-library/react";

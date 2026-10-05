@@ -1,33 +1,48 @@
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { cva } from "class-variance-authority";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
+import { Dialog } from "@base-ui/react/dialog";
+import { Drawer } from "@base-ui/react/drawer";
 import { XIcon } from "lucide-react";
 import {
-	type ComponentProps,
 	type ComponentPropsWithoutRef,
-	type ComponentRef,
 	createContext,
 	forwardRef,
 	type HTMLAttributes,
+	isValidElement,
+	type MutableRefObject,
+	type ReactElement,
 	type ReactNode,
 	useContext,
+	useLayoutEffect,
+	useRef,
 	useState,
 } from "react";
-import { Drawer as DrawerPrimitive } from "vaul";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { type ContentDismissHooks, isCloseBlocked, runAutoFocusHook } from "./revolaDismiss";
+import {
+	dialogOverlayClass,
+	drawerOverlayClass,
+	responsiveDialogContentVariants,
+} from "./revolaStyles";
 
 const MOBILE_BREAKPOINT = "(min-width: 640px)";
+
+type Direction = "top" | "right" | "bottom" | "left";
+
+const SWIPE_DIRECTION = { top: "up", right: "right", bottom: "down", left: "left" } as const;
 
 type ResponsiveDialogContextValue = {
 	modal: boolean;
 	dismissible: boolean;
-	direction: "top" | "right" | "bottom" | "left";
+	direction: Direction;
 	onlyDrawer: boolean;
 	onlyDialog: boolean;
 	alert: boolean;
 	// Resolved once by the root so all children agree on the same mode.
 	useDialog: boolean;
+	// Content registers its Radix-shaped hooks here; the root's close gate reads them.
+	dismissHooks: MutableRefObject<ContentDismissHooks>;
 };
 
 const ResponsiveDialogContext = createContext<ResponsiveDialogContextValue | null>(null);
@@ -40,31 +55,19 @@ function useResponsiveDialog(): ResponsiveDialogContextValue {
 	return ctx;
 }
 
-function useShouldUseDialog(): boolean {
-	return useResponsiveDialog().useDialog;
-}
-
-const DialogPopupContainerContext = createContext<HTMLElement | null>(null);
-
-/**
- * The in-dialog layer that floating popups (select, combobox, dropdown) should
- * portal into, or null when there is no dialog above.
- *
- * Radix Dialog's scroll lock only whitelists its own content node
- * (`shards: [contentRef]`), and react-remove-scroll unconditionally cancels
- * wheel events whose target sits outside every shard. A popup portalled to
- * `document.body` is therefore unscrollable by mouse while a dialog is open.
- * Rendering it inside the content subtree puts it back under the shard, which
- * restores wheel scrolling *and* keeps proper overscroll containment.
- */
-export function useDialogPopupContainer(): HTMLElement | null {
-	return useContext(DialogPopupContainerContext);
-}
-
-export type ResponsiveDialogProps = ComponentProps<typeof DrawerPrimitive.Root> & {
+export type ResponsiveDialogProps = {
+	open?: boolean;
+	defaultOpen?: boolean;
+	onOpenChange?: (open: boolean) => void;
+	modal?: boolean;
+	dismissible?: boolean;
+	direction?: Direction;
+	/** Accepted for compatibility with the former vaul drawer; it has no effect. */
+	shouldScaleBackground?: boolean;
 	onlyDrawer?: boolean;
 	onlyDialog?: boolean;
 	alert?: boolean;
+	children?: ReactNode;
 };
 
 export function ResponsiveDialog({
@@ -74,31 +77,65 @@ export function ResponsiveDialog({
 	onlyDrawer = false,
 	onlyDialog = false,
 	alert = false,
-	shouldScaleBackground = true,
 	open: controlledOpen,
+	defaultOpen = false,
 	onOpenChange: controlledOnOpenChange,
-	...props
+	children,
 }: ResponsiveDialogProps) {
-	const [internalOpen, setInternalOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(defaultOpen);
+	const dismissHooks = useRef<ContentDismissHooks>({});
 	const isUncontrolled = controlledOpen === undefined;
 	const open = isUncontrolled ? internalOpen : controlledOpen;
 	const onOpenChange = isUncontrolled ? setInternalOpen : controlledOnOpenChange;
 
 	const isDesktop = useMediaQuery(MOBILE_BREAKPOINT);
 
-	// Resolve mode exactly once; guard until known so Dialog/Drawer portals are
-	// never mounted before their matching root (the "DialogPortal must be used
-	// within Dialog" mobile crash when matchMedia fires mid-tree).
+	// Resolve mode exactly once; guard until known so Dialog/Drawer parts are
+	// never mounted before their matching root when matchMedia fires mid-tree.
 	if (!onlyDialog && !onlyDrawer && isDesktop === null) {
 		return null;
 	}
 
 	const useDialog = onlyDialog || (!onlyDrawer && (isDesktop ?? true));
-	const mode = useDialog ? "dialog" : "drawer";
-	const Root = useDialog ? DialogPrimitive.Root : DrawerPrimitive.Root;
-
 	const effectiveModal = alert ? true : modal;
 	const effectiveDismissible = alert ? true : dismissible;
+	const rules = {
+		dismissible: effectiveDismissible,
+		preventOutside: !effectiveModal || !effectiveDismissible || alert,
+	};
+
+	function handleOpenChange(
+		next: boolean,
+		details: { reason: string; event: Event; cancel: () => void },
+	): void {
+		if (!next && isCloseBlocked(details, rules, dismissHooks.current)) {
+			details.cancel();
+			return;
+		}
+		onOpenChange?.(next);
+	}
+
+	const rootProps = { open, onOpenChange: handleOpenChange, children };
+	const dialogProps = { modal: effectiveModal, disablePointerDismissal: rules.preventOutside };
+
+	// key remounts the subtree atomically when the responsive mode flips, so
+	// parts never meet a root of the other engine.
+	function renderRoot(): ReactNode {
+		if (!useDialog) {
+			return (
+				<Drawer.Root
+					key="drawer"
+					{...rootProps}
+					{...dialogProps}
+					swipeDirection={SWIPE_DIRECTION[direction]}
+				/>
+			);
+		}
+		if (alert) {
+			return <AlertDialog.Root key="alert" {...rootProps} />;
+		}
+		return <Dialog.Root key="dialog" {...rootProps} {...dialogProps} />;
+	}
 
 	return (
 		<ResponsiveDialogContext.Provider
@@ -110,145 +147,52 @@ export function ResponsiveDialog({
 				onlyDialog,
 				alert,
 				useDialog,
+				dismissHooks,
 			}}
 		>
-			{/* key ensures the whole subtree unmounts and remounts atomically when
-			    the responsive mode flips, preventing portal/root mismatch errors. */}
-			<Root
-				key={mode}
-				modal={effectiveModal}
-				direction={direction}
-				dismissible={effectiveDismissible}
-				shouldScaleBackground={shouldScaleBackground}
-				open={open}
-				onOpenChange={onOpenChange}
-				{...props}
-			/>
+			{renderRoot()}
 		</ResponsiveDialogContext.Provider>
 	);
 }
 
-export function ResponsiveDialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>) {
-	const Trigger = useShouldUseDialog() ? DialogPrimitive.Trigger : DrawerPrimitive.Trigger;
-	return <Trigger {...props} />;
+type ButtonPartProps = ComponentPropsWithoutRef<"button"> & { asChild?: boolean };
+
+// Radix's `asChild` maps onto Base UI's `render` element.
+function renderAsChild(asChild: boolean | undefined, children: ReactNode) {
+	return asChild && isValidElement(children)
+		? { render: children as ReactElement<Record<string, unknown>> }
+		: { children };
 }
 
-function ResponsiveDialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>) {
-	const Portal = useShouldUseDialog() ? DialogPrimitive.Portal : DrawerPrimitive.Portal;
-	return <Portal {...props} />;
+export function ResponsiveDialogTrigger({ asChild, children, ...props }: ButtonPartProps) {
+	const { useDialog, alert } = useResponsiveDialog();
+	const part = renderAsChild(asChild, children);
+	if (!useDialog) {
+		return <Drawer.Trigger {...props} {...part} />;
+	}
+	const Trigger = alert ? AlertDialog.Trigger : Dialog.Trigger;
+	return <Trigger {...props} {...part} />;
 }
 
-function ResponsiveDialogOverlay({
-	className,
-	...props
-}: ComponentProps<typeof DialogPrimitive.Overlay>) {
-	const Overlay = useShouldUseDialog() ? DialogPrimitive.Overlay : DrawerPrimitive.Overlay;
-	return (
-		<Overlay
-			{...props}
-			className={cn(
-				"fixed inset-0 z-50 bg-black/50 sm:data-[state=open]:animate-in sm:data-[state=closed]:animate-out sm:data-[state=closed]:fade-out-0 sm:data-[state=open]:fade-in-0",
-				className,
-			)}
-		/>
-	);
-}
-
-export function ResponsiveDialogClose(props: ComponentProps<typeof DialogPrimitive.Close>) {
-	const { dismissible, alert } = useResponsiveDialog();
+export function ResponsiveDialogClose({ asChild, children, ...props }: ButtonPartProps) {
+	const { useDialog } = useResponsiveDialog();
 	const t = useTranslation();
-	const Close = useShouldUseDialog() ? DialogPrimitive.Close : DrawerPrimitive.Close;
-	const shouldPreventClose = !dismissible && !alert;
+	const Close = useDialog ? Dialog.Close : Drawer.Close;
 	return (
-		<Close
-			aria-label={t("action.close")}
-			{...(shouldPreventClose && { onClick: (e: React.MouseEvent) => e.preventDefault() })}
-			{...props}
-		/>
+		<Close aria-label={t("action.close")} {...props} {...renderAsChild(asChild, children)} />
 	);
 }
 
-// z-50 matches the shared floating-layer scale (overlay, select/dropdown
-// popovers). Higher values bury portalled popovers opened from inside the
-// dialog — radix Select content (z-50) rendered behind the modal and looked
-// like it never opened.
-const responsiveDialogContentVariants = cva("fixed z-50 bg-background", {
-	variants: {
-		device: {
-			desktop:
-				"left-1/2 top-1/2 grid max-h-[calc(100%-4rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] origin-center gap-4 rounded-lg border shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-[98%] data-[state=open]:zoom-in-[97%] data-[state=open]:duration-[180ms] data-[state=closed]:duration-150 data-[state=open]:ease-out data-[state=closed]:ease-in motion-reduce:animate-none sm:max-w-lg",
-			mobile: "flex",
-		},
-		direction: {
-			bottom: "",
-			top: "",
-			left: "",
-			right: "",
-		},
-	},
-	defaultVariants: {
-		device: "desktop",
-		direction: "bottom",
-	},
-	compoundVariants: [
-		{
-			device: "mobile",
-			direction: "bottom",
-			className:
-				"inset-x-0 bottom-0 mt-24 h-fit max-h-[65%] flex-col rounded-t-md border border-b-0 border-primary/10",
-		},
-		{
-			device: "mobile",
-			direction: "top",
-			className:
-				"inset-x-0 top-0 mb-24 h-fit max-h-[65%] flex-col rounded-b-md border border-b-0 border-primary/10",
-		},
-		{
-			device: "mobile",
-			direction: "left",
-			className:
-				"bottom-2 left-2 top-2 flex w-[310px] bg-background outline-none [--initial-transform:calc(100%+8px)]",
-		},
-		{
-			device: "mobile",
-			direction: "right",
-			className:
-				"bottom-2 right-2 top-2 w-[310px] bg-background outline-none [--initial-transform:calc(100%+8px)]",
-		},
-	],
-});
-
-type DismissFlags = { useDialog: boolean; preventEscape: boolean; preventOutside: boolean };
-
-// Dialog and drawer name the outside-press event differently; escape only
-// applies to the dialog. Returns the matching Radix handler props.
-function dismissHandlers(flags: DismissFlags): Record<string, (e: Event) => void> {
-	const block = (e: Event) => e.preventDefault();
-	const out: Record<string, (e: Event) => void> = {};
-	if (flags.useDialog) {
-		if (flags.preventEscape) {
-			out.onEscapeKeyDown = block;
-		}
-		if (flags.preventOutside) {
-			out.onInteractOutside = block;
-		}
-		return out;
-	}
-	if (flags.preventOutside) {
-		out.onPointerDownOutside = block;
-		out.onInteractOutside = block;
-	}
-	return out;
-}
-
-export const ResponsiveDialogContent = forwardRef<
-	HTMLDivElement,
-	ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+export type ResponsiveDialogContentProps = ComponentPropsWithoutRef<"div"> &
+	ContentDismissHooks & {
 		showCloseButton?: boolean;
 		closeButtonClassName?: string;
 		dragHandleClassName?: string;
-	}
->(
+		onOpenAutoFocus?: (event: Event) => void;
+		onCloseAutoFocus?: (event: Event) => void;
+	};
+
+export const ResponsiveDialogContent = forwardRef<HTMLDivElement, ResponsiveDialogContentProps>(
 	(
 		{
 			className,
@@ -256,68 +200,68 @@ export const ResponsiveDialogContent = forwardRef<
 			showCloseButton = true,
 			closeButtonClassName,
 			dragHandleClassName,
+			onOpenAutoFocus,
+			onCloseAutoFocus,
+			onEscapeKeyDown,
+			onPointerDownOutside,
+			onInteractOutside,
 			...props
 		},
 		ref,
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: vendored revola adapter; residual complexity is render-conditional JSX
 	) => {
-		const { direction, modal, dismissible, alert } = useResponsiveDialog();
+		const { direction, alert, useDialog, dismissHooks } = useResponsiveDialog();
 		const t = useTranslation();
-		const shouldUseDialog = useShouldUseDialog();
-		const Content = shouldUseDialog ? DialogPrimitive.Content : DrawerPrimitive.Content;
-		// State, not a ref: consumers portal into this node during render, so
-		// they must re-render once it exists.
-		const [popupContainer, setPopupContainer] = useState<HTMLElement | null>(null);
 
-		const shouldShowCloseButton = !alert && showCloseButton;
-		const shouldPreventOutsideInteraction = !modal || (!dismissible && !alert) || alert;
+		useLayoutEffect(() => {
+			dismissHooks.current = { onEscapeKeyDown, onPointerDownOutside, onInteractOutside };
+		});
+
+		const Portal = useDialog ? Dialog.Portal : Drawer.Portal;
+		const Backdrop = useDialog ? Dialog.Backdrop : Drawer.Backdrop;
+		const Popup = useDialog ? Dialog.Popup : Drawer.Popup;
+		const popup = (
+			<Popup
+				ref={ref}
+				{...props}
+				initialFocus={onOpenAutoFocus && (() => runAutoFocusHook(onOpenAutoFocus))}
+				finalFocus={onCloseAutoFocus && (() => runAutoFocusHook(onCloseAutoFocus))}
+				className={cn(
+					responsiveDialogContentVariants({
+						device: useDialog ? "desktop" : "mobile",
+						direction,
+					}),
+					className,
+				)}
+			>
+				{!useDialog && direction === "bottom" && (
+					<div
+						className={cn(
+							"mx-auto my-4 h-1.5 w-14 rounded-full bg-muted-foreground/25 pb-1.5 dark:bg-muted",
+							dragHandleClassName,
+						)}
+					/>
+				)}
+				{children}
+				{!alert && showCloseButton && (
+					<ResponsiveDialogClose
+						className={cn(
+							"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background backdrop-blur-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none",
+							closeButtonClassName,
+						)}
+					>
+						<XIcon className="size-4" />
+						<span className="sr-only">{t("action.close")}</span>
+					</ResponsiveDialogClose>
+				)}
+			</Popup>
+		);
 
 		return (
-			<ResponsiveDialogPortal>
-				<ResponsiveDialogOverlay />
-				<Content
-					ref={ref}
-					{...props}
-					{...dismissHandlers({
-						useDialog: shouldUseDialog,
-						preventEscape: !dismissible && !alert,
-						preventOutside: shouldPreventOutsideInteraction,
-					})}
-					className={cn(
-						responsiveDialogContentVariants({
-							device: shouldUseDialog ? "desktop" : "mobile",
-							direction,
-						}),
-						className,
-					)}
-				>
-					{!shouldUseDialog && direction === "bottom" && (
-						<div
-							className={cn(
-								"mx-auto my-4 h-1.5 w-14 rounded-full bg-muted-foreground/25 pb-1.5 dark:bg-muted",
-								dragHandleClassName,
-							)}
-						/>
-					)}
-					<DialogPopupContainerContext.Provider value={popupContainer}>
-						{children}
-					</DialogPopupContainerContext.Provider>
-					{/* Out of flow so the popups portalled here never become grid/flex
-					    items of the content layout. */}
-					<div ref={setPopupContainer} className="absolute" />
-					{shouldShowCloseButton && (
-						<ResponsiveDialogClose
-							className={cn(
-								"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background backdrop-blur-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none",
-								closeButtonClassName,
-							)}
-						>
-							<XIcon className="size-4" />
-							<span className="sr-only">{t("action.close")}</span>
-						</ResponsiveDialogClose>
-					)}
-				</Content>
-			</ResponsiveDialogPortal>
+			<Portal>
+				<Backdrop className={useDialog ? dialogOverlayClass : drawerOverlayClass} />
+				{/* The drawer's swipe handling and touch scroll lock live on its viewport. */}
+				{useDialog ? popup : <Drawer.Viewport>{popup}</Drawer.Viewport>}
+			</Portal>
 		);
 	},
 );
@@ -346,28 +290,25 @@ export function ResponsiveDialogFooter({
 	);
 }
 
-export const ResponsiveDialogTitle = forwardRef<
-	ComponentRef<typeof DialogPrimitive.Title>,
-	ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => {
-	const Title = useShouldUseDialog() ? DialogPrimitive.Title : DrawerPrimitive.Title;
-	return (
-		<Title
-			ref={ref}
-			className={cn("text-lg font-semibold leading-none tracking-tight", className)}
-			{...props}
-		/>
-	);
-});
+export const ResponsiveDialogTitle = forwardRef<HTMLHeadingElement, ComponentPropsWithoutRef<"h2">>(
+	({ className, ...props }, ref) => {
+		const Title = useResponsiveDialog().useDialog ? Dialog.Title : Drawer.Title;
+		return (
+			<Title
+				ref={ref}
+				className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+				{...props}
+			/>
+		);
+	},
+);
 ResponsiveDialogTitle.displayName = "ResponsiveDialogTitle";
 
 export const ResponsiveDialogDescription = forwardRef<
-	ComponentRef<typeof DialogPrimitive.Description>,
-	ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+	HTMLParagraphElement,
+	ComponentPropsWithoutRef<"p">
 >(({ className, ...props }, ref) => {
-	const Description = useShouldUseDialog()
-		? DialogPrimitive.Description
-		: DrawerPrimitive.Description;
+	const Description = useResponsiveDialog().useDialog ? Dialog.Description : Drawer.Description;
 	return (
 		<Description
 			ref={ref}
