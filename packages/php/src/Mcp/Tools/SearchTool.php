@@ -31,7 +31,7 @@ final class SearchTool extends Tool
         A field you omit is absent from the handler's input; resend `values` for fields you keep.
         A container's row fields follow it as `name.*.child`; send rows as a list of objects.
         Fields listed in a form's `excludedFields` cannot be changed: omit them, or send the value `values`
-        holds (as in a repeater row you resend whole); execute() refuses any other value.
+        holds (a repeater row resent whole, at its stored position); execute() refuses any other value.
         A richtext value is a Lexical editor state {root: {type: "root", children: [...]}} built from the
         node types in its `nodes`; copy the node shape from `values`, the error names a missing key. An
         `embeds` entry is a root child {type: "embed", version: 1, id (unique), kind, data} whose
