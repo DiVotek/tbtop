@@ -105,7 +105,7 @@ it('excludes an executable whose validated form has a required field MCP cannot 
     expect($excluded)->toMatchArray([
         'mcp-edges-page:photo' => 'field "file" is required and cannot be filled over MCP (upload)',
         'mcp-edges-page:gallery' => 'field "images" is required and cannot be filled over MCP (upload)',
-        'mcp-edges-page:article' => 'fields "cover", "body" are required and cannot be filled over MCP (upload, richtext)',
+        'mcp-edges-page:article' => 'fields "cover", "banner" are required and cannot be filled over MCP (upload)',
         'mcp-edges-page:submitDraft' => 'field "scan" is required and cannot be filled over MCP (upload)',
     ])
         ->and(array_column($page['executables'], 'id'))->toContain('mcp-edges-page:retouch', 'mcp-edges-page:saveDraft');

@@ -38,7 +38,7 @@ class McpEdgesPage extends Page
             ]),
             $s->form('photo', [$s->text('caption'), $s->upload('file')->required()])->onSubmit(self::records('photo')),
             $s->form('gallery', [$s->text('heading'), $s->upload('images')->multiple()->required()])->onSubmit(self::records('gallery')),
-            $s->form('article', [$s->upload('cover')->required(), $s->richtext('body')->required(), $s->text('note')])
+            $s->form('article', [$s->upload('cover')->required(), $s->upload('banner')->required(), $s->text('note')])
                 ->onSubmit(self::records('article')),
             $s->form('retouch', [$s->text('alt'), $s->upload('original')->required()->rules('sometimes')])->onSubmit(self::records('retouch')),
             $s->form('draft', [

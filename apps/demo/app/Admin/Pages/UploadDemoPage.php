@@ -85,6 +85,25 @@ class UploadDemoPage extends Page
                     // Demo: no DB write — just confirm the selection round-tripped.
                     return '/admin/upload-demo';
                 }),
+            $s->displayText('Upload inside a repeater')->variant('heading'),
+            $s->form('slides', [
+                // Over MCP the row image is excluded: an agent may resend a row's
+                // stored image unchanged but cannot set a new one.
+                $s->repeater('slides')->label('Slides')->fields([
+                    $s->text('caption')->label('Caption')->required(),
+                    $s->upload('image')->label('Image')
+                        ->disk('public')->directory('slides')->visibility('public')
+                        ->accept('image/*')->maxSize(5 * 1024 * 1024),
+                ]),
+                $s->actionsRow([
+                    FormActions::save($s),
+                ]),
+            ])
+                ->record(['slides' => [['caption' => 'Sample', 'image' => 'docs/sample.webp']]])
+                ->onSubmit(function (ActionCtx $ctx): string {
+                    // Demo: no DB write — just confirm the rows round-tripped.
+                    return '/admin/upload-demo';
+                }),
         ]);
     }
 }

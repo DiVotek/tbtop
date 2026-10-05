@@ -9,7 +9,7 @@ use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 use Tbtop\Admin\Mcp\ActionNeeds;
 use Tbtop\Admin\Mcp\Execution;
-use Tbtop\Admin\Mcp\FormArguments;
+use Tbtop\Admin\Mcp\FormInput;
 use Tbtop\Admin\Mcp\PageSurface;
 use Tbtop\Admin\Mcp\PanelPages;
 
@@ -59,7 +59,7 @@ final class ExecuteTool extends Tool
             }
             $input = self::objectArg($request->get('form'));
             if ($form !== null) {
-                FormArguments::assertSendable($form, $input);
+                FormInput::assertSendable($form, $input);
             }
             if ($action === null) {
                 return $execution->form($name, $input);
