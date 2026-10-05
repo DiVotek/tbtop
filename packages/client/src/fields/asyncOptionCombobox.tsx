@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from "react";
 import { useClientActionContext } from "../structure/actionContext";
-import { FormSkeleton } from "../structure/defaults";
+import { FieldSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import type { AsyncOptionsBase, OptionMap } from "./asyncOptions";
 import { useAsyncSearch } from "./asyncSearch";
@@ -68,13 +68,13 @@ export function AsyncOptionCombobox<TBag extends AsyncOptionsBase>({
 	const hasRenderedRef = useRef(false);
 
 	if (search.kind === "loading" && !hasRenderedRef.current) {
-		return <>{loading ?? <FormSkeleton />}</>;
+		return <>{loading ?? <FieldSkeleton />}</>;
 	}
 	// A failure before anything rendered has no control to fall back to.
 	// Afterwards the shell stays: unmounting it removes the input, and with it
 	// the only way to change the search and retry.
 	if (search.kind === "error" && !hasRenderedRef.current) {
-		return <>{renderAsyncError(error, search.message, <FormSkeleton />)}</>;
+		return <>{renderAsyncError(error, search.message, <FieldSkeleton />)}</>;
 	}
 	hasRenderedRef.current = true;
 

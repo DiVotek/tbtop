@@ -147,7 +147,7 @@ interface UserRow {
 }
 
 describe("Select field — async mode", () => {
-	test("Select async renders the form skeleton while query is pending", () => {
+	test("Select async renders the field skeleton while query is pending", () => {
 		const Wrap = wrap(NO_RESP);
 		const query = () => new Promise<UserRow[]>(() => {});
 		const { container } = render(
@@ -164,7 +164,7 @@ describe("Select field — async mode", () => {
 				/>
 			</Wrap>,
 		);
-		expect(container.querySelector('[data-testid="form-skeleton"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="field-skeleton"]')).not.toBeNull();
 	});
 
 	test("Select async with onLoad resolves the initial value's label", async () => {
@@ -239,7 +239,7 @@ describe("Select field — async mode", () => {
 			).toContain("Dave");
 		});
 		expect(onLoad).not.toHaveBeenCalled();
-		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
+		expect(container.querySelector('[data-testid="field-skeleton"]')).toBeNull();
 	});
 
 	test("Select async resolves the label for an int value", async () => {
@@ -533,7 +533,7 @@ describe("Select field — async mode", () => {
 		await waitFor(() => expect(query.mock.calls.length).toBeGreaterThan(1));
 
 		// The second query is still pending here — the input must survive it.
-		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
+		expect(container.querySelector('[data-testid="field-skeleton"]')).toBeNull();
 		expect(container.querySelector('[data-testid="select-search-authorId"]')).not.toBeNull();
 		resolveSecond?.([]);
 	});
@@ -711,7 +711,7 @@ describe("Select field — async mode", () => {
 			</Wrap>,
 		);
 		expect(queryByTestId("custom-loader")).not.toBeNull();
-		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
+		expect(container.querySelector('[data-testid="field-skeleton"]')).toBeNull();
 	});
 
 	test("Select async error override is called with the rejected error", async () => {
