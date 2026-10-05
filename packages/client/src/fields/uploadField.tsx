@@ -1,8 +1,9 @@
-import { UploadIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { type FieldFormProps, fieldId } from "./fieldProps";
 import { UploadMultiForm } from "./uploadMultiField";
+import { HiddenFileInput, UploadError, UploadPicker } from "./uploadPicker";
 import {
 	basename,
 	exceedsMaxSize,
@@ -167,21 +168,16 @@ function UploadPreview({
 				<span id={filenameId} className="flex-1 truncate text-sm">
 					{busy ? t("field.upload.uploading") : filename}
 				</span>
-				<input
+				<HiddenFileInput
 					id={id}
 					name={name}
-					type="file"
 					accept={accept}
 					className="peer sr-only"
-					disabled={busy || disabled}
+					disabled={busy || Boolean(disabled)}
 					onBlur={onBlur}
-					aria-invalid={invalid || undefined}
-					aria-describedby={describedBy ? `${filenameId} ${describedBy}` : filenameId}
-					onChange={(e) => {
-						const files = Array.from(e.currentTarget.files ?? []);
-						e.currentTarget.value = "";
-						onFiles(files);
-					}}
+					invalid={invalid}
+					describedBy={describedBy ? `${filenameId} ${describedBy}` : filenameId}
+					onFiles={onFiles}
 				/>
 				<label
 					htmlFor={id}
@@ -199,74 +195,7 @@ function UploadPreview({
 					<XIcon className="h-4 w-4" />
 				</button>
 			</div>
-			{error ? (
-				<p role="alert" className="text-sm text-destructive">
-					{error}
-				</p>
-			) : null}
-		</div>
-	);
-}
-
-interface PickerProps {
-	id: string;
-	name: string;
-	accept?: string;
-	multiple?: boolean;
-	busy: boolean;
-	disabled?: boolean;
-	error: string | null;
-	onBlur?: () => void;
-	invalid?: boolean;
-	describedBy?: string;
-	onFiles: (files: File[]) => void;
-}
-
-export function UploadPicker({
-	id,
-	name,
-	accept,
-	multiple,
-	busy,
-	disabled,
-	error,
-	onBlur,
-	invalid,
-	describedBy,
-	onFiles,
-}: PickerProps) {
-	const t = useTranslation();
-	return (
-		<div className="space-y-2">
-			<label
-				htmlFor={id}
-				className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed text-sm text-muted-foreground hover:border-foreground"
-			>
-				<UploadIcon className="h-5 w-5" aria-hidden />
-				<span>{busy ? t("field.upload.uploading") : t("field.upload.prompt")}</span>
-				<input
-					id={id}
-					name={name}
-					type="file"
-					accept={accept}
-					multiple={multiple}
-					className="sr-only"
-					disabled={busy || disabled}
-					onBlur={onBlur}
-					aria-invalid={invalid || undefined}
-					aria-describedby={describedBy}
-					onChange={(e) => {
-						const files = Array.from(e.currentTarget.files ?? []);
-						e.currentTarget.value = "";
-						onFiles(files);
-					}}
-				/>
-			</label>
-			{error ? (
-				<p role="alert" className="text-sm text-destructive">
-					{error}
-				</p>
-			) : null}
+			<UploadError error={error} />
 		</div>
 	);
 }
