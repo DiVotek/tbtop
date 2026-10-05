@@ -2,7 +2,7 @@
  * Special-purpose table cell renderers for badge, boolean, and icon kinds.
  * These are thin display-only components — no bindings, no form state.
  */
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { cn } from "../../lib/cn";
 import { Badge } from "../../ui/badge";
 import { colorShapeClass } from "../colorShape";
@@ -108,12 +108,24 @@ export function ImageCell({ value, col, tooltip }: ImageCellProps): ReactNode {
 	if (!url) {
 		return <span data-testid="image-cell" />;
 	}
+	// Keyed by url so a refetch that brings a new url retries the load.
+	return <LoadedImage key={url} url={url} col={col} tooltip={tooltip} />;
+}
+
+type LoadedImageProps = Omit<ImageCellProps, "value"> & { url: string };
+
+function LoadedImage({ url, col, tooltip }: LoadedImageProps): ReactNode {
+	const [hasFailed, setHasFailed] = useState(false);
+	if (hasFailed) {
+		return <span data-testid="image-cell" />;
+	}
 	return (
 		<span data-testid="image-cell">
 			<img
 				src={url}
 				alt={col.alt ?? tooltip ?? ""}
 				className={cn("h-10 w-10 object-cover", imageShapeClass(col.shape))}
+				onError={() => setHasFailed(true)}
 			/>
 		</span>
 	);

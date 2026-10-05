@@ -2,7 +2,7 @@
  * New column kinds: badge, boolean (icon), icon-map; align/width/tooltip props.
  */
 import { describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { renderNode } from "../../render/structureRenderer";
 import { s } from "../structure";
 import { wrapForStructure as wrap } from "../testFixtures";
@@ -160,6 +160,24 @@ describe("TableCell: image kind", () => {
 		const img = container.querySelector("td img");
 		expect(img).toBeTruthy();
 		expect(img?.getAttribute("src")).toBe("/img/a.png");
+	});
+
+	test("an image that fails to load leaves the cell empty, as an empty value does", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", cover: "/img/missing.png" }],
+			columns: [{ name: "cover", label: "Cover", kind: "image" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const img = container.querySelector("td img");
+		if (!img) {
+			throw new Error("expected an img before the load error");
+		}
+		fireEvent.error(img);
+		const cell = container.querySelector('[data-testid="image-cell"]');
+		expect(cell).toBeTruthy();
+		expect(cell?.querySelector("img")).toBeNull();
 	});
 
 	test("default shape (no shape) applies rounded-none", async () => {
