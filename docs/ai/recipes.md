@@ -621,7 +621,10 @@ EditAction::make(
         $s->relation('assignee_id')->label('Assignee')->searchable()
             ->query(fn (array $deps) => User::query())->required(),
     ]),
-    loadUsing: fn (ActionCtx $ctx): array => ['assignee_id' => $ctx->row['assignee_id'] ?? null],
+    // Table rows carry only declared columns; read the rest from the record.
+    loadUsing: fn (ActionCtx $ctx): array => [
+        'assignee_id' => Task::query()->whereKey($ctx->row['id'])->value('assignee_id'),
+    ],
     saveUsing: function (ActionCtx $ctx): Effects {
         $task = Task::query()->whereKey($ctx->row['id'])->firstOrFail();
         $task->update(['assignee_id' => $ctx->form['assignee_id']]);
