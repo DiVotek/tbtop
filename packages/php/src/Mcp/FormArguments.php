@@ -71,7 +71,7 @@ final class FormArguments
                 continue;
             }
             $fields[] = [
-                ...self::field($field->name, $node->kind, $field->labelText(), $node->options, $rules),
+                ...self::field($field, $node->kind, $node->options, $rules),
                 ...($field->isTranslatableField() ? ['translatable' => true] : []),
             ];
         }
@@ -135,38 +135,39 @@ final class FormArguments
      * @param  array<string, list<string>>  $rules
      * @return array<string, mixed>
      */
-    private static function field(string $name, string $kind, ?string $label, array $options, array $rules): array
+    private static function field(Field $field, string $kind, array $options, array $rules): array
     {
+        $name = $field->name;
         $nested = array_filter($rules, static fn (string $key): bool => str_starts_with($key, $name.'.'), ARRAY_FILTER_USE_KEY);
 
         return array_filter([
             'name' => $name,
             'kind' => $kind,
-            'label' => $label,
+            'label' => $field->labelText(),
             'rules' => $rules[$name] ?? [],
             'nestedRules' => $nested,
-            'options' => self::optionsOf($kind, $options),
+            'mask' => is_string($options['mask'] ?? null) ? $options['mask'] : null,
+            'dependsOn' => is_array($options['dependsOn'] ?? null) ? array_values($options['dependsOn']) : null,
+            'options' => self::optionsOf($field, $options),
         ], static fn (mixed $v): bool => $v !== null && $v !== []);
     }
 
     /**
      * $field's choices as {value, label} with the value's own type, 'dynamic'
-     * when fetched per search, null when free-form.
+     * when query()'s options lookup serves them, null when free-form.
      *
      * @return list<array{value: mixed, label: string}>|string|null
      */
     public static function options(Field $field): array|string|null
     {
-        $node = $field->toNode();
-
-        return self::optionsOf($node->kind, $node->options);
+        return self::optionsOf($field, $field->toNode()->options);
     }
 
     /**
      * @param  array<string, mixed>  $options
      * @return list<array{value: mixed, label: string}>|string|null
      */
-    private static function optionsOf(string $kind, array $options): array|string|null
+    private static function optionsOf(Field $field, array $options): array|string|null
     {
         if (is_array($options['options'] ?? null)) {
             return array_map(
@@ -174,10 +175,7 @@ final class FormArguments
                 array_values($options['options']),
             );
         }
-        if (($options['async'] ?? false) === true || $kind === 'relation') {
-            return 'dynamic';
-        }
 
-        return null;
+        return FieldOptions::isServed($field) ? 'dynamic' : null;
     }
 }
