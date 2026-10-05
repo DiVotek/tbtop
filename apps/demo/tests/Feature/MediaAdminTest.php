@@ -36,8 +36,8 @@ class MediaAdminTest extends TestCase
         $rows = collect($this->getJson('/admin/media/tables/media')->assertOk()->json('data.data'))
             ->keyBy('filename');
 
-        $this->assertSame($image->url, $rows['photo.png']['preview']);
-        $this->assertNull($rows['notes.txt']['preview']);
+        $this->assertSame($image->url, $rows['photo.png']['url']);
+        $this->assertNull($rows['notes.txt']['url']);
     }
 
     public function test_upload_form_submit_creates_a_media_row_from_the_upload_endpoint_payload(): void
