@@ -1,8 +1,9 @@
-import { UploadIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { type FieldFormProps, fieldId } from "./fieldProps";
 import { UploadMultiForm } from "./uploadMultiField";
+import { HiddenFileInput, UploadError, UploadPicker } from "./uploadPicker";
 import {
 	basename,
 	exceedsMaxSize,
@@ -85,8 +86,17 @@ function UploadSingleForm({
 	if (preview) {
 		return (
 			<UploadPreview
+				id={fieldId({ id, name })}
+				name={name}
+				accept={opts.accept}
 				value={preview}
+				busy={busy}
 				disabled={disabled}
+				error={error}
+				onBlur={onBlur}
+				invalid={invalid}
+				describedBy={describedBy}
+				onFiles={onFiles}
 				onRemove={() => {
 					setError(null);
 					onChange(null);
@@ -111,41 +121,10 @@ function UploadSingleForm({
 }
 
 interface PreviewProps {
-	value: UploadValue;
-	disabled?: boolean;
-	onRemove: () => void;
-}
-
-function UploadPreview({ value, disabled, onRemove }: PreviewProps) {
-	const t = useTranslation();
-	const filename = basename(value.path);
-	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
-	return (
-		<div className="flex min-h-24 items-center gap-3 rounded-md border p-2">
-			{isImg ? (
-				<img src={value.url} alt={filename} className="h-12 w-12 rounded object-cover" />
-			) : (
-				<div className="h-12 w-12 rounded bg-muted" />
-			)}
-			<span className="flex-1 truncate text-sm">{filename}</span>
-			<button
-				type="button"
-				className="rounded p-1 hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
-				aria-label={t("field.upload.remove")}
-				disabled={disabled}
-				onClick={onRemove}
-			>
-				<XIcon className="h-4 w-4" />
-			</button>
-		</div>
-	);
-}
-
-interface PickerProps {
 	id: string;
 	name: string;
 	accept?: string;
-	multiple?: boolean;
+	value: UploadValue;
 	busy: boolean;
 	disabled?: boolean;
 	error: string | null;
@@ -153,13 +132,14 @@ interface PickerProps {
 	invalid?: boolean;
 	describedBy?: string;
 	onFiles: (files: File[]) => void;
+	onRemove: () => void;
 }
 
-export function UploadPicker({
+function UploadPreview({
 	id,
 	name,
 	accept,
-	multiple,
+	value,
 	busy,
 	disabled,
 	error,
@@ -167,39 +147,55 @@ export function UploadPicker({
 	invalid,
 	describedBy,
 	onFiles,
-}: PickerProps) {
+	onRemove,
+}: PreviewProps) {
 	const t = useTranslation();
+	const filename = basename(value.path);
+	const filenameId = `${id}-filename`;
+	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
 	return (
 		<div className="space-y-2">
-			<label
-				htmlFor={id}
-				className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed text-sm text-muted-foreground hover:border-foreground"
-			>
-				<UploadIcon className="h-5 w-5" aria-hidden />
-				<span>{busy ? t("field.upload.uploading") : t("field.upload.prompt")}</span>
-				<input
+			<div className="flex min-h-24 items-center gap-3 rounded-md border p-2">
+				{isImg ? (
+					<img
+						src={value.url}
+						alt={filename}
+						className="h-12 w-12 rounded object-cover"
+					/>
+				) : (
+					<div className="h-12 w-12 rounded bg-muted" />
+				)}
+				<span id={filenameId} className="flex-1 truncate text-sm">
+					{busy ? t("field.upload.uploading") : filename}
+				</span>
+				<HiddenFileInput
 					id={id}
 					name={name}
-					type="file"
 					accept={accept}
-					multiple={multiple}
-					className="sr-only"
-					disabled={busy || disabled}
+					className="peer sr-only"
+					disabled={busy || Boolean(disabled)}
 					onBlur={onBlur}
-					aria-invalid={invalid || undefined}
-					aria-describedby={describedBy}
-					onChange={(e) => {
-						const files = Array.from(e.currentTarget.files ?? []);
-						e.currentTarget.value = "";
-						onFiles(files);
-					}}
+					invalid={invalid}
+					describedBy={describedBy ? `${filenameId} ${describedBy}` : filenameId}
+					onFiles={onFiles}
 				/>
-			</label>
-			{error ? (
-				<p role="alert" className="text-sm text-destructive">
-					{error}
-				</p>
-			) : null}
+				<label
+					htmlFor={id}
+					className="cursor-pointer rounded px-2 py-1 text-sm hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50 peer-disabled:pointer-events-none peer-disabled:opacity-50"
+				>
+					{t("field.upload.replace")}
+				</label>
+				<button
+					type="button"
+					className="rounded p-1 hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+					aria-label={t("field.upload.remove")}
+					disabled={busy || disabled}
+					onClick={onRemove}
+				>
+					<XIcon className="h-4 w-4" />
+				</button>
+			</div>
+			<UploadError error={error} />
 		</div>
 	);
 }
