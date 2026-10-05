@@ -7,9 +7,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
-use Tbtop\Admin\Http\ActionFormRules;
 use Tbtop\Admin\Mcp\ActionNeeds;
-use Tbtop\Admin\Mcp\AgentError;
 use Tbtop\Admin\Mcp\Execution;
 use Tbtop\Admin\Mcp\FormArguments;
 use Tbtop\Admin\Mcp\PageSurface;
@@ -54,45 +52,25 @@ final class ExecuteTool extends Tool
             $resolved = $pages->resolve($class, $params);
             $execution = new Execution($pages, $class, $params);
 
-            if (isset($resolved->s->collectedActions()[$name])) {
-                $action = PageSurface::exposedAction($resolved, $name);
-                $enclosing = ActionFormRules::enclosingForm($resolved, $name);
-                if ($action === null || $action->handler() === null || PageSurface::isUnfillableForm($enclosing, ! $action->skipsFormValidation())) {
-                    throw self::notExecutable("{$slug}:{$name}");
-                }
+            ['action' => $action, 'form' => $form] = PageSurface::executable($resolved, $name);
+            if ($action !== null) {
                 $needs = $action->getSpec()['needs'] ?? [];
                 ActionNeeds::assertSent("{$slug}:{$name}", $needs, $request->get('form'), $request->get('row'), $request->get('selection'));
-                $input = self::objectArg($request->get('form'));
-                if ($enclosing !== null) {
-                    FormArguments::assertSendable($enclosing, $input);
-                }
-
-                return $execution->action($name, array_filter([
-                    'form' => $input,
-                    'row' => self::objectArg($request->get('row')),
-                    'selection' => self::selection($request->get('selection')),
-                ]));
             }
-            $form = $resolved->s->reachableForm($name);
-            if ($form?->submitHandler() !== null) {
-                if (PageSurface::isUnfillableForm($form, true)) {
-                    throw self::notExecutable("{$slug}:{$name}");
-                }
-
-                $input = self::objectArg($request->get('form'));
+            $input = self::objectArg($request->get('form'));
+            if ($form !== null) {
                 FormArguments::assertSendable($form, $input);
-
+            }
+            if ($action === null) {
                 return $execution->form($name, $input);
             }
 
-            throw new AgentError("Unknown executable \"{$slug}:{$name}\". Call search() for this page.");
+            return $execution->action($name, array_filter([
+                'form' => $input,
+                'row' => self::objectArg($request->get('row')),
+                'selection' => self::selection($request->get('selection')),
+            ]));
         });
-    }
-
-    /** The refusal for an executable search() does not list as one. */
-    private static function notExecutable(string $id): AgentError
-    {
-        return new AgentError("\"{$id}\" is not executable here. Call search() for this page.");
     }
 
     /**

@@ -182,7 +182,10 @@ return $panel
 - **Three tools.** `search` lists pages, and for each page without route params its
   executables and tables; `search(page, params)` describes one record page. `query` reads
   a table's rows (the table endpoint's payload: the record key and the formatted visible
-  columns) — read-only. `execute` runs an
+  columns) — read-only. `query` also lists the choices of a field or filter `search()`
+  marks `options: "dynamic"`: `executable` + `field` (with `deps` for the names in the
+  field's `dependsOn`) or `table` + `filter`, answering `{options: [{value, label}]}` as the
+  UI's type-ahead would. `execute` runs an
   executable by id `{page-slug}:{name}` — always annotated destructive, so the MCP client
   asks for confirmation.
 - **Same controllers, no middleware.** `query`/`execute` call `TableController`,
@@ -203,6 +206,8 @@ return $panel
   required excluded field: a rule key of the field holding `required` without `sometimes`.
   An edit form whose file already exists stays executable with `->required()->rules('sometimes')`.
   `execute` refuses input that sets an excluded field instead of passing it to the handler.
+  The media library block and drag-reorder tables run in the browser; `search()` lists
+  them as excluded (`{page}:mediaLibrary`, `{page}:{table}.reorder`) and `execute` refuses them.
 - **Refusals, not silent ignores.** `execute` refuses a call missing what the action
   `needs` (`selection: []` counts as missing, `form: {}` as sent) and a `row` without its
   `id` — a key is an int or a non-empty string, in `row` and in `selection` alike. `query` checks the page gate first, then refuses a `sort`, `perPage`,

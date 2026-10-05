@@ -53,7 +53,11 @@ final class PageSurface
             }
         }
 
-        return ['executables' => $executables, 'tables' => self::tables($resolved), 'excluded' => $excluded];
+        return [
+            'executables' => $executables,
+            'tables' => self::tables($resolved),
+            'excluded' => [...$excluded, ...ClientOnlySurfaces::of($resolved)],
+        ];
     }
 
     /** Why an executable submitting $form is excluded, or null — see FormArguments::unfillableReason(). */
@@ -70,6 +74,44 @@ final class PageSurface
     public static function isUnfillableForm(?FormBuilder $form, bool $validated): bool
     {
         return self::unfillableReason($form, $validated) !== null;
+    }
+
+    /**
+     * The executable $name as execute() runs it: its action (null for an
+     * onSubmit form) and the form it submits. Throws for what search() does not list.
+     *
+     * @return array{action: ?ActionBuilder, form: ?FormBuilder}
+     */
+    public static function executable(ResolvedPage $resolved, string $name): array
+    {
+        $id = $resolved->page::slug().":{$name}";
+        if (isset($resolved->s->collectedActions()[$name])) {
+            $action = self::exposedAction($resolved, $name);
+            $form = ActionFormRules::enclosingForm($resolved, $name);
+            if ($action === null || $action->handler() === null || self::isUnfillableForm($form, ! $action->skipsFormValidation())) {
+                throw self::notExecutable($id);
+            }
+
+            return ['action' => $action, 'form' => $form];
+        }
+        $form = $resolved->s->reachableForm($name);
+        if ($form?->submitHandler() !== null) {
+            if (self::isUnfillableForm($form, true)) {
+                throw self::notExecutable($id);
+            }
+
+            return ['action' => null, 'form' => $form];
+        }
+        if (ClientOnlySurfaces::has($resolved, $id)) {
+            throw self::notExecutable($id);
+        }
+
+        throw new AgentError("Unknown executable \"{$id}\". Call search() for this page.");
+    }
+
+    private static function notExecutable(string $id): AgentError
+    {
+        return new AgentError("\"{$id}\" is not executable here. Call search() for this page.");
     }
 
     /** The action behind $name when this user may run it over MCP, else null. */

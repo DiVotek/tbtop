@@ -2,7 +2,7 @@
     {
         "name": "search",
         "title": "Search Tool",
-        "description": "Discover what you can do in this admin panel. Without arguments: every page you may open, plus the\nexecutables (actions/forms) and tables of pages that take no params. With `page` (+ `params` for a\npage whose path has params, e.g. a record id, as strings): that page's executables and tables. Each\nexecutable lists its `needs` (form/row/selection) and form fields with Laravel validation rules;\na `translatable` field takes an object keyed by locale (see its nestedRules). A form's `values` are\nits current data — build edits from them, not from query() rows, which are formatted for display.\nA field you omit is absent from the handler's input; resend `values` for fields you keep.\nFields listed in a form's `excludedFields` cannot be sent: execute() refuses input that sets any.",
+        "description": "Discover what you can do in this admin panel. Without arguments: every page you may open, plus the\nexecutables (actions/forms) and tables of pages that take no params. With `page` (+ `params` for a\npage whose path has params, e.g. a record id, as strings): that page's executables and tables. Each\nexecutable lists its `needs` (form/row/selection) and form fields with Laravel validation rules;\na `translatable` field takes an object keyed by locale (see its nestedRules). A form's `values` are\nits current data — build edits from them, not from query() rows, which are formatted for display.\nA field you omit is absent from the handler's input; resend `values` for fields you keep.\nFields listed in a form's `excludedFields` cannot be sent: execute() refuses input that sets any.\nA field with `options: \"dynamic\"` lists its choices through query() (`executable` + `field`, with\n`deps` for the names in its `dependsOn`). A `mask` formats a text value: 9 digit, a letter, * letter\nor digit, any other character literal; send the value as the mask formats it, literals included.",
         "inputSchema": {
             "properties": {
                 "page": {
@@ -23,7 +23,7 @@
     {
         "name": "query",
         "title": "Query Tool",
-        "description": "Read rows of a table found by search(). A row is what the admin table receives: its key\n(`id` for Eloquent models) and its visible columns, formatted; no other record attributes.\nPass a row unchanged as `row` to execute() for a row action, or keys as `selection`. Filters take\nthe value shape search() states per filter; search, columnSearch, filters, tabs, sort and perPage\naccept only what search() listed for that table, and anything else is refused.",
+        "description": "Read rows of a table found by search(). A row is what the admin table receives: its key\n(`id` for Eloquent models) and its visible columns, formatted; no other record attributes.\nPass a row unchanged as `row` to execute() for a row action, or keys as `selection`. Filters take\nthe value shape search() states per filter; search, columnSearch, filters, tabs, sort and perPage\naccept only what search() listed for that table, and anything else is refused.\nFor a field or filter whose options are \"dynamic\", the same tool lists its choices: pass\n`executable` + `field` (a form field) or `table` + `filter`, with an optional `search` text and\n`deps` ({parent: value} for every name in the field's dependsOn). Returns {options: [{value,\nlabel}]}, capped like the UI's type-ahead: narrow with search.",
         "inputSchema": {
             "properties": {
                 "page": {
@@ -31,8 +31,24 @@
                     "type": "string"
                 },
                 "table": {
-                    "description": "Table name from search().",
+                    "description": "Table name from search(): its rows, or with filter its options.",
                     "type": "string"
+                },
+                "executable": {
+                    "description": "Executable id whose form holds field, for an options lookup.",
+                    "type": "string"
+                },
+                "field": {
+                    "description": "Field name as search() lists it, for an options lookup.",
+                    "type": "string"
+                },
+                "filter": {
+                    "description": "Filter name of table, for an options lookup.",
+                    "type": "string"
+                },
+                "deps": {
+                    "description": "Parent values for a field's dependsOn: {parent: value}.",
+                    "type": "object"
                 },
                 "params": {
                     "description": "Route params of the page, values as strings.",
@@ -47,7 +63,7 @@
                     "type": "integer"
                 },
                 "search": {
-                    "description": "Table-wide search.",
+                    "description": "Table-wide search, or the option search of a lookup.",
                     "type": "string"
                 },
                 "columnSearch": {
@@ -76,8 +92,7 @@
             },
             "type": "object",
             "required": [
-                "page",
-                "table"
+                "page"
             ]
         },
         "annotations": {
