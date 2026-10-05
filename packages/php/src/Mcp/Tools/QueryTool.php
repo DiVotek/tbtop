@@ -129,6 +129,10 @@ final class QueryTool extends Tool
             throw new AgentError('Pass table, or executable with field.');
         }
         if ($executable === null && $filter === null) {
+            if ($request->get('deps') !== null) {
+                throw new AgentError('deps applies only to an options lookup (executable + field, or table + filter).');
+            }
+
             return null;
         }
         foreach (['pageNumber', 'perPage', 'columnSearch', 'filters', 'tab', 'sort', 'dir'] as $arg) {

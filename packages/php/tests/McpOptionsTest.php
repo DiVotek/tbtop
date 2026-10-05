@@ -35,6 +35,10 @@ it('refuses an options lookup it cannot answer as the UI would', function (array
         ['executable' => 'mcp-options-page:trip', 'field' => 'note'],
         'Field "note" has no dynamic options; search() lists its options.',
     ],
+    'deps on a row query' => [
+        ['table' => 'missing', 'deps' => ['country' => 'ua']],
+        'deps applies only to an options lookup (executable + field, or table + filter).',
+    ],
     'field outside the form' => [
         ['executable' => 'mcp-options-page:trip', 'field' => 'missing'],
         'Field "missing" is not in the form of "mcp-options-page:trip".',
