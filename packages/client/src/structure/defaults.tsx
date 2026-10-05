@@ -1,4 +1,22 @@
+import { useDensity } from "../app/densityContext";
+import { cn } from "../lib/cn";
 import { AsyncErrorBox } from "./asyncErrorBox";
+
+// Stands in for one control while its options load, so it must match the
+// Input's height: anything taller makes the surrounding form or modal shrink
+// once the control appears.
+export function FieldSkeleton() {
+	const density = useDensity();
+	return (
+		<div
+			className={cn(
+				"h-9 w-full animate-pulse rounded-md bg-muted",
+				density === "compact" && "h-8",
+			)}
+			data-testid="field-skeleton"
+		/>
+	);
+}
 
 export function FormSkeleton() {
 	return (

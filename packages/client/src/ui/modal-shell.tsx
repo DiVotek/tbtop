@@ -162,7 +162,7 @@ export function ConfirmDialog({
 			size="sm"
 			onlyDialog
 			// Focus the confirm button on open so Enter confirms immediately,
-			// instead of Radix's default of focusing the dialog content itself.
+			// instead of the default of focusing the first tabbable element.
 			onOpenAutoFocus={(e) => {
 				e.preventDefault();
 				confirmRef.current?.focus();

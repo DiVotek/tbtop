@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useClientActionContext } from "../structure/actionContext";
-import { FormSkeleton } from "../structure/defaults";
+import { FieldSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { useMultiResolvedLabels } from "./asyncMultiOptions";
 import type { OptionMap } from "./asyncOptions";
@@ -80,11 +80,11 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 		!hasRenderedRef.current && (resolved.kind === "loading" || search.kind === "loading");
 
 	if (isInitialLoad) {
-		return <>{opts.loading ?? <FormSkeleton />}</>;
+		return <>{opts.loading ?? <FieldSkeleton />}</>;
 	}
 	// Real query error (not a transient loading state) surfaces after initial render.
 	if (search.kind === "error") {
-		return <>{renderAsyncError(opts.error, search.message, <FormSkeleton />)}</>;
+		return <>{renderAsyncError(opts.error, search.message, <FieldSkeleton />)}</>;
 	}
 
 	// Shell is now rendering — mark it.

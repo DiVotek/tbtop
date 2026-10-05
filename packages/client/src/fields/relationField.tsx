@@ -1,5 +1,5 @@
 import { useTranslation } from "../i18n/i18n";
-import { FormSkeleton } from "../structure/defaults";
+import { FieldSkeleton } from "../structure/defaults";
 import { AsyncOptionCombobox } from "./asyncOptionCombobox";
 import type { AsyncSingleOptionsBag } from "./asyncOptions";
 import { nullableCell } from "./cellHelpers";
@@ -67,7 +67,7 @@ export function RelationForm({
 	});
 
 	if (remote.isFirstLoad) {
-		return <FormSkeleton />;
+		return <FieldSkeleton />;
 	}
 
 	return (

@@ -383,7 +383,7 @@ describe("Select multi async — shell stays mounted during query refetch", () =
 		// The shell must still be mounted — input must still be in the DOM.
 		// (A skeleton would replace it and the input would be absent.)
 		await waitFor(() => expect(container.querySelector("input")).not.toBeNull());
-		expect(container.querySelector('[data-testid="form-skeleton"]')).toBeNull();
+		expect(container.querySelector('[data-testid="field-skeleton"]')).toBeNull();
 	});
 
 	test("a chip renders for a value the dropdown listed but onLoad never resolved", async () => {
