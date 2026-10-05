@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "../i18n/i18n";
-import { FormSkeleton } from "../structure/defaults";
+import { FieldSkeleton } from "../structure/defaults";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { AsyncOptionCombobox } from "./asyncOptionCombobox";
 import type { OptionMap } from "./asyncOptions";
@@ -261,7 +261,7 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 	const [refetchKey, setRefetchKey] = useState(0);
 
 	if (remote.isFirstLoad) {
-		return <>{opts.loading ?? <FormSkeleton />}</>;
+		return <>{opts.loading ?? <FieldSkeleton />}</>;
 	}
 
 	return (

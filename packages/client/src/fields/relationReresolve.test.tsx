@@ -81,7 +81,7 @@ async function selectSecondOption(container: HTMLElement, user: UserEvent) {
 }
 
 // A label the dropdown already listed is known, so re-resolving it costs a
-// round-trip and flickers the control into <FormSkeleton />.
+// round-trip and flickers the control into <FieldSkeleton />.
 describe("relation re-resolve", () => {
 	test("does not re-fetch a label the dropdown already carried", async () => {
 		const user = userEvent.setup();
