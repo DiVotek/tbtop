@@ -60,6 +60,7 @@ class TwoFactorChallengePage extends Page
                 // digit slots and adds a digits:6 rule, so a lost authenticator
                 // could not be recovered from this page.
                 $s->text('code')->label('Code')->required()
+                    ->rules(['string', 'max:64'])
                     ->placeholder('000000 or recovery code'),
                 $s->actionsRow([
                     $s->action('submit')->label('Verify')->color('primary')->submit(),
