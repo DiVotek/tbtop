@@ -6,6 +6,7 @@ use App\Models\Media;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -35,14 +36,15 @@ class MediaIndexPage extends Page
             ]),
             $s->table('media')
                 ->columns([
-                    ['name' => 'filename', 'label' => 'Filename', 'kind' => 'upload'],
+                    // Only images get a preview; a blank cell beats a broken <img> for PDFs.
+                    Column::make('url')->image()->square()->label('Preview')->alt('Preview')
+                        ->formatUsing(fn (?string $url, Media $media) => str_starts_with($media->mime_type, 'image/') ? $url : null),
+                    'filename' => 'Filename',
                     'mime_type' => 'Type',
                     'filesize' => 'Size',
                 ])
                 ->defaultSort('created_at', 'desc')
-                // The upload cell reads row.mimeType (camelCase, per UploadRow);
-                // alias it alongside the snake_case model attributes.
-                ->query(fn () => Media::query()->selectRaw('media.*, mime_type as mimeType'))
+                ->query(fn () => Media::query())
                 ->rowActions([
                     $s->action('edit')->label('Edit')->url('/admin/media/{row.id}/edit'),
                     // Prebuilt delete; the using closure returns the page's own

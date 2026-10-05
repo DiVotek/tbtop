@@ -1,30 +1,12 @@
-import { useNearestRow } from "../structure/rowContext";
 import type { FieldCellProps } from "./fieldProps";
 import { basename, looksLikeImage, type UploadValue } from "./uploadUtils";
 
-interface UploadRowShape {
-	path?: string;
-	url?: string;
-	filename?: string;
-	sizes?: Array<{ url: string; width: number }>;
-}
-
-function thumbnailUrl(
-	sizes: Array<{ url: string; width: number }> | undefined,
-	fallback: string,
-): string {
-	const variants = sizes ?? [];
-	if (variants.length === 0) {
-		return fallback;
-	}
-	return variants.reduce((a, b) => (b.width < a.width ? b : a)).url ?? fallback;
-}
-
+// Renders from its own value only. Sibling row fields are not read: the server
+// projects a row down to declared columns, so they would not reach the client.
+// A thumbnail column is an `image` column over a URL attribute.
 export function UploadCell({
 	value,
 }: FieldCellProps<UploadValue | UploadValue[] | string | string[]>) {
-	const row = useNearestRow() as UploadRowShape | null;
-
 	if (Array.isArray(value)) {
 		if (value.length === 0) {
 			return null;
@@ -47,35 +29,15 @@ export function UploadCell({
 	}
 
 	if (typeof value === "string") {
-		const filename = row?.filename ?? basename(value);
-		const url = row?.url;
-		if (url && looksLikeImage(url, filename)) {
-			return (
-				<img
-					src={thumbnailUrl(row?.sizes, url)}
-					alt={filename}
-					className="h-8 w-8 rounded object-cover"
-				/>
-			);
-		}
-		return <span>{filename}</span>;
+		return <span>{basename(value)}</span>;
 	}
 
-	const item = value as UploadValue | null;
-	const url = row?.url ?? item?.url;
-	const path = row?.path ?? item?.path;
-	const filename = row?.filename ?? (path ? basename(path) : undefined);
-	if (!url && !filename) {
+	if (!value) {
 		return null;
 	}
-	if (looksLikeImage(url ?? "", filename ?? "")) {
-		return (
-			<img
-				src={thumbnailUrl(row?.sizes, url ?? "")}
-				alt={filename ?? ""}
-				className="h-8 w-8 rounded object-cover"
-			/>
-		);
+	const filename = basename(value.path);
+	if (value.url && looksLikeImage(value.url, filename)) {
+		return <img src={value.url} alt={filename} className="h-8 w-8 rounded object-cover" />;
 	}
 	return <span>{filename}</span>;
 }

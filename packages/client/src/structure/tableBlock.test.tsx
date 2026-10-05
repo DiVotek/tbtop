@@ -22,24 +22,16 @@ describe("Table integration", () => {
 		expect(getByTestId("table-block")).toBeTruthy();
 	});
 
-	test("Table upload-kind cell renders the thumbnail from row data", async () => {
-		const rows = [
-			{
-				id: "r1",
-				filename: "photo.png",
-				url: "/storage/uploads/photo.png",
-				mimeType: "image/png",
-				sizes: [{ url: "/storage/uploads/photo-thumb.png", width: 128 }],
-			},
-		];
+	test("Table upload-kind cell renders its own path, not sibling row fields", async () => {
+		const rows = [{ id: "r1", file: "uploads/photo.png", url: "/storage/uploads/photo.png" }];
 		const node = s.table({
 			query: async () => rows,
-			columns: [{ name: "filename", label: "File", kind: "upload" }],
+			columns: [{ name: "file", label: "File", kind: "upload" }],
 		});
 		const Wrap = wrap(() => new Response("{}"));
-		const { findByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
-		const img = await findByRole("img");
-		expect(img.getAttribute("src")).toBe("/storage/uploads/photo-thumb.png");
+		const { findByText, queryByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect(await findByText("photo.png")).toBeTruthy();
+		expect(queryByRole("img")).toBeNull();
 	});
 
 	test("Table skeleton renders while query is pending", () => {
