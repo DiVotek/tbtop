@@ -16,6 +16,8 @@ import {
 import { CommandPalette } from "./commandPalette/CommandPalette";
 import type { CommandPaletteData } from "./commandPalette/types";
 import { DensityContext } from "./densityContext";
+import { useRailActiveGroup } from "./navRail";
+import { RailSidebarFrame } from "./RailSidebarFrame";
 import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
 import { ThemeSync } from "./ThemeSync";
 import { TopbarSidebarFrame } from "./TopbarSidebarFrame";
@@ -28,7 +30,7 @@ export interface ChromeTrees {
 }
 
 /** Shell navigation layout, mirrors PanelConfig::navigation() on the server. */
-export type NavigationLayout = "sidebar" | "topbar" | "topbar-sidebar";
+export type NavigationLayout = "sidebar" | "topbar" | "topbar-sidebar" | "rail-sidebar";
 
 interface SharedProps {
 	tbtop?: {
@@ -41,7 +43,10 @@ interface SharedProps {
 		appearance?: Appearance | null;
 		palette?: CommandPaletteData | null;
 		prefix?: string;
+		panel?: string;
 	};
+	/** Page prop: the current page's nav() group key, when it declares one. */
+	navGroup?: unknown;
 	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
 }
@@ -76,12 +81,17 @@ interface AdminLayoutShellProps {
 	appearance?: Appearance | null;
 	userMenuItems?: NavItem[];
 	homeUrl?: string | null;
+	/** rail-sidebar: the page's nav() group, a fallback when no nav item matches the URL. */
+	pageNavGroup?: string;
+	/** Scopes per-panel client state (the remembered rail group). */
+	panelId?: string;
 }
 
 const FRAMES: Record<NavigationLayout, (props: ShellFrameProps) => ReactNode> = {
 	sidebar: SidebarFrame,
 	topbar: TopbarFrame,
 	"topbar-sidebar": TopbarSidebarFrame,
+	"rail-sidebar": RailSidebarFrame,
 };
 
 /**
@@ -103,11 +113,19 @@ export function AdminLayoutShell({
 	appearance,
 	userMenuItems,
 	homeUrl,
+	pageNavGroup,
+	panelId,
 }: AdminLayoutShellProps) {
 	const Frame = FRAMES[navigation] ?? SidebarFrame;
 	const maxWidth = appearance?.maxWidth ? MAX_WIDTH_CLASS[appearance.maxWidth] : undefined;
 	const density = appearance?.density ?? "default";
 	const slotProps: AdminLayoutSlotProps = { nav, user };
+	const activeGroup = useRailActiveGroup(navigation === "rail-sidebar", {
+		nav,
+		currentUrl,
+		pageGroup: pageNavGroup,
+		panelId,
+	});
 	const chromeData: ChromeData = {
 		nav,
 		user,
@@ -120,6 +138,7 @@ export function AdminLayoutShell({
 		darkMode: appearance?.darkMode,
 		defaultTheme: appearance?.defaultTheme,
 		userMenuItems,
+		activeGroup,
 	};
 
 	const sidebar = slots?.sidebar
@@ -167,6 +186,8 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 				appearance={props.tbtop?.appearance}
 				userMenuItems={props.tbtop?.userMenuItems}
 				homeUrl={props.tbtop?.prefix}
+				pageNavGroup={typeof props.navGroup === "string" ? props.navGroup : undefined}
+				panelId={props.tbtop?.panel}
 			>
 				{children}
 			</AdminLayoutShell>

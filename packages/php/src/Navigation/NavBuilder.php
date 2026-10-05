@@ -55,11 +55,13 @@ final class NavBuilder
             if ($entry['parent'] !== null && self::gatePasses($entries[$entry['parent']]['can'])) {
                 continue;
             }
-            $groups[$entry['group'] ?? self::UNGROUPED][] = self::buildNode($class, $entries, $childrenOf);
+            $node = self::buildNode($class, $entries, $childrenOf);
+            $groups[$entry['group'] ?? self::UNGROUPED][] = self::withSection($node, $entry['group'], $entry['section']);
         }
 
         foreach ($panel->navigationItems() as $item) {
-            $groups[$item->getGroup() ?? self::UNGROUPED][] = self::customItemFrom($item);
+            $node = self::customItemFrom($item);
+            $groups[$item->getGroup() ?? self::UNGROUPED][] = self::withSection($node, $item->getGroup(), $item->getSection());
         }
 
         return self::assemble($groups, $panel->navigationGroups());
@@ -71,7 +73,7 @@ final class NavBuilder
      * for parent lookups.
      *
      * @param  list<class-string<Page>>  $classes
-     * @return array<class-string<Page>, array{group: string|null, item: array<string, mixed>, parent: class-string<Page>|null, can: string|null}>
+     * @return array<class-string<Page>, array{group: string|null, section: string|null, item: array<string, mixed>, parent: class-string<Page>|null, can: string|null}>
      */
     private static function collectPages(array $classes, string $prefix): array
     {
@@ -85,6 +87,7 @@ final class NavBuilder
             $parent = $nav['parent'] ?? null;
             $entries[$class] = [
                 'group' => isset($nav['group']) ? (string) $nav['group'] : null,
+                'section' => isset($nav['section']) ? (string) $nav['section'] : null,
                 'item' => self::itemFrom($nav, $prefix.'/'.trim($path, '/'), $class),
                 'parent' => $parent !== null ? (string) $parent : null,
                 'can' => $class::can(),
@@ -162,6 +165,23 @@ final class NavBuilder
         }
 
         return $node;
+    }
+
+    /**
+     * Tags a top-level item with its section. Nested children never get one
+     * (they follow their parent), the ungrouped bucket has no sections, and an
+     * empty key means unsectioned — the client keys the unsectioned run by ''.
+     *
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>
+     */
+    private static function withSection(array $node, ?string $group, ?string $section): array
+    {
+        if ($group === null || $section === null || $section === '') {
+            return $node;
+        }
+
+        return [...$node, 'section' => $section];
     }
 
     /**
@@ -248,11 +268,13 @@ final class NavBuilder
     {
         $meta = [];
         $labels = [];
+        $sectionLabels = [];
         $declaredOrder = [];
         foreach ($navGroups as $index => $navGroup) {
             $key = $navGroup->key();
             $meta[$key] = $navGroup->meta();
             $labels[$key] = $navGroup->displayLabel();
+            $sectionLabels[$key] = $navGroup->getSectionLabels();
             $declaredOrder[$key] = $index;
         }
 
@@ -267,7 +289,12 @@ final class NavBuilder
             $items = $groups[$key];
             usort($items, static fn (array $a, array $b) => $a['order'] <=> $b['order']);
             $label = $key === self::UNGROUPED ? null : ($labels[$key] ?? $key);
-            $out[] = ['key' => $key, 'group' => $label, 'items' => $items, ...($meta[$key] ?? [])];
+            $arranged = NavSections::arrange($items, $sectionLabels[$key] ?? []);
+            $group = ['key' => $key, 'group' => $label, 'items' => $arranged['items'], ...($meta[$key] ?? [])];
+            if ($arranged['sections'] !== []) {
+                $group['sections'] = $arranged['sections'];
+            }
+            $out[] = $group;
         }
 
         return $out;

@@ -4,10 +4,12 @@ namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Validation\EmbedsRule;
 
 final class FormSubmitController
 {
@@ -25,7 +27,8 @@ final class FormSubmitController
             throw new NotFoundHttpException("Form \"{$tbtopForm}\" is not submittable on this page.");
         }
 
-        $validated = $request->validate($form->collectRules(), [], $form->collectAttributes());
+        $validator = Validator::make($request->all(), $form->collectRules(), [], $form->collectAttributes());
+        $validated = EmbedsRule::applyDeclaredKeys($validator->getRules(), $validator->validate());
         $ctx = new ActionCtx(
             request: $request,
             user: $request->user(),

@@ -45,7 +45,7 @@ this stack.
 the React component's zod schema."* **Wrong.** The client zod is **on-blur UX only and never
 trusted** — a request can skip the client entirely. Validation is *always* a Laravel rule on
 the PHP field: `$s->text('title')->required()->rules('max:200')`
-(`Concerns/PostFormFields.php:22`). The zod mirror is generated *from* the PHP rules, not the
+(`Concerns/PostFormFields.php`). The zod mirror is generated *from* the PHP rules, not the
 other way around.
 
 **Mis-placement 2 — inventing a new effect to navigate.** *"I need the form to redirect
@@ -58,7 +58,7 @@ effect kind edits the package for something the contract already covers.
 filter, restore action, and scoping inline on every index page."* **Wrong by default.** The
 backend behavior (the `SoftDeletes` trait, the scoping) is plain Laravel on the *model*; the
 table affordance is a one-call macro: `->softDeletes($s, Post::class)`
-(`SoftDeletesDemoPage.php:55`). Re-deriving it per page is reinventing what the framework
+(`SoftDeletesDemoPage.php`). Re-deriving it per page is reinventing what the framework
 ships.
 
 This decision tree expands the placement table in the repo's `CLAUDE.md`; when in doubt,
@@ -93,6 +93,64 @@ class AdminPanel extends Panel
     }
 }
 ```
+
+### Discovering host pages
+
+Opt in per panel with an existing directory and its Composer-autoloadable namespace:
+
+```php
+$panel
+    ->discoverPages(
+        in: app_path('Admin/Pages'),
+        for: 'App\\Admin\\Pages',
+    )
+    ->pages([DashboardPage::class, MediaLibraryPage::class]);
+```
+
+Discovery recursively registers concrete `Page` subclasses whose filename and namespace
+match their relative path. Repeat `discoverPages()` for additional roots. Missing directories
+throw; unrelated classes and abstract pages are ignored. Nothing scans the whole application
+unless you explicitly configure that scope.
+
+Manual pages come first; discovered classes follow in alphabetical fully qualified class-name
+order, with duplicates removed. `pages()` replaces only the manual list, regardless of its
+position relative to `discoverPages()`. Keep the dashboard first in `pages()` to retain the
+panel-root redirect: absent a page owning the root, the first static page path is the destination.
+Discovery-enabled panels reject duplicate slugs and identical normalized paths. Distinct
+parameterized patterns can still overlap: order those pages explicitly in `pages()`.
+
+To exclude a concrete page from discovery, override `public static function isDiscovered(): bool`
+and return `false`. Explicit `pages()` registration still includes it. `nav() === null` only hides
+navigation; detail/edit pages and public auth pages still need routes. Existing gates and
+page middleware overrides apply unchanged, including to each page's endpoint cluster.
+
+For production, cache the discovered class index **before** caching routes:
+
+```sh
+php artisan tbtop:cache-pages
+php artisan route:cache
+```
+
+The index lives in `bootstrap/cache/tbtop-pages.php`, serves both HTTP and console consumers,
+and contains only discovered class names keyed by discovery roots. Roots inside the application
+are keyed relative to its base path, so an index built in one release directory still applies
+after an atomic-symlink deploy swaps the release path. Manual registrations,
+authorization, and page output remain live. Rebuild after adding, moving, removing, or changing
+the discovery eligibility of a page. An unindexed set of roots scans normally. Index publication
+is atomic; a failed rebuild leaves the previous index intact. An index naming a class that no
+longer exists is ignored and rescanned, so deleting a page without rebuilding degrades to a scan
+rather than breaking every reader of the panel registry — including other packages that register
+routes from it. Restart long-lived application workers after deployment to discard in-memory
+page lists.
+
+To return to uncached development:
+
+```sh
+php artisan tbtop:clear-cached-pages
+php artisan route:clear
+```
+
+These commands are explicit; Laravel's `optimize` / `optimize:clear` do not manage this index.
 
 ```php
 use Tbtop\Admin\Dsl\{Node, S};
@@ -132,7 +190,7 @@ are overridable hooks with sensible defaults.
 | `subtitle()` | `subtitle(): ?string` | No | Muted line under the heading; `null` renders nothing |
 | `headerActions()` | `headerActions(S $s): array` | No | Actions rendered in the page header, beside the title |
 | `middleware()` | `static middleware(PanelConfig $panel): ?list<string>` | No | Replaces the panel's auth/app middleware for this page **and its whole endpoint cluster** (forms, actions, tables, data). The mechanism for a **public** page inside an authenticated panel: return `['web']` to skip `auth:{guard}` — panel binding, locale and the Inertia share still apply. Spread `$panel->authStack()` to add rather than replace. `null` inherits |
-| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. Omit `group` to list the page ungrouped (no heading, no indent). `parent` nests this page under another page's nav item — see [./recipes.md](./recipes.md#recipe-9--navigation-configuration) |
+| `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. Omit `group` to list the page ungrouped (no heading, no indent). `parent` nests this page under another page's nav item; `section` places it under a heading declared by `NavGroup::sections()` — see [./recipes.md](./recipes.md#recipe-9--navigation-configuration) |
 | `can()` | `static can(): ?string` | No | Gate ability name required to view this page. `null` = no gate (any authenticated user) |
 | `breadcrumbs()` | `breadcrumbs(): array\|\Closure\|null` | No | Override breadcrumbs. Return `[['label' => '...', 'url' => '...']]`, a closure receiving the page instance, or `null` to auto-build from the nav tree |
 | `layout()` | `layout(): string` | No | Shell layout: `'admin'` (sidebar + header, the default) or `'center'` (chrome-less, content centered) |
@@ -182,15 +240,49 @@ Each layout block accepts children and optional option arrays, and returns a `No
 | `row` | `row(array $children, array $opts = []): Node` | Horizontal row of children |
 | `flex` | `flex(array $children, string $direction = 'row', ?string $justify = null, ?string $align = null, ?int $gap = null, bool $wrap = false, ?string $variant = null, ?string $class = null): Node` | Flex container with explicit direction (`'row'`\|`'col'`), justify, align, gap, wrap, an optional `'card'` variant, and an escape-hatch `class` |
 | `grid` | `grid(array $opts, array $children): Node` | Grid layout; `$opts['cols']` is an int (1-8, back-compat: single column below `md`) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8); `$opts['gap']` is 0-12 (default 4); `$opts['class']` is an escape-hatch |
-| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'action'` (`['label' => …, 'url' => …]` — a quiet right-aligned link in the header row), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch), plus `colSpan`/`colStart` and the meta keys |
+| `section` | `section(array $opts, array $children): Node` | Titled card section; `$opts` carries `'title'`, `'description'` (muted text under the title), `'icon'` (string name or `{name, position}`), `'aside'` (a child node rendered as a right-side column on wide screens), `'collapsible'`/`'collapsed'` (bool, chevron toggle), `'columns'` (int or breakpoint object — lays children out in a grid instead of a stack), `'actions'` (list of `ActionBuilder` — right-aligned buttons in the header row), `'url'` + `'openUrlInNewTab'` (the whole section as one link), `'variant'` (`'card'`\|`'plain'`), `'class'` (escape-hatch), plus `colSpan`/`colStart` and the meta keys |
 | `collapsible` | `collapsible(array $opts, array $children): Node` | Section with a chevron toggle; `$opts` must include `'label'`; `'collapsed'` defaults to `false` |
-| `aside` | `aside(array $children, array $opts = []): Node` | Right-column sticky panel on wide screens; `$opts` supports `'class'` (escape-hatch) |
+| `aside` | `aside(array $children, array $opts = []): Node` | Fixed-width (`w-80`) right column that does not shrink. It does **not** stick on scroll — pass `'class' => 'sticky top-4'` via `$opts` if you want that |
 
 A section's `'aside'` is a persistent context slot: when a `section` sets both
 `'aside'` and `'collapsible'`, collapsing hides only the main body — the aside stays visible.
 The default, `'card'`, and `'plain'` variants share the same header behavior: description,
-icon, action, chevron, keyboard toggle, and initial `'collapsed'` state all remain available;
+icon, actions, chevron, keyboard toggle, and initial `'collapsed'` state all remain available;
 the variant changes visual chrome only.
+
+**Header actions vs aside.** `'actions'` is the header-row slot for buttons: any
+`ActionBuilder` (`url()`, `handle()`, `modal()`…), right-aligned where the title sits. A
+section with `'actions'` and no `'title'` still renders a header row. Entries go through
+the usual `when()`/`authorize()` filtering; an empty list after filtering is dropped from
+the wire. A `handle($fn, needs: ['form'])` header action inside a `form` receives that form's
+validated payload, like any action nested in the form. `'aside'` is a different thing — the
+body's side column for context content; put interactive actions in `'actions'`, not in
+`'aside'`. Both may be set.
+
+```php
+$s->section([
+    'title' => 'Pages',
+    'actions' => [
+        $s->action('open')->label('Open pages')->url('/admin/pages')->link(),
+        $s->action('export')->label('Export')->handle(fn () => Effects::make()->notify('Queued')),
+    ],
+], $children);
+```
+
+**A linked section.** `'url' => '/admin/orders'` makes the whole section one link, like a
+linked `Stat`: a same-origin path is an Inertia visit, an off-origin URL or `mailto:` a
+native navigation, and `'openUrlInNewTab' => true` opens it in a new tab (no effect without
+`'url'`). `'url'` must be a non-empty string and `'openUrlInNewTab'` a bool, or `section()`
+throws. Meant for informational cards: anything interactive inside a linked section —
+header `'actions'`, a `'collapsible'` toggle, fields, tables — sits inside the link, so a
+click on it also navigates. Nested interactive content inside a link is standard HTML
+behavior and is not guarded; keep linked sections read-only.
+
+**Deprecated `'action'`.** The old `'action' => ['label' => …, 'url' => …]` still works
+until 1.0: it raises one `E_USER_DEPRECATED` and is rewritten server-side into
+`'actions'` holding one `url()->link()->size('sm')` action. The look changes — it renders
+with action-link styling (primary color) instead of the old muted link. Combining
+`'action'` and `'actions'` throws; migrate to `'actions' => [$s->action(...)->url(...)->link()]`.
 
 `->columnSpan(int|array $span)` / `->columnStart(int|array $start)` are fluent
 methods on `Field` only (same int-or-breakpoint-object shape, 1-8) — `Node`
@@ -322,8 +414,27 @@ from shared Inertia props.
 | `stat` | `stat(string $label): Stat` | KPI stat card |
 | `chart` | `chart(string $name, string $type, array $opts = []): ChartBuilder` | Creates and registers a chart |
 | `list` | `list(string $name): ListBuilder` | Server-rendered list block — `->items(fn)` returns the rows |
+| `listItem` | `listItem(string $title): ListItem` | Fluent list row for `->items(fn)` — equivalent to the array form |
 | `liveRegion` | `liveRegion(string $name): LiveRegionBuilder` | Display content re-rendered server-side when a form field changes (see below) |
 | `actionsRow` | `actionsRow(array $actions, array $opts = []): Node` | Wraps a list of `ActionBuilder` instances in a `row` node |
+
+#### `list` rows — arrays or `listItem()`
+
+`->items(fn)` returns rows in either form, mixed freely; both serialize to the same item:
+
+```php
+$s->list('recent')->items(fn () => [
+    ['title' => 'Post 1', 'meta' => '2h', 'url' => '/admin/posts/1', 'openUrlInNewTab' => true],
+    $s->listItem('Post 2')->meta('5h')->color('success')->url('/admin/posts/2')->openUrlInNewTab(),
+]);
+```
+
+`'title'` is required, `'color'` is one of `success`/`warning`/`danger`/`muted` (checked at
+serialization for both forms), and `'openUrlInNewTab'` is a bool with no effect without
+`'url'`. Links follow the usual rule: a same-origin path is an Inertia visit, an off-origin
+URL a native navigation. Arrays suit rows mapped from a query; `listItem()` reads better for
+hand-written rows. **Unknown array keys are silently ignored** — a mistyped
+`'newTab'` (the wire key, not the authoring key) does nothing.
 
 #### `liveRegion` — server-rendered content that reacts to form input
 
@@ -389,7 +500,7 @@ Returned by `$s->form(string $name, array $children)`.
 | Method | Signature | Purpose |
 |---|---|---|
 | `record` | `record(array $record): self` | Pre-fills the form with initial data (lands in page props) |
-| `onSubmit` | `onSubmit(Closure $handler): self` | Handler called on form submit; receives `ActionCtx`, returns `Effects` |
+| `onSubmit` | `onSubmit(Closure $handler): self` | Handler called on form submit; receives `ActionCtx` and returns `Effects` — or a URL string, which becomes a plain redirect (see [Effects vs server redirect vs string href](#effects-vs-server-redirect-vs-string-href--which-to-return)) |
 | `guardUnsaved` | `guardUnsaved(bool $enabled): self` | Per-form override of the unsaved-changes navigation guard (panel default applies when not called) |
 
 The `onSubmit` handler follows the same signature as action handlers — see **Action handler context** below.
@@ -434,6 +545,17 @@ and the record-URL row link.
 - `embedded(true)` is the stronger one: it drops the whole toolbar **including filters**,
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
+
+**What a row carries to the client** — an allowlist, never the full database row: the
+record key, the visible declared columns (toggleable and `hiddenByDefault()` columns
+included), the `groups()` column, and the `_recordUrl` / `_tooltips` / `_descriptions`
+meta. Undeclared attributes, eager-loaded relations and `->hidden()` / `visible(false)`
+columns stay on the server. So a row-action URL template (`{field}`), a row-action
+`hiddenIf()` / `disabledIf()`, or a `needs: ['row']` handler sees only those fields — to
+use another one, declare it as a column, or load the record by `$ctx->row['id']` in the
+handler (`$ctx->row` comes from the client; re-read anything you authorize on). Selection,
+reorder and inline edit identify rows by `id`, so a model keyed otherwise (uuid primary
+key) needs an `id` attribute.
 
 #### `groups()` — row grouping
 
@@ -540,11 +662,33 @@ to the cell value in display mode for any kind (boolean ignores them), and insid
 inline editor for text / number / select columns. Typical use:
 `Column::make('price')->numberInput()->step('0.01')->suffix('USD')`.
 
+**Badges.** `badge()` maps a stored value to its text and color, keyed by the raw value. It
+takes one of three forms, on `Column` and on `displayValue(...)` alike:
+
+- an inline map — `['in_progress' => ['label' => __('In progress'), 'color' => Color::Warning]]`.
+  Both keys are optional, so `['color' => ...]` or `['label' => ...]` alone works;
+- an enum class — `badge(OrderStatus::class)` reads `HasLabel`/`HasColor` from
+  `Tbtop\Admin\Contracts\` (Filament-compatible signatures), keys by `->value` (`->name` for a
+  pure enum) and falls back to the case name for the label. `displayValue($order->status)`
+  accepts the enum instance directly;
+- the color-only map `['paid' => Color::Success]` — **deprecated, removed in 1.0**. Each call
+  using it raises one `E_USER_DEPRECATED` (Laravel logs it to the `deprecations` channel).
+  Write `['paid' => ['color' => Color::Success]]` instead.
+
+A value missing from the map shows as stored, in gray. An unknown descriptor key (`'colour'`),
+an empty label or a non-string color throws `InvalidArgumentException`. Keys must match what
+the row serializes to: a boolean cast arrives as `true`/`false`, so map a computed value
+instead:
+
 ```php
 // from apps/demo/app/Admin/Pages/PostsIndexPage.php
-Column::make('published')
+Column::make('status')
     ->label('Status')
-    ->badge(['1' => Color::Success, '0' => Color::Gray])
+    ->formatUsing(fn ($value, Post $post) => $post->published ? 'published' : 'draft')
+    ->badge([
+        'published' => ['label' => 'Live', 'color' => Color::Success],
+        'draft' => ['label' => 'Draft'],
+    ])
     ->toggleable(),
 
 Column::make('published_at')
@@ -569,7 +713,7 @@ persist in the URL under `t[{table}][colSearch][{column}]`, alongside `filters`/
 ### ActionBuilder
 
 Instantiate via `$s->action(string $name)`. Every action needs exactly one spec method
-(`visit`, `submit`, `handle`, `modal`, or `custom`) — calling two throws.
+(`url`, `submit`, `handle`, `modal`, or `custom`) — calling two throws.
 
 > **Full method list: [api/actions.md](./api/actions.md)** — generated from source. The
 > table below covers the spec methods and the ones with real gotchas; styling helpers
@@ -580,7 +724,8 @@ Instantiate via `$s->action(string $name)`. Every action needs exactly one spec 
 | `label` | `label(string $label): self` | Button label |
 | `color` | `color(string $color): self` | Button color, e.g. `'primary'`, `'danger'` |
 | `keybinding` | `keybinding(string $keys): self` | Keyboard shortcut, e.g. `'mod+s'` |
-| `visit` | `visit(string $href, bool $newTab = false): self` | **Spec.** Client-side navigation to a static URL; `$newTab` opens it in a new browser tab instead |
+| `url` | `url(string $href): self` | **Spec.** Client-side navigation to a static URL (`{row.*}` templates resolve per row). Unlike `url()` on nav items, commands and stats it is not a setter: a second spec throws. Not `link()`, which only styles the trigger |
+| `openUrlInNewTab` | `openUrlInNewTab(bool $condition = true): self` | Opens the `url()` target in a new browser tab; call order does not matter, no effect without `url()` |
 | `submit` | `submit(?string $form = null): self` | **Spec.** Submit a form; optional form name (defaults to the enclosing form) |
 | `handle` | `handle(Closure $handler, array $needs = []): self` | **Spec.** Server action handler; `$needs` declares payload sources (`'form'`\|`'row'`\|`'selection'`) |
 | `modal` | `modal(string $title, Node\|FormBuilder\|JsonSerializable\|null $body = null, ?string $description = null): self` | **Spec.** Opens a modal dialog |
@@ -639,8 +784,8 @@ for a server action; always go through `$s->action()` or a preset that does.
 
 | Preset | Signature | Shape |
 |---|---|---|
-| `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', string $title = 'Edit record', ?string $saveName = null): ActionBuilder` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
-| `CreateAction` | `make(S $s, FormBuilder $form, Closure $storeUsing, array $defaultRecord = [], string $name = 'create', string $title = 'Create record'): ActionBuilder` | Modal, no `query` — the form's own defaults reach the client via the normal `collectedForms()` path. `$form` holds fields only; the helper appends an inner Store+Cancel `actionsRow`. `$storeUsing` runs the insert (void → notify+closeModal+refreshTable) |
+| `EditAction` | `make(S $s, FormBuilder $form, Closure $loadUsing, Closure $saveUsing, string $name = 'edit', ?string $title = null, ?string $saveName = null): ActionBuilder` — `null` title falls back to the translated `tbtop-admin::admin.edit.title` | Modal + `query` (preload). `$form` holds fields only — the helper appends an inner Save+Cancel `actionsRow`. `$loadUsing` keys must match field names; `$saveUsing` runs the update (void → notify+closeModal+refreshTable) |
+| `CreateAction` | `make(S $s, FormBuilder $form, Closure $storeUsing, array $defaultRecord = [], string $name = 'create', ?string $title = null): ActionBuilder` — `null` title falls back to the translated `tbtop-admin::admin.create.title` | Modal, no `query` — the form's own defaults reach the client via the normal `collectedForms()` path. `$form` holds fields only; the helper appends an inner Store+Cancel `actionsRow`. `$storeUsing` runs the insert (void → notify+closeModal+refreshTable) |
 | `ViewAction` | `make(S $s, Closure $loadUsing, Closure $render, string $name = 'view', string $title = 'View record'): ActionBuilder` | Modal + `query` (preload); close-only, no save. `$render` builds the body **once at author time** — bind live per-row values with `S::displayValue(null)->field($name)` nodes resolved client-side from `$loadUsing`'s result |
 | `DeleteAction` | `make(S $s, Closure $using, string $name = 'delete', bool $bulk = false): ActionBuilder` | Danger + confirm server action; `$using` deletes. `bulk: true` switches to `needs: ['selection']` (empty selection → benign notify) |
 | `ReplicateAction` | `make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder` | Server action; `$using` clones. No auto-redirect — return a `redirect` effect from `$using` for edit-after-clone |
@@ -650,7 +795,7 @@ for a server action; always go through `$s->action()` or a preset that does.
 `DeleteAction` in a row and a bulk action, straight from the demo:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:213-226
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
     Post::whereKey($ctx->row['id'] ?? null)->delete();
 }),
@@ -665,7 +810,7 @@ DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (Act
 `ReplicateAction` returns a `redirect` from its own closure to edit the clone:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:202-211
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
     $clone = Post::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->replicate();
     $clone->slug = $clone->slug.'-copy-'.uniqid();
@@ -679,7 +824,7 @@ ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
 `->slideOver()`:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:52-71
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 CreateAction::make(
     $s,
     form: $s->form('quickCreatePost', [
@@ -703,7 +848,7 @@ CreateAction::make(
 `field()`-bound `displayValue` blocks that resolve against `loadUsing`'s result per row:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:154-170
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 ViewAction::make(
     $s,
     name: 'viewPost',
@@ -724,15 +869,15 @@ ViewAction::make(
 
 #### `FormActions` — form-footer button presets
 
-`FormActions` removes the boilerplate `actionsRow([... submit() ..., ... visit() ...])` at
+`FormActions` removes the boilerplate `actionsRow([... submit() ..., ... url() ...])` at
 the bottom of a form. Two entry points:
 
 - **`FormActions::save($s, $label = 'Save'): ActionBuilder`** — a single primary submit
   button (with the `mod+s` keybinding). Returns a chainable `ActionBuilder`, so wrap it in
   your own `actionsRow` or chain more on it.
 - **`FormActions::saveCancel($s, $cancelUrl, $saveLabel = 'Save', $extra = []): Node`** — a
-  complete footer `Node`: a primary Save submit plus a Cancel button that `visit()`s
-  `$cancelUrl`. `$extra` is a list of additional `ActionBuilder`s appended to the row. Drop
+  complete footer `Node`: a primary Save submit plus a Cancel button that navigates
+  to `$cancelUrl` via `url()`. `$extra` is a list of additional `ActionBuilder`s appended to the row. Drop
   the returned `Node` straight into the form's children.
 
 ```php
@@ -743,9 +888,10 @@ $s->form('post', [
 ])
 ```
 
-The hand-rolled version this replaces is `PostCreatePage.php:31-35` (a `save` submit + a
-`cancel` visit inside an `actionsRow`). Because `FormActions::save` routes through `$s`, the
-submit action is registered like any other — the registry mandate above holds.
+What this replaces is a hand-rolled `actionsRow` holding a `save` submit and a `cancel`
+`url()` action; the demo pages have all migrated to the helper. Because `FormActions::save` routes
+through `$s`, the submit action is registered like any other — the registry mandate above
+holds.
 
 `RecordAction` (same namespace) is the shared internal the server presets build on:
 `server()` / `bulk()` wire the server-action-with-default-tail, and a void/null closure
@@ -754,7 +900,7 @@ falls back to that tail. You rarely call it directly.
 #### Worked example — `EditAction` modal with load/save
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:174-200
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 EditAction::make(
     $s,
     name: 'editPublication',
@@ -819,7 +965,8 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 `value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
-clamped again client-side**. Call `->toNode()` to embed a `Stat` in a layout node.
+clamped again client-side**. `url($href)` makes the whole card a link (a dashboard KPI
+that opens its list); `openUrlInNewTab()` opens it in a new browser tab. Call `->toNode()` to embed a `Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php
@@ -925,7 +1072,7 @@ navigation decision is made**:
 |---|---|---|
 | Stay on the page, show a toast / refresh a table | `Effects::make()->notify(...)` (no redirect) | The common case — save in place |
 | Navigate after a server decision | `Effects::make()->redirect($url)` | You computed the URL from data only the server has (the new record's id) |
-| Navigate to a fixed, known URL on a **button** (no server work) | `->visit($url)` on the action (a spec, not a handler) | A Cancel/Back button — pure client navigation, no round-trip |
+| Navigate to a fixed, known URL on a **button** (no server work) | `->url($url)` on the action (a spec, not a handler) | A Cancel/Back button — pure client navigation, no round-trip |
 | Redirect straight out of `onSubmit` | **return a string** (the URL) | A create form that lands on the new edit page |
 
 The two redirect forms are not interchangeable:
@@ -934,7 +1081,7 @@ The two redirect forms are not interchangeable:
 the freshly-created record:
 
 ```php
-// apps/demo/app/Admin/Pages/PostCreatePage.php:49-53
+// apps/demo/app/Admin/Pages/PostCreatePage.php
 ->onSubmit(function (ActionCtx $ctx): string {
     $post = Post::create($ctx->form);
 
@@ -943,13 +1090,13 @@ the freshly-created record:
 ```
 
 `MediaNewPage` returns a string the same way (`return '/admin/media';`,
-`apps/demo/app/Admin/Pages/MediaNewPage.php:51`).
+`apps/demo/app/Admin/Pages/MediaNewPage.php`).
 
 **A handler returning a `redirect` effect** — used by the edit page's delete action, which
 notifies *and* navigates:
 
 ```php
-// apps/demo/app/Admin/Pages/PostEditPage.php:52-56
+// apps/demo/app/Admin/Pages/PostEditPage.php
 ->handle(function (ActionCtx $ctx): Effects {
     Post::whereKey($ctx->request->route('post'))->delete();
 
@@ -958,7 +1105,7 @@ notifies *and* navigates:
 ```
 
 Rule of thumb: a **string return** is a bare redirect (no toast). An **`Effects` redirect**
-lets you chain a `notify` (or `refreshTable`) alongside the navigation. A **`visit()` spec**
+lets you chain a `notify` (or `refreshTable`) alongside the navigation. A **`url()` spec**
 is for buttons that never touch the server. Do not invent a new effect to navigate — the
 three forms above cover every case (the effect set is closed).
 
@@ -974,13 +1121,13 @@ the same wire shape:
 Use for a single comparison. The operators are `=` `!=` `>` `>=` `<` `<=`:
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:34-35
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 $s->date('published_at')->label('Published at')->rules('nullable|date')
     ->hiddenIf('published', '=', false),   // hide the date until "published" is on
 ```
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:74-75 (inside a repeater)
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php (inside a repeater)
 $s->text('url')->label('URL')
     ->hiddenIf('type', '!=', 'link'),      // only show URL when type === 'link'
 ```
@@ -989,7 +1136,7 @@ The same shorthand drives a row action's visibility — the demo hides the publi
 on rows that are already drafts:
 
 ```php
-// apps/demo/app/Admin/Pages/PostsIndexPage.php:152
+// apps/demo/app/Admin/Pages/PostsIndexPage.php
 ->label('Publication')->hiddenIf('published', '=', false)
 ```
 
@@ -999,7 +1146,7 @@ Use when you need a combinator (AND / OR / NOT) or a leaf the shorthand has no s
 (`truthy`, `empty`, `notEmpty`, `in`, `notIn`):
 
 ```php
-// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php:36-39
+// apps/demo/app/Admin/Pages/Concerns/PostFormFields.php
 Rating::make('rating')->label('Rating')->max(5)
     ->set('min', 0)->set('step', 0.1)
     ->rules('nullable|numeric|min:0|max:5')

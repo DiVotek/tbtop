@@ -82,8 +82,8 @@ it('drops a when(false) filter from a table', function () {
 it('drops a when(false) action from every table action slot', function (string $method, string $key) {
     $s = new S;
     $table = (new TableBuilder('t'))->$method([
-        $s->action('gone')->visit('/')->when(false),
-        $s->action('kept')->visit('/'),
+        $s->action('gone')->url('/')->when(false),
+        $s->action('kept')->url('/'),
     ]);
 
     $names = array_column(encodeWhen($table->toNode())['options'][$key], 'name');
@@ -261,10 +261,10 @@ it('resolves the when closure once per page assembly however often it is read', 
 it('serializes a when(true) node identically to one with no when at all', function () {
     $s = new S;
 
-    $plain = $s->section(['title' => 'S'], [$s->text('a'), $s->action('go')->visit('/')]);
+    $plain = $s->section(['title' => 'S'], [$s->text('a'), $s->action('go')->url('/')]);
     $whenTrue = $s->section(['title' => 'S'], [
         $s->text('a')->when(true),
-        $s->action('go')->visit('/')->when(true),
+        $s->action('go')->url('/')->when(true),
     ]);
 
     expect(json_encode($whenTrue))->toBe(json_encode($plain));

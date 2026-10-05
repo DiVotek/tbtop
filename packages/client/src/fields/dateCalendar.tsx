@@ -40,7 +40,6 @@ export function DateCalendar({
 			selected={selected}
 			onSelect={onSelect}
 			disabled={disabled}
-			autoFocus
 		/>
 	);
 }

@@ -20,7 +20,7 @@ this repository uses them.
 
 ## Supported versions
 
-Tabletop is pre-1.0. Both packages ship in lockstep from a single version
-(see `packages/client/package.json`). Only the latest published `0.2.x`
-release is supported — please upgrade before reporting an issue against an
-older version.
+Tabletop is pre-1.0. Both packages ship in lockstep from a single version —
+the `version` field in `packages/client/package.json` is the source of truth.
+Only the latest published release is supported; please upgrade before
+reporting an issue against an older version.

@@ -24,13 +24,13 @@ it('localeSwitcher: carries the variant into the options when given', function (
 });
 
 it('visit: omits newTab by default', function (): void {
-    $node = (new S)->action('go')->visit('/x')->toNode();
+    $node = (new S)->action('go')->url('/x')->toNode();
 
     expect($node->options['spec'])->toBe(['type' => 'visit', 'href' => '/x']);
 });
 
 it('visit: carries newTab into the spec when requested', function (): void {
-    $node = (new S)->action('site')->visit('https://x.test', newTab: true)->toNode();
+    $node = (new S)->action('site')->url('https://x.test')->openUrlInNewTab()->toNode();
 
     expect($node->options['spec'])->toBe([
         'type' => 'visit',
@@ -40,14 +40,14 @@ it('visit: carries newTab into the spec when requested', function (): void {
 });
 
 it('badge: adds a count and tint to the action options', function (): void {
-    $node = (new S)->action('inbox')->badge(3, Color::Danger)->visit('/x')->toNode();
+    $node = (new S)->action('inbox')->badge(3, Color::Danger)->url('/x')->toNode();
 
     expect($node->options['badge'])->toBe('3')
         ->and($node->options['badgeColor'])->toBe('danger');
 });
 
 it('badge: omits badgeColor when no color is given', function (): void {
-    $node = (new S)->action('inbox')->badge(5)->visit('/x')->toNode();
+    $node = (new S)->action('inbox')->badge(5)->url('/x')->toNode();
 
     expect($node->options['badge'])->toBe('5')
         ->and($node->options)->not->toHaveKey('badgeColor');

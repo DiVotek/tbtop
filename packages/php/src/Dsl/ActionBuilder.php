@@ -14,7 +14,7 @@ use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
  * Fluent action surface — DSL boundary, method count is the API.
- * Exactly one spec per action: visit | submit | server (handle) | modal | custom.
+ * Exactly one spec per action: url | submit | handle | modal | custom.
  */
 final class ActionBuilder implements JsonSerializable
 {
@@ -42,6 +42,8 @@ final class ActionBuilder implements JsonSerializable
 
     private bool $withoutValidation = false;
 
+    private bool $openUrlInNewTab = false;
+
     private ?string $authorizeAbility = null;
 
     private mixed $authorizeArg = null;
@@ -51,6 +53,11 @@ final class ActionBuilder implements JsonSerializable
     ];
 
     private const BUTTON_SIZES = ['sm', 'md', 'lg'];
+
+    /** Wire spec type → the authoring method that sets it, for error texts. */
+    private const SPEC_METHODS = [
+        'visit' => 'url', 'submit' => 'submit', 'server' => 'handle', 'modal' => 'modal', 'custom' => 'custom',
+    ];
 
     public function __construct(public readonly string $name) {}
 
@@ -89,18 +96,44 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
-    /** Visit spec: navigates to $href on click, one of the mutually exclusive action specs. @param  bool  $newTab  Open the target in a new browser tab. */
-    public function visit(string $href, bool $newTab = false): self
+    /**
+     * Navigation spec: navigates to $href on click ({row.*} templates resolve per
+     * row). One of the mutually exclusive action specs — unlike url() on
+     * NavItem/Command/Stat it is not a setter: a second url(), or url() next
+     * to submit/handle/modal/custom, throws. Not to be confused with link(),
+     * which only styles the trigger.
+     */
+    public function url(string $href): self
     {
-        return $this->setSpec(array_filter([
-            'type' => 'visit',
-            'href' => $href,
-            'newTab' => $newTab ?: null,
-        ], static fn (mixed $v): bool => $v !== null));
+        return $this->setSpec(['type' => 'visit', 'href' => $href]);
+    }
+
+    /** Open url() in a new browser tab instead of navigating in place. Order-independent; no effect without url(). */
+    public function openUrlInNewTab(bool $condition = true): self
+    {
+        $this->openUrlInNewTab = $condition;
+
+        return $this;
     }
 
     /**
-     * Submit spec: one of the mutually exclusive action specs (visit/submit/
+     * Deprecated (removed in 1.0): use url(), plus openUrlInNewTab() for a new tab.
+     *
+     * @deprecated Use url() and openUrlInNewTab().
+     */
+    public function visit(string $href, bool $newTab = false): self
+    {
+        $canon = $newTab ? 'url()->openUrlInNewTab()' : 'url()';
+        trigger_error(
+            "ActionBuilder::visit() is deprecated and will be removed in 1.0. Use {$canon} instead.",
+            E_USER_DEPRECATED,
+        );
+
+        return $this->url($href)->openUrlInNewTab($newTab);
+    }
+
+    /**
+     * Submit spec: one of the mutually exclusive action specs (url/submit/
      * handle/modal/custom) — setting a second one throws. With $form omitted,
      * submits the form the action is rendered inside; pass a form name to
      * target a different form on the same page.
@@ -111,7 +144,7 @@ final class ActionBuilder implements JsonSerializable
     }
 
     /**
-     * Server spec: one of the mutually exclusive action specs. $handler runs
+     * Handle spec: one of the mutually exclusive action specs. $handler runs
      * server-side and must return an Effects instance (see Actions\Effects) —
      * a non-Effects return is treated as no effects. $needs declares which
      * payload sources are collected and passed to $handler: 'form' (validated
@@ -143,7 +176,7 @@ final class ActionBuilder implements JsonSerializable
 
     /**
      * Adds a confirmation dialog before the action fires. Composes with any
-     * spec (visit/submit/handle/modal/custom) — unlike those, it is not
+     * spec (url/submit/handle/modal/custom) — unlike those, it is not
      * itself a spec and doesn't participate in the "exactly one" exclusivity.
      */
     public function confirm(string $title, ?string $description = null): self
@@ -157,7 +190,7 @@ final class ActionBuilder implements JsonSerializable
     }
 
     /**
-     * Modal spec: one of the mutually exclusive action specs (visit/submit/
+     * Modal spec: one of the mutually exclusive action specs (url/submit/
      * handle/modal/custom) — calling a second spec method on the same
      * action throws. $body renders inside the dialog; pass a FormBuilder to
      * collect input, or omit it for a plain content/confirmation modal.
@@ -315,7 +348,7 @@ final class ActionBuilder implements JsonSerializable
     public function toNode(): Node
     {
         if ($this->spec === null) {
-            throw new LogicException("Action \"{$this->name}\" needs one of visit/submit/handle/modal/custom.");
+            throw new LogicException("Action \"{$this->name}\" needs one of url/submit/handle/modal/custom.");
         }
 
         if ($this->modalSize !== null) {
@@ -339,6 +372,11 @@ final class ActionBuilder implements JsonSerializable
                 throw new LogicException("query() is only valid on modal actions (action \"{$this->name}\").");
             }
             $spec = [...$spec, 'query' => true, 'queryNeeds' => $this->queryNeeds];
+        }
+
+        // Appended after href and only when set, so visit nodes stay byte-identical.
+        if ($this->openUrlInNewTab && ($spec['type'] ?? '') === 'visit') {
+            $spec = [...$spec, 'newTab' => true];
         }
 
         // Only written when disabled, so existing nodes stay byte-identical.
@@ -367,7 +405,7 @@ final class ActionBuilder implements JsonSerializable
     private function setSpec(array $spec): self
     {
         if ($this->spec !== null) {
-            throw new LogicException("Action \"{$this->name}\" already has a spec ({$this->spec['type']}).");
+            throw new LogicException("Action \"{$this->name}\" already has a spec (".self::SPEC_METHODS[$this->spec['type']].').');
         }
         $this->spec = $spec;
 

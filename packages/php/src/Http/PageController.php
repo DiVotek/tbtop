@@ -54,6 +54,13 @@ final class PageController
             $props['headerActions'] = $resolved->headerActionNodes();
         }
 
+        // Lets the rail-sidebar shell find the active nav group on pages the
+        // sidebar cannot list (route params) or whose URL sits under no nav item.
+        $navGroup = $resolved->page::nav()['group'] ?? null;
+        if ($navGroup !== null && $navGroup !== '') {
+            $props['navGroup'] = (string) $navGroup;
+        }
+
         if ($panel->breadcrumbs()) {
             $props['breadcrumbs'] = BreadcrumbsBuilder::build($resolved->page, $panel);
         }

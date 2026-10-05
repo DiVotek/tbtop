@@ -25,7 +25,7 @@ final class MethodClassifier
             'markdown', 'displayDivider', 'displayAlert', 'displayValue',
             'displayImage', 'displayRichtext', 'displayKeyValue', 'navMenu',
             'userMenu', 'logo', 'localeSwitcher', 'spacer', 'unsavedIndicator',
-            'notifications', 'themeToggle', 'form', 'table', 'stat', 'list',
+            'notifications', 'themeToggle', 'form', 'table', 'stat', 'list', 'listItem',
             'chart', 'action', 'liveRegion', 'actionsRow', 'inFilter', 'register',
         ],
         'Tbtop\Admin\Notifications\Notification' => ['sendToDatabase'],

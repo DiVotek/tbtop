@@ -24,16 +24,17 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `defaultLocale(string $locale): static` | Default admin UI locale, overriding the first entry of locales(). |
 | `defaultThemeMode(string $mode): static` | Initial theme when the visitor has no saved preference. |
 | `density(string $mode): static` | Shell density: 'compact' tightens control heights, spacing, and the sidebar width. |
+| `discoverPages(string $in, string $for): static` | Adds a recursive page discovery directory and its Composer-autoloadable namespace; rebuild the page cache after adding pages. |
 | `guard(string $guard): static` | Auth guard checked by authStack(). Defaults to 'web'. |
 | `id(string $id): static` | Feeds the route-name namespace (`tbtop.{id}.*`) — changing it on an existing panel renames every route. |
 | `locales(array $locales): static` | Admin UI locales. First entry is the default unless defaultLocale() is set. |
 | `maxContentWidth(string $width): static` | Center page content to a Tailwind max-w token (e.g. '7xl'). |
 | `middleware(array $middleware): static` | Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}` on top at read time. |
-| `navigation(string $navigation): static` | Shell navigation layout: 'sidebar' (default), 'topbar', or 'topbar-sidebar' (full-width bar with a sidebar beneath it). The client renders the same chrome blocks; only their arrangement changes. All layouts collapse to a burger drawer on mobile. |
+| `navigation(string $navigation): static` | Shell navigation layout: 'sidebar' (default), 'topbar', 'topbar-sidebar' (full-width bar with a sidebar beneath it), or 'rail-sidebar' (a rail of labeled nav-group icons beside a sidebar listing only the active group). The client renders the same chrome blocks; only their arrangement changes. All layouts collapse to a burger drawer on mobile. |
 | `navigationGroups(array $groups): static` | Per-group nav metadata as a list of NavGroup::make('Content')->icon('file-text') ->collapsible(), matched to a page's nav()['group'] by that label. |
 | `navigationItems(array $items): static` | Extra always-shown nav entries with no page/gate (e.g. an external link), merged into the built tree alongside page-derived items, grouped by label the same way navigationGroups() matches groups. |
 | `notificationsPolling(?int $seconds): static` | Seconds between header-bell polls for new notifications. null disables auto-polling (the bell still fetches when opened). Mirrors Filament's databaseNotificationsPolling(); only active when the chrome renders a notifications bell. |
-| `pages(array $pages): static` | Page classes that get routes registered for this panel. |
+| `pages(array $pages): static` | Replaces manual pages; discovery merges them first and removes duplicate classes. |
 | `prefix(string $prefix): static` | URL path prefix the panel is mounted under. Defaults to the panel id when unset — see getPrefix(). |
 | `rootView(string $view): static` | Blade root view rendered on first visit (per-panel Vite entry escape hatch). |
 | `unsavedGuard(bool $enabled = true): static` | Default for the unsaved-changes navigation guard on forms. |
@@ -57,8 +58,10 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 |---|---|
 | `collapsed(bool $collapsed = true): self` | Start the group collapsed (implies collapsible). |
 | `collapsible(bool $collapsible = true): self` | Render the group header as a collapse toggle. |
+| `description(Closure\|string $description): self` | One muted line under the group's title, in every navigation layout: the rail-sidebar column, the sidebar heading, and the top of a dropdown menu. Pass a Closure for the same request-time translation reason as label(). |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
 | `label(Closure\|string $label): self` | Translated header text shown in the sidebar. Pass a Closure to defer translation to request time — panel config is built once (singleton), so a bare __() there would freeze on the first request's locale. |
+| `sections(array $sections): self` | Named sections inside the group, in render order, as key => heading. Pages opt in with nav()['section'] => key; items without a section render first, unheaded. Pass Closure labels for the same request-time translation reason as label(). |
 
 ## NavItem
 
@@ -68,7 +71,9 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 |---|---|
 | `group(string $group): self` | Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
-| `newTab(bool $newTab = true): self` | Open url() in a new browser tab instead of navigating in place. |
+| `newTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
+| `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. |
+| `section(string $section): self` | Section key within its group, declared on NavGroup::sections() (nav context only). Ignored for ungrouped items and in the user menu. |
 | `sort(int $order): self` | Sort position within its group (nav context only). |
 | `url(string $url): self` | Destination URL — an internal path or an external link. |
 
@@ -95,5 +100,6 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `handler(string $name): self` | Run a client handler registered via definePaletteCommand() instead of navigating. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
 | `keywords(array $keywords): self` | Extra search terms beyond the label. |
-| `openInNewTab(bool $newTab = true): self` | Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). |
+| `openInNewTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
+| `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). |
 | `url(string $url): self` | Navigate to a URL — an internal path (Inertia visit) or an external link. |

@@ -8,6 +8,7 @@ use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\CollectsRules;
 use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Validation\ConstraintMap;
+use UnitEnum;
 
 /**
  * Fluent column descriptor for TableBuilder.
@@ -480,16 +481,19 @@ final class Column implements JsonSerializable
     }
 
     /**
-     * Render the cell as a colored badge; sets kind = 'badge'. A value with no
-     * entry in $colors still renders (gray/default badge styling), it just
-     * doesn't get its own color.
+     * Render the cell as a colored badge; sets kind = 'badge'. $map keys by the
+     * stored value: an inline map ['new' => ['label' => 'New', 'color' =>
+     * Color::Info]] (both keys optional), or an enum class (HasLabel/HasColor,
+     * keyed by ->value, ->name for a pure enum; no label → the case name). A
+     * value without a label shows as stored, without a color in gray. The
+     * color-only map ['paid' => Color::Success] is deprecated (removed in 1.0).
      *
-     * @param  array<string, Color|string>  $colors  value → Color|string
+     * @param  array<array-key, array{label?: string|null, color?: Color|string|null}|Color|string>|class-string<UnitEnum>  $map  value → descriptor (or a deprecated bare color), or an enum class
      */
-    public function badge(array $colors): static
+    public function badge(array|string $map): static
     {
         $this->kind = 'badge';
-        $this->kindMeta['badge'] = KindMetaBuilder::badgeMeta($colors);
+        $this->kindMeta['badge'] = KindMetaBuilder::badgeMeta($map);
 
         return $this;
     }
@@ -725,13 +729,19 @@ final class Column implements JsonSerializable
 
     /**
      * Static options for an editable select column. Uses the same {value, label}
-     * normalization the Select field emits so the wire shape matches.
+     * normalization the Select field emits so the wire shape matches. An enum
+     * class expands to its cases (value = ->value, ->name for a pure enum;
+     * label from HasLabel, else the case name); descriptions are dropped. No
+     * validation is implied: add Rule::enum() (backed) or
+     * Rule::in(array_column(X::cases(), 'name')) (pure) via rules().
      *
-     * @param  list<array{value: mixed, label: string}>  $options
+     * @param  list<array{value: mixed, label: string}>|class-string<UnitEnum>  $options
      */
-    public function options(array $options): static
+    public function options(array|string $options): static
     {
-        $this->editOptions = OptionList::normalize($options);
+        $this->editOptions = is_string($options)
+            ? EnumOptions::selectOptions($options)
+            : OptionList::normalize($options);
 
         return $this;
     }

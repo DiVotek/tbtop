@@ -3,6 +3,7 @@ import { cn } from "../../lib/cn";
 import { useChartColors } from "../../lib/useChartColors";
 import { resolveColorClasses } from "../../structure/table/colorRegistry";
 import { resolveIcon } from "../../structure/table/iconRegistry";
+import { CardLink } from "../cardLink";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 import { Sparkline } from "./Sparkline";
 import { type DescriptionColor, StatDescription, type TrendDirection } from "./StatDescription";
@@ -32,6 +33,9 @@ export interface StatDescriptor {
 	sparkline?: number[];
 	sparklinePosition?: SparklinePosition;
 	sparklineColor?: SparklineColorToken;
+	/** Makes the whole card a link. */
+	url?: string;
+	newTab?: boolean;
 }
 
 const DELTA_ICONS: Record<DeltaDirection, React.ElementType> = {
@@ -102,16 +106,22 @@ export function StatCard({ options }: StatCardProps) {
 		</div>
 	);
 
-	if (tooltip) {
-		return (
-			<Tooltip>
-				<TooltipTrigger asChild>{card}</TooltipTrigger>
-				<TooltipContent>{tooltip}</TooltipContent>
-			</Tooltip>
-		);
-	}
+	const content = tooltip ? (
+		<Tooltip>
+			<TooltipTrigger asChild>{card}</TooltipTrigger>
+			<TooltipContent>{tooltip}</TooltipContent>
+		</Tooltip>
+	) : (
+		card
+	);
 
-	return card;
+	return options.url === undefined ? (
+		content
+	) : (
+		<CardLink url={options.url} newTab={options.newTab === true} testId="stat-link">
+			{content}
+		</CardLink>
+	);
 }
 
 interface StatHeaderProps {

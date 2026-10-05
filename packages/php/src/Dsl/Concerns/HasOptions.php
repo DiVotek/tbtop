@@ -2,6 +2,8 @@
 
 namespace Tbtop\Admin\Dsl\Concerns;
 
+use Tbtop\Admin\Dsl\EnumOptions;
+
 /**
  * Shared {value, label} options() for the fixed-option fields (Select, Radio,
  * CheckboxList, ToggleButtons, InFilter). Values are string-normalized so the
@@ -27,10 +29,19 @@ trait HasOptions
      * subtitle, html) only renders on Select; other adopters (Radio,
      * CheckboxList, ToggleButtons, InFilter) render only description/disabled.
      *
-     * @param  list<array{value: mixed, label: string, description?: string, disabled?: bool, display?: array<string, string>}>  $options
+     * An enum class expands to {value, label, description?}: value = ->value
+     * (->name for a pure enum), label from HasLabel else the case name,
+     * description from HasDescription. An int-backed enum still ships string
+     * values, so seed record()/default() with strings. No validation is
+     * implied: add Rule::enum(X::class) for a backed enum, or
+     * Rule::in(array_column(X::cases(), 'name')) for a pure one.
+     *
+     * @param  list<array{value: mixed, label: string, description?: string, disabled?: bool, display?: array<string, string>}>|class-string<\UnitEnum>  $options
      */
-    public function options(array $options): static
+    public function options(array|string $options): static
     {
-        return $this->set('options', self::normalizeOptionValues($options));
+        $list = is_string($options) ? EnumOptions::options($options) : $options;
+
+        return $this->set('options', self::normalizeOptionValues($list));
     }
 }

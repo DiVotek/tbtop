@@ -25,6 +25,12 @@ final class NavGroup
     /** @var string|(\Closure(): string)|null */
     private string|\Closure|null $label = null;
 
+    /** @var string|(\Closure(): string)|null */
+    private string|\Closure|null $description = null;
+
+    /** @var array<string, string|(\Closure(): string)> */
+    private array $sections = [];
+
     private function __construct(private readonly string $key) {}
 
     public static function make(string $key): self
@@ -42,6 +48,35 @@ final class NavGroup
     public function label(string|\Closure $label): self
     {
         $this->label = $label;
+
+        return $this;
+    }
+
+    /**
+     * One muted line under the group's title, in every navigation layout: the
+     * rail-sidebar column, the sidebar heading, and the top of a dropdown menu.
+     * Pass a Closure for the same request-time translation reason as label().
+     *
+     * @param  string|(\Closure(): string)  $description
+     */
+    public function description(string|\Closure $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    /**
+     * Named sections inside the group, in render order, as key => heading.
+     * Pages opt in with nav()['section'] => key; items without a section
+     * render first, unheaded. Pass Closure labels for the same request-time
+     * translation reason as label().
+     *
+     * @param  array<string, string|(\Closure(): string)>  $sections
+     */
+    public function sections(array $sections): self
+    {
+        $this->sections = $sections;
 
         return $this;
     }
@@ -82,8 +117,22 @@ final class NavGroup
     }
 
     /**
-     * Sparse wire meta merged into the built group: icon/collapsible/collapsed,
-     * each present only when set.
+     * Declared section headings, translated, in declaration order.
+     *
+     * @return array<string, string>
+     */
+    public function getSectionLabels(): array
+    {
+        return array_map(
+            static fn (string|\Closure $label): string => $label instanceof \Closure ? $label() : $label,
+            $this->sections,
+        );
+    }
+
+    /**
+     * Sparse wire meta merged into the built group: icon/collapsible/collapsed/
+     * description, each present only when set. Built per request, so a Closure
+     * description resolves in the request's locale.
      *
      * @return array<string, mixed>
      */
@@ -95,6 +144,9 @@ final class NavGroup
         }
         if ($this->collapsed) {
             $meta['collapsed'] = true;
+        }
+        if ($this->description !== null) {
+            $meta['description'] = $this->description instanceof \Closure ? ($this->description)() : $this->description;
         }
 
         return $meta;

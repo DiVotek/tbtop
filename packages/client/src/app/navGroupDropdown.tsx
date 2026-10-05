@@ -1,10 +1,12 @@
 import { Link } from "@inertiajs/react";
 import { ChevronDownIcon } from "lucide-react";
 import { cn } from "../lib/cn";
+import { isExternalUrl } from "../lib/externalUrl";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuSub,
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
@@ -14,6 +16,7 @@ import { NodeIcon } from "../ui/node-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import type { ChromeData, NavGroup, NavItem } from "./chromeContext";
 import { containsActive, NavItemLink } from "./navGroupSection";
+import { sectionRuns } from "./navSections";
 
 interface NavGroupDropdownProps {
 	group: NavGroup;
@@ -67,9 +70,29 @@ export function NavGroupDropdown({ group, currentUrl, rail = false }: NavGroupDr
 				className="min-w-44"
 				data-testid={`nav-group-menu-${group.key}`}
 			>
-				{group.items.map((item) => (
-					<DropdownNavItem key={item.href} item={item} currentUrl={currentUrl} />
-				))}
+				{group.description !== undefined && (
+					<DropdownMenuLabel
+						className="max-w-64 truncate text-xs font-normal text-muted-foreground"
+						title={group.description}
+						data-testid="nav-group-description"
+					>
+						{group.description}
+					</DropdownMenuLabel>
+				)}
+				{sectionRuns(group).map((run) => [
+					run.heading !== null && (
+						<DropdownMenuLabel
+							key={`section-${run.key}`}
+							className="text-xs text-muted-foreground"
+							data-testid={`nav-section-${group.key}-${run.key}`}
+						>
+							{run.heading}
+						</DropdownMenuLabel>
+					),
+					...run.items.map((item) => (
+						<DropdownNavItem key={item.href} item={item} currentUrl={currentUrl} />
+					)),
+				])}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -198,31 +221,42 @@ function DropdownNavItem({ item, currentUrl }: { item: NavItem; currentUrl: stri
  */
 function RailItemLink({ item, currentUrl }: { item: NavItem; currentUrl: string }) {
 	const active = containsActive(item, currentUrl);
+	const className = cn(
+		"flex size-9 items-center justify-center rounded-md hover:bg-accent",
+		active && "bg-accent",
+	);
+	const glyph = item.icon ? (
+		<NodeIcon icon={item.icon} className="size-4 shrink-0" />
+	) : (
+		<RailItemGlyph label={item.label} />
+	);
+	// Same rule as NavItemLink: new-tab and off-origin hrefs bypass Inertia's router.
+	const link =
+		item.newTab || isExternalUrl(item.href) ? (
+			<a
+				href={item.href}
+				aria-label={item.label}
+				className={className}
+				target={item.newTab ? "_blank" : undefined}
+				rel={item.newTab ? "noopener noreferrer" : undefined}
+			>
+				{glyph}
+			</a>
+		) : (
+			<Link href={item.href} aria-label={item.label} className={className}>
+				{glyph}
+			</Link>
+		);
 	return (
 		<Tooltip>
-			<TooltipTrigger asChild>
-				<Link
-					href={item.href}
-					aria-label={item.label}
-					className={cn(
-						"flex size-9 items-center justify-center rounded-md hover:bg-accent",
-						active && "bg-accent",
-					)}
-				>
-					{item.icon ? (
-						<NodeIcon icon={item.icon} className="size-4 shrink-0" />
-					) : (
-						<RailItemGlyph label={item.label} />
-					)}
-				</Link>
-			</TooltipTrigger>
+			<TooltipTrigger asChild>{link}</TooltipTrigger>
 			<TooltipContent side="right">{item.label}</TooltipContent>
 		</Tooltip>
 	);
 }
 
 /** Fallback glyph for a rail item with no icon: its label's first letter. */
-function RailItemGlyph({ label }: { label: string }) {
+export function RailItemGlyph({ label }: { label: string }) {
 	return (
 		<span
 			className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-muted text-[10px] font-medium uppercase"

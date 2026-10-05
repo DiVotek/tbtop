@@ -83,7 +83,7 @@ final class CurrentPanel
         return $this->config->getBrand();
     }
 
-    /** @return 'sidebar'|'topbar' */
+    /** @return 'sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar' */
     public function navigation(): string
     {
         return $this->config->getNavigation();

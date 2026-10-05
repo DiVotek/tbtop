@@ -44,7 +44,6 @@ export function DaterangeCalendar({
 			disabled={disabled}
 			startMonth={startMonth}
 			endMonth={endMonth}
-			autoFocus
 		/>
 	);
 }

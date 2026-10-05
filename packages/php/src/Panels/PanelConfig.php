@@ -18,7 +18,7 @@ final class PanelConfig
     use ConfiguresAppearance;
 
     /** Shell navigation layouts the client can render. */
-    public const NAVIGATIONS = ['sidebar', 'topbar', 'topbar-sidebar'];
+    public const NAVIGATIONS = ['sidebar', 'topbar', 'topbar-sidebar', 'rail-sidebar'];
 
     private string $id = '';
 
@@ -31,6 +31,12 @@ final class PanelConfig
 
     /** @var list<class-string<Page>> */
     private array $pages = [];
+
+    /** @var list<array{in: string, for: string}> */
+    private array $pageDiscoveryRoots = [];
+
+    /** @var list<class-string<Page>>|null */
+    private ?array $resolvedPages = null;
 
     /** @var list<string> */
     private array $locales = ['en'];
@@ -95,10 +101,24 @@ final class PanelConfig
         return $this;
     }
 
-    /** Page classes that get routes registered for this panel. @param  list<class-string<Page>>  $pages */
+    /** Replaces manual pages; discovery merges them first and removes duplicate classes. @param  list<class-string<Page>>  $pages */
     public function pages(array $pages): static
     {
         $this->pages = $pages;
+        $this->resolvedPages = null;
+
+        return $this;
+    }
+
+    /** Adds a recursive page discovery directory and its Composer-autoloadable namespace; rebuild the page cache after adding pages. */
+    public function discoverPages(string $in, string $for): static
+    {
+        if (trim($in) === '' || trim($for, '\\ ') === '') {
+            throw new InvalidArgumentException('Page discovery requires a directory and namespace.');
+        }
+
+        $this->pageDiscoveryRoots[] = ['in' => $in, 'for' => trim($for, '\\')];
+        $this->resolvedPages = null;
 
         return $this;
     }
@@ -144,12 +164,14 @@ final class PanelConfig
     }
 
     /**
-     * Shell navigation layout: 'sidebar' (default), 'topbar', or
-     * 'topbar-sidebar' (full-width bar with a sidebar beneath it). The client
-     * renders the same chrome blocks; only their arrangement changes. All
-     * layouts collapse to a burger drawer on mobile.
+     * Shell navigation layout: 'sidebar' (default), 'topbar',
+     * 'topbar-sidebar' (full-width bar with a sidebar beneath it), or
+     * 'rail-sidebar' (a rail of labeled nav-group icons beside a sidebar
+     * listing only the active group). The client renders the same chrome
+     * blocks; only their arrangement changes. All layouts collapse to a burger
+     * drawer on mobile.
      *
-     * @param  string  $navigation  One of self::NAVIGATIONS ('sidebar'|'topbar'|'topbar-sidebar')
+     * @param  string  $navigation  One of self::NAVIGATIONS ('sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar')
      */
     public function navigation(string $navigation): static
     {
@@ -295,7 +317,41 @@ final class PanelConfig
     /** @return list<class-string<Page>> */
     public function getPages(): array
     {
-        return $this->pages;
+        if ($this->pageDiscoveryRoots === []) {
+            return $this->pages;
+        }
+
+        return $this->resolvedPages ??= $this->getPagesWithDiscovered(
+            app(PageDiscovery::class)->getPages($this->pageDiscoveryRoots),
+        );
+    }
+
+    /** @return list<array{in: string, for: string}> */
+    public function getPageDiscoveryRoots(): array
+    {
+        return $this->pageDiscoveryRoots;
+    }
+
+    /** @param list<class-string<Page>> $discovered @return list<class-string<Page>> */
+    public function getPagesWithDiscovered(array $discovered): array
+    {
+        $pages = array_values(array_unique([...$this->pages, ...$discovered]));
+        $slugs = [];
+        $paths = [];
+        foreach ($pages as $class) {
+            $slug = $class::slug();
+            $path = trim($class::path(), '/');
+            if (isset($slugs[$slug])) {
+                throw new InvalidArgumentException("Panel [{$this->id}] has duplicate page slug [{$slug}]: [{$slugs[$slug]}] and [{$class}].");
+            }
+            if (isset($paths[$path])) {
+                throw new InvalidArgumentException("Panel [{$this->id}] has duplicate page path [{$path}]: [{$paths[$path]}] and [{$class}].");
+            }
+            $slugs[$slug] = $class;
+            $paths[$path] = $class;
+        }
+
+        return $pages;
     }
 
     /** @return list<string> */
@@ -324,10 +380,10 @@ final class PanelConfig
         return $this->brand;
     }
 
-    /** @return 'sidebar'|'topbar'|'topbar-sidebar' */
+    /** @return 'sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar' */
     public function getNavigation(): string
     {
-        /** @var 'sidebar'|'topbar'|'topbar-sidebar' */
+        /** @var 'sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar' */
         return $this->navigation;
     }
 

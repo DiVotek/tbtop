@@ -13,8 +13,11 @@ domain: panels
   ever needed.
 - **Clean break from flat config.** Legacy keys (`pages`, `prefix`, `middleware`,
   `locales`, `default_locale`, `unsaved_guard`, `breadcrumbs`) move into `PanelConfig`.
-  Config keeps only: `panels`, global `media`, `content_locales`. No compat shim — zero
+  Config keeps only what is global rather than per-panel: `panels`, `media`,
+  `content_locales`, `default_content_locale`, `relation`. No compat shim — zero
   consumers at decision time.
+  > Replaces previous decision (see git history) — the key list said three keys; the
+  > published config has five.
 - **Route names gain a panel segment**: `tbtop.{panel}.{slug}` (+ `.form` / `.action` /
   `.table` / `.data` / `.selectCreate`). Media/upload/locale routes register under every
   panel's prefix, so the panel's guard applies to them automatically.
@@ -48,19 +51,37 @@ domain: panels
   schema + kitchen-sink fixture + contract tests in the same change (contract gate).
   Client React `slots` remain the last-resort escape hatch.
 - **Navigation layout is a panel flag, not a chrome shape.** `PanelConfig::navigation('sidebar'
-  |'topbar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop; the client
+  |'topbar'|'topbar-sidebar'|'rail-sidebar')` (default `sidebar`) ships as the `tbtop.navigation` shared prop;
+  `topbar-sidebar` is a full-width bar with the sidebar beneath it, a third frame added after
+  this decision landed. `rail-sidebar` renders the sidebar tree in a narrow rail (one icon-over-label
+  entry per group, navigating to its first internal item — an icon-only rail is hard
+  to learn for non-technical admins) beside a column listing only the active group; the
+  client resolves that group by longest URL match, then the page's `navGroup` prop (its `nav()`
+  group), then the last group a URL or `nav()` resolved on this panel, then the first. The client
   rearranges the *same* chrome trees rather than serializing a different one — so a custom
   Chrome class works under either layout. `sidebar` keeps the persistent left column; `topbar`
   renders one horizontal bar (logo + nav group dropdowns + header items) that collapses to the
   same burger drawer as the sidebar on mobile. Orientation is a client-only `ChromeData` concern:
   in `horizontal` the `navMenu` renders each group as a dropdown (reusing the sidebar item
   renderer, so item icons/badges carry over), while the mobile drawer keeps `vertical` so the
-  same tree stacks as collapsible groups — no new wire kind, no schema/contract change. Both
-  layouts reuse `SidebarDrawer` for mobile.
+  same tree stacks as collapsible groups — no new wire kind, no schema/contract change. Every
+  layout reuses `SidebarDrawer` for mobile; under `rail-sidebar` it shows the rail entries in a
+  row that swaps the list without navigating. The only wire addition for the rail is the
+  optional `navGroup` page prop.
 - **No default nav group.** Items that declare no group land in one ungrouped bucket that
-  ships as `navGroup.group: null` (key `''`) and renders without heading or indent; it sorts
-  like any undeclared group. The old implicit `General` group forced consumers to wrap a
+  ships as `navGroup.group: null` (key `''`) and renders without heading or indent; it always renders
+  first, ahead of every declared and undeclared group. The old implicit `General` group forced consumers to wrap a
   Dashboard entry in a group just to see it. An explicit `'General'` still works as a label.
+- **Nav sections are headings inside a group, in every layout.** `NavGroup::sections()` declares
+  keyed, translatable headings; items reference them via `nav()['section']` /
+  `NavItem::section()`. The server emits items already in section order plus the group's
+  `sections` labels, so the client only groups adjacent items. Not a nested group: sections
+  do not collapse and carry no icon. Rail-only sections were rejected — the key would be
+  silently ignored in the other layouts.
+- **A nav group description renders in every layout.** `NavGroup::description()` ships as
+  `navGroup.description` and shows as one muted line under the group title: the rail-sidebar
+  column, the sidebar heading, and the first line of a topbar/rail dropdown. Same reason as
+  sections: a rail-only key would be silently ignored when a panel switches layout.
 - **404s render inside the panel chrome.** Each panel's default route group ends with a
   `Route::fallback()` → `PanelErrorController`, and the provider registers a
   `NotFoundHttpException` renderable that fires only while `CurrentPanel` is bound and the

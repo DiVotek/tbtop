@@ -635,6 +635,12 @@ final class TableBuilder implements JsonSerializable
         return $this->opts['defaultSort'] ?? null;
     }
 
+    /** Column the rows are grouped by, or null when groups() was not called. */
+    public function getGroupsColumn(): ?string
+    {
+        return $this->opts['groups']['column'] ?? null;
+    }
+
     /** @return array{perPage: int, options: list<int>} */
     public function paginationSpec(): array
     {

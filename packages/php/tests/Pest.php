@@ -3,7 +3,7 @@
 use Tbtop\Admin\Tests\HttpTestCase;
 use Tbtop\Admin\Tests\TestCase;
 
-uses(HttpTestCase::class)->in('PageHttpTest.php', 'TableHttpTest.php', 'UploadHttpTest.php', 'LocaleHttpTest.php', 'TranslatableTableTest.php', 'TableFilterTest.php', 'InFilterTest.php', 'BreadcrumbsHttpTest.php', 'SharedPropsTest.php', 'PanelRootRedirectTest.php', 'FormTabsHttpTest.php', 'FormSubmitAttributesHttpTest.php', 'RequiredIfHttpTest.php');
+uses(HttpTestCase::class)->in('PageHttpTest.php', 'TableHttpTest.php', 'UploadHttpTest.php', 'LocaleHttpTest.php', 'TranslatableTableTest.php', 'TableFilterTest.php', 'InFilterTest.php', 'BreadcrumbsHttpTest.php', 'SharedPropsTest.php', 'PanelRootRedirectTest.php', 'FormTabsHttpTest.php', 'FormSubmitAttributesHttpTest.php', 'RequiredIfHttpTest.php', 'RichtextEmbedsHttpTest.php');
 uses(TestCase::class)->in('ChildCollectionTest.php', 'DslSerializationTest.php', 'RuleCollectionTest.php', 'FluentValidationRulesTest.php', 'NavBuilderTest.php', 'ContractTest.php', 'ClientLocaleContractTest.php', 'ChromeTest.php', 'ArchTest.php', 'ExampleTest.php', 'InstallCommandTest.php', 'TranslatableFieldTest.php', 'RichtextFieldTest.php', 'CondTest.php', 'CondFieldBuilderTest.php', 'FieldKindParityTest.php', 'FieldTypedModifiersTest.php', 'FieldRegistryTest.php', 'TableFilterSerializationTest.php', 'DaterangeFieldTest.php', 'LayoutNodeTest.php', 'SelectCreatableTest.php', 'ColumnDslTest.php', 'FormBuilderTest.php', 'BreadcrumbsTest.php', 'MediaSsrfGuardTest.php', 'MediaSvgSanitizerTest.php', 'MediaUploadLimitTest.php', 'ImageEncoderTest.php', 'TableTabsDslTest.php', 'UploadFieldConfigTest.php', 'TranslatableModelProjectionTest.php', 'NotificationBuilderTest.php', 'NotificationProjectionTest.php', 'RelationColumnProjectionTest.php', 'ActionPolishTest.php', 'TableEmbeddedDslTest.php', 'TableToolbarDslTest.php', 'ValidationAttributesTest.php', 'PlaceholderFieldTest.php', 'CrudActionHelpersTest.php', 'SoftDeletesDslTest.php', 'RecordActionDefaultTailTest.php', 'ReplicateRestoreForceDeleteLocaleTest.php', 'RecordDefaultsTest.php', 'ReachableEntityTest.php', 'CondToRequiredRuleTest.php', 'RequiredIfFieldTest.php', 'ApiReferenceTest.php', 'WiringDocsParityTest.php', 'StructureWalkTest.php');
 
 use Tbtop\Admin\Tests\ColumnProjectionHttpTestCase;
@@ -16,7 +16,7 @@ use Tbtop\Admin\Tests\RouteCacheSerializationTestCase;
 use Tbtop\Admin\Tests\RunsMigrationsTestCase;
 use Tbtop\Admin\Tests\TableTabsHttpTestCase;
 
-uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php');
+uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php', 'ColumnProjectionAllowlistTest.php');
 uses(TableTabsHttpTestCase::class)->in('TableTabsHttpTest.php');
 uses(MediaHttpTestCase::class)->in('MediaHttpTest.php');
 uses(PageLayoutHttpTestCase::class)->in('PageLayoutTest.php');

@@ -19,7 +19,7 @@ Every field builder and its wire kind. **Every field** comes first — those met
 | `columnStart(array\|int $start): static` | Grid column start: int (1-8) or a breakpoint object {sm?, md?, lg?, xl?}. |
 | `confirmed(): static` | Requires a sibling "{name}_confirmation" field to match. |
 | `copyable(string $copyMessage = 'Copied', int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
-| `default(mixed $value): static` | Seeds the form value when the record has no key for this field. An explicit key in the form's record() always wins — even record(['x' => null]) keeps the null instead of this default. |
+| `default(mixed $value): static` | Seeds the form value when the record has no key for this field. An explicit key in the form's record() always wins — even record(['x' => null]) keeps the null instead of this default. An enum case, or each case in a list (multi-value fields), is stored as its string option value (->value, ->name for a pure enum), matching options(Enum::class). |
 | `different(string $field): static` | Value must differ from another field's value. |
 | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side evaluation: the field still ships on the wire and its value still submits — only the input's interactivity is disabled. Contrast with when(), which drops the node from the wire entirely. Pass a Cond, or the shorthand ($field, $op, $value). |
 | `filterUsing(callable $fn): static` | Attach a server-side filter closure: fn($query, $value) => $query. Takes priority over kind-default mapping. NEVER serialized to the wire. |
@@ -61,7 +61,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 | Method | What it does |
 |---|---|
-| `options(array $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. |
+| `options(array\|string $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. An enum class expands to {value, label, description?}: value = ->value (->name for a pure enum), label from HasLabel else the case name, description from HasDescription. An int-backed enum still ships string values, so seed record()/default() with strings. No validation is implied: add Rule::enum(X::class) for a backed enum, or Rule::in(array_column(X::cases(), 'name')) for a pure one. |
 
 ## Colorpicker (colorpicker)
 
@@ -102,7 +102,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 | Method | What it does |
 |---|---|
-| `options(array $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. |
+| `options(array\|string $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. An enum class expands to {value, label, description?}: value = ->value (->name for a pure enum), label from HasLabel else the case name, description from HasDescription. An int-backed enum still ships string values, so seed record()/default() with strings. No validation is implied: add Rule::enum(X::class) for a backed enum, or Rule::in(array_column(X::cases(), 'name')) for a pure one. |
 
 ## Keyvalue (keyvalue)
 
@@ -171,7 +171,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 |---|---|
 | `boolean(): static` | Shorthand for a 2-option Yes/No radio. No-op if ->options() was already called. |
 | `inline(bool $value = true): static` | Horizontal layout instead of the default stacked list. |
-| `options(array $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. |
+| `options(array\|string $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. An enum class expands to {value, label, description?}: value = ->value (->name for a pure enum), label from HasLabel else the case name, description from HasDescription. An int-backed enum still ships string values, so seed record()/default() with strings. No validation is implied: add Rule::enum(X::class) for a backed enum, or Rule::in(array_column(X::cases(), 'name')) for a pure one. |
 
 ## Relation (relation)
 
@@ -211,6 +211,8 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 | Method | What it does |
 |---|---|
+| `embeds(array $embeds): static` | Block kinds the editor can insert as cards (slash menu "Blocks" group and the toolbar "Block" button). Each embed's data is validated against its fields on save, in every locale of a translatable field. |
+| `maxEmbeds(int $max): static` | Server-side cap on embeds per document (at least 1); a save with more fails on the field. No limit by default. |
 | `placeholder(string $text): static` | Placeholder text shown in the empty editor. |
 
 ## Select (select)
@@ -225,7 +227,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `ignore(string\|int $id, string $idColumn = 'id'): static` | Skip the given record when checking uniqueness (edit pages). Appends ",{id},{idColumn}" to the most recent unique rule. |
 | `keepValueOnParentChange(bool $keep = true): static` | Keep the selected value when a parent changes (default: reset to empty). |
 | `multiple(bool $value = true): static` | Allow selecting more than one value. |
-| `options(array $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. |
+| `options(array\|string $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. An enum class expands to {value, label, description?}: value = ->value (->name for a pure enum), label from HasLabel else the case name, description from HasDescription. An int-backed enum still ships string values, so seed record()/default() with strings. No validation is implied: add Rule::enum(X::class) for a backed enum, or Rule::in(array_column(X::cases(), 'name')) for a pure one. |
 | `prefix(JsonSerializable\|string $content): static` | Content rendered before the input, inside the control (e.g. a currency symbol or icon block). A plain string becomes a TextBlock; any other JsonSerializable node is used as-is. Display nodes only — nesting a Field here throws (an affix decorates the control, it is not a second input, and its rules would never be collected). |
 | `query(callable $fn): static` | Dynamic option source, served from the select-options endpoint. Any source works — a database, a config array, an enum, an external API. $fn: fn(array $deps, string $search): array $deps — current values of the fields named in dependsOn(), or []. $search — the user's current search text, '' when the list first opens. Return either a list of ['value' => ..., 'label' => ...] rows, or an associative value => label map (e.g. User::pluck('name', 'id')). Applying $search and capping the result count are the closure's responsibility — nothing filters or truncates on its behalf. A stored value's label is resolved from the associative map when the closure returns one and the value is present; otherwise from resolveUsing(); otherwise the raw value is displayed. |
 | `resolveUsing(callable $fn): static` | Resolve a stored value back to its display label when query() cannot. $fn: fn(string $value): string\|array\|null — null when the value no longer exists. Return an option array (['label' => ..., 'display' => [...]]) to keep image/subtitle/html on a value the dropdown never listed. |
@@ -330,7 +332,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | Method | What it does |
 |---|---|
 | `multiple(bool $value = true): static` | Allow selecting more than one value. |
-| `options(array $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. |
+| `options(array\|string $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. An enum class expands to {value, label, description?}: value = ->value (->name for a pure enum), label from HasLabel else the case name, description from HasDescription. An int-backed enum still ships string values, so seed record()/default() with strings. No validation is implied: add Rule::enum(X::class) for a backed enum, or Rule::in(array_column(X::cases(), 'name')) for a pure one. |
 
 ## Upload (upload)
 
@@ -338,7 +340,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 | Method | What it does |
 |---|---|
-| `accept(array\|string $accept): static` | Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list ['application/pdf', 'image/*'] to allow several. |
+| `accept(array\|string $accept): static` | Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list ['application/pdf', 'image/*'] to allow several. A list is joined with commas: the wire grammar types `accept` as a string, and the client passes it straight to the DOM attribute. |
 | `convertTo(string $format): static` | Convert the stored image to this format ('webp'\|'jpeg'\|'png'). |
 | `directory(string $dir): static` | Subdirectory the file is stored under (default 'uploads'). |
 | `disk(string $disk): static` | Laravel filesystem disk name (default 'public'). |
@@ -349,3 +351,14 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `reorderable(bool $value = true): static` | Allow drag-to-reorder when multiple is enabled. |
 | `saveUsing(Closure $fn): static` | Override how an uploaded file is stored. The closure receives the UploadedFile and the resolved UploadFieldConfig and must return the wire shape `{path, url}`. Default stores to the configured disk. Never serialized to the client. Bypasses UploadStorer::store() entirely, so SVG sanitization is skipped — the mime-guard (accept + text/html rejection) still runs first, but a custom closure that stores SVGs must sanitize them itself. |
 | `visibility(string $v): static` | Storage visibility: 'public' (default) or 'private'. |
+
+## Embed (richtext embeds)
+
+`Tbtop\Admin\Dsl\Fields\Embed`
+
+| Method | What it does |
+|---|---|
+| `fields(array $fields): static` | The modal form's fields; the embed's `data` is exactly what they return. ->translatable() on them is ignored (a document is already per-locale), and a richtext with its own embeds() is rejected — embeds do not nest. |
+| `icon(string $icon): static` | Icon shown on the card and in the insert menus (same icon names as elsewhere in the admin). |
+| `label(string $label): static` | Name shown on the card, in the slash menu, the "Block" dropdown and as the modal title; defaults to the kind. |
+| `summary(string $field): static` | Name of the field whose value is the card's one-line summary. A value that is not a non-empty string falls back to the label. |

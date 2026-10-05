@@ -33,5 +33,6 @@ Database notifications surfaced in the admin bell. Backed by Laravel's `database
 
 | Method | What it does |
 |---|---|
-| `openInNewTab(bool $newTab = true): self` | Open the link in a new browser tab instead of navigating in place. |
+| `openInNewTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
+| `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. |
 | `url(string $url): self` | Target URL the action link navigates to. |

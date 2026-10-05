@@ -14,7 +14,7 @@ it('includes href, icon, group, newTab and keywords when set', function () {
         ->url('https://example.test')
         ->icon('globe')
         ->group('Links')
-        ->openInNewTab()
+        ->openUrlInNewTab()
         ->keywords(['help', 'guide']);
 
     expect($command->toArray())->toBe([

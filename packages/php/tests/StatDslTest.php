@@ -265,3 +265,12 @@ it('Stat: queryClosure re-invokes the value closure and returns the descriptor s
     expect($query())->toBe(['value' => 1, 'description' => 'online', 'sparkline' => [1, 2]])
         ->and($query())->toBe(['value' => 2, 'description' => 'online', 'sparkline' => [1, 2]]);
 });
+
+it('Stat: url makes the card a link, newTab only when requested', function (): void {
+    $inPlace = encodeStat(Stat::make('Orders')->value(3)->url('/admin/orders'));
+    $newTab = encodeStat(Stat::make('Orders')->value(3)->url('https://example.test')->openUrlInNewTab());
+
+    expect($inPlace['options']['url'])->toBe('/admin/orders')
+        ->and($inPlace['options'])->not->toHaveKey('newTab')
+        ->and($newTab['options'])->toMatchArray(['url' => 'https://example.test', 'newTab' => true]);
+});

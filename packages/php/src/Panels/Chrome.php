@@ -15,7 +15,7 @@ use Tbtop\Admin\Dsl\S;
  * Chrome trees are page-independent: server-closure actions (->handle())
  * resolve against a page's action endpoint, which does not exist for the
  * shell. Serialization throws when one is found in a chrome tree — use
- * ->visit() or ->custom() actions instead.
+ * ->url() or ->custom() actions instead.
  */
 class Chrome
 {

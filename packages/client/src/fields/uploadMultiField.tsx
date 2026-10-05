@@ -7,7 +7,7 @@ import { useTranslation } from "../i18n/i18n";
 import type { UploadTask, UploadTaskStatus } from "../media/types";
 import { UploadProgressList } from "../media/uploadProgressList";
 import type { FieldFormProps } from "./fieldProps";
-import { UploadPicker } from "./uploadField";
+import { UploadPicker } from "./uploadPicker";
 import { UploadSortableItem, UploadStaticItem } from "./uploadSortableItem";
 import {
 	exceedsMaxSize,

@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\File;
+use Tbtop\Admin\Panels\Panel;
+use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\TestCase;
 
 uses(TestCase::class);
@@ -23,7 +25,7 @@ afterEach(function () {
 it('generates the correct file and class for a given name', function () {
     $this->artisan('make:tbtop-page', ['name' => 'Orders'])
         ->assertSuccessful()
-        ->expectsOutputToContain('Register OrdersPage in your panel/config pages list.');
+        ->expectsOutputToContain('Register OrdersPage with pages()');
 
     $path = expectedPagePath('OrdersPage');
     expect(file_exists($path))->toBeTrue();
@@ -110,3 +112,28 @@ it('rejects page names that could escape the pages directory', function (string 
     'empty after suffix removal' => 'Page',
     'invalid punctuation' => '!!!',
 ]);
+
+it('points at the page cache when a panel already discovers the target directory', function () {
+    config(['tbtop-admin.panels' => [DiscoveringPanel::class]]);
+
+    $this->artisan('make:tbtop-page', ['name' => 'Invoices'])
+        ->assertSuccessful()
+        ->expectsOutputToContain('Panel [discovering] discovers InvoicesPage.')
+        ->doesntExpectOutputToContain('Register InvoicesPage with pages()');
+});
+
+it('falls back to manual registration when no panel discovers the target directory', function () {
+    config(['tbtop-admin.panels' => []]);
+
+    $this->artisan('make:tbtop-page', ['name' => 'Refunds'])
+        ->assertSuccessful()
+        ->expectsOutputToContain('Register RefundsPage with pages()');
+});
+
+final class DiscoveringPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('discovering')->discoverPages(app_path('Admin/Pages'), 'App\\Admin\\Pages');
+    }
+}

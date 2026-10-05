@@ -2,8 +2,10 @@
 
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\NavBuilder;
+use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Panels\CurrentPanel;
@@ -34,6 +36,25 @@ it('kitchen-sink serialization matches the committed fixture snapshot', function
     }
 
     expect($current."\n")->toBe((string) file_get_contents(FIXTURE_PATH));
+});
+
+it('a richtext with embeds serializes its embeds as options.embeds, outside the child lists', function () {
+    $s = new S;
+    $field = $s->richtext('body')->embeds([
+        Embed::make('callout')->label('Callout')->icon('info')->summary('title')->fields([
+            $s->text('title')->required()->translatable(),
+        ]),
+        Embed::make('divider'),
+    ]);
+    $json = json_decode(json_encode($field));
+
+    validateAgainstSchema($json);
+    expect(json_decode(json_encode($field), true)['options']['embeds'])->toMatchArray([
+        ['kind' => 'callout', 'label' => 'Callout', 'icon' => 'info', 'summary' => 'title', 'fields' => [
+            ['kind' => 'text', 'options' => ['required' => true, 'constraints' => ['required' => true]], 'meta' => [], 'name' => 'title'],
+        ]],
+        ['kind' => 'divider', 'label' => 'divider', 'icon' => null, 'summary' => null, 'fields' => []],
+    ]);
 });
 
 it('default chrome serialization conforms to the chrome contract', function () {
@@ -161,10 +182,15 @@ it('table embedded option conforms to the wire grammar schema', function () {
     validateAgainstSchema(json_decode(json_encode($table)));
 });
 
-it('section action option conforms to the wire grammar schema', function () {
+it('section link and header actions conform to the wire grammar schema', function () {
     $s = new S;
     $node = $s->section(
-        ['title' => 'Recently updated pages', 'action' => ['label' => 'Open pages', 'url' => '/admin/pages']],
+        [
+            'title' => 'Recently updated pages',
+            'url' => '/admin/pages',
+            'openUrlInNewTab' => true,
+            'actions' => [$s->action('open')->label('Open pages')->url('/admin/pages')->link()],
+        ],
         [$s->displayText('...')]
     );
 
@@ -174,7 +200,7 @@ it('section action option conforms to the wire grammar schema', function () {
 it('list node conforms to the wire grammar schema', function () {
     $s = new S;
     $node = $s->list('recent')->items(fn () => [
-        ['title' => 'Home', 'meta' => '2 min ago', 'color' => 'success', 'url' => '/admin/pages/1'],
+        ['title' => 'Home', 'meta' => '2 min ago', 'color' => 'success', 'url' => '/admin/pages/1', 'openUrlInNewTab' => true],
         ['title' => 'About'],
     ]);
 
@@ -189,7 +215,7 @@ it('section card and plain variants conform to the wire grammar schema', functio
             'variant' => 'card',
             'collapsible' => true,
             'collapsed' => true,
-            'action' => ['label' => 'Open', 'url' => '/x'],
+            'actions' => [$s->action('open')->label('Open')->url('/x')->link()],
         ],
         [$s->displayText('...')]
     );
@@ -207,7 +233,7 @@ it('section card and plain variants conform to the wire grammar schema', functio
 it('actionsRow grid variant conforms to the wire grammar schema', function () {
     $s = new S;
     $node = $s->actionsRow(
-        [$s->action('pages')->label('Pages')->visit('/admin/pages')],
+        [$s->action('pages')->label('Pages')->url('/admin/pages')],
         ['variant' => 'grid']
     );
 
@@ -264,15 +290,16 @@ it('liveRegion ships dependsOn and record-seeded initial, never the closure', fu
         ->and($region->options->initial[0]->options->content)->toBe('Hello');
 });
 
-it('nested nav tree with a merged custom item conforms to the nav contract', function () {
+it('nested nav tree with a merged, sectioned custom item and a group description conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)
             ->id('admin')
             ->prefix('admin')
             ->pages([NavParentPage::class, NavChildPage::class])
+            ->navigationGroups([NavGroup::make('Content')->description('Articles and pages')->sections(['help' => 'Help'])])
             ->navigationItems([
                 NavItem::make('Documentation')->url('https://example.test')->icon('globe')
-                    ->group('Content')->sort(5)->newTab(),
+                    ->group('Content')->section('help')->sort(5)->openUrlInNewTab(),
             ])
     );
 
@@ -282,7 +309,7 @@ it('nested nav tree with a merged custom item conforms to the nav contract', fun
 it('userMenuItems serialization conforms to the nav contract', function () {
     $panel = new CurrentPanel(
         (new PanelConfig)->userMenuItems([
-            NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key'),
+            NavItem::make('API Tokens')->url('/admin/api-tokens')->icon('key')->section('account'),
         ])
     );
 

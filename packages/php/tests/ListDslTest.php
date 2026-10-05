@@ -66,3 +66,26 @@ it('S::list() delegates to ListBuilder::make()', function (): void {
     expect($json['kind'])->toBe('list')
         ->and($json['options']['items'][0]['color'])->toBe('muted');
 });
+
+it('List: array and listItem() forms produce the same item, newTab only with a url', function (): void {
+    $s = new S;
+    $json = encodeList(ListBuilder::make('links')->items(fn (): array => [
+        ['title' => 'Post 1', 'meta' => '2h', 'color' => 'success', 'url' => '/admin/posts/1', 'openUrlInNewTab' => true],
+        $s->listItem('Post 1')->meta('2h')->color('success')->url('/admin/posts/1')->openUrlInNewTab(),
+        ['title' => 'No url', 'openUrlInNewTab' => true],
+        $s->listItem('No url')->openUrlInNewTab(),
+    ]));
+
+    $linked = ['title' => 'Post 1', 'meta' => '2h', 'color' => 'success', 'url' => '/admin/posts/1', 'newTab' => true];
+    expect($json['options']['items'])->toBe([$linked, $linked, ['title' => 'No url'], ['title' => 'No url']]);
+});
+
+it('List: a non-bool openUrlInNewTab throws naming the key', function (): void {
+    encodeList(ListBuilder::make('bad')->items(fn (): array => [
+        ['title' => 'X', 'url' => '/x', 'openUrlInNewTab' => 'yes'],
+    ]));
+})->throws(InvalidArgumentException::class, 'openUrlInNewTab');
+
+it('List: an item that is neither an array nor a ListItem throws naming the type', function (): void {
+    encodeList(ListBuilder::make('bad')->items(fn (): array => ['Just a string']));
+})->throws(InvalidArgumentException::class, 'got string');

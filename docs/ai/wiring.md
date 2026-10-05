@@ -38,6 +38,7 @@ Route file: `packages/php/routes/admin.php`
 
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
+| `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
 
@@ -50,11 +51,16 @@ application/json`, i.e. the table/select/upload endpoints) and requests outside 
 panel keep the app's own 404. The client resolves `admin/error` to the exported
 `AdminErrorPage` (see `apps/demo/resources/js/admin.tsx`).
 
+**Host-provided: `POST {prefix}/logout`.** The profile dropdown posts to
+`${routesBase}/logout` (`packages/client/src/data/entityRoutes.ts`), but the package
+registers no such route — auth is the host app's. Register it under the panel prefix
+(the demo does it in `apps/demo/routes/auth.php`).
+
 ### Media manager routes (prefix: `{prefix}/api/media`, name: `tbtop.{panel}.media.*`)
 
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
-| `GET` | `/api/media` | `media.index` | `MediaController@index` | JSON | `{data: MediaItem[], total, page, perPage}` |
+| `GET` | `/api/media` | `media.index` | `MediaController@index` | JSON | `{data: MediaItem[], folders: MediaFolder[], total, page, perPage}` — query: `perPage` (≤200), `page`, `search`, `folder` (empty = root), `sort`, `dir`. `folders` lists the child folders of the current level, never paginated |
 | `POST` | `/api/media/upload` | `media.upload` | `MediaUploadController` | JSON | `MediaItem` (201) |
 | `POST` | `/api/media/import-url` | `media.import-url` | `MediaImportController` | JSON | `MediaItem` (201) |
 | `GET` | `/api/media/{id}` | `media.show` | `MediaController@show` | JSON | `MediaItem` |
@@ -106,7 +112,7 @@ notification action is a **link only** — it can never carry a server closure.
 | `GET` | `{page-path}/tables/{tbtopTable}` | `{slug}.table` | `TableController` | JSON | `{data: {data: Row[], total, page, perPage, tabCounts?}}` |
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
-| `POST` | `{page-path}/select-options/{tbtopField}` | `{slug}.selectOptions` | `SelectOptionsController` | JSON | search mode: `{options: [{value, label, display?}]}` · resolve mode: `{option: {value, label}\|null}` |
+| `POST` | `{page-path}/select-options/{tbtopField}` | `{slug}.selectOptions` | `SelectOptionsController` | JSON | three modes, picked by the body: `{search}` → `{options: [{value, label, display?}]}` · `{value}` → `{option: {value, label}\|null}` · `{values: []}` → `{options: [...]}` (resolve many saved values in one round-trip) |
 | `POST` | `{page-path}/tables/{tbtopTable}/filters/{tbtopFilter}/options` | `{slug}.tableFilterOptions` | `TableFilterOptionsController` | JSON | same responder and shape as `selectOptions`, for an async `select()->query()` used as a table filter |
 | `POST` | `{page-path}/daterange-ranges/{tbtopField}` | `{slug}.daterangeRanges` | `DaterangeRangesController` | JSON | `{ranges: [{from?, to?}]}` — re-runs `disabledRanges()` with the posted `{deps}` |
 | `POST` | `{page-path}/relation-search/{tbtopField}` | `{slug}.relationSearch` | `RelationSearchController` | JSON | search mode: `{options: [{value, label}]}` · resolve mode: `{option: {value, label}\|null}` |
@@ -147,7 +153,9 @@ array via `Inertia::flash`. The effect set is closed; see
 
 ## Package configuration
 
-`packages/php/config/tbtop-admin.php` (publish with `php artisan admin:install`).
+`packages/php/config/tbtop-admin.php` (publish with
+`php artisan vendor:publish --tag="tbtop-admin-config"` — **not** `admin:install`,
+which publishes only the host wiring files).
 It is heavily commented — read it directly for the authoritative detail. What
 matters when authoring:
 
@@ -169,8 +177,11 @@ matters when authoring:
 
 | Command | What it does |
 |---|---|
-| `php artisan admin:install` | Publishes the host wiring: config, the root Blade view, and the admin JS entry. `--force` overwrites existing files. |
-| `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. |
+| `php artisan admin:install` | Publishes three host files — `resources/views/admin.blade.php`, `resources/js/admin.tsx`, `resources/css/admin.css` — and prints the four steps it deliberately does **not** patch (Vite input list, `->rootView('admin')`, Tailwind v4, `npm install`). It does **not** publish the config; that is `vendor:publish --tag="tbtop-admin-config"`. `--force` overwrites existing files. |
+| `php artisan vendor:publish --tag="tbtop-admin-config"` | Publishes `config/tbtop-admin.php`. Migrations need no step — the provider declares `runsMigrations()`; publish them with `--tag="tbtop-admin-migrations"` only to customize them first. |
+| `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. Reports which panel discovers the new page, or tells you to register it with `pages()` when none does. |
+| `php artisan tbtop:cache-pages` | Atomically rebuilds the discovered page index for all configured panels. Run before `route:cache`; rebuild both after changing discovered pages. |
+| `php artisan tbtop:clear-cached-pages` | Removes the discovered page index. Also run `route:clear` to return to uncached routing. |
 
 ---
 
@@ -247,15 +258,19 @@ For the full picture of adding a new field kind to both sides, see
 
 `tbtop.nav` (`$defs/nav`) and `tbtop.userMenuItems` (`$defs/userMenuItems`) are shared
 Inertia props built by `NavBuilder::build($panel)` and `PanelConfig::userMenuItems()`
-respectively (`packages/php/src/AdminServiceProvider.php:52-53`). Three `$defs` in
+respectively (`packages/php/src/AdminServiceProvider.php`). Three `$defs` in
 `structure.schema.json` cover them:
 
-- **`navItem`** — `{label, href, order, icon?, badge?, badgeColor?, newTab?, children?}`.
+- **`navItem`** — `{label, href, order, icon?, badge?, badgeColor?, newTab?, section?, children?}`.
   `children` is a self-referencing array of `navItem` — the nesting mechanism for
   `nav()['parent']` (see [./recipes.md](./recipes.md#recipe-9--navigation-configuration)).
-- **`navGroup`** — `{key, group, items: navItem[], icon?, collapsible?, collapsed?}`; `nav` is
+  `section` appears only on top-level items of a named group.
+- **`navGroup`** — `{key, group, items: navItem[], icon?, collapsible?, collapsed?, description?, sections?}`; `nav` is
   `navGroup[]`. `group` is the display label or `null` for the single ungrouped bucket
   (items that declared no group), which the client renders without heading or indent.
+  `sections` is `{key, label}[]` for the non-empty sections, in render order; the server
+  already emits `items` in that order, so the client only groups adjacent items by `section`.
+  `description` is the resolved `NavGroup::description()` text, absent when unset.
 - **`userMenuItem`** — `{label, href, icon?, newTab?}`; no `order`/`children` — user-menu
   entries are a flat list, not grouped or nested.
 
@@ -263,6 +278,10 @@ All three are `additionalProperties: false`, same drift-guard discipline as ever
 wire shape: `ContractTest.php` asserts a nested-nav tree and a `userMenuItems` payload
 against these `$defs` directly (not via the kitchen-sink snapshot, since nav depends on
 panel/page wiring the kitchen-sink fixture doesn't exercise).
+
+The page prop `navGroup` (not a shared prop, no `$def`) carries the current page's
+`nav()['group']` key, sent only when declared. The `rail-sidebar` layout uses it to pick the
+active group on pages no nav item's URL covers.
 
 ---
 
@@ -330,32 +349,41 @@ function defineFieldClient<T extends string, P>(
 
 ### Canonical example: rating field in the demo consumer
 
-The demo (`apps/demo/resources/js/admin.tsx`) registers a custom `rating`
-field using `registerBlock` directly. This is the pattern to follow in a
-consumer project:
+The demo registers a custom `rating` field on **both** sides. This is the
+pattern to follow in a consumer project.
+
+Client (`apps/demo/resources/js/admin.tsx`) — `defineFieldClient` takes a
+separate `form` and `cell` component, so you don't branch on `ctx.surface`
+yourself:
 
 ```tsx
-registerBlock<"rating", { max?: number; min?: number; step?: number }>({
-  kind: "rating",
-  behavior: "field",
-  render: function RatingRender({ options, ctx }) {
-    const max = options.max ?? 5;
-    if (ctx.surface === "cell") {
-      const val = ctx.binding?.value as number | null;
-      return <span>{val ?? "–"}</span>;
+defineFieldClient<"rating", number>("rating", { form: RatingForm, cell: RatingCell });
+```
+
+PHP (`apps/demo/app/Admin/Fields/Rating.php`) — a `Field` subclass whose
+`kind()` returns the same wire string, with fluent setters for its options:
+
+```php
+final class Rating extends Field
+{
+    protected function kind(): string
+    {
+        return 'rating';
     }
-    return (
-      <Input
-        type="number"
-        min={options.min ?? 1}
-        max={max}
-        step={options.step ?? 1}
-        defaultValue={(ctx.binding?.value as number | undefined) ?? ""}
-        onChange={(e) => ctx.binding?.onChange(Number(e.target.value))}
-      />
-    );
-  },
-});
+
+    public function max(int $max): static
+    {
+        return $this->set('max', $max);
+    }
+}
+```
+
+Registered in the consumer's service provider
+(`apps/demo/app/Providers/AppServiceProvider.php`), which is what makes
+`$s->rating('score')` resolve:
+
+```php
+S::register('rating', Rating::class);
 ```
 
 Call `registerBlock` (or `defineBlock` / `defineFieldClient`) **before**
@@ -364,14 +392,20 @@ populated before the first render.
 
 ### Cross-wire note
 
-A field registered this way is **client-only** — the kind string is not in the
-schema and the PHP side has no builder for it. That is fine for fields whose
-options originate client-side (hardcoded or from a non-DSL source). If the
-field must be composed in the PHP DSL (e.g. `$s->rating('score')`) and
-transmitted over the wire, it also needs:
+Registering only on the client gives you a **client-only** field: the React
+side can render the kind, but no PHP builder emits it. That is fine for fields
+whose options originate client-side (hardcoded or from a non-DSL source).
 
-1. A PHP field class in `packages/php/src/Dsl/Fields/` (or the consumer app).
-2. A schema entry in `packages/contracts/structure.schema.json`.
-3. The contract gate to be run and the kitchen-sink snapshot updated.
+To compose the field in the PHP DSL (e.g. `$s->rating('score')`) you need the
+PHP half too — a `Field` subclass plus `S::register()`, as shown above. The
+demo's `rating` has both, which is why it works end to end.
+
+Two things you do **not** need for a consumer-app field like this:
+
+- **No schema entry.** `packages/contracts/structure.schema.json` takes an open
+  kind string; only structurally distinct kinds need a schema branch.
+- **No core registry edit.** `S::register()` is the two-phase escape hatch —
+  `S::BUILT_IN_KINDS` and `kindMap()` are for kinds shipped *by the package*.
+  A consumer field never touches `packages/php/src/Dsl/S.php`.
 
 See [./fields.md](./fields.md) for the full new-field checklist.

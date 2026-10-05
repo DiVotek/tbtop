@@ -10,6 +10,7 @@ use Tbtop\Admin\Dsl\Fields\Colorpicker;
 use Tbtop\Admin\Dsl\Fields\Date;
 use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Datetime;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\InFilter;
 use Tbtop\Admin\Dsl\Fields\Keyvalue;
@@ -280,17 +281,25 @@ final class S
     /**
      * Card section. Accepted $opts keys: 'title', 'description' (muted text
      * under the title), 'icon' (string name or {name, position}), 'aside'
-     * (a child node rendered as a right-side column on wide screens),
-     * 'collapsible' (bool, default false), 'collapsed' (bool, only relevant
-     * when collapsible), 'columns' (int|breakpoint-object — lays out the
-     * section's children in a grid instead of a stack), 'action'
-     * (['label' => string, 'url' => string] — a quiet link rendered right-aligned
-     * in the header row, e.g. "Open pages"), 'variant' ('card'|'plain' — 'card'
-     * wraps the section in a bordered card with an inline header; 'plain' renders
-     * the title as an uppercase muted label. Omitted = current stack render),
-     * 'class' (extra Tailwind classes merged onto the section's root element).
-     * All variants retain the same description, icon, action, aside, and
-     * collapsible behavior; the variant changes visual chrome only.
+     * (a child node rendered as a right-side column of the body on wide screens;
+     * stays visible when collapsed), 'collapsible' (bool, default false),
+     * 'collapsed' (bool, only relevant when collapsible), 'columns'
+     * (int|breakpoint-object — lays out the section's children in a grid
+     * instead of a stack), 'actions' (list of ActionBuilder — buttons
+     * right-aligned in the header row; a section with actions and no title
+     * still renders a header; when()/authorize() filtering applies),
+     * 'url' (non-empty string — the whole section becomes one link, like a
+     * linked Stat; interactive content inside it, such as header actions or a
+     * collapsible toggle, sits inside that link and navigates with it),
+     * 'openUrlInNewTab' (bool — opens 'url' in a new tab; no effect without
+     * 'url'), 'variant' ('card'|'plain' — 'card' wraps the section in a
+     * bordered card with an inline header; 'plain' renders the title as an
+     * uppercase muted label. Omitted = current stack render), 'class' (extra
+     * Tailwind classes merged onto the section's root element). All variants
+     * retain the same description, icon, actions, aside, and collapsible
+     * behavior; the variant changes visual chrome only. Deprecated (removed in
+     * 1.0): 'action' (['label' => string, 'url' => string]) — rewritten into one
+     * link-styled 'actions' entry; cannot be combined with 'actions'.
      *
      * @param  array<string, mixed>  $opts
      * @param  list<mixed>  $children
@@ -299,7 +308,7 @@ final class S
     {
         self::assertKnownKeys('section', $opts, [
             'title', 'description', 'icon', 'aside', 'collapsible', 'collapsed',
-            'columns', 'action', 'variant', 'class', 'colSpan', 'colStart',
+            'columns', 'action', 'actions', 'url', 'openUrlInNewTab', 'variant', 'class', 'colSpan', 'colStart',
             ...Meta::keys(),
         ], static fn (string $key): string => $key === 'label' ? " Did you mean 'title'?" : '');
         self::validateColumnPlacement($opts);
@@ -310,14 +319,11 @@ final class S
         if (isset($opts['icon'])) {
             $opts['icon'] = self::normalizeIcon($opts['icon']);
         }
-        if (isset($opts['action'])) {
-            $opts['action'] = self::normalizeSectionAction($opts['action']);
-        }
         if (isset($opts['variant'])) {
             $opts['variant'] = self::normalizeSectionVariant($opts['variant']);
         }
 
-        return self::layout('section', $children, $opts);
+        return self::layout('section', $children, SectionOptions::normalize($opts));
     }
 
     /**
@@ -355,18 +361,6 @@ final class S
         }
 
         return $variant;
-    }
-
-    /** @param  array<string, mixed>  $action @return array{label: string, url: string} */
-    private static function normalizeSectionAction(array $action): array
-    {
-        if (! isset($action['label']) || ! isset($action['url'])) {
-            throw new InvalidArgumentException(
-                "section 'action' requires both 'label' and 'url' keys."
-            );
-        }
-
-        return ['label' => (string) $action['label'], 'url' => (string) $action['url']];
     }
 
     /** @param  string|array{name: string, position?: string}  $icon @return array{name: string, position: string} */
@@ -774,6 +768,12 @@ final class S
         return ListBuilder::make($name);
     }
 
+    /** Fluent row for list()->items() — equivalent to the array form, which stays first-class. */
+    public function listItem(string $title): ListItem
+    {
+        return new ListItem($title);
+    }
+
     /**
      * Registers the chart under $name in this page's request-scoped registry,
      * so the HTTP layer can resolve it by name — keep names unique per page,
@@ -977,6 +977,16 @@ final class S
     }
 
     /**
+     * Find the embed of $kind declared by richtext field $fieldName, walking all registered forms.
+     */
+    public function findEmbed(string $fieldName, string $kind): ?Embed
+    {
+        return $this->searchIncludedForms(
+            static fn (FormBuilder $form): ?Embed => $form->findEmbed($fieldName, $kind),
+        );
+    }
+
+    /**
      * Find a liveRegion by name, walking all registered forms.
      */
     public function findLiveRegion(string $regionName): ?LiveRegionBuilder
@@ -1001,12 +1011,12 @@ final class S
      * or the field endpoints (upload, select options/create, relation search)
      * keep serving data for a form the user never received.
      *
-     * @template TField of Field
+     * @template TFound of object
      *
-     * @param  callable(FormBuilder): ?TField  $search
-     * @return TField|null
+     * @param  callable(FormBuilder): ?TFound  $search
+     * @return TFound|null
      */
-    private function searchIncludedForms(callable $search): ?Field
+    private function searchIncludedForms(callable $search): ?object
     {
         foreach ($this->forms as $form) {
             if (! $form->isIncluded()) {

@@ -1,5 +1,6 @@
 import { lazy, type ReactNode, Suspense } from "react";
 import type { FieldFormProps } from "../fieldProps";
+import type { EmbedDef } from "./embedContext";
 import type { RichtextValue } from "./richtextCell";
 
 // Lazily import the heavy Lexical bundle only when a richtext form is first
@@ -11,6 +12,7 @@ const defaultFallback = <div className="h-40 rounded-md border bg-muted animate-
 
 interface RichtextOptionsBag {
 	placeholder?: string;
+	embeds?: EmbedDef[];
 }
 
 export interface RichtextFormLazyProps extends FieldFormProps<RichtextValue, RichtextOptionsBag> {

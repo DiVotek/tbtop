@@ -12,7 +12,7 @@ function encodeAction(mixed $value): array
 
 it('CondActionBuilder: hiddenIf shorthand eq maps = symbol', function () {
     $s = new S;
-    $action = $s->action('approve')->visit('/x')->hiddenIf('status', '=', 'done');
+    $action = $s->action('approve')->url('/x')->hiddenIf('status', '=', 'done');
 
     $json = encodeAction($action);
 
@@ -21,7 +21,7 @@ it('CondActionBuilder: hiddenIf shorthand eq maps = symbol', function () {
 
 it('CondActionBuilder: hiddenIf shorthand neq maps != symbol', function () {
     $s = new S;
-    $action = $s->action('approve')->visit('/x')->hiddenIf('status', '!=', 'pending');
+    $action = $s->action('approve')->url('/x')->hiddenIf('status', '!=', 'pending');
 
     $json = encodeAction($action);
 
@@ -30,7 +30,7 @@ it('CondActionBuilder: hiddenIf shorthand neq maps != symbol', function () {
 
 it('CondActionBuilder: hiddenIf shorthand gt maps > symbol', function () {
     $s = new S;
-    $action = $s->action('flag')->visit('/x')->hiddenIf('views', '>', 100);
+    $action = $s->action('flag')->url('/x')->hiddenIf('views', '>', 100);
 
     $json = encodeAction($action);
 
@@ -39,7 +39,7 @@ it('CondActionBuilder: hiddenIf shorthand gt maps > symbol', function () {
 
 it('CondActionBuilder: hiddenIf shorthand in maps in symbol', function () {
     $s = new S;
-    $action = $s->action('manage')->visit('/x')->hiddenIf('role', 'in', ['manager', 'viewer']);
+    $action = $s->action('manage')->url('/x')->hiddenIf('role', 'in', ['manager', 'viewer']);
 
     $json = encodeAction($action);
 
@@ -48,7 +48,7 @@ it('CondActionBuilder: hiddenIf shorthand in maps in symbol', function () {
 
 it('CondActionBuilder: hiddenIf shorthand empty maps empty keyword (2-arg form)', function () {
     $s = new S;
-    $action = $s->action('publish')->visit('/x')->hiddenIf('published_at', 'empty');
+    $action = $s->action('publish')->url('/x')->hiddenIf('published_at', 'empty');
 
     $json = encodeAction($action);
 
@@ -57,7 +57,7 @@ it('CondActionBuilder: hiddenIf shorthand empty maps empty keyword (2-arg form)'
 
 it('CondActionBuilder: hiddenIf shorthand truthy maps truthy keyword', function () {
     $s = new S;
-    $action = $s->action('unpublish')->visit('/x')->hiddenIf('published', 'truthy');
+    $action = $s->action('unpublish')->url('/x')->hiddenIf('published', 'truthy');
 
     $json = encodeAction($action);
 
@@ -68,7 +68,7 @@ it('CondActionBuilder: hiddenIf shorthand truthy maps truthy keyword', function 
 
 it('CondActionBuilder: hiddenIf object form stores Cond directly', function () {
     $s = new S;
-    $action = $s->action('archive')->visit('/x')->hiddenIf(
+    $action = $s->action('archive')->url('/x')->hiddenIf(
         Cond::all(Cond::eq('status', 'draft'), Cond::empty('published_at'))
     );
 
@@ -85,7 +85,7 @@ it('CondActionBuilder: hiddenIf object form stores Cond directly', function () {
 
 it('CondActionBuilder: disabledIf shorthand lands in meta bag without hiddenIf', function () {
     $s = new S;
-    $action = $s->action('delete')->visit('/x')->disabledIf('locked', 'truthy');
+    $action = $s->action('delete')->url('/x')->disabledIf('locked', 'truthy');
 
     $json = encodeAction($action);
 
@@ -95,7 +95,7 @@ it('CondActionBuilder: disabledIf shorthand lands in meta bag without hiddenIf',
 
 it('CondActionBuilder: role-gated bulk hiddenIf serializes for the user condition', function () {
     $s = new S;
-    $action = $s->action('disable-user')->visit('/x')->hiddenIf('role', '=', 'manager');
+    $action = $s->action('disable-user')->url('/x')->hiddenIf('role', '=', 'manager');
 
     $json = encodeAction($action);
 
@@ -104,7 +104,7 @@ it('CondActionBuilder: role-gated bulk hiddenIf serializes for the user conditio
 
 it('CondActionBuilder: action without conds has empty meta', function () {
     $s = new S;
-    $action = $s->action('edit')->visit('/x');
+    $action = $s->action('edit')->url('/x');
 
     $json = encodeAction($action);
 
