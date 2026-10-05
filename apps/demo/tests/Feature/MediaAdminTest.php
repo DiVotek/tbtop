@@ -28,14 +28,14 @@ class MediaAdminTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('admin/page', false));
     }
 
-    public function test_media_table_rows_carry_the_camel_case_mime_type_for_the_upload_cell(): void
+    public function test_media_table_rows_carry_the_url_for_the_preview_column(): void
     {
-        $this->makeMedia();
+        $media = $this->makeMedia();
 
         $response = $this->getJson('/admin/media/tables/media')->assertOk();
 
         $this->assertSame(1, $response->json('data.total'));
-        $this->assertSame('image/png', $response->json('data.data.0.mimeType'));
+        $this->assertSame($media->url, $response->json('data.data.0.url'));
     }
 
     public function test_upload_form_submit_creates_a_media_row_from_the_upload_endpoint_payload(): void

@@ -297,25 +297,20 @@ describe("UploadForm", () => {
 });
 
 describe("UploadCell", () => {
-	test("UploadCell with an image row renders an img with the row url", () => {
+	test("UploadCell with an image value renders an img with its own url", () => {
+		const { container } = render(<UploadCell value={SAMPLE} />);
+		expect(container.querySelector("img")?.getAttribute("src")).toBe("/uploads/pic.png");
+	});
+
+	test("UploadCell ignores sibling row fields for a string path", () => {
 		const row = { path: "uploads/a.png", url: "/u/a.png" };
 		const { container } = render(
 			<RowProvider value={row}>
-				<UploadCell value={SAMPLE} />
+				<UploadCell value="uploads/report.pdf" />
 			</RowProvider>,
 		);
-		const img = container.querySelector("img");
-		expect(img?.getAttribute("src")).toBe("/u/a.png");
-	});
-
-	test("UploadCell with a non-image row renders the filename", () => {
-		const row = { path: "uploads/a.pdf", url: "/u/a.pdf" };
-		const { container } = render(
-			<RowProvider value={row}>
-				<UploadCell value={null} />
-			</RowProvider>,
-		);
-		expect(container.textContent).toContain("a.pdf");
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBe("report.pdf");
 	});
 
 	test("UploadCell with no value and no row renders nothing", () => {
