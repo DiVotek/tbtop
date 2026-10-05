@@ -42,6 +42,12 @@ domain: tables
   today, and accepting the others would silently do nothing (unfolding: DiVotek/tbtop#295). The schema pins the pairing
   both ways — `kind: "group"` requires a non-empty `columns`, and `columns` requires
   `kind: "group"`.
+- **Table rows are an allowlist.** `ColumnProjection` builds each row fresh: the record
+  key, visible declared columns, the `groups()` column and `_recordUrl`/`_tooltips`/
+  `_descriptions`. It used to start from the full row (`toArray()` / the query-builder
+  `stdClass`), which shipped undeclared attributes, loaded relations, `->hidden()` columns
+  and, on query-builder tables, every selected column. Declaring a column is the only way
+  to put a field on the wire; there is deliberately no data-only escape hatch.
 
 ## Why
 
