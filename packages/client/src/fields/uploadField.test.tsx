@@ -226,6 +226,60 @@ describe("UploadForm", () => {
 		expect(onBlur).toHaveBeenCalledTimes(1);
 	});
 
+	test("Upload with a value keeps a labelled file input that owns validation state", () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const onBlur = mock(() => {});
+		const { container, getByLabelText, getByRole } = render(
+			<Wrap>
+				<label htmlFor="file">Attachment</label>
+				<UploadForm
+					name="file"
+					value={SAMPLE}
+					onChange={() => {}}
+					onBlur={onBlur}
+					invalid
+					describedBy="file-error"
+					options={{ accept: "image/*", upload: async () => uploadResponse() }}
+				/>
+				<p id="file-error">File is required</p>
+			</Wrap>,
+		);
+		const input = getByLabelText("Attachment") as HTMLInputElement;
+		expect(getByLabelText("Replace")).toBe(input);
+		expect(input.type).toBe("file");
+		expect(input.getAttribute("accept")).toBe("image/*");
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(input.getAttribute("aria-describedby")).toBe("file-filename file-error");
+		expect(container.querySelector("#file-filename")?.textContent).toBe("pic.png");
+		fireEvent.blur(input);
+		expect(onBlur).toHaveBeenCalledTimes(1);
+
+		const removeButton = getByRole("button", { name: /remove/i });
+		expect(removeButton.hasAttribute("aria-invalid")).toBe(false);
+		expect(removeButton.hasAttribute("aria-describedby")).toBe(false);
+	});
+
+	test("Upload with a value replaces the file through the preview input", async () => {
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const captured: (UploadValue | UploadValue[] | string | string[] | null)[] = [];
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="file"
+					value={SAMPLE}
+					onChange={(v) => captured.push(v)}
+					options={{
+						upload: async () => uploadResponse("uploads/next.png", "/uploads/next.png"),
+					}}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		await userEvent.upload(input, new File(["x"], "next.png", { type: "image/png" }));
+		await waitFor(() => expect(captured.length).toBeGreaterThan(0));
+		expect(captured.at(-1)).toEqual({ path: "uploads/next.png", url: "/uploads/next.png" });
+	});
+
 	test("Upload tolerates a plain string value without crashing", () => {
 		const Wrap = clientWrapper(() => new Response("{}"));
 		const { getByText } = render(
@@ -243,25 +297,20 @@ describe("UploadForm", () => {
 });
 
 describe("UploadCell", () => {
-	test("UploadCell with an image row renders an img with the row url", () => {
+	test("UploadCell with an image value renders an img with its own url", () => {
+		const { container } = render(<UploadCell value={SAMPLE} />);
+		expect(container.querySelector("img")?.getAttribute("src")).toBe("/uploads/pic.png");
+	});
+
+	test("UploadCell ignores sibling row fields for a string path", () => {
 		const row = { path: "uploads/a.png", url: "/u/a.png" };
 		const { container } = render(
 			<RowProvider value={row}>
-				<UploadCell value={SAMPLE} />
+				<UploadCell value="uploads/report.pdf" />
 			</RowProvider>,
 		);
-		const img = container.querySelector("img");
-		expect(img?.getAttribute("src")).toBe("/u/a.png");
-	});
-
-	test("UploadCell with a non-image row renders the filename", () => {
-		const row = { path: "uploads/a.pdf", url: "/u/a.pdf" };
-		const { container } = render(
-			<RowProvider value={row}>
-				<UploadCell value={null} />
-			</RowProvider>,
-		);
-		expect(container.textContent).toContain("a.pdf");
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBe("report.pdf");
 	});
 
 	test("UploadCell with no value and no row renders nothing", () => {

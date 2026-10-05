@@ -546,6 +546,17 @@ and the record-URL row link.
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
 
+**What a row carries to the client** — an allowlist, never the full database row: the
+record key, the visible declared columns (toggleable and `hiddenByDefault()` columns
+included), the `groups()` column, and the `_recordUrl` / `_tooltips` / `_descriptions`
+meta. Undeclared attributes, eager-loaded relations and `->hidden()` / `visible(false)`
+columns stay on the server. So a row-action URL template (`{field}`), a row-action
+`hiddenIf()` / `disabledIf()`, or a `needs: ['row']` handler sees only those fields — to
+use another one, declare it as a column, or load the record by `$ctx->row['id']` in the
+handler (`$ctx->row` comes from the client; re-read anything you authorize on). Selection,
+reorder and inline edit identify rows by `id`, so a model keyed otherwise (uuid primary
+key) needs an `id` attribute.
+
 #### `groups()` — row grouping
 
 `->groups(string $column)` partitions contiguous rows sharing `$column`'s value under a
