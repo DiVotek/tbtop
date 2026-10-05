@@ -81,4 +81,11 @@ it('an excluded child of a repeater is listed and refused', function (): void {
     expect($changed['json']['message'])
         ->toBe('Fields listed in excludedFields cannot be changed over MCP; omit them or send their current value: sections.1.image.')
         ->and(McpPage::$ran)->not->toHaveKey('post');
+
+    $coerced = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
+        'sections' => [['heading' => 'Intro', 'image' => true]],
+    ]]));
+    expect($coerced['json']['message'])
+        ->toBe('Fields listed in excludedFields cannot be changed over MCP; omit them or send their current value: sections.0.image.')
+        ->and(McpPage::$ran)->not->toHaveKey('post');
 });

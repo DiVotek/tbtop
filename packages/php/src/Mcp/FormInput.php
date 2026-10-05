@@ -48,8 +48,7 @@ final class FormInput
             $key = $prefix.$field->name;
             $value = $input[$field->name];
             if (in_array($field->toNode()->kind, FormFields::UNSUPPORTED_KINDS, true)) {
-                // Loose: ids decoded from JSON may differ in type from the cast record value.
-                if ($value != ($stored[$field->name] ?? null)) {
+                if (self::canonical($value) !== self::canonical($stored[$field->name] ?? null)) {
                     $changed[] = $key;
                 }
 
@@ -71,6 +70,19 @@ final class FormInput
         }
 
         return $changed;
+    }
+
+    /**
+     * Numbers as strings, so a media id sent as "12" matches a stored 12 — and
+     * nothing else matches, as a loose comparison would let `true` equal any path.
+     */
+    private static function canonical(mixed $value): mixed
+    {
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return is_array($value) ? array_map(self::canonical(...), $value) : $value;
     }
 
     /** A translatable richtext holds one document per locale. */
