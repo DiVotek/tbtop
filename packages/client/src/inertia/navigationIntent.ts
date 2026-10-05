@@ -1,5 +1,5 @@
 /**
- * A one-shot flag that marks the next Inertia navigation as server-initiated
+ * A short-lived mark that flags the next Inertia navigation as server-initiated
  * (a redirect effect from AdminPage's flash handling, not a link click or
  * back/forward the user triggered themselves).
  *
@@ -18,12 +18,18 @@
  * subject to the unsaved-changes guard, regardless of ordering. applyRedirect
  * marks the flag immediately before calling router.visit; useUnsavedGuard's
  * 'before' handler consumes it first, before ever looking at isDirty.
+ *
+ * The mark expires in a microtask, so one nobody consumes (no guard mounted,
+ * external redirect, cancelled visit) cannot wave through a later navigation.
+ * Gotcha: Inertia fires 'before' synchronously inside router.visit, so the
+ * mark must be followed by router.visit in the same task — an await between
+ * them lets it expire and the guard prompts right after a save.
  */
 let serverRedirectGeneration = 0;
 let pendingServerRedirectGeneration: number | null = null;
 let serverRedirectVisit: object | null = null;
 
-/** Call immediately before router.visit() for a server-authored redirect effect. */
+/** Call synchronously before router.visit() for a server-authored redirect effect. */
 export function markServerRedirect(): void {
 	const generation = ++serverRedirectGeneration;
 	pendingServerRedirectGeneration = generation;
