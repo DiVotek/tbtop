@@ -36,13 +36,17 @@ class MediaIndexPage extends Page
             ]),
             $s->table('media')
                 ->columns([
-                    Column::make('url')->image()->square()->label('Preview')->alt('Preview'),
+                    Column::make('preview')->image()->square()->label('Preview')->alt('Preview'),
                     'filename' => 'Filename',
                     'mime_type' => 'Type',
                     'filesize' => 'Size',
                 ])
                 ->defaultSort('created_at', 'desc')
-                ->query(fn () => Media::query())
+                // Only images get a preview URL; an image cell with an empty value
+                // renders blank instead of a broken <img> for PDFs and text files.
+                ->query(fn () => Media::query()->selectRaw(
+                    "media.*, case when mime_type like 'image/%' then url end as preview"
+                ))
                 ->rowActions([
                     $s->action('edit')->label('Edit')->url('/admin/media/{row.id}/edit'),
                     // Prebuilt delete; the using closure returns the page's own
