@@ -16,18 +16,21 @@ final class FormFields
     public const UNSUPPORTED_KINDS = ['upload', 'media'];
 
     /**
-     * $mandatory: whether a row holding these fields must exist — the top level, or
-     * a container that is required or has a minimum row count.
+     * $fields as RuleWalker::fieldsByKey() keys them. An excluded field counts as
+     * required only when its row must exist: at the top level, or in a container
+     * that is required or has a minimum row count.
      *
-     * @param  list<Field>  $fields
+     * @param  array<string, Field>  $fields
      * @param  array<string, list<mixed>>  $rules
      * @return array{fields: list<array<string, mixed>>, excluded: list<array<string, string>>, required: list<array<string, string>>}
      */
-    public static function describe(array $fields, array $rules, string $prefix = '', bool $mandatory = true): array
+    public static function describe(array $fields, array $rules): array
     {
         $out = ['fields' => [], 'excluded' => [], 'required' => []];
-        foreach ($fields as $field) {
-            $name = $prefix.$field->name;
+        $rowMandatory = [];
+        foreach ($fields as $name => $field) {
+            $parent = str_contains($name, '.*.') ? substr($name, 0, (int) strrpos($name, '.*.')) : null;
+            $mandatory = $parent === null || ($rowMandatory[$parent] ?? false);
             $node = $field->toNode();
             if (in_array($node->kind, self::UNSUPPORTED_KINDS, true)) {
                 $out['excluded'][] = ['name' => $name, 'kind' => $node->kind, 'reason' => "{$node->kind} fields cannot be filled over MCP"];
@@ -37,17 +40,13 @@ final class FormFields
 
                 continue;
             }
-            $children = RuleWalker::fields($field->childFields());
+            $rowMandatory[$name] = $mandatory && (in_array('required', $rules[$name] ?? [], true) || (int) ($node->options['minItems'] ?? 0) > 0);
+            $isContainer = array_any(array_keys($fields), static fn (string $key): bool => str_starts_with($key, "{$name}.*."));
             $out['fields'][] = [
-                ...self::field($field, $name, $node->kind, $node->options, $rules, $children === []),
+                ...self::field($field, $name, $node->kind, $node->options, $rules, ! $isContainer),
                 ...($field->isTranslatableField() ? ['translatable' => true] : []),
                 ...($field instanceof Richtext ? self::richtext($field) : []),
             ];
-            if ($children !== []) {
-                $rowRequired = in_array('required', $rules[$name] ?? [], true) || (int) ($node->options['minItems'] ?? 0) > 0;
-                $nested = self::describe($children, $rules, "{$name}.*.", $mandatory && $rowRequired);
-                $out = array_merge_recursive($out, $nested);
-            }
         }
 
         return $out;
@@ -126,8 +125,8 @@ final class FormFields
     {
         $embeds = [];
         foreach ($field->getEmbeds() as $embed) {
-            $fields = RuleWalker::fields($embed->includedFields());
-            $described = self::describe($fields, RuleWalker::collect($fields));
+            $fields = $embed->includedFields();
+            $described = self::describe(RuleWalker::fieldsByKey($fields), RuleWalker::collect($fields));
             $embeds[] = array_filter([
                 'kind' => $embed->kind,
                 'label' => $embed->labelText(),

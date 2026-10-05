@@ -2,7 +2,8 @@
 
 namespace Tbtop\Admin\Mcp;
 
-use Tbtop\Admin\Dsl\Fields\Field;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationData;
 use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\RuleWalker;
@@ -21,7 +22,21 @@ final class FormInput
      */
     public static function assertSendable(FormBuilder $form, array $input): void
     {
-        $changed = self::changedExcluded($form->getFields(), $input, $form->recordData(), '');
+        $stored = $form->recordData();
+        $changed = [];
+        foreach (RuleWalker::fieldsByKey($form->getFields()) as $key => $field) {
+            if ($field instanceof Richtext) {
+                self::assertDocuments($field, $key, $input);
+            }
+            if (! in_array($field->toNode()->kind, FormFields::UNSUPPORTED_KINDS, true)) {
+                continue;
+            }
+            foreach (self::sent($key, $input) as $path => $value) {
+                if (self::canonical($value) !== self::canonical(Arr::get($stored, $path))) {
+                    $changed[] = $path;
+                }
+            }
+        }
         if ($changed === []) {
             return;
         }
@@ -31,45 +46,42 @@ final class FormInput
     }
 
     /**
-     * The input keys of excluded fields whose value differs from the stored one, per repeater row.
+     * A translatable richtext holds one document per locale; anything but an
+     * object there is checked as a single document, so it is refused.
      *
-     * @param  list<Field>  $fields
-     * @param  array<mixed>  $input
-     * @param  array<mixed>  $stored
-     * @return list<string>
+     * @param  array<string, mixed>  $input
      */
-    private static function changedExcluded(array $fields, array $input, array $stored, string $prefix): array
+    private static function assertDocuments(Richtext $field, string $key, array $input): void
     {
-        $changed = [];
-        foreach ($fields as $field) {
-            if (! array_key_exists($field->name, $input)) {
-                continue;
+        $documents = $field->isTranslatableField() ? self::sent("{$key}.*", $input) : [];
+        foreach (self::sent($key, $input) as $path => $value) {
+            if (! $field->isTranslatableField() || ! is_array($value)) {
+                $documents[$path] = $value;
             }
-            $key = $prefix.$field->name;
-            $value = $input[$field->name];
-            if (in_array($field->toNode()->kind, FormFields::UNSUPPORTED_KINDS, true)) {
-                if (self::canonical($value) !== self::canonical($stored[$field->name] ?? null)) {
-                    $changed[] = $key;
-                }
+        }
+        foreach ($documents as $path => $document) {
+            RichtextDocument::assertValid($path, $document);
+        }
+    }
 
-                continue;
-            }
-            if ($field instanceof Richtext) {
-                self::assertDocuments($field, $key, $value);
-
-                continue;
-            }
-            $children = RuleWalker::fields($field->childFields());
-            $rows = is_array($stored[$field->name] ?? null) ? $stored[$field->name] : [];
-            foreach ($children === [] || ! is_array($value) ? [] : $value as $i => $row) {
-                if (is_array($row)) {
-                    $was = is_array($rows[$i] ?? null) ? $rows[$i] : [];
-                    $changed = [...$changed, ...self::changedExcluded($children, $row, $was, "{$key}.{$i}.")];
-                }
+    /**
+     * The input values at rule key $pattern, by concrete path (`sections.0.image`),
+     * expanded as the validator expands wildcard rules; paths not sent are skipped.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private static function sent(string $pattern, array $input): array
+    {
+        $regex = '/^'.str_replace('\*', '[^\.]+', preg_quote($pattern, '/')).'\z/';
+        $out = [];
+        foreach (ValidationData::initializeAndGatherData($pattern, $input) as $path => $value) {
+            if (preg_match($regex, (string) $path) === 1 && Arr::has($input, (string) $path)) {
+                $out[(string) $path] = $value;
             }
         }
 
-        return $changed;
+        return $out;
     }
 
     /**
@@ -83,18 +95,5 @@ final class FormInput
         }
 
         return is_array($value) ? array_map(self::canonical(...), $value) : $value;
-    }
-
-    /** A translatable richtext holds one document per locale. */
-    private static function assertDocuments(Richtext $field, string $key, mixed $value): void
-    {
-        if (! $field->isTranslatableField() || ! is_array($value)) {
-            RichtextDocument::assertValid($key, $value);
-
-            return;
-        }
-        foreach ($value as $locale => $document) {
-            RichtextDocument::assertValid("{$key}.{$locale}", $document);
-        }
     }
 }

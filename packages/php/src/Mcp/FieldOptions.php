@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Select;
+use Tbtop\Admin\Dsl\RuleWalker;
 use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\Http\RelationSearchResponder;
 use Tbtop\Admin\Http\ResolvedPage;
@@ -36,7 +37,8 @@ final class FieldOptions
             throw new AgentError("Executable \"{$executable}\" is not on page \"{$page}\".");
         }
         $form = PageSurface::executable($resolved, $exec)['form'];
-        $field = $form === null ? null : self::find($form->getFields(), $name);
+        // search() lists a container's row field under this same key: `parent.*.child`.
+        $field = $form === null ? null : (RuleWalker::fieldsByKey($form->getFields())[$name] ?? null);
         if ($field === null) {
             throw new AgentError("Field \"{$name}\" is not in the form of \"{$executable}\".");
         }
@@ -57,23 +59,6 @@ final class FieldOptions
         }
 
         throw new AgentError("Unknown filter \"{$name}\" for table \"{$table->name}\".");
-    }
-
-    /**
-     * $name as search() lists it; a container child is `parent.*.child`.
-     *
-     * @param  list<mixed>  $fields
-     */
-    private static function find(array $fields, string $name): ?Field
-    {
-        [$head, $rest] = array_pad(explode('.*.', $name, 2), 2, null);
-        foreach ($fields as $field) {
-            if ($field instanceof Field && $field->name === $head) {
-                return $rest === null ? $field : self::find($field->childFields(), $rest);
-            }
-        }
-
-        return null;
     }
 
     /**

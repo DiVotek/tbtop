@@ -34,13 +34,35 @@ final class RuleWalker
     public static function collect(array $children, string $prefix = ''): array
     {
         $rules = [];
-        foreach (self::fields($children) as $field) {
-            foreach (self::fromField($field, $prefix) as $key => $entry) {
-                $rules[$key] = $entry;
+        foreach (self::fieldsByKey($children, $prefix) as $key => $field) {
+            foreach (self::fromField($field, substr($key, 0, -strlen($field->name))) as $ruleKey => $entry) {
+                $rules[$ruleKey] = $entry;
             }
         }
 
         return $rules;
+    }
+
+    /**
+     * Every field collect() reads, keyed by its own rule key: a repeater row's
+     * field as `parent.*.child`, after its parent. A translatable field's keys
+     * (`name.locale`) are its own, so its children are not walked.
+     *
+     * @param  list<mixed>  $children
+     * @return array<string, Field>
+     */
+    public static function fieldsByKey(array $children, string $prefix = ''): array
+    {
+        $out = [];
+        foreach (self::fields($children) as $field) {
+            $key = $prefix.$field->name;
+            $out[$key] = $field;
+            if (! $field->isTranslatableField()) {
+                $out += self::fieldsByKey($field->childFields(), $key.'.*.');
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -112,13 +134,8 @@ final class RuleWalker
         // Rule-less fields get a permissive baseline so validate()
         // still includes them in the validated payload.
         $entries = $field->ruleEntries();
-        $rules = [$key => self::withEmbedsRule($field, $entries === [] ? ['nullable'] : $entries)];
-        $subFields = $field->childFields();
-        if ($subFields !== []) {
-            $rules += self::collect($subFields, $key.'.*.');
-        }
 
-        return $rules;
+        return [$key => self::withEmbedsRule($field, $entries === [] ? ['nullable'] : $entries)];
     }
 
     /**

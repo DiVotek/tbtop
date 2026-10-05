@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Mcp;
 
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\FormBuilder;
+use Tbtop\Admin\Dsl\RuleWalker;
 
 /**
  * Describes a form's input for an agent: kind, label, options and Laravel rules
@@ -53,7 +54,7 @@ final class FormArguments
      */
     private static function analyse(FormBuilder $form): array
     {
-        $described = FormFields::describe($form->getFields(), $form->collectRules());
+        $described = FormFields::describe(RuleWalker::fieldsByKey($form->getFields()), $form->collectRules());
         $out = ['form' => $form->name, 'fields' => $described['fields']];
         if ($described['excluded'] !== []) {
             $out['excludedFields'] = $described['excluded'];
