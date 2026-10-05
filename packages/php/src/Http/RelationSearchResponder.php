@@ -1,0 +1,127 @@
+<?php
+
+namespace Tbtop\Admin\Http;
+
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Tbtop\Admin\Dsl\Fields\Relation;
+use Tbtop\Admin\I18n\LocaleService;
+use Tbtop\Admin\I18n\TranslatableValue;
+
+/**
+ * Answers relation-search for one Relation field — shared by the HTTP endpoint
+ * and the MCP options lookup, which resolve the field differently.
+ *
+ *   search mode  — body: {search: string}  → {options: [{value, label}]}
+ *   resolve mode — body: {value: string}   → {option: {value, label}|null}
+ */
+final class RelationSearchResponder
+{
+    public function respond(Request $request, Relation $field): JsonResponse
+    {
+        $deps = DependencyPayload::read($request, $field->dependsOnFields());
+
+        if ($request->has('value')) {
+            return $this->resolveByValue($request, $field, $deps);
+        }
+
+        return $this->search($request, $field, $deps);
+    }
+
+    /** @param  array<string, string>  $deps */
+    private function resolveByValue(Request $request, Relation $field, array $deps): JsonResponse
+    {
+        $value = (string) $request->input('value', '');
+        $builder = $this->buildQuery($field, $deps);
+        $model = $builder->find($value);
+
+        if ($model === null) {
+            return response()->json(['option' => null]);
+        }
+
+        return response()->json([
+            'option' => self::toOption($model, $field->getLabelKey()),
+        ]);
+    }
+
+    /** @param  array<string, string>  $deps */
+    private function search(Request $request, Relation $field, array $deps): JsonResponse
+    {
+        $search = (string) $request->input('search', '');
+        $builder = $this->buildQuery($field, $deps);
+        $labelKey = $field->getLabelKey();
+
+        if ($search !== '') {
+            $builder = $builder->where(
+                self::searchColumn($builder, $labelKey),
+                'like',
+                '%'.$search.'%',
+            );
+        }
+
+        $rows = $builder->limit($field->getSearchLimit())->get();
+
+        $options = $rows->map(fn ($model) => self::toOption($model, $labelKey))
+            ->values()
+            ->all();
+
+        return response()->json(['options' => $options]);
+    }
+
+    /**
+     * A translatable column stores a locale map, so LIKE against the whole JSON
+     * text matches locale keys and misses non-ASCII values (stored escaped).
+     * Searching the default locale's JSON path compares the decoded value.
+     *
+     * @param  Builder<Model>  $builder
+     */
+    private static function searchColumn(Builder $builder, string $labelKey): string
+    {
+        if (! self::isTranslatable($builder->getModel(), $labelKey)) {
+            return $labelKey;
+        }
+
+        return $labelKey.'->'.LocaleService::defaultContentLocale();
+    }
+
+    private static function isTranslatable(Model $model, string $labelKey): bool
+    {
+        $translatable = $model->translatable ?? null;
+        if (is_array($translatable) && in_array($labelKey, $translatable, true)) {
+            return true;
+        }
+
+        return in_array($model->getCasts()[$labelKey] ?? null, ['array', 'json'], true);
+    }
+
+    /** @return array{value: string, label: string} */
+    private static function toOption(Model $model, string $labelKey): array
+    {
+        $label = TranslatableValue::pick($model->getRawOriginal($labelKey) ?? $model->{$labelKey});
+
+        return [
+            'value' => (string) $model->getKey(),
+            'label' => is_scalar($label) ? (string) $label : '',
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $deps
+     * @return Builder<Model>
+     */
+    private function buildQuery(Relation $field, array $deps): Builder
+    {
+        $closure = $field->queryClosure();
+
+        // Callers only pass a field that has a query closure.
+        assert($closure instanceof Closure);
+
+        $builder = $closure($deps);
+        assert($builder instanceof Builder);
+
+        return $builder;
+    }
+}

@@ -76,6 +76,13 @@ domain: mcp
   otherwise `whereKey(null)` reports success. A key is an int or a non-empty string: an
   array `id` would make `whereKey()` a `whereIn` on other rows. The browser always sends what the UI wired; enforcing it in the
   controller would change the HTTP contract for every client.
+- **Dynamic options are read through `query`, scoped to an executable.** `query` takes
+  `executable` + `field` (or `table` + `filter`) and calls the shared option responders
+  with the field found inside that executable's form; `options: "dynamic"` marks exactly
+  the fields and filters it serves. A fourth tool was rejected (tool-per-thing, see above);
+  calling the HTTP option endpoints was rejected because they find a field by name across
+  every form of the page, which ignores `mcp(false)`. A missing `dependsOn` parent is
+  refused — the browser never fetches without one.
 - **`query` refuses what `search()` does not list.** sort (plus the default-sort field,
   which `search()` lists in `sortable`), perPage, filter names, `columnSearch` columns and
   table-wide search are checked against the same description `search()` produces, after

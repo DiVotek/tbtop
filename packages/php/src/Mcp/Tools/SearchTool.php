@@ -30,6 +30,9 @@ final class SearchTool extends Tool
         its current data — build edits from them, not from query() rows, which are formatted for display.
         A field you omit is absent from the handler's input; resend `values` for fields you keep.
         Fields listed in a form's `excludedFields` cannot be sent: execute() refuses input that sets any.
+        A field with `options: "dynamic"` lists its choices through query() (`executable` + `field`, with
+        `deps` for the names in its `dependsOn`). A `mask` formats a text value: 9 digit, a letter, * letter
+        or digit, any other character literal; send the value as the mask formats it, literals included.
         TXT;
 
     public function schema(JsonSchema $schema): array
