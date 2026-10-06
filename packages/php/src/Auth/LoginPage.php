@@ -45,6 +45,7 @@ abstract class LoginPage extends AuthPage
                     ]),
                 ]),
             ])
+                ->guardUnsaved(false)
                 ->record(['email' => '', 'password' => '', 'remember' => false])
                 ->onSubmit(fn (ActionCtx $ctx): string => $this->authenticate($ctx)),
         ]);

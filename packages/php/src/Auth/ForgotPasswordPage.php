@@ -44,6 +44,7 @@ abstract class ForgotPasswordPage extends AuthPage
                     ]),
                 ]),
             ])
+                ->guardUnsaved(false)
                 ->record(['email' => ''])
                 ->onSubmit(fn (ActionCtx $ctx): Effects => $this->sendLink($ctx)),
         ]);

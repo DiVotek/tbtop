@@ -18,8 +18,10 @@ it('smokes the public login page while logged out', function () {
         ->assertNoSmoke();             // no console logs + no JavaScript errors
 });
 
-it('links the login page to the forgot-password page', function () {
+it('links the login page to the forgot-password page, even with the email typed', function () {
+    // A typed-in form must not trip the unsaved-changes guard on the way out.
     visit('/admin/login')
+        ->type('email', 'admin@admin.com')
         ->click('Forgot your password?')
         ->assertPathIs('/admin/forgot-password')
         ->assertVisible('#app form')

@@ -43,6 +43,7 @@ abstract class ResetPasswordPage extends AuthPage
                     $s->action('submit')->label(__('tbtop-admin::admin.auth.reset.submit'))->color('primary')->submit(),
                 ]),
             ])
+                ->guardUnsaved(false)
                 ->record(['email' => (string) request()->query('email', ''), 'password' => '', 'password_confirmation' => ''])
                 ->onSubmit(fn (ActionCtx $ctx): Effects => $this->resetPassword($ctx)),
         ]);
