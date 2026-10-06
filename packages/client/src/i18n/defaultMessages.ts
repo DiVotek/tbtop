@@ -9,7 +9,6 @@ export const defaultMessages: Messages = {
 	"action.close": "Close",
 	"action.confirm": "Confirm",
 	"action.logout": "Logout",
-	"action.login": "Login",
 	"auth.profile.title": "Profile",
 	"validation.required": "Required",
 	"validation.email": "Invalid email",

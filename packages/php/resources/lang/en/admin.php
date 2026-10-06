@@ -11,7 +11,6 @@ return [
         'close' => 'Close',
         'confirm' => 'Confirm',
         'logout' => 'Logout',
-        'login' => 'Login',
         'done' => 'Done',
         'replicate' => 'Replicate',
         'restore' => 'Restore',
