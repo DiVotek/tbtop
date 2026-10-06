@@ -7,6 +7,7 @@ use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\Chromes\HeaderActionChrome;
 use Tbtop\Admin\Tests\Fixtures\NavPage;
 use Tbtop\Admin\Tests\Fixtures\OpsOnlyPage;
+use Tbtop\Admin\Tests\Fixtures\PublicLoginPage;
 
 /** Second panel under /ops, protected by the 'staff' guard. */
 class OpsPanel extends Panel
@@ -18,7 +19,7 @@ class OpsPanel extends Panel
             ->prefix('ops')
             ->guard('staff')
             ->middleware(['web'])
-            ->pages([NavPage::class, OpsOnlyPage::class])
+            ->pages([NavPage::class, OpsOnlyPage::class, PublicLoginPage::class])
             ->locales(['fr', 'en'])
             ->defaultLocale('fr')
             ->navigation('topbar')

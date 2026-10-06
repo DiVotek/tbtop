@@ -4,20 +4,18 @@ namespace Tbtop\Admin;
 
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Commands\CachePagesCommand;
 use Tbtop\Admin\Commands\ClearCachedPagesCommand;
 use Tbtop\Admin\Commands\InstallCommand;
 use Tbtop\Admin\Commands\MakePageCommand;
 use Tbtop\Admin\Http\PanelErrorPage;
-use Tbtop\Admin\I18n\LocaleService;
-use Tbtop\Admin\Navigation\NavBuilder;
-use Tbtop\Admin\Panels\ChromeSerializer;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelRegistry;
 
@@ -51,39 +49,6 @@ class AdminServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->registerPanelErrorRenderer();
-
-        Inertia::share('tbtop', static function (): ?array {
-            $panel = CurrentPanel::current();
-            if ($panel === null) {
-                return null;
-            }
-
-            $locale = LocaleService::currentLocale();
-            $prefix = $panel->pathPrefix();
-            $pollSeconds = $panel->notificationsPolling();
-            $palette = $panel->commandPalette();
-
-            return [
-                'panel' => $panel->id(),
-                'nav' => NavBuilder::build($panel),
-                'userMenuItems' => $panel->userMenuItems(),
-                'chrome' => ChromeSerializer::forPanel($panel),
-                'brand' => $panel->brand(),
-                'navigation' => $panel->navigation(),
-                'appearance' => $panel->appearance() ?: null,
-                'prefix' => $prefix,
-                'apiBase' => $prefix.'/api',
-                'locale' => $locale,
-                'locales' => LocaleService::availableLocales(),
-                'messages' => LocaleService::messagesFor($locale),
-                'contentLocales' => LocaleService::contentLocales(),
-                'defaultContentLocale' => LocaleService::defaultContentLocale(),
-                'notifications' => [
-                    'pollInterval' => $pollSeconds !== null ? $pollSeconds * 1000 : null,
-                ],
-                'palette' => $palette === null ? null : (object) $palette,
-            ];
-        });
     }
 
     /**
@@ -107,6 +72,14 @@ class AdminServiceProvider extends PackageServiceProvider
                 }
 
                 return PanelErrorPage::notFound($request, $panel);
+            });
+            // An expired session fails CSRF before auth runs; for logout that is the goal already reached.
+            $handler->renderable(static function (HttpException $e, Request $request): ?RedirectResponse {
+                if ($e->getStatusCode() !== 419 || ! $request->routeIs('tbtop.*.logout')) {
+                    return null;
+                }
+
+                return redirect('/'.trim((string) $request->route()?->getPrefix(), '/'));
             });
         });
     }

@@ -40,6 +40,7 @@ Route file: `packages/php/routes/admin.php`
 |---|---|---|---|---|---|
 | `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
+| `POST` | `{prefix}/logout` | `tbtop.{panel}.logout` | `LogoutController` | Inertia-compatible redirect | Logs out the panel's guard, invalidates the session, redirects to `{prefix}` (the host's guest redirect takes it to login). An expired-session POST (419) redirects the same way |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
 | `POST` | `{prefix}/{mcp path}` (default `mcp`) | `tbtop.{panel}.mcp` | `TbtopMcpServer` (laravel/mcp) | JSON-RPC (MCP streamable HTTP) | MCP `tools/call` results for `search` / `query` / `execute`. Only when the panel calls `mcp()`; runs `[SetCurrentPanel, ValidateMcpOrigin, ...mcp($middleware), SetAdminLocale]` instead of the panel stack. `GET`/`DELETE` on the same path answer 405 — see [MCP server](#mcp-server) |
 
@@ -52,10 +53,9 @@ application/json`, i.e. the table/select/upload endpoints) and requests outside 
 panel keep the app's own 404. The client resolves `admin/error` to the exported
 `AdminErrorPage` (see `apps/demo/resources/js/admin.tsx`).
 
-**Host-provided: `POST {prefix}/logout`.** The profile dropdown posts to
-`${routesBase}/logout` (`packages/client/src/data/entityRoutes.ts`), but the package
-registers no such route — auth is the host app's. Register it under the panel prefix
-(the demo does it in `apps/demo/routes/auth.php`).
+**Signed-in user.** The shared `tbtop.user` prop is the panel guard's user as the model
+serializes it (`toArray()`), `null` for a guest. The model's `$hidden` is the only filter:
+anything not hidden reaches every page's HTML. The client reads only this prop.
 
 ### Media manager routes (prefix: `{prefix}/api/media`, name: `tbtop.{panel}.media.*`)
 
