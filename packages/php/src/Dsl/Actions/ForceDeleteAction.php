@@ -25,7 +25,7 @@ final class ForceDeleteAction
         return RecordAction::server(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->forceDelete(),
+            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->key())->firstOrFail()->forceDelete(),
             Effects::make()->notify(__('tbtop-admin::admin.force_delete.notify.success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.force_delete'))->color('danger')->confirm(
             __('tbtop-admin::admin.force_delete.confirm.title'),

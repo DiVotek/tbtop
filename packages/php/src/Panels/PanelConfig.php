@@ -306,7 +306,8 @@ final class PanelConfig
 
     /**
      * The panel's auth/app middleware layer a page spreads to add to it, e.g.
-     * middleware(PanelConfig $p): array { return [...$p->authStack(), 'can:x']; }.
+     * middleware(PanelConfig $p): array { return [...$p->authStack(), 'throttle:30,1']; }.
+     * Access rules belong in Page::can(), which MCP calls also enforce.
      * Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those.
      *
      * @return list<string>
