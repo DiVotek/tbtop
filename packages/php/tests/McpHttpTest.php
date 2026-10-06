@@ -110,3 +110,13 @@ it('accepts no Origin, the app\'s own and an allowed one; refuses any other with
     $call(['Origin' => 'https://evil.example'])->assertForbidden()->assertJsonPath('error.code', -32600);
     expect(McpPage::$ran)->toBe([]);
 });
+
+it('refuses a rebound host: an Origin matching the request Host but not app.url gets 403', function (): void {
+    $this->postJson('http://evil.example/admin/mcp', [
+        'jsonrpc' => '2.0',
+        'id' => 1,
+        'method' => 'tools/call',
+        'params' => ['name' => 'execute', 'arguments' => ['id' => 'mcp-page:ping']],
+    ], ['Origin' => 'http://evil.example'])->assertForbidden()->assertJsonPath('error.code', -32600);
+    expect(McpPage::$ran)->toBe([]);
+});

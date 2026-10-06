@@ -228,7 +228,8 @@ return $panel
   stateless token auth (the demo hides `LoginPage` and `TwoFactorChallengePage`).
 - **Origin is checked, as the MCP transport requires.** A request without an `Origin`
   header (Claude Desktop, Cursor, CLI clients) passes. A browser `Origin` must be the
-  app's own or listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other
+  origin of `app.url` (never the request's `Host`, which a rebound request controls) or
+  listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other
   gets `403` before auth runs, which stops DNS-rebinding and cross-site calls.
 - A page may not use the MCP path, or the slug `mcp` (the route name), in a panel with MCP on.
 
