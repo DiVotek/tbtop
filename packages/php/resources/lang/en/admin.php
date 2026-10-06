@@ -12,7 +12,6 @@ return [
         'confirm' => 'Confirm',
         'logout' => 'Logout',
         'login' => 'Login',
-        'register' => 'Register',
         'done' => 'Done',
         'replicate' => 'Replicate',
         'restore' => 'Restore',

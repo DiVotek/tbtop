@@ -36,7 +36,7 @@ the recurring verification mechanism.
 - **Auth:** `$this->actingAs($admin)` in `beforeEach` (the admin gate needs `role=admin`;
   the factory does not set it, so seed `['role' => 'admin']`). `actingAs` carries into the
   browser because the Laravel test server runs the same app instance. One dedicated test
-  drives the real `/login` form to keep login-flow coverage.
+  drives the real `/admin/login` form to keep login-flow coverage.
 - **Per page, shallow checks:** visit → `assertVisible('#app main')` (proves React hydrated
   the admin shell — a bare `main` would be read as the *text* "main", so the explicit
   `#app main` CSS selector is required) → `assertNoSmoke()` (no console logs + no JS errors).

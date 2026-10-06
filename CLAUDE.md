@@ -20,7 +20,7 @@ page composition. The client owns rendering. **These three boundaries are the ar
 
 Monorepo. Two published packages + a demo app.
 
-- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, guard/middleware integration, media. **Laravel package.** (Auth *screens* are DSL pages; the auth backend lives in the demo — see the auth note below.)
+- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, guard/middleware integration, media. **Laravel package.** (Auth *screens* are DSL base pages the host publishes; the host owns auth — see the auth note below.)
 - `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, 26 wire field kinds plus 2 client-only registrations (`json`/`unknown`), layout shell, data clients.
 - `packages/contracts/` → generated `structure.schema.json` + `fixtures/kitchen-sink.json` — the wire-grammar contract shared by both sides.
 - `apps/demo/` → Laravel app wiring both packages end-to-end. **The reference consumer — read its `app/Admin/Pages/` to see real DSL usage.**

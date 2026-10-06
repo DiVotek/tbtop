@@ -14,7 +14,7 @@ use Tbtop\Admin\Pages\Page;
  * shell centered both horizontally and vertically. Use it to manually verify
  * that the 'center' layout value produces no sidebar, header, or footer.
  *
- * Auth pages (login/register) will use this layout once implemented.
+ * The auth pages (sign-in, password reset, 2FA challenge) use this layout.
  */
 class LoginPreviewPage extends Page
 {
@@ -44,7 +44,7 @@ class LoginPreviewPage extends Page
             $s->displayText('Center Layout')->variant('heading'),
             $s->displayText(
                 'This page uses layout: center — no sidebar, header, or footer. '
-                .'Auth pages (login/register) will use this shell once they are implemented.'
+                .'The auth pages (sign-in, password reset, 2FA challenge) use this shell.'
             )->variant('muted'),
             $s->displayAlert('You are seeing the center layout.')
                 ->title('Center layout active')
