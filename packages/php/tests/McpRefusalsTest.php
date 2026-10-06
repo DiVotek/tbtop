@@ -17,24 +17,24 @@ it('refuses an execute call that omits what the action needs, without running th
     'no row' => [['id' => 'mcp-page:rename'], '"mcp-page:rename" needs row. Pass a row from query().'],
     'row without its key' => [
         ['id' => 'mcp-page:rename', 'row' => ['name' => 'WIDGET']],
-        '"mcp-page:rename" needs a row with its key "id". Pass a row from query() unchanged.',
+        '"mcp-page:rename" needs a row with its key "_key". Pass a row from query() unchanged.',
     ],
     'row with a null key' => [
         ['id' => 'mcp-page:rename', 'row' => ['id' => null]],
-        '"mcp-page:rename" needs a row with its key "id". Pass a row from query() unchanged.',
+        '"mcp-page:rename" needs a row with its key "_key". Pass a row from query() unchanged.',
     ],
     'row with an array key' => [
         ['id' => 'mcp-page:rename', 'row' => ['id' => ['a' => 1]]],
-        '"mcp-page:rename" needs a row with its key "id". Pass a row from query() unchanged.',
+        '"mcp-page:rename" needs a row with its key "_key". Pass a row from query() unchanged.',
     ],
-    'no selection' => [['id' => 'mcp-page:archiveMany'], '"mcp-page:archiveMany" needs selection. Pass row keys from query() as selection.'],
+    'no selection' => [['id' => 'mcp-page:archiveMany'], '"mcp-page:archiveMany" needs selection. Pass the `_key` of rows from query() as selection.'],
     'empty selection' => [
         ['id' => 'mcp-page:archiveMany', 'selection' => []],
-        '"mcp-page:archiveMany" needs selection. Pass row keys from query() as selection.',
+        '"mcp-page:archiveMany" needs selection. Pass the `_key` of rows from query() as selection.',
     ],
     'selection of null keys' => [
         ['id' => 'mcp-page:archiveMany', 'selection' => [null, '']],
-        '"mcp-page:archiveMany" needs selection. Pass row keys from query() as selection.',
+        '"mcp-page:archiveMany" needs selection. Pass the `_key` of rows from query() as selection.',
     ],
     'no form' => [['id' => 'mcp-page:save'], '"mcp-page:save" needs form. Pass form with the fields search() lists.'],
     'several missing' => [

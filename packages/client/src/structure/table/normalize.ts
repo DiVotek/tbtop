@@ -3,8 +3,15 @@
  * No JSX — kept separate from the grid render code.
  */
 
+/**
+ * The row's record key. The server sends it as `_key`, which no column can
+ * overwrite; `id` is the fallback for rows from a consumer's own endpoint.
+ */
 export function readId(row: Record<string, unknown>): string | undefined {
-	const id = row.id;
+	return keyString(row._key) ?? keyString(row.id);
+}
+
+function keyString(id: unknown): string | undefined {
 	if (typeof id === "string") {
 		return id;
 	}

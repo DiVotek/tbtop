@@ -1,7 +1,10 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\Http\ColumnProjection;
@@ -108,4 +111,59 @@ it('ColumnProjection: carries the groups() column for Eloquent rows', function (
     $result = ColumnProjection::apply($table, CarModel::query()->get());
 
     expect($result[0])->toHaveKey('location_id', 7);
+});
+
+it('ColumnProjection: a formatted id column leaves the record key intact under _key', function (): void {
+    Schema::create('keyed_posts', function ($table): void {
+        $table->id();
+        $table->string('title');
+    });
+    DB::table('keyed_posts')->insert(['id' => 42, 'title' => 'Post A']);
+
+    $table = (new TableBuilder('keyed_posts'))
+        ->columns([Column::make('id')->formatUsing(fn ($v) => "#{$v}"), Column::make('title')])
+        ->query(fn () => DB::table('keyed_posts'));
+
+    $wire = json_decode(json_encode(ColumnProjection::apply($table, DB::table('keyed_posts')->get()->all())[0]), true);
+    $ctx = new ActionCtx(Request::create('/'), null, row: $wire);
+
+    expect($wire['id'])->toBe('#42')
+        ->and($wire['_key'])->toBe(42)
+        ->and($ctx->key())->toBe(42);
+});
+
+it('ColumnProjection: a model keyed by a uuid ships that key under _key', function (): void {
+    Schema::create('uuid_posts', function ($table): void {
+        $table->uuid('uuid')->primary();
+        $table->string('title');
+    });
+    $model = new class extends Model
+    {
+        protected $table = 'uuid_posts';
+
+        protected $primaryKey = 'uuid';
+
+        protected $keyType = 'string';
+
+        public $incrementing = false;
+
+        public $timestamps = false;
+
+        protected $guarded = [];
+    };
+    $model->newQuery()->create(['uuid' => '9f3c1a2e-0000-4000-8000-000000000001', 'title' => 'Post A']);
+
+    $table = (new TableBuilder('uuid_posts'))
+        ->columns([Column::make('title')])
+        ->query(fn () => $model->newQuery());
+
+    $row = ColumnProjection::apply($table, $model->newQuery()->get())[0];
+
+    expect($row['_key'])->toBe('9f3c1a2e-0000-4000-8000-000000000001')
+        ->and((new ActionCtx(Request::create('/'), null, row: $row))->key())->toBe('9f3c1a2e-0000-4000-8000-000000000001');
+});
+
+it('ActionCtx::key falls back to id for a row without _key', function (): void {
+    expect((new ActionCtx(Request::create('/'), null, row: ['id' => 7]))->key())->toBe(7)
+        ->and((new ActionCtx(Request::create('/'), null))->key())->toBeNull();
 });

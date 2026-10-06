@@ -56,7 +56,7 @@ public function view(S $s): Node
                 $s->action('delete')->label('Delete')->color('danger')
                     ->confirm('Delete comment?', 'This cannot be undone.')
                     ->handle(function (ActionCtx $ctx): Effects {
-                        Comment::whereKey($ctx->row['id'])->delete();
+                        Comment::whereKey($ctx->key())->delete();
                         return Effects::make()
                             ->notify('Comment deleted')
                             ->refreshTable('comments');
@@ -178,13 +178,13 @@ $s->table('posts')
     ->rowActions([
         $s->action('restore')->label('Restore')
             ->handle(function (ActionCtx $ctx): Effects {
-                Post::withTrashed()->whereKey($ctx->row['id'])->restore();
+                Post::withTrashed()->whereKey($ctx->key())->restore();
                 return Effects::make()->notify('Restored')->refreshTable('posts');
             }, needs: ['row']),
         $s->action('force-delete')->label('Delete permanently')->color('danger')
             ->confirm('Permanently delete?', 'This cannot be undone.')
             ->handle(function (ActionCtx $ctx): Effects {
-                Post::withTrashed()->whereKey($ctx->row['id'])->forceDelete();
+                Post::withTrashed()->whereKey($ctx->key())->forceDelete();
                 return Effects::make()->notify('Deleted')->refreshTable('posts');
             }, needs: ['row']),
     ])
@@ -260,11 +260,11 @@ EditAction::make(
             ->hiddenIf('published', '=', false),
     ]),
     loadUsing: fn (ActionCtx $ctx): array => Post::query()
-        ->whereKey($ctx->row['id'] ?? null)
+        ->whereKey($ctx->key())
         ->firstOrFail()
         ->only(['published', 'published_at']),
     saveUsing: function (ActionCtx $ctx): Effects {
-        Post::whereKey($ctx->row['id'] ?? null)->update([
+        Post::whereKey($ctx->key())->update([
             'published' => (bool) ($ctx->form['published'] ?? false),
             'published_at' => $ctx->form['published_at'] ?? null,
         ]);
@@ -623,10 +623,10 @@ EditAction::make(
     ]),
     // Table rows carry only declared columns; read the rest from the record.
     loadUsing: fn (ActionCtx $ctx): array => [
-        'assignee_id' => Task::query()->whereKey($ctx->row['id'])->value('assignee_id'),
+        'assignee_id' => Task::query()->whereKey($ctx->key())->value('assignee_id'),
     ],
     saveUsing: function (ActionCtx $ctx): Effects {
-        $task = Task::query()->whereKey($ctx->row['id'])->firstOrFail();
+        $task = Task::query()->whereKey($ctx->key())->firstOrFail();
         $task->update(['assignee_id' => $ctx->form['assignee_id']]);
 
         Notification::make()->title("Task #{$task->id} assigned to you")->info()
