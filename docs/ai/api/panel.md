@@ -15,7 +15,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 
 | Method | What it does |
 |---|---|
-| `authStack(): array` | The panel's auth/app middleware layer a page spreads to add to it, e.g. middleware(PanelConfig $p): array { return [...$p->authStack(), 'can:x']; }. Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those. |
+| `authStack(): array` | The panel's auth/app middleware layer a page spreads to add to it, e.g. middleware(PanelConfig $p): array { return [...$p->authStack(), 'throttle:30,1']; }. Access rules belong in Page::can(), which MCP calls also enforce. Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those. |
 | `brand(string $brand): static` | Brand name shown in the chrome (sidebar/topbar header). |
 | `breadcrumbs(bool $enabled = true): static` | Whether pages build and send the breadcrumbs prop. |
 | `chrome(string $chrome): static` | Class-string of a Chrome subclass that authors the shell (header/sidebar/ footer). Override headerItems()/sidebarItems() and spread the parent to append to the stock shell; override header()/sidebar()/footer() to replace an area outright. |
