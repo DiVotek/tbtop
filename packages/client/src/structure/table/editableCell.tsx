@@ -8,6 +8,7 @@ import { getBlockDescriptor } from "../../render/blockRegistry";
 import { renderDescriptor } from "../../render/renderDescriptor";
 import { useClientActionContext } from "../actionContext";
 import type { TableColumn } from "../types";
+import { readId } from "./normalize";
 
 type EditableCol = TableColumn & { editable: NonNullable<TableColumn["editable"]> };
 
@@ -137,17 +138,6 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 			)}
 		</div>
 	);
-}
-
-function readId(row: Record<string, unknown>): string | undefined {
-	const id = row.id;
-	if (typeof id === "string") {
-		return id;
-	}
-	if (typeof id === "number" && Number.isFinite(id)) {
-		return String(id);
-	}
-	return undefined;
 }
 
 function extractCellError(err: unknown, column: string): string {
