@@ -41,7 +41,7 @@ trait ConfiguresMcp
     }
 
     /**
-     * Browser origins, besides the app's own, that may call the MCP endpoint
+     * Browser origins, besides the origin of `app.url`, that may call the MCP endpoint
      * (`https://agent.example.com`). A request whose Origin is neither gets
      * 403; one with no Origin — a desktop or CLI client — is not affected.
      *

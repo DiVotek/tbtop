@@ -3,7 +3,9 @@
 namespace Tbtop\Admin\Tests\Fixtures\Panels;
 
 use Tbtop\Admin\Panels\PanelConfig;
+use Tbtop\Admin\Tests\Fixtures\McpContentPage;
 use Tbtop\Admin\Tests\Fixtures\McpEdgesPage;
+use Tbtop\Admin\Tests\Fixtures\McpOptionsPage;
 use Tbtop\Admin\Tests\Fixtures\McpPage;
 use Tbtop\Admin\Tests\Fixtures\McpRecordPage;
 use Tbtop\Admin\Tests\Fixtures\McpRecordSecretPage;
@@ -18,6 +20,6 @@ class McpPanel extends TestPanel
 
     protected function pages(): array
     {
-        return [McpPage::class, McpRecordPage::class, McpRecordSecretPage::class, McpEdgesPage::class];
+        return [McpPage::class, McpRecordPage::class, McpRecordSecretPage::class, McpEdgesPage::class, McpOptionsPage::class, McpContentPage::class];
     }
 }

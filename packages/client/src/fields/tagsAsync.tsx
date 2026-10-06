@@ -3,7 +3,7 @@ import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { useClientActionContext } from "../structure/actionContext";
-import { FormSkeleton } from "../structure/defaults";
+import { FieldSkeleton, FormSkeleton } from "../structure/defaults";
 import { renderAsyncError } from "../structure/renderAsyncError";
 import { inputCompactFontClass, inputFontClass } from "../ui/input";
 import { useMultiResolvedLabels } from "./asyncMultiOptions";
@@ -21,10 +21,10 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 	const resolved = useMultiResolvedLabels({ ctx, fieldName: props.name, value: current, opts });
 	const searchState = useAsyncSearch({ ctx, query: opts.query, search });
 	if (resolved.kind === "loading") {
-		return <>{opts.loading ?? <FormSkeleton />}</>;
+		return <>{opts.loading ?? <FieldSkeleton />}</>;
 	}
 	if (searchState.kind === "error") {
-		return <>{renderAsyncError(opts.error, searchState.message, <FormSkeleton />)}</>;
+		return <>{renderAsyncError(opts.error, searchState.message, <FieldSkeleton />)}</>;
 	}
 	const rows = searchState.kind === "ready" ? searchState.rows : [];
 	const hasOnLoad = opts.onLoad !== undefined;

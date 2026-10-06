@@ -13,7 +13,10 @@ final class Slug extends Field
         return 'slug';
     }
 
-    /** Set the source field whose value is used to auto-generate the slug. */
+    /**
+     * Set the source field whose value is used to auto-generate the slug. A translatable
+     * source derives from the default content locale; name a locale leaf (`title.en`) to pin another.
+     */
     public function fromField(string $fieldName): static
     {
         return $this->set('fromField', $fieldName);

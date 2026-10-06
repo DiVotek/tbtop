@@ -182,7 +182,10 @@ return $panel
 - **Three tools.** `search` lists pages, and for each page without route params its
   executables and tables; `search(page, params)` describes one record page. `query` reads
   a table's rows (the table endpoint's payload: the record key and the formatted visible
-  columns) — read-only. `execute` runs an
+  columns) — read-only. `query` also lists the choices of a field or filter `search()`
+  marks `options: "dynamic"`: `executable` + `field` (with `deps` for the names in the
+  field's `dependsOn`) or `table` + `filter`, answering `{options: [{value, label}]}` as the
+  UI's type-ahead would. `execute` runs an
   executable by id `{page-slug}:{name}` — always annotated destructive, so the MCP client
   asks for confirmation.
 - **Same controllers, no middleware.** `query`/`execute` call `TableController`,
@@ -197,12 +200,20 @@ return $panel
   agent can resend the fields it keeps.
 - **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
   `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
-  actions, and `upload`/`media`/`richtext` fields, are listed as excluded with a reason; so
+  actions, and `upload`/`media` fields, are listed as excluded with a reason — inside a
+  repeater too, under the row name (`sections.*.image`); so
   is a form (or an action submitting it) whose every field is excluded, or — when the form
   is validated (an `onSubmit` form, an action without `->withoutValidation()`) — one with a
-  required excluded field: a rule key of the field holding `required` without `sometimes`.
+  required excluded field: a rule key of the field holding `required` without `sometimes`
+  (in a repeater, only when the repeater is required or has `minItems`).
   An edit form whose file already exists stays executable with `->required()->rules('sometimes')`.
-  `execute` refuses input that sets an excluded field instead of passing it to the handler.
+  `execute` refuses input that changes an excluded field instead of passing it to the handler;
+  the stored value sent back unchanged (a repeater row resent whole) passes.
+  A `richtext` value is checked before the handler: a Lexical state `{root: …}` whose nodes
+  are the editor's own types with the keys Lexical reads on import, per locale and per row.
+  `search()` lists the node types and each embed kind with its `data` fields.
+  The media library block and drag-reorder tables run in the browser; `search()` lists
+  them as excluded (`{page}:mediaLibrary`, `{page}:{table}.reorder`) and `execute` refuses them.
 - **Refusals, not silent ignores.** `execute` refuses a call missing what the action
   `needs` (`selection: []` counts as missing, `form: {}` as sent) and a `row` without its
   `id` — a key is an int or a non-empty string, in `row` and in `selection` alike. `query` checks the page gate first, then refuses a `sort`, `perPage`,
@@ -217,7 +228,8 @@ return $panel
   stateless token auth (the demo hides `LoginPage` and `TwoFactorChallengePage`).
 - **Origin is checked, as the MCP transport requires.** A request without an `Origin`
   header (Claude Desktop, Cursor, CLI clients) passes. A browser `Origin` must be the
-  app's own or listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other
+  origin of `app.url` (never the request's `Host`, which a rebound request controls) or
+  listed in `->mcpAllowedOrigins(['https://agent.example.com'])`; any other
   gets `403` before auth runs, which stops DNS-rebinding and cross-site calls.
 - A page may not use the MCP path, or the slug `mcp` (the route name), in a panel with MCP on.
 

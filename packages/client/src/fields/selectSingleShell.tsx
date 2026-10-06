@@ -5,7 +5,6 @@ import { useDensity } from "../app/densityContext";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
-import { useDialogPopupContainer } from "../ui/revola";
 import { fieldId } from "./fieldProps";
 import { SelectOptionContent } from "./selectOptionContent";
 import type { StaticOption } from "./selectShared";
@@ -46,7 +45,6 @@ export function SingleComboboxShell({
 }: SingleShellProps) {
 	const t = useTranslation();
 	const density = useDensity();
-	const popupContainer = useDialogPopupContainer();
 	const [query, setQuery] = useState("");
 	const [open, setOpen] = useState(false);
 
@@ -120,13 +118,10 @@ export function SingleComboboxShell({
 				<ChevronDownIcon className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-50" />
 			</div>
 
-			<Combobox.Portal container={popupContainer ?? undefined}>
-				{/* Radix dialogs disable pointer events on body; this body-level portal
-				    must opt back in so modal filter options remain clickable. */}
+			<Combobox.Portal>
 				<Combobox.Positioner
 					data-testid={`select-positioner-${name}`}
 					className="z-50"
-					style={{ pointerEvents: "auto" }}
 					sideOffset={4}
 				>
 					<Combobox.Popup className="flex max-h-[var(--available-height)] w-[var(--anchor-width)] flex-col overflow-hidden rounded-md border border-input bg-background shadow-md">

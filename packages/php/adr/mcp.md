@@ -46,7 +46,8 @@ domain: mcp
   > Replaces previous decision (see git history)
 - **Origin is validated by the package, not left to the host.** The streamable HTTP
   transport requires it and laravel/mcp does not do it. No `Origin` passes (non-browser
-  clients); the app's own origin and `mcpAllowedOrigins()` pass; anything else is 403.
+  clients); the origin of `app.url` (not the request Host, which DNS
+  rebinding controls) and `mcpAllowedOrigins()` pass; anything else is 403.
 - **Actions and `onSubmit` forms are one executable kind to the agent.** Ids are
   `{page-slug}:{name}`; route params travel separately as `params`.
 - **Two-level discovery.** `search()` lists pages and the actions/forms of parameterless
@@ -62,20 +63,36 @@ domain: mcp
   row back as `$ctx->row`, exactly as from the browser.
 - **Visibility: everything the user can do, minus `->mcp(false)`.** Opt-out on an action
   or a page, server-only — never serialized to the wire. Client-only `custom` handlers
-  and `upload`/`media`/`richtext` fields are excluded from `search` with a stated reason.
+  and `upload`/`media` fields are excluded from `search` with a stated reason.
 - **A form is unfillable when every field is excluded or a required one is.** Required is
   checked per rule key (`name` or `name.*`): the string `required` without `sometimes` on
   that same key — a multiple upload has `required` on `name` and `sometimes` on `name.*`,
   and still fails without a file. It applies only where the form is validated (`onSubmit`,
   an action without `->withoutValidation()`). `search()` never advertises an executable
-  that cannot pass validation; a demo-only fix was rejected. Excluded kinds nested in a
-  container (an upload in a repeater) are not walked yet.
+  that cannot pass validation; a demo-only fix was rejected. A container's children are
+  described and refused under their row name (`sections.*.image`); a required child blocks
+  the form only when the container is required or has `minItems`.
+- **An excluded field accepts its stored value unchanged.** `values` hands a repeater row
+  back whole, upload included; refusing that echo would force the agent to strip keys per
+  row. Only a value that differs from `recordData()` at the same path is refused.
+- **Richtext is raw Lexical JSON, checked by a node allowlist.** The agent writes what the
+  editor stores, copying shapes from `values`. `RichtextDocument` refuses an unknown node
+  type or a missing key Lexical reads on import — the browser would drop or fail on them,
+  so the save would succeed and the editor break. No defaults are filled in; HTML strings
+  are refused (no stored HTML exists). Embed data stays with `EmbedsRule`.
 - **`needs` is enforced in `ExecuteTool`, not `ActionController`.** A missing `row`,
   `selection` (empty, or holding anything but keys, counts as missing) or `form`, or a row
   without its `id` (the key the client reads), is refused before the handler runs —
   otherwise `whereKey(null)` reports success. A key is an int or a non-empty string: an
   array `id` would make `whereKey()` a `whereIn` on other rows. The browser always sends what the UI wired; enforcing it in the
   controller would change the HTTP contract for every client.
+- **Dynamic options are read through `query`, scoped to an executable.** `query` takes
+  `executable` + `field` (or `table` + `filter`) and calls the shared option responders
+  with the field found inside that executable's form; `options: "dynamic"` marks exactly
+  the fields and filters it serves. A fourth tool was rejected (tool-per-thing, see above);
+  calling the HTTP option endpoints was rejected because they find a field by name across
+  every form of the page, which ignores `mcp(false)`. A missing `dependsOn` parent is
+  refused — the browser never fetches without one.
 - **`query` refuses what `search()` does not list.** sort (plus the default-sort field,
   which `search()` lists in `sortable`), perPage, filter names, `columnSearch` columns and
   table-wide search are checked against the same description `search()` produces, after

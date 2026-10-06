@@ -1,6 +1,7 @@
 import { Wand2, X } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { useContentLocaleConfig } from "../structure/contentLocaleContext";
 import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useFieldSourceData } from "./fieldDependencies";
@@ -26,17 +27,17 @@ function resolvePath(data: Record<string, unknown>, path: string): unknown {
 
 // Dotted paths reach into nested sources, e.g. translatable "title.en". When
 // fromField resolves to a locale-map object instead of a scalar (fromField
-// points at a translatable field's root, not one of its locale leaves) and
-// this slug is itself mounted inside a translatable panel, fall back to
-// reading that panel's own locale off the source — panelLocale is the slug's
-// own panel, independent of whichever locale tab the user has open.
-function sourceAt(data: Record<string, unknown>, path: string, panelLocale: string | null): string {
+// points at a translatable field's root, not one of its locale leaves), read
+// one locale off it: the slug's own panel locale when the slug is itself
+// translatable, otherwise the default content locale — never the locale tab
+// the user happens to have open, so switching tabs doesn't rewrite the slug.
+function sourceAt(data: Record<string, unknown>, path: string, locale: string | null): string {
 	const resolved = resolvePath(data, path);
 	if (typeof resolved === "string" || typeof resolved === "number") {
 		return String(resolved);
 	}
-	if (resolved !== null && typeof resolved === "object" && panelLocale) {
-		return sourceAt(data, `${path}.${panelLocale}`, null);
+	if (resolved !== null && typeof resolved === "object" && locale) {
+		return sourceAt(data, `${path}.${locale}`, null);
 	}
 	return "";
 }
@@ -64,12 +65,13 @@ export function SlugForm({
 	const fromField = options?.fromField ?? "";
 	const sourceData = useFieldSourceData();
 	const panelLocale = usePanelLocale();
+	const { defaultLocale } = useContentLocaleConfig();
 	const syncBroken = useRef(false);
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 
 	const currentSlug = asString(value);
-	const sourceValue = sourceAt(sourceData, fromField, panelLocale);
+	const sourceValue = sourceAt(sourceData, fromField, panelLocale ?? defaultLocale);
 
 	const emitDerived = useCallback((source: string, current: string) => {
 		const derived = slugify(source);
