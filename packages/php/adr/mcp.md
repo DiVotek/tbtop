@@ -46,7 +46,8 @@ domain: mcp
   > Replaces previous decision (see git history)
 - **Origin is validated by the package, not left to the host.** The streamable HTTP
   transport requires it and laravel/mcp does not do it. No `Origin` passes (non-browser
-  clients); the app's own origin and `mcpAllowedOrigins()` pass; anything else is 403.
+  clients); the origin of `app.url` (not the request Host, which DNS
+  rebinding controls) and `mcpAllowedOrigins()` pass; anything else is 403.
 - **Actions and `onSubmit` forms are one executable kind to the agent.** Ids are
   `{page-slug}:{name}`; route params travel separately as `params`.
 - **Two-level discovery.** `search()` lists pages and the actions/forms of parameterless
