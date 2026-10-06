@@ -57,6 +57,29 @@ panel keep the app's own 404. The client resolves `admin/error` to the exported
 serializes it (`toArray()`), `null` for a guest. The model's `$hidden` is the only filter:
 anything not hidden reaches every page's HTML. The client reads only this prop.
 
+### Auth pages
+
+The package owns no auth routes. `php artisan admin:install --auth` publishes
+`app/Admin/Pages/Auth/{LoginPage,ForgotPasswordPage,ResetPasswordPage}.php`, each an empty
+subclass of `Tbtop\Admin\Auth\*`; override a hook there or delete the file. They are
+ordinary page routes (`{prefix}/login`, `{prefix}/forgot-password`,
+`{prefix}/reset-password/{token}`; names `tbtop.{panel}.login-page` etc.), public through
+`middleware(): ['web', RedirectSignedInUsers::class]`, hidden from MCP, never the panel home.
+
+- **Guard.** Sign-in uses the panel's guard, never the app default.
+- **Guests.** The host points Laravel's guest redirect at the panel login in
+  `bootstrap/app.php` — without it a guest hits `route('login')` and gets a 500:
+  `$middleware->redirectGuestsTo(fn () => \Tbtop\Admin\Auth\LoginPage::url() ?? '/admin/login');`
+  `LoginPage::url()` resolves the login of the panel the request belongs to.
+- **Hooks.** `LoginPage`: `credentials()`, `afterAuthenticated()` (return a URL to divert,
+  e.g. to a 2FA challenge), `redirectTo()`, `throttleKey()`, `maxAttempts()`.
+  `ForgotPasswordPage`: `broker()`. `ResetPasswordPage`: `passwordRules()`, `broker()`.
+  The credential check, throttle and session renewal stay private.
+- **Reset mail.** Sent as `ResetPasswordNotification` with the panel reset URL baked in;
+  Laravel's global `ResetPassword::createUrlUsing()` is left alone for the host's own links.
+- **Assumes** a user model with `email` and `password`, and the skeleton's
+  `password_reset_tokens` table.
+
 ### Media manager routes (prefix: `{prefix}/api/media`, name: `tbtop.{panel}.media.*`)
 
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
@@ -353,7 +376,7 @@ matters when authoring:
 
 | Command | What it does |
 |---|---|
-| `php artisan admin:install` | Publishes three host files — `resources/views/admin.blade.php`, `resources/js/admin.tsx`, `resources/css/admin.css` — and prints the four steps it deliberately does **not** patch (Vite input list, `->rootView('admin')`, Tailwind v4, `npm install`). It does **not** publish the config; that is `vendor:publish --tag="tbtop-admin-config"`. `--force` overwrites existing files. |
+| `php artisan admin:install` | Publishes three host files — `resources/views/admin.blade.php`, `resources/js/admin.tsx`, `resources/css/admin.css` — and prints the four steps it deliberately does **not** patch (Vite input list, `->rootView('admin')`, Tailwind v4, `npm install`). It does **not** publish the config; that is `vendor:publish --tag="tbtop-admin-config"`. `--force` overwrites existing files. `--auth` also publishes the [auth pages](#auth-pages) for one panel (`--panel=<id>` when several are registered) and prints the `redirectGuestsTo` step. |
 | `php artisan vendor:publish --tag="tbtop-admin-config"` | Publishes `config/tbtop-admin.php`. Migrations need no step — the provider declares `runsMigrations()`; publish them with `--tag="tbtop-admin-migrations"` only to customize them first. |
 | `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. Reports which panel discovers the new page, or tells you to register it with `pages()` when none does. |
 | `php artisan tbtop:cache-pages` | Atomically rebuilds the discovered page index for all configured panels. Run before `route:cache`; rebuild both after changing discovered pages. |

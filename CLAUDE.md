@@ -20,7 +20,7 @@ page composition. The client owns rendering. **These three boundaries are the ar
 
 Monorepo. Two published packages + a demo app.
 
-- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, guard/middleware integration, media. **Laravel package.** (Auth *screens* are DSL pages; the auth backend lives in the demo — see the auth note below.)
+- `packages/php/` → `tbtop/admin` (composer) — the DSL, HTTP controllers, guard/middleware integration, media. **Laravel package.** (Auth *screens* are DSL base pages the host publishes; the host owns auth — see the auth note below.)
 - `packages/client/` → `@tbtop/inertia-admin` (npm) — React interpreter: render registry, 26 wire field kinds plus 2 client-only registrations (`json`/`unknown`), layout shell, data clients.
 - `packages/contracts/` → generated `structure.schema.json` + `fixtures/kitchen-sink.json` — the wire-grammar contract shared by both sides.
 - `apps/demo/` → Laravel app wiring both packages end-to-end. **The reference consumer — read its `app/Admin/Pages/` to see real DSL usage.**
@@ -100,19 +100,18 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   palette, database notifications (header bell), appearance (theme/density/max-width),
   UI + content locales. In `Panels/PanelConfig.php` and its traits in `Panels/Concerns/`
   (appearance: `ConfiguresAppearance.php`); see `docs/ai/api/panel.md`.
-- **Auth:** login, register, password reset, email verification, 2FA, passkeys, password
-  confirmation — the **backend lives in the demo via Laravel Breeze controllers**
-  (test-covered), **not** in the package. There is NO Fortify and no package-side auth
-  backend. The screens are DSL pages using `layout(): 'center'` plus a `middleware()`
-  override to stay public (`LoginPage`, `TwoFactorChallengePage`, `TwoFactorSetupPage`,
-  `ApiTokensPage`). Don't rebuild the flows to learn them; the open gap is a package-side
-  backend story, not the layout.
+- **Auth:** sign-in and password reset are package base pages (`packages/php/src/Auth/`)
+  that `admin:install --auth` publishes into the host as empty subclasses; logout is a
+  package route. No controllers, no Breeze, no Fortify. The demo runs on the generated
+  classes, plus its own 2FA (`TwoFactorChallengePage`, `TwoFactorSetupPage`, hooked in via
+  `LoginPage::afterAuthenticated()`) and `ApiTokensPage`. Registration, email
+  verification and passkeys do not exist.
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
   `apps/demo/resources/js/admin.tsx` for the rating-field example (PHP half:
   `apps/demo/app/Admin/Fields/Rating.php`, registered via `S::register` in
   `AppServiceProvider`). Use this for app-specific fields instead of editing the packages.
 
-Known stubs/gaps (don't assume these work): no package-side auth backend, no CSV
+Known stubs/gaps (don't assume these work): no package-side 2FA, no CSV
 export/import, no **cross-model** record search (per-table search ships; the ⌘K palette
 searches nav items and declared commands, not rows), no multi-tenancy. Full list in
 `docs/backlog.md` — it lags the code, so verify against source before trusting a "gap".

@@ -3,6 +3,8 @@
 namespace Tbtop\Admin\Commands;
 
 use Illuminate\Console\Command;
+use Tbtop\Admin\Panels\PanelConfig;
+use Tbtop\Admin\Panels\PanelRegistry;
 
 /**
  * Publishes the host-side wiring the admin panel needs to render.
@@ -21,7 +23,10 @@ use Illuminate\Console\Command;
  */
 class InstallCommand extends Command
 {
-    protected $signature = 'admin:install {--force : Overwrite files that already exist}';
+    protected $signature = 'admin:install
+        {--force : Overwrite files that already exist}
+        {--auth : Also publish sign-in and password reset pages for one panel}
+        {--panel= : The panel --auth targets, required when several are registered}';
 
     protected $description = 'Publish the host wiring for the admin panel: root view, JS entry, and stylesheet.';
 
@@ -38,6 +43,14 @@ class InstallCommand extends Command
 
     public function handle(): int
     {
+        $panel = null;
+        if ($this->option('auth')) {
+            $panel = $this->authPanel();
+            if ($panel === null) {
+                return self::FAILURE;
+            }
+        }
+
         $written = [];
         $skipped = [];
 
@@ -67,9 +80,74 @@ class InstallCommand extends Command
             $this->components->warn("Exists, left untouched: {$relative} (use --force to overwrite)");
         }
 
+        $auth = $panel === null ? null : (new AuthScaffold($panel))->publish((bool) $this->option('force'));
+        if ($auth !== null) {
+            $this->reportAuth($auth);
+        }
+
         $this->manualSteps();
+        if ($auth !== null) {
+            $this->authSteps($auth);
+        }
 
         return self::SUCCESS;
+    }
+
+    /** The panel --auth targets; null after printing why there is none. */
+    private function authPanel(): ?PanelConfig
+    {
+        $panels = PanelRegistry::fromConfig()->all();
+        $id = $this->option('panel');
+        if (is_string($id) && $id !== '') {
+            if (! isset($panels[$id])) {
+                $this->components->error("Unknown panel [{$id}]. Registered: ".implode(', ', array_keys($panels)).'.');
+
+                return null;
+            }
+
+            return $panels[$id];
+        }
+        if ($panels === []) {
+            $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth.');
+
+            return null;
+        }
+        if (count($panels) > 1) {
+            $this->components->error('Several panels: pass --panel=<id>');
+
+            return null;
+        }
+
+        return array_values($panels)[0];
+    }
+
+    private function reportAuth(AuthScaffold $auth): void
+    {
+        foreach ($auth->written as $relative) {
+            $this->components->info("Published: {$relative}");
+        }
+        foreach ($auth->existing as $relative) {
+            $this->components->warn("Exists, left untouched: {$relative} (use --force to overwrite)");
+        }
+        foreach ($auth->clashes as $clash) {
+            $this->components->warn("Skipped: {$clash} — delete it to use the scaffold");
+        }
+    }
+
+    private function authSteps(AuthScaffold $auth): void
+    {
+        $panel = $auth->panel;
+        $login = '/'.trim($panel->getPrefix(), '/').'/login';
+        $this->newLine();
+        $this->line('  5. Send guests to the panel login (bootstrap/app.php, inside withMiddleware) — without it a guest gets a 500:');
+        $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::url() ?? '{$login}');");
+        $this->line('     LoginPage::url() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
+
+        if (! $auth->isDiscovered()) {
+            $this->newLine();
+            $this->line("  6. Panel [{$panel->getId()}] does not discover app/Admin/Pages; register the auth pages:");
+            $this->line('       ->discoverPages(in: app_path(\'Admin/Pages\'), for: \''.str_replace('\\Auth', '', $auth->namespace()).'\')');
+        }
     }
 
     private function stub(string $name): string
@@ -80,7 +158,7 @@ class InstallCommand extends Command
     private function manualSteps(): void
     {
         $this->newLine();
-        $this->components->warn('Four steps remain, in files this package does not own:');
+        $this->components->warn('Steps that remain, in files this package does not own:');
         $this->newLine();
 
         $this->line('  1. Add the admin entry to the Vite input list (vite.config.ts):');

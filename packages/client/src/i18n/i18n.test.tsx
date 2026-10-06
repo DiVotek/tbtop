@@ -348,7 +348,7 @@ test("i18n defaultMessages includes the documented A1 keys", () => {
 	expect(defaultMessages["action.cancel"]).toBeDefined();
 	expect(defaultMessages["action.delete"]).toBeDefined();
 	expect(defaultMessages["action.create"]).toBeDefined();
-	expect(defaultMessages["auth.login.title"]).toBeDefined();
+	expect(defaultMessages["auth.profile.title"]).toBeDefined();
 	expect(defaultMessages["state.notFound"]).toBeDefined();
 	expect(defaultMessages["state.forbidden"]).toBeDefined();
 	expect(defaultMessages["state.loading"]).toBeDefined();

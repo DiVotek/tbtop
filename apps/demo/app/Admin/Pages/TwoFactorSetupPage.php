@@ -10,7 +10,7 @@ use Tbtop\Admin\Pages\Page;
  * Two-factor enrollment page. A thin DSL host: it emits the custom
  * `twoFactorSetup` client block, which owns the whole stateful flow
  * (fetch QR + secret → confirm OTP → show recovery codes) by talking
- * directly to the plain-JSON endpoints in routes/auth.php:
+ * directly to the plain-JSON endpoints in routes/web.php:
  *
  *   POST /two-factor/setup   → { qr_svg, secret }
  *   POST /two-factor/confirm → { recovery_codes: [...] }
