@@ -262,7 +262,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `alphaDash(): static` | Letters, numbers, dashes and underscores only. |
 | `alphaNum(): static` | Letters and numbers only. |
 | `endsWith(string ...$values): static` | Value must end with one of the given substrings. |
-| `fromField(string $fieldName): static` | Set the source field whose value is used to auto-generate the slug. |
+| `fromField(string $fieldName): static` | Set the source field whose value is used to auto-generate the slug. A translatable source derives from the default content locale; name a locale leaf (`title.en`) to pin another. |
 | `length(int $length): static` | Exact character count. |
 | `maxLength(int $length): static` | Maximum character count. |
 | `minLength(int $length): static` | Minimum character count. |

@@ -3,6 +3,7 @@ import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { renderNode } from "../render/structureRenderer";
+import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
 import { s } from "../structure/structure";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
 import type { FormController } from "../structure/types";
@@ -240,15 +241,20 @@ describe("Slug field", () => {
 		});
 	});
 
-	test("Slug form-context sync: object source without path derives empty, not [object Object]", async () => {
-		const node = s.form({ query: async () => ({ title: { en: "Hello" }, slug: "" }) }, [
-			s.slug({ name: "slug", fromField: "title" }),
-		]);
+	test("Slug form-context sync: bare fromField over a translatable source derives from the default content locale", async () => {
+		const node = s.form(
+			{ query: async () => ({ title: { en: "Hello World", uk: "Pryvit Svit" }, slug: "" }) },
+			[s.slug({ name: "slug", fromField: "title" })],
+		);
 		const Wrap = wrap(() => new Response("{}"));
-		const { getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const { getByRole } = render(
+			<ContentLocaleConfigProvider config={{ locales: ["en", "uk"], defaultLocale: "uk" }}>
+				<Wrap>{renderNode(node)}</Wrap>
+			</ContentLocaleConfigProvider>,
+		);
 		await waitFor(() => {
 			const input = getByRole("textbox") as HTMLInputElement;
-			expect(input.value).toBe("");
+			expect(input.value).toBe("pryvit-svit");
 		});
 	});
 
