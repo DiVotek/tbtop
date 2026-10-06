@@ -15,8 +15,8 @@ use Tbtop\Admin\Panels\PanelConfig;
 
 /**
  * DSL-authored 2FA challenge page, reached after login when the user has 2FA
- * enabled. Mirrors TwoFactorChallengeController::store(): verify a TOTP or
- * recovery code against the pending session user, then complete the session.
+ * enabled. Verifies a TOTP or recovery code against the pending session user,
+ * then completes the session.
  *
  * Accepts the same code field for both authenticator and recovery codes.
  */
@@ -77,7 +77,7 @@ class TwoFactorChallengePage extends Page
         ]);
     }
 
-    /** Mirrors TwoFactorChallengeController::store(). Returns the next URL. */
+    /** Returns the next URL. */
     private function challenge(ActionCtx $ctx): string
     {
         $userId = $ctx->request->session()->get('auth.2fa.user_id');

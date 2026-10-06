@@ -3,7 +3,6 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
@@ -27,7 +26,6 @@
         "@base-ui/react": "^1.5.0",
         "@headlessui/react": "^2.2.0",
         "@inertiajs/react": "^3.3.1",
-        "@laravel/passkeys": "^0.2.0",
         "@lexical/code": "^0.44.0",
         "@lexical/link": "^0.44.0",
         "@lexical/list": "^0.44.0",

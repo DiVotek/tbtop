@@ -10,8 +10,8 @@ use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelConfig;
 
 /**
- * Demo chrome: the stock shell plus a visit-action button in the header
- * and a footer note — the reference "spread defaults + append" pattern.
+ * Demo chrome: the stock shell plus a notifications bell and layout switcher
+ * in the header and a footer note — the reference "spread defaults + append" pattern.
  */
 class DemoChrome extends Chrome
 {
@@ -21,7 +21,6 @@ class DemoChrome extends Chrome
             $s->notifications(),
             $this->layoutSwitcher($s),
             ...parent::headerItems($s),
-            $s->action('view-site')->label('View site')->url('/'),
         ];
     }
 

@@ -5,7 +5,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
-use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Tbtop\Admin\Auth\LoginPage;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -25,9 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Admin panel is the canonical surface: the auth middleware (priority-sorted
         // ahead of RequireFullAuth) sends all guests to the DSL login page.
-        $middleware->alias(['abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class]);
+        $middleware->alias(['abilities' => CheckAbilities::class]);
 
-        $middleware->redirectGuestsTo(fn (Request $request): string => route('tbtop.admin.login-page'));
+        $middleware->redirectGuestsTo(fn (): string => LoginPage::url() ?? route('tbtop.admin.login-page'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

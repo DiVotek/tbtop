@@ -26,14 +26,6 @@ class BundleSplitTest extends TestCase
         $response->assertViewIs('admin');
     }
 
-    public function test_public_welcome_page_renders_using_the_default_root_view(): void
-    {
-        $response = $this->get('/');
-
-        $response->assertOk();
-        $response->assertViewIs('app');
-    }
-
     public function test_admin_blade_includes_theme_class_from_cookie(): void
     {
         $this->withCookie('tbtop_theme', 'dark');
