@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+/**
+ * Sign-in screen at {prefix}/login. Behaviour lives in the package base, so
+ * fixes arrive with composer update. Override a hook here to change it:
+ *
+ *   view(S $s)                     the screen
+ *   credentials(ActionCtx $ctx)    what the user is matched by
+ *   afterAuthenticated($user, $ctx) return a URL to send the user elsewhere (e.g. a 2FA challenge)
+ *   redirectTo(ActionCtx $ctx)     where a signed-in user lands
+ *   throttleKey(ActionCtx $ctx), maxAttempts()
+ *
+ * Delete this file to drop the screen.
+ */
+class LoginPage extends \Tbtop\Admin\Auth\LoginPage {}
