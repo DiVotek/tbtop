@@ -106,3 +106,25 @@ describe("AdminPage.layout: provider parity between center and shell", () => {
 		expect(getByTestId("translated").textContent).toBe("Enregistrer");
 	});
 });
+
+describe("AdminPage.layout: signed-in user", () => {
+	test("the profile dropdown shows the panel's tbtop.user", () => {
+		currentProps = {
+			layout: "admin",
+			tbtop: { user: { id: 7, name: "Olena", email: "olena@example.com" } },
+			auth: { user: { id: 1, name: "Host user", email: "host@example.com" } },
+		};
+		const { getByTestId } = render(AdminPage.layout(<div />));
+		expect(getByTestId("profile-name").textContent).toBe("Olena");
+	});
+
+	test("a host-shared auth.user alone renders no profile dropdown", () => {
+		currentProps = {
+			layout: "admin",
+			tbtop: {},
+			auth: { user: { id: 1, name: "Host user", email: "host@example.com" } },
+		};
+		const { queryByTestId } = render(AdminPage.layout(<div />));
+		expect(queryByTestId("profile-trigger")).toBeNull();
+	});
+});

@@ -44,10 +44,10 @@ interface SharedProps {
 		palette?: CommandPaletteData | null;
 		prefix?: string;
 		panel?: string;
+		user?: ChromeUser | null;
 	};
 	/** Page prop: the current page's nav() group key, when it declares one. */
 	navGroup?: unknown;
-	auth?: { user?: ChromeUser | null };
 	[key: string]: unknown;
 }
 
@@ -169,7 +169,7 @@ export function AdminLayoutShell({
 export function AdminLayout({ children, slots }: AdminLayoutProps) {
 	const { props, url } = usePage<SharedProps>();
 	const nav = props.tbtop?.nav ?? [];
-	const user = props.auth?.user ?? null;
+	const user = props.tbtop?.user ?? null;
 	const palette = props.tbtop?.palette;
 
 	return (

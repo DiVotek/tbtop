@@ -8,7 +8,7 @@ interface AuthUserProviderProps {
 	children: ReactNode;
 }
 
-/** Hydrated from Inertia shared props (`auth.user`) by AdminPage. */
+/** Hydrated from the `tbtop.user` shared prop by AdminPage. */
 export function AuthUserProvider({ user, children }: AuthUserProviderProps) {
 	return <AuthUserContext.Provider value={user}>{children}</AuthUserContext.Provider>;
 }
