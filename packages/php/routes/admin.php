@@ -16,6 +16,7 @@ use Tbtop\Admin\Http\FieldUploadViewController;
 use Tbtop\Admin\Http\FormSubmitController;
 use Tbtop\Admin\Http\LiveRegionController;
 use Tbtop\Admin\Http\LocaleController;
+use Tbtop\Admin\Http\LogoutController;
 use Tbtop\Admin\Http\Media\MediaController;
 use Tbtop\Admin\Http\Media\MediaDownloadController;
 use Tbtop\Admin\Http\Media\MediaFolderController;
@@ -117,11 +118,12 @@ $registerPageRoutes = static function (array $pages): void {
 };
 
 /**
- * The locale, upload, and media-manager cluster. Lives only in the panel's
+ * The locale, logout, upload, and media-manager cluster. Lives only in the panel's
  * default (inherited) group — a public page must not expose these unauthenticated.
  */
 $registerChromeRoutes = static function (): void {
     Route::post('locale', LocaleController::class)->name('locale');
+    Route::post('logout', LogoutController::class)->name('logout');
 
     // Media manager endpoints (under api/ to avoid collision with page routes)
     Route::prefix('api/media')->name('media.')->group(function (): void {

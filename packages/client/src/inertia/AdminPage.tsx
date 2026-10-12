@@ -48,8 +48,8 @@ interface AdminPageProps {
 		contentLocales?: string[];
 		defaultContentLocale?: string;
 		appearance?: Appearance | null;
+		user?: AuthUser | null;
 	};
-	auth?: { user?: AuthUser | null };
 	[key: string]: unknown;
 }
 
@@ -60,7 +60,7 @@ interface AdminPageProps {
 export function AdminPage() {
 	const page = usePage<AdminPageProps>();
 	const t = useTranslation();
-	const { structure, data, params, title, subtitle, headerActions, breadcrumbs, tbtop, auth } =
+	const { structure, data, params, title, subtitle, headerActions, breadcrumbs, tbtop } =
 		page.props;
 	ensureBuiltinsRegistered();
 	if (tbtop?.prefix) {
@@ -108,7 +108,7 @@ export function AdminPage() {
 
 	return (
 		<ClientProvider apiBase={apiBase}>
-			<AuthUserProvider user={auth?.user ?? null}>
+			<AuthUserProvider user={tbtop?.user ?? null}>
 				<PageParamsProvider params={params ?? {}}>
 					<ContentLocaleConfigProvider
 						config={{ locales: contentLocales, defaultLocale: defaultContentLocale }}

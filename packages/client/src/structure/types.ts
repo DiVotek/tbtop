@@ -13,9 +13,11 @@ export type {
 	TableColumnLinkOptions,
 } from "./tableColumnTypes";
 
-// Inlined from the old auth/AuthProvider — session auth lives on the Laravel
-// side now; the Inertia layout will hydrate this from shared page props.
-export type AuthUser = { id: string; email: string };
+/** The panel guard's user as the model serializes it (`tbtop.user`); `$hidden` decides the rest. */
+export type AuthUser = { id: string | number; email: string; name?: string } & Record<
+	string,
+	unknown
+>;
 
 export type NodeId = string;
 

@@ -27,6 +27,14 @@ it('MiddlewareOverride: public page renders unauthenticated', function (): void 
     $this->get('/admin/public-login', ['X-Inertia' => 'true'])->assertOk();
 });
 
+it('MiddlewareOverride: public page shares no user to a guest', function (): void {
+    $tbtop = $this->get('/admin/public-login', ['X-Inertia' => 'true'])
+        ->assertOk()
+        ->json('props.tbtop');
+
+    expect($tbtop)->toHaveKey('user')->and($tbtop['user'])->toBeNull();
+});
+
 it('MiddlewareOverride: public form endpoint submits unauthenticated', function (): void {
     $this->post('/admin/public-login/forms/login', ['email' => 'a@b.c', 'password' => 'x'])
         ->assertRedirect('/done');

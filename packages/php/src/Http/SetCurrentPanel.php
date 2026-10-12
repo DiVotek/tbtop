@@ -4,9 +4,11 @@ namespace Tbtop\Admin\Http;
 
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelRegistry;
+use Tbtop\Admin\Panels\PanelSharedProps;
 
 /**
  * Route middleware `SetCurrentPanel:{id}` — binds the request's panel
@@ -19,6 +21,8 @@ class SetCurrentPanel
     public function handle(Request $request, Closure $next, string $panelId): Response
     {
         app()->instance(CurrentPanel::class, new CurrentPanel($this->registry->get($panelId)));
+        // Per request, not at boot: a long-lived app may flush shared props between requests (Pest browser does).
+        Inertia::share('tbtop', static fn (): ?array => PanelSharedProps::current());
 
         try {
             return $next($request);

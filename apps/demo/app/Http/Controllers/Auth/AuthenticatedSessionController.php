@@ -49,13 +49,6 @@ class AuthenticatedSessionController extends Controller
         return redirect('/');
     }
 
-    public function destroyAdmin(Request $request): RedirectResponse
-    {
-        $this->terminateSession($request);
-
-        return redirect()->route('tbtop.admin.login-page');
-    }
-
     private function terminateSession(Request $request): void
     {
         Auth::guard('web')->logout();
