@@ -64,7 +64,8 @@ The package owns no auth routes. `php artisan admin:install --auth` publishes
 subclass of `Tbtop\Admin\Auth\*`; override a hook there or delete the file. They are
 ordinary page routes (`{prefix}/login`, `{prefix}/forgot-password`,
 `{prefix}/reset-password/{token}`; names `tbtop.{panel}.login-page` etc.), public through
-`middleware(): ['web', RedirectSignedInUsers::class]`, hidden from MCP, never the panel home.
+`middleware(): ['web', RedirectSignedInUsers::class]` — not the panel stack, which may hold an access
+check; override `middleware()` in the subclass to add an allowlist — hidden from MCP, never the panel home.
 
 - **Guard.** Sign-in uses the panel's guard, never the app default.
 - **Guests.** The host points Laravel's guest redirect at the panel login in
@@ -73,8 +74,10 @@ ordinary page routes (`{prefix}/login`, `{prefix}/forgot-password`,
   `LoginPage::url()` resolves the login of the panel the request belongs to.
 - **Hooks.** `LoginPage`: `credentials()`, `afterAuthenticated()` (return a URL to divert,
   e.g. to a 2FA challenge), `redirectTo()`, `throttleKey()`, `maxAttempts()`.
-  `ForgotPasswordPage`: `broker()`. `ResetPasswordPage`: `passwordRules()`, `broker()`.
-  The credential check, throttle and session renewal stay private.
+  `ResetPasswordPage`: `passwordRules()`. The cores — `authenticate()`, `sendLink()`,
+  `resetPassword()` — are protected: call them from a rebuilt `view()`, or wrap via `parent::`.
+- **Password broker.** `PanelConfig::passwordBroker('admins')`; null uses the app default.
+  A panel guard on a non-default provider needs its own broker in `config/auth.php`.
 - **Reset mail.** Sent as `ResetPasswordNotification` with the panel reset URL baked in;
   Laravel's global `ResetPassword::createUrlUsing()` is left alone for the host's own links.
 - **Assumes** a user model with `email` and `password`, and the skeleton's

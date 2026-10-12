@@ -33,6 +33,10 @@ class AuthHttpTestCase extends TestCase
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('auth.providers.users.model', AuthUser::class);
         $app['config']->set('auth.guards.staff', ['driver' => 'session', 'provider' => 'users']);
+        // The default broker points at a table that does not exist: a reset that ignores the
+        // panel's passwordBroker('staff') fails instead of passing by accident.
+        $app['config']->set('auth.passwords.users.table', 'missing_reset_tokens');
+        $app['config']->set('auth.passwords.staff', ['provider' => 'users', 'table' => 'password_reset_tokens', 'expire' => 60, 'throttle' => 60]);
         $app['config']->set('tbtop-admin.panels', [AuthPanel::class]);
     }
 

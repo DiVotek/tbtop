@@ -16,6 +16,8 @@ use Tbtop\Admin\Actions\ActionCtx;
  *   afterAuthenticated($user, $ctx) return a URL to send the user elsewhere (e.g. a 2FA challenge)
  *   redirectTo(ActionCtx $ctx)     where a signed-in user lands
  *   throttleKey(ActionCtx $ctx), maxAttempts()
+ *   authenticate(ActionCtx $ctx)   the sign-in core; call it from a rebuilt view()'s onSubmit
+ *   static middleware(PanelConfig $panel)  add a panel-wide allowlist here; the login skips the panel stack
  *
  * Delete this file to drop the screen.
  *
@@ -30,7 +32,7 @@ class LoginPage extends \Tbtop\Admin\Auth\LoginPage
             return null;
         }
 
-        Auth::guard('web')->logout();
+        Auth::guard(static::panel()->guard())->logout();
         $ctx->request->session()->put('auth.2fa.user_id', $user->getAuthIdentifier());
         $ctx->request->session()->put('auth.2fa.completed', false);
 

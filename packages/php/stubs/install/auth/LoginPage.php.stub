@@ -11,6 +11,8 @@ namespace {{ namespace }};
  *   afterAuthenticated($user, $ctx) return a URL to send the user elsewhere (e.g. a 2FA challenge)
  *   redirectTo(ActionCtx $ctx)     where a signed-in user lands
  *   throttleKey(ActionCtx $ctx), maxAttempts()
+ *   authenticate(ActionCtx $ctx)   the sign-in core; call it from a rebuilt view()'s onSubmit
+ *   static middleware(PanelConfig $panel)  add a panel-wide allowlist here; the login skips the panel stack
  *
  * Delete this file to drop the screen.
  */

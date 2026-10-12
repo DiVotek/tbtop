@@ -19,6 +19,7 @@ class AuthPanel extends Panel
             ->prefix('admin')
             ->guard('staff')
             ->middleware(['web'])
+            ->passwordBroker('staff')
             ->pages([ForgotPasswordPage::class, LoginPage::class, ResetPasswordPage::class, NavPage::class]);
     }
 }

@@ -15,7 +15,8 @@ use Tbtop\Admin\Dsl\S;
 
 /**
  * Requests a password reset link. The mail links to the panel's reset page,
- * not Laravel's `password.reset` route. Hooks: view(), broker().
+ * not Laravel's `password.reset` route. Hooks: view(). The broker comes from
+ * PanelConfig::passwordBroker().
  */
 abstract class ForgotPasswordPage extends AuthPage
 {
@@ -50,17 +51,11 @@ abstract class ForgotPasswordPage extends AuthPage
         ]);
     }
 
-    /** The password broker from config/auth.php that issues the token. */
-    protected function broker(): string
-    {
-        return (string) config('auth.defaults.passwords');
-    }
-
     /**
      * Every outcome but the per-IP throttle answers the same: the broker only
      * throttles existing accounts, so a distinct message would reveal them.
      */
-    private function sendLink(ActionCtx $ctx): Effects
+    protected function sendLink(ActionCtx $ctx): Effects
     {
         $key = 'tbtop-forgot|'.$ctx->request->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
@@ -73,7 +68,7 @@ abstract class ForgotPasswordPage extends AuthPage
 
         $resetRoute = ResetPasswordPage::routeName()
             ?? throw new LogicException('The panel has no ResetPasswordPage for the reset link to open.');
-        Password::broker($this->broker())->sendResetLink(
+        Password::broker(static::panel()->passwordBroker())->sendResetLink(
             ['email' => $ctx->form['email']],
             static function (CanResetPassword $user, string $token) use ($resetRoute): void {
                 $url = route($resetRoute, ['token' => $token, 'email' => $user->getEmailForPasswordReset()]);

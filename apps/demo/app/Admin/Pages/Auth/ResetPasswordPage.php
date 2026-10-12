@@ -8,6 +8,5 @@ namespace App\Admin\Pages\Auth;
  *
  *   view(S $s)        the screen
  *   passwordRules()   rules for the new password (default: Password::defaults())
- *   broker()          the password broker from config/auth.php
  */
 class ResetPasswordPage extends \Tbtop\Admin\Auth\ResetPasswordPage {}

@@ -82,3 +82,25 @@ it('refuses an invalid token under the email field', function () {
 
     expect(Hash::check('old-password', $this->user->fresh()->password))->toBeTrue();
 });
+
+it('answers an unknown email on the reset form exactly like a bad token', function () {
+    $this->from('/admin/reset-password/bogus')->post('/admin/reset-password/bogus/forms/reset', [
+        'email' => 'nobody@example.com',
+        'password' => 'brand-new-password',
+        'password_confirmation' => 'brand-new-password',
+    ])->assertSessionHasErrors(['email' => __('passwords.token')]);
+});
+
+it('throttles failed resets per IP so emails cannot be probed in bulk', function () {
+    $attempt = fn (string $email) => $this->from('/admin/reset-password/bogus')->post('/admin/reset-password/bogus/forms/reset', [
+        'email' => $email,
+        'password' => 'brand-new-password',
+        'password_confirmation' => 'brand-new-password',
+    ]);
+    foreach (range(1, 5) as $i) {
+        $attempt("probe{$i}@example.com")->assertSessionHasErrors(['email' => __('passwords.token')]);
+    }
+
+    $attempt('olena@example.com')->assertSessionHasErrors('email');
+    expect(session('errors')->first('email'))->toStartWith(substr(__('auth.throttle'), 0, 20));
+});

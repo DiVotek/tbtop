@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Auth;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -76,7 +77,9 @@ abstract class LoginPage extends AuthPage
 
     protected function throttleKey(ActionCtx $ctx): string
     {
-        return Str::transliterate(Str::lower((string) $ctx->form['email']).'|'.$ctx->request->ip());
+        $login = Arr::first(Arr::except($this->credentials($ctx), 'password'));
+
+        return Str::transliterate(Str::lower((string) $login).'|'.$ctx->request->ip());
     }
 
     /** Failed attempts allowed per throttle key per minute. */
@@ -85,8 +88,8 @@ abstract class LoginPage extends AuthPage
         return 5;
     }
 
-    /** The security core — throttle, attempt, regenerate — stays fixed; the hooks wrap it. */
-    private function authenticate(ActionCtx $ctx): string
+    /** The security core — throttle, attempt, regenerate. A subclass that rebuilds view() calls it; override it only to wrap parent::authenticate(). */
+    protected function authenticate(ActionCtx $ctx): string
     {
         $key = 'tbtop-login|'.$this->throttleKey($ctx);
         if (RateLimiter::tooManyAttempts($key, $this->maxAttempts())) {

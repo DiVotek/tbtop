@@ -28,6 +28,8 @@ final class PanelConfig
 
     private string $guard = 'web';
 
+    private ?string $passwordBroker = null;
+
     /** @var list<string> */
     private array $middleware = ['web'];
 
@@ -91,6 +93,14 @@ final class PanelConfig
     public function guard(string $guard): static
     {
         $this->guard = $guard;
+
+        return $this;
+    }
+
+    /** Password broker from config/auth.php for the auth pages' reset flow; null uses the app default. A guard on a non-default provider needs its own broker. */
+    public function passwordBroker(?string $broker): static
+    {
+        $this->passwordBroker = $broker;
 
         return $this;
     }
@@ -296,6 +306,11 @@ final class PanelConfig
     public function getGuard(): string
     {
         return $this->guard;
+    }
+
+    public function getPasswordBroker(): ?string
+    {
+        return $this->passwordBroker;
     }
 
     /** @return list<string> */

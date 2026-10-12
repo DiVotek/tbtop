@@ -39,6 +39,12 @@ final class CurrentPanel
         return $this->config->getGuard();
     }
 
+    /** Null means the app's default broker. */
+    public function passwordBroker(): ?string
+    {
+        return $this->config->getPasswordBroker();
+    }
+
     /** Raw route prefix, e.g. 'admin'. */
     public function prefix(): string
     {
