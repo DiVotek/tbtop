@@ -69,12 +69,12 @@ if (!opts.steps) {
 
 await browser.close();
 
-// The demo has no dev-only sign-in route, so drive the real Breeze form.
+// The demo has no dev-only sign-in route, so drive the real panel login form.
 async function signIn(page) {
-    await page.goto(`${opts.base}/login`, { waitUntil: 'networkidle' });
+    await page.goto(`${opts.base}/admin/login`, { waitUntil: 'networkidle' });
     await page.fill('#email', opts.as);
     await page.fill('#password', opts.password);
-    await Promise.all([page.waitForURL((url) => url.pathname !== '/login'), page.click('button:has-text("Log in")')]);
+    await Promise.all([page.waitForURL((url) => url.pathname !== '/admin/login'), page.click('button[type="submit"]')]);
 }
 
 // Inertia swaps pages after networkidle; an earlier frame shows the old screen.

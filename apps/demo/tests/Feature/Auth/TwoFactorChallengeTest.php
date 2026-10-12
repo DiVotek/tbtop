@@ -29,12 +29,13 @@ class TwoFactorChallengeTest extends TestCase
     {
         [$user] = $this->userWithTwoFactor();
 
-        $response = $this->post('/login', [
+        $response = $this->post('/admin/login/forms/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);
 
-        $response->assertRedirect(route('two-factor.challenge'));
+        $response->assertRedirect('/admin/two-factor-challenge');
+        $response->assertSessionHas('auth.2fa.user_id', $user->id);
         $this->assertGuest();
     }
 
@@ -53,11 +54,10 @@ class TwoFactorChallengeTest extends TestCase
 
         $this->withSession(['auth.2fa.user_id' => $user->id]);
 
-        $response = $this->postJson('/two-factor-challenge', [
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
             'code' => '000000',
-        ]);
+        ])->assertSessionHasErrors('code');
 
-        $response->assertStatus(422);
         $this->assertGuest();
     }
 
@@ -68,13 +68,11 @@ class TwoFactorChallengeTest extends TestCase
         $this->withSession(['auth.2fa.user_id' => $user->id]);
         $previousSessionId = session()->getId();
 
-        $validOtp = $g2fa->getCurrentOtp($secret);
-
-        $response = $this->post('/two-factor-challenge', [
-            'code' => $validOtp,
+        $response = $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => $g2fa->getCurrentOtp($secret),
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect('/admin/dashboard');
         $this->assertAuthenticatedAs($user);
         $response->assertSessionMissing('auth.2fa.user_id');
         $response->assertSessionHas('auth.2fa.completed', true);
@@ -98,19 +96,6 @@ class TwoFactorChallengeTest extends TestCase
         $remaining = json_decode(decrypt($user->two_factor_recovery_codes), true);
         $this->assertNotContains($codes[0], $remaining);
         $this->assertContains($codes[1], $remaining);
-    }
-
-    public function test_admin_dsl_challenge_accepts_a_totp_code(): void
-    {
-        [$user, $g2fa, $secret] = $this->userWithTwoFactor();
-
-        $this->withSession(['auth.2fa.user_id' => $user->id]);
-
-        $this->post('/admin/two-factor-challenge/forms/challenge', [
-            'code' => $g2fa->getCurrentOtp($secret),
-        ])->assertRedirect('/admin/dashboard');
-
-        $this->assertAuthenticatedAs($user);
     }
 
     public function test_admin_dsl_challenge_returns_to_the_intended_url_after_a_recovery_code(): void

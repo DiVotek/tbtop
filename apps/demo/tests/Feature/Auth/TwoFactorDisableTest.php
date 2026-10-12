@@ -24,7 +24,7 @@ class TwoFactorDisableTest extends TestCase
 
         $validOtp = $g2fa->getCurrentOtp($secret);
 
-        $response = $this->actingAs($user)->postJson('/two-factor/disable', [
+        $response = $this->actingAs($user)->withSession(['auth.2fa.completed' => true])->postJson('/two-factor/disable', [
             'code' => $validOtp,
         ]);
 
@@ -46,7 +46,7 @@ class TwoFactorDisableTest extends TestCase
             'two_factor_confirmed_at' => now(),
         ]);
 
-        $response = $this->actingAs($user)->postJson('/two-factor/disable', [
+        $response = $this->actingAs($user)->withSession(['auth.2fa.completed' => true])->postJson('/two-factor/disable', [
             'code' => '000000',
         ]);
 

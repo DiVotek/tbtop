@@ -8,9 +8,8 @@ use Tests\TestCase;
 
 /**
  * A guest who requests a deep admin URL must land back on it after signing in,
- * not on the dashboard. RequireFullAuth stashes url.intended; the DSL login
- * page reads it (it returns a URL string, so redirect()->intended() is not
- * available to it).
+ * not on the panel root. RequireFullAuth stashes url.intended; the package
+ * LoginPage base reads it in redirectTo().
  */
 class RedirectAfterLoginTest extends TestCase
 {
@@ -28,14 +27,14 @@ class RedirectAfterLoginTest extends TestCase
         ])->assertRedirect('/admin/posts');
     }
 
-    public function test_login_without_an_intended_url_lands_on_the_dashboard()
+    public function test_login_without_an_intended_url_lands_on_the_panel_root()
     {
         $user = User::factory()->create();
 
         $this->post('/admin/login/forms/login', [
             'email' => $user->email,
             'password' => 'password',
-        ])->assertRedirect('/admin/dashboard');
+        ])->assertRedirect('/admin');
     }
 
     public function test_the_intended_url_is_not_reused_by_a_later_login()
@@ -53,6 +52,6 @@ class RedirectAfterLoginTest extends TestCase
         $this->post('/admin/login/forms/login', [
             'email' => $user->email,
             'password' => 'password',
-        ])->assertRedirect('/admin/dashboard');
+        ])->assertRedirect('/admin');
     }
 }

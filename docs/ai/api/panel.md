@@ -37,6 +37,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `navigationItems(array $items): static` | Extra always-shown nav entries with no page/gate (e.g. an external link), merged into the built tree alongside page-derived items, grouped by label the same way navigationGroups() matches groups. |
 | `notificationsPolling(?int $seconds): static` | Seconds between header-bell polls for new notifications. null disables auto-polling (the bell still fetches when opened). Mirrors Filament's databaseNotificationsPolling(); only active when the chrome renders a notifications bell. |
 | `pages(array $pages): static` | Replaces manual pages; discovery merges them first and removes duplicate classes. |
+| `passwordBroker(?string $broker): static` | Password broker from config/auth.php for the auth pages' reset flow; null uses the app default. A guard on a non-default provider needs its own broker. |
 | `prefix(string $prefix): static` | URL path prefix the panel is mounted under. Defaults to the panel id when unset — see getPrefix(). |
 | `rootView(string $view): static` | Blade root view rendered on first visit (per-panel Vite entry escape hatch). |
 | `unsavedGuard(bool $enabled = true): static` | Default for the unsaved-changes navigation guard on forms. |

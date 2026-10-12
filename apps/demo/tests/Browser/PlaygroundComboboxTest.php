@@ -5,8 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 
 // Browser-only checks that happy-dom can't reproduce: the Base UI combobox opens a
-// portalled popup, and the inline "create" dialog must stack above it (z-50). Plus one
-// real /login form drive, replacing the old Playwright auth.setup.ts.
+// portalled popup, and the inline "create" dialog must stack above it (z-50).
 
 it('opens, selects, and creates in the roles combobox', function () {
     $this->actingAs(User::factory()->create(['role' => 'admin']));
@@ -42,20 +41,5 @@ it('opens, selects, and creates in the roles combobox', function () {
             "document.querySelector('[data-testid=\"chip-auditor\"] span')?.textContent?.trim()",
             'Auditor',
         )
-        ->assertNoJavaScriptErrors();
-});
-
-it('logs in through the real login form', function () {
-    User::factory()->create([
-        'email' => 'admin@admin.com',
-        'password' => 'password',
-        'role' => 'admin',
-    ]);
-
-    visit('/login')
-        ->type('email', 'admin@admin.com')
-        ->type('password', 'password')
-        ->click('Log in')
-        ->assertPathIsNot('/login')
         ->assertNoJavaScriptErrors();
 });

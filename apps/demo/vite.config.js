@@ -10,8 +10,7 @@ const clientSrc = (path) =>
 export default defineConfig({
 	plugins: [
 		laravel({
-			input: ["resources/css/app.css", "resources/js/app.tsx", "resources/js/admin.tsx"],
-			ssr: "resources/js/ssr.jsx",
+			input: ["resources/css/app.css", "resources/js/admin.tsx"],
 			refresh: true,
 		}),
 		react(),

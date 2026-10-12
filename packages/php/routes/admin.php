@@ -6,6 +6,7 @@ use Symfony\Component\Console\Application as ConsoleApplication;
 use Symfony\Component\Console\Exception\ExceptionInterface as InputException;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputOption;
+use Tbtop\Admin\Auth\AuthPage;
 use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\ActionDataController;
 use Tbtop\Admin\Http\DataController;
@@ -155,7 +156,7 @@ $registerChromeRoutes = static function (): void {
 
 /**
  * The path the panel root should redirect to: the first declared page with a
- * static (parameter-less) path. Null when no page qualifies, or when a page
+ * static (parameter-less) path, auth pages aside. Null when no page qualifies, or when a page
  * already owns the root path — registering a redirect would shadow it.
  */
 $panelHomePath = static function (PanelConfig $panel): ?string {
@@ -165,7 +166,8 @@ $panelHomePath = static function (PanelConfig $panel): ?string {
         if ($path === '') {
             return null;
         }
-        if ($home === null && ! str_contains($path, '{')) {
+        // Discovery orders by FQCN, so App\Admin\Pages\Auth\* would otherwise win.
+        if ($home === null && ! str_contains($path, '{') && ! is_subclass_of($class, AuthPage::class)) {
             $home = $path;
         }
     }

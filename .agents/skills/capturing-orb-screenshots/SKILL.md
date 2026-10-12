@@ -32,7 +32,7 @@ not replace the project's Pest browser smoke suite.
    ```bash
    session="tbtop-screenshot"
    agent-browser --session "$session" set viewport 1728 1000
-   agent-browser --session "$session" open "http://127.0.0.1:$port/login"
+   agent-browser --session "$session" open "http://127.0.0.1:$port/admin/login"
    agent-browser --session "$session" wait --load networkidle
    agent-browser --session "$session" snapshot -i
    ```

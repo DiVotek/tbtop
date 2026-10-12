@@ -40,7 +40,7 @@ domain: panels
 - **Page layout**: `Page::layout(): string` — `'admin' | 'center'`, default `'admin'`
   (inherited; developer overrides per page). Serialized in page props; the client's
   persistent layout dispatches `AdminLayout` vs `CenterLayout` (centered, chrome-less).
-  Auth pages (login/register) use `center`.
+  Auth pages (login, password reset) use `center`.
 - **Chrome = per-panel plain stateless class** (instantiated at share-time, like Page —
   not a container singleton). Methods `header / sidebar / footer (S $s): Node` return DSL
   trees; defaults wrap predefined blocks in `$s->row(...)`. Default item lists are

@@ -69,7 +69,7 @@ class PanelNotFoundTest extends TestCase
         // LoginPage is reachable without the panel's auth guard; a 404 raised
         // from one of its own routes (e.g. an undefined data source) must not
         // leak panel chrome to a visitor who was never authenticated.
-        $this->post('/logout');
+        $this->post('/admin/logout');
 
         $this->get('/admin/login/data/bogus')
             ->assertNotFound()
@@ -82,7 +82,9 @@ class PanelNotFoundTest extends TestCase
 
     public function test_authenticated_404_on_a_public_page_route_still_gets_the_panel_chrome(): void
     {
-        $this->get('/admin/login/data/bogus')
+        // Not LoginPage: the scaffolded auth pages send a signed-in user into the
+        // panel before routing. The 2FA challenge page stays public to everyone.
+        $this->get('/admin/two-factor-challenge/data/bogus')
             ->assertNotFound()
             ->assertInertia(function (Assert $page) {
                 $page->component('admin/error', false)

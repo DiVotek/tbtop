@@ -11,12 +11,13 @@ use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelConfig;
 
 /**
  * DSL-authored 2FA challenge page, reached after login when the user has 2FA
- * enabled. Mirrors TwoFactorChallengeController::store(): verify a TOTP or
- * recovery code against the pending session user, then complete the session.
+ * enabled. Verifies a TOTP or recovery code against the pending session user,
+ * then completes the session.
  *
  * Accepts the same code field for both authenticator and recovery codes.
  */
@@ -77,7 +78,7 @@ class TwoFactorChallengePage extends Page
         ]);
     }
 
-    /** Mirrors TwoFactorChallengeController::store(). Returns the next URL. */
+    /** Returns the next URL. */
     private function challenge(ActionCtx $ctx): string
     {
         $userId = $ctx->request->session()->get('auth.2fa.user_id');
@@ -100,7 +101,7 @@ class TwoFactorChallengePage extends Page
 
     private function complete(ActionCtx $ctx, User $user): string
     {
-        Auth::login($user);
+        Auth::guard(CurrentPanel::current()?->guard())->login($user);
         $ctx->request->session()->forget('auth.2fa.user_id');
         $ctx->request->session()->put('auth.2fa.completed', true);
         $ctx->request->session()->regenerate();

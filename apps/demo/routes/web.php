@@ -1,18 +1,19 @@
 <?php
 
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Middleware\RequireFullAuth;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+Route::redirect('/', '/admin');
 
+// JSON endpoints behind the DSL TwoFactorSetupPage's custom block.
 Route::middleware([RequireFullAuth::class])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
-});
+    Route::post('two-factor/setup', [TwoFactorController::class, 'setup'])
+        ->name('two-factor.setup');
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+    Route::post('two-factor/confirm', [TwoFactorController::class, 'confirm'])
+        ->name('two-factor.confirm');
+
+    Route::post('two-factor/disable', [TwoFactorController::class, 'disable'])
+        ->name('two-factor.disable');
+});

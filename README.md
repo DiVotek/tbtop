@@ -176,5 +176,5 @@ phpstan runs at level 5 (the skeleton default; raise it in `phpstan.neon.dist`).
 
 ## Status
 
-See `docs/backlog.md` for the current gap list (a package-side auth backend is
-the known blocker). Per-package contributor notes live in the root `CLAUDE.md`.
+See `docs/backlog.md` for the current gap list. Sign-in and password reset come
+from `php artisan admin:install --auth`. Per-package contributor notes live in the root `CLAUDE.md`.
