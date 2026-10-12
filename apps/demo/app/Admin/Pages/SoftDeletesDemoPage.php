@@ -48,7 +48,7 @@ class SoftDeletesDemoPage extends Page
                 ->rowActions([
                     // Closure-returned Effects override DeleteAction's default tail.
                     DeleteAction::make($s, using: function (ActionCtx $ctx): Effects {
-                        Post::whereKey($ctx->row['id'] ?? null)->delete();
+                        Post::whereKey($ctx->key())->delete();
 
                         return Effects::make()->notify('Post deleted')->refreshTable('posts');
                     })->confirm('Delete post?', 'It moves to the Trashed tab.'),

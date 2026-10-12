@@ -26,7 +26,7 @@ final class RestoreAction
         return RecordAction::server(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->restore(),
+            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->key())->firstOrFail()->restore(),
             Effects::make()->notify(__('tbtop-admin::admin.restore.notify.success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.restore'))->color('gray');
     }

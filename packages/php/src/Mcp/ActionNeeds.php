@@ -10,12 +10,12 @@ namespace Tbtop\Admin\Mcp;
 final class ActionNeeds
 {
     /** The record key a row carries, as the client reads it (normalize.ts readId). */
-    private const ROW_KEY = 'id';
+    private const ROW_KEY = '_key';
 
     private const HINTS = [
         'form' => 'Pass form with the fields search() lists.',
         'row' => 'Pass a row from query().',
-        'selection' => 'Pass row keys from query() as selection.',
+        'selection' => 'Pass the `_key` of rows from query() as selection.',
     ];
 
     /**
@@ -39,7 +39,7 @@ final class ActionNeeds
 
             throw new AgentError("\"{$id}\" needs ".implode(', ', $missing).". {$hints}");
         }
-        if (in_array('row', $needs, true) && is_array($row) && ! self::isKey($row[self::ROW_KEY] ?? null)) {
+        if (in_array('row', $needs, true) && is_array($row) && ! self::isKey($row[self::ROW_KEY] ?? $row['id'] ?? null)) {
             throw new AgentError("\"{$id}\" needs a row with its key \"".self::ROW_KEY.'". Pass a row from query() unchanged.');
         }
     }

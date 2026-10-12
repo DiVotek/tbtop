@@ -50,7 +50,7 @@ class MediaIndexPage extends Page
                     // Prebuilt delete; the using closure returns the page's own
                     // copy + named refreshTable, overriding the helper's tail.
                     DeleteAction::make($s, using: function (ActionCtx $ctx): Effects {
-                        Media::whereKey($ctx->row['id'] ?? null)->delete();
+                        Media::whereKey($ctx->key())->delete();
 
                         return Effects::make()->notify('File deleted')->refreshTable('media');
                     })->confirm('Delete file?', 'This cannot be undone.'),

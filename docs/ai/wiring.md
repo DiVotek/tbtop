@@ -249,7 +249,7 @@ The agent is trusted to act for its user, but what it reads and what it is sent 
 
   ```php
   $s->action('archive')->handle(function (ActionCtx $ctx): Effects {
-      $post = Post::query()->whereBelongsTo($ctx->user, 'author')->findOrFail($ctx->row['id']);
+      $post = Post::query()->whereBelongsTo($ctx->user, 'author')->findOrFail($ctx->key());
       Gate::forUser($ctx->user)->authorize('update', $post);
       $post->update(['archived_at' => now()]);
 
