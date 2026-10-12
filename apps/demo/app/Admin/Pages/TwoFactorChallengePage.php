@@ -11,6 +11,7 @@ use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
+use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelConfig;
 
 /**
@@ -100,7 +101,7 @@ class TwoFactorChallengePage extends Page
 
     private function complete(ActionCtx $ctx, User $user): string
     {
-        Auth::login($user);
+        Auth::guard(CurrentPanel::current()?->guard())->login($user);
         $ctx->request->session()->forget('auth.2fa.user_id');
         $ctx->request->session()->put('auth.2fa.completed', true);
         $ctx->request->session()->regenerate();
