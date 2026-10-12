@@ -90,6 +90,14 @@ domain: panels
   `AdminErrorPage` reuses `AdminPage`'s layout dispatcher. Requests outside a panel keep the
   app handler — the package never overrides the consumer's `Handler`.
 
+- **The package owns the panel session's edges: `POST {prefix}/logout` and `tbtop.user`.**
+  Logout signs out the panel's guard, then invalidates the whole session — every panel
+  sharing that session cookie is signed out too, on purpose: a per-guard logout would leave
+  a half-live session behind. `tbtop.user` is the guard's user via `toArray()` (`$hidden`
+  applies; relations loaded during the request ride along). The `tbtop` share is registered
+  per request in `SetCurrentPanel`, not at boot: Pest browser flushes shared props between
+  requests.
+
 ## Why
 
 Single-instance assumptions (one prefix, hardcoded `['web','auth']`, global
