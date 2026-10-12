@@ -124,6 +124,12 @@
   package base pages (`Tbtop\Admin\Auth\*`), so fixes arrive through the base. No
   controllers or routes. Open: 2FA (`--2fa`), email verification, registration, a DSL
   profile/password page. Replaces the 2026-09-24 "non-goal" decision.
+  - **`--auth` on a second panel** — the scaffold always writes `app/Admin/Pages/Auth`, so a
+    second `--panel=` run reports "Exists" and does nothing, and its discovery hint would pull
+    the first panel's pages in. Per-panel target dir/namespace, or refuse with a manual step.
+  - **Forgot-password timing** (deferred) — the reset mail is sent inline, so an existing
+    account answers slower than an unknown one. Breeze has the same gap; `Timebox` or a
+    queued notification closes it if a consumer asks.
 - Multi-tenancy (post-panels; panels ≠ tenancy).
 - **Cross-model record search** — the ⌘K palette ships and searches nav items plus
   declared commands (`CommandPaletteConfig::commands()`); what is missing is searching
