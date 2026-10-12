@@ -34,6 +34,7 @@ final class ColumnProjection
         $out = [];
         foreach ($rows as $row) {
             $projected = self::projectRow($row, $valueColumns);
+            self::attachKey($projected, $row);
             self::attachGroupKey($projected, $row, $groupsColumn);
             if ($recordUrl !== null) {
                 data_set($projected, '_recordUrl', $recordUrl($row));
@@ -44,6 +45,20 @@ final class ColumnProjection
         }
 
         return $out;
+    }
+
+    /**
+     * The record key under `_key`, which no column can claim: a declared `id`
+     * column with a format or link overwrites `id`, and a model keyed otherwise
+     * (uuid, custom $primaryKey) ships no `id` at all. The client identifies
+     * rows by `_key` for selection, reorder, inline edit and row actions.
+     */
+    private static function attachKey(mixed &$projected, mixed $row): void
+    {
+        $key = $row instanceof Model ? $row->getKey() : data_get($row, 'id');
+        if ($key !== null) {
+            data_set($projected, '_key', $key);
+        }
     }
 
     /**

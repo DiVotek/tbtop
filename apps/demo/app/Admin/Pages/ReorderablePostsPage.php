@@ -35,9 +35,14 @@ class ReorderablePostsPage extends Page
         return $s->stack([
             $s->table('posts')
                 ->columns([
+                    Column::make('id')
+                        ->label('ID')
+                        // A formatted key column: rows stay identified by `_key`.
+                        ->formatUsing(fn ($value) => "#{$value}"),
                     Column::make('title')
                         ->label('Title')
-                        ->kind('text'),
+                        ->kind('text')
+                        ->translatable(),
                     Column::make('views')
                         ->label('Views')
                         ->number()

@@ -39,6 +39,19 @@ final class ActionCtx
     }
 
     /**
+     * The clicked row's record key, for whereKey()/find(). Reads `_key`, which
+     * table rows always carry, so it stays the raw key when an `id` column is
+     * formatted or the model is keyed otherwise; falls back to `id` for rows
+     * from a custom endpoint. Null when the action did not declare needs: ['row'].
+     */
+    public function key(): int|string|null
+    {
+        $key = $this->row['_key'] ?? $this->row['id'] ?? null;
+
+        return is_int($key) || is_string($key) ? $key : null;
+    }
+
+    /**
      * Replace the client-sent form with its validated counterpart. Null leaves
      * the payload untouched — the action declared no form to validate against,
      * so the handler validates it itself.

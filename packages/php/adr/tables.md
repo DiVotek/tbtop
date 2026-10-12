@@ -48,6 +48,12 @@ domain: tables
   `stdClass`), which shipped undeclared attributes, loaded relations, `->hidden()` columns
   and, on query-builder tables, every selected column. Declaring a column is the only way
   to put a field on the wire; there is deliberately no data-only escape hatch.
+- **A row's identity is `_key`, not `id`.** Every projected row carries the raw record key
+  under `_key`, written after the columns so none can overwrite it; the key also stays under
+  its own name. The client (`readId`) and `ActionCtx::key()` read `_key` and fall back to
+  `id` for rows from a consumer's own endpoint. Rejected: always aliasing the key as `id`
+  (a formatted `id` column still clobbers it) and a table-level `rowKey` name (same
+  clobbering, plus a schema change). Closes DiVotek/tbtop#326.
 
 ## Why
 

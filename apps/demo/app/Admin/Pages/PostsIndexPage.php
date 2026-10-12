@@ -72,6 +72,10 @@ class PostsIndexPage extends Page
                     )->label('Quick create')->slideOver(),
                 ])
                 ->columns([
+                    Column::make('id')
+                        ->label('ID')
+                        // A formatted key column: rows stay identified by `_key`.
+                        ->formatUsing(fn ($value) => "#{$value}"),
                     Column::make('cover_url')->image()->square()->label('Cover')->alt('Cover'),
                     Column::make('color')->color()->rounded()->label('Color'),
                     Column::make('title')
@@ -171,7 +175,7 @@ class PostsIndexPage extends Page
                     // row id, so edit goes through a server redirect effect.
                     $s->action('edit')->label('Edit')->handle(
                         fn (ActionCtx $ctx): Effects => Effects::make()
-                            ->redirect("/admin/posts/{$ctx->row['id']}/edit"),
+                            ->redirect("/admin/posts/{$ctx->key()}/edit"),
                         needs: ['row'],
                     ),
                     // Prebuilt read-only detail modal, widened past the default
@@ -181,7 +185,7 @@ class PostsIndexPage extends Page
                         name: 'viewPost',
                         title: 'Post detail',
                         loadUsing: fn (ActionCtx $ctx): array => Post::query()
-                            ->whereKey($ctx->row['id'] ?? null)
+                            ->whereKey($ctx->key())
                             ->firstOrFail()
                             ->only(['slug', 'published', 'views']),
                         render: fn () => $s->stack([
@@ -208,11 +212,11 @@ class PostsIndexPage extends Page
                                 ->hiddenIf('published', '=', false),
                         ]),
                         loadUsing: fn (ActionCtx $ctx): array => Post::query()
-                            ->whereKey($ctx->row['id'] ?? null)
+                            ->whereKey($ctx->key())
                             ->firstOrFail()
                             ->only(['published', 'published_at']),
                         saveUsing: function (ActionCtx $ctx): Effects {
-                            Post::whereKey($ctx->row['id'] ?? null)->update([
+                            Post::whereKey($ctx->key())->update([
                                 'published' => (bool) ($ctx->form['published'] ?? false),
                                 'published_at' => $ctx->form['published_at'] ?? null,
                             ]);
@@ -225,7 +229,7 @@ class PostsIndexPage extends Page
                     )->label('Publication')->hiddenIf('published', '=', false),
                     // Prebuilt clone: returns a redirect to edit the new copy.
                     ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
-                        $clone = Post::query()->whereKey($ctx->row['id'] ?? null)
+                        $clone = Post::query()->whereKey($ctx->key())
                             ->firstOrFail()->replicate();
                         $clone->slug = $clone->slug.'-copy-'.uniqid();
                         $clone->save();
@@ -236,7 +240,7 @@ class PostsIndexPage extends Page
                     }),
                     // Prebuilt delete: danger + confirm baked in by the helper.
                     DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
-                        Post::whereKey($ctx->row['id'] ?? null)->delete();
+                        Post::whereKey($ctx->key())->delete();
                     }),
                 ])
                 ->bulkActions([

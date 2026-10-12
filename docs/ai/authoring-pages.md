@@ -547,15 +547,17 @@ and the record-URL row link.
   Rows, badges, `recordUrl` and `perPage` still apply.
 
 **What a row carries to the client** — an allowlist, never the full database row: the
-record key, the visible declared columns (toggleable and `hiddenByDefault()` columns
+record key (under its own name and again under `_key`), the visible declared columns (toggleable and `hiddenByDefault()` columns
 included), the `groups()` column, and the `_recordUrl` / `_tooltips` / `_descriptions`
 meta. Undeclared attributes, eager-loaded relations and `->hidden()` / `visible(false)`
 columns stay on the server. So a row-action URL template (`{field}`), a row-action
 `hiddenIf()` / `disabledIf()`, or a `needs: ['row']` handler sees only those fields — to
-use another one, declare it as a column, or load the record by `$ctx->row['id']` in the
+use another one, declare it as a column, or load the record by `$ctx->key()` in the
 handler (`$ctx->row` comes from the client; re-read anything you authorize on). Selection,
-reorder and inline edit identify rows by `id`, so a model keyed otherwise (uuid primary
-key) needs an `id` attribute.
+reorder, inline edit and `$ctx->key()` identify rows by `_key`, so a uuid or custom
+`$primaryKey` works, and a formatted `id` column (`formatUsing()`, a link, a money/date
+format) no longer changes the key. Read `$ctx->key()`, not `$ctx->row['id']`: the latter
+carries the formatted column value. A URL template takes the key as `{row._key}`.
 
 #### `groups()` — row grouping
 
@@ -797,7 +799,7 @@ for a server action; always go through `$s->action()` or a preset that does.
 ```php
 // apps/demo/app/Admin/Pages/PostsIndexPage.php
 DeleteAction::make($s, name: 'delete', using: function (ActionCtx $ctx): void {
-    Post::whereKey($ctx->row['id'] ?? null)->delete();
+    Post::whereKey($ctx->key())->delete();
 }),
 // bulk — empty selection is a benign notify; the closure overrides the tail:
 DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): Effects {
@@ -812,7 +814,7 @@ DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (Act
 ```php
 // apps/demo/app/Admin/Pages/PostsIndexPage.php
 ReplicateAction::make($s, using: function (ActionCtx $ctx): Effects {
-    $clone = Post::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()->replicate();
+    $clone = Post::query()->whereKey($ctx->key())->firstOrFail()->replicate();
     $clone->slug = $clone->slug.'-copy-'.uniqid();
     $clone->save();
 
@@ -854,7 +856,7 @@ ViewAction::make(
     name: 'viewPost',
     title: 'Post detail',
     loadUsing: fn (ActionCtx $ctx): array => Post::query()
-        ->whereKey($ctx->row['id'] ?? null)->firstOrFail()
+        ->whereKey($ctx->key())->firstOrFail()
         ->only(['slug', 'published', 'views']),
     render: fn () => $s->stack([
         $s->displayText('Slug')->variant('subheading'),
@@ -912,10 +914,10 @@ EditAction::make(
             ->rules('nullable|date')->hiddenIf('published', '=', false),
     ]),
     loadUsing: fn (ActionCtx $ctx): array => Post::query()
-        ->whereKey($ctx->row['id'] ?? null)->firstOrFail()
+        ->whereKey($ctx->key())->firstOrFail()
         ->only(['published', 'published_at']),
     saveUsing: function (ActionCtx $ctx): Effects {
-        Post::whereKey($ctx->row['id'] ?? null)->update([
+        Post::whereKey($ctx->key())->update([
             'published' => (bool) ($ctx->form['published'] ?? false),
             'published_at' => $ctx->form['published_at'] ?? null,
         ]);
@@ -1192,7 +1194,7 @@ they are derived server-side and trusted over anything the client sends.
 $s->action('delete')->label('Delete')->color('danger')
     ->confirm('Delete post?', 'This cannot be undone.')
     ->handle(function (ActionCtx $ctx): Effects {
-        Post::whereKey($ctx->row['id'] ?? null)->delete();
+        Post::whereKey($ctx->key())->delete();
 
         return Effects::make()->notify('Post deleted')->refreshTable('posts');
     }, needs: ['row'])

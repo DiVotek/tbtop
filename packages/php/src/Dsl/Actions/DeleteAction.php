@@ -11,7 +11,7 @@ use Tbtop\Admin\Dsl\S;
 /**
  * Prebuilt delete action — a danger-styled, confirmed server action over
  * RecordAction. No model is baked in: the consumer's `using` closure runs the
- * actual delete (e.g. Post::whereKey($ctx->row['id'])->delete()).
+ * actual delete (e.g. Post::whereKey($ctx->key())->delete()).
  *
  * Returns the configured ActionBuilder so label/icon/confirm/color stay
  * overridable by chaining tbtop's fluent API.
