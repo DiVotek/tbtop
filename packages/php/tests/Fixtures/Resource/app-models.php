@@ -69,13 +69,24 @@ class Page extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['title', 'parent_id', 'secrets'];
+    public static bool $authorCalled = false;
+
+    protected $fillable = ['title', 'parent_id', 'author_id', 'secrets'];
 
     protected $casts = ['secrets' => 'encrypted:array'];
 
-    public function parent(): BelongsTo
+    /** Untyped, like many hand-written relations. */
+    public function parent() // @phpstan-ignore missingType.return
     {
         return $this->belongsTo(Page::class);
+    }
+
+    /** Named after author_id but not a relation: the generator must not call it. */
+    public function author(): string
+    {
+        self::$authorCalled = true;
+
+        return 'side effect';
     }
 }
 
@@ -108,6 +119,7 @@ function createResourceTables(): void
         $table->id();
         $table->string('title');
         $table->foreignId('parent_id')->nullable()->constrained('pages');
+        $table->foreignId('author_id')->nullable()->constrained('writers');
         $table->text('secrets')->nullable();
         $table->integer('hits')->default(0);
     });

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use ReflectionMethod;
+use ReflectionNamedType;
 use Throwable;
 
 /**
@@ -57,7 +58,7 @@ final class ForeignKeys
     private static function relationFor(Model $owner, string $column): ?array
     {
         $method = Str::camel((string) preg_replace('/_id$/', '', $column));
-        if ($method === $column || ! method_exists($owner, $method) || (new ReflectionMethod($owner, $method))->getNumberOfRequiredParameters() > 0) {
+        if ($method === $column || ! method_exists($owner, $method) || ! self::declaresRelation(new ReflectionMethod($owner, $method))) {
             return null;
         }
         try {
@@ -67,6 +68,22 @@ final class ForeignKeys
         } catch (Throwable) {
             return null;
         }
+    }
+
+    /** Only a method typed as a Relation, or an untyped one calling belongsTo(), is ever invoked. */
+    private static function declaresRelation(ReflectionMethod $method): bool
+    {
+        if ($method->getNumberOfRequiredParameters() > 0) {
+            return false;
+        }
+        $type = $method->getReturnType();
+        if ($type !== null) {
+            return $type instanceof ReflectionNamedType && is_a($type->getName(), Relation::class, true);
+        }
+        $file = $method->getFileName();
+        $lines = $file === false ? [] : array_slice(file($file) ?: [], $method->getStartLine() - 1, $method->getEndLine() - $method->getStartLine() + 1);
+
+        return str_contains(implode('', $lines), 'belongsTo(');
     }
 
     /** Fallback when no relation names the model: App\\Models\\{Singular}. @return class-string|null */

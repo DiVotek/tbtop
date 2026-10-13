@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Note;
+use App\Models\Page;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Commands\Resource\ColumnInfo;
@@ -96,7 +97,8 @@ it('aliases a model named like a stub import and keeps only its fillable columns
         ->toContain("\$s->text('title')->label('Title')->required()")
         ->toContain("\$s->relation('parent_id')")
         ->toContain('// TODO secrets: json column')
-        ->not->toContain('hits');
+        ->not->toContain('hits')
+        ->and(Page::$authorCalled)->toBeFalse();
 });
 
 it('marks translatable attributes and loads their whole locale map on edit', function () {
