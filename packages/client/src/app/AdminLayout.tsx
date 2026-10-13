@@ -19,7 +19,7 @@ import { DensityContext } from "./densityContext";
 import { useRailActiveGroup } from "./navRail";
 import { RailSidebarFrame } from "./RailSidebarFrame";
 import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
-import { ThemeSync } from "./ThemeSync";
+import { StylePresetSync, ThemeSync } from "./ThemeSync";
 import { TopbarSidebarFrame } from "./TopbarSidebarFrame";
 
 /** Server-authored chrome trees from the `tbtop.chrome` shared prop. */
@@ -155,6 +155,7 @@ export function AdminLayoutShell({
 		<DensityContext.Provider value={density}>
 			<ChromeDataContext.Provider value={chromeData}>
 				<ThemeSync />
+				<StylePresetSync />
 				<Frame {...frameProps} />
 			</ChromeDataContext.Provider>
 		</DensityContext.Provider>

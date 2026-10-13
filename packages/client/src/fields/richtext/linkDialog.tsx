@@ -77,7 +77,9 @@ export function LinkDialog({ editor, request, onClose }: LinkDialogProps) {
 
 	return (
 		<ResponsiveDialog open={open} onOpenChange={(next) => !next && onClose()}>
-			<ResponsiveDialogContent className="flex flex-col gap-4 p-6 sm:max-w-md">
+			{/* `!` beats the preset layer (`cn-dialog-content` sets grid, gap-4,
+			    p-4; ModalShell's own scale relies on this too). */}
+			<ResponsiveDialogContent className="!flex !flex-col !gap-4 !p-6 sm:!max-w-md">
 				<ResponsiveDialogHeader>
 					<ResponsiveDialogTitle>
 						{t("field.richtext.link_dialog_title")}

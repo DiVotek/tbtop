@@ -20,3 +20,25 @@ export function ThemeSync() {
 
 	return null;
 }
+
+/**
+ * The active new-gen style preset scope (`style-preset-*`). Portals
+ * (dialog overlay/content, select/dropdown popovers, tooltips) render into
+ * `document.body` — outside any React subtree — so the scope class must live
+ * on `documentElement`, not on a wrapper div. Keep in sync with the active
+ * preset import in styles.css.
+ */
+export const STYLE_PRESET_CLASS = "style-preset-mira";
+
+export function StylePresetSync() {
+	useEffect(() => {
+		const root = document.documentElement;
+		const prev = [...root.classList].find((c) => c.startsWith("style-preset-"));
+		if (prev && prev !== STYLE_PRESET_CLASS) {
+			root.classList.remove(prev);
+		}
+		root.classList.add(STYLE_PRESET_CLASS);
+	}, []);
+
+	return null;
+}

@@ -35,7 +35,8 @@ describe("ModalShell", () => {
 			),
 		);
 		const content = baseElement.querySelector('[role="dialog"]');
-		expect(content?.className ?? "").toContain("p-6");
+		// Dialog padding is owned by the preset's `cn-dialog-content`.
+		expect(content?.className ?? "").toContain("cn-dialog-content");
 	});
 
 	// Regression: tall dialog bodies (media picker) overflowed the viewport.
@@ -90,13 +91,13 @@ describe("ModalShell", () => {
 	});
 
 	test.each([
-		["xl", "sm:max-w-xl"],
-		["2xl", "sm:max-w-2xl"],
-		["3xl", "sm:max-w-3xl"],
-		["4xl", "sm:max-w-4xl"],
-		["5xl", "sm:max-w-5xl"],
-		["6xl", "sm:max-w-6xl"],
-		["7xl", "sm:max-w-7xl"],
+		["xl", "sm:!max-w-xl"],
+		["2xl", "sm:!max-w-2xl"],
+		["3xl", "sm:!max-w-3xl"],
+		["4xl", "sm:!max-w-4xl"],
+		["5xl", "sm:!max-w-5xl"],
+		["6xl", "sm:!max-w-6xl"],
+		["7xl", "sm:!max-w-7xl"],
 	] as const)("extended size %s applies %s on the dialog content", (size, expectedClass) => {
 		const { baseElement } = render(
 			wrap(

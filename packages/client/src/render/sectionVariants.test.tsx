@@ -121,7 +121,9 @@ describe("section variant card", () => {
 		const Wrap = wrapForStructure(() => new Response("{}"));
 		const { findByTestId, getByTestId } = render(<Wrap>{renderNode(section)}</Wrap>);
 		await findByTestId("table-block");
-		const shell = getByTestId("section-card").querySelector(".overflow-x-auto") as HTMLElement;
+		const shell = getByTestId("section-card").querySelector(
+			".cn-table-container",
+		) as HTMLElement;
 		expect(shell.className).not.toContain("border");
 	});
 
@@ -172,7 +174,7 @@ describe("section variant card", () => {
 		const Wrap = wrapForStructure(() => new Response("{}"));
 		const { findByTestId, container } = render(<Wrap>{renderNode(table)}</Wrap>);
 		await findByTestId("table-block");
-		const shell = container.querySelector(".overflow-x-auto") as HTMLElement;
+		const shell = container.querySelector(".cn-table-container") as HTMLElement;
 		expect(shell.className).toContain("border");
 	});
 });

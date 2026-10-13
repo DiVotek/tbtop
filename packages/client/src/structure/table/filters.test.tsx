@@ -113,7 +113,7 @@ describe("ModalFilters: formColumns + formWidth", () => {
 		);
 		fireEvent.click(getByTestId("table-filters-trigger"));
 		const dialog = document.querySelector('[role="dialog"]');
-		expect(dialog?.className).toContain("sm:max-w-2xl");
+		expect(dialog?.className).toContain("sm:!max-w-2xl");
 	});
 
 	test("applies formColumns grid layout inside the modal body", () => {

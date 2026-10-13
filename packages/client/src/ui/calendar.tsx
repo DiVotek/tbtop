@@ -6,6 +6,13 @@ import { type DayButton, DayPicker, getDefaultClassNames } from "react-day-picke
 import { cn } from "../lib/cn";
 import { Button, buttonVariants } from "./button";
 
+// New-gen shape: only the class strings with an upstream `cn-*` definition
+// were swapped (`cn-calendar` carries padding + `--cell-size`/`--cell-radius`,
+// plus the dropdown root and dropdown caption label). Everything else — the
+// DayPicker wiring, the `buttonVariant` prop, the day-button modifiers —
+// stays ours. Upstream's `cn-calendar-caption`, `cn-calendar-day-button` and
+// `cn-rtl-flip` have no preset definition, so they are not emitted.
+
 function Calendar({
 	className,
 	classNames,
@@ -24,7 +31,7 @@ function Calendar({
 		<DayPicker
 			showOutsideDays={showOutsideDays}
 			className={cn(
-				"group/calendar bg-background p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
+				"cn-calendar group/calendar bg-background [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
 				String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
 				String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
 				className,
@@ -61,7 +68,7 @@ function Calendar({
 					defaultClassNames.dropdowns,
 				),
 				dropdown_root: cn(
-					"relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:ring-[3px] has-focus:ring-ring/50",
+					"cn-calendar-dropdown-root relative rounded-md",
 					defaultClassNames.dropdown_root,
 				),
 				dropdown: cn("absolute inset-0 bg-popover opacity-0", defaultClassNames.dropdown),
@@ -69,7 +76,7 @@ function Calendar({
 					"font-medium select-none",
 					captionLayout === "label"
 						? "text-sm"
-						: "flex h-8 items-center gap-1 rounded-md pr-1 pl-2 text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
+						: "cn-calendar-caption-label flex items-center gap-1 rounded-md text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
 					defaultClassNames.caption_label,
 				),
 				month_grid: cn("w-full border-collapse", defaultClassNames.month_grid),

@@ -71,7 +71,7 @@ describe("CommandPalette", () => {
 		});
 		expect(queryByTestId("command-palette-input")).toBeNull();
 		openPalette();
-		expect(getByText("Dashboard").closest("button")?.className).toContain("bg-accent");
+		expect(getByText("Dashboard").closest("button")?.hasAttribute("data-selected")).toBe(true);
 	});
 
 	test("a commands-only palette omits nav destinations", () => {

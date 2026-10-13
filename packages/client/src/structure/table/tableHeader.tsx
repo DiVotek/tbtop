@@ -15,14 +15,19 @@ interface SortableHeaderProps {
 	onSort: (col: string, dir?: "asc" | "desc") => void;
 }
 
-function headerAlignClass(align: TableColumn["align"]): string {
+// New-gen shape: padding, height, weight, nowrap and text colour come from
+// `cn-table-head` (`ui/presets/style-preset-*.css`). The preset layer sits
+// above utilities and pins `text-left`, so center/right alignment needs `!`.
+// Our deltas: sortable hover tint + pointer, `aria-sort`, per-column width,
+// and the sort button's focus ring (the preset styles no inner trigger).
+function headerAlignClass(align: TableColumn["align"]): string | undefined {
 	if (align === "center") {
-		return "text-center";
+		return "text-center!";
 	}
 	if (align === "right") {
-		return "text-right";
+		return "text-right!";
 	}
-	return "text-left";
+	return undefined;
 }
 
 export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
@@ -61,9 +66,9 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 	return (
 		<th
 			className={cn(
-				"whitespace-nowrap px-3 py-2 font-medium transition-colors",
+				"cn-table-head transition-colors",
 				alignClass,
-				col.sortable && "cursor-pointer select-none hover:bg-muted hover:text-foreground",
+				col.sortable && "cursor-pointer select-none hover:bg-muted",
 			)}
 			style={widthStyle}
 			onClick={col.sortable ? handleClick : undefined}

@@ -342,7 +342,8 @@ describe("TableCell: column display properties", () => {
 		const Wrap = wrap(() => new Response("{}"));
 		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
 		await findByTestId("table-block");
-		const th = container.querySelector("th.text-center");
+		// The th needs `!` to beat the preset's `text-left` (cn-table-head).
+		const th = container.querySelector('th[class~="text-center!"]');
 		const td = container.querySelector("td.text-center");
 		expect(th).toBeTruthy();
 		expect(td).toBeTruthy();

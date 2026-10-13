@@ -19,6 +19,7 @@ import {
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { buttonVariants } from "./button";
 import { type ContentDismissHooks, isCloseBlocked, runAutoFocusHook } from "./revolaDismiss";
 import {
 	dialogOverlayClass,
@@ -26,11 +27,25 @@ import {
 	responsiveDialogContentVariants,
 } from "./revolaStyles";
 
+// New-gen shape: popup/backdrop classes live in `revolaStyles.ts`; the parts
+// below emit the structural `cn-dialog-*` names and the preset owns their
+// visuals (close position, header/footer gap, title/description type).
+// Mapping: close → `cn-dialog-close` on a ghost `icon-sm` button (as upstream),
+// header → `cn-dialog-header`, footer → `cn-dialog-footer`, title →
+// `cn-dialog-title`, description → `cn-dialog-description`, drawer drag handle
+// → `cn-drawer-swipe-handle` (its rules key off `group/drawer-popup` +
+// `data-swipe-axis`, which Base UI does not emit, so the popup sets it).
+// The drawer reuses the dialog part classes rather than `cn-drawer-header` /
+// `-footer` / `-title` / `-description`: one part tree serves both modes.
+// Deltas vs upstream: header stays `text-center sm:text-left`, footer stacks
+// reversed on mobile, and the handle only renders for bottom drawers.
 const MOBILE_BREAKPOINT = "(min-width: 640px)";
 
 type Direction = "top" | "right" | "bottom" | "left";
 
 const SWIPE_DIRECTION = { top: "up", right: "right", bottom: "down", left: "left" } as const;
+
+const SWIPE_AXIS = { top: "y", right: "x", bottom: "y", left: "x" } as const;
 
 type ResponsiveDialogContextValue = {
 	modal: boolean;
@@ -222,6 +237,8 @@ export const ResponsiveDialogContent = forwardRef<HTMLDivElement, ResponsiveDial
 		const popup = (
 			<Popup
 				ref={ref}
+				data-slot={useDialog ? "dialog-content" : "drawer-content"}
+				data-swipe-axis={useDialog ? undefined : SWIPE_AXIS[direction]}
 				{...props}
 				initialFocus={onOpenAutoFocus && (() => runAutoFocusHook(onOpenAutoFocus))}
 				finalFocus={onCloseAutoFocus && (() => runAutoFocusHook(onCloseAutoFocus))}
@@ -235,21 +252,21 @@ export const ResponsiveDialogContent = forwardRef<HTMLDivElement, ResponsiveDial
 			>
 				{!useDialog && direction === "bottom" && (
 					<div
-						className={cn(
-							"mx-auto my-4 h-1.5 w-14 rounded-full bg-muted-foreground/25 pb-1.5 dark:bg-muted",
-							dragHandleClassName,
-						)}
+						data-slot="drawer-swipe-handle"
+						className={cn("cn-drawer-swipe-handle flex shrink-0", dragHandleClassName)}
 					/>
 				)}
 				{children}
 				{!alert && showCloseButton && (
 					<ResponsiveDialogClose
+						data-slot="dialog-close"
 						className={cn(
-							"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background backdrop-blur-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none",
+							buttonVariants({ variant: "ghost", size: "icon-sm" }),
+							"cn-dialog-close",
 							closeButtonClassName,
 						)}
 					>
-						<XIcon className="size-4" />
+						<XIcon />
 						<span className="sr-only">{t("action.close")}</span>
 					</ResponsiveDialogClose>
 				)}
@@ -258,7 +275,10 @@ export const ResponsiveDialogContent = forwardRef<HTMLDivElement, ResponsiveDial
 
 		return (
 			<Portal>
-				<Backdrop className={useDialog ? dialogOverlayClass : drawerOverlayClass} />
+				<Backdrop
+					data-slot={useDialog ? "dialog-overlay" : "drawer-overlay"}
+					className={useDialog ? dialogOverlayClass : drawerOverlayClass}
+				/>
 				{/* The drawer's swipe handling and touch scroll lock live on its viewport. */}
 				{useDialog ? popup : <Drawer.Viewport>{popup}</Drawer.Viewport>}
 			</Portal>
@@ -270,7 +290,8 @@ ResponsiveDialogContent.displayName = "ResponsiveDialogContent";
 export function ResponsiveDialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 	return (
 		<div
-			className={cn("flex flex-col gap-1.5 text-center sm:text-left", className)}
+			data-slot="dialog-header"
+			className={cn("cn-dialog-header flex flex-col text-center sm:text-left", className)}
 			{...props}
 		/>
 	);
@@ -284,7 +305,13 @@ export function ResponsiveDialogFooter({
 	children?: ReactNode;
 }) {
 	return (
-		<footer className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}>
+		<footer
+			data-slot="dialog-footer"
+			className={cn(
+				"cn-dialog-footer flex flex-col-reverse sm:flex-row sm:justify-end",
+				className,
+			)}
+		>
 			{children}
 		</footer>
 	);
@@ -296,7 +323,8 @@ export const ResponsiveDialogTitle = forwardRef<HTMLHeadingElement, ComponentPro
 		return (
 			<Title
 				ref={ref}
-				className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+				data-slot="dialog-title"
+				className={cn("cn-dialog-title", className)}
 				{...props}
 			/>
 		);
@@ -312,7 +340,8 @@ export const ResponsiveDialogDescription = forwardRef<
 	return (
 		<Description
 			ref={ref}
-			className={cn("text-sm text-muted-foreground", className)}
+			data-slot="dialog-description"
+			className={cn("cn-dialog-description", className)}
 			{...props}
 		/>
 	);

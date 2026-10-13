@@ -26,20 +26,28 @@ import {
 
 // ─── Size map ─────────────────────────────────────────────────────────────────
 
+// New-gen shape: padding, gap, surface and rounding come from the preset's
+// `cn-dialog-content` / `cn-drawer-popup` (see `revolaStyles.ts`). Deltas we
+// keep: this size scale (our API), the flex-column scroll layout (the preset
+// lays the dialog out as a grid), drawer padding (`cn-drawer-popup` carries
+// none, so `p-6` applies only when Base UI's `data-swipe-direction` marks the
+// drawer), and the edge-flush slide-over. The preset layer sits above
+// utilities, so those deltas use the `!` prefix where they contend with it.
+//
 // Legacy abstract sizes (sm/md/lg/full) predate this PR's Tailwind-literal scale (xl-7xl).
 // Names diverge intentionally (e.g. xl < lg) — not a bug.
 const SIZE_CLASS: Record<ModalSize, string> = {
-	sm: "sm:max-w-md",
-	md: "sm:max-w-lg",
-	lg: "sm:max-w-2xl",
-	xl: "sm:max-w-xl",
-	"2xl": "sm:max-w-2xl",
-	"3xl": "sm:max-w-3xl",
-	"4xl": "sm:max-w-4xl",
-	"5xl": "sm:max-w-5xl",
-	"6xl": "sm:max-w-6xl",
-	"7xl": "sm:max-w-7xl",
-	full: "sm:max-w-4xl",
+	sm: "sm:!max-w-md",
+	md: "sm:!max-w-lg",
+	lg: "sm:!max-w-2xl",
+	xl: "sm:!max-w-xl",
+	"2xl": "sm:!max-w-2xl",
+	"3xl": "sm:!max-w-3xl",
+	"4xl": "sm:!max-w-4xl",
+	"5xl": "sm:!max-w-5xl",
+	"6xl": "sm:!max-w-6xl",
+	"7xl": "sm:!max-w-7xl",
+	full: "sm:!max-w-4xl",
 };
 
 export type ModalSize =
@@ -98,10 +106,10 @@ export function ModalShell({
 		>
 			<ResponsiveDialogContent
 				className={cn(
-					"flex flex-col p-6",
+					"!flex flex-col data-[swipe-direction]:p-6",
 					slideOver
 						? cn(
-								"inset-y-0 right-0 h-full w-full rounded-none border-l",
+								"inset-y-0 right-0 h-full w-full !rounded-none border-l",
 								SIZE_CLASS[size],
 							)
 						: SIZE_CLASS[size],
