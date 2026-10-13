@@ -31,7 +31,7 @@ abstract class LoginPage extends AuthPage
 
     public function view(S $s): Node
     {
-        $forgotUrl = ForgotPasswordPage::url();
+        $forgotUrl = ForgotPasswordPage::currentUrl();
 
         return $s->stack([
             $s->displayText(__('tbtop-admin::admin.auth.login.title'))->variant('heading'),
