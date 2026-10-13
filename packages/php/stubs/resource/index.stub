@@ -34,7 +34,7 @@ class IndexPage extends Page
             $s->actionsRow([
                 $s->action('new')->label('New {{ labelLower }}')->color('primary')->url(CreatePage::url()),
             ]),
-            $s->table('{{ slug }}')
+            $s->table('{{ slug }}'){{ listNote }}
                 ->query(fn () => {{ model }}::query(){{ with }})
                 ->columns([
 {{ columns }}

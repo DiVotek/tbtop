@@ -6,11 +6,13 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Gate;
+use Tbtop\Admin\Commands\Resource\ColumnInfo;
 use Tbtop\Admin\Commands\Resource\ResourceCode;
 use Tbtop\Admin\Commands\Resource\ResourceNames;
 use Tbtop\Admin\Commands\Resource\ResourceOptions;
 use Tbtop\Admin\Commands\Resource\ResourceStubs;
 use Tbtop\Admin\Commands\Resource\SchemaReader;
+use Tbtop\Admin\Commands\Resource\UnfilledColumns;
 use Tbtop\Admin\Panels\PanelRegistry;
 use Throwable;
 
@@ -63,6 +65,7 @@ class MakeResourceCommand extends Command
 
         $this->write($files);
         $this->policy($class);
+        $this->warnUnfilled($model, $columns);
         $this->reportDiscovery($dir, $names);
 
         return self::SUCCESS;
@@ -148,6 +151,15 @@ class MakeResourceCommand extends Command
             return;
         }
         $this->call('make:policy', ['name' => class_basename($class).'Policy', '--model' => $class]);
+    }
+
+    /** @param  list<ColumnInfo>|null  $columns */
+    private function warnUnfilled(Model $model, ?array $columns): void
+    {
+        $unfilled = $columns === null ? [] : UnfilledColumns::of($model, $columns);
+        if ($unfilled !== []) {
+            $this->components->warn('Not in the form but required by the table (NOT NULL, no default): '.implode(', ', $unfilled).'. Set them before save, or saving fails.');
+        }
     }
 
     private function reportDiscovery(string $dir, ResourceNames $names): void

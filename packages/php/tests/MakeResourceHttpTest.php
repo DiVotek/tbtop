@@ -135,3 +135,12 @@ it('ignores the edited row in a --simple modal unique rule, and only that row', 
     $save('grace@example.com')->assertUnprocessable();
     expect($ada->fresh()->email)->toBe('ada@example.com');
 });
+
+it('deletes none of a selection that holds a record the policy denies', function () {
+    $open = makeArticle();
+    $secret = makeArticle(['title' => 'Secret', 'slug' => 'secret']);
+
+    $this->postJson('/admin/articles/actions/delete-selected', ['payload' => ['selection' => [$open->id, $secret->id]]])->assertForbidden();
+
+    expect(Article::query()->count())->toBe(2);
+});

@@ -88,5 +88,7 @@ function createResourceTables(): void
     Schema::create('notes', function (Blueprint $table): void {
         $table->id();
         $table->json('title');
+        $table->string('password');
+        $table->json('settings')->nullable();
     });
 }

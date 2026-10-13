@@ -32,10 +32,9 @@ final class TrashedActions
             ? "{$p}    \$record = {$model}::withTrashed()->whereKey({$keys})->firstOrFail();\n"
                 ."{$p}    Gate::authorize('{$ability}', \$record);\n"
                 ."{$p}    \$record->{$ability}();\n"
-            : "{$p}    {$model}::withTrashed()->whereKey({$keys})->get()->each(function ({$model} \$record): void {\n"
-                ."{$p}        Gate::authorize('{$ability}', \$record);\n"
-                ."{$p}        \$record->{$ability}();\n"
-                ."{$p}    });\n";
+            : "{$p}    \$records = {$model}::withTrashed()->whereKey({$keys})->get();\n"
+                ."{$p}    \$records->each(fn ({$model} \$record) => Gate::authorize('{$ability}', \$record));\n"
+                ."{$p}    \$records->each->{$ability}();\n";
 
         return "\n{$p}RecordAction::{$kind}(\$s, '{$name}', function (ActionCtx \$ctx): void {\n{$body}{$p}})".self::look($ability).',';
     }

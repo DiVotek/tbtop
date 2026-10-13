@@ -34,7 +34,7 @@ class IndexPage extends Page
     public function view(S $s): Node
     {
         return $s->stack([
-            $s->table('{{ slug }}')
+            $s->table('{{ slug }}'){{ listNote }}
                 ->query(fn () => {{ model }}::query(){{ with }})
                 ->columns([
 {{ columns }}
@@ -80,14 +80,18 @@ class IndexPage extends Page
         ]);
     }
 
-    /** The edited row's stored key, so a client-sent value never reaches the rule string. */
+    /** The edited row's stored key, so a client-sent value (or a row the user may not edit) never reaches the rule string. */
     private function editedKey(): int|string|null
     {
         $key = request()->input('payload.row._key');
         if (! is_int($key) && ! is_string($key)) {
             return null;
         }
-        $stored = {{ model }}::query()->whereKey($key)->value('{{ keyName }}');
+        $record = {{ model }}::query()->whereKey($key)->first();
+        if ($record === null{{ editDenied }}) {
+            return null;
+        }
+        $stored = $record->getKey();
 
         return is_int($stored) || is_string($stored) ? $stored : null;
     }

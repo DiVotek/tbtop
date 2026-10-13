@@ -77,6 +77,8 @@ final class ResourceStubs
             '{{ can:update }}' => $this->can('viewAny'),
             '{{ gateImport }}' => $this->options->policy ? "use Illuminate\\Support\\Facades\\Gate;\n" : '',
             '{{ authorizeUpdate }}' => $this->authorize('update', $this->options->simple ? 28 : 8),
+            '{{ editDenied }}' => $this->options->policy ? " || Gate::denies('update', \$record)" : '',
+            '{{ listNote }}' => $this->options->policy ? "\n                // viewAny lists every row; scope this query if the policy's view() hides some." : '',
             '{{ authorizeView }}' => $this->authorize('view', 8),
             '{{ authorizeDelete }}' => $this->authorize('delete', 28),
             '{{ authorizeCreate }}' => $this->options->policy ? "\n                            Gate::authorize('create', {$model}::class);" : '',
@@ -152,9 +154,9 @@ final class ResourceStubs
             return "{$pad}{$model}::query()->whereKey(\$ctx->selection)->delete();";
         }
 
-        return "{$pad}{$model}::query()->whereKey(\$ctx->selection)->get()->each(function ({$model} \$record): void {\n"
-            ."{$pad}    Gate::authorize('delete', \$record);\n"
-            ."{$pad}    \$record->delete();\n"
-            ."{$pad}});";
+        // Every record is authorized before any is deleted, so a denied one leaves the rest untouched.
+        return "{$pad}\$records = {$model}::query()->whereKey(\$ctx->selection)->get();\n"
+            ."{$pad}\$records->each(fn ({$model} \$record) => Gate::authorize('delete', \$record));\n"
+            ."{$pad}\$records->each->delete();";
     }
 }

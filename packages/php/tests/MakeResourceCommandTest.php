@@ -1,7 +1,11 @@
 <?php
 
+use App\Models\Note;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Tbtop\Admin\Commands\Resource\ColumnInfo;
+use Tbtop\Admin\Commands\Resource\ResourceCode;
+use Tbtop\Admin\Tests\Fixtures\Resource\Column as EnumColumn;
 use Tbtop\Admin\Tests\TestCase;
 
 use function App\Models\createResourceTables;
@@ -65,13 +69,27 @@ it('maps columns to fields, rules and table columns', function () {
         ->toContain('->recordUrl(fn (Article $record): string => EditPage::url(');
 });
 
+it('warns about required columns the form never writes', function () {
+    $this->artisan('make:tbtop-resource', ['model' => 'Note'])
+        ->expectsOutputToContain('NOT NULL, no default): password.')
+        ->assertSuccessful();
+});
+
+it('keeps a class qualified when its short name clashes with a stub import', function () {
+    $side = new ColumnInfo('side', 'string', null, false, null, false, false, EnumColumn::class, null);
+    $code = (new ResourceCode([$side], 'notes', 'id', false, Note::class))->replacements();
+
+    expect($code['{{ fieldImports }}'].$code['{{ columnImports }}'])->not->toContain('EnumColumn')->not->toContain('Resource\\Column;')
+        ->and($code['{{ fields }}'])->toContain('\\'.EnumColumn::class.'::class');
+});
+
 it('marks translatable attributes and loads their whole locale map on edit', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Note'])->assertSuccessful();
 
     $fields = (string) file_get_contents(app_path('Admin/Pages/Notes/NoteFormFields.php'));
     expect($fields)
         ->toContain("\$s->text('title')->label('Title')->required()->translatable()")
-        ->toContain("[...\$record->only(['title']), ...\$record->getTranslations()]");
+        ->toContain("[...\$record->only(['title', 'settings']), ...\$record->getTranslations()]");
 });
 
 it('writes one modal-driven page with --simple', function () {
