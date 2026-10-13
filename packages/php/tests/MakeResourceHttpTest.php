@@ -67,7 +67,7 @@ it('soft deletes a row from the list', function () {
 it('renders the view page', function () {
     $article = makeArticle();
 
-    $this->get("/admin/articles/{$article->id}")->assertOk();
+    $this->get("/admin/articles/{$article->id}/view")->assertOk();
 });
 
 it('creates and edits in modals on a --simple resource', function () {
@@ -84,7 +84,7 @@ it('creates and edits in modals on a --simple resource', function () {
 it('refuses a record the policy denies on the view page, the edit page and the delete action', function () {
     $article = makeArticle(['title' => 'Secret']);
 
-    $this->get("/admin/articles/{$article->id}")->assertForbidden();
+    $this->get("/admin/articles/{$article->id}/view")->assertForbidden();
     $this->get("/admin/articles/{$article->id}/edit")->assertForbidden();
     $this->post("/admin/articles/{$article->id}/edit/forms/article", ['title' => 'Renamed'])->assertForbidden();
     $this->postJson('/admin/articles/actions/delete', ['payload' => ['row' => ['_key' => $article->id]]])->assertForbidden();

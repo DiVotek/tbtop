@@ -124,7 +124,7 @@ it('refuses --view with --simple, which writes no edit page to link to', functio
 it('adds a view page the rows link to with --view', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Article', '--view' => true])->assertSuccessful();
 
-    expect(resourceFile('ViewPage.php'))->toContain("return 'articles/{article}';")->toContain("'Writer' => \$record->writer?->name,")
+    expect(resourceFile('ViewPage.php'))->toContain("return 'articles/{article}/view';")->toContain("'Writer' => \$record->writer?->name,")
         ->and(resourceFile('IndexPage.php'))->toContain('ViewPage::url(');
 });
 

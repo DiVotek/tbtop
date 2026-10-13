@@ -11,7 +11,7 @@ class ViewPage extends Page
 {
     public static function path(): string
     {
-        return '{{ path }}/{{{ var }}}';
+        return '{{ path }}/{{{ var }}}/view';
     }
 
     public static function slug(): string

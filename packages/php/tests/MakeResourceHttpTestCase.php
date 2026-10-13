@@ -68,11 +68,12 @@ class MakeResourceHttpTestCase extends TestCase
         }
         File::deleteDirectory(app_path('Admin/Pages'));
 
+        // ViewPage first: its {article} segment must not swallow CreatePage's /new.
         self::$pages = [
+            ViewPage::class,
             IndexPage::class,
             CreatePage::class,
             EditPage::class,
-            ViewPage::class,
             \App\Admin\Pages\Writers\IndexPage::class,
         ];
     }
