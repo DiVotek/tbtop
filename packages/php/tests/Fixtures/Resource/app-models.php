@@ -90,8 +90,13 @@ class Page extends Model
     }
 }
 
-/** Laravel's default guard: neither $fillable nor $guarded. */
-class Tag extends Model {}
+/** Laravel's default guard (neither $fillable nor $guarded) and renamed timestamps. */
+class Tag extends Model
+{
+    public const CREATED_AT = 'added_on';
+
+    public const UPDATED_AT = 'changed_on';
+}
 
 function createResourceTables(): void
 {
@@ -99,6 +104,8 @@ function createResourceTables(): void
         $table->id();
         $table->string('name');
         $table->boolean('is_featured')->default(false);
+        $table->timestamp('added_on')->nullable();
+        $table->timestamp('changed_on')->nullable();
     });
     Schema::create('writers', function (Blueprint $table): void {
         $table->id();

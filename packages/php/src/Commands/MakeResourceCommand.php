@@ -61,7 +61,7 @@ class MakeResourceCommand extends Command
             $this->components->warn("Table [{$model->getTable()}] not found: writing pages with TODOs in place of fields. Run the migration and --force to regenerate.");
         }
 
-        $stubs = new ResourceStubs($names, new ResourceCode($columns, $model->getTable(), $model->getKeyName(), $model->usesTimestamps(), $class), $this->resourceOptions($class));
+        $stubs = new ResourceStubs($names, new ResourceCode($columns, $model->getTable(), $model->getKeyName(), $model->usesTimestamps() ? $model->getCreatedAtColumn() : null, $class), $this->resourceOptions($class));
         $dir = app_path('Admin/Pages/'.$names->folder);
         $files = $this->targets($dir, $stubs);
         if ($files === null) {

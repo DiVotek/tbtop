@@ -20,7 +20,7 @@ final class ResourceCode
         private readonly ?array $columns,
         private readonly string $table,
         private readonly string $keyName,
-        private readonly bool $timestamps,
+        private readonly ?string $createdAt,
         private readonly string $modelClass,
     ) {
         $this->fields = new FieldCode($columns ?? []);
@@ -98,8 +98,8 @@ final class ResourceCode
             $lines[] = $code.',';
             $shown += $column->kind === 'text' ? 0 : 1;
         }
-        if ($this->timestamps) {
-            $lines[] = "Column::make('created_at')->label('Created')->datetime()->sortable()->toggleable(true, true),";
+        if ($this->createdAt !== null) {
+            $lines[] = "Column::make('{$this->createdAt}')->label('Created')->datetime()->sortable()->toggleable(true, true),";
         }
 
         return $this->lines($lines, fn (string $line): string => $line, 20);

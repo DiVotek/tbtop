@@ -15,7 +15,7 @@ final class ResourceNames
 {
     /** Short names the stubs import themselves, plus the sibling pages. */
     public const STUB_IMPORTS = [
-        'ActionCtx', 'Effects', 'CreateAction', 'DeleteAction', 'EditAction', 'FormActions', 'RecordAction',
+        'ActionCtx', 'Effects', 'Field', 'CreateAction', 'DeleteAction', 'EditAction', 'FormActions', 'RecordAction',
         'Column', 'Node', 'S', 'Page', 'Gate', 'IndexPage', 'CreatePage', 'EditPage', 'ViewPage',
     ];
 

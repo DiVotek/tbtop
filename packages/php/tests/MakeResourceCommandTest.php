@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Commands\Resource\ColumnInfo;
 use Tbtop\Admin\Commands\Resource\ResourceCode;
+use Tbtop\Admin\Commands\Resource\ResourceNames;
 use Tbtop\Admin\Tests\Fixtures\Resource\Column as EnumColumn;
 use Tbtop\Admin\Tests\TestCase;
 
@@ -81,7 +82,9 @@ it('warns that a model with the default guard gets every column as a field', fun
         ->expectsOutputToContain('Tag declares neither $fillable nor $guarded')
         ->assertSuccessful();
 
-    expect(file_get_contents(app_path('Admin/Pages/Tags/TagFormFields.php')))->toContain("\$s->boolean('is_featured')");
+    expect(file_get_contents(app_path('Admin/Pages/Tags/TagFormFields.php')))->toContain("\$s->boolean('is_featured')")
+        ->not->toContain('added_on')->not->toContain('changed_on')
+        ->and(file_get_contents(app_path('Admin/Pages/Tags/IndexPage.php')))->toContain("Column::make('added_on')->label('Created')");
 });
 
 it('refuses --soft-deletes for a model without SoftDeletes', function () {
@@ -102,9 +105,17 @@ it('reads a bare MySQL string default as a literal, not an expression', function
         ->and($blank('draft', 'sqlite'))->toBe('null');
 });
 
+it('lists every class the stubs import, so a model by that name gets aliased', function () {
+    $sources = [...(glob(dirname(__DIR__).'/stubs/resource/*.stub') ?: []), dirname(__DIR__).'/src/Commands/Resource/ResourceStubs.php'];
+    preg_match_all('/use ([A-Z][\\w\\\\]+);/', implode("\n", array_map('file_get_contents', $sources)), $matches);
+    $imported = array_map(fn (string $class): string => class_basename(str_replace('\\\\', '\\', $class)), $matches[1]);
+
+    expect(array_diff(array_unique($imported), ResourceNames::STUB_IMPORTS))->toBe([]);
+});
+
 it('keeps a class qualified when its short name clashes with a stub import', function () {
     $side = new ColumnInfo('side', 'string', null, false, null, false, false, EnumColumn::class, null);
-    $code = (new ResourceCode([$side], 'notes', 'id', false, Note::class))->replacements();
+    $code = (new ResourceCode([$side], 'notes', 'id', null, Note::class))->replacements();
 
     expect($code['{{ fieldImports }}'].$code['{{ columnImports }}'])->not->toContain('EnumColumn')->not->toContain('Resource\\Column;')
         ->and($code['{{ fields }}'])->toContain('\\'.EnumColumn::class.'::class');
