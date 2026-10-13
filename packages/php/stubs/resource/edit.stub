@@ -1,0 +1,58 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelClass }};
+{{ gateImport }}use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\FormActions;
+use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page;
+
+class EditPage extends Page
+{
+    use {{ trait }};
+
+    public static function path(): string
+    {
+        return '{{ path }}/{{{ var }}}/edit';
+    }
+
+    public static function slug(): string
+    {
+        return '{{ slug }}-edit';
+    }
+{{ can:update }}
+    public function title(): string
+    {
+        return 'Edit {{ labelLower }}';
+    }
+
+    public function view(S $s): Node
+    {
+        $record = {{ model }}::query()->whereKey(request()->route('{{ var }}'))->firstOrFail();{{ authorizeUpdate }}
+
+        return $s->stack([
+            $s->form('{{ var }}', [
+                ...$this->{{ var }}Fields($s, $record->getKey()),
+                FormActions::saveCancel($s, IndexPage::url(), extra: [
+                    $s->action('delete')->label('Delete')->color('danger')
+                        ->confirm('Delete {{ labelLower }}?', 'This cannot be undone.')
+                        ->handle(function () use ($record): Effects {{{ authorizeDelete }}
+                            $record->delete();
+
+                            return Effects::make()->notify('{{ label }} deleted')->redirect(IndexPage::url());
+                        }),
+                ]),
+            ])
+                ->record($this->{{ var }}Record($record))
+                ->onSubmit(function (ActionCtx $ctx) use ($record): Effects {
+                    // $ctx->form holds only the validated fields declared above.
+                    $record->forceFill($ctx->form)->save();
+
+                    return Effects::make()->notify('Saved');
+                }),
+        ]);
+    }
+}

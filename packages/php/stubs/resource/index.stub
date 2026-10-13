@@ -1,0 +1,61 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelClass }};
+{{ columnImports }}{{ gateImport }}use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\Actions\DeleteAction;
+use Tbtop\Admin\Dsl\Column;
+use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page;
+
+class IndexPage extends Page
+{
+    public static function path(): string
+    {
+        return '{{ path }}';
+    }
+
+    public static function slug(): string
+    {
+        return '{{ slug }}-index';
+    }
+{{ nav }}{{ can:viewAny }}
+    public function title(): string
+    {
+        return '{{ plural }}';
+    }
+
+    public function view(S $s): Node
+    {
+        return $s->stack([
+            $s->actionsRow([
+                $s->action('new')->label('New {{ labelLower }}')->color('primary')->url(CreatePage::url()),
+            ]),
+            $s->table('{{ slug }}')
+                ->query(fn () => {{ model }}::query(){{ with }})
+                ->columns([
+{{ columns }}
+                ])
+                ->defaultSort('{{ keyName }}', 'desc')
+                ->paginate(25)
+                ->recordUrl(fn ({{ model }} $record): string => {{ recordPage }}::url(['{{ var }}' => $record->getKey()]))
+                ->rowActions([
+                    $s->action('edit')->label('Edit')->handle(
+                        fn (ActionCtx $ctx): Effects => Effects::make()->redirect(EditPage::url(['{{ var }}' => $ctx->key()])),
+                        needs: ['row'],
+                    ),
+                    DeleteAction::make($s, using: function (ActionCtx $ctx): void {
+{{ deleteRow }}
+                    }),
+                ])
+                ->bulkActions([
+                    DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): void {
+{{ deleteBulk }}
+                    }),
+                ]){{ softDeletes }},
+        ]);
+    }
+}

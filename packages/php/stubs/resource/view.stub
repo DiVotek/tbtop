@@ -1,0 +1,44 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelClass }};
+use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page;
+
+class ViewPage extends Page
+{
+    public static function path(): string
+    {
+        return '{{ path }}/{{{ var }}}';
+    }
+
+    public static function slug(): string
+    {
+        return '{{ slug }}-view';
+    }
+{{ can:view }}
+    public function title(): string
+    {
+        return '{{ label }}';
+    }
+
+    public function headerActions(S $s): array
+    {
+        return [
+            $s->action('edit')->label('Edit')->url(EditPage::url(['{{ var }}' => request()->route('{{ var }}')])),
+        ];
+    }
+
+    public function view(S $s): Node
+    {
+        $record = {{ model }}::query(){{ with }}->whereKey(request()->route('{{ var }}'))->firstOrFail();
+
+        return $s->stack([
+            $s->displayKeyValue([
+{{ display }}
+            ]),
+        ]);
+    }
+}
