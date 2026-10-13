@@ -3,9 +3,11 @@
 namespace Tbtop\Admin\Pages;
 
 use Illuminate\Routing\Route;
+use Illuminate\Routing\RouteCollectionInterface;
 use Illuminate\Support\Facades\Route as Router;
 use LogicException;
 use Tbtop\Admin\Panels\CurrentPanel;
+use WeakMap;
 
 /**
  * Resolves the panel route of a page class for Page::url(). Pages are routed
@@ -15,6 +17,9 @@ use Tbtop\Admin\Panels\CurrentPanel;
  */
 final class PageUrl
 {
+    /** @var WeakMap<RouteCollectionInterface, array{count: int, pages: array<string, array<string, Route>>}>|null */
+    private static ?WeakMap $cache = null;
+
     /**
      * @param  class-string<Page>  $page
      * @param  array<string, mixed>  $parameters
@@ -58,9 +63,31 @@ final class PageUrl
      */
     private static function candidates(string $page, bool $subclasses): array
     {
+        // A table's recordUrl calls url() once per row: scan each route set once per page.
+        $collection = Router::getRoutes();
+        $routes = $collection->getRoutes();
+        self::$cache ??= new WeakMap;
+        $entry = self::$cache[$collection] ?? null;
+        if ($entry === null || $entry['count'] !== count($routes)) {
+            $entry = ['count' => count($routes), 'pages' => []];
+        }
+        $key = $page.($subclasses ? '+' : '');
+        $entry['pages'][$key] ??= self::scan($routes, $page, $subclasses);
+        self::$cache[$collection] = $entry;
+
+        return $entry['pages'][$key];
+    }
+
+    /**
+     * @param  array<int, Route>  $routes
+     * @param  class-string<Page>  $page
+     * @return array<string, Route>
+     */
+    private static function scan(array $routes, string $page, bool $subclasses): array
+    {
         $found = [];
 
-        foreach (Router::getRoutes()->getRoutes() as $route) {
+        foreach ($routes as $route) {
             $served = self::servedPage($route);
             if ($served === null || ! ($served === $page || ($subclasses && is_subclass_of($served, $page)))) {
                 continue;

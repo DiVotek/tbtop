@@ -82,9 +82,29 @@ final class ResourceStubs
             '{{ authorizeCreate }}' => $this->options->policy ? "\n                            Gate::authorize('create', {$model}::class);" : '',
             '{{ deleteRow }}' => $this->deleteRow(),
             '{{ deleteBulk }}' => $this->deleteBulk(),
-            '{{ softDeletes }}' => $this->options->softDeletes ? "\n                ->softDeletes(\$s, {$model}::class)" : '',
+            '{{ softDeletes }}' => $this->softDeletes(),
+            '{{ trashedRow }}' => $this->ownTrashedActions() ? TrashedActions::row($model) : '',
+            '{{ trashedBulk }}' => $this->ownTrashedActions() ? TrashedActions::bulk($model) : '',
+            '{{ trashedImport }}' => $this->ownTrashedActions() ? "use Tbtop\\Admin\\Dsl\\Actions\\RecordAction;\n" : '',
             '{{ recordPage }}' => $this->options->view ? 'ViewPage' : 'EditPage',
         ];
+    }
+
+    private function softDeletes(): string
+    {
+        if (! $this->options->softDeletes) {
+            return '';
+        }
+        $model = $this->names->model;
+        $own = $this->ownTrashedActions() ? ", ['rowActions' => false, 'bulkActions' => false]" : '';
+
+        return "\n                ->softDeletes(\$s, {$model}::class{$own})";
+    }
+
+    /** Under --policy the page writes restore/force-delete itself, so they authorize. */
+    private function ownTrashedActions(): bool
+    {
+        return $this->options->softDeletes && $this->options->policy;
     }
 
     private function nav(): string

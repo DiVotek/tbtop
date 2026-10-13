@@ -3,7 +3,7 @@
 namespace {{ namespace }};
 
 use {{ modelClass }};
-{{ columnImports }}{{ gateImport }}use Tbtop\Admin\Actions\ActionCtx;
+{{ columnImports }}{{ gateImport }}{{ trashedImport }}use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
@@ -70,12 +70,12 @@ class IndexPage extends Page
                     ),
                     DeleteAction::make($s, using: function (ActionCtx $ctx): void {
 {{ deleteRow }}
-                    }),
+                    }),{{ trashedRow }}
                 ])
                 ->bulkActions([
                     DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): void {
 {{ deleteBulk }}
-                    }),
+                    }),{{ trashedBulk }}
                 ]){{ softDeletes }},
         ]);
     }

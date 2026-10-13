@@ -2,6 +2,7 @@
 
 use App\Models\Article;
 use App\Models\Writer;
+use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Tests\MakeResourceHttpTestCase;
 
 uses(MakeResourceHttpTestCase::class);
@@ -85,6 +86,7 @@ it('refuses a record the policy denies on the view page, the edit page and the d
 
     $this->get("/admin/articles/{$article->id}")->assertForbidden();
     $this->get("/admin/articles/{$article->id}/edit")->assertForbidden();
+    $this->post("/admin/articles/{$article->id}/edit/forms/article", ['title' => 'Renamed'])->assertForbidden();
     $this->postJson('/admin/articles/actions/delete', ['payload' => ['row' => ['_key' => $article->id]]])->assertForbidden();
     expect($article->fresh())->not->toBeNull();
 });
@@ -97,4 +99,27 @@ it('refuses to load or save a record the policy denies in a --simple modal', fun
         'payload' => ['row' => ['_key' => $writer->id], 'form' => ['name' => 'Grace']],
     ])->assertForbidden();
     expect($writer->fresh()->name)->toBe('Secret');
+});
+
+it('authorizes restore and force delete of each trashed record', function () {
+    $open = makeArticle();
+    $secret = makeArticle(['title' => 'Secret', 'slug' => 'secret']);
+    $open->delete();
+    $secret->delete();
+    $row = fn (Article $article): array => ['payload' => ['row' => ['_key' => $article->id]]];
+
+    $this->postJson('/admin/articles/actions/restore', $row($secret))->assertForbidden();
+    $this->postJson('/admin/articles/actions/forceDelete', $row($secret))->assertForbidden();
+    $this->postJson('/admin/articles/actions/restoreSelected', ['payload' => ['selection' => [$secret->id]]])->assertForbidden();
+    $this->postJson('/admin/articles/actions/restore', $row($open))->assertOk();
+
+    expect(Article::withTrashed()->find($secret->id)?->trashed())->toBeTrue()
+        ->and(Article::query()->find($open->id))->not->toBeNull();
+});
+
+it('refuses the create form to a user the policy denies create', function () {
+    Gate::before(fn ($user, string $ability): ?bool => $ability === 'create' ? false : null);
+
+    $this->post('/admin/articles/new/forms/article', ['title' => 'Hello', 'slug' => 'hello', 'status' => 'live'])->assertForbidden();
+    expect(Article::query()->count())->toBe(0);
 });

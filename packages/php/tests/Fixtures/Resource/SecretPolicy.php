@@ -33,6 +33,16 @@ class SecretPolicy
         return ! $this->secret($record);
     }
 
+    public function restore(Authenticatable $user, Model $record): bool
+    {
+        return ! $this->secret($record);
+    }
+
+    public function forceDelete(Authenticatable $user, Model $record): bool
+    {
+        return ! $this->secret($record);
+    }
+
     private function secret(Model $record): bool
     {
         return in_array('Secret', [$record->getAttribute('title'), $record->getAttribute('name')], true);
