@@ -123,3 +123,15 @@ it('refuses the create form to a user the policy denies create', function () {
     $this->post('/admin/articles/new/forms/article', ['title' => 'Hello', 'slug' => 'hello', 'status' => 'live'])->assertForbidden();
     expect(Article::query()->count())->toBe(0);
 });
+
+it('ignores the edited row in a --simple modal unique rule, and only that row', function () {
+    $ada = Writer::query()->forceCreate(['name' => 'Ada', 'email' => 'ada@example.com']);
+    Writer::query()->forceCreate(['name' => 'Grace', 'email' => 'grace@example.com']);
+    $save = fn (string $email) => $this->postJson('/admin/writers/actions/editSave', [
+        'payload' => ['row' => ['_key' => $ada->id], 'form' => ['name' => 'Ada L', 'email' => $email]],
+    ]);
+
+    $save('ada@example.com')->assertOk();
+    $save('grace@example.com')->assertUnprocessable();
+    expect($ada->fresh()->email)->toBe('ada@example.com');
+});

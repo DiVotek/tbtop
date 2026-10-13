@@ -67,6 +67,7 @@ function createResourceTables(): void
     Schema::create('writers', function (Blueprint $table): void {
         $table->id();
         $table->string('name');
+        $table->string('email')->nullable()->unique();
         $table->timestamps();
     });
     Schema::create('articles', function (Blueprint $table): void {
