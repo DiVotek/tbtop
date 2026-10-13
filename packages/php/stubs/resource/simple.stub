@@ -58,7 +58,11 @@ class IndexPage extends Page
                         // The edited row's key arrives with the action request, so
                         // unique rules can skip it (null while the page renders).
                         form: $s->form('edit{{ model }}', $this->{{ var }}Fields($s, $this->editedKey())),
-                        loadUsing: fn (ActionCtx $ctx): array => $this->{{ var }}Record({{ model }}::query()->whereKey($ctx->key())->firstOrFail()),
+                        loadUsing: function (ActionCtx $ctx): array {
+                            $record = {{ model }}::query()->whereKey($ctx->key())->firstOrFail();{{ authorizeUpdate }}
+
+                            return $this->{{ var }}Record($record);
+                        },
                         saveUsing: function (ActionCtx $ctx): void {
                             $record = {{ model }}::query()->whereKey($ctx->key())->firstOrFail();{{ authorizeUpdate }}
                             $record->forceFill($ctx->form)->save();
@@ -76,10 +80,15 @@ class IndexPage extends Page
         ]);
     }
 
+    /** The edited row's stored key, so a client-sent value never reaches the rule string. */
     private function editedKey(): int|string|null
     {
         $key = request()->input('payload.row._key');
+        if (! is_int($key) && ! is_string($key)) {
+            return null;
+        }
+        $stored = {{ model }}::query()->whereKey($key)->value('{{ keyName }}');
 
-        return is_int($key) || is_string($key) ? $key : null;
+        return is_int($stored) || is_string($stored) ? $stored : null;
     }
 }

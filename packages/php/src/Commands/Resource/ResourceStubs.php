@@ -77,6 +77,7 @@ final class ResourceStubs
             '{{ can:update }}' => $this->can('viewAny'),
             '{{ gateImport }}' => $this->options->policy ? "use Illuminate\\Support\\Facades\\Gate;\n" : '',
             '{{ authorizeUpdate }}' => $this->authorize('update', $this->options->simple ? 28 : 8),
+            '{{ authorizeView }}' => $this->authorize('view', 8),
             '{{ authorizeDelete }}' => $this->authorize('delete', 28),
             '{{ authorizeCreate }}' => $this->options->policy ? "\n                            Gate::authorize('create', {$model}::class);" : '',
             '{{ deleteRow }}' => $this->deleteRow(),

@@ -6,10 +6,14 @@ use App\Admin\Pages\Articles\CreatePage;
 use App\Admin\Pages\Articles\EditPage;
 use App\Admin\Pages\Articles\IndexPage;
 use App\Admin\Pages\Articles\ViewPage;
+use App\Models\Article;
+use App\Models\Writer;
 use Illuminate\Foundation\Auth\User as AuthUser;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Tests\Fixtures\Panels\ResourcePanel;
+use Tbtop\Admin\Tests\Fixtures\Resource\SecretPolicy;
 
 use function App\Models\createResourceTables;
 
@@ -29,10 +33,12 @@ class MakeResourceHttpTestCase extends TestCase
         parent::setUp();
         createResourceTables();
         if (self::$pages === []) {
+            $this->registerPolicies();
             $this->generate();
             $this->refreshApplication();
             createResourceTables();
         }
+        $this->registerPolicies();
         $this->actingAs(new AuthUser);
     }
 
@@ -43,10 +49,16 @@ class MakeResourceHttpTestCase extends TestCase
         $app['config']->set('tbtop-admin.panels', [ResourcePanel::class]);
     }
 
+    private function registerPolicies(): void
+    {
+        Gate::policy(Article::class, SecretPolicy::class);
+        Gate::policy(Writer::class, SecretPolicy::class);
+    }
+
     private function generate(): void
     {
-        $this->artisan('make:tbtop-resource', ['model' => 'Article', '--view' => true])->assertSuccessful();
-        $this->artisan('make:tbtop-resource', ['model' => 'Writer', '--simple' => true])->assertSuccessful();
+        $this->artisan('make:tbtop-resource', ['model' => 'Article', '--view' => true, '--policy' => true])->assertSuccessful();
+        $this->artisan('make:tbtop-resource', ['model' => 'Writer', '--simple' => true, '--policy' => true])->assertSuccessful();
 
         // Traits before the pages that use them; nothing here is autoloadable.
         $files = glob(app_path('Admin/Pages/*/*.php')) ?: [];

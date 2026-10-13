@@ -81,6 +81,12 @@ it('writes one modal-driven page with --simple', function () {
         ->and(resourceFile('IndexPage.php'))->toContain('CreateAction::make(')->toContain('EditAction::make(');
 });
 
+it('refuses --view with --simple, which writes no edit page to link to', function () {
+    $this->artisan('make:tbtop-resource', ['model' => 'Article', '--simple' => true, '--view' => true])->assertFailed();
+
+    expect(file_exists(app_path('Admin/Pages/Articles')))->toBeFalse();
+});
+
 it('adds a view page the rows link to with --view', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Article', '--view' => true])->assertSuccessful();
 

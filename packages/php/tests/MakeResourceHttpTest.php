@@ -79,3 +79,22 @@ it('creates and edits in modals on a --simple resource', function () {
 
     expect($writer->fresh()->name)->toBe('Grace');
 });
+
+it('refuses a record the policy denies on the view page, the edit page and the delete action', function () {
+    $article = makeArticle(['title' => 'Secret']);
+
+    $this->get("/admin/articles/{$article->id}")->assertForbidden();
+    $this->get("/admin/articles/{$article->id}/edit")->assertForbidden();
+    $this->postJson('/admin/articles/actions/delete', ['payload' => ['row' => ['_key' => $article->id]]])->assertForbidden();
+    expect($article->fresh())->not->toBeNull();
+});
+
+it('refuses to load or save a record the policy denies in a --simple modal', function () {
+    $writer = Writer::query()->forceCreate(['name' => 'Secret']);
+
+    $this->postJson('/admin/writers/actions/edit/data', ['payload' => ['row' => ['_key' => $writer->id]]])->assertForbidden();
+    $this->postJson('/admin/writers/actions/editSave', [
+        'payload' => ['row' => ['_key' => $writer->id], 'form' => ['name' => 'Grace']],
+    ])->assertForbidden();
+    expect($writer->fresh()->name)->toBe('Secret');
+});

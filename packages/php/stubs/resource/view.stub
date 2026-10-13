@@ -3,7 +3,7 @@
 namespace {{ namespace }};
 
 use {{ modelClass }};
-use Tbtop\Admin\Dsl\Node;
+{{ gateImport }}use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
 
@@ -33,7 +33,7 @@ class ViewPage extends Page
 
     public function view(S $s): Node
     {
-        $record = {{ model }}::query(){{ with }}->whereKey(request()->route('{{ var }}'))->firstOrFail();
+        $record = {{ model }}::query(){{ with }}->whereKey(request()->route('{{ var }}'))->firstOrFail();{{ authorizeView }}
 
         return $s->stack([
             $s->displayKeyValue([

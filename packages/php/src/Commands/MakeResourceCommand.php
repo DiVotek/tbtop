@@ -36,6 +36,12 @@ class MakeResourceCommand extends Command
 
     public function handle(): int
     {
+        if ($this->option('simple') && $this->option('view')) {
+            // A view page links to an edit page that --simple does not write.
+            $this->components->error('--view needs the separate edit page: drop --simple, or drop --view.');
+
+            return self::FAILURE;
+        }
         $class = $this->modelClass();
         if ($class === null) {
             return self::FAILURE;
@@ -84,7 +90,7 @@ class MakeResourceCommand extends Command
 
         return new ResourceOptions(
             simple: (bool) $this->option('simple'),
-            view: (bool) $this->option('view') && ! $this->option('simple'),
+            view: (bool) $this->option('view'),
             softDeletes: $softDeletes,
             policy: (bool) $this->option('policy'),
             navGroup: $this->option('no-nav') ? null : (string) ($this->option('group') ?: 'Main'),
@@ -133,7 +139,12 @@ class MakeResourceCommand extends Command
     /** @param  class-string<Model>  $class */
     private function policy(string $class): void
     {
-        if (! $this->option('policy') || Gate::getPolicyFor($class) !== null) {
+        if (! $this->option('policy')) {
+            $this->components->warn('No --policy: anyone who can open the panel can create, edit and delete these records.');
+
+            return;
+        }
+        if (Gate::getPolicyFor($class) !== null) {
             return;
         }
         $this->call('make:policy', ['name' => class_basename($class).'Policy', '--model' => $class]);
