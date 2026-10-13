@@ -119,7 +119,7 @@ it('gates the pages through the model policy with --policy', function () {
         ->and(file_get_contents(app_path('Admin/Pages/Writers/CreatePage.php')))->toContain("return ['create', Writer::class];")
         ->and(file_get_contents(app_path('Admin/Pages/Writers/EditPage.php')))->toContain("Gate::authorize('update', \$record);")
         ->and(file_get_contents(app_path('Admin/Pages/Writers/CreatePage.php')))->toContain("Gate::authorize('create', Writer::class);")
-        ->and(file_get_contents(app_path('Admin/Pages/Writers/WriterFormFields.php')))->not->toContain('api_token')
+        ->and(file_get_contents(app_path('Admin/Pages/Writers/WriterFormFields.php')))->not->toContain('api_token')->not->toContain('is_admin')
         ->and(file_exists(app_path('Policies/WriterPolicy.php')))->toBeTrue();
     File::deleteDirectory(app_path('Policies'));
 });

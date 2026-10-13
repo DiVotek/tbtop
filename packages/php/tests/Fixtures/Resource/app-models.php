@@ -14,7 +14,7 @@ use Tbtop\Admin\Tests\Fixtures\Resource\ArticleStatus;
 
 class Writer extends Model
 {
-    protected $guarded = [];
+    protected $guarded = ['is_admin'];
 
     protected $hidden = ['api_token'];
 }
@@ -71,6 +71,7 @@ function createResourceTables(): void
         $table->string('name');
         $table->string('email')->nullable()->unique();
         $table->string('api_token')->nullable();
+        $table->boolean('is_admin')->default(false);
         $table->timestamps();
     });
     Schema::create('articles', function (Blueprint $table): void {

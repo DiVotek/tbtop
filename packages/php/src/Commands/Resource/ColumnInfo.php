@@ -50,10 +50,4 @@ final class ColumnInfo
             default => 'null',
         };
     }
-
-    /** Short, searchable text: varchar-like and not translatable. */
-    public function isSearchable(): bool
-    {
-        return $this->kind === 'string' && ! $this->translatable && $this->foreign === null;
-    }
 }

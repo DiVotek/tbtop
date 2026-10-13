@@ -4,11 +4,7 @@ namespace Tbtop\Admin\Commands\Resource;
 
 use BackedEnum;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
-use ReflectionMethod;
-use Throwable;
 
 /**
  * Reads a model's table into ColumnInfo rows: types from Schema::getColumns(),
@@ -19,8 +15,6 @@ use Throwable;
  */
 final class SchemaReader
 {
-    private const LABEL_KEYS = ['name', 'title', 'label', 'email'];
-
     /** @return list<ColumnInfo>|null null when the table does not exist */
     public static function read(Model $model): ?array
     {
@@ -32,7 +26,7 @@ final class SchemaReader
         }
 
         $unique = self::uniqueColumns($schema->getIndexes($table));
-        $foreign = self::foreignKeys($schema->getForeignKeys($table), $connection, $model);
+        $foreign = ForeignKeys::read($schema->getForeignKeys($table), $connection, $model);
         $translatable = self::translatable($model);
         $casts = $model->getCasts();
 
@@ -115,68 +109,6 @@ final class SchemaReader
         }
 
         return $names;
-    }
-
-    /**
-     * Single-column foreign keys by local column.
-     *
-     * @param  list<array<string, mixed>>  $keys
-     * @return array<string, array{table: string, column: string, model: class-string|null, labelKey: string, relation: string|null}>
-     */
-    private static function foreignKeys(array $keys, ?string $connection, Model $owner): array
-    {
-        $found = [];
-        foreach ($keys as $key) {
-            $columns = (array) $key['columns'];
-            if (count($columns) !== 1) {
-                continue;
-            }
-            $table = (string) $key['foreign_table'];
-            $local = (string) $columns[0];
-            $found[$local] = [
-                'table' => $table,
-                'column' => (string) ((array) $key['foreign_columns'])[0],
-                'model' => self::modelFor($table),
-                'labelKey' => self::labelKey($table, $connection),
-                'relation' => self::relationFor($owner, $local),
-            ];
-        }
-
-        return $found;
-    }
-
-    /** The owner's relation method for $column (author_id → author()), when it is one. */
-    private static function relationFor(Model $owner, string $column): ?string
-    {
-        $method = Str::camel((string) preg_replace('/_id$/', '', $column));
-        if ($method === $column || ! method_exists($owner, $method) || (new ReflectionMethod($owner, $method))->getNumberOfRequiredParameters() > 0) {
-            return null;
-        }
-        try {
-            return $owner->{$method}() instanceof Relation ? $method : null;
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    /** @return class-string|null */
-    private static function modelFor(string $table): ?string
-    {
-        $class = rtrim(app()->getNamespace(), '\\').'\\Models\\'.Str::studly(Str::singular($table));
-
-        return class_exists($class) && is_subclass_of($class, Model::class) ? $class : null;
-    }
-
-    private static function labelKey(string $table, ?string $connection): string
-    {
-        $columns = Schema::connection($connection)->getColumnListing($table);
-        foreach (self::LABEL_KEYS as $candidate) {
-            if (in_array($candidate, $columns, true)) {
-                return $candidate;
-            }
-        }
-
-        return 'id';
     }
 
     /** @return list<string> */
