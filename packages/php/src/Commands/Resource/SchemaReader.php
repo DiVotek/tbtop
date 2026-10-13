@@ -36,12 +36,13 @@ final class SchemaReader
             if (SkippedColumns::has($model, $name)) {
                 continue;
             }
+            $kind = self::kind((string) $column['type_name'], (string) $column['type'], $casts[$name] ?? null, in_array($name, $translatable, true));
             $columns[] = new ColumnInfo(
                 name: $name,
-                kind: self::kind((string) $column['type_name'], (string) $column['type'], $casts[$name] ?? null, in_array($name, $translatable, true)),
+                kind: $kind,
                 length: self::length((string) $column['type']),
                 nullable: (bool) $column['nullable'],
-                default: is_scalar($column['default']) ? (string) $column['default'] : null,
+                default: ColumnInfo::sqlDefault($column['default'], $kind, $schema->getConnection()->getDriverName()),
                 unique: in_array($name, $unique, true),
                 translatable: in_array($name, $translatable, true),
                 enum: self::enumCast($casts[$name] ?? null),

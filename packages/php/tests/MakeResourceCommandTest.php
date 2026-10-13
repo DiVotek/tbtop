@@ -90,6 +90,18 @@ it('refuses --soft-deletes for a model without SoftDeletes', function () {
     expect(file_exists(app_path('Admin/Pages/Writers')))->toBeFalse();
 });
 
+it('reads a bare MySQL string default as a literal, not an expression', function () {
+    $blank = fn (mixed $default, string $driver): string => (new ColumnInfo('status', 'string', null, false, ColumnInfo::sqlDefault($default, 'string', $driver), false, false, null, null))->defaultLiteral();
+
+    expect($blank('draft', 'mysql'))->toBe("'draft'")
+        ->and($blank("it's", 'mysql'))->toBe("'it\\'s'")
+        ->and($blank("'draft'", 'mysql'))->toBe("'draft'")
+        ->and($blank('uuid()', 'mysql'))->toBe('null')
+        ->and($blank('CURRENT_TIMESTAMP', 'mysql'))->toBe('null')
+        ->and($blank("'draft'::character varying", 'pgsql'))->toBe("'draft'")
+        ->and($blank('draft', 'sqlite'))->toBe('null');
+});
+
 it('keeps a class qualified when its short name clashes with a stub import', function () {
     $side = new ColumnInfo('side', 'string', null, false, null, false, false, EnumColumn::class, null);
     $code = (new ResourceCode([$side], 'notes', 'id', false, Note::class))->replacements();
@@ -109,7 +121,7 @@ it('aliases a model named like a stub import and keeps only its fillable columns
         ->toContain('PageModel::query()')
         ->and(file_get_contents(app_path('Admin/Pages/Pages/PageFormFields.php')))
         ->toContain("\$s->text('title')->label('Title')->required()")
-        ->toContain("\$s->relation('parent_id')")
+        ->toContain("\$s->relation('parent_id')->query(fn () => \\App\\Models\\Page::query())")
         ->toContain('// TODO secrets: json column')
         ->not->toContain('hits')
         ->and(Page::$authorCalled)->toBeFalse();

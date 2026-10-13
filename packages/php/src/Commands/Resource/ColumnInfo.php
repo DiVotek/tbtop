@@ -28,6 +28,26 @@ final class ColumnInfo
         public readonly ?array $foreign,
     ) {}
 
+    /**
+     * A column default as SQL text. MySQL reports a string literal bare (draft)
+     * where the other drivers quote it ('draft'); quote it the same way, but
+     * leave a function call or CURRENT_TIMESTAMP bare, as an expression.
+     */
+    public static function sqlDefault(mixed $default, string $kind, string $driver): ?string
+    {
+        if (! is_scalar($default)) {
+            return null;
+        }
+        $default = (string) $default;
+        $isLiteral = preg_match("/^'.*'$/s", $default) === 1;
+        $isExpression = preg_match('/^(\w+\(.*\)|current_timestamp\w*|null)$/i', $default) === 1;
+        if ($driver !== 'mysql' || ! in_array($kind, ['string', 'text'], true) || $isLiteral || $isExpression) {
+            return $default;
+        }
+
+        return "'".str_replace("'", "''", $default)."'";
+    }
+
     /** NOT NULL: the form must send a value (a boolean always does). */
     public function isRequired(): bool
     {
