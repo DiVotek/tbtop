@@ -47,7 +47,7 @@ class EditPage extends Page
                 ]),
             ])
                 ->record($this->{{ var }}Record($record))
-                ->onSubmit(function (ActionCtx $ctx) use ($record): Effects {
+                ->onSubmit(function (ActionCtx $ctx) use ($record): Effects {{{ authorizeSave }}
                     // $ctx->form holds only the validated fields declared above.
                     $record->forceFill($ctx->form)->save();
 

@@ -1,0 +1,22 @@
+<?php
+
+namespace Tbtop\Admin\Commands\Resource;
+
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * Columns that never become a form field or a table column.
+ *
+ * @internal
+ */
+final class SkippedColumns
+{
+    /** Bookkeeping and secrets every Laravel app shares. */
+    public const NAMES = ['created_at', 'updated_at', 'deleted_at', 'password', 'remember_token', 'email_verified_at'];
+
+    /** The key, the shared names, and whatever the model hides from serialization. */
+    public static function has(Model $model, string $column): bool
+    {
+        return $column === $model->getKeyName() || in_array($column, [...self::NAMES, ...$model->getHidden()], true);
+    }
+}

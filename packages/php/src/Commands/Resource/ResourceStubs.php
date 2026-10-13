@@ -79,6 +79,8 @@ final class ResourceStubs
             '{{ authorizeUpdate }}' => $this->authorize('update', $this->options->simple ? 28 : 8),
             '{{ editDenied }}' => $this->options->policy ? " || Gate::denies('update', \$record)" : '',
             '{{ listNote }}' => $this->options->policy ? "\n                // viewAny lists every row; scope this query if the policy's view() hides some." : '',
+            '{{ authorizeSave }}' => $this->authorize('update', 20),
+            '{{ authorizeStore }}' => $this->options->policy ? "\n                    Gate::authorize('create', {$model}::class);" : '',
             '{{ authorizeView }}' => $this->authorize('view', 8),
             '{{ authorizeDelete }}' => $this->authorize('delete', 28),
             '{{ authorizeCreate }}' => $this->options->policy ? "\n                            Gate::authorize('create', {$model}::class);" : '',

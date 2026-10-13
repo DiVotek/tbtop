@@ -71,7 +71,7 @@ it('maps columns to fields, rules and table columns', function () {
 
 it('warns about required columns the form never writes', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Note'])
-        ->expectsOutputToContain('NOT NULL, no default): password.')
+        ->expectsOutputToContain('NOT NULL, no default): password, blob.')
         ->assertSuccessful();
 });
 
@@ -118,6 +118,8 @@ it('gates the pages through the model policy with --policy', function () {
     expect(file_get_contents(app_path('Admin/Pages/Writers/IndexPage.php')))->toContain("return ['viewAny', Writer::class];")
         ->and(file_get_contents(app_path('Admin/Pages/Writers/CreatePage.php')))->toContain("return ['create', Writer::class];")
         ->and(file_get_contents(app_path('Admin/Pages/Writers/EditPage.php')))->toContain("Gate::authorize('update', \$record);")
+        ->and(file_get_contents(app_path('Admin/Pages/Writers/CreatePage.php')))->toContain("Gate::authorize('create', Writer::class);")
+        ->and(file_get_contents(app_path('Admin/Pages/Writers/WriterFormFields.php')))->not->toContain('api_token')
         ->and(file_exists(app_path('Policies/WriterPolicy.php')))->toBeTrue();
     File::deleteDirectory(app_path('Policies'));
 });

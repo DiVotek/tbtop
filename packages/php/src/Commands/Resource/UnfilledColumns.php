@@ -20,12 +20,12 @@ final class UnfilledColumns
      */
     public static function of(Model $model, array $fields): array
     {
-        $todo = array_map(fn (ColumnInfo $c): string => $c->name, array_filter($fields, fn (ColumnInfo $c): bool => $c->kind === 'json'));
+        $todo = array_map(fn (ColumnInfo $c): string => $c->name, array_filter($fields, fn (ColumnInfo $c): bool => in_array($c->kind, ['json', 'other'], true)));
         $byEloquent = [$model->getKeyName(), ...($model->usesTimestamps() ? [$model->getCreatedAtColumn(), $model->getUpdatedAtColumn()] : [])];
         $names = [];
         foreach (Schema::connection($model->getConnectionName())->getColumns($model->getTable()) as $column) {
             $name = (string) $column['name'];
-            $unwritten = in_array($name, SchemaReader::SKIPPED, true) || in_array($name, $todo, true);
+            $unwritten = SkippedColumns::has($model, $name) || in_array($name, $todo, true);
             if ($unwritten && ! in_array($name, $byEloquent, true) && ! $column['nullable'] && $column['default'] === null && ! $column['auto_increment']) {
                 $names[] = $name;
             }

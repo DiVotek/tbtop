@@ -4,8 +4,11 @@ namespace Tbtop\Admin\Commands\Resource;
 
 use BackedEnum;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use ReflectionMethod;
+use Throwable;
 
 /**
  * Reads a model's table into ColumnInfo rows: types from Schema::getColumns(),
@@ -16,9 +19,6 @@ use Illuminate\Support\Str;
  */
 final class SchemaReader
 {
-    /** Never a form field: keys, bookkeeping and secrets. */
-    public const SKIPPED = ['created_at', 'updated_at', 'deleted_at', 'password', 'remember_token', 'email_verified_at'];
-
     private const LABEL_KEYS = ['name', 'title', 'label', 'email'];
 
     /** @return list<ColumnInfo>|null null when the table does not exist */
@@ -39,7 +39,7 @@ final class SchemaReader
         $columns = [];
         foreach ($schema->getColumns($table) as $column) {
             $name = (string) $column['name'];
-            if ($name === $model->getKeyName() || in_array($name, self::SKIPPED, true)) {
+            if (SkippedColumns::has($model, $name)) {
                 continue;
             }
             $columns[] = new ColumnInfo(
@@ -75,7 +75,7 @@ final class SchemaReader
             in_array($typeName, ['bool', 'boolean'], true), $type === 'tinyint(1)' => 'boolean',
             in_array($typeName, ['varchar', 'char', 'string', 'nvarchar', 'nchar', 'bpchar', 'character varying', 'character', 'uuid', 'enum'], true) => 'string',
             str_contains($typeName, 'text'), $typeName === 'clob' => 'text',
-            str_contains($typeName, 'int') => 'integer',
+            preg_match('/^((tiny|small|medium|big)?int(eger)?[248]?|(small|big)?serial[248]?)$/', $typeName) === 1 => 'integer',
             in_array($typeName, ['decimal', 'numeric', 'float', 'double', 'real', 'float4', 'float8', 'money'], true) => 'decimal',
             $typeName === 'date' => 'date',
             in_array($typeName, ['datetime', 'timestamp', 'timestamptz', 'datetime2', 'datetimeoffset'], true) => 'datetime',
@@ -145,12 +145,18 @@ final class SchemaReader
         return $found;
     }
 
-    /** The owner's belongsTo method for $column (author_id → author()), when it has one. */
+    /** The owner's relation method for $column (author_id → author()), when it is one. */
     private static function relationFor(Model $owner, string $column): ?string
     {
         $method = Str::camel((string) preg_replace('/_id$/', '', $column));
-
-        return $method !== $column && method_exists($owner, $method) ? $method : null;
+        if ($method === $column || ! method_exists($owner, $method) || (new ReflectionMethod($owner, $method))->getNumberOfRequiredParameters() > 0) {
+            return null;
+        }
+        try {
+            return $owner->{$method}() instanceof Relation ? $method : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** @return class-string|null */
