@@ -47,7 +47,7 @@ class IndexPage extends Page
                         form: $s->form('create{{ model }}', $this->{{ var }}Fields($s)),
                         storeUsing: function (ActionCtx $ctx): void {{{ authorizeCreate }}
                             // $ctx->form holds only the validated fields declared above.
-                            (new {{ model }})->forceFill($ctx->form)->save();
+                            (new {{ model }})->{{ fill }}($ctx->form)->save();
                         },
                         defaultRecord: $this->blank{{ model }}(),
                     )->label('New {{ labelLower }}'),
@@ -65,7 +65,7 @@ class IndexPage extends Page
                         },
                         saveUsing: function (ActionCtx $ctx): void {
                             $record = {{ model }}::query()->whereKey($ctx->key())->firstOrFail();{{ authorizeUpdate }}
-                            $record->forceFill($ctx->form)->save();
+                            $record->{{ fill }}($ctx->form)->save();
                         },
                     ),
                     DeleteAction::make($s, using: function (ActionCtx $ctx): void {

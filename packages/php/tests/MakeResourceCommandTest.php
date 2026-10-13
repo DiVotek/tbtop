@@ -84,7 +84,8 @@ it('warns that a model with the default guard gets every column as a field', fun
 
     expect(file_get_contents(app_path('Admin/Pages/Tags/TagFormFields.php')))->toContain("\$s->boolean('is_featured')")
         ->not->toContain('added_on')->not->toContain('changed_on')
-        ->and(file_get_contents(app_path('Admin/Pages/Tags/IndexPage.php')))->toContain("Column::make('added_on')->label('Created')");
+        ->and(file_get_contents(app_path('Admin/Pages/Tags/IndexPage.php')))->toContain("Column::make('added_on')->label('Created')")
+        ->and(file_get_contents(app_path('Admin/Pages/Tags/CreatePage.php')))->toContain('->forceFill($ctx->form)');
 });
 
 it('refuses --soft-deletes for a model without SoftDeletes', function () {
@@ -172,7 +173,7 @@ it('gates the pages through the model policy with --policy', function () {
 
     expect(file_get_contents(app_path('Admin/Pages/Writers/IndexPage.php')))->toContain("return ['viewAny', Writer::class];")
         ->and(file_get_contents(app_path('Admin/Pages/Writers/CreatePage.php')))->toContain("return ['create', Writer::class];")
-        ->and(file_get_contents(app_path('Admin/Pages/Writers/EditPage.php')))->toContain("Gate::authorize('update', \$record);")
+        ->and(file_get_contents(app_path('Admin/Pages/Writers/EditPage.php')))->toContain("Gate::authorize('update', \$record);")->toContain('$record->fill($ctx->form)->save();')
         ->and(file_get_contents(app_path('Admin/Pages/Writers/CreatePage.php')))->toContain("Gate::authorize('create', Writer::class);")
         ->and(file_get_contents(app_path('Admin/Pages/Writers/WriterFormFields.php')))->not->toContain('api_token')->not->toContain('is_admin')
         ->and(file_exists(app_path('Policies/WriterPolicy.php')))->toBeTrue();

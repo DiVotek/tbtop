@@ -71,6 +71,7 @@ final class ResourceStubs
 
         return [
             '{{ nav }}' => $this->nav(),
+            '{{ fill }}' => $this->options->totallyGuarded ? 'forceFill' : 'fill',
             '{{ can:viewAny }}' => $this->can('viewAny'),
             '{{ can:view }}' => $this->can('viewAny'),
             '{{ can:create }}' => $this->can('create'),

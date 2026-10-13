@@ -100,6 +100,7 @@ class MakeResourceCommand extends Command
             softDeletes: in_array(SoftDeletes::class, class_uses_recursive($class), true),
             policy: (bool) $this->option('policy'),
             navGroup: $this->option('no-nav') ? null : (string) ($this->option('group') ?: 'Main'),
+            totallyGuarded: (new $class)->totallyGuarded(),
         );
     }
 

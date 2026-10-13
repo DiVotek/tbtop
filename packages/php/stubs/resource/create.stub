@@ -38,7 +38,7 @@ class CreatePage extends Page
                 ->record($this->blank{{ model }}())
                 ->onSubmit(function (ActionCtx $ctx): string {{{ authorizeStore }}
                     // $ctx->form holds only the validated fields declared above.
-                    $record = (new {{ model }})->forceFill($ctx->form);
+                    $record = (new {{ model }})->{{ fill }}($ctx->form);
                     $record->save();
 
                     return EditPage::url(['{{ var }}' => $record->getKey()]);

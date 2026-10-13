@@ -15,5 +15,7 @@ final class ResourceOptions
         public readonly bool $softDeletes,
         public readonly bool $policy,
         public readonly ?string $navGroup,
+        /** Neither $fillable nor $guarded: fill() would drop every field, so the pages forceFill(). */
+        public readonly bool $totallyGuarded = false,
     ) {}
 }
