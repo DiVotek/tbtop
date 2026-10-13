@@ -124,7 +124,8 @@ middleware. The login screen itself is not shipped ready-made: `php artisan admi
 `->middleware()`, `->navigation()` and `->locales()` override the defaults.
 
 Scaffold a page with `php artisan make:tbtop-page Brands` — it lands in the
-discovery root and needs no registration. Pages that live outside that root, or
+discovery root and needs no registration. For a model's list, create and edit
+pages, `php artisan make:tbtop-resource Brand` writes them from its table. Pages that live outside that root, or
 one that must be the panel's first route, are listed explicitly with
 `->pages([...])`; discovery merges them and drops duplicates.
 

@@ -65,10 +65,28 @@ abstract class Page
         return null;
     }
 
-    /** Gate ability required to view this page. Null means no gate (public to authenticated). */
-    public static function can(): ?string
+    /**
+     * Gate required to view this page: an ability name, or [ability, Model::class]
+     * to check a model policy (e.g. ['viewAny', Post::class]). Null means no gate
+     * (public to authenticated).
+     *
+     * @return string|array{0: string, 1: class-string}|null
+     */
+    public static function can(): string|array|null
     {
         return null;
+    }
+
+    /**
+     * Relative URL of this page, e.g. EditPage::url(['post' => $post]) → '/admin/posts/5/edit'.
+     * Uses $panel, else the current request's panel, else the only panel that
+     * registers the page; throws when the page is in several panels and none applies.
+     *
+     * @param  array<string, mixed>  $parameters  route parameters of path()
+     */
+    public static function url(array $parameters = [], ?string $panel = null): string
+    {
+        return PageUrl::to(static::class, $parameters, $panel);
     }
 
     /**

@@ -1,0 +1,98 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelClass }};
+{{ columnImports }}{{ gateImport }}{{ trashedImport }}use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Dsl\Actions\CreateAction;
+use Tbtop\Admin\Dsl\Actions\DeleteAction;
+use Tbtop\Admin\Dsl\Actions\EditAction;
+use Tbtop\Admin\Dsl\Column;
+use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page;
+
+class IndexPage extends Page
+{
+    use {{ trait }};
+
+    public static function path(): string
+    {
+        return '{{ path }}';
+    }
+
+    public static function slug(): string
+    {
+        return '{{ slug }}-index';
+    }
+{{ nav }}{{ can:viewAny }}
+    public function title(): string
+    {
+        return '{{ plural }}';
+    }
+
+    public function view(S $s): Node
+    {
+        return $s->stack([
+            $s->table('{{ slug }}'){{ listNote }}
+                ->query(fn () => {{ model }}::query(){{ with }})
+                ->columns([
+{{ columns }}
+                ])
+                ->defaultSort('{{ keyName }}', 'desc')
+                ->paginate(25)
+                ->headerActions([
+                    CreateAction::make(
+                        $s,
+                        form: $s->form('create{{ model }}', $this->{{ var }}Fields($s)),
+                        storeUsing: function (ActionCtx $ctx): void {{{ authorizeCreate }}
+                            // $ctx->form holds only the validated fields declared above.
+                            (new {{ model }})->{{ fill }}($ctx->form)->save();
+                        },
+                        defaultRecord: $this->blank{{ model }}(),
+                    )->label('New {{ labelLower }}'),
+                ])
+                ->rowActions([
+                    EditAction::make(
+                        $s,
+                        // The edited row's key arrives with the action request, so
+                        // unique rules can skip it (null while the page renders).
+                        form: $s->form('edit{{ model }}', $this->{{ var }}Fields($s, $this->editedKey())),
+                        loadUsing: function (ActionCtx $ctx): array {
+                            $record = {{ model }}::query()->whereKey($ctx->key())->firstOrFail();{{ authorizeUpdate }}
+
+                            return $this->{{ var }}Record($record);
+                        },
+                        saveUsing: function (ActionCtx $ctx): void {
+                            $record = {{ model }}::query()->whereKey($ctx->key())->firstOrFail();{{ authorizeUpdate }}
+                            $record->{{ fill }}($ctx->form)->save();
+                        },
+                    ),
+                    DeleteAction::make($s, using: function (ActionCtx $ctx): void {
+{{ deleteRow }}
+                    }),{{ trashedRow }}
+                ])
+                ->bulkActions([
+                    DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): void {
+{{ deleteBulk }}
+                    }),{{ trashedBulk }}
+                ]){{ softDeletes }},
+        ]);
+    }
+
+    /** The edited row's stored key, so a client-sent value (or a row the user may not edit) never reaches the rule string. */
+    private function editedKey(): int|string|null
+    {
+        $key = request()->input('payload.row._key');
+        if (! is_int($key) && ! is_string($key)) {
+            return null;
+        }
+        $record = {{ model }}::query()->whereKey($key)->first();
+        if ($record === null{{ editDenied }}) {
+            return null;
+        }
+        $stored = $record->getKey();
+
+        return is_int($stored) || is_string($stored) ? $stored : null;
+    }
+}
