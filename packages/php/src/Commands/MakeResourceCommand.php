@@ -68,7 +68,9 @@ class MakeResourceCommand extends Command
             return self::FAILURE;
         }
 
-        $this->write($files);
+        if (! $this->write($files)) {
+            return self::FAILURE;
+        }
         $this->policy($class);
         $this->warnColumns($model, $columns);
         $this->reportDiscovery($dir, $names);
@@ -132,15 +134,19 @@ class MakeResourceCommand extends Command
     }
 
     /** @param  array<string, string>  $files */
-    private function write(array $files): void
+    private function write(array $files): bool
     {
         foreach ($files as $path => $contents) {
-            if (! is_dir(dirname($path))) {
-                mkdir(dirname($path), 0755, true);
+            $dir = dirname($path);
+            if ((! is_dir($dir) && ! @mkdir($dir, 0755, true)) || @file_put_contents($path, $contents) === false) {
+                $this->components->error("Could not write [{$path}]: check that the directory is writable.");
+
+                return false;
             }
-            file_put_contents($path, $contents);
             $this->components->info("Created: {$path}");
         }
+
+        return true;
     }
 
     /** @param  class-string<Model>  $class */

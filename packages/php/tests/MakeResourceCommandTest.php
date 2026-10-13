@@ -209,6 +209,15 @@ it('writes nothing when a target exists, unless --force', function () {
     expect(file_get_contents(app_path('Admin/Pages/Writers/EditPage.php')))->toContain('class EditPage extends Page');
 });
 
+it('fails when a page cannot be written', function () {
+    File::ensureDirectoryExists(app_path('Admin/Pages'));
+    file_put_contents(app_path('Admin/Pages/Writers'), 'a file where the folder goes');
+
+    $this->artisan('make:tbtop-resource', ['model' => 'Writer'])
+        ->expectsOutputToContain('Could not write')
+        ->assertFailed();
+});
+
 it('fails on an unknown model', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Nope'])->assertFailed();
 
