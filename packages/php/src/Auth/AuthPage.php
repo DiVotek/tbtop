@@ -36,7 +36,7 @@ abstract class AuthPage extends Page
      * finds the host's subclass whatever it is named. Null when the panel
      * has none (the host deleted it) or no panel is bound.
      */
-    public static function url(): ?string
+    public static function currentUrl(): ?string
     {
         $name = static::routeName();
 

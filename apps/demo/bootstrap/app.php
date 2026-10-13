@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ahead of RequireFullAuth) sends all guests to the DSL login page.
         $middleware->alias(['abilities' => CheckAbilities::class]);
 
-        $middleware->redirectGuestsTo(fn (): string => LoginPage::url() ?? route('tbtop.admin.login-page'));
+        $middleware->redirectGuestsTo(fn (): string => LoginPage::currentUrl() ?? route('tbtop.admin.login-page'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

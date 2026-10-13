@@ -140,8 +140,8 @@ class InstallCommand extends Command
         $login = '/'.trim($panel->getPrefix(), '/').'/login';
         $this->newLine();
         $this->line('  5. Send guests to the panel login (bootstrap/app.php, inside withMiddleware) — without it a guest gets a 500:');
-        $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::url() ?? '{$login}');");
-        $this->line('     LoginPage::url() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
+        $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::currentUrl() ?? '{$login}');");
+        $this->line('     LoginPage::currentUrl() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
 
         if (! $auth->isDiscovered()) {
             $this->newLine();

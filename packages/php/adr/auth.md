@@ -32,7 +32,7 @@ domain: auth
 - **The reset form answers an unknown email like a bad token** and throttles failures
   per IP, matching the neutral forgot-password answer.
 - **Guest redirect is plain Laravel `redirectGuestsTo`**, printed as a manual step and
-  resolved per request through `LoginPage::url()`. No panel method for it.
+  resolved per request through `LoginPage::currentUrl()`. No panel method for it.
 - **Signed-in users are turned away by `RedirectSignedInUsers`**, not Laravel's `guest`,
   which lands on the app's dashboard/home route and knows nothing of panels.
 - **Reset mail URL is fixed at send time** (`ResetPasswordNotification`), not through the

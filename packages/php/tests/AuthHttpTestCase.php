@@ -22,7 +22,7 @@ class AuthHttpTestCase extends TestCase
         // The manual step admin:install --auth prints for bootstrap/app.php. Applied after the
         // kernel resolves: resolving it installs the skeleton's route('login') default.
         $this->app->make(HttpKernel::class);
-        (new Middleware)->redirectGuestsTo(static fn (): string => LoginPage::url() ?? '/admin/login');
+        (new Middleware)->redirectGuestsTo(static fn (): string => LoginPage::currentUrl() ?? '/admin/login');
         Route::getRoutes()->refreshNameLookups();
     }
 
