@@ -27,7 +27,7 @@ class MakeResourceCommand extends Command
         {model : Model class, e.g. Post or App\\Models\\Post}
         {--simple : One list page; create and edit open in modals}
         {--view : Add a read-only view page the rows link to}
-        {--soft-deletes : Trashed tabs plus restore and force delete (on by default for SoftDeletes models)}
+        {--soft-deletes : Trashed tabs plus restore and force delete (automatic for SoftDeletes models; refused without the trait)}
         {--policy : Gate the pages through the model policy, creating it when missing}
         {--tests : Write a feature test for the list page}
         {--group=Main : Nav group label}
@@ -48,6 +48,11 @@ class MakeResourceCommand extends Command
         if ($class === null) {
             return self::FAILURE;
         }
+        if ($this->option('soft-deletes') && ! in_array(SoftDeletes::class, class_uses_recursive($class), true)) {
+            $this->components->error('--soft-deletes needs the SoftDeletes trait on ['.$class.']: add it, or drop the flag.');
+
+            return self::FAILURE;
+        }
         /** @var Model $model */
         $model = new $class;
         $names = new ResourceNames($class, app()->getNamespace());
@@ -65,7 +70,7 @@ class MakeResourceCommand extends Command
 
         $this->write($files);
         $this->policy($class);
-        $this->warnUnfilled($model, $columns);
+        $this->warnColumns($model, $columns);
         $this->reportDiscovery($dir, $names);
 
         return self::SUCCESS;
@@ -89,12 +94,10 @@ class MakeResourceCommand extends Command
     /** @param  class-string<Model>  $class */
     private function resourceOptions(string $class): ResourceOptions
     {
-        $softDeletes = (bool) $this->option('soft-deletes') || in_array(SoftDeletes::class, class_uses_recursive($class), true);
-
         return new ResourceOptions(
             simple: (bool) $this->option('simple'),
             view: (bool) $this->option('view'),
-            softDeletes: $softDeletes,
+            softDeletes: in_array(SoftDeletes::class, class_uses_recursive($class), true),
             policy: (bool) $this->option('policy'),
             navGroup: $this->option('no-nav') ? null : (string) ($this->option('group') ?: 'Main'),
         );
@@ -154,8 +157,11 @@ class MakeResourceCommand extends Command
     }
 
     /** @param  list<ColumnInfo>|null  $columns */
-    private function warnUnfilled(Model $model, ?array $columns): void
+    private function warnColumns(Model $model, ?array $columns): void
     {
+        if ($columns !== null && $model->totallyGuarded()) {
+            $this->components->warn(class_basename($model).' declares neither $fillable nor $guarded, so every column became a field. Remove any editors must not set (roles, flags, owner ids).');
+        }
         $unfilled = $columns === null ? [] : UnfilledColumns::of($model, $columns);
         if ($unfilled !== []) {
             $this->components->warn('Not in the form but required by the table (NOT NULL, no default): '.implode(', ', $unfilled).'. Set them before save, or saving fails.');

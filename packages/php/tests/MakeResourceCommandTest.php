@@ -76,6 +76,20 @@ it('warns about required columns the form never writes', function () {
         ->assertSuccessful();
 });
 
+it('warns that a model with the default guard gets every column as a field', function () {
+    $this->artisan('make:tbtop-resource', ['model' => 'Tag'])
+        ->expectsOutputToContain('Tag declares neither $fillable nor $guarded')
+        ->assertSuccessful();
+
+    expect(file_get_contents(app_path('Admin/Pages/Tags/TagFormFields.php')))->toContain("\$s->boolean('is_featured')");
+});
+
+it('refuses --soft-deletes for a model without SoftDeletes', function () {
+    $this->artisan('make:tbtop-resource', ['model' => 'Writer', '--soft-deletes' => true])->assertFailed();
+
+    expect(file_exists(app_path('Admin/Pages/Writers')))->toBeFalse();
+});
+
 it('keeps a class qualified when its short name clashes with a stub import', function () {
     $side = new ColumnInfo('side', 'string', null, false, null, false, false, EnumColumn::class, null);
     $code = (new ResourceCode([$side], 'notes', 'id', false, Note::class))->replacements();

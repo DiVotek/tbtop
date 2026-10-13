@@ -90,8 +90,16 @@ class Page extends Model
     }
 }
 
+/** Laravel's default guard: neither $fillable nor $guarded. */
+class Tag extends Model {}
+
 function createResourceTables(): void
 {
+    Schema::create('tags', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->boolean('is_featured')->default(false);
+    });
     Schema::create('writers', function (Blueprint $table): void {
         $table->id();
         $table->string('name');
