@@ -83,6 +83,20 @@ it('keeps a class qualified when its short name clashes with a stub import', fun
         ->and($code['{{ fields }}'])->toContain('\\'.EnumColumn::class.'::class');
 });
 
+it('aliases a model whose name clashes with a stub import', function () {
+    $this->artisan('make:tbtop-resource', ['model' => 'Page', '--policy' => true, '--view' => true])->assertSuccessful();
+
+    foreach (glob(app_path('Admin/Pages/Pages/*.php')) ?: [] as $file) {
+        exec(escapeshellarg(PHP_BINARY).' -l '.escapeshellarg($file), $output, $status);
+        expect($status)->toBe(0, $file);
+    }
+    expect(file_get_contents(app_path('Admin/Pages/Pages/IndexPage.php')))->toContain('use App\\Models\\Page as PageModel;')
+        ->toContain('PageModel::query()')
+        ->and(file_get_contents(app_path('Admin/Pages/Pages/PageFormFields.php')))
+        ->toContain("\$s->relation('parent_id')")
+        ->toContain('// TODO secrets: json column');
+});
+
 it('marks translatable attributes and loads their whole locale map on edit', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Note'])->assertSuccessful();
 

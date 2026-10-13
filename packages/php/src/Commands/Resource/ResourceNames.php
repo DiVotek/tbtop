@@ -13,7 +13,16 @@ use Illuminate\Support\Str;
  */
 final class ResourceNames
 {
+    /** Short names the stubs import themselves, plus the sibling pages. */
+    public const STUB_IMPORTS = [
+        'ActionCtx', 'Effects', 'CreateAction', 'DeleteAction', 'EditAction', 'FormActions', 'RecordAction',
+        'Column', 'Node', 'S', 'Page', 'Gate', 'IndexPage', 'CreatePage', 'EditPage', 'ViewPage',
+    ];
+
     public readonly string $model;
+
+    /** What the generated code calls the model: its short name, or `{Model}Model` when that clashes with a stub import. */
+    public readonly string $alias;
 
     public readonly string $folder;
 
@@ -29,6 +38,7 @@ final class ResourceNames
     public function __construct(public readonly string $modelClass, public readonly string $appNamespace)
     {
         $this->model = class_basename($modelClass);
+        $this->alias = in_array($this->model, self::STUB_IMPORTS, true) ? $this->model.'Model' : $this->model;
         $this->folder = Str::pluralStudly($this->model);
         $this->var = Str::camel($this->model);
         $this->path = Str::kebab($this->folder);
@@ -51,8 +61,8 @@ final class ResourceNames
     {
         return [
             '{{ namespace }}' => $this->namespace(),
-            '{{ modelClass }}' => $this->modelClass,
-            '{{ model }}' => $this->model,
+            '{{ modelClass }}' => $this->alias === $this->model ? $this->modelClass : "{$this->modelClass} as {$this->alias}",
+            '{{ model }}' => $this->alias,
             '{{ var }}' => $this->var,
             '{{ path }}' => $this->path,
             '{{ slug }}' => $this->path,

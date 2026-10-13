@@ -64,6 +64,19 @@ class Note extends Model
     }
 }
 
+/** Named like a stub import (Tbtop\\Admin\\Pages\\Page) and points at itself. */
+class Page extends Model
+{
+    protected $guarded = [];
+
+    protected $casts = ['secrets' => 'encrypted:array'];
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Page::class);
+    }
+}
+
 function createResourceTables(): void
 {
     Schema::create('writers', function (Blueprint $table): void {
@@ -88,6 +101,12 @@ function createResourceTables(): void
         $table->json('meta')->nullable();
         $table->timestamps();
         $table->softDeletes();
+    });
+    Schema::create('pages', function (Blueprint $table): void {
+        $table->id();
+        $table->string('title');
+        $table->foreignId('parent_id')->nullable()->constrained('pages');
+        $table->text('secrets')->nullable();
     });
     Schema::create('notes', function (Blueprint $table): void {
         $table->id();

@@ -83,7 +83,8 @@ final class SchemaReader
     {
         $base = strtolower(explode(':', $cast)[0]);
 
-        return in_array($base, ['array', 'json', 'object', 'collection', 'encrypted:array', 'encrypted:collection', 'encrypted:object'], true)
+        return in_array($base, ['array', 'json', 'object', 'collection'], true)
+            || in_array(strtolower($cast), ['encrypted:array', 'encrypted:collection', 'encrypted:object'], true)
             || str_contains($base, 'asarrayobject') || str_contains($base, 'ascollection');
     }
 

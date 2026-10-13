@@ -67,7 +67,7 @@ final class ResourceStubs
     /** @return array<string, string> */
     private function fragments(): array
     {
-        $model = $this->names->model;
+        $model = $this->names->alias;
 
         return [
             '{{ nav }}' => $this->nav(),
@@ -99,7 +99,7 @@ final class ResourceStubs
         if (! $this->options->softDeletes) {
             return '';
         }
-        $model = $this->names->model;
+        $model = $this->names->alias;
         $own = $this->ownTrashedActions() ? ", ['rowActions' => false, 'bulkActions' => false]" : '';
 
         return "\n                ->softDeletes(\$s, {$model}::class{$own})";
@@ -127,7 +127,7 @@ final class ResourceStubs
             return '';
         }
 
-        return "\n    /** @return array{0: string, 1: class-string} */\n    public static function can(): array\n    {\n        return ['{$ability}', {$this->names->model}::class];\n    }\n";
+        return "\n    /** @return array{0: string, 1: class-string} */\n    public static function can(): array\n    {\n        return ['{$ability}', {$this->names->alias}::class];\n    }\n";
     }
 
     private function authorize(string $ability, int $indent): string
@@ -139,7 +139,7 @@ final class ResourceStubs
 
     private function deleteRow(): string
     {
-        $model = $this->names->model;
+        $model = $this->names->alias;
         $pad = str_repeat(' ', 24);
         if (! $this->options->policy) {
             return "{$pad}{$model}::query()->whereKey(\$ctx->key())->delete();";
@@ -150,7 +150,7 @@ final class ResourceStubs
 
     private function deleteBulk(): string
     {
-        $model = $this->names->model;
+        $model = $this->names->alias;
         $pad = str_repeat(' ', 24);
         if (! $this->options->policy) {
             return "{$pad}{$model}::query()->whereKey(\$ctx->selection)->delete();";

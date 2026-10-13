@@ -11,11 +11,6 @@ namespace Tbtop\Admin\Commands\Resource;
  */
 final class ResourceCode
 {
-    private const STUB_IMPORTS = [
-        'ActionCtx', 'Effects', 'CreateAction', 'DeleteAction', 'EditAction', 'FormActions', 'RecordAction',
-        'Column', 'Node', 'S', 'Page', 'Gate', 'IndexPage', 'CreatePage', 'EditPage', 'ViewPage',
-    ];
-
     private const VISIBLE_COLUMNS = 6;
 
     private readonly FieldCode $fields;
@@ -151,7 +146,7 @@ final class ResourceCode
     {
         preg_match_all('/\\\\([A-Z][\\w\\\\]+)::/', $code, $matches);
         $taken = [strtolower(class_basename($this->modelClass)) => $this->modelClass];
-        foreach (self::STUB_IMPORTS as $short) {
+        foreach (ResourceNames::STUB_IMPORTS as $short) {
             // Names the stubs import themselves (and the sibling pages): a model by one of them stays qualified.
             $taken[strtolower($short)] = $short;
         }
