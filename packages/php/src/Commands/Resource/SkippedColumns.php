@@ -16,7 +16,8 @@ final class SkippedColumns
 
     /**
      * The key, the shared names, whatever the model hides from serialization,
-     * and what it explicitly guards (a model with no $fillable guards nothing in particular).
+     * and what mass assignment would drop on save. A totally guarded model
+     * (no $fillable, default guard) is read as unconfigured and keeps every column.
      */
     public static function has(Model $model, string $column): bool
     {
@@ -24,6 +25,6 @@ final class SkippedColumns
             return true;
         }
 
-        return ! $model->totallyGuarded() && $model->isGuarded($column);
+        return ! $model->totallyGuarded() && ! $model->isFillable($column);
     }
 }

@@ -64,10 +64,12 @@ class Note extends Model
     }
 }
 
-/** Named like a stub import (Tbtop\\Admin\\Pages\\Page) and points at itself. */
+/** Named like a stub import (Tbtop\\Admin\\Pages\\Page), points at itself, keeps the default guard. */
 class Page extends Model
 {
-    protected $guarded = [];
+    public $timestamps = false;
+
+    protected $fillable = ['title', 'parent_id', 'secrets'];
 
     protected $casts = ['secrets' => 'encrypted:array'];
 
@@ -107,6 +109,7 @@ function createResourceTables(): void
         $table->string('title');
         $table->foreignId('parent_id')->nullable()->constrained('pages');
         $table->text('secrets')->nullable();
+        $table->integer('hits')->default(0);
     });
     Schema::create('notes', function (Blueprint $table): void {
         $table->id();
