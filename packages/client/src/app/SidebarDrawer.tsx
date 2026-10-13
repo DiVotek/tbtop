@@ -46,9 +46,7 @@ export function SidebarDrawer({ sidebar }: SidebarDrawerProps) {
 				<MenuIcon />
 			</Button>
 			<ResponsiveDialog onlyDrawer direction="left" open={open} onOpenChange={setOpen}>
-				{/* `cn-drawer-popup` owns rounding/border but no padding: keep ours.
-				    No `!` needed — layout utilities (flex/overflow/padding) don't
-				    collide with the preset's visual rules on this element. */}
+				{/* `cn-drawer-popup` owns rounding/border but no padding: keep ours. Layout utilities don't collide here, so no `!`. */}
 				<ResponsiveDialogContent className="flex flex-col gap-4 overflow-y-auto rounded-lg border p-4">
 					<Fragment key={openings}>{sidebar}</Fragment>
 				</ResponsiveDialogContent>
