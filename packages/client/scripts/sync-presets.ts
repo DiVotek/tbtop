@@ -45,6 +45,9 @@ const SECTIONS = new Set([
 	"Tooltip",
 ]);
 
+// Upstream names a few sections differently per style; map them to SECTIONS.
+const SECTION_ALIASES: Record<string, string> = { Radio: "Radio Group" };
+
 const base = `https://raw.githubusercontent.com/shadcn-ui/ui/${UPSTREAM_REF}/apps/v4/registry/styles`;
 const outDir = `${import.meta.dir}/../src/ui/presets`;
 const entryDir = `${import.meta.dir}/../src/styles`;
@@ -72,15 +75,20 @@ async function fetchStyle(name: string): Promise<string> {
 	return keepSections(css.replace(scope, `.style-preset-${name} {`));
 }
 
-/** Drops every `/* MARK: X *\/` section whose name is not in SECTIONS. */
+/** Drops every `/* MARK: X *\/` section not in SECTIONS; throws if one is missing. */
 function keepSections(css: string): string {
 	// Peel the scope's closing brace first so it survives a dropped last section.
 	const inner = css.trimEnd().replace(/\}$/, "");
 	const parts = inner.split(/(?=^ {2}\/\* MARK: )/m);
-	const kept = parts.filter((part, i) => {
-		const mark = part.match(/^ {2}\/\* MARK: (.+?) \*\//);
-		return i === 0 || (mark !== null && SECTIONS.has(mark[1]));
+	const marks = parts.map((part) => {
+		const name = part.match(/^ {2}\/\* MARK: (.+?) \*\//)?.[1];
+		return name === undefined ? undefined : (SECTION_ALIASES[name] ?? name);
 	});
+	const missing = [...SECTIONS].filter((name) => !marks.includes(name));
+	if (missing.length > 0) {
+		throw new Error(`upstream section(s) not found: ${missing.join(", ")}`);
+	}
+	const kept = parts.filter((_, i) => i === 0 || SECTIONS.has(marks[i] ?? ""));
 	return `${kept.join("").trimEnd()}\n}\n`;
 }
 
