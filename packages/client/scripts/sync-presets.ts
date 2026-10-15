@@ -78,7 +78,10 @@ async function fetchStyle(name: string): Promise<string> {
 /** Drops every `/* MARK: X *\/` section not in SECTIONS; throws if one is missing. */
 function keepSections(css: string): string {
 	// Peel the scope's closing brace first so it survives a dropped last section.
-	const inner = css.trimEnd().replace(/\}$/, "");
+	const inner = css.trimEnd().slice(0, -1);
+	if (scopeEnd(css) !== css.trimEnd().length - 1) {
+		throw new Error("upstream file is no longer a single scope block");
+	}
 	const parts = inner.split(/(?=^ {2}\/\* MARK: )/m);
 	const marks = parts.map((part) => {
 		const name = part.match(/^ {2}\/\* MARK: (.+?) \*\//)?.[1];
@@ -90,6 +93,19 @@ function keepSections(css: string): string {
 	}
 	const kept = parts.filter((_, i) => i === 0 || SECTIONS.has(marks[i] ?? ""));
 	return `${kept.join("").trimEnd()}\n}\n`;
+}
+
+/** Index of the brace that closes the opening scope block. */
+function scopeEnd(css: string): number {
+	let depth = 0;
+	for (let i = 0; i < css.length; i++) {
+		if (css[i] === "{") {
+			depth++;
+		} else if (css[i] === "}" && --depth === 0) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 /** A single-style entry: core + one preset, for hosts that pin one style. */
