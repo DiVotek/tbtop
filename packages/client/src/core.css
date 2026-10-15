@@ -1,0 +1,383 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Core styles without any style preset. Entry points: styles.css (every
+   preset) and styles/<name>.css (one preset); see scripts/sync-presets.ts. */
+
+@source "./**/*.{ts,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+/* State variants shared by the presets, mirroring upstream's
+   `shadcn/tailwind.css` (which we don't import — no `shadcn` package dep).
+   Upstream preset bodies use shorthands like `data-open:` / `data-checked:`;
+   without these mappings Tailwind would compile them to bare `[data-open]` /
+   `[data-checked]`, which our Radix primitives never emit (they set
+   `data-state` / `data-orientation`). Each variant matches both the
+   `data-state` value and an explicit `data-*` attribute so Base UI
+   primitives keep working if we migrate to them later. */
+@custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));
+@custom-variant data-closed (&:where(
+	[data-state="closed"],
+	[data-closed]:not([data-closed="false"])
+));
+@custom-variant data-checked (&:where(
+	[data-state="checked"],
+	[data-checked]:not([data-checked="false"])
+));
+@custom-variant data-unchecked (&:where(
+	[data-state="unchecked"],
+	[data-unchecked]:not([data-unchecked="false"])
+));
+@custom-variant data-selected (&:where(
+	[data-state="selected"],
+	[data-selected]:not([data-selected="false"])
+));
+@custom-variant data-active (&:where(
+	[data-state="active"],
+	[data-active]:not([data-active="false"])
+));
+@custom-variant data-disabled (&:where(
+	[data-disabled="true"],
+	[data-disabled]:not([data-disabled="false"])
+));
+@custom-variant data-placeholder (&:where(
+	[data-placeholder],
+	[data-placeholder]:not([data-placeholder="false"])
+));
+@custom-variant data-highlighted (&:where(
+	[data-highlighted],
+	[data-highlighted]:not([data-highlighted="false"])
+));
+@custom-variant data-horizontal (&:where([data-orientation="horizontal"]));
+@custom-variant data-vertical (&:where([data-orientation="vertical"]));
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+	--color-info: var(--info);
+	--color-info-foreground: var(--info-foreground);
+	/* Overrides Tailwind's fixed 2px --radius-xs so the smallest step tracks
+	   --radius like the others; 16px controls need a step below sm. */
+	--radius-xs: calc(var(--radius) - 6px);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+	/* shadcn v4 base radius; --radius-sm/md/lg/xl above derive from it and
+	   feed Tailwind's rounded-sm/md/lg/xl utilities. 0.5rem keeps rounded-md
+	   at the same 6px it rendered at before this var existed. */
+	--radius: 0.5rem;
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.145 0 0);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.145 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.205 0 0);
+	--primary-foreground: oklch(0.985 0 0);
+	--secondary: oklch(0.97 0 0);
+	--secondary-foreground: oklch(0.205 0 0);
+	--muted: oklch(0.97 0 0);
+	--muted-foreground: oklch(0.556 0 0);
+	--accent: oklch(0.97 0 0);
+	--accent-foreground: oklch(0.205 0 0);
+	--destructive: oklch(0.577 0.245 27.325);
+	--destructive-foreground: oklch(0.577 0.245 27.325);
+	--border: oklch(0.922 0 0);
+	--input: oklch(0.922 0 0);
+	--ring: oklch(0.708 0 0);
+	--sidebar: oklch(0.985 0 0);
+	--sidebar-foreground: oklch(0.145 0 0);
+	--sidebar-primary: oklch(0.205 0 0);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.97 0 0);
+	--sidebar-accent-foreground: oklch(0.205 0 0);
+	--sidebar-border: oklch(0.922 0 0);
+	--sidebar-ring: oklch(0.708 0 0);
+	--chart-1: oklch(0.646 0.222 41.116);
+	--chart-2: oklch(0.6 0.118 184.704);
+	--chart-3: oklch(0.398 0.07 227.392);
+	--chart-4: oklch(0.828 0.189 84.429);
+	--chart-5: oklch(0.769 0.188 70.08);
+	--success: oklch(0.527 0.154 150.069);
+	--success-foreground: oklch(1 0 0);
+	--warning: oklch(0.769 0.188 70.08);
+	--warning-foreground: oklch(0.145 0 0);
+	--info: oklch(0.6 0.118 184.704);
+	--info-foreground: oklch(1 0 0);
+	/* Thin chart strokes need more lightness than the text/fill tokens carry. */
+	--chart-success: oklch(0.696 0.149 162.5);
+	--chart-warning: oklch(0.769 0.165 70.1);
+	--chart-danger: oklch(0.637 0.208 25.3);
+}
+
+.dark {
+	--background: oklch(0.145 0 0);
+	--foreground: oklch(0.985 0 0);
+	--card: oklch(0.17 0 0);
+	--card-foreground: oklch(0.985 0 0);
+	--popover: oklch(0.17 0 0);
+	--popover-foreground: oklch(0.985 0 0);
+	--primary: oklch(0.985 0 0);
+	--primary-foreground: oklch(0.205 0 0);
+	--secondary: oklch(0.269 0 0);
+	--secondary-foreground: oklch(0.985 0 0);
+	--muted: oklch(0.269 0 0);
+	--muted-foreground: oklch(0.708 0 0);
+	--accent: oklch(0.269 0 0);
+	--accent-foreground: oklch(0.985 0 0);
+	--destructive: oklch(0.577 0.245 27.325);
+	--destructive-foreground: oklch(0.577 0.245 27.325);
+	--border: oklch(0.269 0 0);
+	--input: oklch(0.269 0 0);
+	--ring: oklch(0.556 0 0);
+	--sidebar: oklch(0.17 0 0);
+	--sidebar-foreground: oklch(0.985 0 0);
+	--sidebar-primary: oklch(0.985 0 0);
+	--sidebar-primary-foreground: oklch(0.205 0 0);
+	--sidebar-accent: oklch(0.269 0 0);
+	--sidebar-accent-foreground: oklch(0.985 0 0);
+	--sidebar-border: oklch(0.269 0 0);
+	--sidebar-ring: oklch(0.556 0 0);
+	--chart-1: oklch(0.488 0.243 264.376);
+	--chart-2: oklch(0.696 0.17 162.48);
+	--chart-3: oklch(0.769 0.188 70.08);
+	--chart-4: oklch(0.627 0.265 303.9);
+	--chart-5: oklch(0.645 0.246 16.439);
+	--success: oklch(0.527 0.154 150.069);
+	--success-foreground: oklch(0.985 0 0);
+	--warning: oklch(0.769 0.188 70.08);
+	--warning-foreground: oklch(0.145 0 0);
+	--info: oklch(0.696 0.17 162.48);
+	--info-foreground: oklch(0.145 0 0);
+	--chart-success: oklch(0.696 0.149 162.5);
+	--chart-warning: oklch(0.769 0.165 70.1);
+	--chart-danger: oklch(0.637 0.208 25.3);
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background font-sans text-foreground;
+	}
+	/* Tailwind v4 ships buttons with cursor:default; restore the pointer. */
+	button:not(:disabled),
+	[role="button"]:not([aria-disabled="true"]),
+	a[href],
+	label[for],
+	summary,
+	select:not(:disabled) {
+		cursor: pointer;
+	}
+}
+
+/* ── Scrollbar hide utility ──────────────────────────────────────── */
+/* Keeps the element scrollable but hides the scrollbar chrome across       */
+/* all browsers. Used on the ModalShell body to match shadcn/radix parity.  */
+/* Not using a Tailwind scrollbar plugin — a single rule is cheaper.        */
+/* `no-scrollbar` is the upstream alias (preset bodies use it); keep both.  */
+@utility scrollbar-none {
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+@utility no-scrollbar {
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+/* ── Responsive field grid placement ────────────────────────────── */
+/* colSpan/colStart are dynamic per-field (1-8, optionally per-breakpoint) —  */
+/* too combinatorial for static Tailwind classes, so resolveColumnPlacement   */
+/* sets --col-span[-bp] / --col-start[-bp] inline vars and this utility reads */
+/* them. A bare int sets only the -md var (mobile stays span 1 / auto).      */
+.field-col-place {
+	min-width: 0;
+	grid-column: var(--col-start, auto) / span var(--col-span, 1);
+}
+
+@media (min-width: 640px) {
+	.field-col-place {
+		grid-column:
+			var(--col-start-sm, var(--col-start, auto)) / span
+			var(--col-span-sm, var(--col-span, 1));
+	}
+}
+
+@media (min-width: 768px) {
+	.field-col-place {
+		grid-column:
+			var(--col-start-md, var(--col-start-sm, var(--col-start, auto))) / span
+			var(--col-span-md, var(--col-span-sm, var(--col-span, 1)));
+	}
+}
+
+@media (min-width: 1024px) {
+	.field-col-place {
+		grid-column:
+			var(--col-start-lg, var(--col-start-md, var(--col-start-sm, var(--col-start, auto)))) /
+			span var(--col-span-lg, var(--col-span-md, var(--col-span-sm, var(--col-span, 1))));
+	}
+}
+
+@media (min-width: 1280px) {
+	.field-col-place {
+		grid-column:
+			var(
+				--col-start-xl,
+				var(
+					--col-start-lg,
+					var(--col-start-md, var(--col-start-sm, var(--col-start, auto)))
+				)
+			)
+			/ span
+			var(
+				--col-span-xl,
+				var(--col-span-lg, var(--col-span-md, var(--col-span-sm, var(--col-span, 1))))
+			);
+	}
+}
+
+/* ── Lexical rich-text editor ─────────────────────────────────────── */
+
+.tabletop-editor {
+	min-height: 150px;
+	padding: 0.75rem;
+	outline: none;
+	/* 1rem below md keeps iOS Safari from zooming the viewport on focus, mirroring
+	   inputFontClass ("text-base md:text-sm") in ui/input.tsx — keep both in sync. */
+	font-size: 1rem;
+	line-height: 1.625;
+}
+
+@media (min-width: 768px) {
+	.tabletop-editor {
+		font-size: 0.875rem;
+	}
+}
+
+.tabletop-editor p {
+	margin: 0 0 0.5rem;
+}
+
+.tabletop-editor h1 {
+	font-size: 1.5rem;
+	font-weight: 700;
+	margin: 1rem 0 0.5rem;
+	line-height: 1.3;
+}
+
+.tabletop-editor h2 {
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin: 0.75rem 0 0.5rem;
+	line-height: 1.3;
+}
+
+.tabletop-editor h3 {
+	font-size: 1.125rem;
+	font-weight: 600;
+	margin: 0.5rem 0 0.5rem;
+	line-height: 1.4;
+}
+
+.tabletop-editor ul {
+	list-style-type: disc;
+	padding-left: 1.5rem;
+	margin: 0.5rem 0;
+}
+
+.tabletop-editor ol {
+	list-style-type: decimal;
+	padding-left: 1.5rem;
+	margin: 0.5rem 0;
+}
+
+.tabletop-editor li {
+	margin: 0.125rem 0;
+}
+
+.tabletop-editor blockquote {
+	border-left: 3px solid var(--color-border);
+	padding-left: 1rem;
+	color: var(--color-muted-foreground);
+	margin: 0.5rem 0;
+	font-style: italic;
+}
+
+/* Lexical's CodeNode renders a bare `<code>`, not `<pre><code>`. Block vs
+   inline is carried by the RICHTEXT_THEME classes (richtextConfig.ts) — the
+   data-language attribute only appears via the markdown ``` shortcut. */
+.tabletop-editor-code {
+	display: block;
+	background: var(--color-muted);
+	padding: 0.75rem 1rem;
+	border-radius: var(--radius-md, 0.375rem);
+	overflow-x: auto;
+	margin: 0.5rem 0;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 0.8125rem;
+	line-height: 1.5;
+}
+
+.tabletop-editor-code-inline {
+	background: var(--color-muted);
+	padding: 0.125rem 0.25rem;
+	border-radius: var(--radius-sm, 0.25rem);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 0.8125rem;
+}
+
+.tabletop-editor a {
+	color: var(--color-primary);
+	text-decoration: underline;
+}
+
+.tabletop-editor-placeholder {
+	position: absolute;
+	top: 0.75rem;
+	left: 0.75rem;
+	color: var(--color-muted-foreground);
+	pointer-events: none;
+	font-size: 0.875rem;
+	user-select: none;
+}

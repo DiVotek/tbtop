@@ -62,7 +62,7 @@ export function AlertDescription({ className, ...props }: AlertDescriptionProps)
 	return (
 		<p
 			data-slot="alert-description"
-			className={cn("cn-alert-description text-sm [&_p]:leading-relaxed", className)}
+			className={cn("cn-alert-description", className)}
 			{...props}
 		/>
 	);

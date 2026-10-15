@@ -1,0 +1,34 @@
+/* tbtop-only `cn-*` rules with no upstream equivalent. Shared by every style
+   preset (unscoped) and built on theme tokens, so a pasted shadcn theme
+   recolors them too. Loaded in the same cascade layer as the presets. */
+
+/* Alert status variants: tinted surface + border from the status token. */
+.cn-alert-variant-info {
+	@apply border-info/30 bg-info/10 text-foreground *:[svg]:text-info;
+}
+
+.cn-alert-variant-success {
+	@apply border-success/30 bg-success/10 text-foreground *:[svg]:text-success;
+}
+
+.cn-alert-variant-warning {
+	@apply border-warning/40 bg-warning/10 text-foreground *:[svg]:text-warning;
+}
+
+.cn-alert-variant-danger {
+	@apply border-destructive/30 bg-destructive/10 text-foreground *:[svg]:text-destructive;
+}
+
+.cn-alert-variant-gray {
+	@apply border-border bg-muted text-foreground;
+}
+
+.cn-alert-variant-primary {
+	@apply border-primary/20 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/20;
+}
+
+/* Upstream's CLI rewrites `cn-font-heading` to the heading font at install;
+   at runtime it reads the preset's --font-heading, falling back to body. */
+.cn-font-heading {
+	font-family: var(--font-heading, var(--font-sans));
+}

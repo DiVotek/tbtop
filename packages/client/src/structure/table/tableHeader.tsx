@@ -16,16 +16,16 @@ interface SortableHeaderProps {
 }
 
 // New-gen shape: padding, height, weight, nowrap and text colour come from
-// `cn-table-head` (`ui/presets/style-preset-*.css`). The preset layer sits
-// above utilities and pins `text-left`, so center/right alignment needs `!`.
+// `cn-table-head` (`ui/presets/style-preset-*.css`). The preset pins
+// `text-left`; the center/right utilities below override it.
 // Our deltas: sortable hover tint + pointer, `aria-sort`, per-column width,
 // and the sort button's focus ring (the preset styles no inner trigger).
 function headerAlignClass(align: TableColumn["align"]): string | undefined {
 	if (align === "center") {
-		return "text-center!";
+		return "text-center";
 	}
 	if (align === "right") {
-		return "text-right!";
+		return "text-right";
 	}
 	return undefined;
 }

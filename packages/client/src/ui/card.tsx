@@ -4,9 +4,8 @@ import { cn } from "../lib/cn";
 
 // New-gen shape: spacing, border and typography come from the `cn-card*`
 // rules in `ui/presets/style-preset-*.css`. Upstream's `size` prop is not
-// ported (no caller needs it), and CardTitle omits upstream's
-// `cn-font-heading` and CardAction omits `cn-card-action` — neither has a
-// rule in style-vega.css.
+// ported (no caller needs it), and CardAction omits `cn-card-action` (no
+// preset rule). `cn-font-heading` is defined in ui/presets/tbtop.css.
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
 	return (
@@ -32,7 +31,13 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
-	return <div data-slot="card-title" className={cn("cn-card-title", className)} {...props} />;
+	return (
+		<div
+			data-slot="card-title"
+			className={cn("cn-card-title cn-font-heading", className)}
+			{...props}
+		/>
+	);
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {

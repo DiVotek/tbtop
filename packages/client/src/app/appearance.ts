@@ -3,6 +3,22 @@ export type ThemeMode = "light" | "dark" | "system";
 /** Shell density: "compact" tightens control heights, spacing, and the sidebar width. */
 export type Density = "default" | "compact";
 
+/** Upstream shadcn style presets bundled in styles.css (ui.shadcn.com/create → Style). */
+export const STYLE_PRESETS = [
+	"vega",
+	"nova",
+	"maia",
+	"lyra",
+	"mira",
+	"luma",
+	"sera",
+	"rhea",
+] as const;
+export type StylePreset = (typeof STYLE_PRESETS)[number];
+
+/** Mirrors PanelConfig's default; the server omits the key when unchanged. */
+export const DEFAULT_STYLE_PRESET: StylePreset = "nova";
+
 /**
  * Panel appearance shared prop (tbtop.appearance). Sparse — only keys the
  * author changed from the default are present. Colors / radius / fonts are
@@ -18,6 +34,8 @@ export interface Appearance {
 	maxWidth?: string;
 	/** Shell density; undefined behaves as "default". */
 	density?: Density;
+	/** Style preset; undefined behaves as DEFAULT_STYLE_PRESET. */
+	stylePreset?: StylePreset;
 }
 
 // Static token → class map so Tailwind keeps these utilities in the build

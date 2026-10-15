@@ -298,15 +298,14 @@ export function NavItemNode({ item, currentUrl, sub = false }: NavItemNodeProps)
 	// Upstream SidebarMenuItem: `relative group/menu-item` positions the
 	// absolute `cn-sidebar-menu-action` chevron; the menu button's
 	// `group-has-data-[sidebar=menu-action]` rule pads it clear (pr-8). The
-	// sub-button has no such rule, so it gets `pr-8!` here (important: the
-	// preset layer outranks plain utilities and would keep its `px-2`).
+	// sub-button has no such rule, so it gets `pr-8` here.
 	return (
 		<div className="group/menu-item relative flex flex-col" data-slot="sidebar-menu-item">
 			<NavItemLink
 				item={item}
 				currentUrl={currentUrl}
 				shape={shape}
-				className={sub ? "pr-8!" : undefined}
+				className={sub ? "pr-8" : undefined}
 			/>
 			<button
 				type="button"

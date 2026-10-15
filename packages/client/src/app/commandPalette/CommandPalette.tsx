@@ -125,7 +125,7 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 								placeholder={data.placeholder ?? t("palette.placeholder")}
 								aria-label={data.placeholder ?? t("palette.placeholder")}
 								data-slot="command-input"
-								className="cn-command-input min-w-0 flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground max-md:text-base!"
+								className="cn-command-input min-w-0 flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground max-md:text-base"
 								data-testid="command-palette-input"
 							/>
 							<div
