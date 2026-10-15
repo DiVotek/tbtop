@@ -56,10 +56,8 @@ class TwoFactorController extends Controller
             throw ValidationException::withMessages(['code' => 'Two-factor authentication setup not started.']);
         }
 
-        $secret = decrypt($user->two_factor_secret);
-        $valid = $this->google2fa->verifyKey($secret, $request->input('code'));
-
-        if (! $valid) {
+        // Records the code's time step, so the code used to enrol cannot be replayed at the challenge.
+        if (! $this->verifier->acceptTotp($user, $request->input('code'))) {
             throw ValidationException::withMessages(['code' => 'Invalid verification code.']);
         }
 

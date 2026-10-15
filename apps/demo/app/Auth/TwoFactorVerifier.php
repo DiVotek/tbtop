@@ -22,12 +22,11 @@ class TwoFactorVerifier
     /** True if $code is a valid TOTP or an unused recovery code (which it then consumes). Always false while locked out. */
     public function verify(User $user, string $code): bool
     {
-        if ($this->isLockedOut($user)) {
+        // hit() is an atomic increment: deciding on its result, not on a separate read,
+        // keeps a parallel burst from getting more than MAX_ATTEMPTS codes checked.
+        if (RateLimiter::hit($this->throttleKey($user)) > self::MAX_ATTEMPTS) {
             return false;
         }
-
-        // Count the attempt before checking it, so a parallel burst cannot all pass the lockout check.
-        RateLimiter::hit($this->throttleKey($user));
 
         if ($this->acceptTotp($user, $code) || $this->consumeRecoveryCode($user, $code)) {
             RateLimiter::clear($this->throttleKey($user));
@@ -55,7 +54,8 @@ class TwoFactorVerifier
         return 'two-factor|'.$user->getKey();
     }
 
-    private function acceptTotp(User $user, string $code): bool
+    /** True if $code is a TOTP for the user's secret newer than the last accepted one; records its step. */
+    public function acceptTotp(User $user, string $code): bool
     {
         if (! ctype_digit($code) || strlen($code) !== 6) {
             return false;

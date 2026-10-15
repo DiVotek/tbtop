@@ -185,7 +185,11 @@ class TwoFactorChallengeTest extends TestCase
 
         Auth::logout();
         $this->withSession(['auth.2fa.user_id' => $user->id]);
+        // The enrolment code was consumed; the next step's code signs in.
         $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => $code])
-            ->assertRedirect('/admin/dashboard');
+            ->assertSessionHasErrors('code');
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => (new Google2FA)->oathTotp($secret, $step + 1),
+        ])->assertRedirect('/admin/dashboard');
     }
 }
