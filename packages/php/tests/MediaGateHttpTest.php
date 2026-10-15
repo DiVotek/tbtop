@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\Models\MediaFolder;
+use Tbtop\Admin\Panels\PanelConfig;
 
 // GatedMediaPanel declares ->mediaGate('manage-media').
 
@@ -59,3 +60,8 @@ it('puts every media-manager route behind the gate', function () {
     expect($media)->toHaveCount(12)
         ->and($media->reject(fn ($route) => in_array('can:manage-media', $route->gatherMiddleware(), true)))->toBeEmpty();
 });
+
+it('rejects a media gate ability that cannot be a route middleware parameter', function (string $ability) {
+    expect(fn () => (new PanelConfig)->mediaGate($ability))
+        ->toThrow(InvalidArgumentException::class);
+})->with(['', 'manage,media', 'manage media']);

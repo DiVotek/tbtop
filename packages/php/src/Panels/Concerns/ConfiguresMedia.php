@@ -2,6 +2,8 @@
 
 namespace Tbtop\Admin\Panels\Concerns;
 
+use InvalidArgumentException;
+
 /**
  * Access to the panel's media-manager API (`{prefix}/api/media/*`). Server-only:
  * none of this reaches the Inertia share or the wire.
@@ -17,6 +19,10 @@ trait ConfiguresMedia
      */
     public function mediaGate(?string $ability): static
     {
+        // The ability becomes `can:{ability}` route middleware, whose parameters split on commas.
+        if ($ability !== null && ($ability === '' || preg_match('/[\s,]/', $ability) === 1)) {
+            throw new InvalidArgumentException("mediaGate() needs a plain Gate ability name, got '{$ability}'.");
+        }
         $this->mediaGate = $ability;
 
         return $this;
