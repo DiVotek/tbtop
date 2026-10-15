@@ -7,7 +7,7 @@ import { cn } from "../lib/cn";
 // New-gen shape: structural classes live here as `cn-*` names, the visual
 // definitions live in `ui/presets/style-preset-*.css`. Our delta on top of
 // upstream: the `counter` size (16px notification dots) has no upstream
-// equivalent and falls back to unstyled (only base cn-badge).
+// equivalent, so it is plain utilities, which beat the preset layer.
 const badgeVariants = cva(
 	"cn-badge group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap [&>svg]:pointer-events-none",
 	{
