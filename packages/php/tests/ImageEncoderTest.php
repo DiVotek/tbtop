@@ -74,3 +74,17 @@ it('returns null for a non-image upload', function () {
 
     expect(ImageEncoder::fromUpload($file))->toBeNull();
 });
+
+it('does not decode an image whose header declares more than 40 megapixels', function () {
+    // 1-bit grayscale, 6400x6400 (40.96 MP): solid white compresses to a few KB.
+    $width = 6400;
+    $chunk = fn (string $type, string $data) => pack('N', strlen($data)).$type.$data.pack('N', crc32($type.$data));
+    $row = "\0".str_repeat("\xff", intdiv($width, 8));
+    $png = "\x89PNG\r\n\x1a\n"
+        .$chunk('IHDR', pack('NNCCCCC', $width, $width, 1, 0, 0, 0, 0))
+        .$chunk('IDAT', gzcompress(str_repeat($row, $width)))
+        .$chunk('IEND', '');
+    $file = UploadedFile::fake()->createWithContent('big.png', $png);
+
+    expect(ImageEncoder::fromUpload($file))->toBeNull();
+});
