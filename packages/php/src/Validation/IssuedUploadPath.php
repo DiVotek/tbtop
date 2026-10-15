@@ -16,8 +16,8 @@ final class IssuedUploadPath implements ValidationRule
 {
     private const SESSION_KEY = 'tbtop-admin.issued-uploads';
 
-    /** Per field; an upload session never needs more, and the session must stay small. */
-    private const MAX_PER_FIELD = 20;
+    /** Per field: above any realistic multi-file upload, small enough to keep the session light. */
+    private const MAX_PER_FIELD = 100;
 
     /** @param  list<string>  $storedPaths */
     public function __construct(private readonly string $field, private readonly array $storedPaths) {}
