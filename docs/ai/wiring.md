@@ -78,6 +78,10 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   `resetPassword()` — are protected: call them from a rebuilt `view()`, or wrap via `parent::`.
 - **Password broker.** `PanelConfig::passwordBroker('admins')`; null uses the app default.
   A panel guard on a non-default provider needs its own broker in `config/auth.php`.
+- **Other sessions.** `authStack()` ends in Laravel's `AuthenticateSession` (after
+  `auth:{guard}`), so a password change — a reset or any host-side update — signs every other
+  session out on its next panel request; a remember cookie is rotated with the reset. A page
+  that returns its own `middleware()` without spreading `authStack()` opts out.
 - **Reset mail.** Sent as `ResetPasswordNotification` with the panel reset URL baked in;
   Laravel's global `ResetPassword::createUrlUsing()` is left alone for the host's own links.
 - **Assumes** a user model with `email` and `password`, and the skeleton's
