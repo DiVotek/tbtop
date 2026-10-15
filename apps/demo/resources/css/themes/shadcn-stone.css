@@ -6,7 +6,7 @@
  * `--name: value;` declarations. Only the stone light block carries
  * `--radius`; `.dark` inherits it, same as upstream.
  *
- * Two additions beyond upstream, both from shadcn's own globals.css:
+ * One addition beyond upstream, from shadcn's own globals.css:
  * `--destructive-foreground` (themes.ts omits it; without it the token is
  * undefined for consumers that reference it).
  */
