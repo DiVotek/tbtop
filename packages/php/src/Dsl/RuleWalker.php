@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use InvalidArgumentException;
+use LogicException;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\Fields\Select;
@@ -65,10 +66,12 @@ final class RuleWalker
                 : [$key];
             foreach ($keys as $valueKey) {
                 $valueKey .= $field->isMultiple() ? '.*' : '';
-                if (isset($rules[$valueKey])) {
-                    $stored = IssuedUploadPath::pathsIn(data_get($record, $valueKey));
-                    $rules[$valueKey][] = new IssuedUploadPath($field->name, $stored);
+                // Fail closed: a key collect() did not emit would leave the upload unbound.
+                if (! isset($rules[$valueKey])) {
+                    throw new LogicException("No rules for upload key '{$valueKey}'; collect() and bindUploadPaths() disagree.");
                 }
+                $stored = IssuedUploadPath::pathsIn(data_get($record, $valueKey));
+                $rules[$valueKey][] = new IssuedUploadPath($field->name, $stored);
             }
         }
 
