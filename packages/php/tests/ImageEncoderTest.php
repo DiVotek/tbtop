@@ -2,6 +2,7 @@
 
 use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Uploads\ImageEncoder;
+use Tbtop\Admin\Uploads\ImageSizes;
 
 function gdSample(): GdImage
 {
@@ -75,16 +76,28 @@ it('returns null for a non-image upload', function () {
     expect(ImageEncoder::fromUpload($file))->toBeNull();
 });
 
-it('does not decode an image whose header declares more than 40 megapixels', function () {
-    // 1-bit grayscale, 6400x6400 (40.96 MP): solid white compresses to a few KB.
-    $width = 6400;
+// 1-bit grayscale square PNG: solid white compresses to a few KB at any size.
+function solidPng(int $side): UploadedFile
+{
     $chunk = fn (string $type, string $data) => pack('N', strlen($data)).$type.$data.pack('N', crc32($type.$data));
-    $row = "\0".str_repeat("\xff", intdiv($width, 8));
+    $row = "\0".str_repeat("\xff", intdiv($side, 8));
     $png = "\x89PNG\r\n\x1a\n"
-        .$chunk('IHDR', pack('NNCCCCC', $width, $width, 1, 0, 0, 0, 0))
-        .$chunk('IDAT', gzcompress(str_repeat($row, $width)))
+        .$chunk('IHDR', pack('NNCCCCC', $side, $side, 1, 0, 0, 0, 0))
+        .$chunk('IDAT', gzcompress(str_repeat($row, $side)))
         .$chunk('IEND', '');
-    $file = UploadedFile::fake()->createWithContent('big.png', $png);
 
-    expect(ImageEncoder::fromUpload($file))->toBeNull();
+    return UploadedFile::fake()->createWithContent("{$side}.png", $png);
+}
+
+it('does not decode an image whose header declares more than 40 megapixels', function () {
+    $file = solidPng(6400); // 40.96 MP
+
+    expect(ImageSizes::dimensions($file))->toBe([6400, 6400])
+        ->and(ImageEncoder::fromUpload($file))->toBeNull();
+});
+
+it('still decodes an image just under the 40 megapixel cap', function () {
+    $file = solidPng(6320); // 39.94 MP
+
+    expect(ImageEncoder::fromUpload($file))->toBeInstanceOf(GdImage::class);
 });
