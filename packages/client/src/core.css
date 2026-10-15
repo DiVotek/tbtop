@@ -241,6 +241,10 @@
 	border-radius: var(--surface-radius-lg, var(--radius));
 }
 
+@utility rounded-surface-pill {
+	border-radius: var(--surface-radius-pill, calc(infinity * 1px));
+}
+
 /* ── Responsive field grid placement ────────────────────────────── */
 /* colSpan/colStart are dynamic per-field (1-8, optionally per-breakpoint) —  */
 /* too combinatorial for static Tailwind classes, so resolveColumnPlacement   */
