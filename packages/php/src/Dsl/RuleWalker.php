@@ -9,6 +9,7 @@ use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Validation\EmbedsRule;
+use Tbtop\Admin\Validation\IssuedUploadPath;
 
 final class RuleWalker
 {
@@ -37,6 +38,37 @@ final class RuleWalker
         foreach (self::fieldsByKey($children, $prefix) as $key => $field) {
             foreach (self::fromField($field, substr($key, 0, -strlen($field->name))) as $ruleKey => $entry) {
                 $rules[$ruleKey] = $entry;
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * $rules (from collect() over the same $children) with every Upload value
+     * key held to IssuedUploadPath: a path $record already stores under that
+     * key — any repeater row, any list item — or one issued to this session.
+     *
+     * @param  array<string, list<string|ValidationRule>>  $rules
+     * @param  list<mixed>  $children
+     * @param  array<string, mixed>  $record
+     * @return array<string, list<string|ValidationRule>>
+     */
+    public static function bindUploadPaths(array $rules, array $children, array $record): array
+    {
+        foreach (self::fieldsByKey($children) as $key => $field) {
+            if (! $field instanceof Upload) {
+                continue;
+            }
+            $keys = $field->isTranslatableField()
+                ? array_map(static fn (string $locale): string => "{$key}.{$locale}", self::contentLocales())
+                : [$key];
+            foreach ($keys as $valueKey) {
+                $valueKey .= $field->isMultiple() ? '.*' : '';
+                if (isset($rules[$valueKey])) {
+                    $stored = IssuedUploadPath::pathsIn(data_get($record, $valueKey));
+                    $rules[$valueKey][] = new IssuedUploadPath($field->name, $stored);
+                }
             }
         }
 

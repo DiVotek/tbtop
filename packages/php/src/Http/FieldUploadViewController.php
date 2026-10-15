@@ -55,7 +55,8 @@ final class FieldUploadViewController
         if (str_contains($path, '..')) {
             abort(403);
         }
-        if (! str_starts_with($path, trim($directory, '/').'/')) {
+        $zone = trim($directory, '/');
+        if ($zone === '' || ! str_starts_with($path, $zone.'/')) {
             abort(403);
         }
     }
