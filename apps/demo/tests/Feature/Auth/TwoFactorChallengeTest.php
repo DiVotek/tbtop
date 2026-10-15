@@ -135,6 +135,25 @@ class TwoFactorChallengeTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_the_fifth_wrong_code_drops_the_pending_login_for_good(): void
+    {
+        [$user, $g2fa, $secret] = $this->userWithTwoFactor();
+        $this->freezeTime();
+
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+        foreach (range(1, 5) as $_) {
+            $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => '000000']);
+        }
+
+        // After the throttle window a valid code still needs a fresh password sign-in.
+        $this->travel(2)->minutes();
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => $g2fa->oathTotp($secret, intdiv(now()->getTimestamp(), 30)),
+        ])->assertSessionMissing('auth.2fa.user_id');
+
+        $this->assertGuest();
+    }
+
     public function test_a_used_otp_cannot_be_replayed_within_its_window(): void
     {
         [$user, $g2fa, $secret] = $this->userWithTwoFactor();

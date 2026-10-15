@@ -100,6 +100,10 @@ class TwoFactorChallengePage extends Page
 
         if (! $verifier->verify($user, $ctx->form['code'])) {
             \Log::warning('auth.2fa.challenge_failed', ['user_id' => $user->id]);
+            // The failure that hits the limit drops the pending sign-in too; otherwise guessing resumes after the window.
+            if ($verifier->isLockedOut($user)) {
+                $ctx->request->session()->forget('auth.2fa.user_id');
+            }
             throw ValidationException::withMessages(['code' => 'Invalid verification code.']);
         }
 
