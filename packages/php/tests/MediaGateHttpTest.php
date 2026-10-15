@@ -50,3 +50,12 @@ it('lets a user who passes the panel media gate delete media', function () {
     expect(Media::count())->toBe(0);
     Storage::disk('public')->assertMissing('tbtop-media/photo.png');
 });
+
+it('puts every media-manager route behind the gate', function () {
+    $media = collect(app('router')->getRoutes()->getRoutes())
+        ->filter(fn ($route) => str_contains((string) $route->getName(), '.media.'));
+
+    // index, upload, import-url, show, download, update, replace, destroy, 4 folder routes
+    expect($media)->toHaveCount(12)
+        ->and($media->reject(fn ($route) => in_array('can:manage-media', $route->gatherMiddleware(), true)))->toBeEmpty();
+});
