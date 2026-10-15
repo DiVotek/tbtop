@@ -194,7 +194,7 @@ export function MediaGrid({
 			{/* Grid area with drag-and-drop */}
 			<div
 				className={cn(
-					"relative min-h-40 rounded-md border-2 border-dashed transition-colors",
+					"relative min-h-40 rounded-surface border-2 border-dashed transition-colors",
 					dragOver ? "border-primary bg-primary/5" : "border-transparent",
 				)}
 				onDragOver={handleDragOver}
@@ -253,7 +253,7 @@ export function MediaGrid({
 				{/* Keep-previous overlay */}
 				{isReloading && (
 					<div
-						className="absolute inset-0 flex items-center justify-center rounded-md bg-background/60"
+						className="absolute inset-0 flex items-center justify-center rounded-surface bg-background/60"
 						data-testid="media-reloading-overlay"
 					>
 						<Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -292,7 +292,7 @@ function MediaCard({ item, onSelect, selected = false }: MediaCardProps): ReactN
 		<button
 			type="button"
 			className={cn(
-				"group flex flex-col gap-1 rounded-md border bg-card p-1.5 text-left transition-colors hover:border-primary hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+				"group flex flex-col gap-1 rounded-surface border bg-card p-1.5 text-left transition-colors hover:border-primary hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 				selected && "border-primary ring-2 ring-primary ring-offset-1",
 			)}
 			onClick={() => onSelect(item)}

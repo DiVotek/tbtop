@@ -32,3 +32,20 @@
 .cn-font-heading {
 	font-family: var(--font-heading, var(--font-sans));
 }
+
+/* Corner language for tbtop's own surfaces (core.css `rounded-surface*`).
+   Unset styles keep the token-derived defaults. Override in host CSS. */
+.style-preset-lyra,
+.style-preset-sera {
+	--surface-radius-sm: 0;
+	--surface-radius: 0;
+	--surface-radius-lg: 0;
+}
+
+.style-preset-maia,
+.style-preset-luma,
+.style-preset-rhea {
+	--surface-radius-sm: var(--radius);
+	--surface-radius: calc(var(--radius) + 4px);
+	--surface-radius-lg: calc(var(--radius) + 8px);
+}

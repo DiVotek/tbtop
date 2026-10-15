@@ -198,7 +198,7 @@ function shapeProps(shape: NavItemShape, active: boolean, compact: boolean) {
 	}
 	return {
 		className: cn(
-			"flex items-center gap-2 rounded-md text-sm hover:bg-accent",
+			"flex items-center gap-2 rounded-surface text-sm hover:bg-accent",
 			compact ? "px-3 py-2" : "px-2 py-1.5",
 			active && "bg-accent font-medium",
 		),

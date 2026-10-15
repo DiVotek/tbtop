@@ -15,7 +15,7 @@ export function FolderCard({ folder, onSelect }: FolderCardProps): ReactNode {
 	return (
 		<button
 			type="button"
-			className="group flex flex-col gap-1 rounded-md border bg-card p-1.5 text-left transition-colors hover:border-primary hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			className="group flex flex-col gap-1 rounded-surface border bg-card p-1.5 text-left transition-colors hover:border-primary hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 			onClick={() => onSelect(folder.id)}
 			data-testid={`folder-card-${folder.id}`}
 			title={folder.name}

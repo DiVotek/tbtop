@@ -68,7 +68,7 @@ function ChipContent({
 		<div
 			ref={containerRef}
 			style={style}
-			className="group relative flex items-center gap-2 rounded-md border bg-card p-1.5"
+			className="group relative flex items-center gap-2 rounded-surface border bg-card p-1.5"
 			data-testid={`media-preview-${item.id}`}
 		>
 			{dragHandle}

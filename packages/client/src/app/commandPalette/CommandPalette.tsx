@@ -93,10 +93,9 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 		>
 			<ResponsiveDialogContent
 				showCloseButton={false}
-				// `!` beats the preset layer: `cn-dialog-content` (grid, gap-4,
-				// p-4) and `cn-command-dialog` (p-0 via `rounded-xl!`) sit on the
-				// same element, and the preset layer wins plain utilities.
-				className="cn-command-dialog !flex !flex-col !gap-0 !overflow-hidden !p-0"
+				// `cn-dialog-content` (grid, gap-4, p-4) and `cn-command-dialog`
+				// sit on the same element; these utilities settle the layout.
+				className="cn-command-dialog flex flex-col gap-0 overflow-hidden p-0"
 				data-testid="command-palette"
 			>
 				<ResponsiveDialogTitle className="sr-only">

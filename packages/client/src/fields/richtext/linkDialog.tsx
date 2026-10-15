@@ -95,7 +95,7 @@ export function LinkDialog({ editor, request, onClose }: LinkDialogProps) {
 						type="text"
 						value={url}
 						onChange={(e) => setUrl(e.target.value)}
-						className="h-9 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+						className="h-9 rounded-surface border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 					/>
 				</label>
 

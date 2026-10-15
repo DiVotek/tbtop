@@ -36,7 +36,7 @@ export function AdminErrorPage() {
 				<p className="text-sm text-muted-foreground">{props.message}</p>
 				<Link
 					href={homeUrl}
-					className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+					className="rounded-surface border px-3 py-1.5 text-sm hover:bg-accent"
 				>
 					{t("state.backToPanel")}
 				</Link>

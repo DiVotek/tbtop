@@ -225,6 +225,22 @@
 	}
 }
 
+/* ── Surface corners ──────────────────────────────────────────────── */
+/* tbtop's own surfaces (table frame, cards, editors, list rows) round through */
+/* these instead of rounded-md/lg, so they follow the style preset's corners:  */
+/* ui/presets/tbtop.css sets --surface-radius* per style (sharp for lyra/sera).*/
+@utility rounded-surface-sm {
+	border-radius: var(--surface-radius-sm, calc(var(--radius) - 4px));
+}
+
+@utility rounded-surface {
+	border-radius: var(--surface-radius, calc(var(--radius) - 2px));
+}
+
+@utility rounded-surface-lg {
+	border-radius: var(--surface-radius-lg, var(--radius));
+}
+
 /* ── Responsive field grid placement ────────────────────────────── */
 /* colSpan/colStart are dynamic per-field (1-8, optionally per-breakpoint) —  */
 /* too combinatorial for static Tailwind classes, so resolveColumnPlacement   */

@@ -40,7 +40,7 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 	}
 	return (
 		<fieldset
-			className="flex w-full flex-col gap-2 rounded-md border border-input bg-background px-2 py-1"
+			className="flex w-full flex-col gap-2 rounded-surface border border-input bg-background px-2 py-1"
 			data-testid={`tags-${props.name}`}
 			onBlur={props.onBlur}
 		>
@@ -108,7 +108,7 @@ function AsyncSuggestions({ rows, opts, current, onPick, disabled }: Suggestions
 						aria-selected={selected}
 						disabled={selected || disabled}
 						onClick={() => onPick(v)}
-						className="rounded-md border border-input bg-background px-2 py-1 text-xs disabled:opacity-50"
+						className="rounded-surface border border-input bg-background px-2 py-1 text-xs disabled:opacity-50"
 					>
 						{lbl}
 					</button>

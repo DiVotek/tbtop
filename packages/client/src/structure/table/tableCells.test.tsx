@@ -296,7 +296,7 @@ describe("TableCell: color kind", () => {
 		expect(container.querySelector('[data-testid="color-cell"]')).toBeNull();
 	});
 
-	test("default shape applies rounded-md", async () => {
+	test("default shape applies rounded-surface", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", color: "#fff" }],
 			columns: [{ name: "color", label: "Color", kind: "color" }],
@@ -305,7 +305,7 @@ describe("TableCell: color kind", () => {
 		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
 		await findByTestId("table-block");
 		const cell = container.querySelector('[data-testid="color-cell"]');
-		expect(cell?.className).toContain("rounded-md");
+		expect(cell?.className).toContain("rounded-surface");
 	});
 
 	test("shape=square applies rounded-none", async () => {
