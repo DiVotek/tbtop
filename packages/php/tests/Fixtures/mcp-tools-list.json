@@ -17,6 +17,7 @@
             "type": "object"
         },
         "annotations": {
+            "title": "Search Tool",
             "readOnlyHint": true
         }
     },
@@ -96,6 +97,7 @@
             ]
         },
         "annotations": {
+            "title": "Query Tool",
             "readOnlyHint": true
         }
     },
@@ -135,6 +137,7 @@
             ]
         },
         "annotations": {
+            "title": "Execute Tool",
             "destructiveHint": true
         }
     }

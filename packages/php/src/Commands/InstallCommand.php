@@ -41,6 +41,8 @@ class InstallCommand extends Command
         'admin.css.stub' => 'resources/css/admin.css',
     ];
 
+    private const string PANEL_DOCS = 'https://docs.tbtop.dev/docs/getting-started/panel';
+
     public function handle(): int
     {
         $panel = null;
@@ -108,7 +110,7 @@ class InstallCommand extends Command
             return $panels[$id];
         }
         if ($panels === []) {
-            $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth.');
+            $this->noPanelHint();
 
             return null;
         }
@@ -119,6 +121,14 @@ class InstallCommand extends Command
         }
 
         return array_values($panels)[0];
+    }
+
+    private function noPanelHint(): void
+    {
+        $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth.');
+        $this->line('  List your panel class in config/tbtop-admin.php:');
+        $this->line("       'panels' => [\\App\\Admin\\AdminPanel::class],");
+        $this->line('  Writing the panel class: '.self::PANEL_DOCS);
     }
 
     private function reportAuth(AuthScaffold $auth): void
@@ -140,8 +150,8 @@ class InstallCommand extends Command
         $login = '/'.trim($panel->getPrefix(), '/').'/login';
         $this->newLine();
         $this->line('  5. Send guests to the panel login (bootstrap/app.php, inside withMiddleware) — without it a guest gets a 500:');
-        $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::url() ?? '{$login}');");
-        $this->line('     LoginPage::url() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
+        $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::currentUrl() ?? '{$login}');");
+        $this->line('     LoginPage::currentUrl() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
 
         if (! $auth->isDiscovered()) {
             $this->newLine();

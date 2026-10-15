@@ -96,6 +96,6 @@ abstract class ResetPasswordPage extends AuthPage
             throw ValidationException::withMessages(['email' => __($shown)]);
         }
 
-        return Effects::make()->notify(__($status))->redirect(LoginPage::url() ?? static::panel()->pathPrefix());
+        return Effects::make()->notify(__($status))->redirect(LoginPage::currentUrl() ?? static::panel()->pathPrefix());
     }
 }

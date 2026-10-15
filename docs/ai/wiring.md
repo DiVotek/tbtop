@@ -70,8 +70,8 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
 - **Guard.** Sign-in uses the panel's guard, never the app default.
 - **Guests.** The host points Laravel's guest redirect at the panel login in
   `bootstrap/app.php` — without it a guest hits `route('login')` and gets a 500:
-  `$middleware->redirectGuestsTo(fn () => \Tbtop\Admin\Auth\LoginPage::url() ?? '/admin/login');`
-  `LoginPage::url()` resolves the login of the panel the request belongs to.
+  `$middleware->redirectGuestsTo(fn () => \Tbtop\Admin\Auth\LoginPage::currentUrl() ?? '/admin/login');`
+  `LoginPage::currentUrl()` resolves the login of the panel the request belongs to.
 - **Hooks.** `LoginPage`: `credentials()`, `afterAuthenticated()` (return a URL to divert,
   e.g. to a 2FA challenge), `redirectTo()`, `throttleKey()`, `maxAttempts()`.
   `ResetPasswordPage`: `passwordRules()`. The cores — `authenticate()`, `sendLink()`,
