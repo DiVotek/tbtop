@@ -152,4 +152,21 @@ class TwoFactorChallengeTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_a_re_enrolled_secret_accepts_its_first_code_in_the_same_step(): void
+    {
+        $this->freezeTime();
+        $step = intdiv(now()->getTimestamp(), 30);
+        // Disabled 2FA whose old secret was last used in this very time step.
+        $user = User::factory()->create(['two_factor_last_used_step' => $step]);
+
+        $secret = $this->actingAs($user)->postJson('/two-factor/setup')->json('secret');
+        $code = (new Google2FA)->oathTotp($secret, $step);
+        $this->postJson('/two-factor/confirm', ['code' => $code])->assertOk();
+
+        Auth::logout();
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+        $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => $code])
+            ->assertRedirect('/admin/dashboard');
+    }
 }

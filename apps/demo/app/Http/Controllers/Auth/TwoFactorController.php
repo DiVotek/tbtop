@@ -31,7 +31,8 @@ class TwoFactorController extends Controller
         }
 
         $secret = $this->google2fa->generateSecretKey();
-        $user->forceFill(['two_factor_secret' => encrypt($secret)])->save();
+        // A new secret starts a fresh replay marker; the old secret's step must not reject its first code.
+        $user->forceFill(['two_factor_secret' => encrypt($secret), 'two_factor_last_used_step' => null])->save();
 
         $qrSvg = $this->buildQrSvg($user->email, $secret);
 

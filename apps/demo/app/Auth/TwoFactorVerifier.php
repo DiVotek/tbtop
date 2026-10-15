@@ -26,13 +26,14 @@ class TwoFactorVerifier
             return false;
         }
 
+        // Count the attempt before checking it, so a parallel burst cannot all pass the lockout check.
+        RateLimiter::hit($this->throttleKey($user));
+
         if ($this->acceptTotp($user, $code) || $this->consumeRecoveryCode($user, $code)) {
             RateLimiter::clear($this->throttleKey($user));
 
             return true;
         }
-
-        RateLimiter::hit($this->throttleKey($user));
 
         return false;
     }
@@ -108,7 +109,18 @@ class TwoFactorVerifier
         }
 
         array_splice($codes, (int) $index, 1);
-        $user->forceFill(['two_factor_recovery_codes' => encrypt(json_encode($codes))])->save();
+        $remaining = encrypt(json_encode($codes));
+
+        // Swap only if the list is still the one we read, so one code cannot be redeemed twice concurrently.
+        $updated = User::whereKey($user->getKey())
+            ->where('two_factor_recovery_codes', $user->two_factor_recovery_codes)
+            ->update(['two_factor_recovery_codes' => $remaining]);
+
+        if ($updated !== 1) {
+            return false;
+        }
+
+        $user->setAttribute('two_factor_recovery_codes', $remaining)->syncOriginalAttribute('two_factor_recovery_codes');
 
         \Log::info('auth.2fa.recovery_code_used', ['user_id' => $user->id]);
 
