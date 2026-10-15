@@ -93,10 +93,9 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 		>
 			<ResponsiveDialogContent
 				showCloseButton={false}
-				// `!` beats the preset layer: `cn-dialog-content` (grid, gap-4,
-				// p-4) and `cn-command-dialog` (p-0 via `rounded-xl!`) sit on the
-				// same element, and the preset layer wins plain utilities.
-				className="cn-command-dialog !flex !flex-col !gap-0 !overflow-hidden !p-0"
+				// `cn-dialog-content` (grid, gap-4, p-4) and `cn-command-dialog`
+				// sit on the same element; these utilities settle the layout.
+				className="cn-command-dialog flex flex-col gap-0 overflow-hidden p-0"
 				data-testid="command-palette"
 			>
 				<ResponsiveDialogTitle className="sr-only">
@@ -125,7 +124,7 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 								placeholder={data.placeholder ?? t("palette.placeholder")}
 								aria-label={data.placeholder ?? t("palette.placeholder")}
 								data-slot="command-input"
-								className="cn-command-input min-w-0 flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground max-md:text-base!"
+								className="cn-command-input min-w-0 flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground max-md:text-base"
 								data-testid="command-palette-input"
 							/>
 							<div

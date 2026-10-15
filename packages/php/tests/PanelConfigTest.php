@@ -57,3 +57,19 @@ it('serializes density when set to compact', function () {
 it('rejects an unknown density', function () {
     (new PanelConfig)->density('cozy');
 })->throws(InvalidArgumentException::class, 'Unknown density');
+
+it('omits the style preset while it holds its default', function () {
+    expect((new PanelConfig)->appearance())->toBe([])
+        ->and((new PanelConfig)->getStylePresetClass())->toBe('style-preset-nova');
+});
+
+it('serializes a chosen style preset and its html scope class', function () {
+    $panel = (new PanelConfig)->stylePreset('lyra');
+
+    expect($panel->appearance())->toBe(['stylePreset' => 'lyra'])
+        ->and($panel->getStylePresetClass())->toBe('style-preset-lyra');
+});
+
+it('rejects an unknown style preset', function () {
+    (new PanelConfig)->stylePreset('new-york');
+})->throws(InvalidArgumentException::class, 'Unknown style preset');

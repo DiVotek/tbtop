@@ -46,7 +46,7 @@ function ItemContent({ item, disabled, onRemove }: ItemContentProps) {
 export function UploadStaticItem(props: ItemProps) {
 	return (
 		<div
-			className="flex items-center gap-3 rounded-md border p-2"
+			className="flex items-center gap-3 rounded-surface border p-2"
 			data-testid={`upload-item-${props.itemId}`}
 		>
 			<ItemContent {...props} />
@@ -71,7 +71,7 @@ export function UploadSortableItem(props: ItemProps) {
 		<div
 			ref={setNodeRef}
 			style={style}
-			className="flex items-center gap-3 rounded-md border p-2"
+			className="flex items-center gap-3 rounded-surface border p-2"
 			data-testid={`upload-item-${props.itemId}`}
 		>
 			<button

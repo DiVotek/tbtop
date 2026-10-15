@@ -105,7 +105,7 @@ export function DateForm({
 					/>
 				</div>
 				<Suspense
-					fallback={<div className="h-72 w-72 animate-pulse rounded-md bg-muted" />}
+					fallback={<div className="h-72 w-72 animate-pulse rounded-surface bg-muted" />}
 				>
 					<LazyDateCalendar
 						selected={selected}

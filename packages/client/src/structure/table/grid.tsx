@@ -105,14 +105,14 @@ export function TableGrid(props: TableGridProps) {
 	const frameless = useSectionFrameless();
 
 	// New-gen shape: container/table/body visuals come from the `cn-table*`
-	// rules in `ui/presets/style-preset-*.css` (the preset layer sits above
-	// utilities, so overrides on these elements need a `!` suffix). Our deltas:
+	// rules in `ui/presets/style-preset-*.css` (the preset layer sits below
+	// utilities, so plain utility overrides win). Our deltas:
 	// `relative` stays explicit (the reload overlay anchors to it), the
 	// rounded border is ours and dropped when a card section draws the frame,
 	// and the empty-state cell stays a plain <td> because `cn-table-cell`
 	// forces `whitespace-nowrap`.
 	const shell = (
-		<div className={cn("cn-table-container relative", !frameless && "rounded-md border")}>
+		<div className={cn("cn-table-container relative", !frameless && "rounded-surface border")}>
 			{/* Reload overlay sits below the sticky header (z-20 > overlay z-10). */}
 			{props.isReloading && <ReloadOverlay testId="table-reloading-overlay" />}
 			{reorderFeature && !reorderActive && <ReorderHint />}

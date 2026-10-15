@@ -324,7 +324,7 @@ export const ResponsiveDialogTitle = forwardRef<HTMLHeadingElement, ComponentPro
 			<Title
 				ref={ref}
 				data-slot="dialog-title"
-				className={cn("cn-dialog-title", className)}
+				className={cn("cn-dialog-title cn-font-heading", className)}
 				{...props}
 			/>
 		);

@@ -1,5 +1,6 @@
 import { router } from "@inertiajs/react";
 import { useEffect } from "react";
+import { DEFAULT_STYLE_PRESET, type StylePreset } from "./appearance";
 import { useChromeData } from "./chromeContext";
 import { applyTheme, readThemeCookie } from "./theme";
 
@@ -22,23 +23,23 @@ export function ThemeSync() {
 }
 
 /**
- * The active new-gen style preset scope (`style-preset-*`). Portals
- * (dialog overlay/content, select/dropdown popovers, tooltips) render into
- * `document.body` — outside any React subtree — so the scope class must live
- * on `documentElement`, not on a wrapper div. Keep in sync with the active
- * preset import in styles.css.
+ * Puts the panel's style preset scope (`style-preset-<name>`) on
+ * `documentElement`. Portals (dialog, select/dropdown popovers, tooltips)
+ * render into `document.body`, outside any React subtree, so the scope
+ * cannot live on a wrapper div. The host's root Blade sets the same class
+ * server-side to avoid a first unstyled paint; this keeps it in sync.
  */
-export const STYLE_PRESET_CLASS = "style-preset-mira";
-
-export function StylePresetSync() {
+export function StylePresetSync({ preset = DEFAULT_STYLE_PRESET }: { preset?: StylePreset }) {
 	useEffect(() => {
 		const root = document.documentElement;
-		const prev = [...root.classList].find((c) => c.startsWith("style-preset-"));
-		if (prev && prev !== STYLE_PRESET_CLASS) {
-			root.classList.remove(prev);
-		}
-		root.classList.add(STYLE_PRESET_CLASS);
-	}, []);
+		const next = `style-preset-${preset}`;
+		// classList is live: collect first, then remove.
+		const stale = Array.from(root.classList).filter(
+			(c) => c.startsWith("style-preset-") && c !== next,
+		);
+		root.classList.remove(...stale);
+		root.classList.add(next);
+	}, [preset]);
 
 	return null;
 }

@@ -9,7 +9,7 @@ import { cn } from "../lib/cn";
 // upstream: the indeterminate state (minus icon + filled styling) and no
 // enlarged `after:` hit area (it would overlap neighbouring table cells).
 const radixCheckedState =
-	"data-[state=checked]:border-primary! data-[state=checked]:bg-primary! data-[state=checked]:text-primary-foreground data-[state=indeterminate]:border-primary! data-[state=indeterminate]:bg-primary! data-[state=indeterminate]:text-primary-foreground";
+	"data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground";
 
 function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
 	return (

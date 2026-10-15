@@ -45,7 +45,7 @@ function ToggleGroupItem({
 			className={cn(
 				"cn-toggle group/toggle inline-flex items-center justify-center whitespace-nowrap outline-none hover:bg-muted focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 				"cn-toggle-variant-outline cn-toggle-size-sm",
-				"cn-toggle-group-item shrink-0 focus:z-10 focus-visible:z-10 border-l-0 first:rounded-l-md first:border-l last:rounded-r-md",
+				"cn-toggle-group-item shrink-0 focus:z-10 focus-visible:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l",
 				"data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
 				className,
 			)}

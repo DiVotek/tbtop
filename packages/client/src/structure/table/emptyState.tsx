@@ -41,7 +41,7 @@ export function EmptyState({ hasActiveFilters, onReset, config }: EmptyStateProp
 				<span className="cn-empty-media cn-empty-media-icon flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0">
 					<Icon aria-hidden />
 				</span>
-				<p className="cn-empty-title">{heading}</p>
+				<p className="cn-empty-title cn-font-heading">{heading}</p>
 				<p className="cn-empty-description text-muted-foreground">{description}</p>
 			</div>
 			{hasActiveFilters && (

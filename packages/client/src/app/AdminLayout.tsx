@@ -155,7 +155,7 @@ export function AdminLayoutShell({
 		<DensityContext.Provider value={density}>
 			<ChromeDataContext.Provider value={chromeData}>
 				<ThemeSync />
-				<StylePresetSync />
+				<StylePresetSync preset={appearance?.stylePreset} />
 				<Frame {...frameProps} />
 			</ChromeDataContext.Provider>
 		</DensityContext.Provider>

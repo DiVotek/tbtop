@@ -40,6 +40,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `passwordBroker(?string $broker): static` | Password broker from config/auth.php for the auth pages' reset flow; null uses the app default. A guard on a non-default provider needs its own broker. |
 | `prefix(string $prefix): static` | URL path prefix the panel is mounted under. Defaults to the panel id when unset — see getPrefix(). |
 | `rootView(string $view): static` | Blade root view rendered on first visit (per-panel Vite entry escape hatch). |
+| `stylePreset(string $style): static` | Component style from ui.shadcn.com/create (its "Style" choice): 'vega', 'nova' (default), 'maia', 'lyra', 'mira', 'luma', 'sera' or 'rhea'. Shapes sizes, spacing, radii and shadows; colors stay in your CSS tokens. The root Blade's <html> carries CurrentPanel::current()?->stylePresetClass(). |
 | `unsavedGuard(bool $enabled = true): static` | Default for the unsaved-changes navigation guard on forms. |
 | `userMenuItems(array $items): static` | Custom profile-dropdown entries rendered alongside the fixed theme/locale/logout controls. Link-only (label/icon/href/newTab) — chrome trees are page-independent (no per-request endpoint for a server closure to resolve against), same constraint as NotificationAction. |
 

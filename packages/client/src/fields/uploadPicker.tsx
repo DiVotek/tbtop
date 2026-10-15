@@ -81,7 +81,7 @@ export function UploadPicker({ busy, disabled, error, ...input }: PickerProps) {
 		<div className="space-y-2">
 			<label
 				htmlFor={input.id}
-				className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed text-sm text-muted-foreground hover:border-foreground"
+				className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-surface border border-dashed text-sm text-muted-foreground hover:border-foreground"
 			>
 				<UploadIcon className="h-5 w-5" aria-hidden />
 				<span>{busy ? t("field.upload.uploading") : t("field.upload.prompt")}</span>

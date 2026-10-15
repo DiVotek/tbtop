@@ -10,7 +10,7 @@ import { cn } from "../lib/cn";
 // beyond upstream's single `icon`, density-aware default size, and
 // `data-variant` / `data-size` attributes (used by table cell overrides).
 const buttonVariants = cva(
-	"cn-button group/button inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap transition-all outline-none select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+	"cn-button group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-all outline-none select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 	{
 		variants: {
 			variant: {
@@ -69,11 +69,7 @@ function Button({
 			data-slot="button"
 			data-variant={variant}
 			data-size={resolvedSize}
-			className={cn(
-				buttonVariants({ variant, size: resolvedSize }),
-				size === undefined && density === "compact" && "text-xs shadow-sm",
-				className,
-			)}
+			className={cn(buttonVariants({ variant, size: resolvedSize }), className)}
 			{...(resolvedType !== undefined ? { type: resolvedType } : {})}
 			{...props}
 		/>

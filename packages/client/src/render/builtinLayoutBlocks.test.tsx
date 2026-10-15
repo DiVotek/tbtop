@@ -502,7 +502,7 @@ test("FlexBlock variant:card adds the bordered card toolbar classes", () => {
 	} as never;
 	const { container } = render(renderNode(node));
 	const el = container.firstElementChild as HTMLElement;
-	expect(el.className).toContain("rounded-md");
+	expect(el.className).toContain("rounded-surface");
 	expect(el.className).toContain("border");
 	expect(el.className).toContain("bg-card");
 	expect(el.className).toContain("px-3");

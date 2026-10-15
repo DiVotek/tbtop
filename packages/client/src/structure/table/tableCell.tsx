@@ -81,14 +81,14 @@ export function RowDataCell({
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	// New-gen shape: padding and vertical alignment come from `cn-table-cell`
-	// (`p-2`, was `px-3 py-2`). The preset forces `whitespace-nowrap` from a
-	// layer above utilities; our columns wrap by default, so `whitespace-normal!`
-	// restores that unless the column opts into noWrap/truncation. Alignment,
+	// (`p-2`, was `px-3 py-2`). The preset sets `whitespace-nowrap`; our columns
+	// wrap by default, so `whitespace-normal` restores that unless the column
+	// opts into noWrap/truncation. Alignment,
 	// width and wrap options stay ours.
 	const wrapClass = cn(
 		col.wrap === false && "truncate max-w-0",
 		col.noWrap && "whitespace-nowrap",
-		col.wrap !== false && !col.noWrap && "whitespace-normal!",
+		col.wrap !== false && !col.noWrap && "whitespace-normal",
 	);
 	return (
 		<td
