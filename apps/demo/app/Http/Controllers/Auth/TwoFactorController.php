@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Auth\TwoFactorVerifier;
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -16,11 +16,20 @@ use PragmaRX\Google2FA\Google2FA;
 
 class TwoFactorController extends Controller
 {
-    public function __construct(private readonly Google2FA $google2fa) {}
+    public function __construct(
+        private readonly Google2FA $google2fa,
+        private readonly TwoFactorVerifier $verifier,
+    ) {}
 
     public function setup(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        // Re-keying an enrolled account would bypass the current factor; disable (which needs a code) first.
+        if ($user->hasTwoFactorEnabled()) {
+            throw ValidationException::withMessages(['code' => 'Two-factor authentication is already enabled.']);
+        }
+
         $secret = $this->google2fa->generateSecretKey();
         $user->forceFill(['two_factor_secret' => encrypt($secret)])->save();
 
@@ -37,6 +46,10 @@ class TwoFactorController extends Controller
         $request->validate(['code' => ['required', 'string']]);
 
         $user = $request->user();
+
+        if ($user->hasTwoFactorEnabled()) {
+            throw ValidationException::withMessages(['code' => 'Two-factor authentication is already enabled.']);
+        }
 
         if (! $user->two_factor_secret) {
             throw ValidationException::withMessages(['code' => 'Two-factor authentication setup not started.']);
@@ -71,7 +84,11 @@ class TwoFactorController extends Controller
             throw ValidationException::withMessages(['code' => 'Two-factor authentication is not enabled.']);
         }
 
-        if (! $this->validateCodeOrRecovery($user, $request->input('code'))) {
+        if ($this->verifier->isLockedOut($user)) {
+            throw ValidationException::withMessages(['code' => $this->verifier->lockoutMessage($user)]);
+        }
+
+        if (! $this->verifier->verify($user, $request->input('code'))) {
             \Log::warning('auth.2fa.challenge_failed', ['user_id' => $user->id]);
             throw ValidationException::withMessages(['code' => 'Invalid code.']);
         }
@@ -111,36 +128,5 @@ class TwoFactorController extends Controller
         );
 
         return $writer->writeString($otpAuthUrl);
-    }
-
-    private function validateCodeOrRecovery(User $user, string $code): bool
-    {
-        if (ctype_digit($code) && strlen($code) === 6) {
-            try {
-                $secret = decrypt($user->two_factor_secret);
-                if ($this->google2fa->verifyKey($secret, $code)) {
-                    return true;
-                }
-            } catch (\Throwable) {
-                // Fall through to recovery code check.
-            }
-        }
-
-        return $this->consumeRecoveryCode($user, $code);
-    }
-
-    private function consumeRecoveryCode(User $user, string $code): bool
-    {
-        $codes = json_decode(decrypt($user->two_factor_recovery_codes), true);
-        $index = array_search($code, $codes, true);
-
-        if ($index === false) {
-            return false;
-        }
-
-        array_splice($codes, (int) $index, 1);
-        $user->forceFill(['two_factor_recovery_codes' => encrypt(json_encode($codes))])->save();
-
-        return true;
     }
 }

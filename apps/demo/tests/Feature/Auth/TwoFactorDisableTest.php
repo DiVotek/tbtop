@@ -55,4 +55,27 @@ class TwoFactorDisableTest extends TestCase
         $user->refresh();
         $this->assertNotNull($user->two_factor_confirmed_at);
     }
+
+    public function test_disable_refuses_a_valid_otp_after_five_wrong_codes(): void
+    {
+        $g2fa = new Google2FA;
+        $secret = $g2fa->generateSecretKey();
+        $user = User::factory()->create([
+            'two_factor_secret' => encrypt($secret),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
+            'two_factor_confirmed_at' => now(),
+        ]);
+        $this->freezeTime();
+        $this->actingAs($user)->withSession(['auth.2fa.completed' => true]);
+
+        foreach (range(1, 5) as $_) {
+            $this->postJson('/two-factor/disable', ['code' => '000000'])->assertStatus(422);
+        }
+
+        $this->postJson('/two-factor/disable', [
+            'code' => $g2fa->oathTotp($secret, intdiv(now()->getTimestamp(), 30)),
+        ])->assertStatus(422);
+
+        $this->assertNotNull($user->refresh()->two_factor_confirmed_at);
+    }
 }
