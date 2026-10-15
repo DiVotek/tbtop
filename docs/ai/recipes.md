@@ -339,8 +339,9 @@ on the panel.
 **How it works here:** tbtop renders on **shadcn theme tokens** (the `--background` /
 `--primary` / `--radius` … CSS variables) and **shadcn style presets** (the component
 shapes). So you theme the whole admin the shadcn way: **pick the style on the panel and
-edit the tokens in your app CSS**, not through a PHP color API. There is deliberately no `->colors()` method — a runtime-injected `<style>` would
-only add a flash of the default theme; the CSS file is the single source of truth.
+edit the tokens in your app CSS**, not through a PHP color API. There is deliberately no
+`->colors()` method — a runtime-injected `<style>` would only add a flash of the default
+theme; the CSS file is the single source of truth.
 
 ### Apply a shadcn preset from ui.shadcn.com/create
 
