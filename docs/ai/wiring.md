@@ -85,6 +85,14 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
 
 ### Media manager routes (prefix: `{prefix}/api/media`, name: `tbtop.{panel}.media.*`)
 
+**Securing the media API.** By default every user who passes the panel's middleware can
+list, upload, import, edit, replace and delete every media item and folder. To restrict it,
+name a Gate ability on the panel — `$panel->mediaGate('manage-media')` — and define it in the
+host (`Gate::define('manage-media', fn ($user) => $user->is_admin)`). Every route below then
+runs behind `can:manage-media` and answers 403 to a user who fails it. The check is
+all-or-nothing per panel: there is no per-item ownership. The media picker and library UI
+still render for such a user; their requests are refused.
+
 | Method | Path pattern | Route name | Controller | Transport | Response shape |
 |---|---|---|---|---|---|
 | `GET` | `/api/media` | `media.index` | `MediaController@index` | JSON | `{data: MediaItem[], folders: MediaFolder[], total, page, perPage}` — query: `perPage` (≤200), `page`, `search`, `folder` (empty = root), `sort`, `dir`. `folders` lists the child folders of the current level, never paginated |

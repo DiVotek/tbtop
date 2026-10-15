@@ -121,13 +121,15 @@ $registerPageRoutes = static function (array $pages): void {
 /**
  * The locale, logout, upload, and media-manager cluster. Lives only in the panel's
  * default (inherited) group — a public page must not expose these unauthenticated.
+ * $mediaGate is the panel's mediaGate() ability: when set, the whole media cluster
+ * runs behind `can:{ability}`, so a user who fails it gets 403 before any controller.
  */
-$registerChromeRoutes = static function (): void {
+$registerChromeRoutes = static function (?string $mediaGate): void {
     Route::post('locale', LocaleController::class)->name('locale');
     Route::post('logout', LogoutController::class)->name('logout');
 
     // Media manager endpoints (under api/ to avoid collision with page routes)
-    Route::prefix('api/media')->name('media.')->group(function (): void {
+    Route::prefix('api/media')->name('media.')->middleware($mediaGate === null ? [] : ['can:'.$mediaGate])->group(function (): void {
         Route::get('/', [MediaController::class, 'index'])->name('index');
         Route::post('/upload', MediaUploadController::class)->name('upload');
         Route::post('/import-url', MediaImportController::class)->name('import-url');
@@ -209,7 +211,7 @@ foreach (app(PanelRegistry::class)->all() as $panel) {
             ->name('tbtop.'.$panel->getId().'.')
             ->group(function () use ($panel, $bucket, $isDefault, $registerPageRoutes, $registerChromeRoutes, $panelHomePath): void {
                 if ($isDefault) {
-                    $registerChromeRoutes();
+                    $registerChromeRoutes($panel->getMediaGate());
 
                     // Panel root (the logo link target) 302s to the panel's
                     // home page under the same auth stack as its pages.
