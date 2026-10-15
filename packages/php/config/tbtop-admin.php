@@ -33,8 +33,9 @@ return [
         // Accepted MIME types (fnmatch patterns). Empty = allow all.
         // Note: image/* matches svg+xml. Stored SVG can carry scripts, so
         // uploads are sanitized server-side via Media\SvgSanitizer, keyed off
-        // the file content/extension (not the spoofable mime). text/html is
-        // refused regardless of this list — it is the SVG-as-html XSS vector.
+        // the file content/extension (not the spoofable mime). HTML and the
+        // XML family (text/xml, *+xml except SVG) are refused regardless of
+        // this list — a browser runs script in them (Media\MimePolicy).
         'accept' => [
             'image/*',
             'application/pdf',
