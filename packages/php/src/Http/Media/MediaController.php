@@ -8,6 +8,7 @@ use Illuminate\Http\Response;
 use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\Models\MediaFolder;
+use Tbtop\Admin\Support\ContainsMatch;
 
 final class MediaController
 {
@@ -31,7 +32,7 @@ final class MediaController
         }
 
         if ($search !== '') {
-            $query->where('name', 'like', '%'.$search.'%');
+            ContainsMatch::where($query, 'name', $search);
         }
 
         $total = (int) $query->count();

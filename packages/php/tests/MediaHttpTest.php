@@ -51,6 +51,15 @@ it('searches media by name', function () {
     expect($response->json('total'))->toBe(1);
 });
 
+it('treats % and _ in the media search as literal characters', function () {
+    Media::create(mediaRow(['name' => '50% off.png']));
+    Media::create(mediaRow(['name' => '5000 off.png']));
+
+    $response = $this->getJson('/admin/api/media?search='.urlencode('%').'&folder=')->assertOk();
+    expect($response->json('total'))->toBe(1)
+        ->and($response->json('data.0.name'))->toBe('50% off.png');
+});
+
 it('paginates media results', function () {
     for ($i = 0; $i < 5; $i++) {
         Media::create(mediaRow(['name' => "img{$i}.png"]));

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\I18n\LocaleService;
 use Tbtop\Admin\I18n\TranslatableValue;
+use Tbtop\Admin\Support\ContainsMatch;
 
 /**
  * Answers relation-search for one Relation field — shared by the HTTP endpoint
@@ -55,11 +56,7 @@ final class RelationSearchResponder
         $labelKey = $field->getLabelKey();
 
         if ($search !== '') {
-            $builder = $builder->where(
-                self::searchColumn($builder, $labelKey),
-                'like',
-                '%'.$search.'%',
-            );
+            ContainsMatch::where($builder, self::searchColumn($builder, $labelKey), $search);
         }
 
         $rows = $builder->limit($field->getSearchLimit())->get();

@@ -38,6 +38,21 @@ it('Relation search: search term filters by labelKey using LIKE', function (): v
         ->toContain('Alice Wonder');
 });
 
+it('Relation search: % and _ in the search term are literal characters', function (): void {
+    foreach (['50% off', '5000 off', 'a_b', 'axb'] as $name) {
+        AuthorModel::create(['name' => $name]);
+    }
+
+    $labels = fn (string $search) => array_column(
+        $this->postJson('/admin/relation-search-page/relation-search/author_id', ['search' => $search])
+            ->json('options'),
+        'label',
+    );
+
+    expect($labels('%'))->toBe(['50% off'])
+        ->and($labels('_'))->toBe(['a_b']);
+});
+
 it('Relation search: value resolve returns the matching option', function (): void {
     $response = $this->postJson(
         '/admin/relation-search-page/relation-search/author_id',
