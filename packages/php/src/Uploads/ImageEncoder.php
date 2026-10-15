@@ -51,11 +51,11 @@ final class ImageEncoder
         return ['blob' => $blob, 'mimeType' => $spec['mimeType'], 'ext' => $spec['ext']];
     }
 
-    /** Decode an uploaded file to a GD image, or null if not decodable or above the pixel cap. */
+    /** Decode an uploaded file to a GD image, or null if its size is unreadable, above the pixel cap, or not decodable. */
     public static function fromUpload(UploadedFile $file): ?\GdImage
     {
         [$width, $height] = ImageSizes::dimensions($file);
-        if ($width !== null && $height !== null && $width * $height > self::MAX_DECODE_PIXELS) {
+        if ($width === null || $height === null || $width * $height > self::MAX_DECODE_PIXELS) {
             return null;
         }
         $img = @imagecreatefromstring((string) file_get_contents($file->getRealPath()));
