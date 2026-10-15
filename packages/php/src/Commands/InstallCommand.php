@@ -41,6 +41,8 @@ class InstallCommand extends Command
         'admin.css.stub' => 'resources/css/admin.css',
     ];
 
+    private const string PANEL_DOCS = 'https://docs.tbtop.dev/docs/getting-started/panel';
+
     public function handle(): int
     {
         $panel = null;
@@ -108,7 +110,7 @@ class InstallCommand extends Command
             return $panels[$id];
         }
         if ($panels === []) {
-            $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth.');
+            $this->noPanelHint();
 
             return null;
         }
@@ -119,6 +121,14 @@ class InstallCommand extends Command
         }
 
         return array_values($panels)[0];
+    }
+
+    private function noPanelHint(): void
+    {
+        $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth.');
+        $this->line('  List your panel class in config/tbtop-admin.php:');
+        $this->line("       'panels' => [\\App\\Admin\\AdminPanel::class],");
+        $this->line('  Writing the panel class: '.self::PANEL_DOCS);
     }
 
     private function reportAuth(AuthScaffold $auth): void

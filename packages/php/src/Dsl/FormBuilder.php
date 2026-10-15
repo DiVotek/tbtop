@@ -79,7 +79,8 @@ final class FormBuilder implements JsonSerializable
 
     /**
      * Defaults seed before normalize, so a scalar default on a translatable
-     * field is expanded into a locale map like any other value.
+     * field is expanded into a locale map like any other value, and a date
+     * field's ISO-instant value is cut to its day (see DateRecord).
      *
      * @return array<string, mixed>
      */
@@ -88,7 +89,7 @@ final class FormBuilder implements JsonSerializable
         $children = $this->includedChildren();
         $seeded = RecordDefaults::apply($this->record, $children);
 
-        return TranslatableRecord::normalize($seeded, $children);
+        return TranslatableRecord::normalize(DateRecord::normalize($seeded, $children), $children);
     }
 
     /** Laravel validation rules collected from descendant fields. @return array<string, list<string|\Illuminate\Contracts\Validation\ValidationRule>> */
