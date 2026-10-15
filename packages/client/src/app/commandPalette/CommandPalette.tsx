@@ -25,7 +25,7 @@ interface CommandPaletteProps {
 // arrow-key selection are ours, so the highlighted row carries `data-selected`
 // itself; the overlay is ResponsiveDialog (dialog-only), not the dialog
 // primitive; the nav group label sits where upstream puts a shortcut, but keeps
-// the item's type scale instead of `cn-command-shortcut`; `max-md:text-base!`
+// the item's type scale instead of `cn-command-shortcut`; `max-md:text-base`
 // keeps iOS Safari from zooming on focus (see `ui/input.tsx`).
 
 /** ⌘K overlay: search and jump to nav destinations + custom commands. */
