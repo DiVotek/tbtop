@@ -31,4 +31,12 @@ describe("style preset CSS", () => {
 			expect(css).toContain(`.style-preset-${name} {`);
 		}
 	});
+
+	// PHP validates ->stylePreset() against its own list; it must match the CSS.
+	test("PHP accepts exactly the presets the client ships", async () => {
+		const php = await read("../../php/src/Panels/Concerns/ConfiguresAppearance.php");
+		const list = php.match(/STYLE_PRESETS = \[([^\]]*)\]/)?.[1] ?? "";
+		const names = [...list.matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
+		expect(names).toEqual([...STYLE_PRESETS]);
+	});
 });

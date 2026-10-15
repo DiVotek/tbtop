@@ -5,11 +5,13 @@
 // and only the SECTIONS the client renders; kept sections are verbatim.
 // Refresh: bump UPSTREAM_REF, run `bun scripts/sync-presets.ts`, review the
 // diff. A component that starts using a new upstream section adds it to
-// SECTIONS. tbtop-only rules live in src/ui/presets/tbtop.css.
+// SECTIONS. A new style goes in STYLE_PRESETS (src/app/appearance.ts) and
+// PHP's ConfiguresAppearance::STYLE_PRESETS; styles.test.ts checks both, but
+// styles.css's import list is edited by hand. tbtop-only rules: tbtop.css.
 import { mkdir } from "node:fs/promises";
+import { STYLE_PRESETS as STYLES } from "../src/app/appearance";
 
 const UPSTREAM_REF = "c2477f311c19982ef6e246085438e6cfec3e35ea";
-const STYLES = ["vega", "nova", "maia", "lyra", "mira", "luma", "sera", "rhea"] as const;
 
 // Upstream `/* MARK: <name> */` sections the client's `cn-*` classes use.
 const SECTIONS = new Set([
