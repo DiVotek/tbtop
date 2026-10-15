@@ -14,9 +14,8 @@ import { cva } from "class-variance-authority";
 // Deltas vs upstream: `sm:max-w-lg` default width (callers such as the command
 // palette and ModalShell's `md` size rely on it), `origin-center` and
 // `motion-reduce:animate-none` on the dialog, and the vaul-style drawer motion.
-// The preset layer sits above utilities, so a utility that must beat a preset
-// property (padding, display, gap, max-width, rounding) needs the `!` prefix
-// form (`sm:!max-w-lg`) — the form tailwind-merge 2.x dedupes.
+// The preset layer sits below utilities, so a caller's `sm:max-w-*` or padding
+// beats the preset's, and tailwind-merge dedupes it against this default.
 
 export const dialogOverlayClass = "cn-dialog-overlay fixed inset-0 z-50";
 
@@ -33,7 +32,7 @@ export const responsiveDialogContentVariants = cva("fixed z-50", {
 	variants: {
 		device: {
 			desktop:
-				"cn-dialog-content left-1/2 top-1/2 max-h-[calc(100%-4rem)] w-full translate-x-[-50%] translate-y-[-50%] origin-center outline-none motion-reduce:!animate-none sm:!max-w-lg",
+				"cn-dialog-content left-1/2 top-1/2 max-h-[calc(100%-4rem)] w-full translate-x-[-50%] translate-y-[-50%] origin-center outline-none motion-reduce:animate-none sm:max-w-lg",
 			mobile: `cn-drawer-popup group/drawer-popup flex data-swiping:select-none data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*400ms)] ${drawerMotion}`,
 		},
 		direction: {

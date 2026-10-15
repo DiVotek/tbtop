@@ -13,8 +13,8 @@ import type { StructureNode } from "../structure/structure";
 //   primitives do not emit (their slots are `input` / `select-trigger`);
 // - a multi-select grows the group (`h-auto`) instead of the preset's fixed height;
 // - affixes render arbitrary StructureNodes, so the addon has no click-to-focus.
-// Overrides that contend with a preset rule carry `!`: the preset bodies sit in
-// the `preset` cascade layer, which `styles.css` declares after `utilities`.
+// The presets sit in the `components` cascade layer, below `utilities`, so
+// these overrides win without `!`.
 
 export interface AffixOptions {
 	prefix?: StructureNode;

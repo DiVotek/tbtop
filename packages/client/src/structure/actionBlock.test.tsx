@@ -264,9 +264,9 @@ describe("Action with modal", () => {
 		await act(async () => {
 			fireEvent.click(trigger);
 		});
-		// ModalShell with size="lg" applies sm:!max-w-2xl on the dialog content
+		// ModalShell with size="lg" applies sm:max-w-2xl on the dialog content
 		const dialog = baseElement.querySelector('[role="dialog"]');
-		expect(dialog?.className ?? "").toContain("sm:!max-w-2xl");
+		expect(dialog?.className ?? "").toContain("sm:max-w-2xl");
 	});
 });
 

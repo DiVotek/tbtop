@@ -105,7 +105,7 @@ describe("ResponsiveDialog", () => {
 		// The fade + zoom itself is owned by the preset's `cn-dialog-content`.
 		expect(cls).toContain("origin-center");
 		expect(cls).toContain("cn-dialog-content");
-		expect(cls).toContain("motion-reduce:!animate-none");
+		expect(cls).toContain("motion-reduce:animate-none");
 	});
 
 	test("ResponsiveDialog: media query flip does not crash and content remains present", async () => {
