@@ -103,7 +103,7 @@ export function MultiComboboxShell({
 					data-testid={`select-${name}`}
 					onBlur={onBlur}
 					className={cn(
-						"flex min-h-9 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-2 py-1",
+						"flex min-h-9 w-full flex-wrap items-center gap-1 rounded-surface border border-input bg-background px-2 py-1",
 						density === "compact" && "min-h-8",
 					)}
 				>
@@ -146,7 +146,7 @@ export function MultiComboboxShell({
 					{/* Without this the popup anchors to the input, which the chips
 					    shrink as selections accumulate. */}
 					<Combobox.Positioner className="z-50" sideOffset={4} anchor={chipsRef}>
-						<Combobox.Popup className="w-[var(--anchor-width)] rounded-md border border-input bg-background shadow-md">
+						<Combobox.Popup className="w-[var(--anchor-width)] rounded-surface border border-input bg-background shadow-md">
 							<Combobox.List className="max-h-60 overflow-y-auto p-1">
 								{/* Rows arrive as children, so Combobox.Empty — which reads Base
 								    UI's own collection — would always consider the list empty. */}

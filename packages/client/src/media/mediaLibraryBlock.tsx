@@ -77,7 +77,7 @@ export function MediaLibraryBlock({
 
 			<div className="flex min-h-0 flex-1 gap-4">
 				{/* Left: folder tree */}
-				<aside className="w-48 shrink-0 overflow-y-auto rounded-md border">
+				<aside className="w-48 shrink-0 overflow-y-auto rounded-surface border">
 					<FolderTree
 						folders={folders}
 						selectedId={selectedFolder}

@@ -337,39 +337,75 @@ Notes:
 on the panel.
 
 **How it works here:** tbtop renders on **shadcn theme tokens** (the `--background` /
-`--primary` / `--radius` … CSS variables). So you theme the whole admin — colors, radius,
-shadows, fonts — the shadcn way: **edit those tokens in your app CSS**, not through a PHP
-color API. There is deliberately no `->colors()` method — a runtime-injected `<style>` would
-only add a flash of the default theme; the CSS file is the single source of truth.
+`--primary` / `--radius` … CSS variables) and **shadcn style presets** (the component
+shapes). So you theme the whole admin the shadcn way: **pick the style on the panel and
+edit the tokens in your app CSS**, not through a PHP color API. There is deliberately no
+`->colors()` method — a runtime-injected `<style>` would only add a flash of the default
+theme; the CSS file is the single source of truth.
 
-### Theme by pasting a shadcn preset
+### Apply a shadcn preset from ui.shadcn.com/create
 
-Your admin entry loads one CSS file that holds the token values — in the demo that is
-`apps/demo/resources/css/app.css` (its `:root { … }` and `.dark { … }` blocks). To re-theme,
-build a palette at [ui.shadcn.com/create](https://ui.shadcn.com/create), copy its `:root`
-and `.dark` blocks, and replace the token values in that file:
+A create preset is two things, and tbtop takes each where it belongs:
+
+| Preset part | Where it goes in tbtop |
+|---|---|
+| **Style** (Vega, Nova, Maia, Lyra, Mira, Luma, Sera, Rhea) — sizes, spacing, radii, shadows | `->stylePreset('lyra')` on the panel (default `nova`) |
+| **Theme** — base color, theme color, chart color, radius, menu accent | the `:root` / `.dark` token blocks in your admin CSS |
+| **Font** / heading font | `--font-sans` / `--font-heading` in `:root`, plus the font's own `@import` |
+| Icon library, menu color | not supported — the admin uses lucide and the default menu color |
+
+**1. Style.** Pick the same style on the panel and put its scope class on `<html>` in the
+root Blade (`admin:install` writes this line for you):
+
+```php
+return $panel->stylePreset('lyra');
+```
+
+```blade
+<html class="… {{ \Tbtop\Admin\Panels\CurrentPanel::current()?->stylePresetClass() }}">
+```
+
+The client also sets the class after mount, so a missing Blade line only costs a first
+unstyled paint. `@tbtop/inertia-admin/styles.css` ships all eight styles; to ship one,
+import `@tbtop/inertia-admin/styles/lyra.css` instead and keep `->stylePreset()` on the
+same name.
+
+**2. Theme and font.** Copy the generator's `:root` and `.dark` blocks into the CSS your
+admin entry loads **after** the package styles (in the demo: `apps/demo/resources/css/themes/`,
+imported at the end of `resources/js/admin.tsx`):
 
 ```css
 :root {
-  --radius: 0.75rem;
-  --primary: hsl(221 83% 53%);
-  --primary-foreground: hsl(0 0% 98%);
+  --radius: 0.625rem;
+  --font-sans: "Geist Variable", sans-serif;
+  --primary: oklch(0.205 0 0);
   /* …rest of the preset… */
 }
 .dark {
-  --primary: hsl(217 91% 60%);
+  --primary: oklch(0.922 0 0);
   /* …rest of the preset… */
 }
 ```
 
-Paste only the `:root` / `.dark` value blocks — drop the generator's `@import` and
-`@theme inline` lines (those are build-time and already present). tbtop writes its own dark
-tokens under `.dark` (not `html.dark`), so a pasted `.dark` block overrides cleanly in both
-modes. The demo applies a sample blue-accent preset this way.
+Paste only the value blocks — drop the generator's `@theme inline` lines (they are already
+present). Font tokens go in `:root`, not `@theme`: the package compiles its own stylesheet,
+so only a runtime variable reaches it. tbtop writes its dark tokens under `.dark` (not
+`html.dark`), so a pasted `.dark` block overrides cleanly in both modes.
+
+### Customizing on top of a preset
+
+The preset is a starting point; every layer of it stays overridable:
+
+- **Tokens and Tailwind theme variables** (`--primary`, `--spacing`, `--radius`, …) — the
+  preset only reads them.
+- **One element** — a utility in `className` wins: presets sit in the `components` cascade
+  layer, below `utilities`.
+- **One component everywhere** — any unlayered rule in your CSS beats the preset, e.g.
+  `.cn-button { border-radius: 9999px; }`. The `cn-*` names are upstream shadcn's.
 
 ### Appearance knobs (the parts CSS can't express)
 
-Four knobs live on `PanelConfig` because they drive client behavior or layout, not tokens:
+Five knobs live on `PanelConfig` because they drive client behavior or layout, not tokens:
 
 ```php
 // apps/demo/app/Admin/AdminPanel.php
@@ -377,7 +413,8 @@ return $panel
     ->maxContentWidth('7xl')        // center page content (Tailwind max-w token)
     ->darkMode(true)                // false hides the theme toggle; shell stays light
     ->defaultThemeMode('system')    // initial theme when the visitor has no saved choice
-    ->density('compact');           // tighter control heights, spacing, sidebar
+    ->density('compact')            // tighter control heights, spacing, sidebar
+    ->stylePreset('nova');          // shadcn create style, see above
 ```
 
 - `maxContentWidth($token)` — `sm`…`7xl`, `full`, or `prose`; omit for full-bleed.
@@ -389,7 +426,7 @@ return $panel
 - `density($mode)` — `default` | `compact`; `compact` tightens control heights, spacing
   and the sidebar width. Any other value throws `InvalidArgumentException`.
 
-All four serialize **sparsely** into the `tbtop.appearance` shared prop — a knob left at
+All five serialize **sparsely** into the `tbtop.appearance` shared prop — a knob left at
 its default is omitted from the wire entirely, so an empty `appearance` is normal.
 
 ---

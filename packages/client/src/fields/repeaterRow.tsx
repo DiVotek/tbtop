@@ -105,7 +105,7 @@ function ExpandedRow({
 }: RepeaterRowProps & { children: React.ReactNode }) {
 	const t = useTranslation();
 	return (
-		<div className="flex flex-col gap-2 rounded-md border p-3" data-repeater-item={index}>
+		<div className="flex flex-col gap-2 rounded-surface border p-3" data-repeater-item={index}>
 			<div className="flex items-center justify-between">
 				<span className="text-xs text-muted-foreground">{`${t("field.repeater.item_label")} ${index + 1}`}</span>
 				<div className="flex gap-1">

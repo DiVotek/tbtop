@@ -6,10 +6,10 @@ use InvalidArgumentException;
 
 /**
  * Shell appearance knobs for PanelConfig that CSS alone can't express:
- * dark-mode policy and centered content width. Colors / radius / fonts are
- * deliberately NOT here — tbtop uses shadcn theme tokens, so you theme by
- * pasting a shadcn preset (:root / .dark blocks) into your app CSS. See
- * docs/ai/recipes.md → Theming.
+ * dark-mode policy, centered content width, density and the shadcn style
+ * preset. Colors / radius / fonts are deliberately NOT here — tbtop uses
+ * shadcn theme tokens, so you theme by pasting a shadcn preset (:root / .dark
+ * blocks) into your app CSS. See docs/ai/recipes.md → Theming.
  *
  * appearance() serializes only the keys an author changed from the default,
  * so an unconfigured panel ships nothing.
@@ -25,6 +25,11 @@ trait ConfiguresAppearance
 
     private const DENSITIES = ['default', 'compact'];
 
+    /** Upstream shadcn styles shipped in the client's styles.css. */
+    private const STYLE_PRESETS = ['vega', 'nova', 'maia', 'lyra', 'mira', 'luma', 'sera', 'rhea'];
+
+    private const DEFAULT_STYLE_PRESET = 'nova';
+
     private bool $darkMode = true;
 
     private string $defaultThemeMode = 'system';
@@ -32,6 +37,8 @@ trait ConfiguresAppearance
     private ?string $maxContentWidth = null;
 
     private string $density = 'default';
+
+    private string $stylePreset = self::DEFAULT_STYLE_PRESET;
 
     /** Allow or disable the dark-mode toggle entirely (default: allowed). */
     public function darkMode(bool $enabled = true): static
@@ -75,6 +82,32 @@ trait ConfiguresAppearance
     }
 
     /**
+     * Component style from ui.shadcn.com/create (its "Style" choice): 'vega', 'nova' (default),
+     * 'maia', 'lyra', 'mira', 'luma', 'sera' or 'rhea'. Shapes sizes, spacing, radii and shadows;
+     * colors stay in your CSS tokens. The root Blade's <html> carries CurrentPanel::current()?->stylePresetClass().
+     */
+    public function stylePreset(string $style): static
+    {
+        if (! in_array($style, self::STYLE_PRESETS, true)) {
+            throw new InvalidArgumentException("Unknown style preset \"{$style}\". Expected one of: ".implode(', ', self::STYLE_PRESETS).'.');
+        }
+        $this->stylePreset = $style;
+
+        return $this;
+    }
+
+    public function getStylePreset(): string
+    {
+        return $this->stylePreset;
+    }
+
+    /** The scope class the client's preset CSS keys on, e.g. 'style-preset-nova'. */
+    public function getStylePresetClass(): string
+    {
+        return 'style-preset-'.$this->stylePreset;
+    }
+
+    /**
      * Sparse appearance payload for the client; omits keys left at defaults.
      * Returns [] when nothing was changed.
      *
@@ -87,6 +120,7 @@ trait ConfiguresAppearance
             'defaultTheme' => $this->defaultThemeMode !== 'system' ? $this->defaultThemeMode : null,
             'maxWidth' => $this->maxContentWidth,
             'density' => $this->density !== 'default' ? $this->density : null,
+            'stylePreset' => $this->stylePreset !== self::DEFAULT_STYLE_PRESET ? $this->stylePreset : null,
         ], static fn (mixed $v): bool => $v !== null);
     }
 }

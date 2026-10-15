@@ -25,7 +25,8 @@ const DOT_COLORS: Record<ListItemColor, string> = {
 	muted: "bg-muted-foreground",
 };
 
-const ROW_CLASS = "flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted/40";
+const ROW_CLASS =
+	"flex w-full items-center gap-3 rounded-surface px-2 py-2 text-sm hover:bg-muted/40";
 
 export function ListBlock({ options }: RenderProps<ListBlockOptions>) {
 	const items = options.items ?? [];

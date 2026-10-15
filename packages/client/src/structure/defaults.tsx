@@ -10,7 +10,7 @@ export function FieldSkeleton() {
 	return (
 		<div
 			className={cn(
-				"h-9 w-full animate-pulse rounded-md bg-muted",
+				"h-9 w-full animate-pulse rounded-surface bg-muted",
 				density === "compact" && "h-8",
 			)}
 			data-testid="field-skeleton"
@@ -42,7 +42,7 @@ const SKELETON_ROWS = 5;
 export function TableSkeleton() {
 	return (
 		<div
-			className="overflow-hidden rounded-md border text-sm"
+			className="overflow-hidden rounded-surface border text-sm"
 			data-testid="table-skeleton"
 			aria-hidden
 		>

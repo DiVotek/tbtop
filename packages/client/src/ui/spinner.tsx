@@ -1,8 +1,19 @@
-/** Shared spinner + reload overlay for async blocks (table, media grid). */
+import { cn } from "../lib/cn";
+
+/**
+ * Shared spinner + reload overlay for async blocks (table, media grid).
+ *
+ * Upstream's spinner is a spinning Loader icon with no `cn-*` rule; ours stays
+ * a CSS ring (sized by `className`) and only adopts upstream's `data-slot`.
+ */
 export function Spinner({ className = "h-5 w-5" }: { className?: string }) {
 	return (
 		<div
-			className={`animate-spin rounded-full border-2 border-primary border-t-transparent ${className}`}
+			data-slot="spinner"
+			className={cn(
+				"animate-spin rounded-full border-2 border-primary border-t-transparent",
+				className,
+			)}
 		/>
 	);
 }

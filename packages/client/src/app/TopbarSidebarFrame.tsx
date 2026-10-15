@@ -16,6 +16,12 @@ import { ShellMain } from "./shellMain";
  * right. On desktop the toggle hides the sidebar; on mobile the sidebar
  * lives in the burger drawer instead.
  */
+// New-gen shape: only the expanded sidebar's scroll zone maps onto an
+// upstream part (`cn-sidebar-content`). The asides and the top bar are pure
+// layout (sticky offsets, viewport height, width, border, z-index) that the
+// preset does not own, and the sidebar holds a server-authored chrome tree,
+// so there is no fixed header/footer split to tag. The collapsed aside hosts
+// the rail-orientation dropdowns and is left as layout too.
 export function TopbarSidebarFrame({
 	sidebar,
 	header,
@@ -60,7 +66,12 @@ export function TopbarSidebarFrame({
 							density === "compact" ? "w-48" : "w-56",
 						)}
 					>
-						<div className="min-h-0 flex-1 overflow-y-auto">{sidebar}</div>
+						<div
+							className="cn-sidebar-content flex min-h-0 flex-1 flex-col overflow-y-auto"
+							data-slot="sidebar-content"
+						>
+							{sidebar}
+						</div>
 					</aside>
 				)}
 				<ShellMain maxWidth={maxWidth}>{children}</ShellMain>

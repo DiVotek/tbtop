@@ -3,28 +3,34 @@ import type * as React from "react";
 
 import { cn } from "../lib/cn";
 
+// New-gen shape: visuals come from the `cn-slider*` rules in
+// `ui/presets/style-preset-*.css`. Deltas on top of upstream: a single thumb
+// (upstream renders one per value for ranges; no caller passes a range), and
+// `data-[orientation=…]` sizing duplicates the preset's orientation rules
+// for Radix, which emits `data-orientation` (see the `data-horizontal` /
+// `data-vertical` variants in styles.css).
 function Slider({ className, ...props }: React.ComponentProps<typeof SliderPrimitive.Root>) {
 	return (
 		<SliderPrimitive.Root
 			data-slot="slider"
 			className={cn(
-				"relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50",
+				"cn-slider relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
 				className,
 			)}
 			{...props}
 		>
 			<SliderPrimitive.Track
 				data-slot="slider-track"
-				className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-muted"
+				className="cn-slider-track relative grow overflow-hidden data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full"
 			>
 				<SliderPrimitive.Range
 					data-slot="slider-range"
-					className="absolute h-full bg-primary"
+					className="cn-slider-range absolute select-none data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
 				/>
 			</SliderPrimitive.Track>
 			<SliderPrimitive.Thumb
 				data-slot="slider-thumb"
-				className="block size-4 shrink-0 rounded-full border border-primary bg-background shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+				className="cn-slider-thumb block shrink-0 select-none disabled:pointer-events-none disabled:opacity-50"
 			/>
 		</SliderPrimitive.Root>
 	);
