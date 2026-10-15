@@ -65,15 +65,20 @@ final class DateRecord
     private static function toDay(mixed $value): mixed
     {
         if ($value instanceof DateTimeInterface) {
-            return $value->format('Y-m-d');
+            return self::localDay(Carbon::instance($value));
         }
         if (! is_string($value) || preg_match(self::INSTANT, $value) !== 1) {
             return $value;
         }
         try {
-            return Carbon::parse($value)->setTimezone(date_default_timezone_get())->format('Y-m-d');
+            return self::localDay(Carbon::parse($value));
         } catch (Throwable) {
             return $value;
         }
+    }
+
+    private static function localDay(Carbon $instant): string
+    {
+        return $instant->setTimezone(date_default_timezone_get())->format('Y-m-d');
     }
 }

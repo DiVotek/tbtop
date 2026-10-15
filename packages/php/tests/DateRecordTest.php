@@ -32,9 +32,12 @@ it('reads the instant in the app timezone, so a local midnight keeps its day', f
     try {
         $s = new S;
         // A `date` cast at Kyiv midnight on 2026-10-15 serializes as the previous day in UTC.
-        $form = $s->form('post', [$s->date('due_on')])->record(['due_on' => '2026-10-14T21:00:00.000000Z']);
+        $form = $s->form('post', [$s->date('due_on'), $s->date('due_obj')])->record([
+            'due_on' => '2026-10-14T21:00:00.000000Z',
+            'due_obj' => new DateTimeImmutable('2026-10-14 21:00:00', new DateTimeZone('UTC')),
+        ]);
 
-        expect($form->recordData())->toBe(['due_on' => '2026-10-15']);
+        expect($form->recordData())->toBe(['due_on' => '2026-10-15', 'due_obj' => '2026-10-15']);
     } finally {
         date_default_timezone_set($previous);
     }
