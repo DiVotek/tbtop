@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Tests\Fixtures\Panels;
 use Tbtop\Admin\Tests\Fixtures\GatedUploadPage;
 use Tbtop\Admin\Tests\Fixtures\GatedUploadRenderPage;
 use Tbtop\Admin\Tests\Fixtures\ParametrisedUploadPage;
+use Tbtop\Admin\Tests\Fixtures\UploadBindingPage;
 use Tbtop\Admin\Tests\Fixtures\UploadFieldPage;
 use Tbtop\Admin\Tests\Fixtures\UploadRenderPage;
 
@@ -18,6 +19,7 @@ class UploadFieldPanel extends TestPanel
             UploadRenderPage::class,
             GatedUploadRenderPage::class,
             ParametrisedUploadPage::class,
+            UploadBindingPage::class,
         ];
     }
 }

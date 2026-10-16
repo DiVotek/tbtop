@@ -77,7 +77,7 @@ class UploadDemoPageTest extends TestCase
     public function test_form_submit_redirects_back_to_the_demo_page(): void
     {
         $this->postJson('/admin/upload-demo/forms/upload', [
-            'doc' => 'docs/x.webp',
+            'doc' => 'docs/sample.webp', // the stored value: an arbitrary path is refused
         ])->assertRedirect('/admin/upload-demo');
     }
 
