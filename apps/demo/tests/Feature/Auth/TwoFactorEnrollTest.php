@@ -66,4 +66,39 @@ class TwoFactorEnrollTest extends TestCase
         $user->refresh();
         $this->assertNull($user->two_factor_confirmed_at);
     }
+
+    public function test_setup_on_an_account_with_confirmed_two_factor_keeps_the_secret(): void
+    {
+        $secret = (new Google2FA)->generateSecretKey();
+        $user = User::factory()->create([
+            'two_factor_secret' => encrypt($secret),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
+            'two_factor_confirmed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->withSession(['auth.2fa.completed' => true])
+            ->postJson('/two-factor/setup');
+
+        $response->assertStatus(422);
+        $response->assertJsonMissingPath('secret');
+        $this->assertSame($secret, decrypt($user->refresh()->two_factor_secret));
+    }
+
+    public function test_confirm_on_an_account_with_confirmed_two_factor_keeps_the_recovery_codes(): void
+    {
+        $g2fa = new Google2FA;
+        $secret = $g2fa->generateSecretKey();
+        $user = User::factory()->create([
+            'two_factor_secret' => encrypt($secret),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
+            'two_factor_confirmed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->withSession(['auth.2fa.completed' => true])
+            ->postJson('/two-factor/confirm', ['code' => $g2fa->getCurrentOtp($secret)]);
+
+        $response->assertStatus(422);
+        $response->assertJsonMissingPath('recovery_codes');
+        $this->assertSame(['recovery-code-1'], json_decode(decrypt($user->refresh()->two_factor_recovery_codes), true));
+    }
 }
