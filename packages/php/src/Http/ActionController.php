@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Http;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\RuleWalker;
 use Tbtop\Admin\Validation\EmbedsRule;
 
 final class ActionController
@@ -69,9 +71,40 @@ final class ActionController
         if (! $gate) {
             return self::declaredKeysOnly($input, $rules);
         }
+        $fields = $form->getFields();
+        if (RuleWalker::hasUploadPaths($fields)) {
+            $rules = RuleWalker::bindUploadPaths($rules, $fields, $form->recordData(), ...self::modalRecord($request, $resolved, $actionName));
+        }
         $validator = Validator::make($input, $rules, [], $form->collectAttributes());
 
         return EmbedsRule::applyDeclaredKeys($validator->getRules(), $validator->validate());
+    }
+
+    /**
+     * The record a modal form was loaded with: the enclosing modal's query()
+     * re-run for this submit's row/selection. The data endpoint already serves
+     * the same closure the same payload, so its upload paths are ones the
+     * submitter can see anyway. Empty when there is no such query, or the
+     * submit lacks a payload source the query reads.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function modalRecord(Request $request, ResolvedPage $resolved, string $actionName): array
+    {
+        $action = ActionFormRules::enclosingQueryAction($resolved, $actionName);
+        $query = $action?->queryClosure();
+        if ($action === null || $query === null) {
+            return [];
+        }
+        foreach ($action->getQueryNeeds() as $need) {
+            if (! $request->filled("payload.{$need}")) {
+                return [];
+            }
+        }
+        $data = $query(ActionCtx::fromRequest($request, ResolvedPage::routeParams($request)));
+        $data = $data instanceof Arrayable ? $data->toArray() : $data;
+
+        return is_array($data) ? [$data] : [];
     }
 
     /**
