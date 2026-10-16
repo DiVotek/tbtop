@@ -7,6 +7,9 @@ use Illuminate\Http\UploadedFile;
 /** Encodes a GD image to a target format, gated by GD capability. */
 final class ImageEncoder
 {
+    /** Decode ceiling; larger images stay unconverted (decompression-bomb guard, CWE-409). */
+    private const MAX_DECODE_PIXELS = 40_000_000;
+
     /** @var array<string, array{fn: string, mimeType: string, ext: string, quality: int|null}> */
     private const FORMATS = [
         'webp' => ['fn' => 'imagewebp', 'mimeType' => 'image/webp', 'ext' => 'webp', 'quality' => 80],
@@ -48,9 +51,13 @@ final class ImageEncoder
         return ['blob' => $blob, 'mimeType' => $spec['mimeType'], 'ext' => $spec['ext']];
     }
 
-    /** Decode an uploaded file to a GD image, or null if not a decodable image. */
+    /** Decode an uploaded file to a GD image, or null if its size is unreadable, above the pixel cap, or not decodable. */
     public static function fromUpload(UploadedFile $file): ?\GdImage
     {
+        [$width, $height] = ImageSizes::dimensions($file);
+        if ($width === null || $height === null || $width * $height > self::MAX_DECODE_PIXELS) {
+            return null;
+        }
         $img = @imagecreatefromstring((string) file_get_contents($file->getRealPath()));
 
         return $img === false ? null : $img;

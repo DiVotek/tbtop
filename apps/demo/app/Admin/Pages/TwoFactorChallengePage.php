@@ -90,9 +90,20 @@ class TwoFactorChallengePage extends Page
         }
 
         $user = User::findOrFail($userId);
+        $verifier = app(TwoFactorVerifier::class);
 
-        if (! app(TwoFactorVerifier::class)->verify($user, $ctx->form['code'])) {
+        if ($verifier->isLockedOut($user)) {
+            // Drop the half-authenticated sign-in: further guesses need the password again.
+            $ctx->request->session()->forget('auth.2fa.user_id');
+            throw ValidationException::withMessages(['code' => $verifier->lockoutMessage($user)]);
+        }
+
+        if (! $verifier->verify($user, $ctx->form['code'])) {
             \Log::warning('auth.2fa.challenge_failed', ['user_id' => $user->id]);
+            // The failure that hits the limit drops the pending sign-in too; otherwise guessing resumes after the window.
+            if ($verifier->isLockedOut($user)) {
+                $ctx->request->session()->forget('auth.2fa.user_id');
+            }
             throw ValidationException::withMessages(['code' => 'Invalid verification code.']);
         }
 

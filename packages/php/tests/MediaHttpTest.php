@@ -279,6 +279,32 @@ it('upload refuses a text/html file even when text/* is accepted', function () {
     expect(Media::count())->toBe(0);
 });
 
+it('upload refuses an XML-family mime whatever the accept list says', function (array $accept, string $mime) {
+    config()->set('tbtop-admin.media.accept', $accept);
+    $xhtml = '<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml">'
+        .'<body><script>alert(1)</script></body></html>';
+    $file = UploadedFile::fake()->createWithContent('page.xml', $xhtml)->mimeType($mime);
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(422);
+
+    expect(Media::count())->toBe(0);
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+})->with([
+    'text/* accepted, text/xml' => [['text/*'], 'text/xml'],
+    'empty accept, text/xml' => [[], 'text/xml'],
+    'empty accept, application/xhtml+xml' => [[], 'application/xhtml+xml'],
+    'empty accept, application/xml' => [[], 'application/xml'],
+]);
+
+it('upload still accepts text/plain when text/* is accepted', function () {
+    config()->set('tbtop-admin.media.accept', ['text/*']);
+    $file = UploadedFile::fake()->createWithContent('note.txt', 'hello');
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201);
+});
+
 it('replace sanitizes a replacement svg', function () {
     $media = Media::create(mediaRow(['path' => 'tbtop-media/old.svg', 'mime' => 'image/svg+xml']));
     Storage::disk('public')->put('tbtop-media/old.svg', '<svg></svg>');
