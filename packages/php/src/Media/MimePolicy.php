@@ -10,9 +10,11 @@ final class MimePolicy
      */
     public static function allows(string $mime, array $accept): bool
     {
-        // text/html is active content (the SVG-as-html XSS vector). Refuse it
-        // even when the accept list allows text/* — it is never a media file.
-        if (str_starts_with($mime, 'text/html')) {
+        // HTML and the XML family are active content: a browser runs script in
+        // text/xml or application/xhtml+xml served from the public disk. Refuse
+        // them even when the accept list allows text/* or is empty. SVG is the
+        // one XML type let through — SvgSanitizer strips its scripts on store.
+        if (self::isActiveMarkup($mime)) {
             return false;
         }
 
@@ -27,6 +29,17 @@ final class MimePolicy
         }
 
         return false;
+    }
+
+    private static function isActiveMarkup(string $mime): bool
+    {
+        $type = self::fromHeader($mime);
+        if ($type === 'image/svg+xml') {
+            return false;
+        }
+
+        return in_array($type, ['text/html', 'text/xml', 'text/xsl', 'application/xml', 'application/xhtml+xml'], true)
+            || str_ends_with($type, '+xml');
     }
 
     /**
