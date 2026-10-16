@@ -6,6 +6,7 @@ use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use InvalidArgumentException;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Support\ContainsMatch;
 
 /**
  * Applies filter values to a query builder using field-kind-driven rules.
@@ -77,7 +78,7 @@ final class TableFilterApplier
         $name = $field->name;
 
         if (in_array($kind, self::LIKE_KINDS, true)) {
-            $builder->where($name, 'like', "%{$value}%");
+            ContainsMatch::where($builder, $name, $value);
 
             return;
         }
