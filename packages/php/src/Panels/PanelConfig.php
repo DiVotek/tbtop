@@ -10,6 +10,7 @@ use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\Concerns\ConfiguresAppearance;
 use Tbtop\Admin\Panels\Concerns\ConfiguresMcp;
+use Tbtop\Admin\Panels\Concerns\ConfiguresMedia;
 
 /**
  * Fluent per-panel configuration, produced by Panel::configure().
@@ -18,6 +19,7 @@ final class PanelConfig
 {
     use ConfiguresAppearance;
     use ConfiguresMcp;
+    use ConfiguresMedia;
 
     /** Shell navigation layouts the client can render. */
     public const NAVIGATIONS = ['sidebar', 'topbar', 'topbar-sidebar', 'rail-sidebar'];

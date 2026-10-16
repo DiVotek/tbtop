@@ -9,6 +9,7 @@ uses(TestCase::class)->in('ChildCollectionTest.php', 'DslSerializationTest.php',
 
 use Tbtop\Admin\Tests\ColumnProjectionHttpTestCase;
 use Tbtop\Admin\Tests\HeaderActionsHttpTestCase;
+use Tbtop\Admin\Tests\MediaGateHttpTestCase;
 use Tbtop\Admin\Tests\MediaHttpTestCase;
 use Tbtop\Admin\Tests\NotificationsHttpTestCase;
 use Tbtop\Admin\Tests\PageLayoutHttpTestCase;
@@ -20,6 +21,7 @@ use Tbtop\Admin\Tests\TableTabsHttpTestCase;
 uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php', 'ColumnProjectionAllowlistTest.php');
 uses(TableTabsHttpTestCase::class)->in('TableTabsHttpTest.php');
 uses(MediaHttpTestCase::class)->in('MediaHttpTest.php');
+uses(MediaGateHttpTestCase::class)->in('MediaGateHttpTest.php');
 uses(PageLayoutHttpTestCase::class)->in('PageLayoutTest.php');
 uses(RunsMigrationsTestCase::class)->in('PackageMigrationsTest.php');
 uses(PanelsHttpTestCase::class)->in('PanelsHttpTest.php', 'PanelErrorHttpTest.php', 'PanelSessionHttpTest.php');
