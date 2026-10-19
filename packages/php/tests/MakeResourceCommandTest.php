@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Commands\Resource\ColumnInfo;
 use Tbtop\Admin\Commands\Resource\ResourceCode;
 use Tbtop\Admin\Commands\Resource\ResourceNames;
+use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page as AdminPage;
+use Tbtop\Admin\Panels\Panel;
+use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\Resource\Column as EnumColumn;
 use Tbtop\Admin\Tests\TestCase;
 
@@ -180,6 +185,22 @@ it('gates the pages through the model policy with --policy', function () {
     File::deleteDirectory(app_path('Policies'));
 });
 
+it('warns that a policy it creates denies everything until filled in', function () {
+    $this->artisan('make:tbtop-resource', ['model' => 'Writer', '--policy' => true])
+        ->expectsOutputToContain('WriterPolicy is a stub whose methods return false')
+        ->assertSuccessful();
+    File::deleteDirectory(app_path('Policies'));
+});
+
+it('refuses pages whose path an existing page already holds, and writes nothing', function () {
+    config(['tbtop-admin.panels' => [ClashingPanel::class]]);
+
+    $this->artisan('make:tbtop-resource', ['model' => 'Writer'])
+        ->expectsOutputToContain('path [writers] is taken by [ClashingWritersPage]')
+        ->assertFailed();
+    expect(is_dir(app_path('Admin/Pages/Writers')))->toBeFalse();
+});
+
 it('writes a feature test with --tests', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Writer', '--tests' => true])->assertSuccessful();
 
@@ -232,3 +253,24 @@ it('writes TODO pages when the table is missing', function () {
         ->assertSuccessful();
     expect(file_get_contents(app_path('Admin/Pages/Notes/NoteFormFields.php')))->toContain('// TODO: the table was missing');
 });
+
+final class ClashingWritersPage extends AdminPage
+{
+    public static function path(): string
+    {
+        return 'writers';
+    }
+
+    public function view(S $s): Node
+    {
+        return $s->stack([])->toNode();
+    }
+}
+
+final class ClashingPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('clashing')->pages([ClashingWritersPage::class]);
+    }
+}

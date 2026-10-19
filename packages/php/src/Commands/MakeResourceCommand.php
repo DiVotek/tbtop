@@ -7,14 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Commands\Resource\ColumnInfo;
+use Tbtop\Admin\Commands\Resource\PanelDiscovery;
 use Tbtop\Admin\Commands\Resource\ResourceCode;
 use Tbtop\Admin\Commands\Resource\ResourceNames;
 use Tbtop\Admin\Commands\Resource\ResourceOptions;
 use Tbtop\Admin\Commands\Resource\ResourceStubs;
+use Tbtop\Admin\Commands\Resource\RouteClashes;
 use Tbtop\Admin\Commands\Resource\SchemaReader;
 use Tbtop\Admin\Commands\Resource\UnfilledColumns;
-use Tbtop\Admin\Panels\PanelRegistry;
-use Throwable;
 
 /**
  * Writes list, create and edit pages for a model into the host, with fields,
@@ -38,24 +38,18 @@ class MakeResourceCommand extends Command
 
     public function handle(): int
     {
-        if ($this->option('simple') && $this->option('view')) {
-            // A view page links to an edit page that --simple does not write.
-            $this->components->error('--view needs the separate edit page: drop --simple, or drop --view.');
-
-            return self::FAILURE;
-        }
         $class = $this->modelClass();
         if ($class === null) {
             return self::FAILURE;
         }
-        if ($this->option('soft-deletes') && ! in_array(SoftDeletes::class, class_uses_recursive($class), true)) {
-            $this->components->error('--soft-deletes needs the SoftDeletes trait on ['.$class.']: add it, or drop the flag.');
+        $names = new ResourceNames($class, app()->getNamespace());
+        if (($refusal = $this->refusal($class, $names)) !== null) {
+            $this->components->error($refusal);
 
             return self::FAILURE;
         }
         /** @var Model $model */
         $model = new $class;
-        $names = new ResourceNames($class, app()->getNamespace());
         $columns = SchemaReader::read($model);
         if ($columns === null) {
             $this->components->warn("Table [{$model->getTable()}] not found: writing pages with TODOs in place of fields. Run the migration and --force to regenerate.");
@@ -76,6 +70,24 @@ class MakeResourceCommand extends Command
         $this->reportDiscovery($dir, $names);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Why nothing may be written, or null.
+     *
+     * @param  class-string<Model>  $class
+     */
+    private function refusal(string $class, ResourceNames $names): ?string
+    {
+        if ($this->option('simple') && $this->option('view')) {
+            return '--view needs the separate edit page that --simple does not write: drop one of them.';
+        }
+        if ($this->option('soft-deletes') && ! in_array(SoftDeletes::class, class_uses_recursive($class), true)) {
+            return "--soft-deletes needs the SoftDeletes trait on [{$class}]: add it, or drop the flag.";
+        }
+        $clashes = RouteClashes::find($names, (bool) $this->option('simple'), (bool) $this->option('view'));
+
+        return $clashes === [] ? null : 'The generated pages would collide with existing ones: '.implode('; ', $clashes).'. Rename or remove those pages first.';
     }
 
     /** @return class-string<Model>|null */
@@ -161,6 +173,7 @@ class MakeResourceCommand extends Command
             return;
         }
         $this->call('make:policy', ['name' => class_basename($class).'Policy', '--model' => $class]);
+        $this->components->warn(class_basename($class).'Policy is a stub whose methods return false: every generated page answers 403 until you fill it in.');
     }
 
     /** @param  list<ColumnInfo>|null  $columns */
@@ -177,20 +190,9 @@ class MakeResourceCommand extends Command
 
     private function reportDiscovery(string $dir, ResourceNames $names): void
     {
-        try {
-            $panels = PanelRegistry::fromConfig()->all();
-        } catch (Throwable) {
-            $panels = [];
-        }
-        foreach ($panels as $id => $panel) {
-            foreach ($panel->getPageDiscoveryRoots() as $root) {
-                if (str_starts_with($dir.'/', rtrim($root['in'], '/').'/')) {
-                    $this->components->info("Panel [{$id}] discovers {$names->namespace()}. Run tbtop:cache-pages if the page index is cached.");
-
-                    return;
-                }
-            }
-        }
-        $this->components->warn("No panel discovers [{$dir}]: register its pages with pages().");
+        $id = PanelDiscovery::panelFor($dir);
+        $id === null
+            ? $this->components->warn("No panel discovers [{$dir}]: register its pages with pages().")
+            : $this->components->info("Panel [{$id}] discovers {$names->namespace()}. Run tbtop:cache-pages if the page index is cached.");
     }
 }
