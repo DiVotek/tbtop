@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
@@ -113,5 +114,82 @@ class TwoFactorChallengeTest extends TestCase
         $this->post('/admin/two-factor-challenge/forms/challenge', [
             'code' => $codes[0],
         ])->assertRedirect('/admin/posts');
+    }
+
+    public function test_sixth_attempt_within_a_minute_is_refused_and_drops_the_pending_login(): void
+    {
+        [$user, $g2fa, $secret] = $this->userWithTwoFactor();
+        $this->freezeTime();
+
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+
+        foreach (range(1, 5) as $_) {
+            $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => '000000'])
+                ->assertSessionHasErrors('code');
+        }
+
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => $g2fa->oathTotp($secret, intdiv(now()->getTimestamp(), 30)),
+        ])->assertSessionHasErrors('code')->assertSessionMissing('auth.2fa.user_id');
+
+        $this->assertGuest();
+    }
+
+    public function test_the_fifth_wrong_code_drops_the_pending_login_for_good(): void
+    {
+        [$user, $g2fa, $secret] = $this->userWithTwoFactor();
+        $this->freezeTime();
+
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+        foreach (range(1, 5) as $_) {
+            $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => '000000']);
+        }
+
+        // After the throttle window a valid code still needs a fresh password sign-in.
+        $this->travel(2)->minutes();
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => $g2fa->oathTotp($secret, intdiv(now()->getTimestamp(), 30)),
+        ])->assertSessionMissing('auth.2fa.user_id');
+
+        $this->assertGuest();
+    }
+
+    public function test_a_used_otp_cannot_be_replayed_within_its_window(): void
+    {
+        [$user, $g2fa, $secret] = $this->userWithTwoFactor();
+        $this->freezeTime();
+        $code = $g2fa->oathTotp($secret, intdiv(now()->getTimestamp(), 30));
+
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+        $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => $code])
+            ->assertRedirect('/admin/dashboard');
+
+        Auth::logout();
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+        $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => $code])
+            ->assertSessionHasErrors('code');
+
+        $this->assertGuest();
+    }
+
+    public function test_a_re_enrolled_secret_accepts_its_first_code_in_the_same_step(): void
+    {
+        $this->freezeTime();
+        $step = intdiv(now()->getTimestamp(), 30);
+        // Disabled 2FA whose old secret was last used in this very time step.
+        $user = User::factory()->create(['two_factor_last_used_step' => $step]);
+
+        $secret = $this->actingAs($user)->postJson('/two-factor/setup')->json('secret');
+        $code = (new Google2FA)->oathTotp($secret, $step);
+        $this->postJson('/two-factor/confirm', ['code' => $code])->assertOk();
+
+        Auth::logout();
+        $this->withSession(['auth.2fa.user_id' => $user->id]);
+        // The enrolment code was consumed; the next step's code signs in.
+        $this->post('/admin/two-factor-challenge/forms/challenge', ['code' => $code])
+            ->assertSessionHasErrors('code');
+        $this->post('/admin/two-factor-challenge/forms/challenge', [
+            'code' => (new Google2FA)->oathTotp($secret, $step + 1),
+        ])->assertRedirect('/admin/dashboard');
     }
 }

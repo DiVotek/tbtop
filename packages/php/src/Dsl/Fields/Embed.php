@@ -110,6 +110,21 @@ final class Embed implements JsonSerializable
         return ValidatorFactory::make($data, RuleWalker::collect($fields), [], RuleWalker::collectAttributes($fields));
     }
 
+    /**
+     * getValidator() with every Upload held to a path one of $stored (data of
+     * this kind's embeds already saved) holds, or one issued to this session.
+     *
+     * @param  array<mixed>  $data
+     * @param  list<array<mixed>>  $stored
+     */
+    public function getBoundValidator(array $data, array $stored): Validator
+    {
+        $fields = $this->includedFields();
+        $rules = RuleWalker::bindUploadPaths(RuleWalker::collect($fields), $fields, ...$stored);
+
+        return ValidatorFactory::make($data, $rules, [], RuleWalker::collectAttributes($fields));
+    }
+
     /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {

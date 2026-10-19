@@ -150,7 +150,10 @@ it('asks for the panel when several are registered, before writing anything', fu
 it('refuses --auth without a panel', function () {
     authHost($this->hostRoot, []);
 
-    $this->artisan('admin:install', ['--auth' => true])->assertFailed();
+    $this->artisan('admin:install', ['--auth' => true])
+        ->expectsOutputToContain("'panels' => [\\App\\Admin\\AdminPanel::class],")
+        ->expectsOutputToContain('https://docs.tbtop.dev/docs/getting-started/panel')
+        ->assertFailed();
 
     expect($this->hostRoot.'/app/Admin/Pages/Auth')->not->toBeDirectory();
 });

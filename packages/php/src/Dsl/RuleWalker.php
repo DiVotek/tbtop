@@ -4,11 +4,13 @@ namespace Tbtop\Admin\Dsl;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use InvalidArgumentException;
+use LogicException;
 use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Fields\Richtext;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Validation\EmbedsRule;
+use Tbtop\Admin\Validation\IssuedUploadPath;
 
 final class RuleWalker
 {
@@ -41,6 +43,113 @@ final class RuleWalker
         }
 
         return $rules;
+    }
+
+    /**
+     * $rules (from collect() over the same $children) with every Upload value
+     * key held to IssuedUploadPath: a path one of $records already stores under
+     * that key — any repeater row, any list item — or one issued to this
+     * session. A richtext's EmbedsRule is bound the same way, so an Upload
+     * inside an embed accepts the paths its stored documents already hold.
+     *
+     * @param  array<string, list<string|ValidationRule>>  $rules
+     * @param  list<mixed>  $children
+     * @param  array<string, mixed>  ...$records  What the submitter may already see: the form's record, a modal's loaded data.
+     * @return array<string, list<string|ValidationRule>>
+     */
+    public static function bindUploadPaths(array $rules, array $children, array ...$records): array
+    {
+        foreach (self::fieldsByKey($children) as $key => $field) {
+            if ($field instanceof Upload) {
+                $rules = self::bindUpload($rules, $field, $key, $records);
+            } elseif ($field instanceof Richtext && $field->getEmbeds() !== []) {
+                $rules = self::bindEmbeds($rules, $field, $key, $records);
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Whether bindUploadPaths() has anything to bind in $children: an Upload,
+     * or a richtext with embeds (which may hold one).
+     *
+     * @param  list<mixed>  $children
+     */
+    public static function hasUploadPaths(array $children): bool
+    {
+        foreach (self::fieldsByKey($children) as $field) {
+            if ($field instanceof Upload || ($field instanceof Richtext && $field->getEmbeds() !== [])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string, list<string|ValidationRule>>  $rules
+     * @param  list<array<string, mixed>>  $records
+     * @return array<string, list<string|ValidationRule>>
+     */
+    private static function bindUpload(array $rules, Upload $field, string $key, array $records): array
+    {
+        foreach (self::valueKeys($field, $key) as $valueKey) {
+            $valueKey .= $field->isMultiple() ? '.*' : '';
+            self::assertCollected($rules, $valueKey);
+            $stored = IssuedUploadPath::pathsIn(self::storedValues($records, $valueKey));
+            $rules[$valueKey][] = new IssuedUploadPath($field->name, $stored);
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @param  array<string, list<string|ValidationRule>>  $rules
+     * @param  list<array<string, mixed>>  $records
+     * @return array<string, list<string|ValidationRule>>
+     */
+    private static function bindEmbeds(array $rules, Richtext $field, string $key, array $records): array
+    {
+        foreach (self::valueKeys($field, $key) as $valueKey) {
+            self::assertCollected($rules, $valueKey);
+            $stored = self::storedValues($records, $valueKey);
+            $rules[$valueKey] = array_map(
+                static fn (string|ValidationRule $rule): string|ValidationRule => $rule instanceof EmbedsRule ? $rule->boundTo($stored) : $rule,
+                $rules[$valueKey],
+            );
+        }
+
+        return $rules;
+    }
+
+    /** @return list<string> */
+    private static function valueKeys(Field $field, string $key): array
+    {
+        return $field->isTranslatableField()
+            ? array_map(static fn (string $locale): string => "{$key}.{$locale}", self::contentLocales())
+            : [$key];
+    }
+
+    /**
+     * Fail closed: a key collect() did not emit would leave the value unbound.
+     *
+     * @param  array<string, list<string|ValidationRule>>  $rules
+     */
+    private static function assertCollected(array $rules, string $valueKey): void
+    {
+        if (! isset($rules[$valueKey])) {
+            throw new LogicException("No rules for upload key '{$valueKey}'; collect() and bindUploadPaths() disagree.");
+        }
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $records
+     * @return list<mixed>
+     */
+    private static function storedValues(array $records, string $valueKey): array
+    {
+        return array_map(static fn (array $record): mixed => data_get($record, $valueKey), $records);
     }
 
     /**

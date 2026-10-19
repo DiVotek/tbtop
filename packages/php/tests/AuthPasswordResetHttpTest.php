@@ -104,3 +104,60 @@ it('throttles failed resets per IP so emails cannot be probed in bulk', function
     $attempt('olena@example.com')->assertSessionHasErrors('email');
     expect(session('errors')->first('email'))->toStartWith(substr(__('auth.throttle'), 0, 20));
 });
+
+function signInAs(string $password): void
+{
+    test()->from('/admin/login')->post('/admin/login/forms/login', ['email' => 'olena@example.com', 'password' => $password])
+        ->assertSessionHasNoErrors();
+}
+
+/** The test client keeps one session store: swap in another browser's data and drop the guard's cached user. */
+function switchSession(array $data): void
+{
+    session()->flush();
+    session()->put($data);
+    app('auth')->forgetGuards();
+}
+
+function completeReset(string $password): void
+{
+    requestLink('olena@example.com');
+    $token = null;
+    Notification::assertSentTo(test()->user, ResetPasswordNotification::class, function ($n) use (&$token): bool {
+        $token = $n->token;
+
+        return true;
+    });
+    test()->post("/admin/reset-password/{$token}/forms/reset", [
+        'email' => 'olena@example.com',
+        'password' => $password,
+        'password_confirmation' => $password,
+    ])->assertSessionHasNoErrors();
+}
+
+it('signs out a session elsewhere on its next request once the password is reset', function () {
+    signInAs('old-password');
+    $this->get('/admin/nav-demo')->assertOk();
+    $elsewhere = session()->all();
+
+    switchSession([]);
+    completeReset('brand-new-password');
+    signInAs('brand-new-password');
+    $this->get('/admin/nav-demo')->assertOk();
+    $resetter = session()->all();
+
+    switchSession($elsewhere);
+    $this->get('/admin/nav-demo')->assertRedirect('/admin/login');
+    $this->assertGuest('staff');
+
+    switchSession($resetter);
+    $this->get('/admin/nav-demo')->assertOk();
+});
+
+it('keeps a signed-in session whose password did not change', function () {
+    signInAs('old-password');
+
+    $this->get('/admin/nav-demo')->assertOk();
+    $this->get('/admin/nav-demo')->assertOk();
+    $this->assertAuthenticatedAs($this->user, 'staff');
+});

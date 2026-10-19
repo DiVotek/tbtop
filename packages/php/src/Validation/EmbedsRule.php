@@ -6,15 +6,38 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\InvokableValidationRule;
+use Illuminate\Validation\Validator;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Fields\Richtext;
 
 /**
  * Validates the `embed` nodes of one Lexical document (one field key, one locale)
  * against the fields of their declared kind. Unknown kinds pass untouched.
+ * Once boundTo() the stored documents, an Upload inside an embed accepts only
+ * a path those documents already hold or one issued to this session.
  */
 final class EmbedsRule implements ValidationRule
 {
-    public function __construct(private readonly Richtext $field) {}
+    /** @param  array<string, list<array<mixed>>>|null  $storedData  Per kind, the stored embeds' data; null = unbound. */
+    public function __construct(private readonly Richtext $field, private readonly ?array $storedData = null) {}
+
+    /**
+     * This rule held to the documents already stored under its key: a
+     * document, a list of them (repeater rows, several records) or null.
+     */
+    public function boundTo(mixed $storedDocuments): self
+    {
+        $data = [];
+        foreach (self::documentsIn($storedDocuments) as $document) {
+            foreach (self::embedNodes($document) as [$node]) {
+                if (is_string($node['kind'] ?? null) && is_array($node['data'] ?? null)) {
+                    $data[$node['kind']][] = $node['data'];
+                }
+            }
+        }
+
+        return new self($this->field, $data);
+    }
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -87,7 +110,7 @@ final class EmbedsRule implements ValidationRule
         if ($embed === null) {
             return null;
         }
-        $validator = $embed->getValidator($node['data']);
+        $validator = $this->validatorFor($embed, $node['data']);
         if (! $validator->fails()) {
             return null;
         }
@@ -115,11 +138,39 @@ final class EmbedsRule implements ValidationRule
         foreach (is_array($children) ? $children : [] as $i => $child) {
             $embed = is_array($child) && self::isEmbed($child) ? $this->field->findEmbed((string) $child['kind']) : null;
             if ($embed !== null) {
-                $value['root']['children'][$i]['data'] = $embed->getValidator((array) $child['data'])->validated();
+                $value['root']['children'][$i]['data'] = $this->validatorFor($embed, (array) $child['data'])->validated();
             }
         }
 
         return $value;
+    }
+
+    /** @param  array<mixed>  $data */
+    private function validatorFor(Embed $embed, array $data): Validator
+    {
+        if ($this->storedData === null) {
+            return $embed->getValidator($data);
+        }
+
+        return $embed->getBoundValidator($data, $this->storedData[$embed->kind] ?? []);
+    }
+
+    /**
+     * Every Lexical document in $value: one (it has a `root`), or any nested
+     * list of them.
+     *
+     * @return list<array<mixed>>
+     */
+    private static function documentsIn(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+        if (array_key_exists('root', $value)) {
+            return [$value];
+        }
+
+        return array_merge([], ...array_map(self::documentsIn(...), array_values($value)));
     }
 
     /**

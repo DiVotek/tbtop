@@ -11,6 +11,7 @@ use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Uploads\UploadFieldConfig;
 use Tbtop\Admin\Uploads\UploadFieldUrl;
 use Tbtop\Admin\Uploads\UploadStorer;
+use Tbtop\Admin\Validation\IssuedUploadPath;
 
 /**
  * POST {page-path}/uploads/{tbtopField}
@@ -52,6 +53,7 @@ final class FieldUploadController
         } catch (SvgSanitizeException $e) {
             abort(422, __('tbtop-admin::admin.media.errors.'.$e->reason));
         }
+        IssuedUploadPath::remember($request, $fieldName, $envelope['path']);
 
         return response()->json(['data' => $this->signed($envelope, $config, $request, $fieldName)]);
     }
