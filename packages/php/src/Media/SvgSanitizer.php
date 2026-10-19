@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Media;
 
 use enshrined\svgSanitize\Sanitizer;
 use Illuminate\Support\Facades\Storage;
+use ValueError;
 
 /**
  * Strips active content (scripts, event handlers, external refs) from stored
@@ -41,7 +42,12 @@ final class SvgSanitizer
             return;
         }
 
-        $clean = (new Sanitizer)->sanitize($dirty);
+        try {
+            $clean = (new Sanitizer)->sanitize($dirty);
+        } catch (ValueError) {
+            // enshrined/svg-sanitize 1.1 throws on some malformed input instead of returning false.
+            $clean = false;
+        }
         if ($clean !== false) {
             $storage->put($path, $clean);
 
