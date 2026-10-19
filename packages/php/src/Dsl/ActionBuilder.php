@@ -327,6 +327,16 @@ final class ActionBuilder implements JsonSerializable
         return $this;
     }
 
+    /**
+     * Payload sources query() declared (row | selection | form).
+     *
+     * @return list<string>
+     */
+    public function getQueryNeeds(): array
+    {
+        return $this->queryNeeds;
+    }
+
     public function handler(): ?Closure
     {
         return $this->handler;
