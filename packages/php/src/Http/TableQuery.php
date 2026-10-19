@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Dsl\TableBuilder;
+use Tbtop\Admin\Support\ContainsMatch;
 
 final class TableQuery
 {
@@ -108,7 +109,7 @@ final class TableQuery
         }
         $builder->where(function (EloquentBuilder|QueryBuilder $q) use ($fields, $search): void {
             foreach ($fields as $field) {
-                $q->orWhere($field, 'like', "%{$search}%");
+                ContainsMatch::where($q, $field, $search, 'or');
             }
         });
     }
@@ -129,7 +130,7 @@ final class TableQuery
             if ($value === '') {
                 continue;
             }
-            $builder->where($field, 'like', "%{$value}%");
+            ContainsMatch::where($builder, $field, $value);
         }
     }
 
