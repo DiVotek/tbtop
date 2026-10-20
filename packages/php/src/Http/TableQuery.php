@@ -102,9 +102,10 @@ final class TableQuery
 
     private static function applySearch(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
     {
-        $search = (string) $request->query('search', '');
+        // An array param (?search[]=x) would 500 on string cast: ignore it.
+        $search = $request->query('search');
         $fields = $table->searchableFields();
-        if ($search === '' || $fields === []) {
+        if (! is_string($search) || $search === '' || $fields === []) {
             return;
         }
         $builder->where(function (EloquentBuilder|QueryBuilder $q) use ($fields, $search): void {
@@ -126,8 +127,7 @@ final class TableQuery
             if (! is_string($field) || ! in_array($field, $allowed, true)) {
                 continue;
             }
-            $value = (string) $value;
-            if ($value === '') {
+            if (! is_string($value) || $value === '') {
                 continue;
             }
             ContainsMatch::where($builder, $field, $value);

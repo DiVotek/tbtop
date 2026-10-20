@@ -116,7 +116,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes. Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | `yearPicker(bool $state = true)` — swaps the calendar caption's year label for a year dropdown, offering the years within the bounds below (a narrow band around today without them); `minDate(DateTimeInterface\|string $date)` / `maxDate(...)` — earliest/latest selectable day. Value is a `Y-m-d` day: `record()` cuts an ISO instant (what `$model->toArray()` gives for a date/datetime cast) or a `DateTimeInterface` to its day in the app timezone. Bind it to a date-only column; on a datetime column whose time matters use `datetime()`, since saving a day writes midnight | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
-| **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS`; call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
+| **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS` (combining it with `minuteStep()` throws); call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | `disabledRanges(Closure $fn)` — server closure `fn (array $deps): array` returning a list of `['from' => ?string, 'to' => ?string]` ISO-day ranges (both ends inclusive-disabled; a null end makes the range open, i.e. min/max-date semantics); `dependsOn(string\|array $fields)` — parent field(s) whose changes refetch the ranges. Value shape: `{from?: string, to?: string}` | Only with `disabledRanges()` + `dependsOn()` → daterange-ranges endpoint |
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |
@@ -165,7 +165,7 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 | 3 | `Password` | `$s->password('x')` | `password` | `password` | `fields/passwordField.tsx` |
 | 4 | `Otp` | `$s->otp('x')` | `otp` | `otp` | `fields/otpField.tsx` |
 | 5 | `Number` | `$s->number('x')` | `number` | `number` | `fields/numberField.tsx` |
-| 6 | `Date` | `$s->date('x')` | `date` | `date` | `fields/dateField.tsx` (`DateForm`/`DateCell`) |
+| 6 | `Date` | `$s->date('x')` | `date` | `date` | `fields/dateField.tsx` (`DateCell`; `DateForm` lives in `fields/dateForm.tsx`) |
 | 7 | `Datetime` | `$s->datetime('x')` | `datetime` | `datetime` | `fields/dateField.tsx` (`DateTimeForm`/`DateTimeCell`) |
 | 8 | `Boolean` | `$s->boolean('x')` | `boolean` | `boolean` | `fields/booleanField.tsx` |
 | 9 | `Select` | `$s->select('x')` | `select` | `select` | `fields/selectField.tsx` (branches static/async/creatable/multi at runtime) |
@@ -267,8 +267,7 @@ $s->relation('author_id')->label('Author')
 See [./wiring.md](./wiring.md) for the endpoint request/response shape.
 
 > The relation field ships full async type-ahead (server search endpoint + client
-> combobox) as of PR #2. `CLAUDE.md`'s "plain input" stub note predates that and is
-> stale — the field is fully wired.
+> combobox) as of PR #2 — the field is fully wired.
 
 ### Select with `creatable()` — `select-create` endpoint
 

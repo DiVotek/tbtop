@@ -38,6 +38,18 @@ describe("Colorpicker field", () => {
 		expect(captured.at(-1)).toBe("#00ff00");
 	});
 
+	test("Colorpicker marks the swatch selected regardless of hex letter case", () => {
+		const { getByRole } = render(
+			<ColorpickerForm
+				name="brand"
+				value="#3b82f6"
+				onChange={() => {}}
+				options={{ palette: ["#3B82F6", "#00FF00"] }}
+			/>,
+		);
+		expect(getByRole("option", { name: "#3B82F6" }).getAttribute("aria-selected")).toBe("true");
+	});
+
 	test("Colorpicker swaps to the alpha picker when value is an 8-char hex", () => {
 		const { container, rerender } = render(
 			<ColorpickerForm name="brand" value="#ff0000" onChange={() => {}} />,
