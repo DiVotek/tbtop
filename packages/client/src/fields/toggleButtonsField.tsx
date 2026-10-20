@@ -15,13 +15,16 @@ export function ToggleButtonsCell({
 	value,
 	options,
 }: FieldCellProps<ToggleButtonsValue, ToggleButtonsBag>) {
-	if (value === null || value === undefined) {
+	const coerced = coerceSelectValue(value);
+	if (coerced === null) {
 		return null;
 	}
-	if (Array.isArray(value)) {
-		return value.length === 0 ? null : <MultiCell value={value} options={options?.options} />;
+	if (Array.isArray(coerced)) {
+		return coerced.length === 0 ? null : (
+			<MultiCell value={coerced} options={options?.options} />
+		);
 	}
-	return <span>{optionLabel(value, options?.options)}</span>;
+	return <span>{optionLabel(coerced, options?.options)}</span>;
 }
 
 function MultiCell({ value, options }: { value: string[]; options?: LabeledOption[] }) {
