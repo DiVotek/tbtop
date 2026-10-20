@@ -470,8 +470,8 @@ $s->radio('status')->options(OrderStatus::class)->default(OrderStatus::Pending)
 - `default()` accepts a case, or a list of cases for multi-value fields, and stores the
   string option values. Values passed through `record()` are not converted.
 - **Int-backed enums**: option values are strings on the wire, so string-cast the form data
-  (`record(['priority' => (string) $order->priority->value])`). The Radio, ToggleButtons and
-  CheckboxList clients compare strings, so an int value shows no selection.
+  (`record(['priority' => (string) $order->priority->value])`). Select, Radio, ToggleButtons
+  and CheckboxList string-cast an int value themselves, but casting keeps the data consistent.
 - **No validation is implied**, for the enum form as for the array form. Add
   `Rule::enum(OrderStatus::class)` for a backed enum. `Rule::enum()` needs `tryFrom`, so validate a
   pure enum with `Rule::in(array_column(Draft::cases(), 'name'))`.
