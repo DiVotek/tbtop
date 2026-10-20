@@ -153,6 +153,16 @@ describe("tableUrlState: pagination validation", () => {
 	});
 });
 
+// Regression: a scalar and a nested key for the same filter (a stale bookmark
+// after a select became multiple) threw on the string, crashing the table mount.
+describe("tableUrlState: conflicting filter shapes", () => {
+	test("tableUrlState: a nested key after a scalar one does not throw", () => {
+		const sp = new URLSearchParams("t[posts][status]=draft&t[posts][status][0]=published");
+
+		expect(readTableParams(sp, "posts")).toEqual({ filters: { status: ["published"] } });
+	});
+});
+
 // ─── history.replaceState integration ────────────────────────────────────────
 
 describe("tableUrlState: persistTableParams calls history.replaceState", () => {

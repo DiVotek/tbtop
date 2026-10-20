@@ -59,6 +59,15 @@ it('caps the list to the limit param but counts all unread', function () {
         ->and($res->json('unreadCount'))->toBe(5);
 });
 
+it('falls back to the default limit for a non-numeric limit param', function () {
+    foreach (range(1, 3) as $i) {
+        makeNote(['title' => "n{$i}"]);
+    }
+
+    expect($this->getJson('/admin/api/notifications?limit=abc')->assertOk()->json('data'))->toHaveCount(3)
+        ->and($this->getJson('/admin/api/notifications?limit[]=2')->assertOk()->json('data'))->toHaveCount(3);
+});
+
 it('projects body, color, and actions from the stored data', function () {
     makeNote([
         'body' => 'Car #42 booked',

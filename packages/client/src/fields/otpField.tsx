@@ -43,6 +43,7 @@ export function OtpForm({
 			disabled={disabled}
 			aria-label={t("field.otp.label")}
 			aria-describedby={describedBy}
+			aria-invalid={invalid || undefined}
 		>
 			<InputOTPGroup>
 				{Array.from({ length }, (_, i) => (

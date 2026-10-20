@@ -81,6 +81,10 @@ export function useUploadQueue({ folderId, onUploaded }: UseUploadQueueInput): U
 	const uploadFiles = useCallback(
 		async (files: FileList | File[]): Promise<void> => {
 			const queued = buildTasks(Array.from(files));
+			// A cancelled picker can fire change with no files: nothing to report.
+			if (queued.length === 0) {
+				return;
+			}
 			// Append, never replace: a second drop mid-upload must not wipe the
 			// in-flight batch's progress rows.
 			setTasks((prev) => [...prev, ...queued.map((q) => q.task)]);
