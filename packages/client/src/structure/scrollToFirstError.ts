@@ -41,6 +41,8 @@ function buildErrorSets(fieldErrors: Record<string, string>): {
 		}
 		const base = key.slice(0, dotIdx);
 		const locale = key.slice(dotIdx + 1);
+		// A repeater sub-field ("items.0.label") is its own wrapper, not a locale.
+		errorFieldSet.add(key);
 		errorFieldSet.add(base);
 		if (!localeErrorMap.has(base)) {
 			localeErrorMap.set(base, locale);
