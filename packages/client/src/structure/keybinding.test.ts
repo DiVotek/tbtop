@@ -74,4 +74,23 @@ describe("matchesKeybinding", () => {
 		expect(matchesKeybinding(spec, evt({ key: "s", ctrlKey: true }))).toBe(false);
 		expect(matchesKeybinding(spec, evt({ key: "s", metaKey: true }))).toBe(true);
 	});
+
+	test("mod+s matches on a non-Latin layout via the physical key", () => {
+		const spec = parseKeybinding("mod+s") ?? unreachable();
+		expect(matchesKeybinding(spec, evt({ key: "і", code: "KeyS", ctrlKey: true }))).toBe(true);
+		expect(matchesKeybinding(spec, evt({ key: "ы", code: "KeyS", metaKey: true }))).toBe(true);
+	});
+
+	test("an AltGr character does not match by its physical key", () => {
+		const spec = parseKeybinding("mod+alt+s") ?? unreachable();
+		// Polish AltGr+S types "ś" and reports ctrlKey + altKey.
+		const polishAltGr = evt({ key: "ś", code: "KeyS", ctrlKey: true, altKey: true });
+		expect(matchesKeybinding(spec, polishAltGr)).toBe(false);
+	});
+
+	test("an ASCII key is matched by layout, not by physical position", () => {
+		const spec = parseKeybinding("mod+s") ?? unreachable();
+		// Dvorak: the physical S key types "o".
+		expect(matchesKeybinding(spec, evt({ key: "o", code: "KeyS", metaKey: true }))).toBe(false);
+	});
 });

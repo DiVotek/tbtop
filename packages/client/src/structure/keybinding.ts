@@ -52,7 +52,7 @@ export function parseKeybinding(spec: string): ParsedKeybinding | null {
 }
 
 export function matchesKeybinding(spec: ParsedKeybinding, event: KeyboardEvent): boolean {
-	if (event.key.toLowerCase() !== spec.key) {
+	if (eventKey(event) !== spec.key) {
 		return false;
 	}
 	if (spec.shift !== event.shiftKey) {
@@ -65,6 +65,34 @@ export function matchesKeybinding(spec: ParsedKeybinding, event: KeyboardEvent):
 	const cmdOk = spec.mod ? true : spec.cmd === event.metaKey;
 	const ctrlOk = spec.mod ? true : spec.ctrl === event.ctrlKey;
 	return modOk && cmdOk && ctrlOk;
+}
+
+const ASCII_KEY_RE = /^[\x20-\x7e]$/;
+const LETTER_OR_DIGIT_CODE_RE = /^(?:Key([A-Z])|Digit([0-9]))$/;
+
+/**
+ * The key a binding is compared against. On a non-Latin layout (Cyrillic,
+ * Greek) Ctrl/Cmd+S reports a key like "і" that no binding spells, so a
+ * non-ASCII key pressed with Ctrl/Cmd falls back to the physical letter/digit
+ * from `event.code`. Not with Alt/AltGr: there the key types a real character
+ * (Polish AltGr+S → "ś"), and the dispatcher would swallow it. ASCII keys
+ * stay layout-aware (Dvorak keeps its letters).
+ */
+function eventKey(event: KeyboardEvent): string {
+	const key = event.key.toLowerCase();
+	if (key.length !== 1 || ASCII_KEY_RE.test(key) || !isShortcutChord(event)) {
+		return key;
+	}
+	const match = LETTER_OR_DIGIT_CODE_RE.exec(event.code ?? "");
+	const physical = match?.[1] ?? match?.[2];
+	return physical ? physical.toLowerCase() : key;
+}
+
+function isShortcutChord(event: KeyboardEvent): boolean {
+	if (!(event.ctrlKey || event.metaKey) || event.altKey) {
+		return false;
+	}
+	return event.getModifierState?.("AltGraph") !== true;
 }
 
 interface Binding {
