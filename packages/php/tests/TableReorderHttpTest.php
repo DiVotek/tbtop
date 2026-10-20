@@ -92,3 +92,25 @@ it('Reorder: missing ids key fails validation with 422', function (): void {
         ->assertStatus(422)
         ->assertJsonValidationErrors(['ids']);
 });
+
+it('Reorder: a nested array id fails validation with 422 and persists nothing', function (): void {
+    $ids = reorderIdsByTitle(['a', 'b']);
+    $original = EcPost::pluck('sort_order', 'title')->all();
+
+    $this->postJson('/admin/reorder-posts/tables/ecposts/reorder', ['ids' => [[$ids[0]], $ids[1]]])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['ids.0']);
+
+    expect(EcPost::pluck('sort_order', 'title')->all())->toBe($original);
+});
+
+it('Reorder: duplicate ids fail validation as duplicates, not as out of scope', function (): void {
+    $ids = reorderIdsByTitle(['a', 'a', 'b']);
+    $original = EcPost::pluck('sort_order', 'title')->all();
+
+    $this->postJson('/admin/reorder-posts/tables/ecposts/reorder', ['ids' => $ids])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['ids.1']);
+
+    expect(EcPost::pluck('sort_order', 'title')->all())->toBe($original);
+});
