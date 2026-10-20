@@ -136,7 +136,9 @@ final class TableFilterApplier
             $builder->where($name, '>=', $from);
         }
         if ($to !== null) {
-            $builder->where($name, '<=', $to);
+            // whereDate keeps the end day inclusive on datetime columns, where
+            // a plain `<= 'Y-m-d'` stops at midnight and drops that day's rows.
+            $builder->whereDate($name, '<=', $to);
         }
     }
 
