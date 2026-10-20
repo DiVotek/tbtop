@@ -4,10 +4,16 @@
  * For translatable fields (keyed as `fieldName.locale`), activates the locale
  * tab containing the error before scrolling.
  */
+/** The form's locale switcher plus the configured content locales it may switch to. */
+export interface LocaleSwitch {
+	locales: readonly string[];
+	setActive: (locale: string) => void;
+}
+
 export function scrollToFirstError(
 	fieldErrors: Record<string, string>,
 	formEl: HTMLElement | null,
-	setActiveLocale: ((locale: string) => void) | null,
+	localeSwitch: LocaleSwitch | null,
 ): void {
 	if (!formEl || Object.keys(fieldErrors).length === 0) {
 		return;
@@ -21,7 +27,7 @@ export function scrollToFirstError(
 		return;
 	}
 
-	activateLocaleIfNeeded(targetWrapper, localeErrorMap, setActiveLocale);
+	activateLocaleIfNeeded(targetWrapper, localeErrorMap, localeSwitch);
 	targetWrapper.scrollIntoView({ behavior: "smooth", block: "center" });
 	focusFirstControl(targetWrapper);
 }
@@ -75,12 +81,13 @@ function scrollToFallbackError(formEl: HTMLElement): void {
 function activateLocaleIfNeeded(
 	wrapper: HTMLElement,
 	localeErrorMap: Map<string, string>,
-	setActiveLocale: ((locale: string) => void) | null,
+	localeSwitch: LocaleSwitch | null,
 ): void {
 	const fieldName = wrapper.dataset.fieldName ?? "";
 	const errorLocale = localeErrorMap.get(fieldName);
-	if (errorLocale && setActiveLocale) {
-		setActiveLocale(errorLocale);
+	// A row-level key ("items.0") splits the same way; only a real locale switches tabs.
+	if (errorLocale && localeSwitch?.locales.includes(errorLocale)) {
+		localeSwitch.setActive(errorLocale);
 	}
 }
 

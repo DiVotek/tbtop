@@ -18,3 +18,27 @@ test("a repeater sub-field error focuses that sub-field's control", () => {
 	scrollToFirstError({ "items.0.label": "Required" }, form, null);
 	expect(document.activeElement?.id).toBe("label");
 });
+
+test("a row-level error key does not switch the locale to the row index", () => {
+	const form = document.createElement("form");
+	form.innerHTML = `<div data-field-name="items"><input /></div>`;
+	document.body.append(form);
+	const switched: string[] = [];
+	scrollToFirstError({ "items.0": "Invalid row" }, form, {
+		locales: ["en", "uk"],
+		setActive: (l) => switched.push(l),
+	});
+	expect(switched).toEqual([]);
+});
+
+test("a translatable error key still switches to its locale", () => {
+	const form = document.createElement("form");
+	form.innerHTML = `<div data-field-name="title"><input /></div>`;
+	document.body.append(form);
+	const switched: string[] = [];
+	scrollToFirstError({ "title.uk": "Required" }, form, {
+		locales: ["en", "uk"],
+		setActive: (l) => switched.push(l),
+	});
+	expect(switched).toEqual(["uk"]);
+});
