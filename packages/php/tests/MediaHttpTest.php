@@ -43,6 +43,17 @@ it('filters root media when folder param is empty', function () {
         ->and($response->json('data.0.name'))->toBe('root.png');
 });
 
+it('treats an array-shaped folder param as the root, not folder 1', function () {
+    $folder = MediaFolder::create(['name' => 'docs']);
+    Media::create(mediaRow(['folder_id' => $folder->id, 'name' => 'in-folder.png']));
+    Media::create(mediaRow(['name' => 'root.png']));
+
+    $response = $this->getJson('/admin/api/media?folder[]=x')->assertOk();
+    expect($folder->id)->toBe(1)
+        ->and($response->json('total'))->toBe(1)
+        ->and($response->json('data.0.name'))->toBe('root.png');
+});
+
 it('searches media by name', function () {
     Media::create(mediaRow(['name' => 'hero-image.png']));
     Media::create(mediaRow(['name' => 'footer-logo.png']));
@@ -58,6 +69,14 @@ it('treats % and _ in the media search as literal characters', function () {
     $response = $this->getJson('/admin/api/media?search='.urlencode('%').'&folder=')->assertOk();
     expect($response->json('total'))->toBe(1)
         ->and($response->json('data.0.name'))->toBe('50% off.png');
+});
+
+it('ignores array-shaped search and sort params instead of a 500', function () {
+    Media::create(mediaRow(['name' => 'hero-image.png']));
+    Media::create(mediaRow(['name' => 'footer-logo.png']));
+
+    $response = $this->getJson('/admin/api/media?search[]=hero&sort[]=name&dir[]=asc')->assertOk();
+    expect($response->json('total'))->toBe(2);
 });
 
 it('paginates media results', function () {

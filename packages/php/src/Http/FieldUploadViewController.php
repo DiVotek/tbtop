@@ -37,7 +37,8 @@ final class FieldUploadViewController
             abort(404);
         }
 
-        $path = (string) $request->query('path');
+        $path = $request->query('path');
+        $path = is_string($path) ? $path : '';
         $this->assertInZone($path, $config->directory);
 
         /** @var FilesystemAdapter $disk */

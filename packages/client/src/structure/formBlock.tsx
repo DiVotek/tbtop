@@ -157,6 +157,7 @@ interface ScrollToErrorEffectProps {
 function ScrollToErrorEffect({ errorScrollTick, fieldErrors, formRef }: ScrollToErrorEffectProps) {
 	const localeCtx = useActiveLocale();
 	const setActiveLocale = localeCtx ? localeCtx.setActive : null;
+	const { locales } = useContentLocaleConfig();
 	const prevTickRef = useRef(0);
 
 	useEffect(() => {
@@ -164,8 +165,9 @@ function ScrollToErrorEffect({ errorScrollTick, fieldErrors, formRef }: ScrollTo
 			return;
 		}
 		prevTickRef.current = errorScrollTick;
-		scrollToFirstError(fieldErrors, formRef.current, setActiveLocale);
-	}, [errorScrollTick, fieldErrors, formRef, setActiveLocale]);
+		const localeSwitch = setActiveLocale ? { locales, setActive: setActiveLocale } : null;
+		scrollToFirstError(fieldErrors, formRef.current, localeSwitch);
+	}, [errorScrollTick, fieldErrors, formRef, setActiveLocale, locales]);
 
 	return null;
 }

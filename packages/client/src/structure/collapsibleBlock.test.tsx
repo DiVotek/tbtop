@@ -93,4 +93,14 @@ describe("Collapsible block", () => {
 		expect(queryByText("Hidden section")).toBeNull();
 		expect(queryByText("Inner")).toBeNull();
 	});
+
+	test("Collapsible: toggle reports its expanded state via aria-expanded", () => {
+		const node = s.collapsible({ label: "Advanced", collapsed: true }, []);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const toggle = getByTestId("collapsible-toggle");
+		expect(toggle.getAttribute("aria-expanded")).toBe("false");
+		fireEvent.click(toggle);
+		expect(toggle.getAttribute("aria-expanded")).toBe("true");
+	});
 });

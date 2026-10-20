@@ -235,6 +235,12 @@ it('DisplayValueBlock date bakes the formatted string into value', function () {
         ->and($json['options']['kind'])->toBe('date');
 });
 
+it('DisplayValueBlock date formats a native DateTime value', function () {
+    $json = encodeDisplay(DisplayValueBlock::make(new DateTimeImmutable('2024-03-15 10:30:00'))->date('d.m.Y'));
+
+    expect($json['options']['value'])->toBe('15.03.2024');
+});
+
 it('DisplayValueBlock number bakes the formatted string into value', function () {
     $json = encodeDisplay(DisplayValueBlock::make(1234.5)->number(2));
 

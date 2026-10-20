@@ -5,6 +5,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import {
+	formatBytes,
 	normalizeMediaFolder,
 	normalizeMediaItem,
 	normalizeMediaListResponse,
@@ -56,5 +57,14 @@ describe("media id normalization", () => {
 	test("normalizeMediaListResponse passes malformed payloads through", () => {
 		const malformed = [] as unknown;
 		expect(normalizeMediaListResponse(malformed)).toBe(malformed as never);
+	});
+});
+
+// Regression: the unit was chosen before toFixed rounding, so 1023.96 KB
+// read "1024.0 KB" instead of "1.0 MB".
+describe("formatBytes", () => {
+	test("rolls over to MB when the KB value rounds up to 1024", () => {
+		expect(formatBytes(1500)).toBe("1.5 KB");
+		expect(formatBytes(1024 * 1024 - 1)).toBe("1.0 MB");
 	});
 });

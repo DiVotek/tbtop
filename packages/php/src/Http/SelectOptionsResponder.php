@@ -29,7 +29,9 @@ final class SelectOptionsResponder
     /** @param  array<string, string>  $deps */
     private function search(Request $request, Select $field, array $deps): JsonResponse
     {
-        $search = (string) $request->input('search', '');
+        // Scalars only: an array param would 500 on string cast.
+        $search = $request->input('search');
+        $search = is_scalar($search) ? (string) $search : '';
 
         return response()->json([
             'options' => self::normalize(self::callQuery($field, $deps, $search)),
@@ -39,7 +41,8 @@ final class SelectOptionsResponder
     /** @param  array<string, string>  $deps */
     private function resolveByValue(Request $request, Select $field, array $deps): JsonResponse
     {
-        $value = (string) $request->input('value', '');
+        $value = $request->input('value');
+        $value = is_scalar($value) ? (string) $value : '';
         $rows = self::callQuery($field, $deps, '');
 
         return response()->json(['option' => self::resolveOne($field, $rows, $value)]);
