@@ -176,3 +176,21 @@ it('options expand an enum with descriptions', function () {
         ])
         ->and($pure['options']['options'])->toBe([['value' => 'Draft', 'label' => 'Draft']]);
 });
+
+it('options take an enum case as an explicit option value', function () {
+    $radio = enumBadgeNode(Radio::make('priority')->options([
+        ['value' => EnumBadgePriority::High, 'label' => 'Urgent'],
+        ['value' => EnumBadgePure::Draft, 'label' => 'Draft'],
+    ]));
+    $column = enumBadgeNode(
+        Column::make('status')->selectColumn()
+            ->options([['value' => EnumBadgeOrderStatus::Done, 'label' => 'Finished']])
+            ->onSave(fn () => null),
+    );
+
+    expect($radio['options']['options'])->toBe([
+        ['value' => '1', 'label' => 'Urgent'],
+        ['value' => 'Draft', 'label' => 'Draft'],
+    ])
+        ->and($column['editable']['options'])->toBe([['value' => 'done', 'label' => 'Finished']]);
+});
