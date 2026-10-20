@@ -39,8 +39,11 @@ final class CondToRequiredRule
 
     private static function stringify(mixed $value): string
     {
+        // Laravel reads the literal `null` as null when the other field is
+        // null; an empty string never matches it, so eq/in/neq on null diverged.
         $string = match (true) {
             is_bool($value) => $value ? 'true' : 'false',
+            $value === null => 'null',
             default => (string) $value,
         };
         // Laravel's rule-string format has no escaping: a comma in the value
