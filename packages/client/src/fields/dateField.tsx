@@ -1,11 +1,18 @@
 import { Input } from "../ui/input";
 import { nullableCell } from "./cellHelpers";
+import { parseDay } from "./daterangeDisabled";
+import { toIsoDay } from "./daterangeValue";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export { DateForm } from "./dateForm";
 
 export function DateCell({ value }: FieldCellProps<string>) {
 	return nullableCell(value, (v) => {
+		// new Date("2026-03-05") is UTC midnight — the day before west of UTC.
+		const day = parseDay(String(v));
+		if (day) {
+			return <time dateTime={toIsoDay(day)}>{day.toLocaleDateString()}</time>;
+		}
 		const date = new Date(String(v));
 		if (Number.isNaN(date.getTime())) {
 			return <span>{String(v)}</span>;
