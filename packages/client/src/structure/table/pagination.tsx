@@ -2,7 +2,7 @@
  * Table pagination footer: record range counter, page buttons, per-page selector.
  */
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { Button } from "../../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
@@ -22,6 +22,7 @@ export function TablePagination({
 	onChangeParams,
 }: PaginationProps): ReactNode {
 	const t = useTranslation();
+	const perPageLabelId = useId();
 	const perPage = queryParams.perPage ?? paginationOptions.perPage ?? 25;
 	const page = queryParams.page ?? 1;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
@@ -96,12 +97,16 @@ export function TablePagination({
 
 			{/* Per-page selector */}
 			<div className="flex items-center justify-self-end gap-2 whitespace-nowrap">
-				<span>{t("table.pagination.per_page")}</span>
+				<span id={perPageLabelId}>{t("table.pagination.per_page")}</span>
 				<Select
 					value={String(perPage)}
 					onValueChange={(v) => onChangeParams({ perPage: Number(v), page: 1 })}
 				>
-					<SelectTrigger className="h-8 w-16 text-xs" data-testid="pagination-per-page">
+					<SelectTrigger
+						className="h-8 w-16 text-xs"
+						aria-labelledby={perPageLabelId}
+						data-testid="pagination-per-page"
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
