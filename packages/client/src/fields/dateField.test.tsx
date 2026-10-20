@@ -83,4 +83,17 @@ describe("DatetimeCell", () => {
 		const { container } = render(<DateTimeCell value={null} />);
 		expect(container.textContent).toBe("");
 	});
+
+	test("Datetime form links its helper/error text via aria-describedby", () => {
+		const { container } = render(
+			<DateTimeForm
+				name="publishedAt"
+				value={null}
+				onChange={() => {}}
+				describedBy="publishedAt-error"
+			/>,
+		);
+		const input = container.querySelector('input[type="datetime-local"]');
+		expect(input?.getAttribute("aria-describedby")).toBe("publishedAt-error");
+	});
 });

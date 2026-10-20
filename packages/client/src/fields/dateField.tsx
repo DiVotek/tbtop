@@ -24,7 +24,14 @@ export function DateTimeCell({ value }: FieldCellProps<string>) {
 	});
 }
 
-export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormProps<string>) {
+export function DateTimeForm({
+	id,
+	name,
+	value,
+	onChange,
+	disabled,
+	describedBy,
+}: FieldFormProps<string>) {
 	const local = toLocalDateTime(value);
 	return (
 		<Input
@@ -34,6 +41,7 @@ export function DateTimeForm({ id, name, value, onChange, disabled }: FieldFormP
 			defaultValue={local}
 			onChange={(e) => onChange(localToIso(e.target.value))}
 			disabled={disabled}
+			aria-describedby={describedBy}
 		/>
 	);
 }
