@@ -64,6 +64,21 @@ it('soft deletes a row from the list', function () {
         ->and(Article::withTrashed()->find($article->id))->not->toBeNull();
 });
 
+it('leads the create, edit and view pages back to the list in their breadcrumbs', function () {
+    $article = makeArticle();
+    $crumbs = fn (string $title): array => [['label' => 'Articles', 'url' => '/admin/articles'], ['label' => $title]];
+
+    $this->get('/admin/articles/new', ['X-Inertia' => 'true'])->assertJsonPath('props.breadcrumbs', $crumbs('New article'));
+    $this->get("/admin/articles/{$article->id}/edit", ['X-Inertia' => 'true'])->assertJsonPath('props.breadcrumbs', $crumbs('Edit article'));
+    $this->get("/admin/articles/{$article->id}/view", ['X-Inertia' => 'true'])->assertJsonPath('props.breadcrumbs', $crumbs('Article'));
+});
+
+it('names the --simple modals after the model', function () {
+    $page = json_encode($this->get('/admin/writers', ['X-Inertia' => 'true'])->assertOk()->json('props'));
+
+    expect($page)->toContain('"New writer"')->toContain('"Edit writer"');
+});
+
 it('renders the view page', function () {
     $article = makeArticle();
 

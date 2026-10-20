@@ -24,6 +24,12 @@ class ViewPage extends Page
         return '{{ label }}';
     }
 
+    /** @return list<array{label: string, url?: string}> */
+    public function breadcrumbs(): array
+    {
+        return [['label' => '{{ plural }}', 'url' => IndexPage::url()], ['label' => $this->title()]];
+    }
+
     public function headerActions(S $s): array
     {
         return [

@@ -28,6 +28,12 @@ class CreatePage extends Page
         return 'New {{ labelLower }}';
     }
 
+    /** @return list<array{label: string, url?: string}> */
+    public function breadcrumbs(): array
+    {
+        return [['label' => '{{ plural }}', 'url' => IndexPage::url()], ['label' => $this->title()]];
+    }
+
     public function view(S $s): Node
     {
         return $s->stack([

@@ -50,6 +50,7 @@ class IndexPage extends Page
                             (new {{ model }})->{{ fill }}($ctx->form)->save();
                         },
                         defaultRecord: $this->blank{{ model }}(),
+                        title: 'New {{ labelLower }}',
                     )->label('New {{ labelLower }}'),
                 ])
                 ->rowActions([
@@ -67,6 +68,7 @@ class IndexPage extends Page
                             $record = {{ model }}::query()->whereKey($ctx->key())->firstOrFail();{{ authorizeUpdate }}
                             $record->{{ fill }}($ctx->form)->save();
                         },
+                        title: 'Edit {{ labelLower }}',
                     ),
                     DeleteAction::make($s, using: function (ActionCtx $ctx): void {
 {{ deleteRow }}
