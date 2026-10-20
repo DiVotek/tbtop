@@ -1,6 +1,7 @@
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
+import { coerceSelectValue } from "./selectShared";
 import { LabelChips } from "./tagsShared";
 
 interface ToggleButtonsBag {
@@ -55,7 +56,9 @@ function SingleForm({
 	disabled,
 	options,
 }: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
-	const current = asString(value);
+	// Records carry int-backed values (2) while wire options are string-cast ("2").
+	const coerced = coerceSelectValue(value);
+	const current = typeof coerced === "string" ? coerced : "";
 	return (
 		<ToggleGroup
 			id={fieldId({ id, name })}
@@ -80,7 +83,8 @@ function MultiForm({
 	disabled,
 	options,
 }: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
-	const current = Array.isArray(value) ? value : [];
+	const coerced = coerceSelectValue(value);
+	const current = Array.isArray(coerced) ? coerced : [];
 	return (
 		<ToggleGroup
 			id={fieldId({ id, name })}
