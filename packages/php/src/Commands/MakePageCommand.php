@@ -121,9 +121,11 @@ class MakePageCommand extends Command
         $label = Str::headline($name);
         $group = (string) ($this->option('group') ?: 'Main');
 
+        // path and group land inside single-quoted PHP literals: an apostrophe
+        // in --group="Owner's area" would otherwise write an unparseable page.
         return str_replace(
             ['{{ namespace }}', '{{ class }}', '{{ path }}', '{{ label }}', '{{ group }}'],
-            [$namespace, $class, $path, $label, $group],
+            [$namespace, $class, addcslashes((string) $path, "'\\"), $label, addcslashes($group, "'\\")],
             $contents
         );
     }
