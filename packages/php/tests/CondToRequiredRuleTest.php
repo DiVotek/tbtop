@@ -9,6 +9,8 @@ it('CondToRequiredRule: maps each supported op to its Laravel rule string', func
     'eq' => [Cond::eq('type', 'company'), 'required_if:type,company'],
     'eq with boolean true' => [Cond::eq('published', true), 'required_if:published,true'],
     'eq with boolean false' => [Cond::eq('published', false), 'required_if:published,false'],
+    'eq with null' => [Cond::eq('parent_id', null), 'required_if:parent_id,null'],
+    'neq with null' => [Cond::neq('parent_id', null), 'required_unless:parent_id,null'],
     'in' => [Cond::in('role', ['admin', 'editor']), 'required_if:role,admin,editor'],
     'neq' => [Cond::neq('status', 'draft'), 'required_unless:status,draft'],
     'notIn' => [Cond::notIn('status', ['archived', 'deleted']), 'required_unless:status,archived,deleted'],
@@ -36,4 +38,18 @@ it('CondToRequiredRule: rejects values containing a comma, which the rule-string
         ->toThrow(InvalidArgumentException::class, 'contains a comma');
     expect(fn () => CondToRequiredRule::rule(Cond::in('code', ['ok', 'a,b'])))
         ->toThrow(InvalidArgumentException::class, 'contains a comma');
+});
+
+// The client compares eq/neq against null as "is null"; Laravel only reads the
+// literal `null` that way, so an empty-string encoding never required (eq) or
+// always required (neq) the field.
+
+it('CondToRequiredRule: a null comparison requires the field exactly when the client marks it', function () {
+    $eq = ['title' => [CondToRequiredRule::rule(Cond::eq('parent_id', null))]];
+    $neq = ['title' => [CondToRequiredRule::rule(Cond::neq('parent_id', null))]];
+
+    expect(validator(['parent_id' => null], $eq)->fails())->toBeTrue()
+        ->and(validator(['parent_id' => 5], $eq)->passes())->toBeTrue()
+        ->and(validator(['parent_id' => null], $neq)->passes())->toBeTrue()
+        ->and(validator(['parent_id' => 5], $neq)->fails())->toBeTrue();
 });

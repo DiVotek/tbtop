@@ -470,8 +470,8 @@ $s->radio('status')->options(OrderStatus::class)->default(OrderStatus::Pending)
 - `default()` accepts a case, or a list of cases for multi-value fields, and stores the
   string option values. Values passed through `record()` are not converted.
 - **Int-backed enums**: option values are strings on the wire, so string-cast the form data
-  (`record(['priority' => (string) $order->priority->value])`). The Radio, ToggleButtons and
-  CheckboxList clients compare strings, so an int value shows no selection.
+  (`record(['priority' => (string) $order->priority->value])`). Select, Radio, ToggleButtons
+  and CheckboxList string-cast an int value themselves, but casting keeps the data consistent.
 - **No validation is implied**, for the enum form as for the array form. Add
   `Rule::enum(OrderStatus::class)` for a backed enum. `Rule::enum()` needs `tryFrom`, so validate a
   pure enum with `Rule::in(array_column(Draft::cases(), 'name'))`.
@@ -621,7 +621,7 @@ a config profile. `apps/demo/app/Admin/Pages/UploadDemoPage.php` exercises the f
 | `multiple` | `multiple(bool = true)` | `false` | Accept several files; the form value becomes an array of path strings |
 | `maxFiles` | `maxFiles(int)` | — | Cap on file count in `multiple()` mode |
 | `reorderable` | `reorderable(bool = true)` | `false` | Drag to reorder the uploaded files (`multiple()` only) |
-| `saveUsing` | `saveUsing(Closure)` | — | Take over storage: receives the file plus resolved config, returns `{path, url}`. ⚠️ **Bypasses `UploadStorer`, so SVG sanitization and conversion are skipped.** The mime guard (`accept` + `text/html` rejection) still runs first, but a closure that stores SVG must sanitize it itself |
+| `saveUsing` | `saveUsing(Closure)` | — | Take over storage: receives the file plus resolved config, returns `{path, url}`. ⚠️ **Bypasses `UploadStorer`, so SVG sanitization and conversion are skipped.** The mime guard still runs first: `accept`, plus a refusal of HTML and the XML family (`text/xml`, `application/xhtml+xml`, any `+xml`) whatever `accept` allows. SVG is the one XML type it lets through, so a closure that stores SVG must sanitize it itself |
 
 A public-disk upload that re-encodes to webp, and a private-disk one served only through the
 app:

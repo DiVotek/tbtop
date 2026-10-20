@@ -25,7 +25,9 @@ export function KeyvalueForm({
 	name,
 	value,
 	onChange,
+	onBlur,
 	disabled,
+	describedBy,
 }: FieldFormProps<Record<string, string>>) {
 	const [rows, setRows] = useState<Row[]>(() => rowsFromValue(value));
 	const lastEmitted = useRef<Record<string, string> | null | undefined>(value);
@@ -66,7 +68,7 @@ export function KeyvalueForm({
 	}
 
 	return (
-		<div data-field={name} className="flex flex-col gap-2">
+		<div data-field={name} className="flex flex-col gap-2" onBlur={onBlur}>
 			{rows.map((row, index) => (
 				<div key={row.id} className="flex flex-col gap-0.5">
 					<div className="flex items-center gap-2">
@@ -74,6 +76,7 @@ export function KeyvalueForm({
 							id={index === 0 ? inputId : undefined}
 							type="text"
 							aria-label={t("field.keyvalue.key")}
+							aria-describedby={describedBy}
 							value={row.key}
 							disabled={disabled}
 							onChange={(e) => updateKey(row.id, e.target.value)}
@@ -81,6 +84,7 @@ export function KeyvalueForm({
 						<Input
 							type="text"
 							aria-label={t("field.keyvalue.value")}
+							aria-describedby={describedBy}
 							value={row.value}
 							disabled={disabled}
 							onChange={(e) => updateValue(row.id, e.target.value)}
