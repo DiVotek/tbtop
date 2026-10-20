@@ -90,7 +90,7 @@ final class TableFilterApplier
         if (in_array($kind, self::EQUALITY_KINDS, true)) {
             if (is_array($value)) {
                 // A multiple select sends an array; where() would bind only its first value.
-                $builder->whereIn($name, array_values(array_filter($value, is_scalar(...))));
+                self::applyIn($name, $value, $builder);
 
                 return;
             }
