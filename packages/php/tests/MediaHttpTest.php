@@ -543,6 +543,12 @@ it('download returns 404 for unknown media id', function () {
     $this->get('/admin/api/media/9999/download')->assertNotFound();
 });
 
+it('download returns 404 when the media file is missing from its disk', function () {
+    $media = Media::create(mediaRow(['path' => 'tbtop-media/gone.png']));
+
+    $this->get("/admin/api/media/{$media->id}/download")->assertNotFound();
+});
+
 // ---- PATCH /admin/api/media/{id} ----
 
 it('updates media name, alt and folderId', function () {
