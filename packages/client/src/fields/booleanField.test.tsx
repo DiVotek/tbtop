@@ -81,4 +81,16 @@ describe("Boolean field", () => {
 		const { container } = render(<BooleanCell value={null} />);
 		expect(container.textContent).toBe("");
 	});
+
+	test("the switch is described by the field's help/error text", () => {
+		const { getByRole } = render(
+			<BooleanForm
+				name="active"
+				value={false}
+				onChange={() => {}}
+				describedBy="active-help"
+			/>,
+		);
+		expect(getByRole("switch").getAttribute("aria-describedby")).toBe("active-help");
+	});
 });
