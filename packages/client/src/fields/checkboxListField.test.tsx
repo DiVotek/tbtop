@@ -57,6 +57,38 @@ describe("CheckboxList field", () => {
 		expect(captured.at(-1)).toBeNull();
 	});
 
+	test("checks and toggles options for int-backed record values", async () => {
+		const captured: (string[] | null)[] = [];
+		const user = userEvent.setup();
+		const choices = [
+			{ value: "1", label: "One" },
+			{ value: "2", label: "Two" },
+		];
+		const { container } = render(
+			<CheckboxListForm
+				name="ids"
+				value={[1, 2] as unknown as string[]}
+				onChange={(next) => captured.push(next)}
+				options={{ options: choices }}
+			/>,
+		);
+		const boxes = container.querySelectorAll('[data-slot="checkbox"]');
+		expect(boxes[0]?.getAttribute("data-state")).toBe("checked");
+		expect(boxes[1]?.getAttribute("data-state")).toBe("checked");
+		await user.click(boxes[0] as HTMLElement);
+		expect(captured.at(-1)).toEqual(["2"]);
+	});
+
+	test("cell resolves labels for int-backed values", () => {
+		const { container } = render(
+			<CheckboxListCell
+				value={[2] as unknown as string[]}
+				options={{ options: [{ value: "2", label: "Two" }] }}
+			/>,
+		);
+		expect(container.textContent).toBe("Two");
+	});
+
 	test("cell renders option labels for the selected values", () => {
 		const { container } = render(
 			<CheckboxListCell value={["news", "guide"]} options={{ options: CHOICES }} />,
