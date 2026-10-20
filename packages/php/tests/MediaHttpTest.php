@@ -716,6 +716,26 @@ it('renames a folder', function () {
     expect($response->json('name'))->toBe('New Name');
 });
 
+it('refuses to move a folder into itself or one of its descendants', function () {
+    $parent = MediaFolder::create(['name' => 'parent']);
+    $child = MediaFolder::create(['name' => 'child', 'parent_id' => $parent->id]);
+
+    $this->patchJson("/admin/api/media/folders/{$parent->id}", ['parentId' => $parent->id])
+        ->assertStatus(422)->assertJsonValidationErrors('parentId');
+    $this->patchJson("/admin/api/media/folders/{$parent->id}", ['parentId' => $child->id])
+        ->assertStatus(422)->assertJsonValidationErrors('parentId');
+
+    expect($parent->refresh()->parent_id)->toBeNull();
+});
+
+it('moves a folder under an unrelated folder', function () {
+    $folder = MediaFolder::create(['name' => 'folder']);
+    $target = MediaFolder::create(['name' => 'target']);
+
+    $this->patchJson("/admin/api/media/folders/{$folder->id}", ['parentId' => $target->id])
+        ->assertOk()->assertJsonPath('parentId', $target->id);
+});
+
 // ---- DELETE /admin/api/media/folders/{id} ----
 
 it('deletes an empty folder', function () {
