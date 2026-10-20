@@ -15,6 +15,8 @@ interface Issue {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Laravel's `url` needs `scheme://` and no whitespace; the scheme whitelist stays server-side.
+const URL_RE = /^[a-z][a-z\d+.-]*:\/\/\S+$/i;
 
 /**
  * Compiles wire constraints into a zod-shaped `{ parse }` validator
@@ -108,19 +110,31 @@ function checkPresent(value: unknown, c: FieldConstraints): string | null {
 	return checkSize(value, c) ?? checkFormat(value, c);
 }
 
-// Arrays (repeaters, tags) size by item count; numbers by value; else by char length.
-function sizeOf(value: unknown): number {
+/**
+ * Laravel's size: arrays (repeaters, tags) by item count; numbers by value;
+ * a numeric string by value only under a numeric rule (`integer` is the one
+ * the wire carries); else by char length.
+ */
+function sizeOf(value: unknown, c: FieldConstraints): number {
 	if (typeof value === "number") {
 		return value;
 	}
 	if (Array.isArray(value)) {
 		return value.length;
 	}
-	return String(value).length;
+	const str = String(value);
+	if (c.integer && isNumericString(str)) {
+		return Number(str);
+	}
+	return str.length;
+}
+
+function isNumericString(str: string): boolean {
+	return str.trim() !== "" && Number.isFinite(Number(str));
 }
 
 function checkSize(value: unknown, c: FieldConstraints): string | null {
-	const size = sizeOf(value);
+	const size = sizeOf(value, c);
 	if (c.min !== undefined && size < c.min) {
 		return `validation.min:${c.min}`;
 	}
@@ -131,20 +145,40 @@ function checkSize(value: unknown, c: FieldConstraints): string | null {
 }
 
 function checkFormat(value: unknown, c: FieldConstraints): string | null {
-	const str = String(value);
 	if (c.integer && !Number.isInteger(Number(value))) {
 		return "validation.integer";
 	}
-	if (c.email && !EMAIL_RE.test(str)) {
-		return "validation.email";
-	}
-	if (c.regex && !new RegExp(c.regex).test(str)) {
-		return "validation.regex";
+	const textIssue = checkText(String(value), c);
+	if (textIssue) {
+		return textIssue;
 	}
 	if (c.in && !inAllowed(value, c.in)) {
 		return "validation.in";
 	}
 	return null;
+}
+
+function checkText(str: string, c: FieldConstraints): string | null {
+	if (c.email && !EMAIL_RE.test(str)) {
+		return "validation.email";
+	}
+	if (c.url && !URL_RE.test(str)) {
+		return "validation.url";
+	}
+	if (c.regex && !matchesPattern(c.regex, str)) {
+		return "validation.regex";
+	}
+	return null;
+}
+
+// A PCRE-only pattern (possessive quantifier, inline flags…) JS cannot
+// compile passes here: the server is the gate and reports it on submit.
+function matchesPattern(pattern: string, str: string): boolean {
+	try {
+		return new RegExp(pattern).test(str);
+	} catch {
+		return true;
+	}
 }
 
 // Multi-value fields (multiple select, tags, checkbox list) are checked per element,
