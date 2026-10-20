@@ -56,7 +56,7 @@ export function ColorpickerForm({
 							key={swatch}
 							type="button"
 							role="option"
-							aria-selected={current === swatch}
+							aria-selected={current.toLowerCase() === swatch.toLowerCase()}
 							aria-label={swatch}
 							disabled={disabled}
 							onClick={() => onChange(swatch)}
