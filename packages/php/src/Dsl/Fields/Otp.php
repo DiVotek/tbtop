@@ -16,6 +16,11 @@ final class Otp extends Field
     public function length(int $digits = 6): static
     {
         $this->set('length', $digits);
+        // A second call replaces the slot count, so it replaces the rule too.
+        $this->replaceRules(array_values(array_filter(
+            $this->ruleEntries(),
+            fn (string $rule): bool => ! str_starts_with($rule, 'digits:'),
+        )));
 
         return $this->rules('digits:'.$digits);
     }

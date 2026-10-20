@@ -108,6 +108,13 @@ it('otp length sets the slot count and a digits rule together', function () {
         ->and($field->ruleEntries())->toBe(['digits:6']);
 });
 
+it('otp length called again replaces the digits rule instead of stacking it', function () {
+    $field = Otp::make('code')->required()->length(6)->length(4);
+
+    expect($field->toNode()->jsonSerialize()['options']['length'] ?? null)->toBe(4)
+        ->and($field->ruleEntries())->toBe(['required', 'digits:4']);
+});
+
 it('numeric between validates value range not string length', function () {
     // Regression: without the paired "numeric", Laravel reads between as a
     // character-length check, so a valid 30 would fail an 18-99 range.
