@@ -39,7 +39,8 @@ final class RestoreAction
         return RecordAction::bulk(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->restore(),
+            // Per model, like make(): a builder restore() skips restoring/restored.
+            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->get()->each->restore(),
             Effects::make()->notify(__('tbtop-admin::admin.restore.notify.bulk_success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.restore'))->color('gray');
     }

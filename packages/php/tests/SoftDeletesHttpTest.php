@@ -99,6 +99,22 @@ it('bulk forceDelete permanently removes the selected rows', function (): void {
     expect(SdPost::withTrashed()->find($id))->toBeNull();
 });
 
+it('bulk restore and forceDelete fire the same model events as the row actions', function (): void {
+    $fired = [];
+    SdPost::restored(function (SdPost $post) use (&$fired): void {
+        $fired[] = "restored:{$post->title}";
+    });
+    SdPost::forceDeleted(function (SdPost $post) use (&$fired): void {
+        $fired[] = "forceDeleted:{$post->title}";
+    });
+    $id = SdPost::withTrashed()->where('title', 'Gone')->value('id');
+
+    $this->postJson('/admin/soft-deletes/actions/restoreSelected', ['payload' => ['selection' => [$id]]])->assertOk();
+    $this->postJson('/admin/soft-deletes/actions/forceDeleteSelected', ['payload' => ['selection' => [$id]]])->assertOk();
+
+    expect($fired)->toBe(['restored:Gone', 'forceDeleted:Gone']);
+});
+
 it('bulk restore with an empty selection is a benign no-op', function (): void {
     $response = $this->postJson('/admin/soft-deletes/actions/restoreSelected', [
         'payload' => ['selection' => []],
