@@ -206,3 +206,21 @@ export function readEffects(raw: unknown): ServerEffect[] {
 	}
 	return raw.filter((e): e is ServerEffect => !!e && typeof e === "object" && "kind" in e);
 }
+
+/**
+ * Settles the posting form after a successful submit. A resetForm effect in
+ * the response's flash (Inertia `page.flash`) returns it to its record — the
+ * submit is the only place that form is still in reach. Otherwise the
+ * submitted values are committed, not reset: onSuccess can run before React
+ * commits fresh Inertia props, so a plain reset would visibly roll successful
+ * edits back until reload. The later props sync still replaces this baseline
+ * with the canonical server record.
+ */
+export function settleSubmittedForm(form: ClientActionContext["form"], flash: unknown): void {
+	const effects = readEffects((flash as Record<string, unknown> | undefined)?.["tbtop.effects"]);
+	if (effects.some((effect) => effect.kind === "resetForm")) {
+		form?.reset();
+		return;
+	}
+	form?.reset(form.data);
+}

@@ -6,7 +6,7 @@ import type { ClientActionContext, StructureNode } from "../structure/types";
 import type { ModalSize } from "../ui/modal-shell";
 import { type ConfirmSpec, confirmModal } from "./confirmModal";
 import { getCustomAction } from "./customActions";
-import { executeEffects, readEffects } from "./effects";
+import { executeEffects, readEffects, settleSubmittedForm } from "./effects";
 import { liftNestedErrors } from "./fieldErrors";
 import { serializeFormData } from "./serializeFormData";
 
@@ -166,13 +166,8 @@ function submitHandler(
 			router.post(`${basePath}/forms/${formName}`, data, {
 				preserveScroll: true,
 				preserveState: true,
-				onSuccess: () => {
-					// Commit the submitted values instead of resetting to the previous
-					// record: onSuccess can run before React commits fresh Inertia props.
-					// A plain reset here would visibly roll successful edits back until
-					// reload. The later props sync still replaces this baseline with the
-					// canonical server record.
-					ctx.form?.reset(ctx.form.data);
+				onSuccess: (page) => {
+					settleSubmittedForm(ctx.form, page.flash);
 					resolve();
 				},
 				onError: (errors) => reject({ errors: liftNestedErrors(errors) }),

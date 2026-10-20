@@ -15,9 +15,10 @@ mock.module("@inertiajs/react", () => ({
 
 const noModals: ModalStack = { push: () => () => {}, closeTop: () => false };
 
-// A PHP author calling Effects::make()->haltModal()/resetForm()/setFormData()
-// from a form-submit handler (Inertia flash) reaches a fresh page load with
-// no enclosing form or modal body. Before the split, executeEffects's
+// A PHP author calling Effects::make()->haltModal()/setFormData() from a
+// form-submit handler (Inertia flash) reaches a fresh page load with no
+// enclosing form or modal body (resetForm is applied by the submit itself —
+// see submitResetForm.test.tsx). Before the split, executeEffects's
 // `ctx.form?.reset()` style handlers simply did nothing for these; that
 // silence is what regressed if this test goes red without the warning firing.
 describe("executeFlashEffects: unsupported kinds", () => {
@@ -29,14 +30,13 @@ describe("executeFlashEffects: unsupported kinds", () => {
 			executeFlashEffects(
 				[
 					{ kind: "haltModal", message: "nope" },
-					{ kind: "resetForm" },
 					{ kind: "setFormData", data: { title: "x" } },
 				],
 				{ notify, modals: noModals },
 			),
 		).not.toThrow();
 
-		expect(warn).toHaveBeenCalledTimes(3);
+		expect(warn).toHaveBeenCalledTimes(2);
 		expect(warn.mock.calls[0]?.[0]).toContain("haltModal");
 		expect(notify).not.toHaveBeenCalled();
 		warn.mockRestore();
