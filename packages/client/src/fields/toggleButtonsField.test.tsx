@@ -63,3 +63,41 @@ describe("ToggleButtons field — multiple", () => {
 		expect(container.textContent).toBe("");
 	});
 });
+
+describe("ToggleButtons field — int-backed values", () => {
+	const LEVELS = [
+		{ value: "1", label: "Low" },
+		{ value: "2", label: "High" },
+	];
+
+	test("a numeric record value presses its string-cast option", () => {
+		const { getByText } = render(
+			<ToggleButtonsForm
+				name="level"
+				value={2 as unknown as string}
+				onChange={() => {}}
+				options={{ options: LEVELS }}
+			/>,
+		);
+		expect(getByText("High").closest("button")?.getAttribute("aria-checked")).toBe("true");
+	});
+
+	test("numeric values in multiple mode press their options", () => {
+		const { getByText } = render(
+			<ToggleButtonsForm
+				name="levels"
+				value={[1] as unknown as string[]}
+				onChange={() => {}}
+				options={{ options: LEVELS, multiple: true }}
+			/>,
+		);
+		expect(getByText("Low").closest("button")?.getAttribute("aria-pressed")).toBe("true");
+	});
+
+	test("cell resolves the label for a numeric record value", () => {
+		const { container } = render(
+			<ToggleButtonsCell value={2 as unknown as string} options={{ options: LEVELS }} />,
+		);
+		expect(container.textContent).toBe("High");
+	});
+});
