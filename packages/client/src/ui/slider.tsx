@@ -8,7 +8,7 @@ import { cn } from "../lib/cn";
 // (upstream renders one per value for ranges; no caller passes a range), and
 // `data-[orientation=…]` sizing duplicates the preset's orientation rules
 // for Radix, which emits `data-orientation` (see the `data-horizontal` /
-// `data-vertical` variants in styles.css).
+// `data-vertical` variants in core.css).
 function Slider({ className, ...props }: React.ComponentProps<typeof SliderPrimitive.Root>) {
 	return (
 		<SliderPrimitive.Root

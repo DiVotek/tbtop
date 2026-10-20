@@ -52,3 +52,47 @@
 	--surface-radius: calc(var(--radius) + 4px);
 	--surface-radius-lg: calc(var(--radius) + 8px);
 }
+
+/* Control heights for tbtop's own controls (compact input, multi-select and
+   tags shells, skeletons): each style's input height and its small select
+   height, so compact controls line up with the preset's `sm` buttons and
+   selects. styles.test.ts checks these against the preset files. */
+.style-preset-vega {
+	--control-h: calc(var(--spacing) * 9);
+	--control-h-sm: calc(var(--spacing) * 8);
+}
+
+.style-preset-nova {
+	--control-h: calc(var(--spacing) * 8);
+	--control-h-sm: calc(var(--spacing) * 7);
+}
+
+.style-preset-maia {
+	--control-h: calc(var(--spacing) * 9);
+	--control-h-sm: calc(var(--spacing) * 8);
+}
+
+.style-preset-lyra {
+	--control-h: calc(var(--spacing) * 8);
+	--control-h-sm: calc(var(--spacing) * 7);
+}
+
+.style-preset-mira {
+	--control-h: calc(var(--spacing) * 7);
+	--control-h-sm: calc(var(--spacing) * 6);
+}
+
+.style-preset-luma {
+	--control-h: calc(var(--spacing) * 9);
+	--control-h-sm: calc(var(--spacing) * 8);
+}
+
+.style-preset-sera {
+	--control-h: calc(var(--spacing) * 10);
+	--control-h-sm: calc(var(--spacing) * 9);
+}
+
+.style-preset-rhea {
+	--control-h: calc(var(--spacing) * 8);
+	--control-h-sm: calc(var(--spacing) * 7);
+}

@@ -103,8 +103,8 @@ export function MultiComboboxShell({
 					data-testid={`select-${name}`}
 					onBlur={onBlur}
 					className={cn(
-						"flex min-h-9 w-full flex-wrap items-center gap-1 rounded-surface border border-input bg-background px-2 py-1",
-						density === "compact" && "min-h-8",
+						"flex min-h-[var(--control-h,2.25rem)] w-full flex-wrap items-center gap-1 rounded-surface border border-input bg-background px-2 py-1",
+						density === "compact" && "min-h-[var(--control-h-sm,2rem)]",
 					)}
 				>
 					{displayValues.map((v) => (

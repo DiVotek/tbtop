@@ -70,16 +70,16 @@ describe("density: Input", () => {
 				<Input defaultValue="hi" />
 			</DensityContext.Provider>,
 		);
-		expect(getByDisplayValue("hi").className).toContain("h-8");
+		expect(getByDisplayValue("hi").className).toContain("h-[var(--control-h-sm,2rem)]");
 	});
 
 	test("default density keeps the input at the default size", () => {
 		const { getByDisplayValue } = render(<Input defaultValue="hi" />);
 		const className = getByDisplayValue("hi").className;
-		// Default height comes from the preset's cn-input rule (h-9), not an
-		// inline class; compact must stay off.
+		// Default height comes from the preset's cn-input rule (per style),
+		// not an inline class; compact must stay off.
 		expect(className).toContain("cn-input");
-		expect(className).not.toContain("h-8");
+		expect(className).not.toContain("--control-h-sm");
 	});
 });
 

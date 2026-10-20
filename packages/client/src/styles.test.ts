@@ -45,6 +45,23 @@ describe("style preset CSS", () => {
 		}
 	});
 
+	test("tbtop control heights match each style's input and small select", async () => {
+		const tbtop = await read("ui/presets/tbtop.css");
+		for (const name of STYLE_PRESETS) {
+			const preset = await read(`ui/presets/style-preset-${name}.css`);
+			const input = preset.match(/\.cn-input \{([^}]*)\}/)?.[1] ?? "";
+			const select = preset.match(/\.cn-select-trigger \{([^}]*)\}/)?.[1] ?? "";
+			const block =
+				tbtop.match(
+					new RegExp(`\\.style-preset-${name} \\{([^}]*--control-h[^}]*)\\}`),
+				)?.[1] ?? "";
+			const height = input.match(/(?:^|\s)h-(\d+)[\s;]/)?.[1];
+			const small = select.match(/data-\[size=sm\]:h-(\d+)/)?.[1];
+			expect(block).toContain(`--control-h: calc(var(--spacing) * ${height});`);
+			expect(block).toContain(`--control-h-sm: calc(var(--spacing) * ${small});`);
+		}
+	});
+
 	// PHP validates ->stylePreset() against its own list; it must match the CSS.
 	test("PHP accepts exactly the presets the client ships", async () => {
 		const php = await read("../../php/src/Panels/Concerns/ConfiguresAppearance.php");

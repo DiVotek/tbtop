@@ -14,7 +14,7 @@ import { inputCompactFontClass, inputFontClass } from "./input";
 //
 // `data-[state=*]` animation classes duplicate the preset's open/close
 // rules for Radix, which emits `data-state` (see the `data-open` /
-// `data-closed` variants in styles.css). `cn-menu-translucent` is omitted:
+// `data-closed` variants in core.css). `cn-menu-translucent` is omitted:
 // upstream only emits it for the opt-in translucent menu color.
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {

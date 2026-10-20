@@ -46,8 +46,8 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 		>
 			<div
 				className={cn(
-					"flex min-h-9 flex-wrap items-center gap-1",
-					density === "compact" && "min-h-8",
+					"flex min-h-[var(--control-h,2.25rem)] flex-wrap items-center gap-1",
+					density === "compact" && "min-h-[var(--control-h-sm,2rem)]",
 				)}
 			>
 				<Chips

@@ -19,8 +19,8 @@ const HTML_BOX: Record<OptionSurface, string> = {
 	inline: "max-h-5 overflow-hidden [&_img]:max-h-4 [&_*]:!text-inherit",
 };
 
-// The trigger's height is fixed (h-9, h-8 compact), so an inline
-// preview stays under that inner clearance.
+// The trigger's height is fixed by the style (down to h-6 for mira's compact
+// size), so an inline preview stays under that inner clearance.
 const IMAGE_SIZE: Record<OptionSurface, string> = {
 	list: "size-8",
 	inline: "size-5",

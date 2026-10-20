@@ -10,8 +10,8 @@ export function FieldSkeleton() {
 	return (
 		<div
 			className={cn(
-				"h-9 w-full animate-pulse rounded-surface bg-muted",
-				density === "compact" && "h-8",
+				"h-[var(--control-h,2.25rem)] w-full animate-pulse rounded-surface bg-muted",
+				density === "compact" && "h-[var(--control-h-sm,2rem)]",
 			)}
 			data-testid="field-skeleton"
 		/>
@@ -22,8 +22,8 @@ export function FormSkeleton() {
 	return (
 		<div className="flex flex-col gap-2" data-testid="form-skeleton">
 			<div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-			<div className="h-9 w-full animate-pulse rounded bg-muted" />
-			<div className="h-9 w-full animate-pulse rounded bg-muted" />
+			<div className="h-[var(--control-h,2.25rem)] w-full animate-pulse rounded bg-muted" />
+			<div className="h-[var(--control-h,2.25rem)] w-full animate-pulse rounded bg-muted" />
 		</div>
 	);
 }

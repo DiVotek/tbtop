@@ -8,16 +8,18 @@ import { cn } from "../lib/cn";
 // form (outline variant, zero spacing, small size), so the variant/size/
 // spacing props and context are not ported — the matching data attributes
 // are fixed instead. Deltas: the selected item keeps our primary fill
-// (upstream uses a muted one), and the joined-border classes are plain
-// Tailwind because upstream keys them off shadcn's `data-horizontal` variant,
-// which our Radix packages don't emit.
+// (upstream uses a muted one). Radix only emits `data-orientation` when the
+// prop is passed, and the preset's joined borders and end rounding key on it
+// (`data-horizontal`), so the group defaults it to horizontal.
 function ToggleGroup({
 	className,
+	orientation = "horizontal",
 	...props
 }: React.ComponentProps<typeof ToggleGroupPrimitive.Root>) {
 	return (
 		<ToggleGroupPrimitive.Root
 			data-slot="toggle-group"
+			orientation={orientation}
 			data-variant="outline"
 			data-size="sm"
 			data-spacing={0}

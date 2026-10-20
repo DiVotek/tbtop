@@ -5,9 +5,8 @@ import { cn } from "../lib/cn";
 
 // New-gen shape: visuals come from the `cn-radio-group*` rules in
 // `ui/presets/style-preset-*.css`; the dot is a styled span, as upstream.
-// `data-[state=checked]` fill duplicates the preset's checked rule for
-// Radix, which emits `data-state` (see the `data-checked` variant in
-// styles.css).
+// The checked fill is the preset's (core.css maps `data-checked` onto
+// Radix's `data-state`).
 function RadioGroup({
 	className,
 	...props
@@ -30,7 +29,6 @@ function RadioGroupItem({
 			data-slot="radio-group-item"
 			className={cn(
 				"cn-radio-group-item group/radio-group-item peer relative aspect-square shrink-0 border outline-none after:absolute after:-inset-x-3 after:-inset-y-2 disabled:cursor-not-allowed disabled:opacity-50",
-				"data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary",
 				className,
 			)}
 			{...props}

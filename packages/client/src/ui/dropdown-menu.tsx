@@ -12,7 +12,7 @@ import { cn } from "../lib/cn";
 //
 // `data-[state=*]` classes duplicate the preset's open/close rules for
 // Radix, which emits `data-state` (see the `data-open` / `data-closed`
-// variants in styles.css). `cn-menu-translucent` is omitted: upstream only emits
+// variants in core.css). `cn-menu-translucent` is omitted: upstream only emits
 // it for the opt-in translucent menu color.
 const radixStateAnimation =
 	"data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95";
