@@ -37,7 +37,10 @@ final class KindFormat
     private static function formatDate(mixed $value, string $format): mixed
     {
         try {
-            return Carbon::parse((string) $value)->format($format);
+            // A native DateTime has no __toString(): parse it directly.
+            $input = $value instanceof \DateTimeInterface ? $value : (string) $value;
+
+            return Carbon::parse($input)->format($format);
         } catch (\Throwable) {
             return $value;
         }
