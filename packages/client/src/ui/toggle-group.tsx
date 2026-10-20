@@ -3,13 +3,15 @@ import type * as React from "react";
 
 import { cn } from "../lib/cn";
 
-// New-gen shape: visuals come from the `cn-toggle*` / `cn-toggle-group*` rules
-// in `ui/presets/style-preset-*.css`. Ours is always upstream's segmented
-// form (outline variant, zero spacing, small size), so the variant/size/
-// spacing props and context are not ported — the matching data attributes
-// are fixed instead. Deltas: the selected item keeps our primary fill
-// (upstream uses a muted one). Radix only emits `data-orientation` when the
-// prop is passed, and the preset's joined borders and end rounding key on it
+// New-gen shape: visuals come from the `cn-toggle*` / `cn-toggle-group*`
+// rules in `ui/presets/style-preset-*.css`. Ours is always upstream's
+// segmented form (outline variant, zero spacing, default size), so the
+// variant/size/spacing props and context are not ported — the matching
+// data attributes are fixed instead. The default size matches each style's
+// input height, so toggle buttons line up with the inputs beside them.
+// Deltas: the selected item keeps our primary fill (upstream uses a muted
+// one). Radix only emits `data-orientation` when the prop is passed, and
+// the preset's joined borders and end rounding key on it
 // (`data-horizontal`), so the group defaults it to horizontal.
 function ToggleGroup({
 	className,
@@ -21,7 +23,7 @@ function ToggleGroup({
 			data-slot="toggle-group"
 			orientation={orientation}
 			data-variant="outline"
-			data-size="sm"
+			data-size="default"
 			data-spacing={0}
 			className={cn(
 				// w-fit: a flex box blockifies inside a flex parent, where the
@@ -42,11 +44,11 @@ function ToggleGroupItem({
 		<ToggleGroupPrimitive.Item
 			data-slot="toggle-group-item"
 			data-variant="outline"
-			data-size="sm"
+			data-size="default"
 			data-spacing={0}
 			className={cn(
 				"cn-toggle group/toggle inline-flex items-center justify-center whitespace-nowrap outline-none hover:bg-muted focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-				"cn-toggle-variant-outline cn-toggle-size-sm",
+				"cn-toggle-variant-outline cn-toggle-size-default",
 				"cn-toggle-group-item shrink-0 focus:z-10 focus-visible:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l",
 				"data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
 				className,

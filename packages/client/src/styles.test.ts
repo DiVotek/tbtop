@@ -62,6 +62,18 @@ describe("style preset CSS", () => {
 		}
 	});
 
+	// ToggleGroup uses the default toggle size so toggle buttons line up with inputs.
+	test("each style's default toggle is as tall as its input", async () => {
+		for (const name of STYLE_PRESETS) {
+			const preset = await read(`ui/presets/style-preset-${name}.css`);
+			const input = preset.match(/\.cn-input \{([^}]*)\}/)?.[1] ?? "";
+			const toggle = preset.match(/\.cn-toggle-size-default \{([^}]*)\}/)?.[1] ?? "";
+			const height = input.match(/(?:^|\s)h-(\d+)[\s;]/)?.[1];
+			expect(height).toBeDefined();
+			expect(toggle).toContain(` h-${height} `);
+		}
+	});
+
 	// PHP validates ->stylePreset() against its own list; it must match the CSS.
 	test("PHP accepts exactly the presets the client ships", async () => {
 		const php = await read("../../php/src/Panels/Concerns/ConfiguresAppearance.php");
