@@ -32,6 +32,19 @@ describe("style preset CSS", () => {
 		}
 	});
 
+	test("tbtop alert variants match a preset's scoped .cn-alert specificity", async () => {
+		// `.style-preset-X .cn-alert` sets the background (sera); a bare
+		// `.cn-alert-variant-*` would lose to it inside the same layer.
+		const css = await read("ui/presets/tbtop.css");
+		const variants = [...css.matchAll(/^(\.[^\s{]*cn-alert-variant-[\w-]+) \{/gm)].map(
+			(m) => m[1],
+		);
+		expect(variants.length).toBeGreaterThan(0);
+		for (const selector of variants) {
+			expect(selector).toStartWith(".cn-alert.");
+		}
+	});
+
 	// PHP validates ->stylePreset() against its own list; it must match the CSS.
 	test("PHP accepts exactly the presets the client ships", async () => {
 		const php = await read("../../php/src/Panels/Concerns/ConfiguresAppearance.php");

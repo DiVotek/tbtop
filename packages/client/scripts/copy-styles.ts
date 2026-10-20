@@ -21,6 +21,11 @@ for (const file of files) {
 		file === "core.css"
 			? css.replace('@source "./**/*.{ts,tsx}";', '@source "./**/*.{js,ts,tsx}";')
 			: css;
+	if (file === "core.css" && shipped === css) {
+		throw new Error(
+			'core.css no longer has @source "./**/*.{ts,tsx}"; dist would not scan its JS',
+		);
+	}
 	await mkdir(dirname(`${out}/${file}`), { recursive: true });
 	await Bun.write(`${out}/${file}`, shipped);
 }
