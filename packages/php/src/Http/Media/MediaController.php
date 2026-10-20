@@ -19,7 +19,9 @@ final class MediaController
     {
         $perPage = max(1, min(200, (int) ($request->query('perPage', 24))));
         $page = max(1, (int) ($request->query('page', 1)));
-        $search = (string) ($request->query('search', ''));
+        // An array param (?search[]=x) would 500 on string cast: ignore it.
+        $search = $request->query('search');
+        $search = is_string($search) ? $search : '';
         $folderId = $request->query('folder');
 
         [$sortColumn, $sortDir] = $this->resolveSort($request);
@@ -56,10 +58,12 @@ final class MediaController
      */
     private function resolveSort(Request $request): array
     {
-        $sort = (string) ($request->query('sort', ''));
+        $sort = $request->query('sort');
+        $sort = is_string($sort) ? $sort : '';
         $column = in_array($sort, self::SORTABLE_COLUMNS, true) ? $sort : 'created_at';
 
-        $dir = strtolower((string) ($request->query('dir', '')));
+        $dir = $request->query('dir');
+        $dir = is_string($dir) ? strtolower($dir) : '';
         $direction = $dir === 'asc' ? 'asc' : 'desc';
 
         return [$column, $direction];

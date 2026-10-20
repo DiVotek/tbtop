@@ -60,6 +60,14 @@ it('treats % and _ in the media search as literal characters', function () {
         ->and($response->json('data.0.name'))->toBe('50% off.png');
 });
 
+it('ignores array-shaped search and sort params instead of a 500', function () {
+    Media::create(mediaRow(['name' => 'hero-image.png']));
+    Media::create(mediaRow(['name' => 'footer-logo.png']));
+
+    $response = $this->getJson('/admin/api/media?search[]=hero&sort[]=name&dir[]=asc')->assertOk();
+    expect($response->json('total'))->toBe(2);
+});
+
 it('paginates media results', function () {
     for ($i = 0; $i < 5; $i++) {
         Media::create(mediaRow(['name' => "img{$i}.png"]));
