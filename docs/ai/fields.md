@@ -267,8 +267,7 @@ $s->relation('author_id')->label('Author')
 See [./wiring.md](./wiring.md) for the endpoint request/response shape.
 
 > The relation field ships full async type-ahead (server search endpoint + client
-> combobox) as of PR #2. `CLAUDE.md`'s "plain input" stub note predates that and is
-> stale — the field is fully wired.
+> combobox) as of PR #2 — the field is fully wired.
 
 ### Select with `creatable()` — `select-create` endpoint
 
