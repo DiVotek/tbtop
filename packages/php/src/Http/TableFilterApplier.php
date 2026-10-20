@@ -55,7 +55,7 @@ final class TableFilterApplier
 
         return match (true) {
             in_array($kind, self::LIKE_KINDS, true) => 'string, matched as a substring',
-            in_array($kind, self::EQUALITY_KINDS, true) => 'exact value',
+            in_array($kind, self::EQUALITY_KINDS, true) => 'exact value, or an array of values a row matches any of',
             $kind === 'boolean' => 'boolean',
             $kind === 'tags', $kind === 'in' => 'array of values, a row matches any of them',
             $kind === 'daterange' => '{"from": "Y-m-d", "to": "Y-m-d"}, either bound optional',
@@ -88,6 +88,12 @@ final class TableFilterApplier
         }
 
         if (in_array($kind, self::EQUALITY_KINDS, true)) {
+            if (is_array($value)) {
+                // A multiple select sends an array; where() would bind only its first value.
+                $builder->whereIn($name, array_values(array_filter($value, is_scalar(...))));
+
+                return;
+            }
             $builder->where($name, $value);
 
             return;

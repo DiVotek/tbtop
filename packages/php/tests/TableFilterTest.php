@@ -49,6 +49,19 @@ it('TableFilter: select kind applies equality filter', function (): void {
     expect($rows->pluck('title')->all())->toBe(['Beta draft']);
 });
 
+// multiple select → the client sends an array; a row matches any choice
+it('TableFilter: multiple select matches every chosen value', function (): void {
+    $builder = DB::table('items');
+    $fields = [Select::make('status')->multiple()->options([
+        ['value' => 'draft', 'label' => 'Draft'],
+        ['value' => 'published', 'label' => 'Published'],
+    ])];
+    TableFilterApplier::apply($fields, ['status' => ['published', 'draft']], $builder);
+    $rows = $builder->get();
+
+    expect($rows->pluck('title')->all())->toBe(['Alpha post', 'Beta draft', 'Gamma post']);
+});
+
 // boolean → where = with cast from '1'/'0'/'true'/'false'
 it('TableFilter: boolean kind casts string values', function (): void {
     $builder = DB::table('items');
