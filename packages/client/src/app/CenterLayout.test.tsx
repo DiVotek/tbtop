@@ -107,6 +107,22 @@ describe("AdminPage.layout: provider parity between center and shell", () => {
 	});
 });
 
+describe("AdminPage.layout: style preset on center pages", () => {
+	test("a center-layout page puts the panel's style class on <html>", () => {
+		document.documentElement.classList.remove("style-preset-nova", "style-preset-lyra");
+		currentProps = { layout: "center", tbtop: { appearance: { stylePreset: "lyra" } } };
+		render(AdminPage.layout(<div />));
+		expect(document.documentElement.classList.contains("style-preset-lyra")).toBe(true);
+	});
+
+	test("a center-layout page without appearance falls back to the default style", () => {
+		document.documentElement.classList.remove("style-preset-nova", "style-preset-lyra");
+		currentProps = { layout: "center", tbtop: {} };
+		render(AdminPage.layout(<div />));
+		expect(document.documentElement.classList.contains("style-preset-nova")).toBe(true);
+	});
+});
+
 describe("AdminPage.layout: signed-in user", () => {
 	test("the profile dropdown shows the panel's tbtop.user", () => {
 		currentProps = {

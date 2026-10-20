@@ -84,7 +84,7 @@ trait ConfiguresAppearance
     /**
      * Component style from ui.shadcn.com/create (its "Style" choice): 'vega', 'nova' (default),
      * 'maia', 'lyra', 'mira', 'luma', 'sera' or 'rhea'. Shapes sizes, spacing, radii and shadows;
-     * colors stay in your CSS tokens. The root Blade's <html> carries CurrentPanel::current()?->stylePresetClass().
+     * colors stay in your CSS tokens. The root Blade's `<html>` carries `CurrentPanel::current()?->stylePresetClass()`.
      */
     public function stylePreset(string $style): static
     {

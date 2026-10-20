@@ -33,7 +33,7 @@ class BundleSplitTest extends TestCase
         $response = $this->get('/admin/dashboard');
 
         $response->assertOk();
-        $this->assertStringContainsString('class="dark"', $response->getContent());
+        $this->assertMatchesRegularExpression('/<html[^>]*class="dark style-preset-nova"/', $response->getContent());
     }
 
     public function test_admin_blade_has_no_dark_class_when_theme_cookie_is_light(): void
@@ -43,6 +43,7 @@ class BundleSplitTest extends TestCase
         $response = $this->get('/admin/dashboard');
 
         $response->assertOk();
-        $this->assertStringNotContainsString('class="dark"', $response->getContent());
+        $this->assertMatchesRegularExpression('/<html[^>]*class="\s*style-preset-nova"/', $response->getContent());
+        $this->assertDoesNotMatchRegularExpression('/<html[^>]*class="[^"]*\bdark\b/', $response->getContent());
     }
 }
