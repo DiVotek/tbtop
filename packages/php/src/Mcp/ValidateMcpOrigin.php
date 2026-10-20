@@ -46,8 +46,11 @@ final class ValidateMcpOrigin
         return [$url['scheme'].'://'.$url['host'].(isset($url['port']) ? ':'.$url['port'] : '')];
     }
 
+    /** Browsers omit a scheme's default port from Origin, so an app.url or allow-list entry naming it must match without it. */
     private static function normalize(string $origin): string
     {
-        return strtolower(rtrim($origin, '/'));
+        $origin = strtolower(rtrim($origin, '/'));
+
+        return (string) preg_replace(['#^(http://[^/]+):80$#', '#^(https://[^/]+):443$#'], '$1', $origin);
     }
 }
