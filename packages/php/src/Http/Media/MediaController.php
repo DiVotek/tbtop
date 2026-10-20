@@ -23,6 +23,8 @@ final class MediaController
         $search = $request->query('search');
         $search = is_string($search) ? $search : '';
         $folderId = $request->query('folder');
+        // (int) of an array is 1: ?folder[]=x must not silently open folder 1.
+        $folderId = is_string($folderId) ? $folderId : null;
 
         [$sortColumn, $sortDir] = $this->resolveSort($request);
         $query = Media::query()->orderBy($sortColumn, $sortDir);

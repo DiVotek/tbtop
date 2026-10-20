@@ -43,6 +43,17 @@ it('filters root media when folder param is empty', function () {
         ->and($response->json('data.0.name'))->toBe('root.png');
 });
 
+it('treats an array-shaped folder param as the root, not folder 1', function () {
+    $folder = MediaFolder::create(['name' => 'docs']);
+    Media::create(mediaRow(['folder_id' => $folder->id, 'name' => 'in-folder.png']));
+    Media::create(mediaRow(['name' => 'root.png']));
+
+    $response = $this->getJson('/admin/api/media?folder[]=x')->assertOk();
+    expect($folder->id)->toBe(1)
+        ->and($response->json('total'))->toBe(1)
+        ->and($response->json('data.0.name'))->toBe('root.png');
+});
+
 it('searches media by name', function () {
     Media::create(mediaRow(['name' => 'hero-image.png']));
     Media::create(mediaRow(['name' => 'footer-logo.png']));
