@@ -419,6 +419,13 @@ it('TableQuery: colSearch on an undeclared column is silently ignored', function
     expect(array_column($response->json('data.data'), 'title'))->toBe(['Post A', 'Post B']);
 });
 
+it('TableQuery: array-shaped search, colSearch and sort params are ignored, not a 500', function (): void {
+    $response = $this->getJson('/admin/cposts/tables/cposts?search[]=x&colSearch[title][]=x&sort[]=title&dir[]=desc');
+
+    $response->assertOk();
+    expect(array_column($response->json('data.data'), 'title'))->toBe(['Post A', 'Post B']);
+});
+
 it('TableQuery: colSearch on a searchable() (but not individuallySearchable()) column is ignored', function (): void {
     $response = $this->getJson('/admin/cposts/tables/cposts?colSearch[status]=published');
 
