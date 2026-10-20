@@ -165,7 +165,7 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 | 3 | `Password` | `$s->password('x')` | `password` | `password` | `fields/passwordField.tsx` |
 | 4 | `Otp` | `$s->otp('x')` | `otp` | `otp` | `fields/otpField.tsx` |
 | 5 | `Number` | `$s->number('x')` | `number` | `number` | `fields/numberField.tsx` |
-| 6 | `Date` | `$s->date('x')` | `date` | `date` | `fields/dateField.tsx` (`DateForm`/`DateCell`) |
+| 6 | `Date` | `$s->date('x')` | `date` | `date` | `fields/dateField.tsx` (`DateCell`; `DateForm` lives in `fields/dateForm.tsx`) |
 | 7 | `Datetime` | `$s->datetime('x')` | `datetime` | `datetime` | `fields/dateField.tsx` (`DateTimeForm`/`DateTimeCell`) |
 | 8 | `Boolean` | `$s->boolean('x')` | `boolean` | `boolean` | `fields/booleanField.tsx` |
 | 9 | `Select` | `$s->select('x')` | `select` | `select` | `fields/selectField.tsx` (branches static/async/creatable/multi at runtime) |
