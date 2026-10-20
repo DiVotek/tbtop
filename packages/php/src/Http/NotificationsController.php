@@ -88,8 +88,12 @@ final class NotificationsController
 
     private function resolveLimit(Request $request): int
     {
-        $limit = (int) $request->query('limit', (string) self::DEFAULT_LIMIT);
+        // A non-numeric or array limit means "not given", not (int) 0 → 1 row.
+        $limit = $request->query('limit');
+        if (! is_string($limit) || ! ctype_digit($limit)) {
+            return self::DEFAULT_LIMIT;
+        }
 
-        return max(1, min(self::MAX_LIMIT, $limit));
+        return max(1, min(self::MAX_LIMIT, (int) $limit));
     }
 }
