@@ -25,8 +25,10 @@ export function relativeTime(iso: string, locale?: string, now: Date = new Date(
 	const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 	let delta = (date.getTime() - now.getTime()) / 1000;
 	for (const division of DIVISIONS) {
-		if (Math.abs(delta) < division.amount) {
-			return rtf.format(Math.round(delta), division.unit);
+		// Compare the rounded value: 59.6s must roll over to "1 minute", not "60 seconds".
+		const rounded = Math.round(delta);
+		if (Math.abs(rounded) < division.amount) {
+			return rtf.format(rounded, division.unit);
 		}
 		delta /= division.amount;
 	}
