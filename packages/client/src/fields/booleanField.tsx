@@ -1,9 +1,10 @@
 import { Switch } from "../ui/switch";
+import { isOn } from "./booleanValue";
 import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 export function BooleanCell({ value }: FieldCellProps<boolean>) {
-	return nullableCell(value, (v) => <span>{v ? "✓" : "—"}</span>);
+	return nullableCell(value, (v) => <span>{isOn(v) ? "✓" : "—"}</span>);
 }
 
 export function BooleanForm({
@@ -19,7 +20,7 @@ export function BooleanForm({
 		<Switch
 			id={fieldId({ id, name })}
 			name={name}
-			checked={value === true}
+			checked={isOn(value)}
 			onCheckedChange={(next) => onChange(next)}
 			onBlur={onBlur}
 			disabled={disabled}

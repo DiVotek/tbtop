@@ -82,6 +82,29 @@ describe("Boolean field", () => {
 		expect(container.textContent).toBe("");
 	});
 
+	// An int-backed column without a boolean cast arrives as 1/0, and a boolean
+	// filter restored from the URL comes back as the string "true".
+	test("Boolean shows a loosely-typed truthy value as on and a falsy one as off", () => {
+		const loose = (v: unknown) => v as boolean;
+		const state = (v: unknown) =>
+			render(<BooleanForm name="published" value={loose(v)} onChange={() => {}} />)
+				.container.querySelector('[data-slot="switch"]')
+				?.getAttribute("data-state");
+		expect(state(1)).toBe("checked");
+		expect(state("1")).toBe("checked");
+		expect(state("true")).toBe("checked");
+		expect(state(0)).toBe("unchecked");
+		expect(state("0")).toBe("unchecked");
+		expect(state("false")).toBe("unchecked");
+	});
+
+	test("BooleanCell renders an em-dash for a string-encoded false", () => {
+		const { container, rerender } = render(<BooleanCell value={"0" as unknown as boolean} />);
+		expect(container.textContent).toBe("—");
+		rerender(<BooleanCell value={"false" as unknown as boolean} />);
+		expect(container.textContent).toBe("—");
+	});
+
 	test("the switch is described by the field's help/error text", () => {
 		const { getByRole } = render(
 			<BooleanForm
