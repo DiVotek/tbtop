@@ -150,6 +150,29 @@ it('TableFilter: empty array is skipped', function (): void {
     expect($builder->get()->count())->toBe(3);
 });
 
+// The query string is browser-supplied: ?filters[title][]=x arrives as an array.
+it('TableFilter: an array value on a text filter is ignored, not a 500', function (): void {
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Text::make('title')], ['title' => ['post']], $builder);
+    expect($builder->get()->count())->toBe(3);
+});
+
+it('TableFilter: an array value on a boolean filter is ignored, not a 500', function (): void {
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Boolean::make('featured')], ['featured' => ['1']], $builder);
+    expect($builder->get()->count())->toBe(3);
+});
+
+it('TableFilter: nested arrays in a tags filter are dropped, not a 500', function (): void {
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Tags::make('status')], ['status' => ['draft', ['published']]], $builder);
+    expect($builder->pluck('title')->all())->toBe(['Beta draft']);
+
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Tags::make('status')], ['status' => [['published']]], $builder);
+    expect($builder->get()->count())->toBe(3);
+});
+
 // application order preserved (filter A then filter B → intersection)
 it('TableFilter: application order preserved - multiple filters intersect', function (): void {
     $builder = DB::table('items');
