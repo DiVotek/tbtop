@@ -209,3 +209,25 @@ describe("KeyvalueCell", () => {
 		expect(container.textContent).toBe("");
 	});
 });
+
+describe("Keyvalue invalid state", () => {
+	test("an invalid keyvalue field marks every row input aria-invalid", () => {
+		const { getAllByRole } = render(
+			<KeyvalueForm name="meta" value={{ a: "1", b: "2" }} invalid onChange={() => {}} />,
+		);
+		const inputs = getAllByRole("textbox");
+		expect(inputs).toHaveLength(4);
+		for (const input of inputs) {
+			expect(input.getAttribute("aria-invalid")).toBe("true");
+		}
+	});
+
+	test("a valid keyvalue field leaves aria-invalid off its row inputs", () => {
+		const { getAllByRole } = render(
+			<KeyvalueForm name="meta" value={{ a: "1" }} onChange={() => {}} />,
+		);
+		for (const input of getAllByRole("textbox")) {
+			expect(input.getAttribute("aria-invalid")).toBeNull();
+		}
+	});
+});
