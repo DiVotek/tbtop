@@ -111,6 +111,13 @@ it('accepts no Origin, the app\'s own and an allowed one; refuses any other with
     expect(McpPage::$ran)->toBe([]);
 });
 
+it('matches a browser Origin against an app.url that names the default port', function (): void {
+    config(['app.url' => 'https://admin.example.com:443']);
+
+    $this->callTool('execute', ['id' => 'mcp-page:ping'], ['Origin' => 'https://admin.example.com'])->assertOk();
+    $this->callTool('execute', ['id' => 'mcp-page:ping'], ['Origin' => 'https://admin.example.com:8443'])->assertForbidden();
+});
+
 it('refuses a rebound host: an Origin matching the request Host but not app.url gets 403', function (): void {
     $this->postJson('http://evil.example/admin/mcp', [
         'jsonrpc' => '2.0',

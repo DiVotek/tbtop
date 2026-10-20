@@ -73,6 +73,7 @@ export function TablePagination({
 							key={p}
 							variant={p === page ? "default" : "outline"}
 							size="sm"
+							aria-current={p === page ? "page" : undefined}
 							onClick={() => goTo(p as number)}
 							data-testid={`pagination-page-${p}`}
 						>

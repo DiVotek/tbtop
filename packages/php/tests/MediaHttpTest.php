@@ -543,6 +543,12 @@ it('download returns 404 for unknown media id', function () {
     $this->get('/admin/api/media/9999/download')->assertNotFound();
 });
 
+it('download returns 404 when the media file is missing from its disk', function () {
+    $media = Media::create(mediaRow(['path' => 'tbtop-media/gone.png']));
+
+    $this->get("/admin/api/media/{$media->id}/download")->assertNotFound();
+});
+
 // ---- PATCH /admin/api/media/{id} ----
 
 it('updates media name, alt and folderId', function () {
@@ -708,6 +714,26 @@ it('renames a folder', function () {
         ->assertOk();
 
     expect($response->json('name'))->toBe('New Name');
+});
+
+it('refuses to move a folder into itself or one of its descendants', function () {
+    $parent = MediaFolder::create(['name' => 'parent']);
+    $child = MediaFolder::create(['name' => 'child', 'parent_id' => $parent->id]);
+
+    $this->patchJson("/admin/api/media/folders/{$parent->id}", ['parentId' => $parent->id])
+        ->assertStatus(422)->assertJsonValidationErrors('parentId');
+    $this->patchJson("/admin/api/media/folders/{$parent->id}", ['parentId' => $child->id])
+        ->assertStatus(422)->assertJsonValidationErrors('parentId');
+
+    expect($parent->refresh()->parent_id)->toBeNull();
+});
+
+it('moves a folder under an unrelated folder', function () {
+    $folder = MediaFolder::create(['name' => 'folder']);
+    $target = MediaFolder::create(['name' => 'target']);
+
+    $this->patchJson("/admin/api/media/folders/{$folder->id}", ['parentId' => $target->id])
+        ->assertOk()->assertJsonPath('parentId', $target->id);
 });
 
 // ---- DELETE /admin/api/media/folders/{id} ----

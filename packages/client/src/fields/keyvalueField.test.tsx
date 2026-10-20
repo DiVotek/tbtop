@@ -155,6 +155,42 @@ describe("Keyvalue field", () => {
 	});
 });
 
+describe("Keyvalue binding", () => {
+	test("links every row input to the field's error/helper text", () => {
+		const { getAllByRole } = render(
+			<KeyvalueForm
+				name="meta"
+				value={{ env: "prod", tier: "gold" }}
+				onChange={() => {}}
+				describedBy="meta-error"
+			/>,
+		);
+		const inputs = getAllByRole("textbox");
+		expect(inputs).toHaveLength(4);
+		for (const input of inputs) {
+			expect(input.getAttribute("aria-describedby")).toBe("meta-error");
+		}
+	});
+
+	test("reports blur so the form revalidates the field", async () => {
+		const user = userEvent.setup();
+		let blurs = 0;
+		const { getByRole } = render(
+			<KeyvalueForm
+				name="meta"
+				value={{ env: "prod" }}
+				onChange={() => {}}
+				onBlur={() => {
+					blurs++;
+				}}
+			/>,
+		);
+		await user.click(getByRole("textbox", { name: "Key" }));
+		await user.click(document.body);
+		expect(blurs).toBeGreaterThan(0);
+	});
+});
+
 describe("KeyvalueCell", () => {
 	test("KeyvalueCell renders comma-separated key=value pairs", () => {
 		const { container } = render(<KeyvalueCell value={{ env: "prod", region: "us" }} />);

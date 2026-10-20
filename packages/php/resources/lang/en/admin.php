@@ -194,6 +194,7 @@ return [
             'mime_not_allowed' => 'This file type is not allowed.',
             'svg_invalid' => 'This file is corrupted or is not a valid SVG.',
             'folder_not_empty' => 'The folder is not empty.',
+            'folder_cycle' => 'The folder cannot be moved into itself or one of its subfolders.',
         ],
         'folder' => [
             'all_files' => 'All files',
