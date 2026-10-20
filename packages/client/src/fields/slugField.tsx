@@ -5,7 +5,7 @@ import { useContentLocaleConfig } from "../structure/contentLocaleContext";
 import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useFieldSourceData } from "./fieldDependencies";
-import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { slugify } from "./slugify";
 import { usePanelLocale } from "./translatableWrapper";
 
@@ -56,10 +56,12 @@ export function SlugCell({ value }: FieldCellProps<string>) {
  * never silently rewrites a published slug.
  */
 export function SlugForm({
+	id,
 	name,
 	value,
 	onChange,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<string, SlugOptionsBag>) {
 	const fromField = options?.fromField ?? "";
@@ -124,7 +126,9 @@ export function SlugForm({
 		<div data-field={name} className="flex flex-col gap-2">
 			<div className="flex items-center gap-2">
 				<Input
+					id={fieldId({ id, name })}
 					type="text"
+					aria-describedby={describedBy}
 					value={currentSlug}
 					readOnly
 					disabled={disabled}

@@ -43,12 +43,40 @@ it('filters root media when folder param is empty', function () {
         ->and($response->json('data.0.name'))->toBe('root.png');
 });
 
+it('treats an array-shaped folder param as the root, not folder 1', function () {
+    $folder = MediaFolder::create(['name' => 'docs']);
+    Media::create(mediaRow(['folder_id' => $folder->id, 'name' => 'in-folder.png']));
+    Media::create(mediaRow(['name' => 'root.png']));
+
+    $response = $this->getJson('/admin/api/media?folder[]=x')->assertOk();
+    expect($folder->id)->toBe(1)
+        ->and($response->json('total'))->toBe(1)
+        ->and($response->json('data.0.name'))->toBe('root.png');
+});
+
 it('searches media by name', function () {
     Media::create(mediaRow(['name' => 'hero-image.png']));
     Media::create(mediaRow(['name' => 'footer-logo.png']));
 
     $response = $this->getJson('/admin/api/media?search=hero&folder=')->assertOk();
     expect($response->json('total'))->toBe(1);
+});
+
+it('treats % and _ in the media search as literal characters', function () {
+    Media::create(mediaRow(['name' => '50% off.png']));
+    Media::create(mediaRow(['name' => '5000 off.png']));
+
+    $response = $this->getJson('/admin/api/media?search='.urlencode('%').'&folder=')->assertOk();
+    expect($response->json('total'))->toBe(1)
+        ->and($response->json('data.0.name'))->toBe('50% off.png');
+});
+
+it('ignores array-shaped search and sort params instead of a 500', function () {
+    Media::create(mediaRow(['name' => 'hero-image.png']));
+    Media::create(mediaRow(['name' => 'footer-logo.png']));
+
+    $response = $this->getJson('/admin/api/media?search[]=hero&sort[]=name&dir[]=asc')->assertOk();
+    expect($response->json('total'))->toBe(2);
 });
 
 it('paginates media results', function () {
@@ -279,6 +307,32 @@ it('upload refuses a text/html file even when text/* is accepted', function () {
     expect(Media::count())->toBe(0);
 });
 
+it('upload refuses an XML-family mime whatever the accept list says', function (array $accept, string $mime) {
+    config()->set('tbtop-admin.media.accept', $accept);
+    $xhtml = '<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml">'
+        .'<body><script>alert(1)</script></body></html>';
+    $file = UploadedFile::fake()->createWithContent('page.xml', $xhtml)->mimeType($mime);
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(422);
+
+    expect(Media::count())->toBe(0);
+    expect(Storage::disk('public')->allFiles())->toBe([]);
+})->with([
+    'text/* accepted, text/xml' => [['text/*'], 'text/xml'],
+    'empty accept, text/xml' => [[], 'text/xml'],
+    'empty accept, application/xhtml+xml' => [[], 'application/xhtml+xml'],
+    'empty accept, application/xml' => [[], 'application/xml'],
+]);
+
+it('upload still accepts text/plain when text/* is accepted', function () {
+    config()->set('tbtop-admin.media.accept', ['text/*']);
+    $file = UploadedFile::fake()->createWithContent('note.txt', 'hello');
+
+    $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201);
+});
+
 it('replace sanitizes a replacement svg', function () {
     $media = Media::create(mediaRow(['path' => 'tbtop-media/old.svg', 'mime' => 'image/svg+xml']));
     Storage::disk('public')->put('tbtop-media/old.svg', '<svg></svg>');
@@ -489,6 +543,12 @@ it('download returns 404 for unknown media id', function () {
     $this->get('/admin/api/media/9999/download')->assertNotFound();
 });
 
+it('download returns 404 when the media file is missing from its disk', function () {
+    $media = Media::create(mediaRow(['path' => 'tbtop-media/gone.png']));
+
+    $this->get("/admin/api/media/{$media->id}/download")->assertNotFound();
+});
+
 // ---- PATCH /admin/api/media/{id} ----
 
 it('updates media name, alt and folderId', function () {
@@ -654,6 +714,26 @@ it('renames a folder', function () {
         ->assertOk();
 
     expect($response->json('name'))->toBe('New Name');
+});
+
+it('refuses to move a folder into itself or one of its descendants', function () {
+    $parent = MediaFolder::create(['name' => 'parent']);
+    $child = MediaFolder::create(['name' => 'child', 'parent_id' => $parent->id]);
+
+    $this->patchJson("/admin/api/media/folders/{$parent->id}", ['parentId' => $parent->id])
+        ->assertStatus(422)->assertJsonValidationErrors('parentId');
+    $this->patchJson("/admin/api/media/folders/{$parent->id}", ['parentId' => $child->id])
+        ->assertStatus(422)->assertJsonValidationErrors('parentId');
+
+    expect($parent->refresh()->parent_id)->toBeNull();
+});
+
+it('moves a folder under an unrelated folder', function () {
+    $folder = MediaFolder::create(['name' => 'folder']);
+    $target = MediaFolder::create(['name' => 'target']);
+
+    $this->patchJson("/admin/api/media/folders/{$folder->id}", ['parentId' => $target->id])
+        ->assertOk()->assertJsonPath('parentId', $target->id);
 });
 
 // ---- DELETE /admin/api/media/folders/{id} ----

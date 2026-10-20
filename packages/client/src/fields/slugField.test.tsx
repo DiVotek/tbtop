@@ -27,6 +27,16 @@ describe("Slug field", () => {
 		expect(input.readOnly).toBe(true);
 	});
 
+	test("the field label names the slug input and its help text describes it", () => {
+		const { getByLabelText } = render(
+			<>
+				<label htmlFor="slug">Slug</label>
+				<SlugForm name="slug" value="a" onChange={() => {}} describedBy="slug-help" />
+			</>,
+		);
+		expect(getByLabelText("Slug").getAttribute("aria-describedby")).toBe("slug-help");
+	});
+
 	test("typing into the slug input does not change the value", async () => {
 		const user = userEvent.setup();
 		const captured: (string | null)[] = [];

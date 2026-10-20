@@ -2,6 +2,8 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use UnitEnum;
+
 /**
  * Shared option-value normalization for the value primitives that emit a
  * {value, label} list (Select / Radio fields, editable select columns).
@@ -18,8 +20,14 @@ final class OptionList
     public static function normalize(array $options): array
     {
         return array_map(
-            fn (array $option) => ['value' => (string) $option['value']] + $option,
+            fn (array $option) => ['value' => self::value($option['value'])] + $option,
             $options,
         );
+    }
+
+    /** An enum case becomes its option value (->value, ->name for a pure enum), as in options(Enum::class). */
+    private static function value(mixed $value): string
+    {
+        return $value instanceof UnitEnum ? EnumOptions::key($value) : (string) $value;
     }
 }

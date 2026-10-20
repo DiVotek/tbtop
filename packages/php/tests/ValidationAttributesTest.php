@@ -72,3 +72,21 @@ it('collects a sub-field label attached under the children key', function () {
 
     expect($form->collectAttributes())->toBe(['items.*.label' => 'Menu label']);
 });
+
+// A multiple select/upload validates each value under `name.*`, so its label
+// must cover that key too, or an element error reads "The selected tags.0 is invalid."
+
+it('labels the element key of a multiple select and upload', function () {
+    $s = new S;
+    $form = $s->form('post', [
+        $s->select('tags')->label('Tags')->multiple()->rules('in:a,b'),
+        $s->upload('photos')->label('Photos')->multiple(),
+    ]);
+
+    expect($form->collectAttributes())->toBe([
+        'tags' => 'Tags',
+        'tags.*' => 'Tags',
+        'photos' => 'Photos',
+        'photos.*' => 'Photos',
+    ]);
+});

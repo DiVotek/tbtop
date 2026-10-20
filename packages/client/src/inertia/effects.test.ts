@@ -120,6 +120,24 @@ describe("executeEffects: redirect", () => {
 		expect(routerVisit).not.toHaveBeenCalled();
 		expect(consumeServerRedirect()).toBe(false);
 	});
+
+	// Regression: a query-only href resolved against the origin ("/"), not the
+	// current page, so "?tab=2" on /admin/posts/1 dropped state and scroll.
+	test("a query-only redirect counts as the same page", () => {
+		const original = location.href;
+		window.history.replaceState(null, "", "/admin/posts/1");
+		routerVisit.mockClear();
+		try {
+			executeEffects([{ kind: "redirect", href: "?tab=2" }], fakeCtx());
+			expect(routerVisit).toHaveBeenCalledWith("?tab=2", {
+				preserveState: true,
+				preserveScroll: true,
+			});
+		} finally {
+			window.history.replaceState(null, "", original);
+			consumeServerRedirect();
+		}
+	});
 });
 
 // ---------------------------------------------------------------------------

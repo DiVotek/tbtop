@@ -101,6 +101,21 @@ it('TableFilter: daterange with only to bound', function (): void {
     expect($rows->pluck('title')->all())->toBe(['Alpha post']);
 });
 
+it('TableFilter: daterange to bound includes the whole end day on a datetime column', function (): void {
+    Schema::create('events', function ($table): void {
+        $table->id();
+        $table->dateTime('starts_at');
+    });
+    DB::table('events')->insert([
+        ['starts_at' => '2024-01-31 14:30:00'],
+        ['starts_at' => '2024-02-01 09:00:00'],
+    ]);
+    $builder = DB::table('events');
+    TableFilterApplier::apply([Daterange::make('starts_at')], ['starts_at' => ['to' => '2024-01-31']], $builder);
+
+    expect($builder->pluck('starts_at')->all())->toBe(['2024-01-31 14:30:00']);
+});
+
 // filterUsing closure overrides default
 it('TableFilter: filterUsing closure takes priority over default mapping', function (): void {
     $builder = DB::table('items');

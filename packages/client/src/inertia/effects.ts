@@ -90,7 +90,8 @@ export function applyRedirect(effect: ServerEffect): void {
 			window.location.assign(effect.href);
 			return;
 		}
-		const samePage = new URL(effect.href, location.origin).pathname === location.pathname;
+		// Resolve against the current page, as router.visit does ("?tab=2", "edit").
+		const samePage = new URL(effect.href, location.href).pathname === location.pathname;
 		router.visit(effect.href, { preserveState: samePage, preserveScroll: samePage });
 	}
 }

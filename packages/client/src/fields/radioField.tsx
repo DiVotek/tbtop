@@ -1,8 +1,9 @@
 import { cn } from "../lib/cn";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { nullableCell } from "./cellHelpers";
-import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { OptionRow } from "./optionList";
+import { coerceSelectValue } from "./selectShared";
 
 interface RadioOption {
 	value: string;
@@ -18,8 +19,9 @@ interface RadioOptionsBag {
 
 export function RadioCell({ value, options }: FieldCellProps<string, RadioOptionsBag>) {
 	return nullableCell(value, (v) => {
-		const match = options?.options?.find((o) => o.value === v);
-		return <span>{match?.label ?? v}</span>;
+		const key = String(v);
+		const match = options?.options?.find((o) => o.value === key);
+		return <span>{match?.label ?? key}</span>;
 	});
 }
 
@@ -34,10 +36,12 @@ export function RadioForm({
 }: FieldFormProps<string, RadioOptionsBag>) {
 	const choices = options?.options ?? [];
 	const groupId = fieldId({ id, name });
+	// Records carry int-backed values (2) while wire options are string-cast ("2").
+	const coerced = coerceSelectValue(value);
 	return (
 		<RadioGroup
 			id={groupId}
-			value={asString(value)}
+			value={typeof coerced === "string" ? coerced : ""}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
 			disabled={disabled}

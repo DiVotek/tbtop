@@ -13,6 +13,7 @@ export function BooleanForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 }: FieldFormProps<boolean>) {
 	return (
 		<Switch
@@ -22,6 +23,7 @@ export function BooleanForm({
 			onCheckedChange={(next) => onChange(next)}
 			onBlur={onBlur}
 			disabled={disabled}
+			aria-describedby={describedBy}
 		/>
 	);
 }

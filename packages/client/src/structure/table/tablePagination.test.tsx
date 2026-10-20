@@ -81,6 +81,16 @@ describe("TablePagination: page navigation", () => {
 		expect(next).toHaveProperty("disabled", true);
 	});
 
+	test("marks only the current page button with aria-current=page", async () => {
+		const node = makePaginatedTable(100);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const page1 = await findByTestId("pagination-page-1");
+		const page2 = await findByTestId("pagination-page-2");
+		expect(page1.getAttribute("aria-current")).toBe("page");
+		expect(page2.getAttribute("aria-current")).toBeNull();
+	});
+
 	test("clicking page 2 updates URL with namespaced page param", async () => {
 		const replaceStateCalls: string[] = [];
 		const origReplaceState = window.history.replaceState.bind(window.history);

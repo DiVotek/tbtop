@@ -32,6 +32,35 @@ it('searches across searchable fields', function () {
     expect(array_column($rows, 'title'))->toBe(['Gamma news']);
 });
 
+it('treats % and _ in table search as literal characters', function () {
+    DB::table('posts')->insert([
+        ['title' => '50% off'], ['title' => '5000 off'], ['title' => 'a_b'], ['title' => 'axb'],
+    ]);
+
+    $titles = fn (string $search) => array_column(
+        $this->getJson('/admin/posts/tables/posts?perPage=50&search='.urlencode($search))->json('data.data'),
+        'title',
+    );
+
+    expect($titles('%'))->toBe(['50% off'])
+        ->and($titles('_'))->toBe(['a_b'])
+        ->and($titles('!'))->toBe([]);
+});
+
+it('treats % and _ in text filters as literal characters', function () {
+    DB::table('posts')->insert([
+        ['title' => '50% off'], ['title' => '5000 off'], ['title' => 'a_b'], ['title' => 'axb'],
+    ]);
+
+    $titles = fn (string $value) => array_column(
+        $this->getJson('/admin/posts/tables/posts?perPage=50&filters[title]='.urlencode($value))->json('data.data'),
+        'title',
+    );
+
+    expect($titles('%'))->toBe(['50% off'])
+        ->and($titles('_'))->toBe(['a_b']);
+});
+
 it('applies equality filters and explicit sort', function () {
     $rows = $this->getJson('/admin/posts/tables/posts?filters[published]=1&sort=views&dir=asc')
         ->json('data.data');

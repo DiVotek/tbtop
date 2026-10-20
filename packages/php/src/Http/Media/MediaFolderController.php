@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Http\Media;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\Models\MediaFolder;
@@ -49,12 +50,33 @@ final class MediaFolderController
             $fill['name'] = $data['name'];
         }
         if (array_key_exists('parentId', $data)) {
+            $this->assertNotOwnAncestor($id, $data['parentId']);
             $fill['parent_id'] = $data['parentId'];
         }
 
         $folder->update($fill);
 
         return response()->json(MediaResource::toFolder($folder->refresh()));
+    }
+
+    /**
+     * Moving a folder under itself or one of its descendants would detach the
+     * subtree from the root in a parent cycle no listing could reach.
+     */
+    private function assertNotOwnAncestor(int $id, mixed $parentId): void
+    {
+        $seen = [];
+        $current = $parentId === null ? null : (int) $parentId;
+        while ($current !== null && ! isset($seen[$current])) {
+            if ($current === $id) {
+                throw ValidationException::withMessages([
+                    'parentId' => __('tbtop-admin::admin.media.errors.folder_cycle'),
+                ]);
+            }
+            $seen[$current] = true;
+            $current = MediaFolder::whereKey($current)->value('parent_id');
+            $current = $current === null ? null : (int) $current;
+        }
     }
 
     public function destroy(int $id): Response|JsonResponse

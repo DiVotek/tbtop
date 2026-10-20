@@ -16,8 +16,9 @@ final class TableSortApplier
     public static function apply(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
     {
         $default = $table->defaultSortSpec();
-        $requestedSort = (string) $request->query('sort', '');
-        $dir = (string) $request->query('dir', $default['dir'] ?? 'asc');
+        $requestedSort = $request->query('sort');
+        $requestedSort = is_string($requestedSort) ? $requestedSort : '';
+        $dir = $request->query('dir', $default['dir'] ?? 'asc');
         $direction = $dir === 'desc' ? 'desc' : 'asc';
 
         // Security whitelist: only allow explicitly declared sortable columns.

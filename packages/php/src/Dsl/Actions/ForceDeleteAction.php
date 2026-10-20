@@ -41,7 +41,8 @@ final class ForceDeleteAction
         return RecordAction::bulk(
             $s,
             $name,
-            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->forceDelete(),
+            // Per model, like make(): a builder forceDelete() skips forceDeleting/forceDeleted.
+            fn (ActionCtx $ctx) => $model::withTrashed()->whereKey($ctx->selection)->get()->each->forceDelete(),
             Effects::make()->notify(__('tbtop-admin::admin.force_delete.notify.bulk_success'))->refreshTable(),
         )->label(__('tbtop-admin::admin.action.force_delete'))->color('danger')->confirm(
             __('tbtop-admin::admin.force_delete.confirm.title'),

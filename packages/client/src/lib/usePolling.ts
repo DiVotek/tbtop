@@ -33,7 +33,10 @@ export function usePolling(fn: () => void, intervalMs: number | null | undefined
 			fnRef.current();
 			start();
 		};
-		start();
+		// A tab opened in the background must not poll until it is shown.
+		if (!document.hidden) {
+			start();
+		}
 		document.addEventListener("visibilitychange", onVisibility);
 		return () => {
 			stop();

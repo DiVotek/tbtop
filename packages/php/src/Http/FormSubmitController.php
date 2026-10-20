@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Dsl\RuleWalker;
 use Tbtop\Admin\Validation\EmbedsRule;
 
 final class FormSubmitController
@@ -27,7 +28,8 @@ final class FormSubmitController
             throw new NotFoundHttpException("Form \"{$tbtopForm}\" is not submittable on this page.");
         }
 
-        $validator = Validator::make($request->all(), $form->collectRules(), [], $form->collectAttributes());
+        $rules = RuleWalker::bindUploadPaths($form->collectRules(), $form->getFields(), $form->recordData());
+        $validator = Validator::make($request->all(), $rules, [], $form->collectAttributes());
         $validated = EmbedsRule::applyDeclaredKeys($validator->getRules(), $validator->validate());
         $ctx = new ActionCtx(
             request: $request,

@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Panels;
 
 use Closure;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use InvalidArgumentException;
 use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
 use Tbtop\Admin\Navigation\NavGroup;
@@ -10,6 +11,7 @@ use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\Concerns\ConfiguresAppearance;
 use Tbtop\Admin\Panels\Concerns\ConfiguresMcp;
+use Tbtop\Admin\Panels\Concerns\ConfiguresMedia;
 
 /**
  * Fluent per-panel configuration, produced by Panel::configure().
@@ -18,6 +20,7 @@ final class PanelConfig
 {
     use ConfiguresAppearance;
     use ConfiguresMcp;
+    use ConfiguresMedia;
 
     /** Shell navigation layouts the client can render. */
     public const NAVIGATIONS = ['sidebar', 'topbar', 'topbar-sidebar', 'rail-sidebar'];
@@ -105,7 +108,7 @@ final class PanelConfig
         return $this;
     }
 
-    /** Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}` on top at read time. @param  list<string>  $middleware */
+    /** Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}` and AuthenticateSession on top at read time. @param  list<string>  $middleware */
     public function middleware(array $middleware): static
     {
         $this->middleware = $middleware;
@@ -324,12 +327,14 @@ final class PanelConfig
      * middleware(PanelConfig $p): array { return [...$p->authStack(), 'throttle:30,1']; }.
      * Access rules belong in Page::can(), which MCP calls also enforce.
      * Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those.
+     * AuthenticateSession follows auth: it reads the user that `auth:{guard}` resolves, and
+     * ends a session whose password hash no longer matches the user's (a reset elsewhere).
      *
      * @return list<string>
      */
     public function authStack(): array
     {
-        return [...$this->middleware, 'auth:'.$this->guard];
+        return [...$this->middleware, 'auth:'.$this->guard, AuthenticateSession::class];
     }
 
     /** @return list<class-string<Page>> */

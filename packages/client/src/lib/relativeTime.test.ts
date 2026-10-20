@@ -11,6 +11,12 @@ describe("relativeTime", () => {
 		expect(relativeTime("2026-06-22T12:00:00Z", "en", now)).toBe("2 days ago");
 	});
 
+	test("rolls over to the next unit when rounding reaches its boundary", () => {
+		expect(relativeTime("2026-06-24T11:59:00.400Z", "en", now)).toBe("1 minute ago");
+		expect(relativeTime("2026-06-24T11:00:20Z", "en", now)).toBe("1 hour ago");
+		expect(relativeTime("2026-06-23T12:20:00Z", "en", now)).toBe("yesterday");
+	});
+
 	test("returns an empty string for an unparseable timestamp", () => {
 		expect(relativeTime("not-a-date", "en", now)).toBe("");
 	});

@@ -515,13 +515,15 @@ final class TableBuilder implements JsonSerializable
 
     /**
      * All searchable fields: table-level list + per-column searchable() columns.
+     * A column gated out by hidden()/visible() contributes nothing, so its value
+     * cannot be probed through search while the cell stays on the server.
      *
      * @return list<string>
      */
     public function searchableFields(): array
     {
         $fields = $this->searchable;
-        foreach ($this->columnObjects as $col) {
+        foreach ($this->visibleColumns() as $col) {
             foreach ($this->searchableNamesFor($col) as $name) {
                 if (! in_array($name, $fields, true)) {
                     $fields[] = $name;
@@ -552,11 +554,11 @@ final class TableBuilder implements JsonSerializable
         return $names;
     }
 
-    /** @return list<string> Column names with individuallySearchable() enabled. */
+    /** @return list<string> Visible column names with individuallySearchable() enabled. */
     public function individuallySearchableColumns(): array
     {
         $names = [];
-        foreach ($this->columnObjects as $col) {
+        foreach ($this->visibleColumns() as $col) {
             if ($col->isIndividuallySearchable()) {
                 $names[] = $col->name;
             }
@@ -599,15 +601,16 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Names of columns that are explicitly declared sortable.
-     * The default-sort field is always implicitly allowed.
+     * Names of visible columns that are explicitly declared sortable — a
+     * gated-out column would otherwise leak its ordering. The default-sort
+     * field is always implicitly allowed.
      *
      * @return list<string>
      */
     public function sortableColumnNames(): array
     {
         $names = [];
-        foreach ($this->columnObjects as $col) {
+        foreach ($this->visibleColumns() as $col) {
             if ($col->isSortable()) {
                 $names[] = $col->name;
             }

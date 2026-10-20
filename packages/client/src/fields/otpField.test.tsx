@@ -34,6 +34,12 @@ describe("Otp field", () => {
 		expect(input?.value).toBe("123");
 	});
 
+	test("an invalid field marks the focusable backing input aria-invalid", () => {
+		const { container } = render(<OtpForm name="code" value="" onChange={() => {}} invalid />);
+		const input = container.querySelector("input[name=code]");
+		expect(input?.getAttribute("aria-invalid")).toBe("true");
+	});
+
 	test("OtpCell masks one dot per character and renders nothing when empty", () => {
 		const { container, rerender } = render(<OtpCell value="123456" />);
 		expect(container.textContent).toBe("••••••");

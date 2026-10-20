@@ -35,6 +35,9 @@ abstract class ResetPasswordPage extends AuthPage
 
     public function view(S $s): Node
     {
+        // An array (?email[]=x) would 500 on the string cast: prefill nothing.
+        $email = request()->query('email');
+
         return $s->stack([
             $s->displayText(__('tbtop-admin::admin.auth.reset.title'))->variant('heading'),
             $s->form('reset', [
@@ -46,7 +49,7 @@ abstract class ResetPasswordPage extends AuthPage
                 ]),
             ])
                 ->guardUnsaved(false)
-                ->record(['email' => (string) request()->query('email', ''), 'password' => '', 'password_confirmation' => ''])
+                ->record(['email' => is_string($email) ? $email : '', 'password' => '', 'password_confirmation' => ''])
                 ->onSubmit(fn (ActionCtx $ctx): Effects => $this->resetPassword($ctx)),
         ]);
     }

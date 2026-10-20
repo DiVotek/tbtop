@@ -2,9 +2,10 @@
  * useUploadQueue — a second upload call while the first batch is still in flight
  * must APPEND its rows, not replace the list (which would wipe live progress).
  */
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import { ClientProvider } from "../data/client";
 import { type FetchHandler, makeTestClient } from "../testFixtures";
 import type { MediaItem } from "./types";
@@ -77,5 +78,22 @@ describe("useUploadQueue", () => {
 		await waitFor(() =>
 			expect(result.current.tasks.every((t) => t.status === "done")).toBe(true),
 		);
+	});
+
+	// Regression: an empty selection (a cancelled picker fires change with no
+	// files in Chrome) toasted "upload done" though nothing was uploaded.
+	test("an empty file list uploads nothing and shows no toast", async () => {
+		const success = spyOn(toast, "success").mockImplementation(() => "id");
+		try {
+			const { result } = renderHook(
+				() => useUploadQueue({ folderId: null, onUploaded: () => {} }),
+				{ wrapper: wrap(deferredHandler().handler) },
+			);
+			await act(() => result.current.uploadFiles([]));
+			expect(result.current.tasks).toEqual([]);
+			expect(success).not.toHaveBeenCalled();
+		} finally {
+			success.mockRestore();
+		}
 	});
 });

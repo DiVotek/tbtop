@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Http;
 
+use Tbtop\Admin\Dsl\ActionBuilder;
 use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\StructureWalk;
@@ -39,8 +40,7 @@ final class ActionFormRules
      */
     public static function enclosingFormName(Node $tree, string $actionName, iterable $additionalRoots = []): ?string
     {
-        return self::search($tree, $actionName, null)
-            ?? self::searchList($additionalRoots, $actionName, null);
+        return self::enclosing($tree, $actionName, $additionalRoots)['form'] ?? null;
     }
 
     /** The reachable form $actionName submits into on $resolved, or null — see enclosingFormName(). */
@@ -51,6 +51,30 @@ final class ActionFormRules
         return $name === null ? null : $resolved->s->reachableForm($name);
     }
 
+    /**
+     * The closest modal action above $actionName that loads its body through
+     * query() (EditAction's row load), when $actionName submits a form: that
+     * query is where the form's record came from. Null when there is none.
+     */
+    public static function enclosingQueryAction(ResolvedPage $resolved, string $actionName): ?ActionBuilder
+    {
+        $found = self::enclosing($resolved->tree, $actionName, $resolved->headerActionSources);
+        $name = $found['query'] ?? null;
+
+        return $name === null ? null : $resolved->s->reachableAction($name);
+    }
+
+    /**
+     * @param  iterable<mixed>  $additionalRoots
+     * @return array{form: string, query: string|null}|null
+     */
+    private static function enclosing(Node $tree, string $actionName, iterable $additionalRoots): ?array
+    {
+        $start = ['form' => null, 'query' => null];
+
+        return self::search($tree, $actionName, $start) ?? self::searchList($additionalRoots, $actionName, $start);
+    }
+
     private static function readsForm(Node $node): bool
     {
         $spec = $node->options['spec'] ?? null;
@@ -58,28 +82,48 @@ final class ActionFormRules
         return is_array($spec) && in_array('form', $spec['needs'] ?? [], true);
     }
 
+    private static function loadsQuery(Node $node): bool
+    {
+        $spec = $node->options['spec'] ?? null;
+
+        return $node->kind === 'action' && $node->name !== null && is_array($spec) && ($spec['query'] ?? false) === true;
+    }
+
     /**
-     * Depth-first, carrying the closest form name seen above the current
-     * node. $node may be a builder StructureWalk has not yet serialized.
+     * Depth-first, carrying the closest form name and query-loading modal
+     * action seen above the current node. $node may be a builder
+     * StructureWalk has not yet serialized.
+     *
+     * @param  array{form: string|null, query: string|null}  $enclosing
+     * @return array{form: string, query: string|null}|null
      */
-    private static function search(mixed $node, string $actionName, ?string $enclosing): ?string
+    private static function search(mixed $node, string $actionName, array $enclosing): ?array
     {
         $node = StructureWalk::resolveActionNode($node);
         if ($node === null) {
             return null;
         }
         if ($node->kind === 'action' && $node->name === $actionName) {
-            return self::readsForm($node) ? $enclosing : null;
+            $form = $enclosing['form'];
+
+            return self::readsForm($node) && $form !== null ? ['form' => $form, 'query' => $enclosing['query']] : null;
         }
         if ($node->kind === 'form' && $node->name !== null) {
-            $enclosing = $node->name;
+            $enclosing['form'] = $node->name;
+        }
+        if (self::loadsQuery($node)) {
+            $enclosing['query'] = $node->name;
         }
 
         return self::searchList(StructureWalk::actionSearchDescendants($node), $actionName, $enclosing);
     }
 
-    /** @param  iterable<mixed>  $children */
-    private static function searchList(iterable $children, string $actionName, ?string $enclosing): ?string
+    /**
+     * @param  iterable<mixed>  $children
+     * @param  array{form: string|null, query: string|null}  $enclosing
+     * @return array{form: string, query: string|null}|null
+     */
+    private static function searchList(iterable $children, string $actionName, array $enclosing): ?array
     {
         foreach ($children as $child) {
             $found = self::search($child, $actionName, $enclosing);

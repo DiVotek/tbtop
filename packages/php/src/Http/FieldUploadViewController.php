@@ -37,7 +37,8 @@ final class FieldUploadViewController
             abort(404);
         }
 
-        $path = (string) $request->query('path');
+        $path = $request->query('path');
+        $path = is_string($path) ? $path : '';
         $this->assertInZone($path, $config->directory);
 
         /** @var FilesystemAdapter $disk */
@@ -55,7 +56,8 @@ final class FieldUploadViewController
         if (str_contains($path, '..')) {
             abort(403);
         }
-        if (! str_starts_with($path, trim($directory, '/').'/')) {
+        $zone = trim($directory, '/');
+        if ($zone === '' || ! str_starts_with($path, $zone.'/')) {
             abort(403);
         }
     }
