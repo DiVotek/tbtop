@@ -33,6 +33,7 @@ describe("endpoint cluster", () => {
 					{
 						label: "Posts",
 						href: "/admin/posts",
+						order: 1,
 						icon: { name: "file-text", position: "left" },
 					},
 				],
@@ -68,6 +69,6 @@ describe("endpoint cluster", () => {
 
 	test("non-admin URLs fall through to the host", async () => {
 		expect(await admin.handle(new Request("http://x/blog/1"))).toBeNull();
-		expect(await admin.handle(new Request("http://x/admin/nope"))).toBeNull();
+		expect(await admin.handle(new Request("http://x/admin-other"))).toBeNull();
 	});
 });

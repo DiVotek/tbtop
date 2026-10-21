@@ -72,3 +72,17 @@ export function withCookie(response: Response, line: string): Response {
 	copy.headers.append("set-cookie", line);
 	return copy;
 }
+
+/** One store per request, so a page and its handlers share what they put. */
+export function sessionCache(resolve: SessionResolver) {
+	const cache = new WeakMap<Request, Promise<SessionStore>>();
+	return (request: Request): Promise<SessionStore> => {
+		const known = cache.get(request);
+		if (known !== undefined) {
+			return known;
+		}
+		const store = Promise.resolve(resolve(request));
+		cache.set(request, store);
+		return store;
+	};
+}

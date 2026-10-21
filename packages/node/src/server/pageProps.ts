@@ -1,6 +1,7 @@
 import { materialize, Upload } from "../dsl";
+import { buildBreadcrumbs } from "./chrome/breadcrumbs";
 import { asJson, type Json } from "./http";
-import { resolveText } from "./page";
+import { type Crumb, resolveText } from "./page";
 import { type PanelInfo, sharedProps } from "./panel";
 import type { Resolved } from "./resolve";
 import type { UploadOptions } from "./uploads/config";
@@ -20,6 +21,7 @@ export interface AdminPageProps {
 	params: Record<string, string>;
 	headerActions?: Json[];
 	navGroup?: string;
+	breadcrumbs?: Crumb[];
 	tbtop: { [key: string]: Json };
 }
 
@@ -48,6 +50,8 @@ export async function buildPageProps(
 		params: ctx.params,
 		headerActions: headerActions.length > 0 ? await materialize(headerActions) : undefined,
 		navGroup: page.nav?.group || undefined,
-		tbtop: sharedProps(panel),
+		breadcrumbs:
+			panel.breadcrumbs === false ? undefined : await buildBreadcrumbs(page, ctx, panel),
+		tbtop: await sharedProps(panel, ctx.request),
 	});
 }

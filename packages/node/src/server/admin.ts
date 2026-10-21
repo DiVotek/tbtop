@@ -1,16 +1,16 @@
 import { currentContext, materialize, runWithContext } from "../dsl";
 import { notificationsRoute } from "../notifications/routes";
+import { assertAppearance } from "./chrome/appearance";
+import { expectsJson, notFoundPage } from "./chrome/errorPage";
 import type { AdminConfig } from "./config";
 import { ENDPOINTS, matchEndpoints } from "./endpoints";
 import { errorResponse, HttpError, json, stripPrefix } from "./http";
+
+export { HttpError };
+
 import { rootView as defaultRootView } from "./inertia/html";
 import { isInertia, redirectTo } from "./inertia/protocol";
-import {
-	memorySessions,
-	SESSION_USER,
-	type SessionResolver,
-	type SessionStore,
-} from "./inertia/session";
+import { memorySessions, SESSION_USER, type SessionStore, sessionCache } from "./inertia/session";
 import { currentLocale, localeContext, switchLocale, uiLocales } from "./locale";
 import type { PageDef } from "./page";
 import { type AdminPageProps, buildPageProps } from "./pageProps";
@@ -37,10 +37,11 @@ class AdminServer {
 
 	constructor(private readonly config: AdminConfig) {
 		this.prefix = config.prefix.replace(/\/+$/, "");
+		assertAppearance(config.navigation, config.appearance);
 		this.panel = {
+			...config,
+			id: config.id ?? "admin",
 			prefix: this.prefix,
-			brand: config.brand,
-			pages: config.pages,
 			locales: uiLocales(config),
 			uploads: config,
 			pollInterval: config.notifications ? (config.notifications.pollInterval ?? 30) : null,
@@ -57,7 +58,10 @@ class AdminServer {
 		const user = (await this.readUser(request, session)) ?? null;
 		const locale = localeContext(this.config, await currentLocale(this.config, session));
 		const extra = (await this.config.context?.(request)) ?? {};
-		return runWithContext({ user, ...locale, ...extra }, () => run().catch(errorResponse));
+		const unsavedGuard = this.config.unsavedGuard ?? true;
+		return runWithContext({ user, unsavedGuard, ...locale, ...extra }, () =>
+			run().catch(errorResponse),
+		);
 	}
 
 	/** inContext(), plus the session's Set-Cookie on the way out. */
@@ -127,8 +131,27 @@ class AdminServer {
 		return this.guarded(request, async () => {
 			const denied = await this.denyGuest(request, found.page, false);
 			const session = await this.sessions(request);
-			return denied ?? pageResponse(this.panel, { request, session, found });
+			return (
+				denied ??
+				pageResponse(this.panel, { request, session, found }).catch(this.notFound(request))
+			);
 		});
+	}
+
+	/** A 404 a page raises (a record it cannot find) renders inside the shell. */
+	private notFound(request: Request) {
+		return (error: unknown): Promise<Response> =>
+			error instanceof HttpError && error.status === 404 && !expectsJson(request)
+				? notFoundPage(this.panel, request)
+				: Promise.reject(error);
+	}
+
+	/** The panel's Route::fallback(): any other GET under the prefix is the 404 page. */
+	fallback(request: Request): Promise<Response> | null {
+		if (!["GET", "HEAD"].includes(request.method) || expectsJson(request)) {
+			return null;
+		}
+		return this.guarded(request, () => notFoundPage(this.panel, request));
 	}
 
 	/** The panel's own POST routes: logout and the UI locale switch. */
@@ -177,7 +200,8 @@ class AdminServer {
 		return (
 			(await this.panelRoute(request, path)) ??
 			(await this.endpoint(request, path)) ??
-			this.page(request, path)
+			(await this.page(request, path)) ??
+			this.fallback(request)
 		);
 	}
 }
@@ -194,24 +218,10 @@ export function createAdmin(config: AdminConfig) {
 		pageProps: (request: Request) => server.pageProps(request),
 		/** The request's session store: a login handler puts the user here. */
 		session: (request: Request) => server.sessions(request),
+		id: server.panel.id,
 		prefix: server.prefix,
 		endpoints: ENDPOINTS,
 	};
 }
 
-/** One store per request, so a page and its handlers share what they put. */
-function sessionCache(resolve: SessionResolver) {
-	const cache = new WeakMap<Request, Promise<SessionStore>>();
-	return (request: Request): Promise<SessionStore> => {
-		const known = cache.get(request);
-		if (known !== undefined) {
-			return known;
-		}
-		const store = Promise.resolve(resolve(request));
-		cache.set(request, store);
-		return store;
-	};
-}
-
 export type Admin = ReturnType<typeof createAdmin>;
-export { HttpError };

@@ -47,6 +47,14 @@ export const admin = createAdmin({
 	prefix: "/admin",
 	brand: "tbtop · node",
 	pages: [...pages, login],
+	navigationGroups: [{ key: "Content", icon: "file-text", description: "Posts and drafts" }],
+	navigationItems: [
+		{ label: "Docs", url: "https://github.com/DiVotek/tbtop", icon: "book-open", newTab: true },
+	],
+	userMenuItems: [{ label: "Source", url: "https://github.com/DiVotek/tbtop", icon: "github" }],
+	commandPalette: {
+		commands: [{ label: "New post", url: "/admin/posts/new", icon: "plus", keywords: ["create"] }],
+	},
 	driver,
 	hostRules,
 	session: memorySessions({ secure: production }),

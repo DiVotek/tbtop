@@ -1,4 +1,4 @@
-import { Column, definePage, Effects, type HostRule, type Row, type S } from "../src";
+import { Column, definePage, Effects, type HostRule, HttpError, type Row, type S } from "../src";
 import { memoryDriver, memoryQuery } from "../src/adapters/memory";
 
 /** In-memory "database" so the sketch runs with zero setup. A real host plugs Kysely here. */
@@ -139,7 +139,7 @@ export const postEdit = definePage({
 	view: (s, { params }) => {
 		const post = db.find(params.post ?? "");
 		if (!post) {
-			throw new Response("Not found", { status: 404 });
+			throw new HttpError(404, "Post not found.");
 		}
 		return postForm(s, post.id)
 			.record(post)

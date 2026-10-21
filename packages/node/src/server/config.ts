@@ -5,8 +5,11 @@ import type { RootView } from "./inertia/protocol";
 import type { SessionResolver, SessionStore } from "./inertia/session";
 import type { LocaleConfig } from "./locale";
 import type { PageDef } from "./page";
+import type { PanelLook } from "./panel";
 
-export interface AdminConfig extends ServerOptions, LocaleConfig {
+export interface AdminConfig extends ServerOptions, LocaleConfig, PanelLook {
+	/** The panel's id, unique among the host's panels (`tbtop.panel`); default `admin`. */
+	id?: string;
 	/** URL prefix of the panel, e.g. `/admin`. */
 	prefix: string;
 	pages: PageDef[];
@@ -23,6 +26,8 @@ export interface AdminConfig extends ServerOptions, LocaleConfig {
 	rootView?: RootView;
 	/** The header bell's store; `pollInterval` in seconds (null: no polling). */
 	notifications?: { store: NotificationStore; pollInterval?: number | null };
+	/** Panel-wide default of a form's unsaved-changes guard (default true). */
+	unsavedGuard?: boolean;
 	/** Request-scoped settings: locales, timezone, a Gate-style `can`. */
 	context?: (request: Request) => Partial<AdminContext> | Promise<Partial<AdminContext>>;
 }

@@ -1,7 +1,32 @@
 import { currentContext, defaultLocale } from "../dsl/context";
-import type { NavEntry, PageDef } from "./page";
+import { type AppearanceConfig, appearanceProp, type NavigationLayout } from "./chrome/appearance";
+import { type ChromeDef, serializeChrome } from "./chrome/chrome";
+import type { NavGroupDef } from "./chrome/navGroups";
+import { buildNav, linkItem, type NavLink } from "./chrome/navigation";
+import { type PaletteConfig, paletteProp } from "./chrome/palette";
+import type { PageDef } from "./page";
 
-export interface PanelInfo {
+/** The shell knobs of a panel (PanelConfig.php): layout, nav, chrome, palette, appearance. */
+export interface PanelLook {
+	/** Default `sidebar`. All layouts collapse to a burger drawer on mobile. */
+	navigation?: NavigationLayout;
+	/** Meta and order of the sidebar groups that pages name in `nav.group`. */
+	navigationGroups?: NavGroupDef[];
+	/** Always-shown links merged into the sidebar (an external link). */
+	navigationItems?: NavLink[];
+	/** Profile-menu links beside the fixed theme/locale/logout controls. */
+	userMenuItems?: NavLink[];
+	/** The shell in the DSL; default: user menu on top, logo and nav on the side. */
+	chrome?: ChromeDef;
+	appearance?: AppearanceConfig;
+	/** The ⌘K palette: on by default, false turns it off. */
+	commandPalette?: boolean | PaletteConfig;
+	/** Send the `breadcrumbs` page prop (default true). */
+	breadcrumbs?: boolean;
+}
+
+export interface PanelInfo extends PanelLook {
+	id: string;
 	prefix: string;
 	brand?: string;
 	pages: PageDef[];
@@ -11,17 +36,23 @@ export interface PanelInfo {
 	pollInterval: number | null;
 }
 
-/** The `tbtop` shared prop (PanelSharedProps.php): chrome, nav and the signed-in user. */
-export function sharedProps(panel: PanelInfo): Record<string, unknown> {
+/** The `tbtop` shared prop (PanelSharedProps.php): the panel's chrome, locale and signed-in user. */
+export async function sharedProps(
+	panel: PanelInfo,
+	request: Request,
+): Promise<Record<string, unknown>> {
 	const context = currentContext();
 	return {
-		panel: "admin",
+		panel: panel.id,
+		user: context.user ?? null,
+		nav: await buildNav(panel, request),
+		userMenuItems: (panel.userMenuItems ?? []).map(linkItem),
+		chrome: await serializeChrome(panel.chrome),
+		brand: panel.brand ?? null,
+		navigation: panel.navigation ?? "sidebar",
+		appearance: appearanceProp(panel.appearance),
 		prefix: panel.prefix,
 		apiBase: `${panel.prefix}/api`,
-		user: context.user ?? null,
-		brand: panel.brand ?? null,
-		navigation: "sidebar",
-		nav: navGroups(panel.pages, panel.prefix),
 		locale: context.locale,
 		locales: panel.locales,
 		messages: context.messages,
@@ -30,33 +61,6 @@ export function sharedProps(panel: PanelInfo): Record<string, unknown> {
 		notifications: {
 			pollInterval: panel.pollInterval === null ? null : panel.pollInterval * 1000,
 		},
-	};
-}
-
-interface NavGroup {
-	key: string;
-	group: string | null;
-	items: unknown[];
-}
-
-function navGroups(pages: PageDef[], prefix: string): NavGroup[] {
-	const groups = new Map<string, NavGroup>();
-	const entries = pages
-		.flatMap((page) => (page.nav ? [{ page, nav: page.nav }] : []))
-		.sort((a, b) => (a.nav.order ?? 0) - (b.nav.order ?? 0));
-	for (const { page, nav } of entries) {
-		const key = nav.group ?? "";
-		const group = groups.get(key) ?? { key: key || "_", group: nav.group ?? null, items: [] };
-		group.items.push(navItem(nav, `${prefix}/${page.path}`));
-		groups.set(key, group);
-	}
-	return [...groups.values()];
-}
-
-function navItem(nav: NavEntry, href: string) {
-	return {
-		label: nav.label,
-		href,
-		icon: nav.icon ? { name: nav.icon, position: "left" } : undefined,
+		palette: paletteProp(panel.commandPalette),
 	};
 }

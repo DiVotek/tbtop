@@ -38,11 +38,17 @@ real `@inertiajs/react`. Not a published package yet.
 - **Data**: the ORM is the host's. Tables and relations go through a
   `QueryDriver`; `/kysely` (driver, `kyselyRules` for `unique`/`exists`,
   notifications) and `/memory` ship.
+- **Panel**: the `tbtop` shared prop as PHP sends it. Sidebar navigation from
+  `page.nav` (groups, sections, nesting via `nav.parent`, gated by
+  `authorize`), `navigationGroups` / `navigationItems` / `userMenuItems`,
+  breadcrumbs, the shell as a `ChromeDef` in the DSL, the ⌘K palette, the
+  four navigation layouts and appearance. A 404 under the prefix renders the
+  `admin/error` page in the shell. `createPanels([...])` serves several panels
+  from one handler.
 - **Runtimes**: Bun, Node, and Cloudflare Workers (`bun run check:workers` runs
   the core in workerd; CI does too).
 
-Not ported yet: chrome (the bell needs it to show), multi-panel, command
-palette, MCP, the `admin/error` page, the media library.
+Not ported yet: MCP; the media library is out of scope.
 
 ```bash
 bun install && bun test && bunx tsc --noEmit

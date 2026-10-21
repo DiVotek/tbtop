@@ -1,10 +1,25 @@
-import type { ActionBuilder, Node, S } from "../dsl";
+import type { ActionBuilder, IconSpec, Node, S } from "../dsl";
+import type { Text } from "./chrome/text";
 
+/** A page's sidebar entry (Page::nav()). */
 export interface NavEntry {
+	label: Text;
+	/** Key of the sidebar group; declare its label/icon in the panel's `navigationGroups`. */
 	group?: string;
-	label: string;
-	icon?: string;
+	/** Section key within the group, declared on its NavGroupDef. */
+	section?: string;
+	/** Path of the page this one nests under. */
+	parent?: string;
+	icon?: IconSpec;
 	order?: number;
+	badge?: string | number;
+	badgeColor?: string;
+}
+
+/** One breadcrumb; the last one (the current page) has no url. */
+export interface Crumb {
+	label: string;
+	url?: string;
 }
 
 export interface ViewCtx {
@@ -25,6 +40,8 @@ export interface PageDef<P extends string = string> {
 	nav?: NavEntry;
 	/** Returning false answers 403 (Page::can() in PHP). */
 	authorize?: (ctx: ViewCtx) => boolean | Promise<boolean>;
+	/** Overrides the crumbs built from `nav` (group, then the page title). */
+	breadcrumbs?: Crumb[] | ((ctx: ViewCtx) => Crumb[]);
 	/** Reachable without a user when the panel has a `loginPath` (the login page itself). */
 	public?: boolean;
 	view: (s: S, ctx: ViewCtx) => unknown;
