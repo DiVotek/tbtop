@@ -25,6 +25,8 @@ export interface PageDef<P extends string = string> {
 	nav?: NavEntry;
 	/** Returning false answers 403 (Page::can() in PHP). */
 	authorize?: (ctx: ViewCtx) => boolean | Promise<boolean>;
+	/** Reachable without a user when the panel has a `loginPath` (the login page itself). */
+	public?: boolean;
 	view: (s: S, ctx: ViewCtx) => unknown;
 	headerActions?: (s: S, ctx: ViewCtx) => (ActionBuilder | Node)[];
 }

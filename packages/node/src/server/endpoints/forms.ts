@@ -5,10 +5,13 @@ import {
 	currentContext,
 	Effects,
 	type FormBuilder,
+	materialize,
 } from "../../dsl";
 import { enclosingForm } from "../enclosingForm";
-import { effectsBody, notFound, readBody } from "../http";
+import { asJson, effectsBody, notFound, readBody } from "../http";
+import { back, redirectOrLocation } from "../inertia/protocol";
 import { dataGet, dataHas, dataSet, emptyToNull, expandKey } from "../validation/data";
+import { validate } from "../validation/validator";
 import { arg, type Endpoint, type EndpointCtx } from "./types";
 import { validated } from "./validateWith";
 
@@ -34,7 +37,10 @@ function formRules(form: FormBuilder) {
 	return { rules: collectRules(children), attributes: collectAttributes(children) };
 }
 
-/** POST forms/{name}: validate against the form's own rules, then onSubmit. */
+/**
+ * POST forms/{name} (FormSubmitController): an Inertia visit. Errors and
+ * effects travel through the session, then the client follows the redirect back.
+ */
 const submitForm: Endpoint = {
 	method: "POST",
 	pattern: ["forms", ":name"],
@@ -45,16 +51,34 @@ const submitForm: Endpoint = {
 			throw notFound(`Form "${arg(ctx, 0)}" is not submittable on this page.`);
 		}
 		const { rules, attributes } = formRules(form);
-		const data = await validated(await readBody(ctx.request), rules, {
+		const outcome = await validate(emptyToNull(await readBody(ctx.request)), rules, {
 			attributes,
 			hostRules: ctx.options.hostRules,
 		});
-		const result = await handler(baseCtx(ctx, { form: data }));
-		return typeof result === "string"
-			? { effects: Effects.make().redirect(result) }
-			: effectsBody(result, Effects.make());
+		if (!outcome.ok) {
+			return flashErrors(ctx, outcome.errors);
+		}
+		const result = await handler(baseCtx(ctx, { form: outcome.validated }));
+		if (typeof result === "string") {
+			return redirectOrLocation(ctx.request, result);
+		}
+		const { effects } = effectsBody(result, Effects.make());
+		await ctx.session.set("flash", { "tbtop.effects": asJson(await materialize(effects)) });
+		return back(ctx.request, pageUrl(ctx));
 	},
 };
+
+/** Laravel's Inertia middleware: the first message per key, under the visit's error bag. */
+async function flashErrors(ctx: EndpointCtx, errors: Record<string, string[]>) {
+	const first = Object.fromEntries(Object.entries(errors).map(([key, all]) => [key, all[0]]));
+	const errorBag = ctx.request.headers.get("x-inertia-error-bag");
+	await ctx.session.set("errors", errorBag ? { [errorBag]: first } : first);
+	return back(ctx.request, pageUrl(ctx));
+}
+
+function pageUrl(ctx: EndpointCtx): string {
+	return new URL(ctx.request.url).pathname.replace(/\/forms\/[^/]+\/?$/, "");
+}
 
 /** POST actions/{name}: the enclosing form validates `payload.form` unless withoutValidation(). */
 const runAction: Endpoint = {

@@ -1,4 +1,5 @@
 import type { QueryDriver } from "../driver";
+import type { SessionStore } from "../inertia/session";
 import type { Resolved } from "../resolve";
 import type { HostRule } from "../validation/validator";
 
@@ -15,12 +16,14 @@ export interface EndpointCtx {
 	/** The `:name` segments of the matched pattern, in order. */
 	args: string[];
 	options: ServerOptions;
+	session: SessionStore;
 }
 
 export interface Endpoint {
 	method: "GET" | "POST";
 	/** Segments after the page path; `:x` matches any one segment. */
 	pattern: string[];
+	/** A JSON body, or a finished Response (the Inertia form submit redirects). */
 	run(ctx: EndpointCtx): Promise<unknown>;
 }
 

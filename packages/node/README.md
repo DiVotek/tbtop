@@ -1,44 +1,48 @@
 # @tbtop/admin-node (experimental)
 
-The tbtop admin server on Bun/Node: same PHP DSL shape in TypeScript, same wire
-grammar (`packages/contracts`), same React client (`packages/client`). This is a
-proof of the idea, not a published package.
+The tbtop admin server on Bun/Node: the PHP DSL in TypeScript, the same wire
+grammar (`packages/contracts`), the same React client (`packages/client`) on the
+real `@inertiajs/react`. Not a published package yet.
 
 ## What exists
 
-- DSL subset: `stack`, `row`, `section`, display text, fields `text`, `textarea`,
-  `slug`, `number`, `boolean`, `select`, `form`, `action`, `table`, `column`.
-- Typed forms: `onSubmit` receives the payload inferred from the fields
-  (`required()` narrows `string | null` to `string`, `options()` to a literal union).
-- Endpoints `forms`, `actions` and `tables` as one Web `fetch` handler
-  (`createAdmin().handle`), plus `pageProps()` for a page loader.
-- Validation: zod schemas built from field constraints, 422 in Laravel's
-  `{message, errors}` shape, only declared keys reach handlers.
-- Tables: hosts pass a row source; `@tbtop/admin-node/kysely` provides one over Kysely.
+- **DSL**: every PHP builder and method (`src/dsl`), same names. Gated by a
+  byte-equal port of `kitchen-sink.json` and a method-parity test against
+  `docs/ai/api`.
+- **Inertia server protocol** (`src/server/inertia`), host-agnostic: the page
+  object (HTML on first load, JSON on a visit), asset version 409, partial
+  reloads, 303 redirects, `Inertia::location`, flash and the errors bag through
+  the session. `rootView()` + `viteTags()` stand in for Blade's `@inertia` / `@vite`.
+- **Session**: `SessionStore { get, set, forget, commit? }`, the only view of the
+  host's session. The default reads the user from `SESSION_USER`; a login page
+  puts it there (`admin.session(request)`). `memorySessions()` is a one-server
+  reference store.
+- **Endpoints** (`routes/admin.php`, minus uploads and media), as one Web `fetch`
+  handler: `createAdmin().handle(request)` answers pages, endpoints and
+  `POST {prefix}/logout`, and returns `null` for URLs it does not own.
+- **Validation**: Laravel rules and messages; unknown rules throw. The host
+  supplies `unique` / `exists` as `hostRules`.
+- **Data**: the ORM is the host's. Tables and relations go through a
+  `QueryDriver`; `@tbtop/admin-node/kysely` and `@tbtop/admin-node/memory` ship.
 
-Not ported yet: the other 20 field kinds, filters, tabs, relation, uploads, live
-regions, media, notifications, i18n, MCP, multi-panel.
-
-## Parity gate
-
-`test/contract.test.ts` validates every page against `structure.schema.json` and
-compares forms authored in TS with the PHP `kitchen-sink.json`. A wire change on
-the PHP side breaks this test in the same PR.
+Not ported yet: uploads and media, notifications, i18n, MCP, multi-panel, chrome.
 
 ```bash
 bun install && bun test && bunx tsc --noEmit
 ```
 
-## Host: TanStack Start
+## Host
 
-`apps/start-demo` renders the unchanged client in TanStack Start. `src/server.ts`
-mounts `admin.handle` before Start's handler; `routes/admin.$.tsx` loads
-`pageProps()`; `src/admin/inertia-shim.tsx` aliases `@inertiajs/react` onto
-TanStack Router (`usePage`, `router`, `Link`, `Head`).
+`apps/node-demo` is the whole host: `server.ts` is `Bun.serve` around
+`admin.handle`, `src/client.tsx` is the same `createInertiaApp` boot as
+`apps/demo`. Any Web-standard server (Hono, Elysia, a Start server entry)
+mounts the handler the same way.
 
 ```bash
-cd ../client && bun install       # the demo compiles the client from source
-cd ../../apps/start-demo && bun install
-bunx vite dev                     # http://localhost:3000/admin/posts
-bunx vite build && bun serve.ts   # production on Bun
+cd ../client && bun install           # the demo compiles the client from source
+cd ../../apps/node-demo && bun install
+bun run dev                            # Vite on :5173, the server on :3000
+bun run build && bun run start         # production on Bun
 ```
+
+Sign in at `/admin/login` with any email: the demo's login page trusts it.

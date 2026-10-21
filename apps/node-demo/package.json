@@ -1,21 +1,24 @@
 {
-  "name": "start-host",
+  "name": "node-demo",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "bun run dev:client & bun run dev:server",
+    "dev:client": "vite",
+    "dev:server": "bun --watch server.ts",
     "build": "vite build",
-    "start": "bun serve.ts"
+    "start": "NODE_ENV=production bun server.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.170.0",
-    "@tanstack/react-start": "^1.169.3",
+    "@inertiajs/react": "^3.3.1",
     "@tbtop/admin-node": "file:../../packages/node",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",
+    "@types/bun": "^1.3.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.0",
