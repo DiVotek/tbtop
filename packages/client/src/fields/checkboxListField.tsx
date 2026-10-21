@@ -1,4 +1,5 @@
 import { Checkbox } from "../ui/checkbox";
+import { groupLabelledBy } from "./fieldChrome";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
 import { OptionRow } from "./optionList";
@@ -6,13 +7,20 @@ import { LabelChips } from "./tagsShared";
 
 interface CheckboxListBag {
 	options?: LabeledOption[];
+	label?: string;
+}
+
+/** Records carry int-backed values ([1, 2]) while wire options are string-cast ("1"). */
+function selectedValues(value: unknown): string[] {
+	return Array.isArray(value) ? value.map(String) : [];
 }
 
 export function CheckboxListCell({ value, options }: FieldCellProps<string[], CheckboxListBag>) {
-	if (!Array.isArray(value) || value.length === 0) {
+	const current = selectedValues(value);
+	if (current.length === 0) {
 		return null;
 	}
-	return <LabelChips value={value} labelFor={(v) => optionLabel(v, options?.options)} />;
+	return <LabelChips value={current} labelFor={(v) => optionLabel(v, options?.options)} />;
 }
 
 export function CheckboxListForm({
@@ -22,17 +30,25 @@ export function CheckboxListForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<string[], CheckboxListBag>) {
 	const choices = options?.options ?? [];
-	const current = Array.isArray(value) ? value : [];
+	const current = selectedValues(value);
 	const groupId = fieldId({ id, name });
 	function toggle(v: string): void {
 		const next = current.includes(v) ? current.filter((x) => x !== v) : [...current, v];
 		onChange(next.length === 0 ? null : next);
 	}
 	return (
-		<div className="grid gap-3" data-testid={`checkboxlist-${name}`} onBlur={onBlur}>
+		<div
+			role="group"
+			aria-labelledby={groupLabelledBy(groupId, options?.label)}
+			aria-describedby={describedBy}
+			className="grid gap-3"
+			data-testid={`checkboxlist-${name}`}
+			onBlur={onBlur}
+		>
 			{choices.map((opt) => (
 				<OptionRow
 					key={opt.value}

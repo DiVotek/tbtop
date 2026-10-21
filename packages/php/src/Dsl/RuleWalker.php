@@ -471,6 +471,7 @@ final class RuleWalker
         $attributes = $field->isTranslatableField()
             ? self::translatableAttributes($key, $label)
             : self::plainAttributes($key, $label);
+        $attributes += self::elementAttributes($field, $attributes);
 
         $subFields = $field->childFields();
         if ($subFields !== []) {
@@ -478,6 +479,26 @@ final class RuleWalker
         }
 
         return $attributes;
+    }
+
+    /**
+     * A multiple select or upload validates each value under `key.*`; without a
+     * label there, an element error names the raw `key.0` instead of the field.
+     *
+     * @param  array<string, string>  $attributes
+     * @return array<string, string>
+     */
+    private static function elementAttributes(Field $field, array $attributes): array
+    {
+        if (! ($field instanceof Select || $field instanceof Upload) || ! $field->isMultiple()) {
+            return [];
+        }
+        $elements = [];
+        foreach ($attributes as $key => $label) {
+            $elements["{$key}.*"] = $label;
+        }
+
+        return $elements;
     }
 
     /** @return array<string, string> */

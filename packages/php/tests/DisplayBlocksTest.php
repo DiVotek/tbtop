@@ -235,11 +235,33 @@ it('DisplayValueBlock date bakes the formatted string into value', function () {
         ->and($json['options']['kind'])->toBe('date');
 });
 
+it('DisplayValueBlock date formats a native DateTime value', function () {
+    $json = encodeDisplay(DisplayValueBlock::make(new DateTimeImmutable('2024-03-15 10:30:00'))->date('d.m.Y'));
+
+    expect($json['options']['value'])->toBe('15.03.2024');
+});
+
 it('DisplayValueBlock number bakes the formatted string into value', function () {
     $json = encodeDisplay(DisplayValueBlock::make(1234.5)->number(2));
 
     expect($json['options']['value'])->toBe('1,234.50')
         ->and($json['options']['kind'])->toBe('number');
+});
+
+it('DisplayValueBlock number and money pass a non-numeric value through unformatted', function () {
+    $number = encodeDisplay(DisplayValueBlock::make('n/a')->number(2));
+    $money = encodeDisplay(DisplayValueBlock::make('pending')->money('USD'));
+
+    expect($number['options']['value'])->toBe('n/a')
+        ->and($money['options']['value'])->toBe('pending');
+});
+
+it('DisplayValueBlock number and money still format a numeric string', function () {
+    $number = encodeDisplay(DisplayValueBlock::make('1234.5')->number(1));
+    $money = encodeDisplay(DisplayValueBlock::make('12345')->money('EUR'));
+
+    expect($number['options']['value'])->toBe('1,234.5')
+        ->and($money['options']['value'])->toBe('123.45 EUR');
 });
 
 it('DisplayValueBlock is accessible via S::displayValue', function () {

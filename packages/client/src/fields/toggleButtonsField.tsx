@@ -1,11 +1,14 @@
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { groupLabelledBy } from "./fieldChrome";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
+import { coerceSelectValue } from "./selectShared";
 import { LabelChips } from "./tagsShared";
 
 interface ToggleButtonsBag {
 	options?: LabeledOption[];
 	multiple?: boolean;
+	label?: string;
 }
 
 type ToggleButtonsValue = string | string[];
@@ -14,13 +17,16 @@ export function ToggleButtonsCell({
 	value,
 	options,
 }: FieldCellProps<ToggleButtonsValue, ToggleButtonsBag>) {
-	if (value === null || value === undefined) {
+	const coerced = coerceSelectValue(value);
+	if (coerced === null) {
 		return null;
 	}
-	if (Array.isArray(value)) {
-		return value.length === 0 ? null : <MultiCell value={value} options={options?.options} />;
+	if (Array.isArray(coerced)) {
+		return coerced.length === 0 ? null : (
+			<MultiCell value={coerced} options={options?.options} />
+		);
 	}
-	return <span>{optionLabel(value, options?.options)}</span>;
+	return <span>{optionLabel(coerced, options?.options)}</span>;
 }
 
 function MultiCell({ value, options }: { value: string[]; options?: LabeledOption[] }) {
@@ -53,13 +59,18 @@ function SingleForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
-	const current = asString(value);
+	// Records carry int-backed values (2) while wire options are string-cast ("2").
+	const coerced = coerceSelectValue(value);
+	const current = typeof coerced === "string" ? coerced : "";
 	return (
 		<ToggleGroup
 			id={fieldId({ id, name })}
 			type="single"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
+			aria-describedby={describedBy}
 			value={current}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
@@ -78,13 +89,17 @@ function MultiForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
-	const current = Array.isArray(value) ? value : [];
+	const coerced = coerceSelectValue(value);
+	const current = Array.isArray(coerced) ? coerced : [];
 	return (
 		<ToggleGroup
 			id={fieldId({ id, name })}
 			type="multiple"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
+			aria-describedby={describedBy}
 			value={current}
 			onValueChange={(next) => onChange(next.length === 0 ? null : next)}
 			onBlur={onBlur}

@@ -81,6 +81,16 @@ describe("TablePagination: page navigation", () => {
 		expect(next).toHaveProperty("disabled", true);
 	});
 
+	test("marks only the current page button with aria-current=page", async () => {
+		const node = makePaginatedTable(100);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const page1 = await findByTestId("pagination-page-1");
+		const page2 = await findByTestId("pagination-page-2");
+		expect(page1.getAttribute("aria-current")).toBe("page");
+		expect(page2.getAttribute("aria-current")).toBeNull();
+	});
+
 	test("clicking page 2 updates URL with namespaced page param", async () => {
 		const replaceStateCalls: string[] = [];
 		const origReplaceState = window.history.replaceState.bind(window.history);
@@ -175,5 +185,15 @@ describe("TablePagination: auto-hidden when everything fits on the first page", 
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		expect(await findByTestId("table-pagination")).toBeTruthy();
 		window.history.replaceState(null, "", "http://localhost/");
+	});
+});
+
+describe("TablePagination: per-page selector accessible name", () => {
+	test("the per-page trigger is named by its 'Per page' label", async () => {
+		const node = makePaginatedTable(100, 25);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const trigger = await findByRole("combobox", { name: "Per page" });
+		expect(trigger.getAttribute("data-testid")).toBe("pagination-per-page");
 	});
 });

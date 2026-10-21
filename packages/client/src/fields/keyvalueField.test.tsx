@@ -155,6 +155,42 @@ describe("Keyvalue field", () => {
 	});
 });
 
+describe("Keyvalue binding", () => {
+	test("links every row input to the field's error/helper text", () => {
+		const { getAllByRole } = render(
+			<KeyvalueForm
+				name="meta"
+				value={{ env: "prod", tier: "gold" }}
+				onChange={() => {}}
+				describedBy="meta-error"
+			/>,
+		);
+		const inputs = getAllByRole("textbox");
+		expect(inputs).toHaveLength(4);
+		for (const input of inputs) {
+			expect(input.getAttribute("aria-describedby")).toBe("meta-error");
+		}
+	});
+
+	test("reports blur so the form revalidates the field", async () => {
+		const user = userEvent.setup();
+		let blurs = 0;
+		const { getByRole } = render(
+			<KeyvalueForm
+				name="meta"
+				value={{ env: "prod" }}
+				onChange={() => {}}
+				onBlur={() => {
+					blurs++;
+				}}
+			/>,
+		);
+		await user.click(getByRole("textbox", { name: "Key" }));
+		await user.click(document.body);
+		expect(blurs).toBeGreaterThan(0);
+	});
+});
+
 describe("KeyvalueCell", () => {
 	test("KeyvalueCell renders comma-separated key=value pairs", () => {
 		const { container } = render(<KeyvalueCell value={{ env: "prod", region: "us" }} />);
@@ -171,5 +207,27 @@ describe("KeyvalueCell", () => {
 	test("KeyvalueCell renders empty for empty object", () => {
 		const { container } = render(<KeyvalueCell value={{}} />);
 		expect(container.textContent).toBe("");
+	});
+});
+
+describe("Keyvalue invalid state", () => {
+	test("an invalid keyvalue field marks every row input aria-invalid", () => {
+		const { getAllByRole } = render(
+			<KeyvalueForm name="meta" value={{ a: "1", b: "2" }} invalid onChange={() => {}} />,
+		);
+		const inputs = getAllByRole("textbox");
+		expect(inputs).toHaveLength(4);
+		for (const input of inputs) {
+			expect(input.getAttribute("aria-invalid")).toBe("true");
+		}
+	});
+
+	test("a valid keyvalue field leaves aria-invalid off its row inputs", () => {
+		const { getAllByRole } = render(
+			<KeyvalueForm name="meta" value={{ a: "1" }} onChange={() => {}} />,
+		);
+		for (const input of getAllByRole("textbox")) {
+			expect(input.getAttribute("aria-invalid")).toBeNull();
+		}
 	});
 });

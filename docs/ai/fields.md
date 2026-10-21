@@ -116,7 +116,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes. Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | `yearPicker(bool $state = true)` — swaps the calendar caption's year label for a year dropdown, offering the years within the bounds below (a narrow band around today without them); `minDate(DateTimeInterface\|string $date)` / `maxDate(...)` — earliest/latest selectable day. Value is a `Y-m-d` day: `record()` cuts an ISO instant (what `$model->toArray()` gives for a date/datetime cast) or a `DateTimeInterface` to its day in the app timezone. Bind it to a date-only column; on a datetime column whose time matters use `datetime()`, since saving a day writes midnight | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
-| **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS`; call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
+| **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS` (combining it with `minuteStep()` throws); call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | `disabledRanges(Closure $fn)` — server closure `fn (array $deps): array` returning a list of `['from' => ?string, 'to' => ?string]` ISO-day ranges (both ends inclusive-disabled; a null end makes the range open, i.e. min/max-date semantics); `dependsOn(string\|array $fields)` — parent field(s) whose changes refetch the ranges. Value shape: `{from?: string, to?: string}` | Only with `disabledRanges()` + `dependsOn()` → daterange-ranges endpoint |
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |
@@ -165,7 +165,7 @@ are in `BUILT_IN_KINDS` order; **append new rows at the end**, do not reorder ex
 | 3 | `Password` | `$s->password('x')` | `password` | `password` | `fields/passwordField.tsx` |
 | 4 | `Otp` | `$s->otp('x')` | `otp` | `otp` | `fields/otpField.tsx` |
 | 5 | `Number` | `$s->number('x')` | `number` | `number` | `fields/numberField.tsx` |
-| 6 | `Date` | `$s->date('x')` | `date` | `date` | `fields/dateField.tsx` (`DateForm`/`DateCell`) |
+| 6 | `Date` | `$s->date('x')` | `date` | `date` | `fields/dateField.tsx` (`DateCell`; `DateForm` lives in `fields/dateForm.tsx`) |
 | 7 | `Datetime` | `$s->datetime('x')` | `datetime` | `datetime` | `fields/dateField.tsx` (`DateTimeForm`/`DateTimeCell`) |
 | 8 | `Boolean` | `$s->boolean('x')` | `boolean` | `boolean` | `fields/booleanField.tsx` |
 | 9 | `Select` | `$s->select('x')` | `select` | `select` | `fields/selectField.tsx` (branches static/async/creatable/multi at runtime) |
@@ -246,14 +246,19 @@ example below differs only in what the closure returns.
 
 ## Fields that need a server endpoint
 
-Four fields resolve data from the server at runtime rather than from static props.
+Some fields call a page endpoint at runtime instead of reading only static props:
+`relation`, `select` (with `creatable()` or `query()`), `daterange` (with `disabledRanges()` +
+`dependsOn()`) and `richtext` (with `embeds()`). `upload` posts to its own endpoint too — see
+the [Upload field cookbook](#upload-field-cookbook).
 
 ### Relation — `relation-search` endpoint
 
 `Relation` always requires a `query()` closure on the PHP builder. The client sends
 a search string; the endpoint runs the closure, filters by the search term, and returns
 matching records. The `labelKey` method sets which column is used as the display label
-(defaults to `'name'`).
+(defaults to `'name'`). The endpoint returns at most 50 rows: set
+`tbtop-admin.relation.search_cap` to change it app-wide, or `searchLimit(int)` on one field
+(server-only, never serialized).
 
 ```php
 // From apps/demo/app/Admin/Pages/RelationDemoPage.php
@@ -267,8 +272,7 @@ $s->relation('author_id')->label('Author')
 See [./wiring.md](./wiring.md) for the endpoint request/response shape.
 
 > The relation field ships full async type-ahead (server search endpoint + client
-> combobox) as of PR #2. `CLAUDE.md`'s "plain input" stub note predates that and is
-> stale — the field is fully wired.
+> combobox) as of PR #2 — the field is fully wired.
 
 ### Select with `creatable()` — `select-create` endpoint
 
@@ -471,8 +475,8 @@ $s->radio('status')->options(OrderStatus::class)->default(OrderStatus::Pending)
 - `default()` accepts a case, or a list of cases for multi-value fields, and stores the
   string option values. Values passed through `record()` are not converted.
 - **Int-backed enums**: option values are strings on the wire, so string-cast the form data
-  (`record(['priority' => (string) $order->priority->value])`). The Radio, ToggleButtons and
-  CheckboxList clients compare strings, so an int value shows no selection.
+  (`record(['priority' => (string) $order->priority->value])`). Select, Radio, ToggleButtons
+  and CheckboxList string-cast an int value themselves, but casting keeps the data consistent.
 - **No validation is implied**, for the enum form as for the array form. Add
   `Rule::enum(OrderStatus::class)` for a backed enum. `Rule::enum()` needs `tryFrom`, so validate a
   pure enum with `Rule::in(array_column(Draft::cases(), 'name'))`.
@@ -622,7 +626,7 @@ a config profile. `apps/demo/app/Admin/Pages/UploadDemoPage.php` exercises the f
 | `multiple` | `multiple(bool = true)` | `false` | Accept several files; the form value becomes an array of path strings |
 | `maxFiles` | `maxFiles(int)` | — | Cap on file count in `multiple()` mode |
 | `reorderable` | `reorderable(bool = true)` | `false` | Drag to reorder the uploaded files (`multiple()` only) |
-| `saveUsing` | `saveUsing(Closure)` | — | Take over storage: receives the file plus resolved config, returns `{path, url}`. ⚠️ **Bypasses `UploadStorer`, so SVG sanitization and conversion are skipped.** The mime guard (`accept` + `text/html` rejection) still runs first, but a closure that stores SVG must sanitize it itself |
+| `saveUsing` | `saveUsing(Closure)` | — | Take over storage: receives the file plus resolved config, returns `{path, url}`. ⚠️ **Bypasses `UploadStorer`, so SVG sanitization and conversion are skipped.** The mime guard still runs first: `accept`, plus a refusal of HTML and the XML family (`text/xml`, `application/xhtml+xml`, any `+xml`) whatever `accept` allows. SVG is the one XML type it lets through, so a closure that stores SVG must sanitize it itself |
 
 A public-disk upload that re-encodes to webp, and a private-disk one served only through the
 app:

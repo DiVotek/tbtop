@@ -20,9 +20,13 @@ mock.module("@inertiajs/react", () => ({
 	...inertiaReact,
 	router: {
 		post: mock(
-			(path: string, data: Record<string, unknown>, opts?: { onSuccess?: () => void }) => {
+			(
+				path: string,
+				data: Record<string, unknown>,
+				opts?: { onSuccess?: (page: unknown) => void },
+			) => {
 				postCalls.push({ path, data });
-				opts?.onSuccess?.();
+				opts?.onSuccess?.({ flash: {} });
 			},
 		),
 		on: mock(() => () => {}),

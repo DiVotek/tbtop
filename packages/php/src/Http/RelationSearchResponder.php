@@ -35,7 +35,9 @@ final class RelationSearchResponder
     /** @param  array<string, string>  $deps */
     private function resolveByValue(Request $request, Relation $field, array $deps): JsonResponse
     {
-        $value = (string) $request->input('value', '');
+        // Scalars only: an array param would 500 on string cast.
+        $value = $request->input('value');
+        $value = is_scalar($value) ? (string) $value : '';
         $builder = $this->buildQuery($field, $deps);
         $model = $builder->find($value);
 
@@ -51,7 +53,8 @@ final class RelationSearchResponder
     /** @param  array<string, string>  $deps */
     private function search(Request $request, Relation $field, array $deps): JsonResponse
     {
-        $search = (string) $request->input('search', '');
+        $search = $request->input('search');
+        $search = is_scalar($search) ? (string) $search : '';
         $builder = $this->buildQuery($field, $deps);
         $labelKey = $field->getLabelKey();
 

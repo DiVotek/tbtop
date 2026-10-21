@@ -72,7 +72,7 @@ export function IconMapCell({ value, col }: IconCellProps): ReactNode {
 	if (!Icon) {
 		return <span className={classes.icon}>{str}</span>;
 	}
-	return <Icon className={cn("size-4", classes.icon)} aria-hidden aria-label={str} />;
+	return <Icon className={cn("size-4", classes.icon)} role="img" aria-label={str} />;
 }
 
 /**

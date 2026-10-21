@@ -23,6 +23,7 @@ import { FormControllerProvider } from "./formContext";
 import { isEqual, useFormController } from "./formController";
 import { isNodeDisabled, isNodeHidden, isNodeRequired } from "./meta";
 import { useModalData } from "./modalDataContext";
+import { afterPointerRelease, trackPointerPress } from "./pointerSettle";
 import { renderAsyncError } from "./renderAsyncError";
 import { scrollToFirstError } from "./scrollToFirstError";
 import { structureChildren } from "./structureChildren";
@@ -102,6 +103,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 	const guard = useUnsavedGuard(ctrl.isDirty, guardUnsaved);
 	const hasTranslatable = detectTranslatableFields(children ?? []);
 	const formRef = useRef<HTMLFormElement | null>(null);
+	useEffect(trackPointerPress, []);
 	return (
 		<FormControllerProvider value={ctrl}>
 			<ActiveLocaleProvider defaultLocale={localeConfig.defaultLocale}>
@@ -157,6 +159,7 @@ interface ScrollToErrorEffectProps {
 function ScrollToErrorEffect({ errorScrollTick, fieldErrors, formRef }: ScrollToErrorEffectProps) {
 	const localeCtx = useActiveLocale();
 	const setActiveLocale = localeCtx ? localeCtx.setActive : null;
+	const { locales } = useContentLocaleConfig();
 	const prevTickRef = useRef(0);
 
 	useEffect(() => {
@@ -164,8 +167,9 @@ function ScrollToErrorEffect({ errorScrollTick, fieldErrors, formRef }: ScrollTo
 			return;
 		}
 		prevTickRef.current = errorScrollTick;
-		scrollToFirstError(fieldErrors, formRef.current, setActiveLocale);
-	}, [errorScrollTick, fieldErrors, formRef, setActiveLocale]);
+		const localeSwitch = setActiveLocale ? { locales, setActive: setActiveLocale } : null;
+		scrollToFirstError(fieldErrors, formRef.current, localeSwitch);
+	}, [errorScrollTick, fieldErrors, formRef, setActiveLocale, locales]);
 
 	return null;
 }
@@ -288,7 +292,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 						onChange: (next) => ctrl.set(name, next),
 						onBlur: () => {
 							ctrl.markTouched(name);
-							revalidateField(ctrl, name, t);
+							afterPointerRelease(() => revalidateField(ctrl, name, t));
 						},
 						disabled,
 						invalid: fieldError !== undefined,
@@ -349,7 +353,7 @@ function renderTranslatableFieldNode(input: TranslatableFieldInput): ReactNode {
 		onChange: (next) => ctrl.set(name, next),
 		onBlur: () => {
 			ctrl.markTouched(name);
-			revalidateField(ctrl, name, formCtx.t);
+			afterPointerRelease(() => revalidateField(ctrl, name, formCtx.t));
 		},
 		disabled,
 		describedBy: input.describedBy,

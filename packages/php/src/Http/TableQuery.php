@@ -102,7 +102,7 @@ final class TableQuery
 
     private static function applySearch(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
     {
-        $search = (string) $request->query('search', '');
+        $search = self::text($request->query('search'));
         $fields = $table->searchableFields();
         if ($search === '' || $fields === []) {
             return;
@@ -126,12 +126,22 @@ final class TableQuery
             if (! is_string($field) || ! in_array($field, $allowed, true)) {
                 continue;
             }
-            $value = (string) $value;
+            $value = self::text($value);
             if ($value === '') {
                 continue;
             }
             ContainsMatch::where($builder, $field, $value);
         }
+    }
+
+    /**
+     * Search text as a string. An array param (?search[]=x) would 500 on the
+     * cast, so it counts as absent; an MCP call forwards its arguments with
+     * their JSON types, so a number stays a valid search.
+     */
+    private static function text(mixed $value): string
+    {
+        return is_string($value) || is_int($value) || is_float($value) ? (string) $value : '';
     }
 
     private static function applyFilters(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void

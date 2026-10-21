@@ -45,6 +45,10 @@ function networkError(): TabletopError {
 	return { code: "network", message: "Network request failed", status: 0 };
 }
 
+function abortedError(): TabletopError {
+	return { code: "network", message: "Upload aborted", status: 0 };
+}
+
 function applyHeaders(xhr: XMLHttpRequest, headers: Record<string, string>): void {
 	for (const [key, value] of Object.entries(headers)) {
 		xhr.setRequestHeader(key, value);
@@ -65,6 +69,11 @@ function bindProgress(xhr: XMLHttpRequest, onProgress: UploadViaXhrInput["onProg
 export function uploadViaXhr(input: UploadViaXhrInput): Promise<unknown> {
 	const { xhrFactory, url, formData, headers, signal, onProgress } = input;
 	return new Promise((resolve, reject) => {
+		// An already-aborted signal never fires "abort" again — bail before sending.
+		if (signal?.aborted) {
+			reject(abortedError());
+			return;
+		}
 		const xhr = xhrFactory();
 		xhr.open("POST", url);
 		// ≡ credentials: "include"; matches the fetch path's "same-origin" only
@@ -81,9 +90,7 @@ export function uploadViaXhr(input: UploadViaXhrInput): Promise<unknown> {
 		});
 		xhr.addEventListener("error", () => reject(networkError()));
 		xhr.addEventListener("timeout", () => reject(networkError()));
-		xhr.addEventListener("abort", () =>
-			reject({ code: "network", message: "Upload aborted", status: 0 } as TabletopError),
-		);
+		xhr.addEventListener("abort", () => reject(abortedError()));
 		if (signal) {
 			signal.addEventListener("abort", () => xhr.abort());
 		}

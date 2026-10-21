@@ -169,8 +169,10 @@ export function formatBytes(bytes: number): string {
 	if (bytes < 1024) {
 		return `${bytes} B`;
 	}
-	if (bytes < 1024 * 1024) {
-		return `${(bytes / 1024).toFixed(1)} KB`;
+	const kb = (bytes / 1024).toFixed(1);
+	// Compare the rounded value so 1023.96 KB rolls over to "1.0 MB".
+	if (Number(kb) < 1024) {
+		return `${kb} KB`;
 	}
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

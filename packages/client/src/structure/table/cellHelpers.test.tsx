@@ -26,6 +26,14 @@ describe("BooleanIconCell", () => {
 });
 
 describe("IconMapCell", () => {
+	test("the icon is announced by its value, not hidden from assistive tech", () => {
+		const col = {
+			iconMap: { draft: { icon: "pencil", color: "gray" } },
+		} as unknown as TableColumn;
+		const { getByRole } = render(<IconMapCell value="draft" col={col} />);
+		expect(getByRole("img", { name: "draft" }).getAttribute("aria-hidden")).toBeNull();
+	});
+
 	test("resolves the icon paint color, not the badge text color", () => {
 		const col = {
 			iconMap: { active: { icon: "check", color: "success" } },

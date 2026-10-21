@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Gate;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\BreadcrumbsBuilder;
@@ -85,6 +86,54 @@ it('BreadcrumbsBuilder: parametrized page gets group url from non-parametrized s
     // NavPage is at /admin/nav-demo, same group "Content"
     expect($crumbs[0])->toBe(['label' => 'Content', 'url' => '/admin/nav-demo'])
         ->and($crumbs[1])->toBe(['label' => 'Edit Item']);
+});
+
+it('BreadcrumbsBuilder: group url skips a sibling page the user cannot access', function () {
+    $gated = new class extends Page
+    {
+        public static function path(): string
+        {
+            return 'content-admin';
+        }
+
+        public static function nav(): ?array
+        {
+            return ['group' => 'Content', 'label' => 'Content Admin'];
+        }
+
+        public static function can(): ?string
+        {
+            return 'manage-content';
+        }
+
+        public function view(S $s): Node
+        {
+            return $s->stack([]);
+        }
+    };
+    $page = new class extends Page
+    {
+        public static function path(): string
+        {
+            return 'content/{item}/edit';
+        }
+
+        public static function nav(): ?array
+        {
+            return ['group' => 'Content', 'label' => 'Edit Item'];
+        }
+
+        public function view(S $s): Node
+        {
+            return $s->stack([]);
+        }
+    };
+
+    Gate::define('manage-content', fn (?object $user) => false);
+
+    $crumbs = BreadcrumbsBuilder::build($page, panelWithPages([$gated::class, NavPage::class, $page::class]));
+
+    expect($crumbs[0])->toBe(['label' => 'Content', 'url' => '/admin/nav-demo']);
 });
 
 // --------------------------------------------------------------------------

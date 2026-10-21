@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "../structure/structure";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
-import { DateTimeCell, DateTimeForm } from "./dateField";
+import { DateCell, DateTimeCell, DateTimeForm } from "./dateField";
 
 const ISO = "2026-05-17T14:30:00.000Z";
 
@@ -82,5 +82,27 @@ describe("DatetimeCell", () => {
 	test("DatetimeCell renders nothing for null", () => {
 		const { container } = render(<DateTimeCell value={null} />);
 		expect(container.textContent).toBe("");
+	});
+
+	test("Datetime form links its helper/error text via aria-describedby", () => {
+		const { container } = render(
+			<DateTimeForm
+				name="publishedAt"
+				value={null}
+				onChange={() => {}}
+				describedBy="publishedAt-error"
+			/>,
+		);
+		const input = container.querySelector('input[type="datetime-local"]');
+		expect(input?.getAttribute("aria-describedby")).toBe("publishedAt-error");
+	});
+});
+
+describe("DateCell", () => {
+	test("a Y-m-d value renders that calendar day, not UTC midnight shifted to local", () => {
+		const { container } = render(<DateCell value="2026-03-05" />);
+		const time = container.querySelector("time");
+		expect(time?.getAttribute("dateTime")).toBe("2026-03-05");
+		expect(time?.textContent).toBe(new Date(2026, 2, 5).toLocaleDateString());
 	});
 });

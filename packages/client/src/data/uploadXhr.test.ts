@@ -179,3 +179,20 @@ test("aborts the request when the signal fires", async () => {
 	expect(xhr.aborted).toBe(true);
 	await expect(p).rejects.toMatchObject({ status: 0 });
 });
+
+// Regression: a signal aborted before the call never fired its listener, so
+// the upload was sent anyway (e.g. a queue item cancelled before it started).
+test("rejects without sending when the signal is already aborted", async () => {
+	const xhr = new MockXhr();
+	const controller = new AbortController();
+	controller.abort();
+	const p = uploadViaXhr({
+		xhrFactory: () => xhr as unknown as XMLHttpRequest,
+		url: "http://api/media/upload",
+		formData: makeFd(),
+		headers: headers(),
+		signal: controller.signal,
+	});
+	expect(xhr.sentBody).toBeNull();
+	await expect(p).rejects.toMatchObject({ code: "network", message: "Upload aborted" });
+});

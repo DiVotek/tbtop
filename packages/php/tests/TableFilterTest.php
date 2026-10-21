@@ -49,6 +49,19 @@ it('TableFilter: select kind applies equality filter', function (): void {
     expect($rows->pluck('title')->all())->toBe(['Beta draft']);
 });
 
+// multiple select → the client sends an array; a row matches any choice
+it('TableFilter: multiple select matches every chosen value', function (): void {
+    $builder = DB::table('items');
+    $fields = [Select::make('status')->multiple()->options([
+        ['value' => 'draft', 'label' => 'Draft'],
+        ['value' => 'published', 'label' => 'Published'],
+    ])];
+    TableFilterApplier::apply($fields, ['status' => ['published', 'draft']], $builder);
+    $rows = $builder->get();
+
+    expect($rows->pluck('title')->all())->toBe(['Alpha post', 'Beta draft', 'Gamma post']);
+});
+
 // boolean → where = with cast from '1'/'0'/'true'/'false'
 it('TableFilter: boolean kind casts string values', function (): void {
     $builder = DB::table('items');
@@ -101,6 +114,21 @@ it('TableFilter: daterange with only to bound', function (): void {
     expect($rows->pluck('title')->all())->toBe(['Alpha post']);
 });
 
+it('TableFilter: daterange to bound includes the whole end day on a datetime column', function (): void {
+    Schema::create('events', function ($table): void {
+        $table->id();
+        $table->dateTime('starts_at');
+    });
+    DB::table('events')->insert([
+        ['starts_at' => '2024-01-31 14:30:00'],
+        ['starts_at' => '2024-02-01 09:00:00'],
+    ]);
+    $builder = DB::table('events');
+    TableFilterApplier::apply([Daterange::make('starts_at')], ['starts_at' => ['to' => '2024-01-31']], $builder);
+
+    expect($builder->pluck('starts_at')->all())->toBe(['2024-01-31 14:30:00']);
+});
+
 // filterUsing closure overrides default
 it('TableFilter: filterUsing closure takes priority over default mapping', function (): void {
     $builder = DB::table('items');
@@ -132,6 +160,29 @@ it('TableFilter: empty array is skipped', function (): void {
     $builder = DB::table('items');
     $fields = [Tags::make('tags')];
     TableFilterApplier::apply($fields, ['tags' => []], $builder);
+    expect($builder->get()->count())->toBe(3);
+});
+
+// The query string is browser-supplied: ?filters[title][]=x arrives as an array.
+it('TableFilter: an array value on a text filter is ignored, not a 500', function (): void {
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Text::make('title')], ['title' => ['post']], $builder);
+    expect($builder->get()->count())->toBe(3);
+});
+
+it('TableFilter: an array value on a boolean filter is ignored, not a 500', function (): void {
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Boolean::make('featured')], ['featured' => ['1']], $builder);
+    expect($builder->get()->count())->toBe(3);
+});
+
+it('TableFilter: nested arrays in a tags filter are dropped, not a 500', function (): void {
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Tags::make('status')], ['status' => ['draft', ['published']]], $builder);
+    expect($builder->pluck('title')->all())->toBe(['Beta draft']);
+
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Tags::make('status')], ['status' => [['published']]], $builder);
     expect($builder->get()->count())->toBe(3);
 });
 

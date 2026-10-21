@@ -39,11 +39,14 @@ import type { ClientActionContext, StructureNode } from "./types";
 type BeforeListener = (event: {
 	detail: { visit: { method?: string; url?: unknown } };
 }) => boolean | void;
-type PostOptions = { onSuccess?: () => void; onError?: (errors: Record<string, string>) => void };
+type PostOptions = {
+	onSuccess?: (page: { flash: Record<string, unknown> }) => void;
+	onError?: (errors: Record<string, string>) => void;
+};
 
 const registeredBeforeListeners: BeforeListener[] = [];
 let routerOnCalled = false;
-let capturedPostOnSuccess: (() => void) | undefined;
+let capturedPostOnSuccess: PostOptions["onSuccess"];
 // Real router.visit() fires the registered 'before' listeners synchronously
 // before navigating — that's the whole mechanism useUnsavedGuard's replay
 // relies on (the leave-confirmed bypass flag is raised only for the duration
@@ -543,7 +546,7 @@ function SaveFormWithFlashHarness() {
 		setFlash([{ kind: "redirect", href: "/admin/posts" }]);
 	};
 	(window as unknown as { __invokePostOnSuccess?: () => void }).__invokePostOnSuccess = () => {
-		capturedPostOnSuccess?.();
+		capturedPostOnSuccess?.({ flash: {} });
 	};
 
 	return (

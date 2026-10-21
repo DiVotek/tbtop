@@ -431,6 +431,21 @@ it('Column: visible(Closure true) column included in TableBuilder serialization'
     expect($names)->toContain('extra');
 });
 
+it('Column: a gated-out column is neither searchable nor sortable', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns([
+            Column::make('title')->searchable()->sortable()->individuallySearchable(),
+            Column::make('salary')->visible(fn () => false)->searchable()->sortable()->individuallySearchable(),
+            Column::make('email')->hidden()->searchable()->sortable()->individuallySearchable(),
+        ])
+        ->query(fn () => null);
+
+    expect($table->searchableFields())->toBe(['title'])
+        ->and($table->sortableColumnNames())->toBe(['title'])
+        ->and($table->individuallySearchableColumns())->toBe(['title']);
+});
+
 // ---------------------------------------------------------------------------
 // Normalization in columns()
 // ---------------------------------------------------------------------------

@@ -126,13 +126,16 @@ function applyNestedFilter(
 	if (!field || !sub) {
 		return;
 	}
+	// A conflicting earlier shape (e.g. a scalar `status=x`) is replaced, not
+	// written into — assigning an index on a string throws.
+	const current = filters[field];
 	const idx = Number(sub);
 	if (Number.isFinite(idx) && String(idx) === sub) {
-		const arr = (filters[field] as unknown[] | undefined) ?? [];
+		const arr = Array.isArray(current) ? current : [];
 		arr[idx] = value;
 		filters[field] = arr;
 	} else {
-		const obj = (filters[field] as Record<string, unknown> | undefined) ?? {};
+		const obj = isRecord(current) ? current : {};
 		obj[sub] = value;
 		filters[field] = obj;
 	}
@@ -164,6 +167,10 @@ function applyScalarFilter({
 	if (value) {
 		filters[field] = value;
 	}
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function escapeRegex(s: string): string {

@@ -64,11 +64,24 @@ final class TableReorderController
     {
         $validated = Validator::make($request->all(), [
             'ids' => 'required|array|min:1',
-            'ids.*' => 'required',
+            'ids.*' => ['bail', 'required', $this->scalarKeyRule(), 'distinct'],
         ])->validate();
 
         /** @var list<int|string> */
         return array_values($validated['ids']);
+    }
+
+    /**
+     * A record key is an int or a string — a nested array or other value is a
+     * malformed request, not an id outside the scope.
+     */
+    private function scalarKeyRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if (! is_int($value) && ! is_string($value)) {
+                $fail('The :attribute must be an integer or a string.');
+            }
+        };
     }
 
     private function resolveBuilder(TableBuilder $table): EloquentBuilder

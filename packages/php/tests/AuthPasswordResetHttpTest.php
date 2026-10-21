@@ -161,3 +161,7 @@ it('keeps a signed-in session whose password did not change', function () {
     $this->get('/admin/nav-demo')->assertOk();
     $this->assertAuthenticatedAs($this->user, 'staff');
 });
+
+it('renders the reset page when the email query param is an array', function () {
+    $this->get('/admin/reset-password/some-token?email[]=x', ['X-Inertia' => 'true'])->assertOk();
+});

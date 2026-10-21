@@ -50,6 +50,13 @@ it('appends the Page suffix only once when name already ends with Page', functio
     expect($contents)->toContain('class OrdersPage extends Page');
 });
 
+it('escapes quotes in --group so the generated page still parses', function () {
+    $this->artisan('make:tbtop-page', ['name' => 'Orders', '--group' => "Owner's area"])
+        ->assertSuccessful();
+
+    expect(file_get_contents(expectedPagePath('OrdersPage')))->toContain("'group' => 'Owner\\'s area'");
+});
+
 it('uses --path option to override the route path', function () {
     $this->artisan('make:tbtop-page', ['name' => 'Orders', '--path' => 'custom/orders'])
         ->assertSuccessful();

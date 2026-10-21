@@ -1,10 +1,12 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\Http\ColumnProjection;
+use Tbtop\Admin\Http\TableQuery;
 
 beforeEach(function () {
     Schema::create('cposts', function ($table): void {
@@ -417,6 +419,24 @@ it('TableQuery: colSearch on an undeclared column is silently ignored', function
 
     $response->assertOk();
     expect(array_column($response->json('data.data'), 'title'))->toBe(['Post A', 'Post B']);
+});
+
+it('TableQuery: array-shaped search, colSearch and sort params are ignored, not a 500', function (): void {
+    $response = $this->getJson('/admin/cposts/tables/cposts?search[]=x&colSearch[title][]=x&sort[]=title&dir[]=desc');
+
+    $response->assertOk();
+    expect(array_column($response->json('data.data'), 'title'))->toBe(['Post A', 'Post B']);
+});
+
+it('TableQuery: a numeric search value, as an MCP call forwards it, still searches', function (): void {
+    $table = (new TableBuilder('cposts'))
+        ->columns([Column::make('title'), Column::make('price')->searchable()->individuallySearchable()])
+        ->query(fn () => DB::table('cposts'));
+    $byColumn = Request::create('/', 'GET', ['colSearch' => ['price' => 2000]]);
+    $byTable = Request::create('/', 'GET', ['search' => 1000]);
+
+    expect(array_column(TableQuery::run($table, $byColumn, DB::table('cposts'))['data'], 'title'))->toBe(['Post B'])
+        ->and(array_column(TableQuery::run($table, $byTable, DB::table('cposts'))['data'], 'title'))->toBe(['Post A']);
 });
 
 it('TableQuery: colSearch on a searchable() (but not individuallySearchable()) column is ignored', function (): void {

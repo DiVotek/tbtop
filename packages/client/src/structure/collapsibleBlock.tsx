@@ -21,6 +21,7 @@ export function CollapsibleBlock({
 				type="button"
 				className="flex items-center gap-2 text-sm font-medium"
 				onClick={() => setOpen((prev) => !prev)}
+				aria-expanded={open}
 				data-testid="collapsible-toggle"
 			>
 				{open ? (

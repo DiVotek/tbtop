@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Navigation;
 
+use Tbtop\Admin\Http\PageGate;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\CurrentPanel;
 
@@ -82,8 +83,8 @@ final class BreadcrumbsBuilder
     }
 
     /**
-     * Tries to find a page in the same nav group that has no route params and returns
-     * its href. Returns null when no such page exists.
+     * Tries to find a page in the same nav group that has no route params and
+     * passes its can() gate, and returns its href. Returns null when no such page exists.
      */
     private static function resolveGroupUrl(string $group, Page $skipPage, CurrentPanel $panel): ?string
     {
@@ -102,6 +103,11 @@ final class BreadcrumbsBuilder
             }
             $path = $class::path();
             if (str_contains($path, '{')) {
+                continue;
+            }
+            // Same gate the sidebar applies: never link the crumb to a page
+            // this user would get a 403 on.
+            if (! PageGate::allows($class)) {
                 continue;
             }
 
