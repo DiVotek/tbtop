@@ -9,7 +9,11 @@
 		"noEmit": true,
 		"skipLibCheck": true,
 		"types": ["vite/client", "bun"],
-		"paths": { "@tbtop/inertia-admin": ["../../packages/client/src/index.ts"] }
+		"paths": {
+			"@tbtop/inertia-admin": ["../../packages/client/src/index.ts"],
+			"@tbtop/admin": ["../../packages/node/src/index.ts"],
+			"@tbtop/admin/example/posts": ["../../packages/node/example/posts.ts"]
+		}
 	},
 	"include": ["src", "server.ts", "vite.config.ts"]
 }

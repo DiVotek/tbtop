@@ -1,8 +1,9 @@
-# @tbtop/admin-node (experimental)
+# @tbtop/admin (Bun/Node, experimental)
 
 The tbtop admin server on Bun/Node: the PHP DSL in TypeScript, the same wire
 grammar (`packages/contracts`), the same React client (`packages/client`) on the
-real `@inertiajs/react`. Not a published package yet.
+real `@inertiajs/react`. Private and not on npm yet (internal test). Host guide:
+[`docs/`](docs/README.md).
 
 ## What exists
 
@@ -58,6 +59,7 @@ The media library is out of scope.
 
 ```bash
 bun install && bun test && bunx tsc --noEmit
+bun run check:package   # build dist, publint, attw, install the tarball under Node
 ```
 
 ## Host
@@ -69,6 +71,7 @@ mounts the handler the same way.
 
 ```bash
 cd ../client && bun install           # the demo compiles the client from source
+cd ../node && bun install             # and reads this package from source (tsconfig paths)
 cd ../../apps/node-demo && bun install
 bun run dev                            # Vite on :5173, the server on :3000
 bun run build && bun run start         # production on Bun

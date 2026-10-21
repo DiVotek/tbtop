@@ -6,8 +6,8 @@ import {
 	SESSION_USER,
 	type ViteManifest,
 	viteTags,
-} from "@tbtop/admin-node";
-import { driver, hostRules, pages } from "@tbtop/admin-node/example/posts";
+} from "@tbtop/admin";
+import { driver, hostRules, pages } from "@tbtop/admin/example/posts";
 
 const production = process.env.NODE_ENV === "production";
 const ENTRY = "src/client.tsx";

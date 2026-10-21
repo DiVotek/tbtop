@@ -1,33 +1,52 @@
 {
-	"name": "@tbtop/admin-node",
-	"version": "0.0.0-sketch",
+	"name": "@tbtop/admin",
+	"version": "0.11.0",
+	"description": "Tabletop admin server for Bun, Node and Cloudflare Workers: pages in a TypeScript DSL, rendered by @tbtop/inertia-admin over Inertia.",
+	"license": "MIT",
 	"private": true,
 	"type": "module",
+	"sideEffects": false,
+	"engines": {
+		"node": ">=20"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"docs"
+	],
 	"exports": {
-		".": "./src/index.ts",
-		"./kysely": "./src/adapters/kysely.ts",
-		"./memory": "./src/adapters/memory.ts",
-		"./local-disk": "./src/adapters/localDisk.ts",
-		"./sharp": "./src/adapters/sharp.ts",
-		"./example/*": "./example/*.ts"
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./kysely": {
+			"types": "./dist/kysely.d.ts",
+			"import": "./dist/kysely.js"
+		},
+		"./memory": {
+			"types": "./dist/memory.d.ts",
+			"import": "./dist/memory.js"
+		},
+		"./local-disk": {
+			"types": "./dist/local-disk.d.ts",
+			"import": "./dist/local-disk.js"
+		},
+		"./sharp": {
+			"types": "./dist/sharp.d.ts",
+			"import": "./dist/sharp.js"
+		},
+		"./package.json": "./package.json"
 	},
 	"scripts": {
+		"build": "tsup",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
+		"check:package": "bun run build && publint && attw --pack . --profile esm-only && bun scripts/smoke-pack.ts",
 		"check:workers": "bun workers/check.ts",
 		"sync:lang": "bun scripts/sync-lang.ts"
 	},
 	"dependencies": {
 		"markdown-it": "^15.0.3"
-	},
-	"devDependencies": {
-		"@types/bun": "^1.3.11",
-		"@types/markdown-it": "^14.2.0",
-		"ajv": "^8.17.1",
-		"kysely": "^0.28.2",
-		"kysely-bun-sqlite": "^0.4.0",
-		"sharp": "0.34",
-		"typescript": "^5.9.0"
 	},
 	"peerDependencies": {
 		"kysely": "^0.28.0"
@@ -37,5 +56,16 @@
 			"optional": true
 		}
 	},
-	"description": "Tabletop admin server for Bun/Node: the PHP DSL's wire grammar, served by a Web-standard fetch handler. Experimental."
+	"devDependencies": {
+		"@arethetypeswrong/cli": "^0.18.5",
+		"@types/bun": "^1.3.11",
+		"@types/markdown-it": "^14.2.0",
+		"ajv": "^8.17.1",
+		"kysely": "^0.28.2",
+		"kysely-bun-sqlite": "^0.4.0",
+		"publint": "^0.3.25",
+		"sharp": "0.34",
+		"tsup": "^8.5.1",
+		"typescript": "^5.9.0"
+	}
 }

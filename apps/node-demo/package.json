@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@inertiajs/react": "^3.3.1",
-    "@tbtop/admin-node": "file:../../packages/node",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
