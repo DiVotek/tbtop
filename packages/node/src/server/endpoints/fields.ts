@@ -1,5 +1,5 @@
-import { collectAttributes, collectRules } from "../../dsl";
-import { keyOf } from "../driver";
+import { collectAttributes, collectRules, type Relation } from "../../dsl";
+import { keyOf, type QueryDriver } from "../driver";
 import { notFound, readBody } from "../http";
 import { pickTranslation } from "../translatable";
 import { readDeps, respondOptions } from "./options";
@@ -51,32 +51,43 @@ const relationSearch: Endpoint = {
 				`Relation field "${arg(ctx, 0)}" with query() is not defined on this page.`,
 			);
 		}
-		const body = await readBody(ctx.request);
-		const driver = requireDriver(ctx.options);
-		const base = query(readDeps(body, field.dependsOnFields()));
-		const labelKey = field.getLabelKey();
-		const option = (row: Record<string, unknown>) => ({
-			value: String(row[keyOf(driver)]),
-			label: String(pickTranslation(row[labelKey]) ?? ""),
-		});
-		if ("value" in body) {
-			const scoped = driver.where(base, {
-				field: keyOf(driver),
-				op: "=",
-				value: String(body.value),
-			});
-			const [row] = await driver.rows(scoped, { page: 1, perPage: 1 });
-			return { option: row === undefined ? null : option(row) };
-		}
-		const search = typeof body.search === "string" ? body.search : "";
-		const searched =
-			search === ""
-				? base
-				: driver.where(base, { field: labelKey, op: "contains", value: search });
-		const rows = await driver.rows(searched, { page: 1, perPage: field.getSearchLimit() });
-		return { options: rows.map(option) };
+		return relationOptions(field, await readBody(ctx.request), requireDriver(ctx.options));
 	},
 };
+
+/** RelationSearchResponder: `{search}` → options, `{value}` → option, over the driver. */
+export async function relationOptions(
+	field: Relation,
+	body: Record<string, unknown>,
+	driver: QueryDriver,
+): Promise<unknown> {
+	const query = field.queryClosure();
+	if (query === undefined) {
+		return { options: [] };
+	}
+	const base = query(readDeps(body, field.dependsOnFields()));
+	const labelKey = field.getLabelKey();
+	const option = (row: Record<string, unknown>) => ({
+		value: String(row[keyOf(driver)]),
+		label: String(pickTranslation(row[labelKey]) ?? ""),
+	});
+	if ("value" in body) {
+		const scoped = driver.where(base, {
+			field: keyOf(driver),
+			op: "=",
+			value: String(body.value),
+		});
+		const [row] = await driver.rows(scoped, { page: 1, perPage: 1 });
+		return { option: row === undefined ? null : option(row) };
+	}
+	const search = typeof body.search === "string" ? body.search : "";
+	const searched =
+		search === ""
+			? base
+			: driver.where(base, { field: labelKey, op: "contains", value: search });
+	const rows = await driver.rows(searched, { page: 1, perPage: field.getSearchLimit() });
+	return { options: rows.map(option) };
+}
 
 /** POST daterange-ranges/{field}: disabledRanges() re-run with the parent values. */
 const daterangeRanges: Endpoint = {

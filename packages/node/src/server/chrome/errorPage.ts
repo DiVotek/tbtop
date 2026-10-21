@@ -1,5 +1,6 @@
 import { currentContext } from "../../dsl/context";
 import { trans } from "../../i18n";
+import { HttpError } from "../http";
 import { inertiaResponse, requestUri } from "../inertia/protocol";
 import type { PanelView } from "../pageResponse";
 import { sharedProps } from "../panel";
@@ -40,4 +41,12 @@ export async function notFoundPage(panel: PanelView, request: Request): Promise<
 		panel.rootView,
 	);
 	return new Response(response.body, { status: 404, headers: response.headers });
+}
+
+/** A catch for a page visit: a 404 the page raises (a record it cannot find) renders in the shell. */
+export function notFoundOr(panel: PanelView, request: Request) {
+	return (error: unknown): Promise<Response> =>
+		error instanceof HttpError && error.status === 404 && !expectsJson(request)
+			? notFoundPage(panel, request)
+			: Promise.reject(error);
 }

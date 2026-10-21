@@ -45,6 +45,22 @@ const PROBES: Probe[] = [
 		},
 		status: 303,
 	},
+	{
+		name: "MCP query over JSON-RPC",
+		path: "/admin/mcp",
+		init: {
+			method: "POST",
+			body: JSON.stringify({
+				jsonrpc: "2.0",
+				id: 1,
+				method: "tools/call",
+				params: { name: "query", arguments: { page: "posts", table: "posts" } },
+			}),
+			headers: { "content-type": "application/json", authorization: "Bearer check" },
+		},
+		status: 200,
+		contains: "Bun and TanStack",
+	},
 ];
 
 function uploadBody(): FormData {

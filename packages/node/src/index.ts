@@ -22,6 +22,7 @@ export type { Text } from "./server/chrome/text";
 export type { Clause, QueryDriver } from "./server/driver";
 export { HttpError, type Json } from "./server/http";
 export * from "./server/inertia";
+export type { McpConfig } from "./server/mcp";
 export {
 	type Crumb,
 	definePage,

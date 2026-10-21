@@ -45,10 +45,16 @@ real `@inertiajs/react`. Not a published package yet.
   four navigation layouts and appearance. A 404 under the prefix renders the
   `admin/error` page in the shell. `createPanels([...])` serves several panels
   from one handler.
+- **MCP**: `mcp: { authenticate }` exposes the panel to agents at
+  `POST {prefix}/mcp` (stateless streamable HTTP, JSON-RPC) with the PHP
+  server's three tools: `search`, `query`, `execute`. The agent acts as the
+  user `authenticate` returns from its token, with that user's gates and
+  validation; the session gate does not run, Origin is checked. `mcp: false`
+  on a page, `.mcp(false)` on an action hide them.
 - **Runtimes**: Bun, Node, and Cloudflare Workers (`bun run check:workers` runs
   the core in workerd; CI does too).
 
-Not ported yet: MCP; the media library is out of scope.
+The media library is out of scope.
 
 ```bash
 bun install && bun test && bunx tsc --noEmit
@@ -69,3 +75,16 @@ bun run build && bun run start         # production on Bun
 ```
 
 Sign in at `/admin/login` with any email: the demo's login page trusts it.
+
+An agent reaches a panel with `mcp` set like this (the token check is the
+host's; repeat the panel's role checks there):
+
+```ts
+createAdmin({
+	// ...
+	mcp: {
+		authenticate: async (request) => users.byToken(request.headers.get("authorization")),
+		allowedOrigins: ["https://admin.example.com"],
+	},
+});
+```

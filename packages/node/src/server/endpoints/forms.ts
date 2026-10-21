@@ -47,6 +47,36 @@ async function formRules(form: FormBuilder, ctx: EndpointCtx) {
 	};
 }
 
+/** What a form submit came to: validation errors, a URL to redirect to, or effects. */
+export type FormOutcome =
+	| { errors: Record<string, string[]> }
+	| { redirect: string }
+	| { effects: unknown };
+
+/** FormSubmitController without the transport: validate, run onSubmit, report the outcome. */
+export async function submitFormOutcome(
+	ctx: EndpointCtx,
+	name: string,
+	body: Bag,
+): Promise<FormOutcome> {
+	const form = ctx.resolved.s.reachableForm(name);
+	const handler = form?.submitHandler();
+	if (form === null || handler === undefined) {
+		throw notFound(`Form "${name}" is not submittable on this page.`);
+	}
+	const { rules, ...options } = await formRules(form, ctx);
+	const outcome = await validate(emptyToNull(body), rules, options);
+	if (!outcome.ok) {
+		return { errors: outcome.errors };
+	}
+	const result = await handler(baseCtx(ctx, { form: outcome.validated }));
+	if (typeof result === "string") {
+		return { redirect: result };
+	}
+	const { effects } = effectsBody(result, Effects.make());
+	return { effects: asJson(await materialize(effects)) };
+}
+
 /**
  * POST forms/{name} (FormSubmitController): an Inertia visit. Errors and
  * effects travel through the session, then the client follows the redirect back.
@@ -55,22 +85,14 @@ const submitForm: Endpoint = {
 	method: "POST",
 	pattern: ["forms", ":name"],
 	async run(ctx) {
-		const form = ctx.resolved.s.reachableForm(arg(ctx, 0));
-		const handler = form?.submitHandler();
-		if (form === null || handler === undefined) {
-			throw notFound(`Form "${arg(ctx, 0)}" is not submittable on this page.`);
-		}
-		const { rules, ...options } = await formRules(form, ctx);
-		const outcome = await validate(emptyToNull(await readBody(ctx.request)), rules, options);
-		if (!outcome.ok) {
+		const outcome = await submitFormOutcome(ctx, arg(ctx, 0), await readBody(ctx.request));
+		if ("errors" in outcome) {
 			return flashErrors(ctx, outcome.errors);
 		}
-		const result = await handler(baseCtx(ctx, { form: outcome.validated }));
-		if (typeof result === "string") {
-			return redirectOrLocation(ctx.request, result);
+		if ("redirect" in outcome) {
+			return redirectOrLocation(ctx.request, outcome.redirect);
 		}
-		const { effects } = effectsBody(result, Effects.make());
-		await ctx.session.set("flash", { "tbtop.effects": asJson(await materialize(effects)) });
+		await ctx.session.set("flash", { "tbtop.effects": outcome.effects });
 		return back(ctx.request, pageUrl(ctx));
 	},
 };
@@ -87,27 +109,30 @@ function pageUrl(ctx: EndpointCtx): string {
 	return new URL(ctx.request.url).pathname.replace(/\/forms\/[^/]+\/?$/, "");
 }
 
+/** ActionController without the transport: `payload` is `{form?, row?, selection?, params?}`. */
+export async function runActionWith(ctx: EndpointCtx, name: string, payload: Bag) {
+	const action = ctx.resolved.s.reachableAction(name);
+	const handler = action?.handler();
+	if (action === null || handler === undefined) {
+		throw notFound(`Action "${name}" has no server handler on this page.`);
+	}
+	const base = baseCtx(ctx, payload);
+	const form = await actionForm(ctx, name, {
+		input: payload.form,
+		gate: !action.skipsFormValidation(),
+	});
+	const result = await handler(form === null ? base : base.withForm(form));
+	return typeof result === "string"
+		? { effects: Effects.make().redirect(result) }
+		: effectsBody(result, Effects.make());
+}
+
 /** POST actions/{name}: the enclosing form validates `payload.form` unless withoutValidation(). */
 const runAction: Endpoint = {
 	method: "POST",
 	pattern: ["actions", ":name"],
 	async run(ctx) {
-		const name = arg(ctx, 0);
-		const action = ctx.resolved.s.reachableAction(name);
-		const handler = action?.handler();
-		if (action === null || handler === undefined) {
-			throw notFound(`Action "${name}" has no server handler on this page.`);
-		}
-		const payload = bag((await readBody(ctx.request)).payload);
-		const base = baseCtx(ctx, payload);
-		const form = await actionForm(ctx, name, {
-			input: payload.form,
-			gate: !action.skipsFormValidation(),
-		});
-		const result = await handler(form === null ? base : base.withForm(form));
-		return typeof result === "string"
-			? { effects: Effects.make().redirect(result) }
-			: effectsBody(result, Effects.make());
+		return runActionWith(ctx, arg(ctx, 0), bag((await readBody(ctx.request)).payload));
 	},
 };
 

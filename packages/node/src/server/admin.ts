@@ -1,10 +1,11 @@
 import { currentContext, materialize, runWithContext } from "../dsl";
 import { notificationsRoute } from "../notifications/routes";
 import { assertAppearance } from "./chrome/appearance";
-import { expectsJson, notFoundPage } from "./chrome/errorPage";
+import { expectsJson, notFoundOr, notFoundPage } from "./chrome/errorPage";
 import type { AdminConfig } from "./config";
-import { ENDPOINTS, matchEndpoints } from "./endpoints";
+import { ENDPOINTS, routeEndpoints } from "./endpoints";
 import { errorResponse, HttpError, json, stripPrefix } from "./http";
+import { assertNoCollision, type McpConfig, mcpPath, mcpRoute, serveMcp } from "./mcp";
 
 export { HttpError };
 
@@ -20,14 +21,6 @@ import { findPage, resolvePage } from "./resolve";
 export type { AdminConfig } from "./config";
 export type { AdminPageProps } from "./pageProps";
 
-/** Every endpoint the path could be, paired with the page that owns it. */
-function routes(pages: PageDef[], path: string) {
-	return matchEndpoints(path).flatMap((m) => {
-		const found = findPage(pages, m.pagePath);
-		return found === null ? [] : [{ ...m, ...found }];
-	});
-}
-
 /** The panel's request plumbing: session, user, context, the guest gate. */
 class AdminServer {
 	readonly prefix: string;
@@ -38,6 +31,9 @@ class AdminServer {
 	constructor(private readonly config: AdminConfig) {
 		this.prefix = config.prefix.replace(/\/+$/, "");
 		assertAppearance(config.navigation, config.appearance);
+		if (config.mcp !== undefined) {
+			assertNoCollision(config.mcp, config.pages);
+		}
 		this.panel = {
 			...config,
 			id: config.id ?? "admin",
@@ -53,9 +49,13 @@ class AdminServer {
 	}
 
 	/** Runs in the request's context; an HttpError becomes its JSON response. */
-	async inContext<T>(request: Request, run: () => Promise<T>): Promise<T | Response> {
+	async inContext<T>(
+		request: Request,
+		run: () => Promise<T>,
+		as?: unknown,
+	): Promise<T | Response> {
 		const session = await this.sessions(request);
-		const user = (await this.readUser(request, session)) ?? null;
+		const user = as ?? (await this.readUser(request, session)) ?? null;
 		const locale = localeContext(this.config, await currentLocale(this.config, session));
 		const extra = (await this.config.context?.(request)) ?? {};
 		const unsavedGuard = this.config.unsavedGuard ?? true;
@@ -101,7 +101,7 @@ class AdminServer {
 	}
 
 	async endpoint(request: Request, path: string): Promise<Response | null> {
-		const routed = routes(this.config.pages, path);
+		const routed = routeEndpoints(this.config.pages, path);
 		const match = routed.find((m) => m.endpoint.method === request.method);
 		if (match === undefined) {
 			return routed.length > 0 ? json({ message: "Method not allowed" }, 405) : null;
@@ -133,17 +133,11 @@ class AdminServer {
 			const session = await this.sessions(request);
 			return (
 				denied ??
-				pageResponse(this.panel, { request, session, found }).catch(this.notFound(request))
+				pageResponse(this.panel, { request, session, found }).catch(
+					notFoundOr(this.panel, request),
+				)
 			);
 		});
-	}
-
-	/** A 404 a page raises (a record it cannot find) renders inside the shell. */
-	private notFound(request: Request) {
-		return (error: unknown): Promise<Response> =>
-			error instanceof HttpError && error.status === 404 && !expectsJson(request)
-				? notFoundPage(this.panel, request)
-				: Promise.reject(error);
 	}
 
 	/** The panel's Route::fallback(): any other GET under the prefix is the 404 page. */
@@ -192,10 +186,26 @@ class AdminServer {
 		});
 	}
 
+	/** POST {prefix}/mcp: the agent's token instead of the session, the tools as its user. */
+	mcp(request: Request, mcp: McpConfig): Promise<Response> {
+		const { pages } = this.config;
+		const run = () =>
+			serveMcp(request, { config: mcp, prefix: this.prefix, pages, options: this.config });
+		return mcpRoute(
+			request,
+			mcp,
+			async (user) => (await this.inContext(request, run, user)) as Response,
+		);
+	}
+
 	async handle(request: Request): Promise<Response | null> {
 		const path = stripPrefix(new URL(request.url).pathname, this.prefix);
 		if (path === null) {
 			return null;
+		}
+		const { mcp } = this.config;
+		if (mcp !== undefined && path === mcpPath(mcp)) {
+			return this.mcp(request, mcp);
 		}
 		return (
 			(await this.panelRoute(request, path)) ??

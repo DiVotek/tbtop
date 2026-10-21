@@ -1,3 +1,5 @@
+import type { PageDef } from "../page";
+import { findPage } from "../resolve";
 import { DATA_ENDPOINTS } from "./data";
 import { FIELD_ENDPOINTS } from "./fields";
 import { FORM_ENDPOINTS } from "./forms";
@@ -38,5 +40,13 @@ export function matchEndpoints(path: string): EndpointMatch[] {
 			p.startsWith(":") ? [decodeURIComponent(tail[i] ?? "")] : [],
 		);
 		return [{ endpoint, pagePath: segments.slice(0, -tail.length).join("/"), args }];
+	});
+}
+
+/** Every endpoint the path could be, paired with the page that owns it. */
+export function routeEndpoints(pages: PageDef[], path: string) {
+	return matchEndpoints(path).flatMap((m) => {
+		const found = findPage(pages, m.pagePath);
+		return found === null ? [] : [{ ...m, ...found }];
 	});
 }

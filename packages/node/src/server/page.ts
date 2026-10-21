@@ -42,6 +42,8 @@ export interface PageDef<P extends string = string> {
 	authorize?: (ctx: ViewCtx) => boolean | Promise<boolean>;
 	/** Overrides the crumbs built from `nav` (group, then the page title). */
 	breadcrumbs?: Crumb[] | ((ctx: ViewCtx) => Crumb[]);
+	/** false hides the page from the MCP server. */
+	mcp?: boolean;
 	/** Reachable without a user when the panel has a `loginPath` (the login page itself). */
 	public?: boolean;
 	view: (s: S, ctx: ViewCtx) => unknown;

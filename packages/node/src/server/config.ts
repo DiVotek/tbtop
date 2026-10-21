@@ -4,6 +4,7 @@ import type { ServerOptions } from "./endpoints";
 import type { RootView } from "./inertia/protocol";
 import type { SessionResolver, SessionStore } from "./inertia/session";
 import type { LocaleConfig } from "./locale";
+import type { McpConfig } from "./mcp";
 import type { PageDef } from "./page";
 import type { PanelLook } from "./panel";
 
@@ -26,6 +27,8 @@ export interface AdminConfig extends ServerOptions, LocaleConfig, PanelLook {
 	rootView?: RootView;
 	/** The header bell's store; `pollInterval` in seconds (null: no polling). */
 	notifications?: { store: NotificationStore; pollInterval?: number | null };
+	/** Expose the panel to AI agents over MCP at `POST {prefix}/mcp`, with its own auth. */
+	mcp?: McpConfig;
 	/** Panel-wide default of a form's unsaved-changes guard (default true). */
 	unsavedGuard?: boolean;
 	/** Request-scoped settings: locales, timezone, a Gate-style `can`. */

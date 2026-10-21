@@ -18,6 +18,10 @@ const admin = createAdmin({
 	secret: "workers-check-only-app-key",
 	disks: { public: memoryDisk() },
 	locales: ["en", "uk"],
+	mcp: {
+		authenticate: (request) =>
+			request.headers.get("authorization") === "Bearer check" ? { name: "agent" } : null,
+	},
 });
 
 export default {

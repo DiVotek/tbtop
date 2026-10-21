@@ -89,3 +89,24 @@ function toBoolean(value: Scalar): boolean {
 		? value
 		: ["1", "true", "yes"].includes(String(value).toLowerCase());
 }
+
+/** The value a filter takes, in words for an agent (TableFilterApplier::valueShape). */
+export function filterValueShape(field: Field): string {
+	if (field.filterClosure()) {
+		return "custom filter: value is passed as-is to the page's closure";
+	}
+	const { kind } = field;
+	if (LIKE_KINDS.includes(kind)) {
+		return "string, matched as a substring";
+	}
+	if (EQUALITY_KINDS.includes(kind)) {
+		return "exact value, or an array of values a row matches any of";
+	}
+	const shapes: Record<string, string> = {
+		boolean: "boolean",
+		tags: "array of values, a row matches any of them",
+		in: "array of values, a row matches any of them",
+		daterange: '{"from": "Y-m-d", "to": "Y-m-d"}, either bound optional',
+	};
+	return shapes[kind] ?? `unsupported kind "${kind}"`;
+}
