@@ -63,6 +63,29 @@ jobs:
       - name: Test
         run: bun test
 
+  node:
+    name: Node server (tsc + bun test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/node
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      - name: Test (schema + PHP fixture parity)
+        run: bun test
+
   lint:
     name: Lint + format (oxlint + biome + pint)
     runs-on: ubuntu-latest

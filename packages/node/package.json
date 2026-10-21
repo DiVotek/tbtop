@@ -1,0 +1,34 @@
+{
+	"name": "@tbtop/admin-node",
+	"version": "0.0.0-sketch",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./kysely": "./src/adapters/kysely.ts",
+		"./example/*": "./example/*.ts"
+	},
+	"scripts": {
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"zod": "^4.1.0"
+	},
+	"devDependencies": {
+		"ajv": "^8.17.1",
+		"typescript": "^5.9.0",
+		"@types/bun": "^1.3.11",
+		"kysely": "^0.28.2",
+		"kysely-bun-sqlite": "^0.4.0"
+	},
+	"peerDependencies": {
+		"kysely": "^0.28.0"
+	},
+	"peerDependenciesMeta": {
+		"kysely": {
+			"optional": true
+		}
+	},
+	"description": "Tabletop admin server for Bun/Node: the PHP DSL's wire grammar, served by a Web-standard fetch handler. Experimental."
+}
