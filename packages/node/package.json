@@ -7,6 +7,8 @@
 		".": "./src/index.ts",
 		"./kysely": "./src/adapters/kysely.ts",
 		"./memory": "./src/adapters/memory.ts",
+		"./local-disk": "./src/adapters/localDisk.ts",
+		"./sharp": "./src/adapters/sharp.ts",
 		"./example/*": "./example/*.ts"
 	},
 	"scripts": {
@@ -24,6 +26,7 @@
 		"ajv": "^8.17.1",
 		"kysely": "^0.28.2",
 		"kysely-bun-sqlite": "^0.4.0",
+		"sharp": "0.34",
 		"typescript": "^5.9.0"
 	},
 	"peerDependencies": {

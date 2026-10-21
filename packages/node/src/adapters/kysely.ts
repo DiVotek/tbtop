@@ -1,6 +1,7 @@
 import { type Kysely, type SelectQueryBuilder, sql } from "kysely";
 import type { Row } from "../dsl";
 import type { Clause, QueryDriver } from "../server/driver";
+import type { HostRule } from "../server/validation/validator";
 
 /** Any select over the host schema; the driver only adds clauses to it. */
 type Builder<DB> = SelectQueryBuilder<DB, keyof DB & string, object>;
@@ -66,4 +67,54 @@ function tableOf<DB>(qb: Builder<DB>): string {
 		throw new Error("kyselyDriver: cannot find the table to update.");
 	}
 	return name;
+}
+
+/**
+ * Laravel's `unique:table,column,except,idColumn` and `exists:table,column`
+ * over Kysely, as host rules: `createAdmin({ hostRules: kyselyRules(db) })`.
+ * Table and column names come from rule strings the developer wrote.
+ */
+export function kyselyRules<DB>(db: Kysely<DB>): Record<string, HostRule> {
+	const untyped = db as unknown as Kysely<Record<string, Row>>;
+	const count = async (
+		table: string,
+		where: [string, unknown[]][],
+		except?: [string, string],
+	) => {
+		let qb = untyped.selectFrom(table).select((eb) => eb.fn.countAll<number>().as("count"));
+		for (const [column, values] of where) {
+			qb = qb.where(untyped.dynamic.ref(column), "in", values);
+		}
+		if (except !== undefined) {
+			qb = qb.where(untyped.dynamic.ref(except[1]), "!=", except[0]);
+		}
+		return Number((await qb.executeTakeFirst())?.count ?? 0);
+	};
+	return {
+		unique: {
+			message: "The :attribute has already been taken.",
+			check: async (value, [table = "", column, except, idColumn = "id"], key) => {
+				const ignore = except === undefined || except === "NULL" ? undefined : except;
+				const excluded =
+					ignore === undefined ? undefined : ([ignore, idColumn] as [string, string]);
+				return (await count(table, [[columnFor(column, key), [value]]], excluded)) === 0;
+			},
+		},
+		exists: {
+			message: "The selected :attribute is invalid.",
+			check: async (value, [table = "", column], key) => {
+				const values = [...new Set(Array.isArray(value) ? value : [value])];
+				return (await count(table, [[columnFor(column, key), values]])) >= values.length;
+			},
+		},
+	};
+}
+
+/** guessColumnForQuery(): the given column, else the key's last non-numeric segment. */
+function columnFor(column: string | undefined, key: string): string {
+	if (column !== undefined && column !== "NULL") {
+		return column;
+	}
+	const last = key.split(".").at(-1) ?? key;
+	return /^\d+$/.test(last) ? key : last;
 }

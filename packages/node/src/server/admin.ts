@@ -58,6 +58,7 @@ class AdminServer {
 			brand: config.brand,
 			pages: config.pages,
 			locales: uiLocales(config),
+			uploads: config,
 			version: config.version ?? null,
 			rootView: config.rootView ?? defaultRootView(),
 		};

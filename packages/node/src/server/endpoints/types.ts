@@ -1,9 +1,10 @@
 import type { QueryDriver } from "../driver";
 import type { SessionStore } from "../inertia/session";
 import type { Resolved } from "../resolve";
+import type { UploadOptions } from "../uploads/config";
 import type { HostRule } from "../validation/validator";
 
-export interface ServerOptions {
+export interface ServerOptions extends UploadOptions {
 	/** The host's query driver: tables, relation search, reorder. */
 	driver?: QueryDriver;
 	/** Rules only the host can check, e.g. `unique`/`exists` against its database. */

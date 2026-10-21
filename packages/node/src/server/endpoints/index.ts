@@ -3,15 +3,17 @@ import { FIELD_ENDPOINTS } from "./fields";
 import { FORM_ENDPOINTS } from "./forms";
 import { TABLE_ENDPOINTS } from "./tables";
 import type { Endpoint } from "./types";
+import { UPLOAD_ENDPOINTS } from "./uploads";
 
 export type { EndpointCtx, ServerOptions } from "./types";
 
-/** The page-scoped endpoint cluster (routes/admin.php), minus uploads and media. */
+/** The page-scoped endpoint cluster (routes/admin.php), minus the media library. */
 export const ENDPOINTS: Endpoint[] = [
 	...FORM_ENDPOINTS,
 	...TABLE_ENDPOINTS,
 	...FIELD_ENDPOINTS,
 	...DATA_ENDPOINTS,
+	...UPLOAD_ENDPOINTS,
 ];
 
 export interface EndpointMatch {

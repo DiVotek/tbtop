@@ -2,8 +2,8 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { Kysely } from "kysely";
 import { BunSqliteDialect } from "kysely-bun-sqlite";
-import { Column, createAdmin, definePage } from "../src";
-import { kyselyDriver } from "../src/adapters/kysely";
+import { Column, createAdmin, definePage, validate } from "../src";
+import { kyselyDriver, kyselyRules } from "../src/adapters/kysely";
 
 interface DB {
 	posts: { id: number; title: string; published: number; views: number; sort_order: number };
@@ -97,5 +97,33 @@ describe("kyselyDriver", () => {
 			.orderBy("sort_order")
 			.execute();
 		expect(order.map((r) => r.id)).toEqual([5, 4, 2, 1]);
+	});
+});
+
+describe("kyselyRules", () => {
+	const rules = kyselyRules(db);
+	const check = (rule: string, value: unknown, params: string[], key = "title") =>
+		validate(
+			{ [key]: value },
+			{ [key]: [`${rule}:${params.join(",")}`] },
+			{ hostRules: rules },
+		);
+
+	test("unique: guesses the column from the key, honours the ignored id", async () => {
+		expect(await check("unique", "Alpha", ["posts"])).toEqual({
+			ok: false,
+			errors: { title: ["The title has already been taken."] },
+		});
+		expect((await check("unique", "Alpha", ["posts", "title", "1"])).ok).toBe(true);
+		expect((await check("unique", "Omega", ["posts"])).ok).toBe(true);
+	});
+
+	test("exists: every distinct value must be found", async () => {
+		expect((await check("exists", 3, ["posts", "id"], "post_id")).ok).toBe(true);
+		expect((await check("exists", [1, 2, 2], ["posts", "id"], "ids")).ok).toBe(true);
+		expect(await check("exists", [1, 99], ["posts", "id"], "ids")).toEqual({
+			ok: false,
+			errors: { ids: ["The selected ids is invalid."] },
+		});
 	});
 });

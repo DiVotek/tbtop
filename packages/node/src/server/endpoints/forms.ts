@@ -10,6 +10,7 @@ import {
 import { enclosingForm } from "../enclosingForm";
 import { asJson, effectsBody, notFound, readBody } from "../http";
 import { back, redirectOrLocation } from "../inertia/protocol";
+import { bindUploads } from "../uploads/bind";
 import { dataGet, dataHas, dataSet, emptyToNull, expandKey } from "../validation/data";
 import { validate } from "../validation/validator";
 import { arg, type Endpoint, type EndpointCtx } from "./types";
@@ -32,9 +33,18 @@ function baseCtx(ctx: EndpointCtx, payload: Bag): ActionCtx {
 	});
 }
 
-function formRules(form: FormBuilder) {
+/** The form's rules and labels; upload keys also check the path was issued (bindUploadPaths). */
+async function formRules(form: FormBuilder, ctx: EndpointCtx) {
 	const children = form.includedChildren();
-	return { rules: collectRules(children), attributes: collectAttributes(children) };
+	const bound = await bindUploads(collectRules(children), children, {
+		session: ctx.session,
+		records: [form.recordData()],
+	});
+	return {
+		rules: bound.rules,
+		attributes: collectAttributes(children),
+		hostRules: { ...ctx.options.hostRules, ...bound.hostRules },
+	};
 }
 
 /**
@@ -50,11 +60,8 @@ const submitForm: Endpoint = {
 		if (form === null || handler === undefined) {
 			throw notFound(`Form "${arg(ctx, 0)}" is not submittable on this page.`);
 		}
-		const { rules, attributes } = formRules(form);
-		const outcome = await validate(emptyToNull(await readBody(ctx.request)), rules, {
-			attributes,
-			hostRules: ctx.options.hostRules,
-		});
+		const { rules, ...options } = await formRules(form, ctx);
+		const outcome = await validate(emptyToNull(await readBody(ctx.request)), rules, options);
 		if (!outcome.ok) {
 			return flashErrors(ctx, outcome.errors);
 		}
@@ -113,14 +120,14 @@ async function actionForm(
 	if (form === null) {
 		return null;
 	}
-	const { rules, attributes } = formRules(form);
+	const { rules, ...options } = await formRules(form, ctx);
 	if (Object.keys(rules).length === 0) {
 		return null;
 	}
 	if (!gate) {
 		return declaredKeysOnly(emptyToNull(bag(input)), rules);
 	}
-	return validated(bag(input), rules, { attributes, hostRules: ctx.options.hostRules });
+	return validated(bag(input), rules, options);
 }
 
 /** The keys the rules declare, values as-is: withoutValidation() keeps the shape, not the verdict. */

@@ -27,7 +27,31 @@ const PROBES: Probe[] = [
 		},
 		status: 303,
 	},
+	{
+		name: "private upload (multipart, AES cookie, HMAC URL)",
+		path: "/admin/files/uploads/doc",
+		init: { method: "POST", body: uploadBody() },
+		status: 200,
+		contains: "/admin/files/uploads/doc/view?path=docs%2F",
+	},
+	{
+		name: "UI locale switch",
+		path: "/admin/locale",
+		init: {
+			method: "POST",
+			body: JSON.stringify({ locale: "uk" }),
+			headers: { "content-type": "application/json", "x-inertia": "true" },
+			redirect: "manual",
+		},
+		status: 303,
+	},
 ];
+
+function uploadBody(): FormData {
+	const body = new FormData();
+	body.append("file", new File(["%PDF-1.7"], "a.pdf"));
+	return body;
+}
 
 async function waitForServer(): Promise<void> {
 	for (let attempt = 0; attempt < 60; attempt++) {

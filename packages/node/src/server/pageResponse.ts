@@ -9,6 +9,7 @@ import { pull, type SessionStore } from "./inertia/session";
 import type { PageDef } from "./page";
 import { buildPageProps } from "./pageProps";
 import { resolvePage } from "./resolve";
+import type { UploadOptions } from "./uploads/config";
 
 const COMPONENT = "admin/page";
 
@@ -17,6 +18,7 @@ export interface PanelView {
 	brand?: string;
 	pages: PageDef[];
 	locales: string[];
+	uploads: UploadOptions;
 	version: string | null;
 	rootView: RootView;
 }

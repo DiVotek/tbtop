@@ -1,14 +1,23 @@
 import { driver, hostRules, pages } from "../example/posts";
-import { cookieSessions, createAdmin } from "../src";
+import { cookieSessions, createAdmin, definePage, memoryDisk } from "../src";
 
-// Build-only fixture: proves the core bundles for Cloudflare Workers
+// Build-only fixture: proves the core runs on Cloudflare Workers
 // (`bun run check:workers`). Not a deployable app.
+const files = definePage({
+	path: "files",
+	title: "Files",
+	view: (s) => s.form("files", [s.upload("doc").visibility("private").directory("docs")]),
+});
+
 const admin = createAdmin({
 	prefix: "/admin",
-	pages,
+	pages: [...pages, files],
 	driver,
 	hostRules,
 	session: cookieSessions({ secret: "workers-check-only-not-a-real-secret" }),
+	secret: "workers-check-only-app-key",
+	disks: { public: memoryDisk() },
+	locales: ["en", "uk"],
 });
 
 export default {
