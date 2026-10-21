@@ -30,9 +30,9 @@ real `@inertiajs/react`. Not a published package yet.
 - **Notifications**: `Notification` / `NotificationAction` builders, the bell's
   API under `{prefix}/api/notifications`, `memoryNotifications()` and
   `kyselyNotifications()` on Laravel's `notifications` table.
-- **Endpoints** (`routes/admin.php`, minus uploads and media), as one Web `fetch`
+- **Endpoints** (`routes/admin.php`, minus the media library), as one Web `fetch`
   handler: `createAdmin().handle(request)` answers pages, endpoints and
-  `POST {prefix}/logout`, and returns `null` for URLs it does not own.
+  `POST {prefix}/logout` and `/locale`, and returns `null` for URLs it does not own.
 - **Validation**: Laravel rules and messages; unknown rules throw. The host
   supplies `unique` / `exists` as `hostRules`.
 - **Data**: the ORM is the host's. Tables and relations go through a
