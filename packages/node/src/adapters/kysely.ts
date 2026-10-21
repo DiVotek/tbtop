@@ -118,3 +118,5 @@ function columnFor(column: string | undefined, key: string): string {
 	const last = key.split(".").at(-1) ?? key;
 	return /^\d+$/.test(last) ? key : last;
 }
+
+export { type KyselyNotificationsOptions, kyselyNotifications } from "./kyselyNotifications";

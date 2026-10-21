@@ -1,40 +1,24 @@
-import { type AdminContext, materialize, runWithContext } from "../dsl";
-import { ENDPOINTS, matchEndpoints, type ServerOptions } from "./endpoints";
+import { currentContext, materialize, runWithContext } from "../dsl";
+import { notificationsRoute } from "../notifications/routes";
+import type { AdminConfig } from "./config";
+import { ENDPOINTS, matchEndpoints } from "./endpoints";
 import { errorResponse, HttpError, json, stripPrefix } from "./http";
 import { rootView as defaultRootView } from "./inertia/html";
-import { isInertia, type RootView, redirectTo } from "./inertia/protocol";
+import { isInertia, redirectTo } from "./inertia/protocol";
 import {
 	memorySessions,
 	SESSION_USER,
 	type SessionResolver,
 	type SessionStore,
 } from "./inertia/session";
-import { currentLocale, type LocaleConfig, localeContext, switchLocale, uiLocales } from "./locale";
+import { currentLocale, localeContext, switchLocale, uiLocales } from "./locale";
 import type { PageDef } from "./page";
 import { type AdminPageProps, buildPageProps } from "./pageProps";
 import { type PanelView, pageResponse } from "./pageResponse";
 import { findPage, resolvePage } from "./resolve";
 
+export type { AdminConfig } from "./config";
 export type { AdminPageProps } from "./pageProps";
-
-export interface AdminConfig extends ServerOptions, LocaleConfig {
-	/** URL prefix of the panel, e.g. `/admin`. */
-	prefix: string;
-	pages: PageDef[];
-	brand?: string;
-	/** The host's session; default: in-process, keyed by a cookie (one server only). */
-	session?: SessionResolver;
-	/** The host owns auth; by default the admin reads the user its login put in the session. */
-	user?: (request: Request, session: SessionStore) => unknown;
-	/** Guests visiting a non-public page are sent here (a page with `public: true`). */
-	loginPath?: string;
-	/** Asset version: a client on another version reloads the page (409). */
-	version?: string | null;
-	/** The first-load HTML document; `rootView({ head: viteTags(...) })` covers most hosts. */
-	rootView?: RootView;
-	/** Request-scoped settings: locales, timezone, a Gate-style `can`. */
-	context?: (request: Request) => Partial<AdminContext> | Promise<Partial<AdminContext>>;
-}
 
 /** Every endpoint the path could be, paired with the page that owns it. */
 function routes(pages: PageDef[], path: string) {
@@ -59,6 +43,7 @@ class AdminServer {
 			pages: config.pages,
 			locales: uiLocales(config),
 			uploads: config,
+			pollInterval: config.notifications ? (config.notifications.pollInterval ?? 30) : null,
 			version: config.version ?? null,
 			rootView: config.rootView ?? defaultRootView(),
 		};
@@ -147,7 +132,10 @@ class AdminServer {
 	}
 
 	/** The panel's own POST routes: logout and the UI locale switch. */
-	panelRoute(request: Request, path: string): Promise<Response> | null {
+	panelRoute(request: Request, path: string): Promise<Response | null> | null {
+		if (path === "api/notifications" || path.startsWith("api/notifications/")) {
+			return this.notifications(request, path);
+		}
 		if (request.method !== "POST" || !["logout", "locale"].includes(path)) {
 			return null;
 		}
@@ -157,6 +145,20 @@ class AdminServer {
 		return this.guarded(request, async () =>
 			switchLocale(this.config, request, await this.sessions(request)),
 		);
+	}
+
+	notifications(request: Request, path: string): Promise<Response | null> | null {
+		const store = this.config.notifications?.store;
+		if (store === undefined) {
+			return null;
+		}
+		return this.guarded(request, async () => {
+			const routed = await notificationsRoute(store, request, {
+				path,
+				user: currentContext().user,
+			});
+			return routed ?? json({ message: "Method not allowed" }, 405);
+		});
 	}
 
 	/** POST {prefix}/logout: the client's profile menu. Forgets the user, back to login. */

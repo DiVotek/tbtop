@@ -15,17 +15,34 @@ real `@inertiajs/react`. Not a published package yet.
   the session. `rootView()` + `viteTags()` stand in for Blade's `@inertia` / `@vite`.
 - **Session**: `SessionStore { get, set, forget, commit? }`, the only view of the
   host's session. The default reads the user from `SESSION_USER`; a login page
-  puts it there (`admin.session(request)`). `memorySessions()` is a one-server
-  reference store.
+  puts it there (`admin.session(request)`). `cookieSessions({ secret })` keeps
+  it in one AES-GCM cookie (no store, runs on Workers); `memorySessions()` is a
+  one-server reference store.
+- **i18n**: UI locales switched through the session (`POST {prefix}/locale`),
+  bundled `tbtop-admin::admin` strings (`lang/*.json`, generated from the PHP
+  lang files by `bun run sync:lang`), host strings and validation templates
+  per locale.
+- **Uploads**: the `upload` field over a `Disk` interface (`memoryDisk`,
+  `localDisk` from `/local-disk`, `r2Disk`). The type is sniffed from the
+  content, SVG passes only through a host sanitizer, `sharpImages` (`/sharp`)
+  converts, private files stream through signed expiring URLs, and a submit
+  may only claim paths issued to its session. No media library.
+- **Notifications**: `Notification` / `NotificationAction` builders, the bell's
+  API under `{prefix}/api/notifications`, `memoryNotifications()` and
+  `kyselyNotifications()` on Laravel's `notifications` table.
 - **Endpoints** (`routes/admin.php`, minus uploads and media), as one Web `fetch`
   handler: `createAdmin().handle(request)` answers pages, endpoints and
   `POST {prefix}/logout`, and returns `null` for URLs it does not own.
 - **Validation**: Laravel rules and messages; unknown rules throw. The host
   supplies `unique` / `exists` as `hostRules`.
 - **Data**: the ORM is the host's. Tables and relations go through a
-  `QueryDriver`; `@tbtop/admin-node/kysely` and `@tbtop/admin-node/memory` ship.
+  `QueryDriver`; `/kysely` (driver, `kyselyRules` for `unique`/`exists`,
+  notifications) and `/memory` ship.
+- **Runtimes**: Bun, Node, and Cloudflare Workers (`bun run check:workers` runs
+  the core in workerd; CI does too).
 
-Not ported yet: uploads and media, notifications, i18n, MCP, multi-panel, chrome.
+Not ported yet: chrome (the bell needs it to show), multi-panel, command
+palette, MCP, the `admin/error` page, the media library.
 
 ```bash
 bun install && bun test && bunx tsc --noEmit

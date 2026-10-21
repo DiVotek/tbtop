@@ -7,6 +7,8 @@ export interface PanelInfo {
 	pages: PageDef[];
 	/** UI locales the switcher offers. */
 	locales: string[];
+	/** Bell polling in seconds; null when the panel has no notifications store. */
+	pollInterval: number | null;
 }
 
 /** The `tbtop` shared prop (PanelSharedProps.php): chrome, nav and the signed-in user. */
@@ -25,6 +27,9 @@ export function sharedProps(panel: PanelInfo): Record<string, unknown> {
 		messages: context.messages,
 		contentLocales: context.contentLocales,
 		defaultContentLocale: defaultLocale(context),
+		notifications: {
+			pollInterval: panel.pollInterval === null ? null : panel.pollInterval * 1000,
+		},
 	};
 }
 

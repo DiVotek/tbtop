@@ -1,7 +1,7 @@
 import { materialize, Upload } from "../dsl";
 import { asJson, type Json } from "./http";
-import { type PageDef, resolveText } from "./page";
-import { sharedProps } from "./panel";
+import { resolveText } from "./page";
+import { type PanelInfo, sharedProps } from "./panel";
 import type { Resolved } from "./resolve";
 import type { UploadOptions } from "./uploads/config";
 import { withUploadUrls } from "./uploads/urls";
@@ -26,13 +26,7 @@ export interface AdminPageProps {
 /** PageController::show(): the tree, every included form's record, the shared panel prop. */
 export async function buildPageProps(
 	resolved: Resolved,
-	panel: {
-		prefix: string;
-		brand?: string;
-		pages: PageDef[];
-		locales: string[];
-		uploads: UploadOptions;
-	},
+	panel: PanelInfo & { uploads: UploadOptions },
 ): Promise<AdminPageProps> {
 	const { page, ctx, s, tree, headerActions } = resolved;
 	const forms = [...s.collectedForms()].filter(([, form]) => form.isIncluded());
