@@ -14,8 +14,12 @@ export interface AdminContext {
 	/** Gate::allows for authorize(): a named ability, optionally with arguments. */
 	can: (ability: string, args: unknown[]) => boolean;
 	user: unknown;
+	/** The UI locale of this request (the panel's `locales`, session-switched). */
+	locale: string;
 	/** Translated server strings by key (`action.save`); English is the fallback. */
 	messages: Record<string, string>;
+	/** Validation message overrides by rule (`required`, `max.string`); English is the fallback. */
+	validationMessages: Record<string, string>;
 }
 
 const DEFAULTS: AdminContext = {
@@ -25,7 +29,9 @@ const DEFAULTS: AdminContext = {
 	timezone: "UTC",
 	can: () => false,
 	user: null,
+	locale: "en",
 	messages: {},
+	validationMessages: {},
 };
 
 const storage = new AsyncLocalStorage<AdminContext>();

@@ -1,25 +1,30 @@
+import { currentContext, defaultLocale } from "../dsl/context";
 import type { NavEntry, PageDef } from "./page";
 
 export interface PanelInfo {
 	prefix: string;
 	brand?: string;
 	pages: PageDef[];
-	user: unknown;
+	/** UI locales the switcher offers. */
 	locales: string[];
 }
 
 /** The `tbtop` shared prop (PanelSharedProps.php): chrome, nav and the signed-in user. */
 export function sharedProps(panel: PanelInfo): Record<string, unknown> {
+	const context = currentContext();
 	return {
 		panel: "admin",
 		prefix: panel.prefix,
 		apiBase: `${panel.prefix}/api`,
-		user: panel.user ?? null,
+		user: context.user ?? null,
 		brand: panel.brand ?? null,
 		navigation: "sidebar",
 		nav: navGroups(panel.pages, panel.prefix),
-		locale: "en",
+		locale: context.locale,
 		locales: panel.locales,
+		messages: context.messages,
+		contentLocales: context.contentLocales,
+		defaultContentLocale: defaultLocale(context),
 	};
 }
 

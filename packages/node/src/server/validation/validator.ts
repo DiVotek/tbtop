@@ -1,3 +1,4 @@
+import { currentContext } from "../../dsl/context";
 import { parseCsv, parseRule } from "../../dsl/rules";
 import { CHECKS, confirmedMatches, IMPLICIT, type RuleInput, type SizeKind } from "./checks";
 import { dataGet, dataHas, dataSet, expandKey } from "./data";
@@ -12,6 +13,8 @@ export interface HostRule {
 export interface ValidateOptions {
 	attributes?: Record<string, string>;
 	hostRules?: Record<string, HostRule>;
+	/** Message templates by rule; default: the request's `validationMessages`. */
+	messages?: Record<string, string>;
 }
 
 export type ValidationResult =
@@ -118,7 +121,10 @@ function sizeKind(list: string[], value: unknown): SizeKind {
 }
 
 function template({ name, input, options }: RuleCall): string {
+	const custom = options.messages ?? currentContext().validationMessages;
 	return (
+		custom[`${name}.${input.sizeKind}`] ??
+		custom[name] ??
 		MESSAGES[`${name}.${input.sizeKind}`] ??
 		MESSAGES[name] ??
 		options.hostRules?.[name]?.message ??

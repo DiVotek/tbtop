@@ -1,3 +1,4 @@
+export { type CookieSessionOptions, cookieSessions } from "./cookieSession";
 export { pageTag, rootView, type ViteManifest, type ViteOptions, viteTags } from "./html";
 export {
 	back,

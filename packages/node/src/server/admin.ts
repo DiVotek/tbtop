@@ -9,6 +9,7 @@ import {
 	type SessionResolver,
 	type SessionStore,
 } from "./inertia/session";
+import { currentLocale, type LocaleConfig, localeContext, switchLocale, uiLocales } from "./locale";
 import type { PageDef } from "./page";
 import { type AdminPageProps, buildPageProps } from "./pageProps";
 import { type PanelView, pageResponse } from "./pageResponse";
@@ -16,7 +17,7 @@ import { findPage, resolvePage } from "./resolve";
 
 export type { AdminPageProps } from "./pageProps";
 
-export interface AdminConfig extends ServerOptions {
+export interface AdminConfig extends ServerOptions, LocaleConfig {
 	/** URL prefix of the panel, e.g. `/admin`. */
 	prefix: string;
 	pages: PageDef[];
@@ -56,6 +57,7 @@ class AdminServer {
 			prefix: this.prefix,
 			brand: config.brand,
 			pages: config.pages,
+			locales: uiLocales(config),
 			version: config.version ?? null,
 			rootView: config.rootView ?? defaultRootView(),
 		};
@@ -67,8 +69,9 @@ class AdminServer {
 	async inContext<T>(request: Request, run: () => Promise<T>): Promise<T | Response> {
 		const session = await this.sessions(request);
 		const user = (await this.readUser(request, session)) ?? null;
+		const locale = localeContext(this.config, await currentLocale(this.config, session));
 		const extra = (await this.config.context?.(request)) ?? {};
-		return runWithContext({ user, ...extra }, () => run().catch(errorResponse));
+		return runWithContext({ user, ...locale, ...extra }, () => run().catch(errorResponse));
 	}
 
 	/** inContext(), plus the session's Set-Cookie on the way out. */
@@ -142,6 +145,19 @@ class AdminServer {
 		});
 	}
 
+	/** The panel's own POST routes: logout and the UI locale switch. */
+	panelRoute(request: Request, path: string): Promise<Response> | null {
+		if (request.method !== "POST" || !["logout", "locale"].includes(path)) {
+			return null;
+		}
+		if (path === "logout") {
+			return this.logout(request);
+		}
+		return this.guarded(request, async () =>
+			switchLocale(this.config, request, await this.sessions(request)),
+		);
+	}
+
 	/** POST {prefix}/logout: the client's profile menu. Forgets the user, back to login. */
 	logout(request: Request): Promise<Response> {
 		return this.guarded(request, async () => {
@@ -155,10 +171,11 @@ class AdminServer {
 		if (path === null) {
 			return null;
 		}
-		if (path === "logout" && request.method === "POST") {
-			return this.logout(request);
-		}
-		return (await this.endpoint(request, path)) ?? this.page(request, path);
+		return (
+			(await this.panelRoute(request, path)) ??
+			(await this.endpoint(request, path)) ??
+			this.page(request, path)
+		);
 	}
 }
 

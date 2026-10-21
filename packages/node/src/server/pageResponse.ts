@@ -16,6 +16,7 @@ export interface PanelView {
 	prefix: string;
 	brand?: string;
 	pages: PageDef[];
+	locales: string[];
 	version: string | null;
 	rootView: RootView;
 }

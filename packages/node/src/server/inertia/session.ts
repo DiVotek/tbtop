@@ -52,7 +52,7 @@ export function memorySessions(options: MemorySessionOptions = {}): SessionResol
 	};
 }
 
-function readCookie(request: Request, name: string): string | null {
+export function readCookie(request: Request, name: string): string | null {
 	for (const part of (request.headers.get("cookie") ?? "").split(";")) {
 		const [key, ...value] = part.trim().split("=");
 		if (key === name) {

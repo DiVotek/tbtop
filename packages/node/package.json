@@ -12,7 +12,8 @@
 	"scripts": {
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
-		"check:workers": "bun workers/check.ts"
+		"check:workers": "bun workers/check.ts",
+		"sync:lang": "bun scripts/sync-lang.ts"
 	},
 	"dependencies": {
 		"markdown-it": "^15.0.3"

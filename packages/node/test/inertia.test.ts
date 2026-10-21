@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { db, driver, hostRules, pages } from "../example/posts";
 import { createAdmin, definePage, type InertiaPage, memorySessions, SESSION_USER } from "../src";
+import { browser as makeBrowser } from "./support/browser";
 
 const seed = structuredClone(db.posts);
 beforeEach(() => {
@@ -29,24 +30,7 @@ const admin = createAdmin({
 	version: "v1",
 });
 
-/** A browser: keeps the session cookie, speaks Inertia when asked, follows nothing. */
-function browser() {
-	let cookie = "";
-	return async (url: string, init: RequestInit & { inertia?: boolean } = {}) => {
-		const headers = new Headers(init.headers);
-		headers.set("cookie", cookie);
-		if (init.inertia === true) {
-			headers.set("x-inertia", "true");
-			headers.set("x-inertia-version", "v1");
-		}
-		const res = await admin.handle(new Request(`http://x${url}`, { ...init, headers }));
-		if (res === null) {
-			throw new TypeError(`${url} fell through`);
-		}
-		cookie = res.headers.get("set-cookie")?.split(";")[0] ?? cookie;
-		return res;
-	};
-}
+const browser = () => makeBrowser(admin);
 
 async function signedIn() {
 	const visit = browser();

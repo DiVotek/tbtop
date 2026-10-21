@@ -1,4 +1,4 @@
-import { currentContext, materialize } from "../dsl";
+import { materialize } from "../dsl";
 import { asJson, type Json } from "./http";
 import { type PageDef, resolveText } from "./page";
 import { sharedProps } from "./panel";
@@ -21,11 +21,10 @@ export interface AdminPageProps {
 /** PageController::show(): the tree, every included form's record, the shared panel prop. */
 export async function buildPageProps(
 	resolved: Resolved,
-	panel: { prefix: string; brand?: string; pages: PageDef[] },
+	panel: { prefix: string; brand?: string; pages: PageDef[]; locales: string[] },
 ): Promise<AdminPageProps> {
 	const { page, ctx, s, tree, headerActions } = resolved;
 	const forms = [...s.collectedForms()].filter(([, form]) => form.isIncluded());
-	const { user, contentLocales: locales } = currentContext();
 	return asJson<AdminPageProps>({
 		slug: page.path,
 		title: resolveText(page.title, ctx) ?? "",
@@ -36,6 +35,6 @@ export async function buildPageProps(
 		params: ctx.params,
 		headerActions: headerActions.length > 0 ? await materialize(headerActions) : undefined,
 		navGroup: page.nav?.group || undefined,
-		tbtop: sharedProps({ ...panel, user, locales }),
+		tbtop: sharedProps(panel),
 	});
 }
