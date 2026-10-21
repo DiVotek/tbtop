@@ -1,8 +1,10 @@
-import { type FormValues, s } from "../src";
+import { type FormValues, S } from "../src";
+
+const s = new S();
 
 // Compile-time only: the form payload is inferred from the fields, sections included.
 const form = s.form("post", [
-	s.section("A", [s.text("title").required(), s.textarea("body")]),
+	s.section({ title: "A" }, [s.text("title").required(), s.textarea("body")]),
 	s
 		.select("status")
 		.options([
@@ -12,7 +14,7 @@ const form = s.form("post", [
 		.required(),
 	s.boolean("published"),
 	s.number("views"),
-	s.row([s.action("save").submit()]),
+	s.actionsRow([s.action("save").submit()]),
 ]);
 
 type Expected = {

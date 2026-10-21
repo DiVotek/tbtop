@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { db, pages } from "../example/posts";
+import { db, driver, hostRules, pages } from "../example/posts";
 import { createAdmin } from "../src";
 
-const admin = createAdmin({ prefix: "/admin", pages });
+const admin = createAdmin({ prefix: "/admin", pages, driver, hostRules });
 const seed = structuredClone(db.posts);
 beforeEach(() => {
 	db.posts = structuredClone(seed);
@@ -58,7 +58,7 @@ describe("endpoint cluster", () => {
 			slug: "hello-world",
 			status: "draft",
 		}))!;
-		expect((await res.json()).errors.slug).toEqual(["The slug has already been taken."]);
+		expect((await res.json()).errors.slug).toEqual(["The Slug has already been taken."]);
 	});
 
 	test("a valid submit runs onSubmit with only declared keys and returns effects", async () => {

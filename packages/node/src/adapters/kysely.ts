@@ -1,66 +1,69 @@
 import { type Kysely, type SelectQueryBuilder, sql } from "kysely";
-import type { RowSource, TableQuery } from "../table";
+import type { Row } from "../dsl";
+import type { Clause, QueryDriver } from "../server/driver";
 
-type Builder<DB, TB extends keyof DB> = SelectQueryBuilder<DB, TB, object>;
+/** Any select over the host schema; the driver only adds clauses to it. */
+type Builder<DB> = SelectQueryBuilder<DB, keyof DB & string, object>;
 
-export interface KyselyRowsOptions<DB, TB extends keyof DB> {
-	/** Base scope every request starts from (PHP: `->query(fn () => Post::query()->where(...))`). */
-	scope?: (qb: Builder<DB, TB>) => Builder<DB, TB>;
-}
+const like = (text: string) => `%${text.replaceAll(/[%_\\]/g, (c) => `\\${c}`)}%`;
 
 /**
- * A table row source over Kysely. Sort and search columns arrive already
- * whitelisted against the declared columns, so `dynamic.ref` never sees raw input.
+ * A QueryDriver over Kysely. Field names arrive whitelisted against the
+ * declared columns, so `dynamic.ref` never sees raw input.
  */
-export function kyselyRows<DB, TB extends keyof DB & string>(
-	db: Kysely<DB>,
-	table: TB,
-	options: KyselyRowsOptions<DB, TB> = {},
-): RowSource {
-	return async (query) => {
-		const base = filtered(db, scoped(db, table, options), query);
-		const counted = (await base
-			.select((eb) => eb.fn.countAll<number>().as("count"))
-			.executeTakeFirst()) as { count?: number | string | bigint } | undefined;
-		const rows = await page(db, base, query).selectAll().execute();
-		return { rows: rows as Record<string, unknown>[], total: Number(counted?.count ?? 0) };
+export function kyselyDriver<DB>(db: Kysely<DB>, keyName = "id"): QueryDriver<Builder<DB>> {
+	const ref = (field: string) => db.dynamic.ref(field);
+	// Explicit ESCAPE: SQLite has no default escape character for LIKE.
+	const contains = (field: string, text: string) =>
+		sql<boolean>`${ref(field)} like ${like(text)} escape '\\'`;
+	const where = (qb: Builder<DB>, clause: Clause): Builder<DB> => {
+		if (clause.op === "contains") {
+			return qb.where(contains(clause.field, clause.value));
+		}
+		if (clause.op === "dateLte") {
+			return qb.where(sql<boolean>`date(${ref(clause.field)}) <= ${clause.value}`);
+		}
+		return qb.where(ref(clause.field), clause.op, clause.value);
+	};
+	return {
+		keyName,
+		where,
+		searchAny: (qb, fields, text) =>
+			qb.where((eb) => eb.or(fields.map((f) => contains(f, text)))),
+		orderBy: (qb, field, dir) => qb.orderBy(ref(field), dir),
+		count: async (qb) => {
+			const row = await qb
+				.clearSelect()
+				.select((eb) => eb.fn.countAll<number>().as("count"))
+				.executeTakeFirst();
+			return Number((row as { count?: unknown } | undefined)?.count ?? 0);
+		},
+		rows: async (qb, { page, perPage }) =>
+			(await qb
+				.selectAll()
+				.limit(perPage)
+				.offset((page - 1) * perPage)
+				.execute()) as Row[],
+		update: async (qb, key, values) => {
+			// Untyped on purpose: the table name is only known at runtime.
+			const untyped = db as unknown as Kysely<Record<string, Row>>;
+			await untyped
+				.updateTable(tableOf(qb))
+				.set(values)
+				.where(untyped.dynamic.ref(keyName), "=", key)
+				.execute();
+		},
 	};
 }
 
-function scoped<DB, TB extends keyof DB & string>(
-	db: Kysely<DB>,
-	table: TB,
-	options: KyselyRowsOptions<DB, TB>,
-): Builder<DB, TB> {
-	const qb = db.selectFrom(table as never) as unknown as Builder<DB, TB>;
-	return options.scope ? options.scope(qb) : qb;
-}
-
-function filtered<DB, TB extends keyof DB>(
-	db: Kysely<DB>,
-	qb: Builder<DB, TB>,
-	query: TableQuery,
-): Builder<DB, TB> {
-	const search = query.search;
-	if (!search) {
-		return qb;
+/** The FROM table of a select builder: reorder writes back to it. */
+function tableOf<DB>(qb: Builder<DB>): string {
+	const node = qb.toOperationNode().from?.froms[0] as
+		| { table?: { identifier?: { name?: string } } }
+		| undefined;
+	const name = node?.table?.identifier?.name;
+	if (name === undefined) {
+		throw new Error("kyselyDriver: cannot find the table to update.");
 	}
-	const pattern = `%${search.text.replaceAll(/[%_\\]/g, (c) => `\\${c}`)}%`;
-	// Explicit ESCAPE: SQLite has no default escape character for LIKE.
-	return qb.where((eb) =>
-		eb.or(
-			search.fields.map(
-				(f) => sql<boolean>`${db.dynamic.ref(f)} like ${pattern} escape '\\'`,
-			),
-		),
-	) as Builder<DB, TB>;
-}
-
-function page<DB, TB extends keyof DB>(
-	db: Kysely<DB>,
-	qb: Builder<DB, TB>,
-	query: TableQuery,
-): Builder<DB, TB> {
-	const sorted = query.sort ? qb.orderBy(db.dynamic.ref(query.sort.field), query.sort.dir) : qb;
-	return sorted.limit(query.perPage).offset((query.page - 1) * query.perPage) as Builder<DB, TB>;
+	return name;
 }

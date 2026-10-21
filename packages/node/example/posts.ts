@@ -1,4 +1,5 @@
-import { definePage, effects, type S, type TableQuery } from "../src";
+import { Column, definePage, Effects, type HostRule, type Row, type S } from "../src";
+import { memoryDriver, memoryQuery } from "../src/adapters/memory";
 
 /** In-memory "database" so the sketch runs with zero setup. A real host plugs Kysely here. */
 export type Post = {
@@ -26,6 +27,20 @@ export const db = {
 	},
 };
 
+/** The query driver the panel runs tables through. */
+export const driver = memoryDriver();
+
+/** `unique:posts,slug[,ignoreId,idColumn]` against the in-memory table: a host rule. */
+export const hostRules: Record<string, HostRule> = {
+	unique: {
+		message: "The :attribute has already been taken.",
+		check: (value, [table, column = "slug", ignore, idColumn = "id"]) => {
+			const rows = (table === "posts" ? db.posts : []) as unknown as Row[];
+			return !rows.some((r) => r[column] === value && String(r[idColumn]) !== String(ignore));
+		},
+	},
+};
+
 const statusChoices = [
 	{ value: "draft", label: "Draft" },
 	{ value: "published", label: "Published" },
@@ -46,19 +61,23 @@ function postsTable(s: S) {
 	return s
 		.table("posts")
 		.columns([
-			s
-				.column("id")
+			Column.make("id")
 				.label("ID")
-				.format((v) => `#${v}`),
-			s.column("title").label("Title").sortable().searchable(),
-			s
-				.column("status")
+				.formatUsing((v) => `#${String(v)}`),
+			Column.make("title").label("Title").sortable().searchable(),
+			Column.make("status")
 				.label("Status")
 				.badge({
 					published: { label: "Live", color: "success" },
 					draft: { label: "Draft" },
 				}),
-			s.column("views").label("Views").kind("number").sortable().align("right"),
+			Column.make("views").label("Views").number().sortable().align("right"),
+		])
+		.filters([
+			s
+				.inFilter("status")
+				.label("Status")
+				.options([...statusChoices]),
 		])
 		.defaultSort("id", "desc")
 		.paginate(10, [10, 25])
@@ -67,67 +86,51 @@ function postsTable(s: S) {
 				.action("edit")
 				.label("Edit")
 				.icon("pencil")
-				.needs("row")
-				.handle(({ row }) => `/admin/posts/${row._key}/edit`),
+				.handle((ctx) => `/admin/posts/${String(ctx.key())}/edit`, ["row"]),
 			s
 				.action("delete")
 				.label("Delete")
 				.color("danger")
 				.confirm("Delete post?", "This cannot be undone.")
-				.needs("row")
-				.handle(({ row }) => {
-					db.posts = db.posts.filter((p) => p.id !== row._key);
-					return effects().notify("Post deleted").refreshTable("posts");
-				}),
+				.handle(
+					(ctx) => {
+						db.posts = db.posts.filter((p) => p.id !== ctx.key());
+						return Effects.make().notify("Post deleted").refreshTable("posts");
+					},
+					["row"],
+				),
 		])
-		.rows(async (q) => memoryRows(q));
+		.query(() => memoryQuery(() => db.posts as unknown as Row[]));
 }
 
-/** The row source a real host writes with Kysely (see `@tbtop/admin-node/kysely`). */
-function memoryRows(q: TableQuery) {
-	const { search, sort } = q;
-	const field = (r: Post, f: string) => r[f as keyof Post];
-	const rows = db.posts.filter(
-		(r) =>
-			!search ||
-			search.fields.some((f) =>
-				String(field(r, f)).toLowerCase().includes(search.text.toLowerCase()),
-			),
-	);
-	if (sort) {
-		const dir = sort.dir === "desc" ? -1 : 1;
-		rows.sort((a, b) => (field(a, sort.field) > field(b, sort.field) ? dir : -dir));
-	}
-	const pageRows = rows.slice((q.page - 1) * q.perPage, q.page * q.perPage);
-	return { rows: pageRows, total: rows.length };
-}
-
-function postForm(name: string, slugTaken: (slug: string) => boolean) {
-	return (s: S) =>
-		s.form(name, [
-			s.section("Content", [
-				s.text("title").label("Title").required().max(200),
-				s
-					.slug("slug")
-					.label("Slug")
-					.from("title")
-					.required()
-					.regex(/^[a-z0-9-]+$/)
-					.refine((v) => !slugTaken(v), "The slug has already been taken."),
-			]),
-			s.section(
-				"Publishing",
-				[
-					s.select("status").label("Status").options(statusChoices).required(),
-					s.number("views").label("Views").min(0),
-				],
-				{ columns: 2 },
-			),
-			s.row([
-				s.action("save").label("Save").color("primary").submit(),
-				s.action("cancel").label("Cancel").url("/admin/posts"),
-			]),
-		]);
+function postForm(s: S, ignoreId?: number) {
+	const unique =
+		ignoreId === undefined ? "unique:posts,slug" : `unique:posts,slug,${ignoreId},id`;
+	return s.form("post", [
+		s.section({ title: "Content" }, [
+			s.text("title").label("Title").required().rules("max:200"),
+			s
+				.slug("slug")
+				.label("Slug")
+				.fromField("title")
+				.required()
+				.regex("/^[a-z0-9-]+$/")
+				.rules(unique),
+		]),
+		s.section({ title: "Publishing", columns: 2 }, [
+			s
+				.select("status")
+				.label("Status")
+				.options([...statusChoices])
+				.required()
+				.in(["draft", "published"]),
+			s.number("views").label("Views").rules("nullable|integer|min:0"),
+		]),
+		s.actionsRow([
+			s.action("save").label("Save").color("primary").submit(),
+			s.action("cancel").label("Cancel").url("/admin/posts"),
+		]),
+	]);
 }
 
 export const postEdit = definePage({
@@ -138,14 +141,11 @@ export const postEdit = definePage({
 		if (!post) {
 			throw new Response("Not found", { status: 404 });
 		}
-		return postForm("post", (slug) =>
-			db.posts.some((p) => p.slug === slug && p.id !== post.id),
-		)(s)
+		return postForm(s, post.id)
 			.record(post)
 			.onSubmit(({ form }) => {
-				// form: { title: string; slug: string; status: "draft" | "published"; views: number | null }
-				Object.assign(post, { ...form, views: form.views ?? 0 });
-				return effects().notify("Saved");
+				Object.assign(post, { ...form, views: Number(form.views ?? 0) });
+				return Effects.make().notify("Saved");
 			});
 	},
 });
@@ -154,12 +154,16 @@ export const postNew = definePage({
 	path: "posts/new",
 	title: "New post",
 	view: (s) =>
-		postForm("post", (slug) => db.posts.some((p) => p.slug === slug))(s)
+		postForm(s)
 			.record({ status: "draft" })
 			.onSubmit(({ form }) => {
 				const id = Math.max(0, ...db.posts.map((p) => p.id)) + 1;
-				db.posts.push({ id, ...form, views: form.views ?? 0 });
-				return effects().notify("Post created").redirect(`/admin/posts/${id}/edit`);
+				db.posts.push({
+					id,
+					...(form as Omit<Post, "id">),
+					views: Number(form.views ?? 0),
+				});
+				return Effects.make().notify("Post created").redirect(`/admin/posts/${id}/edit`);
 			}),
 });
 

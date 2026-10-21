@@ -35,6 +35,13 @@
 	},
 	"overrides": [
 		{
+			"files": ["packages/node/src/dsl/**"],
+			"rules": {
+				"typescript/no-unsafe-declaration-merging": "off",
+				"no-unused-vars": "off"
+			}
+		},
+		{
 			"files": ["**/fields/richtext/**"],
 			"rules": {
 				"unicorn/no-useless-undefined": "off"
