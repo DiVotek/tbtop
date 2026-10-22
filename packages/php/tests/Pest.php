@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Tests\AuthHttpTestCase;
 use Tbtop\Admin\Tests\HttpTestCase;
 use Tbtop\Admin\Tests\TestCase;
@@ -71,4 +72,15 @@ function validateAgainstSchema(mixed $data, string $pointer = ''): void
     expect($result->isValid())->toBeTrue(
         $error ? json_encode((new ErrorFormatter)->format($error)) : '',
     );
+}
+
+/** An indexed-colour (palette) PNG upload — the shape pngquant/TinyPNG produce. */
+function palettePng(int $side): UploadedFile
+{
+    $img = imagecreate($side, $side);
+    imagecolorallocate($img, 200, 30, 30);
+    ob_start();
+    imagepng($img);
+
+    return UploadedFile::fake()->createWithContent("palette-{$side}.png", (string) ob_get_clean());
 }
