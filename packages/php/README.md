@@ -59,7 +59,7 @@ This writes three files into your app — `resources/views/admin.blade.php`
 app's main one: the bundle is large (the richtext chunk alone is ~270KB) and a
 public frontend shouldn't pay for it.
 
-Four steps remain, in files the package deliberately does not patch:
+Four steps remain, in files the package deliberately does not patch, plus a fifth for some hosts:
 
 1. Add the admin entry to the Vite input list in `vite.config.ts`:
 
@@ -77,10 +77,20 @@ Four steps remain, in files the package deliberately does not patch:
    npm install -D tailwindcss @tailwindcss/vite   # and add tailwindcss() to the Vite plugins
    ```
 
-4. Build the client:
+4. Install the client package and build:
 
    ```bash
-   npm run build
+   npm install @tbtop/inertia-admin && npm run build
+   ```
+
+5. Only if your `web` middleware group has no Inertia middleware (a Blade-only
+   host, or no frontend at all): add it to the panel, and to the `middleware()`
+   of every page that overrides it, the sign-in and password reset pages
+   included. An override replaces the panel stack, and a page without the
+   Inertia middleware shows no validation errors.
+
+   ```php
+   ->middleware(['web', \App\Http\Middleware\HandleInertiaRequests::class])
    ```
 
 ## Your first panel

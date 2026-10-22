@@ -149,13 +149,13 @@ class InstallCommand extends Command
         $panel = $auth->panel;
         $login = '/'.trim($panel->getPrefix(), '/').'/login';
         $this->newLine();
-        $this->line('  5. Send guests to the panel login (bootstrap/app.php, inside withMiddleware) — without it a guest gets a 500:');
+        $this->line('  6. Send guests to the panel login (bootstrap/app.php, inside withMiddleware) — without it a guest gets a 500:');
         $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::currentUrl() ?? '{$login}');");
         $this->line('     LoginPage::currentUrl() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
 
         if (! $auth->isDiscovered()) {
             $this->newLine();
-            $this->line("  6. Panel [{$panel->getId()}] does not discover app/Admin/Pages; register the auth pages:");
+            $this->line("  7. Panel [{$panel->getId()}] does not discover app/Admin/Pages; register the auth pages:");
             $this->line('       ->discoverPages(in: app_path(\'Admin/Pages\'), for: \''.str_replace('\\Auth', '', $auth->namespace()).'\')');
         }
     }
@@ -185,5 +185,12 @@ class InstallCommand extends Command
 
         $this->line('  4. Install the client package and rebuild:');
         $this->line('       npm install @tbtop/inertia-admin && npm run build');
+        $this->newLine();
+
+        $this->line('  5. If the web middleware group has no Inertia middleware (a Blade-only host, or no frontend at all), add it to the panel instead:');
+        $this->line("       ->middleware(['web', \\App\\Http\\Middleware\\HandleInertiaRequests::class])   # php artisan inertia:middleware creates it");
+        $this->line('     A page that overrides middleware() replaces that stack, so list it there too, including the sign-in and password reset pages;');
+        $this->line('     without it the page gets no validation errors or shared props (a failed sign-in shows no message),');
+        $this->line('     and the next visit to a panel page reloads the whole page.');
     }
 }
