@@ -61,6 +61,14 @@ describe("NotificationsPanel", () => {
 		expect(getByText("Booking confirmed")).toBeTruthy();
 	});
 
+	test("keeps a multi-line body on separate lines", () => {
+		const body = "Name: Jane\nContact: jane@example.com\nPage: /contact";
+		const { getByTestId } = renderPanel({ items: [note({ body })] });
+		const rendered = getByTestId("notification-body");
+		expect(rendered.textContent).toBe(body);
+		expect(rendered.className).toContain("whitespace-pre-line");
+	});
+
 	test("disables clear-all when the list is empty", () => {
 		const { getByTestId } = renderPanel({});
 		expect(getByTestId("notifications-clear-all").hasAttribute("disabled")).toBe(true);
