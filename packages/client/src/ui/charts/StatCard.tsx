@@ -82,7 +82,7 @@ export function StatCard({ options }: StatCardProps) {
 	const card = (
 		<div
 			className={cn(
-				"group relative flex flex-col items-start gap-1 rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50",
+				"group relative flex flex-col items-start gap-1 rounded-surface-lg border bg-card p-4 text-left transition-colors hover:border-primary/50",
 				bottomSparkline && "overflow-hidden pb-10",
 			)}
 			data-testid="stat-card"
@@ -154,7 +154,7 @@ interface BottomSparklineProps {
 
 // Absolute overlay pinned to the card's bottom edge — not in the flow, so it
 // never pushes the card's natural height. The card's overflow-hidden clips it
-// to the rounded corners (rounded-b-lg is inherited from that clip).
+// to the rounded corners (the bottom corners are inherited from that clip).
 function BottomSparkline({ data, color }: BottomSparklineProps) {
 	return (
 		<div
