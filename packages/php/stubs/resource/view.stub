@@ -1,0 +1,50 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelClass }};
+{{ gateImport }}use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page;
+
+class ViewPage extends Page
+{
+    public static function path(): string
+    {
+        return '{{ path }}/{{{ var }}}/view';
+    }
+
+    public static function slug(): string
+    {
+        return '{{ slug }}-view';
+    }
+{{ can:view }}
+    public function title(): string
+    {
+        return '{{ label }}';
+    }
+
+    /** @return list<array{label: string, url?: string}> */
+    public function breadcrumbs(): array
+    {
+        return [['label' => '{{ plural }}', 'url' => IndexPage::url()], ['label' => $this->title()]];
+    }
+
+    public function headerActions(S $s): array
+    {
+        return [
+            $s->action('edit')->label('Edit')->url(EditPage::url(['{{ var }}' => request()->route('{{ var }}')])),
+        ];
+    }
+
+    public function view(S $s): Node
+    {
+        $record = {{ model }}::query(){{ with }}->whereKey(request()->route('{{ var }}'))->firstOrFail();{{ authorizeView }}
+
+        return $s->stack([
+            $s->displayKeyValue([
+{{ display }}
+            ]),
+        ]);
+    }
+}

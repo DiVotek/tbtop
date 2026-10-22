@@ -1,4 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
+import { groupLabelledBy } from "./fieldChrome";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { type LabeledOption, optionLabel } from "./optionLabel";
 import { coerceSelectValue } from "./selectShared";
@@ -7,6 +8,7 @@ import { LabelChips } from "./tagsShared";
 interface ToggleButtonsBag {
 	options?: LabeledOption[];
 	multiple?: boolean;
+	label?: string;
 }
 
 type ToggleButtonsValue = string | string[];
@@ -57,6 +59,7 @@ function SingleForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
 	// Records carry int-backed values (2) while wire options are string-cast ("2").
@@ -66,6 +69,8 @@ function SingleForm({
 		<ToggleGroup
 			id={fieldId({ id, name })}
 			type="single"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
+			aria-describedby={describedBy}
 			value={current}
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
@@ -84,6 +89,7 @@ function MultiForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<ToggleButtonsValue, ToggleButtonsBag>) {
 	const coerced = coerceSelectValue(value);
@@ -92,6 +98,8 @@ function MultiForm({
 		<ToggleGroup
 			id={fieldId({ id, name })}
 			type="multiple"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
+			aria-describedby={describedBy}
 			value={current}
 			onValueChange={(next) => onChange(next.length === 0 ? null : next)}
 			onBlur={onBlur}

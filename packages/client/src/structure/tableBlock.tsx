@@ -183,10 +183,12 @@ function TableBody(props: TableBodyProps) {
 	const showPagination =
 		pagination !== undefined && total !== undefined && !props.embedded && !fitsOnFirstPage;
 
-	// Reorder is allowed only while rows are shown in their persisted order.
+	// Reorder is allowed only while rows are shown in their persisted order —
+	// a per-column search narrows the rows just like the table-wide one.
+	const hasColumnSearch = Object.values(props.queryParams.colSearch ?? {}).some(Boolean);
 	const reorderEnabled = canReorder({
 		sort: props.queryParams.sort,
-		hasActiveFilters,
+		hasActiveFilters: hasActiveFilters || hasColumnSearch,
 		tab: activeTab,
 		firstTabName: tabs[0]?.name,
 		reorderColumn: props.reorderColumn,

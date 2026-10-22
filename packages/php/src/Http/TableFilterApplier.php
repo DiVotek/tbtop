@@ -55,7 +55,7 @@ final class TableFilterApplier
 
         return match (true) {
             in_array($kind, self::LIKE_KINDS, true) => 'string, matched as a substring',
-            in_array($kind, self::EQUALITY_KINDS, true) => 'exact value',
+            in_array($kind, self::EQUALITY_KINDS, true) => 'exact value, or an array of values a row matches any of',
             $kind === 'boolean' => 'boolean',
             $kind === 'tags', $kind === 'in' => 'array of values, a row matches any of them',
             $kind === 'daterange' => '{"from": "Y-m-d", "to": "Y-m-d"}, either bound optional',
@@ -78,33 +78,37 @@ final class TableFilterApplier
         $name = $field->name;
 
         if (in_array($kind, self::LIKE_KINDS, true)) {
-            ContainsMatch::where($builder, $name, $value);
+            // The query string is browser-supplied: ?filters[title][]=x is an
+            // array, which would 500 on the string term. Ignore it instead.
+            if (is_scalar($value)) {
+                ContainsMatch::where($builder, $name, (string) $value);
+            }
 
             return;
         }
 
         if (in_array($kind, self::EQUALITY_KINDS, true)) {
+            if (is_array($value)) {
+                // A multiple select sends an array; where() would bind only its first value.
+                self::applyIn($name, $value, $builder);
+
+                return;
+            }
             $builder->where($name, $value);
 
             return;
         }
 
         if ($kind === 'boolean') {
-            $builder->where($name, self::castBoolean($value));
+            if (is_scalar($value)) {
+                $builder->where($name, self::castBoolean($value));
+            }
 
             return;
         }
 
-        if ($kind === 'tags') {
-            $values = is_array($value) ? $value : [$value];
-            $builder->whereIn($name, $values);
-
-            return;
-        }
-
-        if ($kind === 'in') {
-            $values = is_array($value) ? $value : [$value];
-            $builder->whereIn($name, $values);
+        if ($kind === 'tags' || $kind === 'in') {
+            self::applyIn($name, $value, $builder);
 
             return;
         }
@@ -142,7 +146,19 @@ final class TableFilterApplier
         }
     }
 
-    private static function castBoolean(mixed $value): bool
+    /**
+     * A row matches any of the values. Nested arrays are dropped — whereIn()
+     * throws on them — and a value list left empty filters nothing.
+     */
+    private static function applyIn(string $name, mixed $value, EloquentBuilder|QueryBuilder $builder): void
+    {
+        $values = array_values(array_filter(is_array($value) ? $value : [$value], is_scalar(...)));
+        if ($values !== []) {
+            $builder->whereIn($name, $values);
+        }
+    }
+
+    private static function castBoolean(bool|int|float|string $value): bool
     {
         if (is_bool($value)) {
             return $value;

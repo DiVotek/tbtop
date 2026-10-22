@@ -103,6 +103,8 @@
 
 - ~~**`tbtop:page` scaffold command**~~ **Shipped** — `make:tbtop-page`, alongside
   `admin:install` (publishes the host wiring).
+- ~~**Resource generator**~~ **Shipped** — `make:tbtop-resource {model}` writes list,
+  create and edit pages from the model's table (`--simple/--view/--soft-deletes/--policy/--tests`).
 - **Consumer testing kit** — Pest/PHPUnit helpers for host apps to test their own pages
   through the wire contract, e.g. `page(CarsPage::class)->assertColumn('vin')
   ->callAction('delete', $car)->assertEffect('refreshTable')`. Filament-parity adoption
