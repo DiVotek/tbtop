@@ -9,6 +9,14 @@ import { RailItemGlyph } from "./navGroupDropdown";
 import { GroupDescription, NavGroupItems } from "./navGroupSection";
 import { railGroups, railTarget } from "./navRail";
 
+// New-gen shape: rail entries (desktop strip and drawer row) are
+// `cn-sidebar-menu-button`s in the default variant, stacked icon-over-label
+// via our `flex-col` — no size class, since the fixed `h-8`/`h-7` heights
+// would clip the label. Spacing comes from the preset (`p-2 gap-2`). The
+// selected entry carries `data-active` (styled by the preset) next to its
+// `aria-current` / `aria-pressed`. A group's items sit in a
+// `cn-sidebar-menu`; the panel title stays a plain heading (it's the column
+// title with its description, not a fixed-height group label).
 const HOME_ICON = { name: "home", position: "left" } as const;
 
 function useGroupLabel(): (group: NavGroup) => string {
@@ -61,7 +69,9 @@ function RailEntry({ group, label, active }: { group: NavGroup; label: string; a
 					href={railTarget(group)?.href ?? ""}
 					aria-current={active ? "true" : undefined}
 					data-testid={railTestId("nav-rail", group)}
-					className={cn(RAIL_ENTRY_CLASS, "w-full", active && "bg-accent")}
+					data-sidebar="menu-button"
+					data-active={active || undefined}
+					className={cn(RAIL_ENTRY_CLASS, "w-full")}
 				>
 					<GroupGlyph group={group} label={label} />
 					<RailLabel ref={labelRef} label={label} />
@@ -73,7 +83,7 @@ function RailEntry({ group, label, active }: { group: NavGroup; label: string; a
 }
 
 const RAIL_ENTRY_CLASS =
-	"flex min-w-0 flex-col items-center gap-1 rounded-md px-1 py-1.5 hover:bg-accent";
+	"cn-sidebar-menu-button cn-sidebar-menu-button-variant-default flex min-w-0 flex-col items-center overflow-hidden outline-hidden";
 
 function RailLabel({ label, ref }: { label: string; ref?: Ref<HTMLSpanElement> }) {
 	return (
@@ -125,11 +135,9 @@ export function RailDrawerNav() {
 						aria-pressed={candidate.key === group?.key}
 						data-testid={railTestId("nav-drawer-group", candidate)}
 						onClick={() => setSelected(candidate.key)}
-						className={cn(
-							RAIL_ENTRY_CLASS,
-							"w-16 shrink-0",
-							candidate.key === group?.key && "bg-accent",
-						)}
+						data-sidebar="menu-button"
+						data-active={candidate.key === group?.key || undefined}
+						className={cn(RAIL_ENTRY_CLASS, "w-16 shrink-0")}
 					>
 						<GroupGlyph group={candidate} label={labelOf(candidate)} />
 						<RailLabel label={labelOf(candidate)} />
@@ -158,7 +166,9 @@ function GroupList({
 					<GroupDescription description={group.description} />
 				)}
 			</div>
-			<NavGroupItems group={group} currentUrl={currentUrl} />
+			<div className="cn-sidebar-menu flex w-full min-w-0 flex-col" data-slot="sidebar-menu">
+				<NavGroupItems group={group} currentUrl={currentUrl} />
+			</div>
 		</div>
 	);
 }

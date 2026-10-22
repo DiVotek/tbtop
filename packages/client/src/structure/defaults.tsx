@@ -10,8 +10,8 @@ export function FieldSkeleton() {
 	return (
 		<div
 			className={cn(
-				"h-9 w-full animate-pulse rounded-md bg-muted",
-				density === "compact" && "h-8",
+				"h-[var(--control-h,2.25rem)] w-full animate-pulse rounded-surface bg-muted",
+				density === "compact" && "h-[var(--control-h-sm,2rem)]",
 			)}
 			data-testid="field-skeleton"
 		/>
@@ -21,9 +21,9 @@ export function FieldSkeleton() {
 export function FormSkeleton() {
 	return (
 		<div className="flex flex-col gap-2" data-testid="form-skeleton">
-			<div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-			<div className="h-9 w-full animate-pulse rounded bg-muted" />
-			<div className="h-9 w-full animate-pulse rounded bg-muted" />
+			<div className="h-4 w-1/3 animate-pulse rounded-surface-sm bg-muted" />
+			<div className="h-[var(--control-h,2.25rem)] w-full animate-pulse rounded-surface-sm bg-muted" />
+			<div className="h-[var(--control-h,2.25rem)] w-full animate-pulse rounded-surface-sm bg-muted" />
 		</div>
 	);
 }
@@ -42,7 +42,7 @@ const SKELETON_ROWS = 5;
 export function TableSkeleton() {
 	return (
 		<div
-			className="overflow-hidden rounded-md border text-sm"
+			className="overflow-hidden rounded-surface border text-sm"
 			data-testid="table-skeleton"
 			aria-hidden
 		>
@@ -51,7 +51,7 @@ export function TableSkeleton() {
 					<tr>
 						{Array.from({ length: SKELETON_COLS }, (_, c) => (
 							<th key={`h-${c}`} className="px-3 py-2 text-left">
-								<div className="h-3 w-20 animate-pulse rounded bg-muted-foreground/20" />
+								<div className="h-3 w-20 animate-pulse rounded-surface-sm bg-muted-foreground/20" />
 							</th>
 						))}
 					</tr>
@@ -61,7 +61,7 @@ export function TableSkeleton() {
 						<tr key={`r-${r}`} className="border-t">
 							{Array.from({ length: SKELETON_COLS }, (_, c) => (
 								<td key={`c-${r}-${c}`} className="px-3 py-2">
-									<div className="h-4 w-full animate-pulse rounded bg-muted" />
+									<div className="h-4 w-full animate-pulse rounded-surface-sm bg-muted" />
 								</td>
 							))}
 						</tr>

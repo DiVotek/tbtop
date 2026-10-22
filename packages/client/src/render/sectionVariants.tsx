@@ -22,7 +22,10 @@ export function CardSection({ header, children, frameless, class: className }: C
 	const hasBody = children !== null && children !== undefined && children !== false;
 	const bodyClass = frameless ? undefined : cn("px-4 pb-4", hasHeader ? "pt-3" : "pt-4");
 	return (
-		<section className={cn("rounded-lg border bg-card", className)} data-testid="section-card">
+		<section
+			className={cn("rounded-surface-lg border bg-card", className)}
+			data-testid="section-card"
+		>
 			{hasHeader && <div className="border-b px-4 py-3">{header}</div>}
 			<SectionFramelessContext.Provider value={true}>
 				{hasBody && (bodyClass ? <div className={bodyClass}>{children}</div> : children)}

@@ -32,7 +32,7 @@ describe("section variant card", () => {
 			),
 		);
 		const card = getByTestId("section-card");
-		expect(card.className).toContain("rounded-lg");
+		expect(card.className).toContain("rounded-surface-lg");
 		expect(card.className).toContain("border");
 		expect(card.className).toContain("bg-card");
 		const heading = getByText("Recently updated");
@@ -121,7 +121,9 @@ describe("section variant card", () => {
 		const Wrap = wrapForStructure(() => new Response("{}"));
 		const { findByTestId, getByTestId } = render(<Wrap>{renderNode(section)}</Wrap>);
 		await findByTestId("table-block");
-		const shell = getByTestId("section-card").querySelector(".overflow-x-auto") as HTMLElement;
+		const shell = getByTestId("section-card").querySelector(
+			".cn-table-container",
+		) as HTMLElement;
 		expect(shell.className).not.toContain("border");
 	});
 
@@ -164,7 +166,7 @@ describe("section variant card", () => {
 		});
 		const { getByTestId } = render(renderNode(section));
 		expect(getByTestId("section-card").className).toContain("custom-card");
-		expect(getByTestId("section-card").className).toContain("rounded-lg");
+		expect(getByTestId("section-card").className).toContain("rounded-surface-lg");
 	});
 
 	test("a standalone table keeps its border frame (control)", async () => {
@@ -172,7 +174,7 @@ describe("section variant card", () => {
 		const Wrap = wrapForStructure(() => new Response("{}"));
 		const { findByTestId, container } = render(<Wrap>{renderNode(table)}</Wrap>);
 		await findByTestId("table-block");
-		const shell = container.querySelector(".overflow-x-auto") as HTMLElement;
+		const shell = container.querySelector(".cn-table-container") as HTMLElement;
 		expect(shell.className).toContain("border");
 	});
 });
@@ -291,7 +293,7 @@ describe("row variant grid", () => {
 		expect(grid.className).toContain("lg:grid-cols-4");
 		const cells = getAllByTestId("row-grid-item");
 		expect(cells).toHaveLength(3);
-		expect(cells[0]?.className).toContain("rounded-md");
+		expect(cells[0]?.className).toContain("rounded-surface");
 		expect(cells[0]?.className).toContain("border");
 		expect(cells[0]?.className).toContain("bg-card");
 	});

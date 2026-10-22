@@ -7,5 +7,5 @@ export function colorShapeClass(shape: unknown): string {
 	if (shape === "square") {
 		return "rounded-none";
 	}
-	return "rounded-md";
+	return "rounded-surface";
 }

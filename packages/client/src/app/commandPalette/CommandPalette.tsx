@@ -1,6 +1,6 @@
+import { SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/i18n";
-import { cn } from "../../lib/cn";
 import { parseKeybinding, registerKeybinding } from "../../structure/keybinding";
 import { NodeIcon } from "../../ui/node-icon";
 import {
@@ -17,6 +17,16 @@ interface CommandPaletteProps {
 	nav: NavGroup[];
 	data: CommandPaletteData;
 }
+
+// New-gen shape: the palette mirrors upstream's CommandDialog anatomy
+// (`cn-command-dialog` > `cn-command` > input wrapper/group + `cn-command-list`
+// > `cn-command-group` > `cn-command-item`), with visuals in
+// `ui/presets/style-preset-*.css`. Our deltas: no cmdk — filtering, hotkey and
+// arrow-key selection are ours, so the highlighted row carries `data-selected`
+// itself; the overlay is ResponsiveDialog (dialog-only), not the dialog
+// primitive; the nav group label sits where upstream puts a shortcut, but keeps
+// the item's type scale instead of `cn-command-shortcut`; `max-md:text-base`
+// keeps iOS Safari from zooming on focus (see `ui/input.tsx`).
 
 /** ⌘K overlay: search and jump to nav destinations + custom commands. */
 export function CommandPalette({ nav, data }: CommandPaletteProps) {
@@ -83,7 +93,9 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 		>
 			<ResponsiveDialogContent
 				showCloseButton={false}
-				className="flex flex-col gap-0 overflow-hidden p-0"
+				// `cn-dialog-content` (grid, gap-4, p-4) and `cn-command-dialog`
+				// sit on the same element; these utilities settle the layout.
+				className="cn-command-dialog flex flex-col gap-0 overflow-hidden p-0"
 				data-testid="command-palette"
 			>
 				<ResponsiveDialogTitle className="sr-only">
@@ -92,52 +104,75 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 				<ResponsiveDialogDescription className="sr-only">
 					{t("palette.description")}
 				</ResponsiveDialogDescription>
-				<input
-					// biome-ignore lint/a11y/noAutofocus: a command palette focuses its input on open by design
-					autoFocus
-					type="text"
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
-					onKeyDown={onKeyDown}
-					placeholder={data.placeholder ?? t("palette.placeholder")}
-					aria-label={data.placeholder ?? t("palette.placeholder")}
-					className="w-full border-b bg-transparent px-4 py-3 text-base outline-none placeholder:text-muted-foreground md:text-sm"
-					data-testid="command-palette-input"
-				/>
-				<ul className="max-h-80 overflow-y-auto p-1">
-					{filtered.length === 0 ? (
-						<li className="px-3 py-6 text-center text-sm text-muted-foreground">
-							{t("palette.no_results")}
-						</li>
-					) : (
-						filtered.map((item, index) => (
-							<li key={item.id}>
-								<button
-									type="button"
-									className={cn(
-										"flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors",
-										index === selected
-											? "bg-accent text-accent-foreground"
-											: "text-foreground hover:bg-accent hover:text-accent-foreground",
-									)}
-									onMouseEnter={() => setSelected(index)}
-									onMouseDown={(event) => {
-										event.preventDefault();
-										run(index);
-									}}
-								>
-									<NodeIcon icon={item.icon} />
-									<span className="flex-1 truncate">{item.label}</span>
-									{item.group ? (
-										<span className="shrink-0 text-xs text-muted-foreground">
-											{item.group}
-										</span>
-									) : null}
-								</button>
-							</li>
-						))
-					)}
-				</ul>
+				<div
+					data-slot="command"
+					className="cn-command flex size-full min-h-0 flex-col overflow-hidden"
+				>
+					<div data-slot="command-input-wrapper" className="cn-command-input-wrapper">
+						<div
+							data-slot="input-group"
+							role="group"
+							className="cn-input-group cn-command-input-group group/input-group relative flex w-full min-w-0 items-center"
+						>
+							<input
+								// biome-ignore lint/a11y/noAutofocus: a command palette focuses its input on open by design
+								autoFocus
+								type="text"
+								value={query}
+								onChange={(event) => setQuery(event.target.value)}
+								onKeyDown={onKeyDown}
+								placeholder={data.placeholder ?? t("palette.placeholder")}
+								aria-label={data.placeholder ?? t("palette.placeholder")}
+								data-slot="command-input"
+								className="cn-command-input min-w-0 flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground max-md:text-base"
+								data-testid="command-palette-input"
+							/>
+							<div
+								data-slot="input-group-addon"
+								data-align="inline-start"
+								className="cn-input-group-addon cn-input-group-addon-align-inline-start order-first flex items-center justify-center select-none"
+							>
+								<SearchIcon className="cn-command-input-icon" />
+							</div>
+						</div>
+					</div>
+					<div
+						data-slot="command-list"
+						className="cn-command-list overflow-x-hidden overflow-y-auto"
+					>
+						{filtered.length === 0 ? (
+							<div data-slot="command-empty" className="cn-command-empty">
+								{t("palette.no_results")}
+							</div>
+						) : (
+							<ul data-slot="command-group" className="cn-command-group">
+								{filtered.map((item, index) => (
+									<li key={item.id}>
+										<button
+											type="button"
+											data-slot="command-item"
+											data-selected={index === selected || undefined}
+											className="cn-command-item group/command-item w-full text-left"
+											onMouseEnter={() => setSelected(index)}
+											onMouseDown={(event) => {
+												event.preventDefault();
+												run(index);
+											}}
+										>
+											<NodeIcon icon={item.icon} />
+											<span className="flex-1 truncate">{item.label}</span>
+											{item.group ? (
+												<span className="shrink-0 text-muted-foreground">
+													{item.group}
+												</span>
+											) : null}
+										</button>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+				</div>
 			</ResponsiveDialogContent>
 		</ResponsiveDialog>
 	);

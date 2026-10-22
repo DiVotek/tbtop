@@ -196,7 +196,9 @@ function DaterangeControl({
 				</div>
 				<Suspense
 					fallback={
-						fallback ?? <div className="h-72 w-72 animate-pulse rounded-md bg-muted" />
+						fallback ?? (
+							<div className="h-72 w-72 animate-pulse rounded-surface bg-muted" />
+						)
 					}
 				>
 					<LazyRangeCalendar

@@ -26,6 +26,14 @@ import {
 
 // ─── Size map ─────────────────────────────────────────────────────────────────
 
+// New-gen shape: padding, gap, surface and rounding come from the preset's
+// `cn-dialog-content` / `cn-drawer-popup` (see `revolaStyles.ts`). Deltas we
+// keep: this size scale (our API), the flex-column scroll layout (the preset
+// lays the dialog out as a grid), drawer padding (`cn-drawer-popup` carries
+// none, so `p-6` applies only when Base UI's `data-swipe-direction` marks the
+// drawer), and the edge-flush slide-over. The preset layer sits below
+// utilities, so these deltas win without `!`.
+//
 // Legacy abstract sizes (sm/md/lg/full) predate this PR's Tailwind-literal scale (xl-7xl).
 // Names diverge intentionally (e.g. xl < lg) — not a bug.
 const SIZE_CLASS: Record<ModalSize, string> = {
@@ -98,7 +106,7 @@ export function ModalShell({
 		>
 			<ResponsiveDialogContent
 				className={cn(
-					"flex flex-col p-6",
+					"flex flex-col data-[swipe-direction]:p-6",
 					slideOver
 						? cn(
 								"inset-y-0 right-0 h-full w-full rounded-none border-l",
