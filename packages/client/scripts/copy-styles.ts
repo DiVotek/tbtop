@@ -1,13 +1,31 @@
-// Ships styles.css raw — it's a Tailwind v4 source (@import "tailwindcss"),
-// the consumer compiles it through their own pipeline. We only rewrite the
-// @source glob so it points at the shipped .js next to dist/styles.css.
+// Ships the CSS raw — it's Tailwind v4 source (@import "tailwindcss"), the
+// consumer compiles it through their own pipeline. Entries (styles.css,
+// styles/<name>.css) and the files they import keep their relative layout;
+// core.css gets its @source glob pointed at the shipped .js next to it.
 import { mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
+import { Glob } from "bun";
 
-const src = `${import.meta.dir}/../src/styles.css`;
-const out = `${import.meta.dir}/../dist/styles.css`;
+const src = `${import.meta.dir}/../src`;
+const out = `${import.meta.dir}/../dist`;
+const files = [
+	"core.css",
+	"styles.css",
+	...new Glob("styles/*.css").scanSync(src),
+	...new Glob("ui/presets/*.css").scanSync(src),
+];
 
-const css = await Bun.file(src).text();
-const patched = css.replace('@source "./**/*.{ts,tsx}";', '@source "./**/*.{js,ts,tsx}";');
-
-await mkdir(`${import.meta.dir}/../dist`, { recursive: true });
-await Bun.write(out, patched);
+for (const file of files) {
+	const css = await Bun.file(`${src}/${file}`).text();
+	const shipped =
+		file === "core.css"
+			? css.replace('@source "./**/*.{ts,tsx}";', '@source "./**/*.{js,ts,tsx}";')
+			: css;
+	if (file === "core.css" && shipped === css) {
+		throw new Error(
+			'core.css no longer has @source "./**/*.{ts,tsx}"; dist would not scan its JS',
+		);
+	}
+	await mkdir(dirname(`${out}/${file}`), { recursive: true });
+	await Bun.write(`${out}/${file}`, shipped);
+}

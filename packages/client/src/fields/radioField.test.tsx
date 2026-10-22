@@ -113,8 +113,9 @@ describe("Radio field", () => {
 			/>,
 		);
 		const group = container.querySelector('[data-slot="radio-group"]') as HTMLElement;
+		// Inline row overrides the preset's stacked grid via flex-row (the
+		// cn-radio-group structure class stays — only its grid display loses).
 		expect(group.className).toContain("flex-row");
-		expect(group.className).not.toContain("grid");
 	});
 
 	test("without inline, the group keeps the default stacked grid layout", () => {
@@ -127,7 +128,9 @@ describe("Radio field", () => {
 			/>,
 		);
 		const group = container.querySelector('[data-slot="radio-group"]') as HTMLElement;
-		expect(group.className).toContain("grid");
+		// Stacked layout comes from the preset's cn-radio-group rule (grid),
+		// not an inline class.
+		expect(group.className).toContain("cn-radio-group");
 	});
 
 	test("a per-option disabled:true disables only that item, not its siblings", () => {

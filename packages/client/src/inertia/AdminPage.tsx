@@ -6,6 +6,7 @@ import { type Appearance, MAX_WIDTH_CLASS } from "../app/appearance";
 import { AuthUserProvider } from "../app/authUser";
 import { CenterLayout } from "../app/CenterLayout";
 import { PageParamsProvider } from "../app/pageParams";
+import { StylePresetSync } from "../app/ThemeSync";
 import { ClientProvider } from "../data/client";
 import { setRoutesBase } from "../data/entityRoutes";
 import { I18nProvider, useTranslation } from "../i18n/i18n";
@@ -203,7 +204,12 @@ export function LayoutDispatcher({ children }: { children: ReactNode }) {
 			    own provider. Shared even for center (chrome-less) — one shape. */}
 			<ClientProvider apiBase={apiBase}>
 				{props.layout === "center" ? (
-					<CenterLayout>{children}</CenterLayout>
+					<>
+						{/* AdminLayout syncs the style itself; auth pages need it too
+						    when the host's Blade predates the server-side class. */}
+						<StylePresetSync preset={tbtop?.appearance?.stylePreset} />
+						<CenterLayout>{children}</CenterLayout>
+					</>
 				) : (
 					<AdminLayout>{children}</AdminLayout>
 				)}

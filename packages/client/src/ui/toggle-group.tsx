@@ -3,17 +3,32 @@ import type * as React from "react";
 
 import { cn } from "../lib/cn";
 
+// New-gen shape: visuals come from the `cn-toggle*` / `cn-toggle-group*`
+// rules in `ui/presets/style-preset-*.css`. Ours is always upstream's
+// segmented form (outline variant, zero spacing, default size), so the
+// variant/size/spacing props and context are not ported — the matching
+// data attributes are fixed instead. The default size matches each style's
+// input height, so toggle buttons line up with the inputs beside them.
+// Deltas: the selected item keeps our primary fill (upstream uses a muted
+// one). Radix only emits `data-orientation` when the prop is passed, and
+// the preset's joined borders and end rounding key on it
+// (`data-horizontal`), so the group defaults it to horizontal.
 function ToggleGroup({
 	className,
+	orientation = "horizontal",
 	...props
 }: React.ComponentProps<typeof ToggleGroupPrimitive.Root>) {
 	return (
 		<ToggleGroupPrimitive.Root
 			data-slot="toggle-group"
+			orientation={orientation}
+			data-variant="outline"
+			data-size="default"
+			data-spacing={0}
 			className={cn(
-				// w-fit: inline-flex blockifies inside a flex parent, where the
+				// w-fit: a flex box blockifies inside a flex parent, where the
 				// default stretch would otherwise widen the group to the column.
-				"inline-flex w-fit items-center rounded-md border border-input shadow-xs",
+				"cn-toggle-group group/toggle-group flex w-fit flex-row items-center",
 				className,
 			)}
 			{...props}
@@ -28,8 +43,14 @@ function ToggleGroupItem({
 	return (
 		<ToggleGroupPrimitive.Item
 			data-slot="toggle-group-item"
+			data-variant="outline"
+			data-size="default"
+			data-spacing={0}
 			className={cn(
-				"inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium transition-colors outline-none first:rounded-l-sm last:rounded-r-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground [&:not(:first-child)]:border-l [&:not(:first-child)]:border-input",
+				"cn-toggle group/toggle inline-flex items-center justify-center whitespace-nowrap outline-none hover:bg-muted focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+				"cn-toggle-variant-outline cn-toggle-size-default",
+				"cn-toggle-group-item shrink-0 focus:z-10 focus-visible:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l",
+				"data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
 				className,
 			)}
 			{...props}

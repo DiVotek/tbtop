@@ -59,14 +59,15 @@ it('RuleWalker: size on multiple select lands on field key, not element key', fu
     ]);
 });
 
-it('RuleWalker: distinct on multiple select lands on field key, not element key', function () {
+it('RuleWalker: distinct on multiple select lands on element key, where Laravel checks duplicates', function () {
     $s = new S;
     $form = $s->form('post', [
         $s->select('tags')->multiple()->rules('distinct'),
     ]);
 
     expect($form->collectRules())->toBe([
-        'tags' => ['array', 'distinct'],
+        'tags' => ['array'],
+        'tags.*' => ['distinct'],
     ]);
 });
 

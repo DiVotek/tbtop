@@ -1,6 +1,11 @@
 /**
  * Progress — determinate bar (shadcn-style). Outer track + inner fill whose
  * width tracks `value` (0-100). No Radix dependency.
+ *
+ * New-gen shape: track/fill colors and height come from `cn-progress` /
+ * `cn-progress-indicator` in `ui/presets/style-preset-*.css`. Delta: no Radix
+ * Progress primitive, so the fill is sized by `width` instead of upstream's
+ * translateX on a full-width indicator, and the value is clamped here.
  */
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn";
@@ -28,10 +33,15 @@ export function Progress({ value, className }: ProgressProps): ReactNode {
 			aria-valuenow={pct}
 			aria-valuemin={0}
 			aria-valuemax={100}
-			className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}
+			data-slot="progress"
+			className={cn(
+				"cn-progress relative flex w-full items-center overflow-x-hidden",
+				className,
+			)}
 		>
 			<div
-				className="h-full rounded-full bg-primary transition-all"
+				data-slot="progress-indicator"
+				className="cn-progress-indicator h-full rounded-full transition-all"
 				style={{ width: `${pct}%` }}
 			/>
 		</div>

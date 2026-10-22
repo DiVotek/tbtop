@@ -4,7 +4,7 @@ export function imageShapeClass(shape: unknown): string {
 		return "rounded-full";
 	}
 	if (shape === "rounded") {
-		return "rounded-lg";
+		return "rounded-surface-lg";
 	}
 	return "rounded-none";
 }

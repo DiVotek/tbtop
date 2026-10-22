@@ -661,6 +661,10 @@ value looks identical in a table cell and a detail view.
 **Visibility.** Three different things: `hidden()` drops the column from the wire
 entirely; `visible(fn)` decides that per request, server-side; `toggleable()` ships the
 column and lets the user hide it, with the second argument choosing the initial state.
+A `hidden()` column, or one `visible(fn)` turns off for this request, is also dropped from
+search, per-column search and sort, so `?search=` and `?sort=` cannot probe it. To search
+a field without showing it, name it in the table-level `->searchable(['email', ...])`
+instead: that list is by field name and needs no column.
 
 **Inline editing.** `toggle()`, `textInput()`, `numberInput()` and `selectColumn()` make
 a cell editable in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()`

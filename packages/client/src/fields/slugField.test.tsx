@@ -146,6 +146,12 @@ describe("Slug field", () => {
 		expect(slugify("café")).toBe("cafe");
 	});
 
+	test("slugify maps Latin letters NFKD cannot fold (Polish ł, Ł)", () => {
+		expect(slugify("płatnik")).toBe("platnik");
+		expect(slugify("Łódź")).toBe("lodz");
+		expect(slugify("Straße Øre")).toBe("strasse-ore");
+	});
+
 	test("slugify drops Cyrillic soft/hard signs (ъ, ь) with no Latin output", () => {
 		expect(slugify("подъезд")).toBe("podezd");
 	});
