@@ -9,11 +9,13 @@
       },
       "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",
+        "@electric-sql/pglite": "^0.5.11",
         "@types/bun": "^1.3.11",
         "@types/markdown-it": "^14.2.0",
         "ajv": "^8.17.1",
         "kysely": "^0.28.2",
         "kysely-bun-sqlite": "^0.4.0",
+        "kysely-pglite-dialect": "^1.4.0",
         "publint": "^0.3.25",
         "sharp": "0.34",
         "tsup": "^8.5.1",
@@ -37,6 +39,8 @@
     "@braidai/lang": ["@braidai/lang@1.1.2", "", {}, "sha512-qBcknbBufNHlui137Hft8xauQMTZDKdophmLFv05r2eNmdIv/MlPuP4TdUknHG68UdWLgVZwgxVe735HzJNIwA=="],
 
     "@colors/colors": ["@colors/colors@1.5.0", "", {}, "sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ=="],
+
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.11", "", {}, "sha512-SWuqsTjA4DDWqgZ05PC1RJaq8e00p5KACxbqaikDFQ8dIGA0SLRzuPniky7IW+q/c5RDNMdEXwv7mFBWIx9Hxw=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 
@@ -307,6 +311,8 @@
     "kysely": ["kysely@0.28.18", "", {}, "sha512-lf6nEHwPlaWbUDw5rycPSkEVGVC7sF7hzY7kH0OryleqK8Ym0zZ+RjI8o+RpHHlxpbKVC1d+UoQSW8GFxGQf4Q=="],
 
     "kysely-bun-sqlite": ["kysely-bun-sqlite@0.4.0", "", { "dependencies": { "bun-types": "^1.1.31" }, "peerDependencies": { "kysely": "^0.28.2" } }, "sha512-2EkQE5sT4ewiw7IWfJsAkpxJ/QPVKXKO5sRYI/xjjJIJlECuOdtG+ssYM0twZJySrdrmuildNPFYVreyu1EdZg=="],
+
+    "kysely-pglite-dialect": ["kysely-pglite-dialect@1.4.0", "", { "peerDependencies": { "@electric-sql/pglite": "^0.2.0 || ^0.3.0 || ^0.4.0 || ^0.5.0", "kysely": ">=0.23.0" } }, "sha512-nCCR5QFZDdIHxVOJAv2DllXn+2Ll+TStq7lwcjow+jkFPYNDe0RIz+8FTmb3Nwbj0trr8kOMFqI2BZ91zH/P+w=="],
 
     "lilconfig": ["lilconfig@3.1.4", "", {}, "sha512-zJZyBmQhArDRefuWTypZxwDpFDIYmrj8ypSBvwGD5P13Y95s6DjzKgu4DVdGbeQa5PDEsAOCAPNk4X+QOR006w=="],
 
