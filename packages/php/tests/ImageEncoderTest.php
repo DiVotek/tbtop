@@ -1,8 +1,12 @@
 <?php
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Uploads\ImageEncoder;
 use Tbtop\Admin\Uploads\ImageSizes;
+use Tbtop\Admin\Uploads\UploadFieldConfig;
+use Tbtop\Admin\Uploads\UploadStorer;
 
 function gdSample(): GdImage
 {
@@ -101,3 +105,35 @@ it('still decodes an image just under the 40 megapixel cap', function () {
 
     expect(ImageEncoder::fromUpload($file))->toBeInstanceOf(GdImage::class);
 });
+
+// ------- palette (indexed-colour) sources -------
+
+function palettePng(int $side): UploadedFile
+{
+    $img = imagecreate($side, $side);
+    imagecolorallocate($img, 200, 30, 30);
+    ob_start();
+    imagepng($img);
+
+    return UploadedFile::fake()->createWithContent("palette-{$side}.png", (string) ob_get_clean());
+}
+
+it('encodes a palette image to webp instead of raising GD\'s palette warning', function () {
+    $img = imagecreate(10, 10);
+    imagecolorallocate($img, 10, 20, 30);
+
+    $enc = ImageEncoder::encode($img, 'webp');
+
+    expect($enc)->not->toBeNull()
+        ->and(getimagesizefromstring($enc['blob'])['mime'])->toBe('image/webp');
+})->skip(! function_exists('imagewebp'), 'GD webp unavailable');
+
+it('converts a palette png upload to webp when the field sets convertTo webp', function () {
+    Storage::fake('public');
+    $config = UploadFieldConfig::resolve(Upload::make('logo')->convertTo('webp'));
+
+    $stored = UploadStorer::store(palettePng(16), $config);
+
+    expect($stored['path'])->toEndWith('.webp')
+        ->and(Storage::disk('public')->mimeType($stored['path']))->toBe('image/webp');
+})->skip(! function_exists('imagewebp'), 'GD webp unavailable');

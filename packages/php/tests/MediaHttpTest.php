@@ -200,6 +200,20 @@ it('upload stores dimensions for the original and each conversion', function () 
         ->and(Storage::disk('public')->exists($row->sizes['thumb']['path']))->toBeTrue();
 });
 
+it('upload makes a webp conversion for a palette png no larger than the profile', function () {
+    $img = imagecreate(64, 64);
+    imagecolorallocate($img, 200, 30, 30);
+    ob_start();
+    imagepng($img);
+    $file = UploadedFile::fake()->createWithContent('icon.png', (string) ob_get_clean());
+
+    $data = $this->postJson('/admin/api/media/upload', ['file' => $file])
+        ->assertStatus(201)->json();
+
+    expect($data['sizes']['thumb'])->toMatchArray(['width' => 64, 'height' => 64, 'mime' => 'image/webp'])
+        ->and(Storage::disk('public')->allFiles('tbtop-media'))->toHaveCount(2);
+})->skip(! function_exists('imagewebp'), 'GD webp unavailable');
+
 it('upload encodes each conversion in its own format, falling back to the global default', function () {
     config()->set('tbtop-admin.media.profiles', [
         'thumb' => [128, 128],
