@@ -24,6 +24,7 @@ const posts = definePage({
 });
 const admin = createAdmin({
 	prefix: "/admin",
+	allowGuests: true,
 	pages: [posts],
 	driver: memoryDriver(),
 	session: memorySessions(),
