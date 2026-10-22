@@ -96,9 +96,11 @@ abstract class Page
      * Null (default) inherits [...$panel->getMiddleware(), 'auth:'.$panel->getGuard()].
      * An array replaces that auth/app layer. The route layer always applies
      * SetCurrentPanel + SetAdminLocale on top, so a public page returning ['web']
-     * still gets panel binding, locale, and the Inertia share — it just skips
-     * auth:guard and any app-level auth middleware. Spread $panel->authStack() to
-     * add to the panel default instead of replacing it.
+     * still gets panel binding, locale, and the tbtop share — it just skips
+     * auth:guard and any app-level auth middleware. The host's Inertia middleware
+     * stays only when it sits in the web group: one listed in the panel's
+     * middleware() must be listed here too. Spread $panel->authStack() to add to
+     * the panel default instead of replacing it.
      *
      * Static by necessity: route registration only has the class-string.
      *
