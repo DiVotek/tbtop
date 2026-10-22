@@ -36,7 +36,7 @@ trait HasGenericRules
         return $this->rules('confirmed');
     }
 
-    /** Required only when all listed fields are present. */
+    /** Required only when any listed field is present. */
     public function requiredWith(string ...$fields): static
     {
         return $this->rules('required_with:'.implode(',', $fields));

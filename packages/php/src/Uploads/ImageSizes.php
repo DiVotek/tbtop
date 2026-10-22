@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Uploads;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 /**
  * @phpstan-type Variant array{path: string, width: int, height: int, mime: string}
@@ -21,7 +22,8 @@ final class ImageSizes
     /**
      * Generates resized variants (fit: inside) next to the original, keyed by
      * profile name. Non-images and missing GD degrade to no variants. A format
-     * GD cannot encode falls back to png per variant.
+     * GD cannot encode falls back to png per variant. If a variant throws, the
+     * variants already written are deleted before the exception propagates.
      *
      * @param  array<string, ConversionProfile>  $profiles
      * @return array<string, Variant>
@@ -37,11 +39,17 @@ final class ImageSizes
         }
 
         $out = [];
-        foreach ($profiles as $name => $profile) {
-            $variant = self::variant($source, $path, $disk, (string) $name, $profile);
-            if ($variant !== null) {
-                $out[(string) $name] = $variant;
+        try {
+            foreach ($profiles as $name => $profile) {
+                $variant = self::variant($source, $path, $disk, (string) $name, $profile);
+                if ($variant !== null) {
+                    $out[(string) $name] = $variant;
+                }
             }
+        } catch (Throwable $e) {
+            Storage::disk($disk)->delete(array_column($out, 'path'));
+
+            throw $e;
         }
 
         return $out;

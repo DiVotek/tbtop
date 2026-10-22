@@ -1,7 +1,7 @@
 import "./lexicalCore";
 import { $generateNodesFromDOM } from "@lexical/html";
 import type { LexicalEditor, SerializedEditorState } from "lexical";
-import { $getRoot, $insertNodes } from "lexical";
+import { $getRoot, $insertNodes, $setSelection } from "lexical";
 
 type InitialEditorState = string | ((editor: LexicalEditor) => void) | undefined;
 
@@ -15,6 +15,10 @@ function htmlInitializer(html: string): (editor: LexicalEditor) => void {
 		const nodes = $generateNodesFromDOM(editor, dom);
 		$getRoot().select();
 		$insertNodes(nodes);
+		// $insertNodes needs a selection to insert at, but one left in the
+		// initial state is applied to the DOM on first commit: the browser then
+		// focuses the editor and scrolls the page to it on load.
+		$setSelection(null);
 	};
 }
 

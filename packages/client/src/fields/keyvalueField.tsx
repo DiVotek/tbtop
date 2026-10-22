@@ -27,6 +27,7 @@ export function KeyvalueForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
 	describedBy,
 }: FieldFormProps<Record<string, string>>) {
 	const [rows, setRows] = useState<Row[]>(() => rowsFromValue(value));
@@ -77,6 +78,7 @@ export function KeyvalueForm({
 							type="text"
 							aria-label={t("field.keyvalue.key")}
 							aria-describedby={describedBy}
+							aria-invalid={invalid || undefined}
 							value={row.key}
 							disabled={disabled}
 							onChange={(e) => updateKey(row.id, e.target.value)}
@@ -85,6 +87,7 @@ export function KeyvalueForm({
 							type="text"
 							aria-label={t("field.keyvalue.value")}
 							aria-describedby={describedBy}
+							aria-invalid={invalid || undefined}
 							value={row.value}
 							disabled={disabled}
 							onChange={(e) => updateValue(row.id, e.target.value)}

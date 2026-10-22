@@ -1,6 +1,7 @@
 import { cn } from "../lib/cn";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { nullableCell } from "./cellHelpers";
+import { groupLabelledBy } from "./fieldChrome";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { OptionRow } from "./optionList";
 import { coerceSelectValue } from "./selectShared";
@@ -15,6 +16,7 @@ interface RadioOption {
 interface RadioOptionsBag {
 	options?: RadioOption[];
 	inline?: boolean;
+	label?: string;
 }
 
 export function RadioCell({ value, options }: FieldCellProps<string, RadioOptionsBag>) {
@@ -32,6 +34,7 @@ export function RadioForm({
 	onChange,
 	onBlur,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<string, RadioOptionsBag>) {
 	const choices = options?.options ?? [];
@@ -45,6 +48,8 @@ export function RadioForm({
 			onValueChange={(next) => onChange(next === "" ? null : next)}
 			onBlur={onBlur}
 			disabled={disabled}
+			aria-labelledby={groupLabelledBy(groupId, options?.label)}
+			aria-describedby={describedBy}
 			className={cn(options?.inline && "flex flex-row flex-wrap gap-4")}
 			data-testid={`radio-${name}`}
 		>
