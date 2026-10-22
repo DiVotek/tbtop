@@ -45,8 +45,8 @@ final class ImageEncoder
             return null;
         }
         $spec = self::FORMATS[$format];
-        if ($format !== 'png' && ! imageistruecolor($img)) {
-            imagepalettetotruecolor($img);
+        if ($format !== 'png' && ! imageistruecolor($img) && ! imagepalettetotruecolor($img)) {
+            return null;
         }
         $blob = self::capture($img, $spec['fn'], $quality ?? $spec['quality']);
         if ($blob === null) {

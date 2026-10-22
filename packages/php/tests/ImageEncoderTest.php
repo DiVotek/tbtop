@@ -108,16 +108,6 @@ it('still decodes an image just under the 40 megapixel cap', function () {
 
 // ------- palette (indexed-colour) sources -------
 
-function palettePng(int $side): UploadedFile
-{
-    $img = imagecreate($side, $side);
-    imagecolorallocate($img, 200, 30, 30);
-    ob_start();
-    imagepng($img);
-
-    return UploadedFile::fake()->createWithContent("palette-{$side}.png", (string) ob_get_clean());
-}
-
 it('encodes a palette image to webp instead of raising GD\'s palette warning', function () {
     $img = imagecreate(10, 10);
     imagecolorallocate($img, 10, 20, 30);
