@@ -57,7 +57,7 @@ describe("StylePresetSync", () => {
 
 	test("scopes <html> to the default preset when the panel names none", () => {
 		render(<StylePresetSync />);
-		expect(document.documentElement.classList.contains("style-preset-nova")).toBeTrue();
+		expect(document.documentElement.classList.contains("style-preset-vega")).toBeTrue();
 	});
 
 	// The server-rendered class must give way to the panel's preset, never stack.

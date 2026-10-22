@@ -28,7 +28,7 @@ trait ConfiguresAppearance
     /** Upstream shadcn styles shipped in the client's styles.css. */
     private const STYLE_PRESETS = ['vega', 'nova', 'maia', 'lyra', 'mira', 'luma', 'sera', 'rhea'];
 
-    private const DEFAULT_STYLE_PRESET = 'nova';
+    private const DEFAULT_STYLE_PRESET = 'vega';
 
     private bool $darkMode = true;
 
@@ -82,7 +82,7 @@ trait ConfiguresAppearance
     }
 
     /**
-     * Component style from ui.shadcn.com/create (its "Style" choice): 'vega', 'nova' (default),
+     * Component style from ui.shadcn.com/create (its "Style" choice): 'vega' (default), 'nova',
      * 'maia', 'lyra', 'mira', 'luma', 'sera' or 'rhea'. Shapes sizes, spacing, radii and shadows;
      * colors stay in your CSS tokens. The root Blade's `<html>` carries `CurrentPanel::current()?->stylePresetClass()`.
      */
@@ -101,7 +101,7 @@ trait ConfiguresAppearance
         return $this->stylePreset;
     }
 
-    /** The scope class the client's preset CSS keys on, e.g. 'style-preset-nova'. */
+    /** The scope class the client's preset CSS keys on, e.g. 'style-preset-vega'. */
     public function getStylePresetClass(): string
     {
         return 'style-preset-'.$this->stylePreset;

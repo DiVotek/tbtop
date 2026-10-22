@@ -17,7 +17,7 @@ export const STYLE_PRESETS = [
 export type StylePreset = (typeof STYLE_PRESETS)[number];
 
 /** Mirrors PanelConfig's default; the server omits the key when unchanged. */
-export const DEFAULT_STYLE_PRESET: StylePreset = "nova";
+export const DEFAULT_STYLE_PRESET: StylePreset = "vega";
 
 /**
  * Panel appearance shared prop (tbtop.appearance). Sparse — only keys the

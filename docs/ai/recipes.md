@@ -349,7 +349,7 @@ A create preset is two things, and tbtop takes each where it belongs:
 
 | Preset part | Where it goes in tbtop |
 |---|---|
-| **Style** (Vega, Nova, Maia, Lyra, Mira, Luma, Sera, Rhea) — sizes, spacing, radii, shadows | `->stylePreset('lyra')` on the panel (default `nova`) |
+| **Style** (Vega, Nova, Maia, Lyra, Mira, Luma, Sera, Rhea) — sizes, spacing, radii, shadows | `->stylePreset('lyra')` on the panel (default `vega`) |
 | **Theme** — base color, theme color, chart color, radius, menu accent | the `:root` / `.dark` token blocks in your admin CSS |
 | **Font** / heading font | `--font-sans` / `--font-heading` in `:root`, plus the font's own `@import` |
 | Icon library, menu color | not supported — the admin uses lucide and the default menu color |
@@ -414,7 +414,7 @@ return $panel
     ->darkMode(true)                // false hides the theme toggle; shell stays light
     ->defaultThemeMode('system')    // initial theme when the visitor has no saved choice
     ->density('compact')            // tighter control heights, spacing, sidebar
-    ->stylePreset('nova');          // shadcn create style, see above
+    ->stylePreset('vega');          // shadcn create style, see above
 ```
 
 - `maxContentWidth($token)` — `sm`…`7xl`, `full`, or `prose`; omit for full-bleed.

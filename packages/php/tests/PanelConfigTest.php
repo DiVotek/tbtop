@@ -60,7 +60,7 @@ it('rejects an unknown density', function () {
 
 it('omits the style preset while it holds its default', function () {
     expect((new PanelConfig)->appearance())->toBe([])
-        ->and((new PanelConfig)->getStylePresetClass())->toBe('style-preset-nova');
+        ->and((new PanelConfig)->getStylePresetClass())->toBe('style-preset-vega');
 });
 
 it('serializes a chosen style preset and its html scope class', function () {
