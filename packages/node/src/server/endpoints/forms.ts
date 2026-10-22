@@ -7,7 +7,9 @@ import {
 	type FormBuilder,
 	materialize,
 } from "../../dsl";
-import { enclosingForm } from "../enclosingForm";
+import { applyEmbed, EMBED_ACTION } from "../embeds/apply";
+import { bindEmbeds } from "../embeds/rule";
+import { enclosingForm, enclosingQueryAction } from "../enclosingForm";
 import { asJson, effectsBody, notFound, readBody } from "../http";
 import { back, redirectOrLocation } from "../inertia/protocol";
 import { bindUploads } from "../uploads/bind";
@@ -33,17 +35,24 @@ function baseCtx(ctx: EndpointCtx, payload: Bag): ActionCtx {
 	});
 }
 
-/** The form's rules and labels; upload keys also check the path was issued (bindUploadPaths). */
-async function formRules(form: FormBuilder, ctx: EndpointCtx) {
+/**
+ * The form's rules and labels (bindUploadPaths): upload keys also check the
+ * path was issued or is stored on `records`, richtext embeds are validated
+ * per kind, and `apply` narrows the validated embeds to their declared keys.
+ */
+async function formRules(form: FormBuilder, ctx: EndpointCtx, loaded: unknown[] = []) {
 	const children = form.includedChildren();
-	const bound = await bindUploads(collectRules(children), children, {
-		session: ctx.session,
-		records: [form.recordData()],
+	const env = { session: ctx.session, records: [form.recordData(), ...loaded] };
+	const uploads = await bindUploads(collectRules(children), children, env);
+	const embeds = bindEmbeds(uploads.rules, children, {
+		...env,
+		hostRules: ctx.options.hostRules,
 	});
 	return {
-		rules: bound.rules,
+		rules: embeds.rules,
 		attributes: collectAttributes(children),
-		hostRules: { ...ctx.options.hostRules, ...bound.hostRules },
+		hostRules: { ...ctx.options.hostRules, ...uploads.hostRules, ...embeds.hostRules },
+		apply: embeds.apply,
 	};
 }
 
@@ -64,12 +73,12 @@ export async function submitFormOutcome(
 	if (form === null || handler === undefined) {
 		throw notFound(`Form "${name}" is not submittable on this page.`);
 	}
-	const { rules, ...options } = await formRules(form, ctx);
+	const { rules, apply, ...options } = await formRules(form, ctx);
 	const outcome = await validate(emptyToNull(body), rules, options);
 	if (!outcome.ok) {
 		return { errors: outcome.errors };
 	}
-	const result = await handler(baseCtx(ctx, { form: outcome.validated }));
+	const result = await handler(baseCtx(ctx, { form: apply(outcome.validated) }));
 	if (typeof result === "string") {
 		return { redirect: result };
 	}
@@ -111,6 +120,9 @@ function pageUrl(ctx: EndpointCtx): string {
 
 /** ActionController without the transport: `payload` is `{form?, row?, selection?, params?}`. */
 export async function runActionWith(ctx: EndpointCtx, name: string, payload: Bag) {
+	if (name === EMBED_ACTION) {
+		return applyEmbed(ctx, payload);
+	}
 	const action = ctx.resolved.s.reachableAction(name);
 	const handler = action?.handler();
 	if (action === null || handler === undefined) {
@@ -118,7 +130,7 @@ export async function runActionWith(ctx: EndpointCtx, name: string, payload: Bag
 	}
 	const base = baseCtx(ctx, payload);
 	const form = await actionForm(ctx, name, {
-		input: payload.form,
+		payload,
 		gate: !action.skipsFormValidation(),
 	});
 	const result = await handler(form === null ? base : base.withForm(form));
@@ -139,20 +151,43 @@ const runAction: Endpoint = {
 async function actionForm(
 	ctx: EndpointCtx,
 	name: string,
-	{ input, gate }: { input: unknown; gate: boolean },
+	{ payload, gate }: { payload: Bag; gate: boolean },
 ): Promise<Bag | null> {
 	const form = enclosingForm(ctx.resolved, name);
 	if (form === null) {
 		return null;
 	}
-	const { rules, ...options } = await formRules(form, ctx);
+	const loaded = gate ? await modalRecord(ctx, name, payload) : [];
+	const { rules, apply, ...options } = await formRules(form, ctx, loaded);
 	if (Object.keys(rules).length === 0) {
 		return null;
 	}
 	if (!gate) {
-		return declaredKeysOnly(emptyToNull(bag(input)), rules);
+		return declaredKeysOnly(emptyToNull(bag(payload.form)), rules);
 	}
-	return validated(bag(input), rules, options);
+	return apply(await validated(bag(payload.form), rules, options));
+}
+
+/**
+ * ActionController::modalRecord(): the record a modal form was loaded with,
+ * its query() re-run for this submit's row/selection, so stored upload paths
+ * pass. Empty without such a query or when a need it reads was not sent.
+ */
+async function modalRecord(ctx: EndpointCtx, name: string, payload: Bag): Promise<unknown[]> {
+	const action = enclosingQueryAction(ctx.resolved, name);
+	const query = action?.queryClosure();
+	if (action === null || query === undefined) {
+		return [];
+	}
+	const filled = (need: string) => {
+		const value = payload[need];
+		return value != null && value !== "" && !(Array.isArray(value) && value.length === 0);
+	};
+	if (!action.getQueryNeeds().every(filled)) {
+		return [];
+	}
+	const data = await query(baseCtx(ctx, payload));
+	return data !== null && typeof data === "object" ? [data] : [];
 }
 
 /** The keys the rules declare, values as-is: withoutValidation() keeps the shape, not the verdict. */

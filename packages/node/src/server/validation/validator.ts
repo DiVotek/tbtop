@@ -4,9 +4,16 @@ import { CHECKS, confirmedMatches, IMPLICIT, type RuleInput, type SizeKind } fro
 import { dataGet, dataHas, dataSet, expandKey } from "./data";
 import { format, MESSAGES } from "./messages";
 
-/** A rule the host implements, e.g. `unique`/`exists` against its own database. */
+/**
+ * A rule the host implements, e.g. `unique`/`exists` against its own database.
+ * `check` may return a string: the failure message itself, instead of `message`.
+ */
 export interface HostRule {
-	check: (value: unknown, params: string[], key: string) => boolean | Promise<boolean>;
+	check: (
+		value: unknown,
+		params: string[],
+		key: string,
+	) => boolean | string | Promise<boolean | string>;
 	message: string;
 }
 
@@ -77,10 +84,11 @@ async function checkKey(
 			continue;
 		}
 		const call = { name, input: { ...base, params: ruleParams(name, raw) }, target, options };
-		if (await passes(call)) {
+		const verdict = await passes(call);
+		if (verdict === true) {
 			continue;
 		}
-		messages.push(message(call));
+		messages.push(typeof verdict === "string" ? verdict : message(call));
 		if (implicit) {
 			break;
 		}
@@ -96,7 +104,7 @@ function ruleParams(name: string, raw: string | null): string[] {
 	return name.endsWith("regex") ? [raw] : parseCsv(raw);
 }
 
-async function passes({ name, input, target, options }: RuleCall): Promise<boolean> {
+async function passes({ name, input, target, options }: RuleCall): Promise<boolean | string> {
 	if (name === "confirmed") {
 		return confirmedMatches(input.data, target.key, input.value);
 	}

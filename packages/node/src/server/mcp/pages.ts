@@ -15,7 +15,8 @@ export class McpPages {
 	) {}
 
 	all(): PageDef[] {
-		return this.pages.filter((page) => page.mcp !== false);
+		// Public pages (login, password reset) are for guests, never for agents (AuthPage::mcp()).
+		return this.pages.filter((page) => page.mcp ?? page.public !== true);
 	}
 
 	find(id: string): PageDef {

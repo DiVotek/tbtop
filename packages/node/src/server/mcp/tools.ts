@@ -41,21 +41,22 @@ async function search(env: ToolEnv, args: Args): Promise<Record<string, unknown>
 	return { pages: pages.filter((entry) => entry !== null) };
 }
 
-/** A page in the bare listing; one whose view() fails is listed with an error, not fatal. */
+/**
+ * A page in the bare listing. One with route params is listed with them: its
+ * gate runs when the agent opens it with real params. One whose gate or view()
+ * fails is listed with an error, never failing the whole search.
+ */
 async function listed(env: ToolEnv, page: PageDef): Promise<Record<string, unknown> | null> {
-	const request = new Request(env.pages.url(page, {}));
-	if (!((await page.authorize?.({ params: {}, request })) ?? true)) {
-		return null;
-	}
 	const params = pathParams(page);
 	if (params.length > 0) {
-		return {
-			page: page.path,
-			title: typeof page.title === "string" ? page.title : page.path,
-			params,
-		};
+		const title = typeof page.title === "string" ? page.title : page.path;
+		return { page: page.path, title, params };
 	}
 	try {
+		const request = new Request(env.pages.url(page, {}));
+		if (!((await page.authorize?.({ params: {}, request })) ?? true)) {
+			return null;
+		}
 		return await search(env, { page: page.path });
 	} catch (error) {
 		env.report(error);

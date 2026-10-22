@@ -17,6 +17,15 @@ const extra = [
 		view: (s) => s.stack([]),
 	}),
 	definePage({ path: "hidden", title: "Hidden", mcp: false, view: (s) => s.stack([]) }),
+	definePage({ path: "login", title: "Sign in", public: true, view: (s) => s.stack([]) }),
+	definePage({
+		path: "fragile",
+		title: "Fragile",
+		authorize: () => {
+			throw new Error("reads a route param");
+		},
+		view: (s) => s.stack([]),
+	}),
 	definePage({
 		path: "broken",
 		title: "Broken",
@@ -131,13 +140,14 @@ describe("MCP transport", () => {
 });
 
 describe("search", () => {
-	test("lists what the user may open: gated and mcp(false) pages are absent", async () => {
+	test("lists what the user may open: gated, public and mcp(false) pages are absent", async () => {
 		const { data } = await call("search");
 		const listed = data.pages as Record<string, unknown>[];
 		expect(listed.map((page) => page.page)).toEqual([
 			"posts",
 			"posts/new",
 			"posts/$post/edit",
+			"fragile",
 			"broken",
 			"tools",
 		]);
@@ -147,6 +157,10 @@ describe("search", () => {
 			params: ["post"],
 		});
 		expect(listed[3]).toEqual({
+			page: "fragile",
+			error: "This page failed to build; see the application log.",
+		});
+		expect(listed[4]).toEqual({
 			page: "broken",
 			error: "This page failed to build; see the application log.",
 		});
