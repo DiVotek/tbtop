@@ -29,5 +29,8 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+        @if (request()->attributes->get(\App\Http\Middleware\DemoStylePreset::SWITCHER))
+            @include('demo.style-switcher')
+        @endif
     </body>
 </html>

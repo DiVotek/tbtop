@@ -56,12 +56,18 @@ class DemoStylePresetTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('tbtop.appearance.stylePreset', 'nova'));
     }
 
-    public function test_the_layout_menu_marks_the_current_style(): void
+    public function test_the_switcher_marks_the_current_style(): void
     {
-        $props = $this->get('/admin/posts?style=sera')->assertOk()->viewData('page')['props'];
-        $chrome = json_encode($props['tbtop']['chrome'], JSON_UNESCAPED_UNICODE);
+        $html = $this->get('/admin/posts?style=sera')->assertOk()->getContent();
 
-        $this->assertStringContainsString('"✓ Style: sera"', $chrome);
-        $this->assertStringContainsString('"Style: vega"', $chrome);
+        $this->assertMatchesRegularExpression('#<a href="[^"]*/admin/posts\?style=sera"[^>]*aria-current="true"[^>]*>sera</a>#', $html);
+        $this->assertMatchesRegularExpression('#<a href="[^"]*/admin/posts\?style=vega"(?![^>]*aria-current)[^>]*>vega</a>#', $html);
+    }
+
+    public function test_the_switcher_is_not_on_pages_outside_the_panel_middleware(): void
+    {
+        $this->app['auth']->forgetGuards();
+
+        $this->get('/admin/login')->assertOk()->assertDontSee('demo-style-switcher', false);
     }
 }

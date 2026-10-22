@@ -17,10 +17,15 @@ class DemoStylePreset
 {
     public const SESSION_KEY = 'demo.style';
 
+    /** Request attribute: the switcher shows only where this middleware runs, so a pick can stick. */
+    public const SWITCHER = 'demo.style-switcher';
+
     public const STYLES = ['vega', 'nova', 'maia', 'lyra', 'mira', 'luma', 'sera', 'rhea'];
 
     public function handle(Request $request, Closure $next): Response
     {
+        $request->attributes->set(self::SWITCHER, true);
+
         $requested = $request->query('style');
         if (is_string($requested) && in_array($requested, self::STYLES, true)) {
             $request->session()->put(self::SESSION_KEY, $requested);
@@ -50,11 +55,15 @@ class DemoStylePreset
         return is_string($style) && in_array($style, self::STYLES, true) ? $style : null;
     }
 
-    /** The `<html>` class for the first paint: the visitor's pick, else the panel's style. */
-    public static function htmlClass(): ?string
+    /** The style on screen: the visitor's pick, else the panel's own. */
+    public static function active(): string
     {
-        $style = self::chosen();
+        return self::chosen() ?? CurrentPanel::current()?->appearance()['stylePreset'] ?? 'vega';
+    }
 
-        return $style !== null ? "style-preset-{$style}" : CurrentPanel::current()?->stylePresetClass();
+    /** The `<html>` class for the first paint. */
+    public static function htmlClass(): string
+    {
+        return 'style-preset-'.self::active();
     }
 }
