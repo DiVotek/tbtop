@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
 import { type ChromeData, ChromeDataContext } from "./chromeContext";
-import { ThemeSync } from "./ThemeSync";
+import { StylePresetSync, ThemeSync } from "./ThemeSync";
 
 const BASE: ChromeData = {
 	nav: [],
@@ -44,5 +44,29 @@ describe("ThemeSync", () => {
 		document.cookie = "tbtop_theme=dark; path=/";
 		renderSync({ darkMode: false });
 		expect(document.documentElement.classList.contains("dark")).toBeFalse();
+	});
+});
+
+describe("StylePresetSync", () => {
+	afterEach(() => {
+		const root = document.documentElement;
+		root.classList.remove(
+			...Array.from(root.classList).filter((c) => c.startsWith("style-preset-")),
+		);
+	});
+
+	test("scopes <html> to the default preset when the panel names none", () => {
+		render(<StylePresetSync />);
+		expect(document.documentElement.classList.contains("style-preset-vega")).toBeTrue();
+	});
+
+	// The server-rendered class must give way to the panel's preset, never stack.
+	test("replaces a stale preset class with the panel's one", () => {
+		document.documentElement.classList.add("style-preset-vega");
+		render(<StylePresetSync preset="lyra" />);
+		const presets = [...document.documentElement.classList].filter((c) =>
+			c.startsWith("style-preset-"),
+		);
+		expect(presets).toEqual(["style-preset-lyra"]);
 	});
 });

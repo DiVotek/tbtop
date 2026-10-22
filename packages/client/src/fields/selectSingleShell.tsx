@@ -124,7 +124,7 @@ export function SingleComboboxShell({
 					className="z-50"
 					sideOffset={4}
 				>
-					<Combobox.Popup className="flex max-h-[var(--available-height)] w-[var(--anchor-width)] flex-col overflow-hidden rounded-md border border-input bg-background shadow-md">
+					<Combobox.Popup className="flex max-h-[var(--available-height)] w-[var(--anchor-width)] flex-col overflow-hidden rounded-surface border border-input bg-background shadow-md">
 						<Combobox.List className="min-h-0 max-h-60 overflow-y-auto p-1">
 							{/* Rows come from the server, so Combobox.Empty — which reads Base
 							    UI's own collection — would always consider the list empty. */}

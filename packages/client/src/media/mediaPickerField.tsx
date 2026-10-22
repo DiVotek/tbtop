@@ -368,7 +368,7 @@ function MediaPreviewBlock({
 				onClick={onOpen}
 				disabled={disabled}
 				className={cn(
-					"flex h-48 w-full items-center justify-center overflow-hidden rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+					"flex h-48 w-full items-center justify-center overflow-hidden rounded-surface border transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 					item
 						? "bg-muted hover:opacity-90"
 						: "border-dashed text-muted-foreground hover:bg-muted/50",
@@ -527,7 +527,7 @@ function MediaPickerModalContent({
 		>
 			<div className="flex min-h-0 gap-4" style={{ height: "60vh" }}>
 				{/* Folder tree */}
-				<aside className="w-44 shrink-0 overflow-y-auto rounded-md border">
+				<aside className="w-44 shrink-0 overflow-y-auto rounded-surface border">
 					<FolderTree
 						folders={folders}
 						selectedId={selectedFolder}

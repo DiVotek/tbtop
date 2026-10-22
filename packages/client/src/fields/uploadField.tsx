@@ -155,7 +155,7 @@ function UploadPreview({
 	const isImg = value.url !== "" && looksLikeImage(value.url, value.path);
 	return (
 		<div className="space-y-2">
-			<div className="flex min-h-24 items-center gap-3 rounded-md border p-2">
+			<div className="flex min-h-24 items-center gap-3 rounded-surface border p-2">
 				{isImg ? (
 					<img
 						src={value.url}

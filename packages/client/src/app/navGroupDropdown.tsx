@@ -165,7 +165,7 @@ function TriggerButton({
 						data-testid={testid}
 						aria-label={label}
 						className={cn(
-							"flex size-9 items-center justify-center rounded-md hover:bg-accent",
+							"flex size-9 items-center justify-center rounded-surface hover:bg-accent",
 							active && "bg-accent",
 						)}
 					>
@@ -180,7 +180,7 @@ function TriggerButton({
 		<DropdownMenuTrigger
 			data-testid={testid}
 			className={cn(
-				"flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm tracking-wider hover:bg-accent",
+				"flex items-center gap-1.5 rounded-surface px-2 py-1.5 text-sm tracking-wider hover:bg-accent",
 				active && "bg-accent font-medium",
 			)}
 		>
@@ -222,7 +222,7 @@ function DropdownNavItem({ item, currentUrl }: { item: NavItem; currentUrl: stri
 function RailItemLink({ item, currentUrl }: { item: NavItem; currentUrl: string }) {
 	const active = containsActive(item, currentUrl);
 	const className = cn(
-		"flex size-9 items-center justify-center rounded-md hover:bg-accent",
+		"flex size-9 items-center justify-center rounded-surface hover:bg-accent",
 		active && "bg-accent",
 	);
 	const glyph = item.icon ? (
@@ -259,7 +259,7 @@ function RailItemLink({ item, currentUrl }: { item: NavItem; currentUrl: string 
 export function RailItemGlyph({ label }: { label: string }) {
 	return (
 		<span
-			className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-muted text-[10px] font-medium uppercase"
+			className="flex size-4 shrink-0 items-center justify-center rounded-surface-sm bg-muted text-[10px] font-medium uppercase"
 			aria-hidden
 		>
 			{label.charAt(0)}

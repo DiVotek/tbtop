@@ -22,7 +22,7 @@ export function SlashMenuList({
 }: SlashMenuListProps) {
 	return createPortal(
 		<div
-			className="absolute z-50 w-56 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+			className="absolute z-50 w-56 overflow-hidden rounded-surface border bg-popover p-1 text-popover-foreground shadow-md"
 			style={{ top: position.top, left: position.left }}
 		>
 			{commands.map((cmd, index) => [
@@ -38,7 +38,7 @@ export function SlashMenuList({
 					key={`${cmd.group ?? ""}:${cmd.label}`}
 					type="button"
 					className={cn(
-						"relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors",
+						"relative flex w-full cursor-default select-none items-center gap-2 rounded-surface-sm px-2 py-1.5 text-sm outline-hidden transition-colors",
 						index === selectedIndex
 							? "bg-accent text-accent-foreground"
 							: "text-foreground hover:bg-accent hover:text-accent-foreground",

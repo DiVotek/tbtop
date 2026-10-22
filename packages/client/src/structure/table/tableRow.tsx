@@ -101,15 +101,18 @@ export function TableRow(props: TableRowProps) {
 
 	const isClickable = Boolean(props.rowClick) || Boolean(recordHref);
 
+	// New-gen shape: border, hover tint and the selected tint come from
+	// `cn-table-row` (selection is signalled with `data-state="selected"`, the
+	// upstream idiom, instead of our old `bg-primary/5`), and the checkbox /
+	// actions cells use `cn-table-cell` (`p-2`, was `px-3 py-2`). Our deltas:
+	// pointer cursor + keyboard activation for clickable rows, and drag bindings.
+
 	return (
 		<tr
 			ref={props.dragRef}
 			style={props.dragStyle}
-			className={cn(
-				"border-t transition-colors hover:bg-muted/50",
-				props.selected && "bg-primary/5",
-				isClickable && "cursor-pointer",
-			)}
+			className={cn("cn-table-row", isClickable && "cursor-pointer")}
+			data-state={props.selected ? "selected" : undefined}
 			data-testid={id ? `table-row-${id}` : undefined}
 			onPointerDown={isClickable ? handleRowPointerDown : undefined}
 			onClick={isClickable ? handleRowClick : undefined}
@@ -119,7 +122,7 @@ export function TableRow(props: TableRowProps) {
 			<RowProvider value={props.row}>
 				{props.leadingCell}
 				{props.hasBulk && (
-					<td className="px-3 py-2">
+					<td className="cn-table-cell">
 						<Checkbox
 							className="cursor-pointer"
 							checked={props.selected}
@@ -137,7 +140,7 @@ export function TableRow(props: TableRowProps) {
 					/>
 				))}
 				{props.hasRowActions && (
-					<td className="px-3 py-2">
+					<td className="cn-table-cell">
 						<RowActionsCell actions={props.rowActions} />
 					</td>
 				)}

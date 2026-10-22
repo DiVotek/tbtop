@@ -26,6 +26,7 @@ export default defineConfig({
 		// dist. Subpath alias is listed first so it wins over the bare one.
 		alias: [
 			{ find: "@tbtop/inertia-admin/styles.css", replacement: clientSrc("styles.css") },
+			{ find: /^@tbtop\/inertia-admin\/styles\/(.+)$/, replacement: clientSrc("styles/$1") },
 			{ find: "@tbtop/inertia-admin", replacement: clientSrc("index.ts") },
 		],
 	},

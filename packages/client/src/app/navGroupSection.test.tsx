@@ -174,7 +174,7 @@ describe("NavGroupSection", () => {
 		expect(posts?.parentElement?.className).toContain("pl-5");
 		expect(dashboard?.parentElement?.className).not.toContain("pl-5");
 		// Only one group heading exists in the sidebar: Content.
-		const headings = Array.from(container.querySelectorAll(".uppercase"));
+		const headings = Array.from(container.querySelectorAll('[data-sidebar="group-label"]'));
 		expect(headings.map((el) => el.textContent)).toEqual(["Content"]);
 	});
 
@@ -231,7 +231,9 @@ describe("navigation active URL matching", () => {
 
 	test("does not highlight a link that only shares a pathname prefix", () => {
 		const { getByText } = render(<NavItemLink item={item} currentUrl="/admin/posts" />);
-		expect(getByText("Post").closest("a")?.className).not.toContain("bg-accent font-medium");
+		const link = getByText("Post").closest("a");
+		expect(link?.className).not.toContain("bg-accent font-medium");
+		expect(link?.hasAttribute("data-active")).toBe(false);
 	});
 
 	test("treats the root link as exact-only", () => {

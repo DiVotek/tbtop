@@ -235,7 +235,7 @@ function DetailShell({
 			data-testid="media-detail"
 		>
 			{/* Preview */}
-			<div className="flex items-center justify-center rounded-md border bg-muted/40 p-4">
+			<div className="flex items-center justify-center rounded-surface border bg-muted/40 p-4">
 				<FilePreview item={item} />
 			</div>
 
