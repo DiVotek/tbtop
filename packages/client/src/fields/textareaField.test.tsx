@@ -2,9 +2,25 @@ import { describe, expect, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderNode } from "../render/structureRenderer";
+import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
 import { s } from "../structure/structure";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
+import type { StructureNode } from "../structure/types";
 import { TextareaCell, TextareaForm } from "./textareaField";
+
+/** s.* builders do not type `translatable`; the wire option is what the form reads. */
+function translatableField(
+	kind: string,
+	name: string,
+	options: Record<string, unknown>,
+): StructureNode {
+	return {
+		kind,
+		name,
+		options: { name, translatable: true, ...options },
+		meta: {},
+	} as StructureNode;
+}
 
 describe("Textarea field", () => {
 	test("Textarea renders a textarea element with rows from options", async () => {
@@ -90,6 +106,26 @@ describe("Textarea field", () => {
 		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
 		const textarea = container.querySelector("textarea");
 		expect(textarea?.getAttribute("placeholder")).toBe("Write…");
+	});
+
+	test("a translatable textarea shows each locale's placeholder on its own tab", async () => {
+		const node = s.form({ query: async () => ({ body: { en: "", uk: "" } }) }, [
+			translatableField("textarea", "body", { placeholder: { en: "Summary", uk: "Опис" } }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { container } = render(
+			<ContentLocaleConfigProvider config={{ locales: ["en", "uk"], defaultLocale: "en" }}>
+				<Wrap>{renderNode(node)}</Wrap>
+			</ContentLocaleConfigProvider>,
+		);
+		await waitFor(() => {
+			expect(
+				container.querySelector('[data-locale="en"] textarea')?.getAttribute("placeholder"),
+			).toBe("Summary");
+			expect(
+				container.querySelector('[data-locale="uk"] textarea')?.getAttribute("placeholder"),
+			).toBe("Опис");
+		});
 	});
 
 	test("Textarea form-block wraps label and required marker, component renders only the input", async () => {

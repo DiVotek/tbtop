@@ -3,9 +3,25 @@ import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { renderNode } from "../render/structureRenderer";
+import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
 import { s } from "../structure/structure";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
+import type { StructureNode } from "../structure/types";
 import { TextForm } from "./textField";
+
+/** s.* builders do not type `translatable`; the wire option is what the form reads. */
+function translatableField(
+	kind: string,
+	name: string,
+	options: Record<string, unknown>,
+): StructureNode {
+	return {
+		kind,
+		name,
+		options: { name, translatable: true, ...options },
+		meta: {},
+	} as StructureNode;
+}
 
 function MaskHarness({ mask }: { mask: string }) {
 	const [value, setValue] = useState<string | null>("");
@@ -92,4 +108,38 @@ test("Text placeholder reaches the masked input", () => {
 		/>,
 	);
 	expect((getByRole("textbox") as HTMLInputElement).placeholder).toBe("(555) 555-5555");
+});
+
+test("a translatable text shows each locale's placeholder on its own tab", async () => {
+	const node = s.form({ query: async () => ({ title: { en: "", uk: "" } }) }, [
+		translatableField("text", "title", {
+			placeholder: { en: "Page title", uk: "Назва сторінки" },
+		}),
+	]);
+	const Wrap = wrap(() => new Response("{}"));
+	const { container } = render(
+		<ContentLocaleConfigProvider config={{ locales: ["en", "uk"], defaultLocale: "en" }}>
+			<Wrap>{renderNode(node)}</Wrap>
+		</ContentLocaleConfigProvider>,
+	);
+	await waitFor(() => {
+		const en = container.querySelector('[data-locale="en"] input') as HTMLInputElement;
+		const uk = container.querySelector('[data-locale="uk"] input') as HTMLInputElement;
+		expect(en?.placeholder).toBe("Page title");
+		expect(uk?.placeholder).toBe("Назва сторінки");
+	});
+});
+
+test("a locale map on a non-translatable text reads the default content locale", () => {
+	const { getByRole } = render(
+		<ContentLocaleConfigProvider config={{ locales: ["en", "uk"], defaultLocale: "uk" }}>
+			<TextForm
+				name="title"
+				value=""
+				onChange={() => {}}
+				options={{ placeholder: { en: "Page title", uk: "Назва сторінки" } }}
+			/>
+		</ContentLocaleConfigProvider>,
+	);
+	expect((getByRole("textbox") as HTMLInputElement).placeholder).toBe("Назва сторінки");
 });

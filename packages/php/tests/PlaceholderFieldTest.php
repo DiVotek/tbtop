@@ -16,6 +16,24 @@ it('serializes a textarea field with placeholder option', function () {
     expect($json['options']['placeholder'])->toBe('Write here…');
 });
 
+it('serializes a per-locale placeholder map on a translatable text and textarea', function () {
+    $s = new S;
+    $map = ['en' => 'Page title', 'uk' => 'Назва сторінки'];
+    $text = json_decode(json_encode($s->text('title')->translatable()->placeholder($map)), true);
+    $textarea = json_decode(json_encode($s->textarea('summary')->placeholder($map)->translatable()), true);
+
+    expect($text['options']['placeholder'])->toBe($map)
+        ->and($text['options']['translatable'])->toBeTrue()
+        ->and($textarea['options']['placeholder'])->toBe($map);
+});
+
+it('refuses a placeholder map without locale keys or with non-string text', function (array $map) {
+    (new S)->text('title')->placeholder($map);
+})->with([
+    'list' => [['Page title']],
+    'non-string text' => [['en' => 5]],
+])->throws(InvalidArgumentException::class, 'locale keys and string values');
+
 it('serializes a number field with placeholder option', function () {
     $s = new S;
     $json = json_decode(json_encode($s->number('rating')->placeholder('0-10')), true);

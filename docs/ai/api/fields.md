@@ -291,7 +291,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `mask(string $pattern): static` | Static input mask, Filament token alphabet: `9` = digit, `a` = letter, `*` = alphanumeric; any other character is a literal that the client inserts automatically (e.g. '(999) 999-9999'). No support for optional or repeating tokens — it's a fixed-length pattern only. |
 | `maxLength(int $length): static` | Maximum character count. |
 | `minLength(int $length): static` | Minimum character count. |
-| `placeholder(string $text): static` | Placeholder text shown in the empty input. |
+| `placeholder(array\|string $text): static` | Placeholder text shown while the field is empty. Pass a locale map (`['en' => 'Page title', 'uk' => 'Назва сторінки']`) on a translatable field to show each locale's text on its own tab; a locale missing from the map shows none. A non-translatable field reads the default content locale. |
 | `prefix(JsonSerializable\|string $content): static` | Content rendered before the input, inside the control (e.g. a currency symbol or icon block). A plain string becomes a TextBlock; any other JsonSerializable node is used as-is. Display nodes only — nesting a Field here throws (an affix decorates the control, it is not a second input, and its rules would never be collected). |
 | `regex(string $pattern): static` | Match a PCRE pattern. Passed as an array element so the rule collector does not split on '\|' inside the pattern. |
 | `startsWith(string ...$values): static` | Value must start with one of the given substrings. |
@@ -311,7 +311,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `length(int $length): static` | Exact character count. |
 | `maxLength(int $length): static` | Maximum character count. |
 | `minLength(int $length): static` | Minimum character count. |
-| `placeholder(string $text): static` | Placeholder text shown in the empty textarea. |
+| `placeholder(array\|string $text): static` | Placeholder text shown while the field is empty. Pass a locale map (`['en' => 'Page title', 'uk' => 'Назва сторінки']`) on a translatable field to show each locale's text on its own tab; a locale missing from the map shows none. A non-translatable field reads the default content locale. |
 | `regex(string $pattern): static` | Match a PCRE pattern. Passed as an array element so the rule collector does not split on '\|' inside the pattern. |
 | `startsWith(string ...$values): static` | Value must start with one of the given substrings. |
 

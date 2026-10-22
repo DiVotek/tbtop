@@ -16,13 +16,15 @@ export interface TextOpts extends AffixOpts {
 	label?: string;
 	required?: boolean;
 	maxLength?: number;
-	placeholder?: string;
+	/** A string, or one per content locale (shown per tab on a translatable field). */
+	placeholder?: string | Record<string, string>;
 }
 
 export interface TextareaOpts {
 	label?: string;
 	required?: boolean;
-	placeholder?: string;
+	/** A string, or one per content locale (shown per tab on a translatable field). */
+	placeholder?: string | Record<string, string>;
 	rows?: number;
 	autoresize?: boolean;
 }

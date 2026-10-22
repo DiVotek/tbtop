@@ -5,12 +5,14 @@ import { Input } from "../ui/input";
 import { nullableCell, TruncatedTextCell } from "./cellHelpers";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { type AffixOptions, InputGroup } from "./inputGroup";
+import { useLocalePlaceholder } from "./localePlaceholder";
 import { MaskedInput } from "./maskedInput";
 
 interface TextOptions extends AffixOptions {
 	mask?: string;
 	copyable?: CopyableConfig;
-	placeholder?: string;
+	/** A string, or one per content locale. */
+	placeholder?: string | Record<string, string>;
 }
 
 export function TextCell({ value }: FieldCellProps<string>) {
@@ -31,7 +33,7 @@ export function TextForm({
 	const inputId = fieldId({ id, name });
 	const mask = options?.mask;
 	const copyable = options?.copyable;
-	const placeholder = options?.placeholder;
+	const placeholder = useLocalePlaceholder(options?.placeholder);
 	const inputClass = copyable ? "pr-9" : undefined;
 	const display = mask ? applyMask(asString(value), mask) : asString(value);
 
