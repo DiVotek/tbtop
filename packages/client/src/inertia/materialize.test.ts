@@ -13,7 +13,10 @@ import { materialize } from "./materialize";
 let postImpl: (
 	url: string,
 	data: unknown,
-	options: { onSuccess?: () => void; onError?: (errors: Record<string, string>) => void },
+	options: {
+		onSuccess?: (page: { flash: Record<string, unknown> }) => void;
+		onError?: (errors: Record<string, string>) => void;
+	},
 ) => void = () => {};
 
 mock.module("@inertiajs/react", () => ({
@@ -732,7 +735,7 @@ describe("materialize form", () => {
 
 	it("commits submitted values before resolving without rolling back to stale initial data", async () => {
 		postImpl = (_url, _data, options) => {
-			options.onSuccess?.();
+			options.onSuccess?.({ flash: {} });
 		};
 
 		const resets: unknown[] = [];

@@ -135,6 +135,16 @@ it('distinct on a multiple select rejects a repeated value', function () {
         ->and(validator(['tags' => ['php', 'php']], $rules)->fails())->toBeTrue();
 });
 
+it('requiredWith requires the value when any one listed field is present', function () {
+    // Laravel's required_with is "any"; required_with_all is "all". The docblock
+    // once said "all", so a single present field must already trigger it.
+    $rules = ['zip' => Text::make('zip')->requiredWith('street', 'city')->ruleEntries()];
+
+    expect(validator(['street' => 'Main St'], $rules)->fails())->toBeTrue()
+        ->and(validator(['street' => 'Main St', 'zip' => '12345'], $rules)->passes())->toBeTrue()
+        ->and(validator([], $rules)->passes())->toBeTrue();
+});
+
 it('min/max helpers surface as client wire constraints', function () {
     // min/max are in the ConstraintMap subset, so they also reach the client.
     $node = Text::make('title')->minLength(3)->maxLength(10)->toNode()->jsonSerialize();

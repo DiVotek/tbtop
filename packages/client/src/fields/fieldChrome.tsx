@@ -35,7 +35,7 @@ export function FieldChrome({
 	children,
 }: FieldChromeProps) {
 	const labelNode = label && (
-		<Label htmlFor={fieldId}>
+		<Label id={fieldLabelId(fieldId)} htmlFor={fieldId}>
 			{label}
 			{required && <span className="text-destructive">*</span>}
 			{tooltip && <FieldTooltip text={tooltip} />}
@@ -78,6 +78,20 @@ export function fieldErrorId(fieldId: string): string {
 
 export function helperTextId(fieldId: string): string {
 	return `${fieldId}-helper`;
+}
+
+export function fieldLabelId(fieldId: string): string {
+	return `${fieldId}-label`;
+}
+
+/**
+ * The `aria-labelledby` value for a choice-group control (radio, checkbox
+ * list, toggle buttons). The chrome's `<label for>` can't name a group — it
+ * renders a div, which isn't labelable — so the group points back at the
+ * label by id. Undefined without a label: a dangling reference names nothing.
+ */
+export function groupLabelledBy(fieldId: string, label: string | undefined): string | undefined {
+	return label ? fieldLabelId(fieldId) : undefined;
 }
 
 /**

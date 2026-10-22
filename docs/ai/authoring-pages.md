@@ -191,7 +191,8 @@ are overridable hooks with sensible defaults.
 | `headerActions()` | `headerActions(S $s): array` | No | Actions rendered in the page header, beside the title |
 | `middleware()` | `static middleware(PanelConfig $panel): ?list<string>` | No | Replaces the panel's auth/app middleware for this page **and its whole endpoint cluster** (forms, actions, tables, data). The mechanism for a **public** page inside an authenticated panel: return `['web']` to skip `auth:{guard}` — panel binding, locale and the Inertia share still apply. Spread `$panel->authStack()` to add rather than replace. `null` inherits. Access rules go in `can()`, not here: page middleware does not run for MCP calls |
 | `nav()` | `static nav(): ?array` | No | Nav placement: `['group' => '...', 'label' => '...', 'order' => 0, 'parent' => OtherPage::class]`, or `null` to hide from nav. Omit `group` to list the page ungrouped (no heading, no indent). `parent` nests this page under another page's nav item; `section` places it under a heading declared by `NavGroup::sections()` — see [./recipes.md](./recipes.md#recipe-9--navigation-configuration) |
-| `can()` | `static can(): ?string` | No | Gate ability name required to view this page. `null` = no gate (any authenticated user) |
+| `can()` | `static can(): string\|array\|null` | No | Gate required to view this page: an ability name, or `[ability, Model::class]` to check a model policy (e.g. `['viewAny', Post::class]`). `null` = no gate (any authenticated user) |
+| `url()` | `static url(array $parameters = [], ?string $panel = null): string` | — | The page's relative URL, e.g. `EditPage::url(['post' => $post])` → `/admin/posts/5/edit`. Resolves `$panel`, else the current request's panel, else the only panel that serves the page; throws when it is in several and none applies. Use it instead of hard-coding the panel prefix |
 | `breadcrumbs()` | `breadcrumbs(): array\|\Closure\|null` | No | Override breadcrumbs. Return `[['label' => '...', 'url' => '...']]`, a closure receiving the page instance, or `null` to auto-build from the nav tree |
 | `layout()` | `layout(): string` | No | Shell layout: `'admin'` (sidebar + header, the default) or `'center'` (chrome-less, content centered) |
 
@@ -222,6 +223,20 @@ public static function can(): ?string
     return 'view-dashboard';
 }
 ```
+
+Policy guard — the class reaches the policy's `viewAny(User $user)`:
+
+```php
+/** @return array{0: string, 1: class-string} */
+public static function can(): array
+{
+    return ['viewAny', Post::class];
+}
+```
+
+A page-level gate has no record. Check per-record abilities (`update`, `delete`) with
+`Gate::authorize('update', $record)` where the record is loaded, as
+`make:tbtop-resource --policy` generates.
 
 ---
 

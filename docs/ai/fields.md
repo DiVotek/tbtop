@@ -246,14 +246,19 @@ example below differs only in what the closure returns.
 
 ## Fields that need a server endpoint
 
-Four fields resolve data from the server at runtime rather than from static props.
+Some fields call a page endpoint at runtime instead of reading only static props:
+`relation`, `select` (with `creatable()` or `query()`), `daterange` (with `disabledRanges()` +
+`dependsOn()`) and `richtext` (with `embeds()`). `upload` posts to its own endpoint too — see
+the [Upload field cookbook](#upload-field-cookbook).
 
 ### Relation — `relation-search` endpoint
 
 `Relation` always requires a `query()` closure on the PHP builder. The client sends
 a search string; the endpoint runs the closure, filters by the search term, and returns
 matching records. The `labelKey` method sets which column is used as the display label
-(defaults to `'name'`).
+(defaults to `'name'`). The endpoint returns at most 50 rows: set
+`tbtop-admin.relation.search_cap` to change it app-wide, or `searchLimit(int)` on one field
+(server-only, never serialized).
 
 ```php
 // From apps/demo/app/Admin/Pages/RelationDemoPage.php

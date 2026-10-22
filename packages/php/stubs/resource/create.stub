@@ -1,0 +1,54 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelClass }};
+{{ gateImport }}use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Dsl\Actions\FormActions;
+use Tbtop\Admin\Dsl\Node;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Pages\Page;
+
+class CreatePage extends Page
+{
+    use {{ trait }};
+
+    public static function path(): string
+    {
+        return '{{ path }}/new';
+    }
+
+    public static function slug(): string
+    {
+        return '{{ slug }}-create';
+    }
+{{ can:create }}
+    public function title(): string
+    {
+        return 'New {{ labelLower }}';
+    }
+
+    /** @return list<array{label: string, url?: string}> */
+    public function breadcrumbs(): array
+    {
+        return [['label' => '{{ plural }}', 'url' => IndexPage::url()], ['label' => $this->title()]];
+    }
+
+    public function view(S $s): Node
+    {
+        return $s->stack([
+            $s->form('{{ var }}', [
+                ...$this->{{ var }}Fields($s),
+                FormActions::saveCancel($s, IndexPage::url(), saveLabel: 'Create'),
+            ])
+                ->record($this->blank{{ model }}())
+                ->onSubmit(function (ActionCtx $ctx): string {{{ authorizeStore }}
+                    // $ctx->form holds only the validated fields declared above.
+                    $record = (new {{ model }})->{{ fill }}($ctx->form);
+                    $record->save();
+
+                    return EditPage::url(['{{ var }}' => $record->getKey()]);
+                }),
+        ]);
+    }
+}

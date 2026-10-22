@@ -1,11 +1,14 @@
 <?php
 
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\MediaUploadLimit;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Media\Models\MediaFolder;
+use Tbtop\Admin\Uploads\ConversionProfile;
 
 beforeEach(function () {
     Storage::fake('public');
@@ -199,6 +202,34 @@ it('upload stores dimensions for the original and each conversion', function () 
         ->and($row->sizes['thumb'])->toMatchArray(['width' => 128, 'height' => 85, 'mime' => 'image/webp'])
         ->and(Storage::disk('public')->exists($row->sizes['thumb']['path']))->toBeTrue();
 });
+
+it('upload makes a webp conversion for a palette png no larger than the profile', function () {
+    $data = $this->postJson('/admin/api/media/upload', ['file' => palettePng(64)])
+        ->assertStatus(201)->json();
+
+    expect($data['sizes']['thumb'])->toMatchArray(['width' => 64, 'height' => 64, 'mime' => 'image/webp'])
+        ->and(Storage::disk('public')->allFiles('tbtop-media'))->toHaveCount(2);
+})->skip(! function_exists('imagewebp'), 'GD webp unavailable');
+
+it('deletes the stored original and earlier variants when a later variant fails', function () {
+    $real = Storage::disk('public');
+    $file = UploadedFile::fake()->image('big.png', 600, 400);
+    $path = (string) $file->store('tbtop-media', 'public');
+    $disk = Mockery::mock(FilesystemAdapter::class);
+    $disk->shouldReceive('put')->andReturnUsing(fn (string $p, string $blob) => str_ends_with($p, '-small.webp')
+        ? throw new RuntimeException('disk full')
+        : $real->put($p, $blob));
+    $disk->shouldReceive('delete')->andReturnUsing(fn (string|array $p) => $real->delete($p));
+    Storage::set('public', $disk);
+    $profiles = [
+        'large' => new ConversionProfile(300, 300, 'webp', null),
+        'small' => new ConversionProfile(100, 100, 'webp', null),
+    ];
+
+    expect(fn () => MediaResource::imageAttributes($file, $path, 'public', $profiles))
+        ->toThrow(RuntimeException::class, 'disk full')
+        ->and($real->allFiles('tbtop-media'))->toBe([]);
+})->skip(! function_exists('imagewebp'), 'GD webp unavailable');
 
 it('upload encodes each conversion in its own format, falling back to the global default', function () {
     config()->set('tbtop-admin.media.profiles', [

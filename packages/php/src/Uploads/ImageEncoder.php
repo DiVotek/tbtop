@@ -34,6 +34,8 @@ final class ImageEncoder
     /**
      * Encode a GD image to the target format.
      * Returns null when the format is unsupported (caller keeps the original).
+     * A palette image is promoted to truecolor in place for every target but
+     * png: GD's webp writer rejects palette images outright.
      *
      * @return array{blob: string, mimeType: string, ext: string}|null
      */
@@ -43,6 +45,9 @@ final class ImageEncoder
             return null;
         }
         $spec = self::FORMATS[$format];
+        if ($format !== 'png' && ! imageistruecolor($img) && ! imagepalettetotruecolor($img)) {
+            return null;
+        }
         $blob = self::capture($img, $spec['fn'], $quality ?? $spec['quality']);
         if ($blob === null) {
             return null;
