@@ -109,8 +109,8 @@ the `KitchenSinkPage`/`ContractTest` gate.
 
 | Field | `S` factory | Wire `kind` | Field-specific methods | Needs server endpoint? |
 |---|---|---|---|---|
-| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string $text)`; `mask(string $pattern)` — input mask where `9` is a digit, `a` a letter, `*` alphanumeric and anything else a literal (fixed length; no optional or repeating tokens); `prefix()`/`suffix()` for inline affixes | No |
-| **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | `placeholder(string $text)` | No |
+| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string\|array $text)` — a locale map (`['en' => …, 'uk' => …]`) on a translatable field shows each locale's text on its tab; `mask(string $pattern)` — input mask where `9` is a digit, `a` a letter, `*` alphanumeric and anything else a literal (fixed length; no optional or repeating tokens); `prefix()`/`suffix()` for inline affixes | No |
+| **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | `placeholder(string\|array $text)` — a locale map on a translatable field, as for Text | No |
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
 | **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes. Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
