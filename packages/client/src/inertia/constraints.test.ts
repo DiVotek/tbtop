@@ -95,3 +95,43 @@ describe("compileConstraints multi-value fields", () => {
 		expect(errors(schema, { sections: [] })).toEqual(["validation.min:2"]);
 	});
 });
+
+describe("compileConstraints server-only patterns", () => {
+	it("skips a regex JS cannot compile instead of throwing", () => {
+		// PCRE-only syntax (possessive quantifier, inline flag group) survives
+		// the server's delimiter strip; the server stays the gate.
+		expect(errors({ code: { regex: "^\\d++$" } }, { code: "abc" })).toEqual([]);
+		expect(errors({ code: { regex: "(?i)^[a-z]+$" } }, { code: "ABC" })).toEqual([]);
+	});
+
+	it("still reports other rules on a field whose regex is skipped", () => {
+		const schema = { code: { regex: "^\\d++$", in: ["1", "2"] } };
+		expect(errors(schema, { code: "3" })).toEqual(["validation.in"]);
+	});
+});
+
+describe("compileConstraints integer size", () => {
+	it("sizes a numeric string by value when the field is integer, like Laravel", () => {
+		const schema = { qty: { integer: true, min: 10, max: 100 } };
+		expect(errors(schema, { qty: "15" })).toEqual([]);
+		expect(errors(schema, { qty: "5" })).toEqual(["validation.min:10"]);
+		expect(errors(schema, { qty: "150" })).toEqual(["validation.max:100"]);
+	});
+
+	it("keeps sizing a non-integer field's numeric string by length", () => {
+		expect(errors({ pin: { min: 4 } }, { pin: "123" })).toEqual(["validation.min:4"]);
+	});
+});
+
+describe("compileConstraints url", () => {
+	it("rejects a value without a scheme and authority", () => {
+		const schema = { site: { url: true } };
+		expect(errors(schema, { site: "example.com" })).toEqual(["validation.url"]);
+		expect(errors(schema, { site: "not a url" })).toEqual(["validation.url"]);
+	});
+
+	it("accepts an absolute url", () => {
+		const schema = { site: { url: true } };
+		expect(errors(schema, { site: "https://example.com/path?q=1" })).toEqual([]);
+	});
+});
