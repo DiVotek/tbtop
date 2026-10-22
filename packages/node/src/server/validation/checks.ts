@@ -72,6 +72,19 @@ export const IMPLICIT = new Set([
 	"required_without",
 ]);
 
+/** strtotime() and checkdate(): parseable, and a Y-m-d part names a real day (no 2024-02-30). */
+function isDate(value: string): boolean {
+	const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+	if (ymd !== null) {
+		const [y, m, d] = ymd.slice(1).map(Number) as [number, number, number];
+		const real = new Date(Date.UTC(y, m - 1, d));
+		if (real.getUTCMonth() !== m - 1 || real.getUTCDate() !== d) {
+			return false;
+		}
+	}
+	return !Number.isNaN(Date.parse(value));
+}
+
 export const CHECKS: Record<string, Check> = {
 	accepted: ({ value }) => value === true || value === 1 || ACCEPTED.includes(text(value)),
 	alpha: ({ value }) => typeof value === "string" && /^[\p{L}\p{M}]+$/u.test(value),
@@ -82,7 +95,7 @@ export const CHECKS: Record<string, Check> = {
 		size(input) >= Number(input.params[0]) && size(input) <= Number(input.params[1]),
 	boolean: ({ value }) => [true, false, 0, 1, "0", "1"].includes(value as never),
 	confirmed: () => true,
-	date: ({ value }) => typeof value === "string" && !Number.isNaN(Date.parse(value)),
+	date: ({ value }) => typeof value === "string" && isDate(value),
 	different: (input) => others(input).every((other) => other !== input.value),
 	digits: ({ value, params }) =>
 		/^\d+$/.test(text(value)) && text(value).length === Number(params[0]),

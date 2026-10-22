@@ -238,6 +238,18 @@ describe("error page", () => {
 		});
 	});
 
+	test("a page the user may not open renders the 403 page, not raw JSON", async () => {
+		const signedIn = panel({ user: () => ({ name: "Max" }) });
+		const res = await browser(signedIn)("/admin/billing");
+		expect(res.status).toBe(403);
+		expect(res.headers.get("content-type")).toContain("text/html");
+		const page = await browser(signedIn)("/admin/billing", { inertia: true });
+		expect(((await page.json()) as InertiaPage).props).toMatchObject({
+			status: 403,
+			title: "You do not have access to this page",
+		});
+	});
+
 	test("a JSON client gets the host's 404, not the page", async () => {
 		const res = await admin.handle(
 			new Request("http://x/admin/nope", { headers: { accept: "application/json" } }),

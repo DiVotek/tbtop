@@ -48,11 +48,19 @@ export function isEnumSource(value: unknown): value is EnumSource {
 	return (value as Partial<EnumSource> | null)?.__enum === true;
 }
 
+/** PHP's `(string)` cast: `true` is "1", `false` is "". */
+export function phpString(value: unknown): string {
+	if (typeof value === "boolean") {
+		return value ? "1" : "";
+	}
+	return String(value);
+}
+
 /** Wire contract: option values are strings, as form data and URL params are. */
 export function normalizeOptions<T extends { value: unknown }>(
 	options: T[],
 ): (Omit<T, "value"> & { value: string })[] {
-	return options.map(({ value, ...rest }) => ({ value: String(value), ...rest }));
+	return options.map(({ value, ...rest }) => ({ value: phpString(value), ...rest }));
 }
 
 /** `{value, label, description?}` per case (EnumOptions::options). */

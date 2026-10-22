@@ -43,7 +43,8 @@
 		"typecheck": "tsc --noEmit",
 		"check:package": "bun run build && publint && attw --pack . --profile esm-only && bun scripts/smoke-pack.ts",
 		"check:workers": "bun workers/check.ts",
-		"sync:lang": "bun scripts/sync-lang.ts"
+		"sync:lang": "bun scripts/sync-lang.ts",
+		"check:lang": "bun scripts/sync-lang.ts --check"
 	},
 	"dependencies": {
 		"markdown-it": "^15.0.3"

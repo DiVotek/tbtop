@@ -29,29 +29,60 @@ const rpc = (body: unknown, status = 200) =>
 		headers: { "content-type": "application/json" },
 	});
 
+const errorBody = ({ id, code, message }: { id: Id; code: number; message: string }) => ({
+	jsonrpc: "2.0",
+	id,
+	error: { code, message },
+});
+
 /** A JSON-RPC error answer; `status` is the HTTP status (403/401 before the server runs). */
 export const rpcError = (error: { id: Id; code: number; message: string }, status = 200) =>
-	rpc(
-		{ jsonrpc: "2.0", id: error.id, error: { code: error.code, message: error.message } },
-		status,
-	);
+	rpc(errorBody(error), status);
+
+const accepted = () => new Response(null, { status: 202 });
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
 	value !== null && typeof value === "object" && !Array.isArray(value);
 
 /**
- * Streamable HTTP, stateless (what laravel/mcp's web transport answers): each
- * POST carries one JSON-RPC message and gets one JSON response; notifications
- * get 202. No SSE stream: the route answers only POST.
+ * Streamable HTTP, stateless (what laravel/mcp's web transport answers): a
+ * POST carries one JSON-RPC message, or a batch of them (2025-03-26), and
+ * gets the answers as JSON; notifications and client responses alone get
+ * 202. No SSE stream: the route answers only POST.
  */
 export async function serveRpc(request: Request, server: McpServerInfo): Promise<Response> {
-	const message: unknown = await request.json().catch(() => UNPARSABLE);
-	if (!isObject(message) || message.jsonrpc !== "2.0" || typeof message.method !== "string") {
-		const code = message === UNPARSABLE ? -32700 : -32600;
-		return rpcError({ id: null, code, message: "Invalid JSON-RPC request." });
+	const parsed: unknown = await request.json().catch(() => UNPARSABLE);
+	if (parsed === UNPARSABLE) {
+		return rpcError({ id: null, code: -32700, message: "Invalid JSON-RPC request." });
+	}
+	if (!Array.isArray(parsed)) {
+		const answer = await handle(parsed, server);
+		return answer === null ? accepted() : rpc(answer);
+	}
+	if (parsed.length === 0) {
+		return rpcError({ id: null, code: -32600, message: "Invalid JSON-RPC request." });
+	}
+	const answers: unknown[] = [];
+	for (const message of parsed) {
+		answers.push(await handle(message, server));
+	}
+	const sent = answers.filter((answer) => answer !== null);
+	return sent.length === 0 ? accepted() : rpc(sent);
+}
+
+/** One message's answer; null for a notification or a response the client sends back. */
+async function handle(message: unknown, server: McpServerInfo): Promise<unknown> {
+	if (!isObject(message) || message.jsonrpc !== "2.0") {
+		return errorBody({ id: null, code: -32600, message: "Invalid JSON-RPC request." });
+	}
+	if (typeof message.method !== "string") {
+		const isResponse = "id" in message && ("result" in message || "error" in message);
+		return isResponse
+			? null
+			: errorBody({ id: null, code: -32600, message: "Invalid JSON-RPC request." });
 	}
 	if (!("id" in message)) {
-		return new Response(null, { status: 202 });
+		return null;
 	}
 	return dispatch(message as Message & { method: string }, server);
 }
@@ -59,7 +90,7 @@ export async function serveRpc(request: Request, server: McpServerInfo): Promise
 async function dispatch(message: Message & { method: string }, server: McpServerInfo) {
 	const id = message.id ?? null;
 	const params = isObject(message.params) ? message.params : {};
-	const result = (value: unknown) => rpc({ jsonrpc: "2.0", id, result: value });
+	const result = (value: unknown) => ({ jsonrpc: "2.0", id, result: value });
 	switch (message.method) {
 		case "initialize":
 			return result(initialize(params, server));
@@ -70,7 +101,7 @@ async function dispatch(message: Message & { method: string }, server: McpServer
 		case "tools/call": {
 			const tool = server.tools.find((candidate) => candidate.name === params.name);
 			if (tool === undefined) {
-				return rpcError({
+				return errorBody({
 					id,
 					code: -32602,
 					message: `Unknown tool "${String(params.name)}".`,
@@ -79,7 +110,11 @@ async function dispatch(message: Message & { method: string }, server: McpServer
 			return result(await tool.call(isObject(params.arguments) ? params.arguments : {}));
 		}
 		default:
-			return rpcError({ id, code: -32601, message: `Method "${message.method}" not found.` });
+			return errorBody({
+				id,
+				code: -32601,
+				message: `Method "${message.method}" not found.`,
+			});
 	}
 }
 

@@ -45,9 +45,12 @@ export async function validate(
 ): Promise<ValidationResult> {
 	const errors: Record<string, string[]> = {};
 	const validated: Record<string, unknown> = {};
-	const targets = Object.entries(rules).flatMap(([pattern, list]) =>
-		expandKey(data, pattern).map((key) => ({ key, pattern, list })),
-	);
+	const targets = Object.entries(rules)
+		.flatMap(([pattern, list]) =>
+			expandKey(data, pattern).map((key) => ({ key, pattern, list })),
+		)
+		// `sometimes`: an absent key is not validated at all.
+		.filter((t) => dataHas(data, t.key) || !t.list.includes("sometimes"));
 	for (const target of targets) {
 		const messages = await checkKey(data, target, options);
 		if (messages.length > 0) {
@@ -73,11 +76,12 @@ async function checkKey(
 	options: ValidateOptions,
 ): Promise<string[]> {
 	const value = dataGet(data, target.key);
-	const skipOptional =
-		!dataHas(data, target.key) || (target.list.includes("nullable") && value === null);
+	const present = dataHas(data, target.key);
+	const skipOptional = !present || (target.list.includes("nullable") && value === null);
 	const base = { value, data, sizeKind: sizeKind(target.list, value) };
+	const bail = target.list.includes("bail");
 	const messages: string[] = [];
-	for (const rule of target.list) {
+	for (const rule of target.list.filter((r) => !MARKERS.has(r))) {
 		const [name, raw] = parseRule(rule);
 		const implicit = IMPLICIT.has(name);
 		if (!implicit && skipOptional) {
@@ -89,12 +93,15 @@ async function checkKey(
 			continue;
 		}
 		messages.push(typeof verdict === "string" ? verdict : message(call));
-		if (implicit) {
+		if (implicit || bail) {
 			break;
 		}
 	}
 	return messages;
 }
+
+/** Rules that steer the run instead of checking the value. */
+const MARKERS = new Set(["sometimes", "bail", "nullable"]);
 
 /** str_getcsv parameters, except a regex keeps its commas. */
 function ruleParams(name: string, raw: string | null): string[] {

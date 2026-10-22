@@ -86,6 +86,9 @@ jobs:
       - name: Test (schema + PHP fixture parity)
         run: bun test
 
+      - name: Lang in sync with the PHP lang files
+        run: bun run check:lang
+
   node-package:
     name: Node package (build, publint, attw, packed install)
     runs-on: ubuntu-latest

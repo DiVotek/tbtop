@@ -1,12 +1,11 @@
-import en from "../lang/en.json";
-import uk from "../lang/uk.json";
+import bundled from "../lang/index";
 import { currentContext } from "./dsl/context";
 
 /**
  * `tbtop-admin::admin` per locale, flattened to dot keys. Generated from the
  * PHP package's lang files by `bun run sync:lang`; never edit by hand.
  */
-export const BUNDLED_MESSAGES: Record<string, Record<string, string>> = { en, uk };
+export const BUNDLED_MESSAGES: Record<string, Record<string, string>> = bundled;
 
 /** __('tbtop-admin::admin.<key>', $replace): the request's messages, then English, then the key. */
 export function trans(key: string, replace: Record<string, string | number> = {}): string {

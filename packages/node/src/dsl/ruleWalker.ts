@@ -34,21 +34,39 @@ export function collectRules(children: unknown[], prefix = ""): Rules {
 	return rules;
 }
 
-/** `key → label` for every labelled field, keyed as collectRules() keys it. */
-export function collectAttributes(children: unknown[]): Record<string, string> {
+/**
+ * `key → label` for every labelled field, keyed as collectRules() keys it
+ * (RuleWalker::collectAttributes): translatable fields per locale, multiple
+ * selects and uploads also under `key.*`, repeater rows under `key.*.child`.
+ */
+export function collectAttributes(children: unknown[], prefix = ""): Record<string, string> {
 	const attributes: Record<string, string> = {};
-	for (const [key, field] of Object.entries(fieldsByKey(children))) {
-		const label = field.labelText();
-		if (label === null) {
-			continue;
-		}
-		attributes[key] = label;
-		const locales = field.isTranslatableField() ? currentContext().contentLocales : [];
-		for (const locale of locales) {
-			attributes[`${key}.${locale}`] = `${label} (${locale})`;
-		}
+	for (const field of submittedFields(children)) {
+		Object.assign(attributes, attributesOf(field, `${prefix}${field.name}`));
 	}
 	return attributes;
+}
+
+function attributesOf(field: Field, key: string): Record<string, string> {
+	const label = field.labelText();
+	const locales = field.isTranslatableField() ? currentContext().contentLocales : null;
+	const own: Record<string, string> =
+		label === null
+			? {}
+			: Object.fromEntries(
+					locales === null
+						? [[key, label]]
+						: locales.map((locale) => [`${key}.${locale}`, `${label} (${locale})`]),
+				);
+	const multiple =
+		(field instanceof Select || field instanceof Upload) && field.isMultiple() === true;
+	const elements = multiple
+		? Object.fromEntries(Object.entries(own).map(([k, v]) => [`${k}.*`, v]))
+		: {};
+	const rows = field.childFields();
+	const nested = rows.length > 0 ? collectAttributes(rows, `${key}.*.`) : {};
+	// PHP's `+=`: the field's own keys win over its rows'.
+	return { ...nested, ...elements, ...own };
 }
 
 /** Every field the walk reads, keyed by its own rule key. */

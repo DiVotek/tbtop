@@ -1,4 +1,5 @@
 import { applyKindFormat, type Column, type Row, type TableBuilder } from "../dsl";
+import { phpString } from "../dsl/options";
 import { pickTranslation } from "./translatable";
 import { dataGet, dataSet } from "./validation/data";
 
@@ -73,7 +74,7 @@ function resolved(
 			typeof value === "number" ||
 			typeof value === "boolean"
 		) {
-			out[col.name] = String(value);
+			out[col.name] = phpString(value);
 		}
 	}
 	return out;

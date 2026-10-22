@@ -1,4 +1,5 @@
 import type { Select } from "../../dsl";
+import { phpString } from "../../dsl/options";
 
 type Bag = Record<string, unknown>;
 type Option = { value: string; label: string; display?: unknown };
@@ -13,7 +14,7 @@ export function readDeps(body: Bag, allowed: string[]): Record<string, string> {
 	const out: Record<string, string> = {};
 	for (const [key, value] of Object.entries(deps)) {
 		if (allowed.includes(key) && scalar(value)) {
-			out[key] = String(value);
+			out[key] = phpString(value);
 		}
 	}
 	return out;

@@ -99,3 +99,20 @@ describe("collectRules (RuleWalker)", () => {
 		});
 	});
 });
+
+describe("run markers and dates", () => {
+	test("sometimes skips an absent key; bail stops at the first failure", async () => {
+		expect(await validate({}, { name: ["sometimes", "required", "string"] })).toEqual({
+			ok: true,
+			validated: {},
+		});
+		const failed = await validate({ name: 5 }, { name: ["bail", "string", "min:3"] });
+		expect(failed.ok ? [] : failed.errors.name).toHaveLength(1);
+	});
+
+	test("date refuses a day the calendar does not have", async () => {
+		expect((await validate({ d: "2024-02-30" }, { d: ["date"] })).ok).toBe(false);
+		expect((await validate({ d: "2024-02-29" }, { d: ["date"] })).ok).toBe(true);
+		expect((await validate({ d: "2024-02-29 10:00:00" }, { d: ["date"] })).ok).toBe(true);
+	});
+});

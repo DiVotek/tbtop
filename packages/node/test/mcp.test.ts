@@ -131,6 +131,28 @@ describe("MCP transport", () => {
 		expect((await (await rpc("tools/call", { name: "nope" })).json()).error.code).toBe(-32602);
 	});
 
+	test("a batch gets its answers in order; a client response alone gets 202", async () => {
+		const post = (body: unknown) =>
+			admin.handle(
+				new Request("http://x/admin/mcp", {
+					method: "POST",
+					headers: { authorization: "Bearer t0ken" },
+					body: JSON.stringify(body),
+				}),
+			);
+		const batch = await post([
+			{ jsonrpc: "2.0", id: 1, method: "ping" },
+			{ jsonrpc: "2.0", method: "notifications/initialized" },
+			{ jsonrpc: "2.0", id: 2, method: "nope" },
+		]);
+		const answers = (await batch?.json()) as { id: number; error?: { code: number } }[];
+		expect(answers.map((answer) => answer.id)).toEqual([1, 2]);
+		expect(answers[1]?.error?.code).toBe(-32601);
+		expect((await post({ jsonrpc: "2.0", id: 9, result: {} }))?.status).toBe(202);
+		const empty = (await (await post([]))?.json()) as { error?: { code: number } } | undefined;
+		expect(empty?.error?.code).toBe(-32600);
+	});
+
 	test("a page at the MCP path fails at createAdmin()", () => {
 		const clash = definePage({ path: "mcp", title: "x", view: (s) => s.stack([]) });
 		expect(() =>

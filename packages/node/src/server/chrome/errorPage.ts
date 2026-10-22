@@ -14,15 +14,27 @@ export function expectsJson(request: Request): boolean {
 	);
 }
 
+/** The page a status renders; Laravel's own 403 page stands for the forbidden one. */
+const TEXTS: Record<number, [string, string]> = {
+	404: ["state.pageNotFound", "state.pageNotFoundHint"],
+	403: ["state.forbidden", "state.forbidden"],
+};
+
+/** PanelErrorPage::notFound(). */
+export function notFoundPage(panel: PanelView, request: Request): Promise<Response> {
+	return errorPage(panel, request, 404);
+}
+
 /**
- * PanelErrorPage::notFound(): the `admin/error` page inside the panel's shell,
+ * PanelErrorPage::render(): the `admin/error` page inside the panel's shell,
  * or the chrome-less center layout for a guest, who must not see the nav.
  */
-export async function notFoundPage(panel: PanelView, request: Request): Promise<Response> {
+async function errorPage(panel: PanelView, request: Request, status: number): Promise<Response> {
+	const [title = "", message = ""] = TEXTS[status] ?? [];
 	const props = {
-		status: 404,
-		title: trans("state.pageNotFound"),
-		message: trans("state.pageNotFoundHint"),
+		status,
+		title: trans(title),
+		message: trans(message),
 		layout: currentContext().user == null ? "center" : "admin",
 		tbtop: await sharedProps(panel, request),
 		errors: {},
@@ -40,13 +52,13 @@ export async function notFoundPage(panel: PanelView, request: Request): Promise<
 		},
 		panel.rootView,
 	);
-	return new Response(response.body, { status: 404, headers: response.headers });
+	return new Response(response.body, { status, headers: response.headers });
 }
 
-/** A catch for a page visit: a 404 the page raises (a record it cannot find) renders in the shell. */
+/** A catch for a page visit: a 404 or 403 the page raises renders as a page, not raw JSON. */
 export function notFoundOr(panel: PanelView, request: Request) {
 	return (error: unknown): Promise<Response> =>
-		error instanceof HttpError && error.status === 404 && !expectsJson(request)
-			? notFoundPage(panel, request)
+		error instanceof HttpError && error.status in TEXTS && !expectsJson(request)
+			? errorPage(panel, request, error.status)
 			: Promise.reject(error);
 }
