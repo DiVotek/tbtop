@@ -41,10 +41,22 @@ const CYRILLIC_MAP: Record<string, string> = {
 	я: "ya",
 };
 
+// Latin letters NFKD leaves whole: their stroke or ligature is part of the
+// letter, not a combining mark, so the fold below would turn them into dashes
+// (Polish "płatnik" -> "p-atnik").
+const LATIN_MAP: Record<string, string> = {
+	ł: "l",
+	đ: "d",
+	ø: "o",
+	ß: "ss",
+	æ: "ae",
+	œ: "oe",
+};
+
 function transliterate(lower: string): string {
 	let out = "";
 	for (const char of lower) {
-		out += CYRILLIC_MAP[char] ?? char;
+		out += CYRILLIC_MAP[char] ?? LATIN_MAP[char] ?? char;
 	}
 	return out;
 }

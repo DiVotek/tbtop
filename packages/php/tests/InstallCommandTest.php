@@ -80,6 +80,7 @@ it('reports the wiring it cannot write itself', function () {
     $this->artisan('admin:install')
         ->expectsOutputToContain('vite.config.ts')
         ->expectsOutputToContain('rootView')
+        ->expectsOutputToContain('HandleInertiaRequests')
         ->assertSuccessful();
 });
 
