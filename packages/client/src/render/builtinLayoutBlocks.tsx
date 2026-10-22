@@ -114,7 +114,7 @@ export function RowBlock({ options, children, renderChild }: RenderProps<RowOpti
 					<div
 						// biome-ignore lint/suspicious/noArrayIndexKey: structure nodes are positional
 						key={i}
-						className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-sm hover:border-primary/50 hover:bg-muted/40"
+						className="flex items-center justify-between rounded-surface border bg-card px-3 py-2 text-sm hover:border-primary/50 hover:bg-muted/40"
 						data-testid="row-grid-item"
 					>
 						<TriggerVariantProvider value="plain">
@@ -151,7 +151,7 @@ export function FlexBlock({ options, children, renderChild }: RenderProps<FlexBl
 	const align = options.align != null ? (ALIGN[options.align] ?? "") : "";
 	const gap = options.gap != null ? (GAP[options.gap] ?? defaultGap) : defaultGap;
 	const wrap = options.wrap ? "flex-wrap" : "";
-	const card = options.variant === "card" ? "rounded-md border bg-card px-3 py-2" : "";
+	const card = options.variant === "card" ? "rounded-surface border bg-card px-3 py-2" : "";
 	const className = cn("flex [&>*]:min-w-0", dir, justify, align, gap, wrap, card, options.class);
 	return <div className={className}>{mapChildren(children, renderChild)}</div>;
 }

@@ -27,7 +27,7 @@ export function BulkActionsBar({ actions, selectedCount }: BulkActionsBarProps) 
 		<div
 			className={cn(
 				"flex flex-wrap items-center gap-3",
-				active && "rounded-md border bg-muted/40 px-3 py-2",
+				active && "rounded-surface border bg-muted/40 px-3 py-2",
 			)}
 			data-testid="table-bulk-actions"
 		>

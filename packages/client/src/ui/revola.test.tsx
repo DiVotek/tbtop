@@ -102,11 +102,9 @@ describe("ResponsiveDialog", () => {
 		expect(cls).not.toContain("slide-out-to");
 		// Entrance is a fade + scale from the center: no directional enter
 		// variables may leak in, and scale must grow from the content center.
+		// The fade + zoom itself is owned by the preset's `cn-dialog-content`.
 		expect(cls).toContain("origin-center");
-		expect(cls).toContain("data-open:animate-in");
-		expect(cls).toContain("data-open:fade-in-0");
-		expect(cls).toContain("data-open:zoom-in-[97%]");
-		expect(cls).toContain("data-closed:zoom-out-[98%]");
+		expect(cls).toContain("cn-dialog-content");
 		expect(cls).toContain("motion-reduce:animate-none");
 	});
 

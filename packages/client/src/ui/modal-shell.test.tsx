@@ -35,7 +35,8 @@ describe("ModalShell", () => {
 			),
 		);
 		const content = baseElement.querySelector('[role="dialog"]');
-		expect(content?.className ?? "").toContain("p-6");
+		// Dialog padding is owned by the preset's `cn-dialog-content`.
+		expect(content?.className ?? "").toContain("cn-dialog-content");
 	});
 
 	// Regression: tall dialog bodies (media picker) overflowed the viewport.

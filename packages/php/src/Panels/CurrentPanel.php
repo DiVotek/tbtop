@@ -143,4 +143,10 @@ final class CurrentPanel
     {
         return $this->config->appearance();
     }
+
+    /** Style preset scope class for the root Blade's <html>, e.g. 'style-preset-vega'. */
+    public function stylePresetClass(): string
+    {
+        return $this->config->getStylePresetClass();
+    }
 }

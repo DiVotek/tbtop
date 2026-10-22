@@ -77,6 +77,7 @@ export function LinkDialog({ editor, request, onClose }: LinkDialogProps) {
 
 	return (
 		<ResponsiveDialog open={open} onOpenChange={(next) => !next && onClose()}>
+			{/* Utilities beat `cn-dialog-content` (grid, gap-4, p-4). */}
 			<ResponsiveDialogContent className="flex flex-col gap-4 p-6 sm:max-w-md">
 				<ResponsiveDialogHeader>
 					<ResponsiveDialogTitle>
@@ -93,7 +94,7 @@ export function LinkDialog({ editor, request, onClose }: LinkDialogProps) {
 						type="text"
 						value={url}
 						onChange={(e) => setUrl(e.target.value)}
-						className="h-9 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+						className="h-9 rounded-surface border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 					/>
 				</label>
 

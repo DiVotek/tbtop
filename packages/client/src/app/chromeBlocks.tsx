@@ -79,7 +79,7 @@ export function LogoBlock() {
 	const content =
 		logoSlot ??
 		(orientation === "rail-sidebar" ? (
-			<span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+			<span className="flex size-9 items-center justify-center rounded-surface bg-primary text-primary-foreground">
 				{title.charAt(0)}
 			</span>
 		) : (
@@ -125,7 +125,7 @@ function LocaleButtons({ locale, setLocale, available }: LocaleVariantProps) {
 				<button
 					key={code}
 					type="button"
-					className="flex size-8 items-center justify-center rounded-md text-xs uppercase hover:bg-accent data-[active=true]:font-medium"
+					className="flex size-8 items-center justify-center rounded-surface text-xs uppercase hover:bg-accent data-[active=true]:font-medium"
 					data-active={locale === code}
 					data-testid={`locale-switcher-${code}`}
 					onClick={() => setLocale(code)}
@@ -142,7 +142,7 @@ function LocaleDropdown({ locale, setLocale, available }: LocaleVariantProps) {
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				data-testid="locale-switcher"
-				className="inline-flex h-8 items-center gap-1 rounded-md px-3 text-xs uppercase hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="inline-flex h-8 items-center gap-1 rounded-surface px-3 text-xs uppercase hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 			>
 				{locale}
 				<ChevronDownIcon className="size-3.5 shrink-0 opacity-60" aria-hidden />

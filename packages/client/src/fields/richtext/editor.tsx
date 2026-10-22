@@ -56,7 +56,7 @@ export function RichtextEditor({
 	return (
 		<LexicalComposer initialConfig={initialConfig}>
 			<EmbedsPlugin defs={embeds} disabled={disabled === true}>
-				<div className="relative rounded-md border transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
+				<div className="relative rounded-surface border transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
 					<Toolbar />
 					<div className="relative">
 						<RichTextPlugin

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
-import { act, cleanup, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import type { NavGroup } from "../chromeContext";
 import { CommandPalette } from "./CommandPalette";
 
@@ -58,7 +58,7 @@ describe("CommandPalette", () => {
 		expect(routerVisit).toHaveBeenCalledWith("/admin/posts");
 	});
 
-	test("closing without selecting resets the highlight for the next open", () => {
+	test("closing without selecting resets the highlight for the next open", async () => {
 		const { getByTestId, getByText, queryByTestId } = render(
 			<CommandPalette nav={NAV} data={{ hotkey: "mod+k" }} />,
 		);
@@ -69,9 +69,10 @@ describe("CommandPalette", () => {
 		act(() => {
 			fireEvent.keyDown(document, { key: "Escape" });
 		});
-		expect(queryByTestId("command-palette-input")).toBeNull();
+		// The dialog unmounts once its exit transition settles, a frame later.
+		await waitFor(() => expect(queryByTestId("command-palette-input")).toBeNull());
 		openPalette();
-		expect(getByText("Dashboard").closest("button")?.className).toContain("bg-accent");
+		expect(getByText("Dashboard").closest("button")?.hasAttribute("data-selected")).toBe(true);
 	});
 
 	test("a commands-only palette omits nav destinations", () => {

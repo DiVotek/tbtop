@@ -203,7 +203,7 @@ describe("DisplayAlertBlock", () => {
 		expect(paragraphs[0]?.textContent).toBe("No title here");
 	});
 
-	test("success color applies green classes", () => {
+	test("success color applies the success variant class", () => {
 		const { getByTestId } = render(
 			<DisplayAlertBlock
 				options={{ message: "OK", color: "success" }}
@@ -212,10 +212,10 @@ describe("DisplayAlertBlock", () => {
 				renderChild={NOOP_RENDER}
 			/>,
 		);
-		expect(getByTestId("display-alert-block").className).toContain("green");
+		expect(getByTestId("display-alert-block").className).toContain("cn-alert-variant-success");
 	});
 
-	test("warning color applies yellow classes", () => {
+	test("warning color applies the warning variant class", () => {
 		const { getByTestId } = render(
 			<DisplayAlertBlock
 				options={{ message: "Careful", color: "warning" }}
@@ -224,10 +224,10 @@ describe("DisplayAlertBlock", () => {
 				renderChild={NOOP_RENDER}
 			/>,
 		);
-		expect(getByTestId("display-alert-block").className).toContain("yellow");
+		expect(getByTestId("display-alert-block").className).toContain("cn-alert-variant-warning");
 	});
 
-	test("danger color applies red classes", () => {
+	test("danger color applies the danger variant class", () => {
 		const { getByTestId } = render(
 			<DisplayAlertBlock
 				options={{ message: "Error", color: "danger" }}
@@ -236,7 +236,7 @@ describe("DisplayAlertBlock", () => {
 				renderChild={NOOP_RENDER}
 			/>,
 		);
-		expect(getByTestId("display-alert-block").className).toContain("red");
+		expect(getByTestId("display-alert-block").className).toContain("cn-alert-variant-danger");
 	});
 
 	test("unknown color falls back to info", () => {
@@ -248,8 +248,8 @@ describe("DisplayAlertBlock", () => {
 				renderChild={NOOP_RENDER}
 			/>,
 		);
-		// info variant has blue classes
-		expect(getByTestId("display-alert-block").className).toContain("blue");
+		// info variant class (visual colors live in the preset CSS)
+		expect(getByTestId("display-alert-block").className).toContain("cn-alert-variant-info");
 	});
 });
 
