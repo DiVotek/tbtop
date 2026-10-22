@@ -1,0 +1,36 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelClass }};
+{{ fieldImports }}use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\S;
+
+/**
+ * Fields shared by the {{ labelLower }} forms. $ignoreKey is the edited record's
+ * key, skipped by unique rules; null on create.
+ */
+trait {{ trait }}
+{
+    /** @return list<Field> */
+    protected function {{ var }}Fields(S $s, int|string|null $ignoreKey = null): array
+    {
+        return [
+{{ fields }}
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    protected function blank{{ model }}(): array
+    {
+        return [
+{{ blank }}
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    protected function {{ var }}Record({{ model }} $record): array
+    {
+        return {{ formRecord }};
+    }
+{{ uniqueRule }}}

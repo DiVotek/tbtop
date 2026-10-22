@@ -17,8 +17,9 @@ final class RuleWalker
     /**
      * Whole-field rules. Laravel's implicit family (`required*`, `missing*`,
      * `prohibited*`, `filled`) inspects the key, so on `field.*` it never runs for `[]`.
+     * `distinct` is not one: it compares sibling `field.*` values, so on `field` it always passes.
      */
-    private const FIELD_LEVEL = ['nullable', 'array', 'min', 'max', 'size', 'between', 'distinct', 'present', 'filled'];
+    private const FIELD_LEVEL = ['nullable', 'array', 'min', 'max', 'size', 'between', 'present', 'filled'];
 
     private const FIELD_LEVEL_PREFIXES = ['required', 'missing', 'prohibited'];
 

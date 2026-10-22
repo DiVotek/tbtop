@@ -24,10 +24,11 @@ final class KindFormat
             'date' => self::formatDate($value, $meta['format'] ?? 'Y-m-d'),
             'datetime' => self::formatDate($value, $meta['format'] ?? 'Y-m-d H:i:s'),
             'time' => self::formatDate($value, $meta['format'] ?? 'H:i'),
-            'number' => isset($meta['decimals'])
+            // A non-numeric value passes through: casting it would fabricate a zero.
+            'number' => isset($meta['decimals']) && is_numeric($value)
                 ? number_format((float) $value, $meta['decimals'])
                 : $value,
-            'money' => isset($meta['currency'])
+            'money' => isset($meta['currency']) && is_numeric($value)
                 ? number_format((float) $value / 100, 2).' '.$meta['currency']
                 : $value,
             default => $value,

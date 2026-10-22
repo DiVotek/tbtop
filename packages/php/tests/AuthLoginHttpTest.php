@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
+use Tbtop\Admin\Auth\LoginPage;
+use Tbtop\Admin\Auth\ResetPasswordPage;
 use Tbtop\Admin\Tests\Fixtures\Auth\AuthUser;
 
 /**
@@ -68,4 +70,9 @@ it('sends a signed-in user away from the auth pages', function () {
 
     $this->get('/admin/login')->assertRedirect('/admin');
     $this->get('/admin/forgot-password')->assertRedirect('/admin');
+});
+
+it('resolves a base auth page URL to the host subclass the panel serves', function () {
+    expect(LoginPage::url())->toBe('/admin/login')
+        ->and(ResetPasswordPage::url(['token' => 'abc']))->toBe('/admin/reset-password/abc');
 });

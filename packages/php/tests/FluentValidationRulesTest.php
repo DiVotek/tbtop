@@ -7,6 +7,7 @@ use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Fields\Slider;
 use Tbtop\Admin\Dsl\Fields\Text;
+use Tbtop\Admin\Dsl\RuleWalker;
 
 // Boundary: assert the rules a consumer's validator receives (ruleEntries),
 // not builder internals. Each fluent helper must append the same Laravel rule
@@ -123,6 +124,25 @@ it('numeric between validates value range not string length', function () {
     expect(validator(['age' => 30], $rules)->passes())->toBeTrue()
         ->and(validator(['age' => 5], $rules)->fails())->toBeTrue()
         ->and(validator(['age' => 200], $rules)->fails())->toBeTrue();
+});
+
+it('distinct on a multiple select rejects a repeated value', function () {
+    // Regression: on the array key Laravel's distinct compares the array with
+    // nothing and always passes; it only checks duplicates on `key.*`.
+    $rules = RuleWalker::collect([Select::make('tags')->multiple()->rules('distinct')]);
+
+    expect(validator(['tags' => ['php', 'go']], $rules)->passes())->toBeTrue()
+        ->and(validator(['tags' => ['php', 'php']], $rules)->fails())->toBeTrue();
+});
+
+it('requiredWith requires the value when any one listed field is present', function () {
+    // Laravel's required_with is "any"; required_with_all is "all". The docblock
+    // once said "all", so a single present field must already trigger it.
+    $rules = ['zip' => Text::make('zip')->requiredWith('street', 'city')->ruleEntries()];
+
+    expect(validator(['street' => 'Main St'], $rules)->fails())->toBeTrue()
+        ->and(validator(['street' => 'Main St', 'zip' => '12345'], $rules)->passes())->toBeTrue()
+        ->and(validator([], $rules)->passes())->toBeTrue();
 });
 
 it('min/max helpers surface as client wire constraints', function () {

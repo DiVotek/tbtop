@@ -214,7 +214,12 @@ delta, sparkline, icon, color; line/bar/area/pie/donut chart types with runtime 
 **What you want:** the four pages that make up a typical resource — a create form, an
 index table, an edit form, and trashed-row management.
 
-Read the demo's `Post` resource instead of a snippet here; it is the complete, running
+Generate the family from the model's table with `php artisan make:tbtop-resource Post`
+(flags in [wiring.md](./wiring.md#artisan-commands)): it writes `app/Admin/Pages/Posts/`
+with `IndexPage`, `CreatePage`, `EditPage` and a shared `PostFormFields` trait, which you
+then own and edit.
+
+For a hand-written reference, the demo's `Post` resource is the complete, running
 version and cannot drift from the code:
 
 - [`PostCreatePage`](../../apps/demo/app/Admin/Pages/PostCreatePage.php) — a form whose

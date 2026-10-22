@@ -47,10 +47,11 @@ const FLASH_EFFECT_HANDLERS: Record<
  * Executes the subset of the effect vocabulary that can act on a fresh page
  * load, with no action/form/table render position behind it: notify,
  * redirect, refreshTable, copyToClipboard, and closeModal (through the
- * page-level modal stack). The other three kinds (resetForm/haltModal/
- * setFormData) require a form or modal body that flash delivery cannot
- * supply — Effects::make()->haltModal() etc. from a form-submit handler is a
- * dead combination today. That is reported here with a console warning
+ * page-level modal stack). resetForm is skipped here: the submit that posted
+ * the form applies it (settleSubmittedForm, effects.ts). The other two kinds
+ * (haltModal/setFormData) require a form or modal body that flash delivery
+ * cannot supply — Effects::make()->haltModal() etc. from a form-submit
+ * handler is a dead combination today. That is reported with a console warning
  * rather than silently doing nothing: the full-context dispatch
  * (executeEffects, effects.ts) can't even express that gap, because
  * FlashEffectContext has no ctx.form to silently no-op through.
@@ -58,6 +59,9 @@ const FLASH_EFFECT_HANDLERS: Record<
  */
 export function executeFlashEffects(effects: ServerEffect[], ctx: FlashEffectContext): void {
 	for (const effect of effects) {
+		if (effect.kind === "resetForm") {
+			continue;
+		}
 		if (!isFlashSafe(effect.kind)) {
 			console.warn(
 				`[tbtop] ${effect.kind}: not supported via Inertia flash — there is no enclosing form/modal on a fresh page load. Effect ignored.`,

@@ -187,3 +187,13 @@ describe("TablePagination: auto-hidden when everything fits on the first page", 
 		window.history.replaceState(null, "", "http://localhost/");
 	});
 });
+
+describe("TablePagination: per-page selector accessible name", () => {
+	test("the per-page trigger is named by its 'Per page' label", async () => {
+		const node = makePaginatedTable(100, 25);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const trigger = await findByRole("combobox", { name: "Per page" });
+		expect(trigger.getAttribute("data-testid")).toBe("pagination-per-page");
+	});
+});
