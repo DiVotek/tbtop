@@ -259,6 +259,48 @@ describe("Slug field", () => {
 		await waitFor(() => expect(slugInput.value).toBe("about-us"));
 	});
 
+	test("a slug in a repeater row locks on leaving its own row's source, not a same-named top-level field", async () => {
+		const user = userEvent.setup();
+		const node = s.form(
+			{
+				query: async () => ({
+					title: "Page",
+					summary: "",
+					items: [{ title: "Alpha", slug: "" }],
+				}),
+			},
+			[
+				s.text({ name: "title", label: "Title" }),
+				s.text({ name: "summary", label: "Summary" }),
+				s.repeater({
+					name: "items",
+					fields: (sb) => [
+						sb.text({ name: "title" }),
+						sb.slug({ name: "slug", fromField: "title" }),
+					],
+				}),
+			],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const rowTitle = () =>
+			container.querySelector('[data-field-name="items.0.title"] input') as HTMLInputElement;
+		const rowSlug = () =>
+			container.querySelector('[data-field="slug"] input') as HTMLInputElement;
+		await waitFor(() => expect(rowSlug()?.value).toBe("alpha"));
+		const summary = document.querySelector("#summary") as HTMLInputElement;
+
+		await user.click(document.querySelector("#title") as HTMLInputElement);
+		await user.click(summary);
+		await user.type(rowTitle(), " Two");
+		await waitFor(() => expect(rowSlug().value).toBe("alpha-two"));
+
+		await user.click(summary);
+		await user.type(rowTitle(), " Three");
+		expect(rowTitle().value).toBe("Alpha Two Three");
+		expect(rowSlug().value).toBe("alpha-two");
+	});
+
 	test("Clear keeps the slug empty across source changes; Generate re-derives and re-engages sync", async () => {
 		const user = userEvent.setup();
 		const node = s.form({ query: async () => ({ title: "Hello World", slug: "" }) }, [
