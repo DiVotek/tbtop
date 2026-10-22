@@ -9,6 +9,7 @@ use Tbtop\Admin\Media\Models\MediaFolder;
 use Tbtop\Admin\Uploads\ConversionProfile;
 use Tbtop\Admin\Uploads\ImageSizes;
 use Tbtop\Admin\Uploads\UploadUrl;
+use Throwable;
 
 /**
  * Serialises Media / MediaFolder models to the wire contract shared with the
@@ -68,6 +69,7 @@ final class MediaResource
     /**
      * Image-derived model attributes for a stored upload: original dimensions
      * (null for non-images) and the conversion variants for the given profiles.
+     * If variant generation throws, the stored original is deleted too.
      *
      * @param  array<string, ConversionProfile>  $profiles
      * @return array{width: int|null, height: int|null, sizes: array<string, Variant>}
@@ -79,12 +81,16 @@ final class MediaResource
         array $profiles,
     ): array {
         [$width, $height] = ImageSizes::dimensions($file);
+        try {
+            $sizes = ImageSizes::generate($file, $storedPath, $disk, $profiles);
+        } catch (Throwable $e) {
+            // No Media row will point at the stored original; don't orphan it.
+            Storage::disk($disk)->delete($storedPath);
 
-        return [
-            'width' => $width,
-            'height' => $height,
-            'sizes' => ImageSizes::generate($file, $storedPath, $disk, $profiles),
-        ];
+            throw $e;
+        }
+
+        return ['width' => $width, 'height' => $height, 'sizes' => $sizes];
     }
 
     /**
