@@ -2,10 +2,10 @@
 
 namespace Tbtop\Admin\Navigation;
 
-use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use LogicException;
 use Tbtop\Admin\Dsl\Color;
+use Tbtop\Admin\Http\PageGate;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\CurrentPanel;
 
@@ -73,7 +73,7 @@ final class NavBuilder
      * for parent lookups.
      *
      * @param  list<class-string<Page>>  $classes
-     * @return array<class-string<Page>, array{group: string|null, section: string|null, item: array<string, mixed>, parent: class-string<Page>|null, can: string|null}>
+     * @return array<class-string<Page>, array{group: string|null, section: string|null, item: array<string, mixed>, parent: class-string<Page>|null, can: string|array{0: string, 1: class-string}|null}>
      */
     private static function collectPages(array $classes, string $prefix): array
     {
@@ -136,9 +136,10 @@ final class NavBuilder
         self::assertNoCycle($parent, $entries, [...$seen, $parent => true]);
     }
 
-    private static function gatePasses(?string $ability): bool
+    /** @param  string|array{0: string, 1: class-string}|null  $gate */
+    private static function gatePasses(string|array|null $gate): bool
     {
-        return $ability === null || Gate::allows($ability);
+        return PageGate::passes($gate);
     }
 
     /**
@@ -146,7 +147,7 @@ final class NavBuilder
      * sorted by order. Omits the 'children' key entirely when there are none.
      *
      * @param  class-string<Page>  $class
-     * @param  array<class-string<Page>, array{item: array<string, mixed>, can: string|null}>  $entries
+     * @param  array<class-string<Page>, array{item: array<string, mixed>, can: string|array{0: string, 1: class-string}|null}>  $entries
      * @param  array<class-string<Page>, list<class-string<Page>>>  $childrenOf
      * @return array<string, mixed>
      */

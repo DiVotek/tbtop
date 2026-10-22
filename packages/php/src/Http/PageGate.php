@@ -21,15 +21,35 @@ final class PageGate
         }
         $gate = $class::can();
         if ($gate !== null) {
-            Gate::authorize($gate);
+            Gate::authorize(...self::gateArguments($gate));
         }
     }
 
     /** @param  class-string<Page>  $class */
     public static function allows(string $class): bool
     {
-        $gate = $class::can();
+        return self::passes($class::can());
+    }
 
-        return $gate === null || Gate::allows($gate);
+    /**
+     * Whether a Page::can() value lets the current user through. Null passes.
+     *
+     * @param  string|array{0: string, 1: class-string}|null  $gate
+     */
+    public static function passes(string|array|null $gate): bool
+    {
+        return $gate === null || Gate::allows(...self::gateArguments($gate));
+    }
+
+    /**
+     * Gate call arguments for a Page::can() value: an ability alone, or an
+     * ability plus the model class its policy is resolved from.
+     *
+     * @param  string|array{0: string, 1: class-string}  $gate
+     * @return array{0: string, 1: array<int, class-string>}
+     */
+    private static function gateArguments(string|array $gate): array
+    {
+        return is_string($gate) ? [$gate, []] : [$gate[0], [$gate[1]]];
     }
 }
