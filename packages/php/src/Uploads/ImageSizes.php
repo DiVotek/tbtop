@@ -20,8 +20,10 @@ final class ImageSizes
     }
 
     /**
-     * Generates resized variants (fit: inside) next to the original, keyed by
-     * profile name. Non-images and missing GD degrade to no variants. A format
+     * Generates resized variants (fit: inside, never upscaled) next to the
+     * original, keyed by profile name. A responsive (width-only) profile is
+     * skipped for an image no wider than it. Non-images and missing GD degrade
+     * to no variants. A format
      * GD cannot encode falls back to png per variant. If a variant throws, the
      * variants already written are deleted before the exception propagates.
      *
@@ -34,10 +36,19 @@ final class ImageSizes
             return [];
         }
         $source = ImageEncoder::fromUpload($file);
-        if ($source === null) {
-            return [];
-        }
 
+        return $source === null ? [] : self::fromImage($source, $path, $disk, $profiles);
+    }
+
+    /**
+     * generate() for an already decoded image, such as a stored original being
+     * regenerated. Same cleanup on failure.
+     *
+     * @param  array<string, ConversionProfile>  $profiles
+     * @return array<string, Variant>
+     */
+    public static function fromImage(\GdImage $source, string $path, string $disk, array $profiles): array
+    {
         $out = [];
         try {
             foreach ($profiles as $name => $profile) {
@@ -65,7 +76,12 @@ final class ImageSizes
     ): ?array {
         $w = imagesx($source);
         $h = imagesy($source);
-        $scale = min($profile->maxWidth / $w, $profile->maxHeight / $h, 1);
+        // A responsive variant no narrower than the original adds nothing to a srcset.
+        if ($profile->isResponsive() && $w <= $profile->maxWidth) {
+            return null;
+        }
+        $heightScale = $profile->maxHeight === null ? 1 : $profile->maxHeight / $h;
+        $scale = min($profile->maxWidth / $w, $heightScale, 1);
         $newW = max((int) round($w * $scale), 1);
         $newH = max((int) round($h * $scale), 1);
 

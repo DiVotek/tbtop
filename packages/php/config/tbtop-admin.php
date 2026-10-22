@@ -64,9 +64,16 @@ return [
         // Conversion profiles, generated for every uploaded raster image.
         // Short form: name => [maxWidth, maxHeight] (uses the defaults above).
         // Long form: name => ['width' => .., 'height' => .., 'format' => 'jpeg', 'quality' => 85].
-        // Files are scaled to fit inside the given box (aspect-ratio preserved).
+        // Files are scaled to fit inside the given box (aspect-ratio preserved),
+        // never upscaled. Leave the height out for a width-only responsive
+        // variant (srcset); it is skipped for an image no wider than it.
+        // After changing profiles, `php artisan tbtop:media-regenerate` builds
+        // the missing variants for media uploaded earlier.
         'profiles' => [
             'thumb' => [320, 320],
+            'sm' => [640],
+            'md' => [1024],
+            'lg' => [1600],
         ],
 
         // URL import settings. Empty allowed_hosts accepts any non-blocked host;
