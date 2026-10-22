@@ -1,4 +1,5 @@
 import { dependencyValues } from "../dependencies";
+import { formatPhpDate } from "../phpDate";
 import { Dependencies, mixin } from "./concerns";
 import { Field } from "./field";
 
@@ -6,7 +7,8 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function day(value: Date | string, method: string): string {
 	if (value instanceof Date) {
-		return value.toISOString().slice(0, 10);
+		// DateTime::format('Y-m-d'): the app timezone's day, not UTC's.
+		return String(formatPhpDate(value, "Y-m-d"));
 	}
 	if (!DAY.test(value)) {
 		throw new Error(`Date::${method}() expects a Y-m-d string or a Date, got "${value}".`);
