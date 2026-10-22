@@ -6,7 +6,7 @@ Until the package is published, build it from this repo and install the tarball:
 
 ```bash
 cd packages/node && bun install && bun run build && npm pack
-cd /path/to/app && npm install /path/to/tbtop/packages/node/tbtop-admin-0.11.0.tgz
+cd /path/to/app && npm install /path/to/tbtop/packages/node/tbtop-admin-0.7.1.tgz
 npm install @tbtop/inertia-admin @inertiajs/react react react-dom
 ```
 

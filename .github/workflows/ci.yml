@@ -7,6 +7,27 @@ on:
     branches: [main]
 
 jobs:
+  changes:
+    name: Changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      node: ${{ steps.filter.outputs.node }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            node:
+              - "packages/node/**"
+              - "apps/node-demo/**"
+              - "packages/contracts/**"
+              - "packages/client/**"
+              - "packages/php/resources/lang/**"
+              - "docs/ai/api/**"
+              - ".github/workflows/ci.yml"
+
   php:
     name: PHP (pest + phpstan + pint)
     runs-on: ubuntu-latest
@@ -64,6 +85,8 @@ jobs:
         run: bun test
 
   node:
+    needs: changes
+    if: needs.changes.outputs.node == 'true'
     name: Node server (tsc + bun test)
     runs-on: ubuntu-latest
     defaults:
@@ -90,6 +113,8 @@ jobs:
         run: bun run check:lang
 
   node-package:
+    needs: changes
+    if: needs.changes.outputs.node == 'true'
     name: Node package (build, publint, attw, packed install)
     runs-on: ubuntu-latest
     defaults:
@@ -115,6 +140,8 @@ jobs:
         run: bun run check:package
 
   node-workers:
+    needs: changes
+    if: needs.changes.outputs.node == 'true'
     name: Node server on Cloudflare Workers (workerd)
     runs-on: ubuntu-latest
     defaults:

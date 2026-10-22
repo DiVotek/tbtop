@@ -1,6 +1,6 @@
 {
 	"name": "@tbtop/admin",
-	"version": "0.11.0",
+	"version": "0.7.1",
 	"description": "Tabletop admin server for Bun, Node and Cloudflare Workers: pages in a TypeScript DSL, rendered by @tbtop/inertia-admin over Inertia.",
 	"license": "MIT",
 	"private": true,

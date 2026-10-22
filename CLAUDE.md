@@ -166,6 +166,7 @@ Demo (`cd apps/demo`, setup in the README quickstart):
 
 **Run only tests for what you changed.** CI covers the two packages — `packages/php`
 (pest, phpstan, contract-fixture drift), `packages/client` (bun test, tsc) and lint.
+The `packages/node` jobs run only when a path they read changed (the `changes` job's filter).
 **`apps/demo` is not in CI**, so its Pest and browser suites only ever run locally:
 touch the demo and you have to run them yourself.
 
@@ -240,7 +241,9 @@ Both packages ship **lockstep** from one tag — `@tbtop/inertia-admin` (npm) an
 version *is* the tag).
 
 Process (manual button, one run does both):
-1. Bump `version` in `packages/client/package.json` in a PR; merge to `main`.
+1. Bump `version` in `packages/client/package.json` in a PR, and the same in
+   `packages/node/package.json` (`@tbtop/admin` for Bun/Node, not published yet; a node test
+   fails when the two differ); merge to `main`.
 2. GitHub → Actions → **Release** → Run (from `main`). The `release.yml` workflow reads the
    version, refuses if that tag exists, pushes `vX.Y.Z`, then:
    - **npm** publishes inside the workflow via **Trusted Publishing (OIDC)** — no token. The
