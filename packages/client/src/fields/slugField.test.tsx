@@ -217,6 +217,96 @@ describe("Slug field", () => {
 		});
 	});
 
+	test("leaving the source fixes the slug; later renames leave it until Generate", async () => {
+		const user = userEvent.setup();
+		const node = s.form({ query: async () => ({ title: "", slug: "" }) }, [
+			s.text({ name: "title", label: "Title" }),
+			s.text({ name: "summary", label: "Summary" }),
+			s.slug({ name: "slug", fromField: "title" }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		let titleInput!: HTMLInputElement;
+		let slugInput!: HTMLInputElement;
+		await waitFor(() => {
+			titleInput = document.querySelector("#title") as HTMLInputElement;
+			slugInput = document.querySelector("[data-field='slug'] input") as HTMLInputElement;
+			expect(slugInput).toBeTruthy();
+		});
+		await user.type(titleInput, "Hello World");
+		await waitFor(() => expect(slugInput.value).toBe("hello-world"));
+		await user.click(document.querySelector("#summary") as HTMLInputElement);
+		await user.type(titleInput, " Renamed");
+		expect(titleInput.value).toBe("Hello World Renamed");
+		expect(slugInput.value).toBe("hello-world");
+		await user.click(getByRole("button", { name: "Generate" }));
+		await waitFor(() => expect(slugInput.value).toBe("hello-world-renamed"));
+	});
+
+	test("leaving an empty source keeps auto mode, so a title typed later still derives", async () => {
+		const user = userEvent.setup();
+		const node = s.form({ query: async () => ({ title: "", slug: "" }) }, [
+			s.text({ name: "title", label: "Title" }),
+			s.text({ name: "summary", label: "Summary" }),
+			s.slug({ name: "slug", fromField: "title" }),
+		]);
+		const Wrap = wrap(() => new Response("{}"));
+		render(<Wrap>{renderNode(node)}</Wrap>);
+		let titleInput!: HTMLInputElement;
+		let slugInput!: HTMLInputElement;
+		await waitFor(() => {
+			titleInput = document.querySelector("#title") as HTMLInputElement;
+			slugInput = document.querySelector("[data-field='slug'] input") as HTMLInputElement;
+			expect(slugInput).toBeTruthy();
+		});
+		await user.click(titleInput);
+		await user.click(document.querySelector("#summary") as HTMLInputElement);
+		await user.type(titleInput, "About Us");
+		await waitFor(() => expect(slugInput.value).toBe("about-us"));
+	});
+
+	test("a slug in a repeater row locks on leaving its own row's source, not a same-named top-level field", async () => {
+		const user = userEvent.setup();
+		const node = s.form(
+			{
+				query: async () => ({
+					title: "Page",
+					summary: "",
+					items: [{ title: "Alpha", slug: "" }],
+				}),
+			},
+			[
+				s.text({ name: "title", label: "Title" }),
+				s.text({ name: "summary", label: "Summary" }),
+				s.repeater({
+					name: "items",
+					fields: (sb) => [
+						sb.text({ name: "title" }),
+						sb.slug({ name: "slug", fromField: "title" }),
+					],
+				}),
+			],
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const rowTitle = () =>
+			container.querySelector('[data-field-name="items.0.title"] input') as HTMLInputElement;
+		const rowSlug = () =>
+			container.querySelector('[data-field="slug"] input') as HTMLInputElement;
+		await waitFor(() => expect(rowSlug()?.value).toBe("alpha"));
+		const summary = document.querySelector("#summary") as HTMLInputElement;
+
+		await user.click(document.querySelector("#title") as HTMLInputElement);
+		await user.click(summary);
+		await user.type(rowTitle(), " Two");
+		await waitFor(() => expect(rowSlug().value).toBe("alpha-two"));
+
+		await user.click(summary);
+		await user.type(rowTitle(), " Three");
+		expect(rowTitle().value).toBe("Alpha Two Three");
+		expect(rowSlug().value).toBe("alpha-two");
+	});
+
 	test("Clear keeps the slug empty across source changes; Generate re-derives and re-engages sync", async () => {
 		const user = userEvent.setup();
 		const node = s.form({ query: async () => ({ title: "Hello World", slug: "" }) }, [
