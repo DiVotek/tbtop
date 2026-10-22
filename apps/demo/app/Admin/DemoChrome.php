@@ -3,6 +3,7 @@
 namespace App\Admin;
 
 use App\Http\Middleware\DemoNavigationLayout;
+use App\Http\Middleware\DemoStylePreset;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Panels\Chrome;
@@ -24,18 +25,29 @@ class DemoChrome extends Chrome
         ];
     }
 
-    /** Visits the current page with ?nav=<layout>; DemoNavigationLayout keeps it for the session. */
+    /**
+     * Visits the current page with ?nav=<layout> or ?style=<preset>;
+     * DemoNavigationLayout and DemoStylePreset keep the pick for the session.
+     */
     private function layoutSwitcher(S $s): Node
     {
-        $current = session(DemoNavigationLayout::SESSION_KEY) ?? CurrentPanel::current()?->navigation();
-        $actions = array_map(
+        $currentNav = session(DemoNavigationLayout::SESSION_KEY) ?? CurrentPanel::current()?->navigation();
+        $navigation = array_map(
             fn (string $layout) => $s->action("layout-{$layout}")
-                ->label($layout === $current ? "✓ {$layout}" : $layout)
+                ->label($layout === $currentNav ? "✓ {$layout}" : $layout)
                 ->url(request()->url().'?nav='.$layout),
             PanelConfig::NAVIGATIONS,
         );
 
-        return $s->dropdown('Layout', $actions);
+        $currentStyle = DemoStylePreset::chosen() ?? CurrentPanel::current()?->appearance()['stylePreset'] ?? 'vega';
+        $styles = array_map(
+            fn (string $style) => $s->action("style-{$style}")
+                ->label($style === $currentStyle ? "✓ Style: {$style}" : "Style: {$style}")
+                ->url(request()->url().'?style='.$style),
+            DemoStylePreset::STYLES,
+        );
+
+        return $s->dropdown('Layout', [...$navigation, ...$styles]);
     }
 
     public function footer(S $s): ?Node
