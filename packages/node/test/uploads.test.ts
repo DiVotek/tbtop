@@ -110,6 +110,31 @@ describe("upload field", () => {
 		expect(empty.status).toBe(422);
 	});
 
+	test("the extension comes from the sniffed type, never a markup one from the client", async () => {
+		const padded = `${"x".repeat(2048)}<script>alert(1)</script>`;
+		const html = new File([padded], "evil.html", { type: "text/plain" });
+		expect((await upload(browser(admin), "gallery", html)).body.data.path).toMatch(/\.bin$/);
+		const csv = new File(["a,b"], "rows.csv", { type: "text/csv" });
+		expect((await upload(browser(admin), "gallery", csv)).body.data.path).toMatch(/\.csv$/);
+		const disguised = new File(["<?foo?>not markup"], "x.svg", { type: "image/svg+xml" });
+		const stored = await upload(browser(admin), "gallery", disguised);
+		expect(stored.body.data.path).toMatch(/\.bin$/);
+		expect(disk.files.get(stored.body.data.path)?.type).toBe("application/octet-stream");
+	});
+
+	test("an SVG behind processing instructions is still sniffed and sanitized", async () => {
+		const svg = new File(
+			['<?foo?><svg xmlns="http://www.w3.org/2000/svg"><script>x()</script></svg>'],
+			"a.txt",
+			{
+				type: "text/plain",
+			},
+		);
+		const { body } = await upload(browser(admin), "gallery", svg);
+		expect(body.data.path).toMatch(/\.svg$/);
+		expect(await disk.files.get(body.data.path)?.text()).not.toContain("<script");
+	});
+
 	test("a submit may only claim paths issued to this session or already stored", async () => {
 		const visit = browser(admin);
 		const { body } = await upload(visit, "avatar", new File([await png()], "me.png"));

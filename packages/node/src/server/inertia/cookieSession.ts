@@ -1,3 +1,4 @@
+import { own } from "../safeKeys";
 import { readCookie, type SessionResolver, type SessionStore, withCookie } from "./session";
 
 export interface CookieSessionOptions {
@@ -43,13 +44,13 @@ type Data = Record<string, unknown>;
 function store(data: Data, line: (next: Data) => Promise<string>): SessionStore {
 	let dirty = false;
 	return {
-		get: (key) => data[key],
+		get: (key) => own(data, key),
 		set: (key, value) => {
 			data[key] = value;
 			dirty = true;
 		},
 		forget: (key) => {
-			dirty = dirty || key in data;
+			dirty = dirty || Object.hasOwn(data, key);
 			delete data[key];
 		},
 		commit: async (response) => (dirty ? withCookie(response, await line(data)) : response),

@@ -23,7 +23,7 @@ const ascii = (bytes: Uint8Array, from: number, to: number) =>
 
 /**
  * The type the content says it is. Known binaries by signature, markup by its
- * text; anything else keeps the client's claim, which MimePolicy still filters.
+ * text; anything else keeps the client's claim unless it claims markup.
  */
 export function sniffMime(bytes: Uint8Array, claimed: string): string {
 	const signed = SIGNATURES.find(([, at, sig]) => sig.every((b, i) => bytes[at + i] === b));
@@ -36,10 +36,12 @@ export function sniffMime(bytes: Uint8Array, claimed: string): string {
 	if (ascii(bytes, 4, 8) === "ftyp") {
 		return isoType(ascii(bytes, 8, 12));
 	}
-	return (
-		markupType(new TextDecoder().decode(bytes.subarray(0, 1024))) ??
-		(claimed || "application/octet-stream")
-	);
+	const markup = markupType(new TextDecoder().decode(bytes.subarray(0, 1024)));
+	if (markup !== null) {
+		return markup;
+	}
+	// Content we cannot read never earns a markup type on the client's word.
+	return claimed === "" || isMarkup(claimed) ? "application/octet-stream" : claimed;
 }
 
 function isoType(brand: string): string {
@@ -55,7 +57,7 @@ function markupType(head: string): string | null {
 		.trimStart()
 		.toLowerCase();
 	// An SVG root (scripts and all: the sanitizer strips them) wins over the HTML sniff.
-	if (/^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!doctype svg[^>]*>\s*)?<svg[\s>]/.test(text)) {
+	if (/^(<\?[^>]*>\s*)*(<!--[\s\S]*?-->\s*)*(<!doctype svg[^>]*>\s*)?<svg[\s>]/.test(text)) {
 		return "image/svg+xml";
 	}
 	if (/^<!doctype html|^<html|<script|<body|<iframe/.test(text)) {
@@ -73,10 +75,14 @@ export function allowsMime(mime: string, accept: string[]): boolean {
 }
 
 function isActiveMarkup(mime: string): boolean {
-	const type = mime.split(";", 1)[0]?.trim().toLowerCase() ?? "";
-	if (type === "image/svg+xml") {
-		return false;
-	}
+	return isMarkup(mime) && baseType(mime) !== "image/svg+xml";
+}
+
+const baseType = (mime: string) => mime.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+
+/** Anything a browser may run as a document: HTML, XML, SVG. */
+function isMarkup(mime: string): boolean {
+	const type = baseType(mime);
 	const markup = [
 		"text/html",
 		"text/xml",

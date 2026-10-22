@@ -17,7 +17,19 @@ const EXTENSIONS: Record<string, string> = {
 	"image/avif": "avif",
 	"image/svg+xml": "svg",
 	"application/pdf": "pdf",
+	"application/zip": "zip",
+	"application/gzip": "gz",
+	"video/webm": "webm",
+	"video/mp4": "mp4",
+	"audio/mpeg": "mp3",
+	"audio/ogg": "ogg",
+	"audio/wav": "wav",
 };
+
+/** Client extensions kept for types the sniffer cannot name; none of them a browser runs. */
+const PASSTHROUGH = new Set(
+	"txt csv tsv json md rtf doc docx xls xlsx ppt pptx odt ods odp epub heic mov m4a".split(" "),
+);
 
 const reject = (key: string) => new HttpError(422, trans(key));
 
@@ -75,12 +87,14 @@ function hashName(): string {
 	return [...crypto.getRandomValues(new Uint8Array(40))].map((b) => alphabet[b % 62]).join("");
 }
 
-/** From the sniffed type; else the client's extension, letters and digits only. */
+/** From the sniffed type; else a client extension from PASSTHROUGH, never one a browser renders. */
 function extension(file: File, mime: string): string {
 	const known = EXTENSIONS[mime];
 	if (known !== undefined) {
 		return known;
 	}
-	const own = file.name.split(".").at(-1)?.toLowerCase() ?? "";
-	return /^[a-z0-9]{1,8}$/.test(own) && own !== file.name.toLowerCase() ? own : "bin";
+	const claimed = file.name.includes(".")
+		? (file.name.split(".").at(-1)?.toLowerCase() ?? "")
+		: "";
+	return PASSTHROUGH.has(claimed) ? claimed : "bin";
 }

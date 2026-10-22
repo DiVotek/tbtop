@@ -1,3 +1,5 @@
+import { isSafeKey, own } from "../safeKeys";
+
 /** Laravel's dot-path helpers over a decoded JSON body (Arr::get/has/set, wildcard expansion). */
 type Bag = Record<string, unknown>;
 
@@ -31,12 +33,17 @@ export function dataGet(data: unknown, key: string): unknown {
 /** Writes `value` at a dot path, creating arrays for numeric segments. */
 export function dataSet(target: Bag, key: string, value: unknown): void {
 	const segments = key.split(".");
+	if (!segments.every(isSafeKey)) {
+		return;
+	}
 	let current = target;
 	for (const [i, segment] of segments.slice(0, -1).entries()) {
-		if (current[segment] === null || typeof current[segment] !== "object") {
-			current[segment] = /^\d+$/.test(segments[i + 1] ?? "") ? [] : {};
-		}
-		current = current[segment] as Bag;
+		const next = own(current, segment);
+		current = (
+			next !== null && typeof next === "object"
+				? next
+				: (current[segment] = /^\d+$/.test(segments[i + 1] ?? "") ? [] : {})
+		) as Bag;
 	}
 	current[segments.at(-1) ?? key] = value;
 }
@@ -54,7 +61,9 @@ export function expandKey(data: unknown, key: string): string[] {
 		return [];
 	}
 	const prefix = head === "" ? "" : `${head}.`;
-	return Object.keys(container).flatMap((k) => expandKey(data, `${prefix}${k}${tail}`));
+	return Object.keys(container)
+		.filter(isSafeKey)
+		.flatMap((k) => expandKey(data, `${prefix}${k}${tail}`));
 }
 
 /** Laravel's ConvertEmptyStringsToNull, so `required` means the same on both stacks. */

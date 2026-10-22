@@ -1,4 +1,5 @@
 import { Effects } from "../dsl";
+import { isSafeKey, own } from "./safeKeys";
 
 export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
@@ -65,8 +66,10 @@ export function stripPrefix(pathname: string, prefix: string): string | null {
 export function phpQuery(params: URLSearchParams): Record<string, unknown> {
 	const out: Record<string, unknown> = {};
 	for (const [raw, value] of params) {
-		const [head = raw, ...rest] = raw.split("[").map((part) => part.replace(/\]$/, ""));
-		assign(out, [head, ...rest], value);
+		const path = raw.split("[").map((part) => part.replace(/\]$/, ""));
+		if (path.every(isSafeKey)) {
+			assign(out, path, value);
+		}
 	}
 	return out;
 }
@@ -77,8 +80,12 @@ function assign(target: Record<string, unknown>, path: string[], value: string):
 		target[key] = value;
 		return;
 	}
-	const next = rest[0] === "" ? [] : {};
-	const container = (target[key] ??= next) as Record<string, unknown> | unknown[];
+	const existing = own(target, key);
+	const container = (
+		existing !== null && typeof existing === "object"
+			? existing
+			: (target[key] = rest[0] === "" ? [] : {})
+	) as Record<string, unknown> | unknown[];
 	if (Array.isArray(container)) {
 		container.push(rest.length === 1 ? value : {});
 		return;
