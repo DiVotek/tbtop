@@ -33,9 +33,9 @@ export class TableBuilder<Q = unknown> {
 
 	constructor(readonly name: string) {}
 
-	/** Column builders, or `{name: "Label"}` shorthand for text columns. */
-	columns(columns: ColumnEntry[]): this {
-		for (const entry of columns) {
+	/** Column builders, or `{name: "Label"}` shorthand for text columns (alone or in the list). */
+	columns(columns: ColumnEntry[] | Record<string, string>): this {
+		for (const entry of Array.isArray(columns) ? columns : [columns]) {
 			this.columnList.push(...toColumns(entry));
 		}
 		for (const col of this.columnList) {
@@ -68,8 +68,14 @@ export class TableBuilder<Q = unknown> {
 		return this;
 	}
 
-	/** Predefined tabs; the first is the default. */
-	tabs(tabs: Tab<Q>[]): this {
+	/**
+	 * Predefined tabs; the first is the default. Pass a callback to get a `tab`
+	 * factory typed with this table's query: `tabs((tab) => [tab("all")])`.
+	 */
+	tabs(tabs: Tab<Q>[] | ((tab: (name: string) => Tab<Q>) => Tab<Q>[])): this {
+		if (typeof tabs === "function") {
+			return this.tabs(tabs((name) => Tab.make<Q>(name)));
+		}
 		const seen = new Set<string>();
 		for (const tab of tabs) {
 			if (seen.has(tab.name)) {
@@ -211,10 +217,10 @@ export class TableBuilder<Q = unknown> {
 		return this.set("bulkActions", actions);
 	}
 
-	/** The base query: `() => query`, a fresh one per call. */
-	query(fn: () => Q): this {
+	/** The base query: `() => query`, a fresh one per call. Types the table's tabs by its result. */
+	query<R extends Q>(fn: () => R): TableBuilder<R> {
 		this.queryFn = fn;
-		return this;
+		return this as unknown as TableBuilder<R>;
 	}
 
 	/** Escape hatch: writes a key straight into the table options. */

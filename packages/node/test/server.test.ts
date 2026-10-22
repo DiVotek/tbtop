@@ -12,7 +12,15 @@ import {
 import { type MemoryQuery, memoryDriver, memoryQuery } from "../src/adapters/memory";
 
 const people: Row[] = [
-	{ id: 1, name: "Ada", role: "admin", joined: "2024-01-10", active: true, sort_order: 0 },
+	{
+		id: 1,
+		name: "Ada",
+		role: "admin",
+		joined: "2024-01-10",
+		active: true,
+		sort_order: 0,
+		starts: "09:30:00",
+	},
 	{ id: 2, name: "Bob", role: "editor", joined: "2024-02-20", active: false, sort_order: 1 },
 	{
 		id: 3,
@@ -88,6 +96,7 @@ function view(s: S) {
 			.columns([
 				Column.make("name").individuallySearchable(),
 				Column.make("joined").date("d.m.Y"),
+				Column.make("starts").time("H:i"),
 				Column.make("active")
 					.toggle()
 					.rules("boolean")
@@ -108,7 +117,10 @@ function view(s: S) {
 			.query(() => memoryQuery(() => people)),
 		s.actionsRow([
 			EditAction.make(s, {
-				form: s.form("edit", [s.text("name").label("Name").required().rules("max:3")]),
+				form: s.form("edit", [
+					s.text("name").label("Name").required().rules("max:3"),
+					s.date("joined"),
+				]),
 				loadUsing: (ctx) => people.find((p) => p.id === ctx.key()) ?? {},
 				saveUsing: (ctx) => Effects.make().notify(`saved ${String(ctx.form.name)}`),
 			}),
@@ -193,6 +205,8 @@ describe("page-scoped endpoints", () => {
 		expect(
 			(await call("actions/edit/data", { payload: { row: { _key: 2 } } })).body.data.name,
 		).toBe("Bob");
+		const cy = await call("actions/edit/data", { payload: { row: { _key: 3 } } });
+		expect(cy.body.data.joined).toBe("2024-03-30");
 		const tooLong = await call("actions/editSave", {
 			payload: { row: { _key: 2 }, form: { name: "Robert" } },
 		});
@@ -216,7 +230,9 @@ describe("page-scoped endpoints", () => {
 			["Bob", "20.02.2024"],
 			["Cy", "30.03.2024"],
 		]);
-		expect((await call("tables/people?colSearch[name]=ad")).body.data.total).toBe(1);
+		const ada = await call("tables/people?colSearch[name]=ad");
+		expect(ada.body.data.total).toBe(1);
+		expect(ada.body.data.data[0].starts).toBe("09:30");
 		expect((await call("tables/people?tab=nope")).status).toBe(422);
 	});
 

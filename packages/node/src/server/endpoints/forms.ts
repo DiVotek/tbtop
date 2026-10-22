@@ -6,6 +6,7 @@ import {
 	Effects,
 	type FormBuilder,
 	materialize,
+	modalData,
 } from "../../dsl";
 import { applyEmbed, EMBED_ACTION } from "../embeds/apply";
 import { bindEmbeds } from "../embeds/rule";
@@ -217,12 +218,13 @@ const actionData: Endpoint = {
 	method: "POST",
 	pattern: ["actions", ":name", "data"],
 	async run(ctx) {
-		const query = ctx.resolved.s.reachableAction(arg(ctx, 0))?.queryClosure();
-		if (query === undefined) {
+		const action = ctx.resolved.s.reachableAction(arg(ctx, 0));
+		const query = action?.queryClosure();
+		if (action == null || query === undefined) {
 			throw notFound(`Action "${arg(ctx, 0)}" has no data query on this page.`);
 		}
 		const payload = bag((await readBody(ctx.request)).payload);
-		return { data: await query(baseCtx(ctx, payload)) };
+		return { data: modalData(await query(baseCtx(ctx, payload)), action) };
 	},
 };
 

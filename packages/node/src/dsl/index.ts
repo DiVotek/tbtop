@@ -49,7 +49,7 @@ export type { Columns, IconSpec } from "./meta";
 export { materialize, Node, type WireNode } from "./node";
 export { type Choice, defineEnum, type EnumSource } from "./options";
 export { formatPhpDate } from "./phpDate";
-export { recordData, seedDefaults } from "./record";
+export { modalData, recordData, seedDefaults } from "./record";
 export { collectAttributes, collectRules, type Rules } from "./ruleWalker";
 export { type Container, S } from "./s";
 export { Stat } from "./stat";

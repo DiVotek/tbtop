@@ -8,6 +8,7 @@ docs site once it ships.
 - [Data, auth and uploads](data.md): the query driver, sessions, host rules, disks, notifications.
 - [The panel](panel.md): navigation, chrome, palette, appearance, locales, several panels.
 - [MCP](mcp.md): exposing a panel to AI agents.
+- [Porting a PHP page](porting.md): typed tables, host rules, uploads, records.
 - [Differences from the PHP package](differences.md).
 
 The DSL itself (`S`, fields, tables, actions, effects) is the PHP one with the

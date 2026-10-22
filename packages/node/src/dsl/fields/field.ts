@@ -108,8 +108,8 @@ export abstract class Field<N extends string = string, V = unknown> {
 		return this;
 	}
 
-	/** Server-side table filter: `(query, value) => query`. Never serialized. */
-	filterUsing(fn: (query: never, value: never) => unknown): this {
+	/** Server-side table filter: `(query, value) => query`; type `query` as the table's. Never serialized. */
+	filterUsing<Q, V = unknown>(fn: (query: Q, value: V) => Q): this {
 		this.filterFn = fn as (query: unknown, value: unknown) => unknown;
 		return this;
 	}

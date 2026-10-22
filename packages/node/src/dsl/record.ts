@@ -5,7 +5,7 @@ import { DateField } from "./fields/temporal";
 import { isConditionMet } from "./inclusion";
 import { Node } from "./node";
 import { formatPhpDate } from "./phpDate";
-import { descendants } from "./walk";
+import { actionSearchDescendants, descendants, resolveActionNode } from "./walk";
 
 type Record_ = Record<string, unknown>;
 
@@ -64,6 +64,15 @@ function repeaterRows(field: Repeater): unknown[] | null {
 		rows.push({});
 	}
 	return rows;
+}
+
+/** A modal query()'s data: date fields in the modal body get a day, as recordData() gives a page form. */
+export function modalData(data: unknown, action: unknown): unknown {
+	const node = resolveActionNode(action);
+	if (node === null || data === null || typeof data !== "object" || Array.isArray(data)) {
+		return data;
+	}
+	return normalizeDates(data as Record_, actionSearchDescendants(node));
 }
 
 const INSTANT = /^\d{4}-\d{2}-\d{2}[T ]/;

@@ -1,4 +1,5 @@
 import { type FormValues, S } from "../src";
+import { type MemoryQuery, memoryQuery } from "../src/adapters/memory";
 
 const s = new S();
 
@@ -35,3 +36,19 @@ form.onSubmit(({ form: values }) => {
 	// @ts-expect-error unknown key
 	void values.nope;
 });
+
+// Compile-time only: a table's query types its tabs and filters.
+s.table("posts")
+	.query(() => memoryQuery(() => []))
+	.columns({ title: "Title" })
+	.tabs((tab) => [
+		tab("all"),
+		tab("live").query((q) => ({ ...q, filters: [...q.filters, (r) => r.live === true] })),
+		// @ts-expect-error a tab scope returns the table's query type
+		tab("bad").query(() => 1),
+	]);
+
+s.select("status").filterUsing((q: MemoryQuery, value: string) => ({
+	...q,
+	filters: [...q.filters, (r) => r.status === value],
+}));
