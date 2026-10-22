@@ -190,6 +190,7 @@ class InstallCommand extends Command
         $this->line('  5. If the web middleware group has no Inertia middleware (a Blade-only host, or no frontend at all), add it to the panel instead:');
         $this->line("       ->middleware(['web', \\App\\Http\\Middleware\\HandleInertiaRequests::class])   # php artisan inertia:middleware creates it");
         $this->line('     A page that overrides middleware() replaces that stack, so list it there too, including the sign-in and password reset pages;');
-        $this->line('     without it the page answers with an empty asset version and the next visit reloads the whole page.');
+        $this->line('     without it the page gets no validation errors or shared props (a failed sign-in shows no message),');
+        $this->line('     and the next visit to a panel page reloads the whole page.');
     }
 }
