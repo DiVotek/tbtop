@@ -37,7 +37,7 @@ const pages = [
 ];
 
 const panel = (config: Partial<AdminConfig> = {}) =>
-	createAdmin({ prefix: "/admin", pages, version: "v1", ...config });
+	createAdmin({ prefix: "/admin", pages, version: "v1", allowGuests: true, ...config });
 
 async function props(admin: ReturnType<typeof panel>, url: string) {
 	const result = await admin.pageProps(new Request(`http://x${url}`));
@@ -249,6 +249,7 @@ describe("error page", () => {
 describe("several panels", () => {
 	const main = panel();
 	const billing = createAdmin({
+		allowGuests: true,
 		id: "billing",
 		prefix: "/admin/billing",
 		pages: [page("invoices")],

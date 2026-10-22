@@ -31,6 +31,7 @@ function seededDb(): Kysely<DB> {
 
 const db = seededDb();
 const admin = createAdmin({
+	allowGuests: true,
 	prefix: "/admin",
 	driver: kyselyDriver(db) as never,
 	pages: [
@@ -86,6 +87,7 @@ describe("kyselyDriver", () => {
 				new Request("http://x/admin/posts/tables/posts/reorder", {
 					method: "POST",
 					body: JSON.stringify({ ids }),
+					headers: { "content-type": "application/json" },
 				}),
 			);
 		expect((await reorder([3, 1]))?.status).toBe(422);

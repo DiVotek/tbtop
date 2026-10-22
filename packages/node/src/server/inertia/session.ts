@@ -25,54 +25,6 @@ export async function pull(session: SessionStore, key: string): Promise<unknown>
 	return value;
 }
 
-export interface MemorySessionOptions {
-	cookie?: string;
-	secure?: boolean;
-}
-
-/**
- * An in-process session keyed by a random cookie id: enough for one server and
- * for tests. Multi-instance hosts pass their own store.
- */
-export function memorySessions(options: MemorySessionOptions = {}): SessionResolver {
-	const name = options.cookie ?? "tbtop_session";
-	const stores = new Map<string, Map<string, unknown>>();
-	return (request) => {
-		const known = readCookie(request, name);
-		const id = known !== null && stores.has(known) ? known : crypto.randomUUID();
-		const data = stores.get(id) ?? new Map<string, unknown>();
-		stores.set(id, data);
-		return {
-			get: (key) => data.get(key),
-			set: (key, value) => void data.set(key, value),
-			forget: (key) => void data.delete(key),
-			commit: (response) =>
-				id === known ? response : withCookie(response, cookieLine(name, id, options)),
-		};
-	};
-}
-
-export function readCookie(request: Request, name: string): string | null {
-	for (const part of (request.headers.get("cookie") ?? "").split(";")) {
-		const [key, ...value] = part.trim().split("=");
-		if (key === name) {
-			return decodeURIComponent(value.join("="));
-		}
-	}
-	return null;
-}
-
-function cookieLine(name: string, id: string, options: MemorySessionOptions): string {
-	const secure = options.secure === true ? "; Secure" : "";
-	return `${name}=${encodeURIComponent(id)}; Path=/; HttpOnly; SameSite=Lax${secure}`;
-}
-
-export function withCookie(response: Response, line: string): Response {
-	const copy = new Response(response.body, response);
-	copy.headers.append("set-cookie", line);
-	return copy;
-}
-
 /** One store per request, so a page and its handlers share what they put. */
 export function sessionCache(resolve: SessionResolver) {
 	const cache = new WeakMap<Request, Promise<SessionStore>>();

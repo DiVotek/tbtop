@@ -42,3 +42,57 @@ describe("prototype pollution", () => {
 		expect(result.ok).toBe(true);
 	});
 });
+
+describe("cross-site requests", () => {
+	const open = createAdmin({
+		prefix: "/admin",
+		pages,
+		driver,
+		hostRules,
+		allowGuests: true,
+		trustedOrigins: ["https://spa.example.com"],
+	});
+	const reorder = (headers: Record<string, string>) =>
+		open.handle(
+			new Request("http://admin.example.com/admin/posts/tables/posts/reorder", {
+				method: "POST",
+				body: JSON.stringify({ ids: [] }),
+				headers: { "content-type": "application/json", ...headers },
+			}),
+		);
+
+	test("a POST from another origin is refused; its own host and trusted origins pass", async () => {
+		expect((await reorder({ origin: "https://evil.example" }))?.status).toBe(403);
+		expect((await reorder({ origin: "null" }))?.status).toBe(403);
+		expect((await reorder({ "sec-fetch-site": "cross-site" }))?.status).toBe(403);
+		expect((await reorder({ origin: "http://admin.example.com" }))?.status).not.toBe(403);
+		expect((await reorder({ origin: "https://spa.example.com" }))?.status).not.toBe(403);
+		expect((await reorder({}))?.status).not.toBe(403);
+	});
+});
+
+describe("guests", () => {
+	test("without loginPath a panel is closed unless allowGuests opts in", async () => {
+		const closed = createAdmin({ prefix: "/admin", pages, driver });
+		expect((await closed.handle(new Request("http://x/admin/posts")))?.status).toBe(401);
+		expect(
+			(await closed.handle(new Request("http://x/admin/posts/tables/posts")))?.status,
+		).toBe(401);
+	});
+
+	test("pageProps sends a guest to the login page, as the page route does", async () => {
+		const props = await admin.pageProps(new Request("http://x/admin/posts"));
+		expect(props instanceof Response && props.status).toBe(303);
+	});
+});
+
+describe("malformed input", () => {
+	test("a broken percent-escape in the path or the cookie is a 400 or a guest, not a 500", async () => {
+		const open = createAdmin({ prefix: "/admin", pages, driver, allowGuests: true });
+		expect((await open.handle(new Request("http://x/admin/posts/%E0/edit")))?.status).toBe(400);
+		const res = await admin.handle(
+			new Request("http://x/admin/posts", { headers: { cookie: "tbtop_session=%E0" } }),
+		);
+		expect(res?.status).toBe(303);
+	});
+});

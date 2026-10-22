@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { db, driver, hostRules, pages } from "../example/posts";
 import { createAdmin } from "../src";
 
-const admin = createAdmin({ prefix: "/admin", pages, driver, hostRules });
+const admin = createAdmin({ allowGuests: true, prefix: "/admin", pages, driver, hostRules });
 const seed = structuredClone(db.posts);
 beforeEach(() => {
 	db.posts = structuredClone(seed);

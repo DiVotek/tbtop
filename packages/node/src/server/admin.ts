@@ -1,18 +1,20 @@
-import { currentContext, materialize, runWithContext } from "../dsl";
-import { notificationsRoute } from "../notifications/routes";
+import { materialize, runWithContext } from "../dsl";
 import { assertAppearance } from "./chrome/appearance";
 import { expectsJson, notFoundOr, notFoundPage } from "./chrome/errorPage";
 import type { AdminConfig } from "./config";
 import { ENDPOINTS, routeEndpoints } from "./endpoints";
+import { isCrossSite } from "./guard";
 import { errorResponse, HttpError, json, stripPrefix } from "./http";
 import { assertNoCollision, type McpConfig, mcpPath, mcpRoute, serveMcp } from "./mcp";
+import { panelRoute } from "./panelRoutes";
 
 export { HttpError };
 
 import { rootView as defaultRootView } from "./inertia/html";
+import { memorySessions } from "./inertia/memorySession";
 import { isInertia, redirectTo } from "./inertia/protocol";
-import { memorySessions, SESSION_USER, type SessionStore, sessionCache } from "./inertia/session";
-import { currentLocale, localeContext, switchLocale, uiLocales } from "./locale";
+import { SESSION_USER, type SessionStore, sessionCache } from "./inertia/session";
+import { currentLocale, localeContext, uiLocales } from "./locale";
 import type { PageDef } from "./page";
 import { type AdminPageProps, buildPageProps } from "./pageProps";
 import { type PanelView, pageResponse } from "./pageResponse";
@@ -28,7 +30,7 @@ class AdminServer {
 	readonly sessions: (request: Request) => Promise<SessionStore>;
 	private readonly readUser: NonNullable<AdminConfig["user"]>;
 
-	constructor(private readonly config: AdminConfig) {
+	constructor(readonly config: AdminConfig) {
 		this.prefix = config.prefix.replace(/\/+$/, "");
 		assertAppearance(config.navigation, config.appearance);
 		if (config.mcp !== undefined) {
@@ -44,7 +46,9 @@ class AdminServer {
 			version: config.version ?? null,
 			rootView: config.rootView ?? defaultRootView(),
 		};
-		this.sessions = sessionCache(config.session ?? memorySessions());
+		// Each panel's default session is its own: signing in to one leaves the others alone.
+		const own = { cookie: `tbtop_${this.panel.id}_session`, path: this.prefix || "/" };
+		this.sessions = sessionCache(config.session ?? memorySessions(own));
 		this.readUser = config.user ?? ((_, session) => session.get(SESSION_USER));
 	}
 
@@ -78,6 +82,10 @@ class AdminServer {
 			return json({ message: "Not found" }, 404);
 		}
 		const ctx = { params: found.params, request };
+		const denied = await this.denyGuest(request, found.page, false);
+		if (denied !== null) {
+			return denied;
+		}
 		return this.inContext(request, async () =>
 			buildPageProps(await resolvePage(found.page, ctx), this.panel),
 		);
@@ -88,16 +96,20 @@ class AdminServer {
 	 * login page; the JSON endpoints answer 401.
 	 */
 	async denyGuest(request: Request, target: PageDef, json401: boolean): Promise<Response | null> {
-		const { loginPath } = this.config;
-		if (loginPath === undefined || target.public === true) {
+		const { loginPath, allowGuests } = this.config;
+		if (target.public === true || (await this.hasUser(request))) {
 			return null;
 		}
-		if ((await this.readUser(request, await this.sessions(request))) != null) {
-			return null;
+		if (loginPath === undefined) {
+			return allowGuests === true ? null : json({ message: "Unauthenticated." }, 401);
 		}
 		return json401 && !isInertia(request)
 			? json({ message: "Unauthenticated." }, 401)
 			: redirectTo(loginPath);
+	}
+
+	async hasUser(request: Request): Promise<boolean> {
+		return (await this.readUser(request, await this.sessions(request))) != null;
 	}
 
 	async endpoint(request: Request, path: string): Promise<Response | null> {
@@ -148,44 +160,6 @@ class AdminServer {
 		return this.guarded(request, () => notFoundPage(this.panel, request));
 	}
 
-	/** The panel's own POST routes: logout and the UI locale switch. */
-	panelRoute(request: Request, path: string): Promise<Response | null> | null {
-		if (path === "api/notifications" || path.startsWith("api/notifications/")) {
-			return this.notifications(request, path);
-		}
-		if (request.method !== "POST" || !["logout", "locale"].includes(path)) {
-			return null;
-		}
-		if (path === "logout") {
-			return this.logout(request);
-		}
-		return this.guarded(request, async () =>
-			switchLocale(this.config, request, await this.sessions(request)),
-		);
-	}
-
-	notifications(request: Request, path: string): Promise<Response | null> | null {
-		const store = this.config.notifications?.store;
-		if (store === undefined) {
-			return null;
-		}
-		return this.guarded(request, async () => {
-			const routed = await notificationsRoute(store, request, {
-				path,
-				user: currentContext().user,
-			});
-			return routed ?? json({ message: "Method not allowed" }, 405);
-		});
-	}
-
-	/** POST {prefix}/logout: the client's profile menu. Forgets the user, back to login. */
-	logout(request: Request): Promise<Response> {
-		return this.guarded(request, async () => {
-			await (await this.sessions(request)).forget(SESSION_USER);
-			return redirectTo(this.config.loginPath ?? `${this.prefix}/`);
-		});
-	}
-
 	/** POST {prefix}/mcp: the agent's token instead of the session, the tools as its user. */
 	mcp(request: Request, mcp: McpConfig): Promise<Response> {
 		const { pages } = this.config;
@@ -203,16 +177,32 @@ class AdminServer {
 		if (path === null) {
 			return null;
 		}
+		if (!decodable(path)) {
+			return json({ message: "Malformed URL." }, 400);
+		}
 		const { mcp } = this.config;
 		if (mcp !== undefined && path === mcpPath(mcp)) {
 			return this.mcp(request, mcp);
 		}
+		if (isCrossSite(request, this.config.trustedOrigins)) {
+			return json({ message: "Cross-site request refused." }, 403);
+		}
 		return (
-			(await this.panelRoute(request, path)) ??
+			(await panelRoute(this, request, path)) ??
 			(await this.endpoint(request, path)) ??
 			(await this.page(request, path)) ??
 			this.fallback(request)
 		);
+	}
+}
+
+/** A path segment like `%E0` would throw in every decodeURIComponent below: a 400, not a 500. */
+function decodable(path: string): boolean {
+	try {
+		decodeURIComponent(path);
+		return true;
+	} catch {
+		return false;
 	}
 }
 

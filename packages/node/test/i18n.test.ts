@@ -4,6 +4,7 @@ import { cookieSessions, createAdmin } from "../src";
 import { browser, visitPage } from "./support/browser";
 
 const admin = createAdmin({
+	allowGuests: true,
 	prefix: "/admin",
 	pages,
 	driver,

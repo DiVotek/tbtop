@@ -30,6 +30,7 @@ const bob = { id: 2, name: "Bob" };
 
 function panel(store: NotificationStore) {
 	const admin = createAdmin({
+		allowGuests: true,
 		prefix: "/admin",
 		session: cookieSessions({ secret: "notifications-test-secret-0123456789" }),
 		notifications: { store, pollInterval: 15 },
@@ -126,9 +127,9 @@ for (const [name, makeStore] of [
 			expect((await list(visit)).data).toEqual([]);
 		});
 
-		test("guests get 404; the poll interval reaches the shared props", async () => {
+		test("guests get 401; the poll interval reaches the shared props", async () => {
 			const admin = panel(makeStore());
-			expect((await browser(admin)("/admin/api/notifications")).status).toBe(404);
+			expect((await browser(admin)("/admin/api/notifications")).status).toBe(401);
 			const page = await visitPage(browser(admin), "/admin/login");
 			expect((page.props.tbtop as { notifications: unknown }).notifications).toEqual({
 				pollInterval: 15000,

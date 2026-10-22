@@ -10,6 +10,7 @@ const files = definePage({
 });
 
 const admin = createAdmin({
+	allowGuests: true,
 	prefix: "/admin",
 	pages: [...pages, files],
 	driver,

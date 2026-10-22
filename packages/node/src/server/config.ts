@@ -21,6 +21,10 @@ export interface AdminConfig extends ServerOptions, LocaleConfig, PanelLook {
 	user?: (request: Request, session: SessionStore) => unknown;
 	/** Guests visiting a non-public page are sent here (a page with `public: true`). */
 	loginPath?: string;
+	/** Without `loginPath`, guests get 401 unless this is true: an open panel is opt-in. */
+	allowGuests?: boolean;
+	/** Origins (besides the panel's own host) allowed to POST to it, e.g. a separate SPA host. */
+	trustedOrigins?: string[];
 	/** Asset version: a client on another version reloads the page (409). */
 	version?: string | null;
 	/** The first-load HTML document; `rootView({ head: viteTags(...) })` covers most hosts. */

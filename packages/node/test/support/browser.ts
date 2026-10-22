@@ -8,6 +8,9 @@ export function browser(admin: Admin, version = "v1"): Visit {
 	return async (url, init = {}) => {
 		const headers = new Headers(init.headers);
 		headers.set("cookie", cookie);
+		if (typeof init.body === "string" && !headers.has("content-type")) {
+			headers.set("content-type", "application/json");
+		}
 		if (init.inertia === true) {
 			headers.set("x-inertia", "true");
 			headers.set("x-inertia-version", version);

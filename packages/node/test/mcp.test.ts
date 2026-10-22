@@ -40,6 +40,7 @@ const extra = [
 ];
 
 const admin = createAdmin({
+	allowGuests: true,
 	prefix: "/admin",
 	pages: [...pages, ...extra],
 	driver,

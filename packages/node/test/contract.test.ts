@@ -7,7 +7,7 @@ import { createAdmin } from "../src";
 const validateNode = new Ajv2020({ strict: false }).compile(schema);
 
 describe("wire contract (the PHP package's own schema)", () => {
-	const admin = createAdmin({ prefix: "/admin", pages, driver });
+	const admin = createAdmin({ allowGuests: true, prefix: "/admin", pages, driver });
 
 	for (const url of ["/admin/posts", "/admin/posts/new", "/admin/posts/1/edit"]) {
 		test(`${url} emits a tree valid against structure.schema.json`, async () => {

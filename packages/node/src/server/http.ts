@@ -44,7 +44,11 @@ export function invalid(errors: Record<string, string[]>): HttpError {
 	return new HttpError(422, "The given data was invalid.", { errors });
 }
 
+/** The JSON body, only when sent as JSON: a cross-site form cannot post `application/json`. */
 export async function readBody(request: Request): Promise<Record<string, unknown>> {
+	if (!(request.headers.get("content-type") ?? "").includes("json")) {
+		return {};
+	}
 	const body: unknown = await request.json().catch(() => ({}));
 	return body !== null && typeof body === "object" && !Array.isArray(body)
 		? (body as Record<string, unknown>)

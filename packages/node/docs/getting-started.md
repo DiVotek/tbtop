@@ -115,4 +115,11 @@ const login = definePage({
 `POST {prefix}/logout` is built in. To read the user from your own auth
 instead, pass `user: (request, session) => ...`.
 
+A panel without `loginPath` answers guests with 401; `allowGuests: true` opens
+it (local tools only).
+
+State-changing requests from another origin are refused (403): the request's
+own host and `X-Forwarded-Host` pass, and `trustedOrigins` adds more. Bodies
+are read only when sent as `application/json`.
+
 `apps/node-demo` in this repo is a complete host on Bun with Vite.

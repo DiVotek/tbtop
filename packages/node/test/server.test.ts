@@ -117,13 +117,21 @@ function view(s: S) {
 }
 
 const admin = createAdmin({
+	allowGuests: true,
 	prefix: "/admin",
 	driver: memoryDriver() as never,
 	pages: [definePage({ path: "people", title: "People", view })],
 });
 
 async function call(path: string, body?: unknown) {
-	const init = body === undefined ? {} : { method: "POST", body: JSON.stringify(body) };
+	const init =
+		body === undefined
+			? {}
+			: {
+					method: "POST",
+					body: JSON.stringify(body),
+					headers: { "content-type": "application/json" },
+				};
 	const res = await admin.handle(new Request(`http://x/admin/people/${path}`, init));
 	if (res === null) {
 		throw new TypeError(`${path} is not an endpoint`);

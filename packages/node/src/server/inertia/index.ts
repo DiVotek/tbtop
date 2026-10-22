@@ -1,5 +1,7 @@
 export { type CookieSessionOptions, cookieSessions } from "./cookieSession";
+export { withCookie } from "./cookies";
 export { pageTag, rootView, type ViteManifest, type ViteOptions, viteTags } from "./html";
+export { type MemorySessionOptions, memorySessions } from "./memorySession";
 export {
 	back,
 	type InertiaPage,
@@ -14,11 +16,8 @@ export {
 	versionConflict,
 } from "./protocol";
 export {
-	type MemorySessionOptions,
-	memorySessions,
 	pull,
 	SESSION_USER,
 	type SessionResolver,
 	type SessionStore,
-	withCookie,
 } from "./session";

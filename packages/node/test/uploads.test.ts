@@ -10,6 +10,7 @@ const SECRET = "uploads-test-app-key-0123456789abcdef";
 let submitted: Record<string, unknown> = {};
 
 const admin = createAdmin({
+	allowGuests: true,
 	prefix: "/admin",
 	session: cookieSessions({ secret: SECRET }),
 	secret: SECRET,

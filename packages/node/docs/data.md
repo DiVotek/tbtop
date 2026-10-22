@@ -30,10 +30,15 @@ A host rule is `{ message, check(value, args) }`.
 
 `session` takes a resolver `(request) => SessionStore`:
 
-- `memorySessions({ secure })` (default): in-process, one server only.
-- `cookieSessions({ secret, maxAge?, secure? })`: everything in one encrypted
-  cookie (AES-GCM, 4 KB limit). No store, so it works on Workers and behind a
-  load balancer. `secret` needs 32+ characters.
+- `memorySessions({ secure, path, lifetime })`: in-process, one server only.
+  Nothing is stored until something is set; idle sessions expire after
+  `lifetime` seconds; signing in or out moves the session to a new id. It is
+  the default, with a cookie per panel (`tbtop_{id}_session`) scoped to the prefix.
+- `cookieSessions({ secret, maxAge?, path?, secure? })`: everything in one
+  encrypted cookie (AES-GCM, 4 KB limit). No store, so it works on Workers and
+  behind a load balancer. `secret` needs 32+ characters. The expiry is sealed
+  inside, so a copied cookie stops working after `maxAge` even though logout
+  cannot revoke it earlier.
 - Your own: `{ get, set, forget, commit? }` over Redis, a database, etc.
 
 `context: (request) => ({ can, timezone, ... })` gives the DSL a Gate-style
