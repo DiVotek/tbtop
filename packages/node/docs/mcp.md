@@ -1,7 +1,7 @@
 # MCP
 
 Set `mcp` and the panel answers agents at `POST {prefix}/mcp` (stateless
-streamable HTTP, JSON-RPC 2.0). No SDK is involved, so it runs on Workers too.
+streamable HTTP, JSON-RPC 2.0, batches included). No SDK is involved, so it runs on Workers too.
 
 ```ts
 createAdmin({

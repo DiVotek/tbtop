@@ -24,7 +24,8 @@ import { kyselyRules } from "@tbtop/admin/kysely";
 createAdmin({ hostRules: kyselyRules(db) /* unique, exists */ });
 ```
 
-A host rule is `{ message, check(value, args) }`.
+A host rule is `{ message, check(value, args) }`; `check` may return a string
+to fail with that message. `sometimes` and `bail` work as in Laravel.
 
 ## Sessions
 

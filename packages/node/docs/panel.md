@@ -46,5 +46,6 @@ The longest matching prefix answers.
 ## Errors
 
 Throw `new HttpError(404, "Post not found.")` in `view`: the panel renders its
-error page inside the shell. A 404 under the prefix does the same; JSON
-clients get `null` from `handle` so the host answers.
+error page inside the shell. A 404 under the prefix does the same, and a page
+whose `authorize` refuses renders it with 403; JSON clients get `null` from
+`handle` for a 404 so the host answers.
