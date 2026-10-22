@@ -88,7 +88,10 @@ export function NotificationItem({ notification, onMarkRead, onDelete }: Notific
 						)}
 					</span>
 					{notification.body && (
-						<span className="mt-0.5 block line-clamp-2 text-sm text-muted-foreground">
+						<span
+							className="mt-0.5 block line-clamp-4 whitespace-pre-line break-words text-sm text-muted-foreground"
+							data-testid="notification-body"
+						>
 							{notification.body}
 						</span>
 					)}
