@@ -21,7 +21,7 @@ use Tbtop\Admin\Tests\TableTabsHttpTestCase;
 
 uses(ColumnProjectionHttpTestCase::class)->in('ColumnProjectionTest.php', 'ColumnProjectionAllowlistTest.php');
 uses(TableTabsHttpTestCase::class)->in('TableTabsHttpTest.php');
-uses(MediaHttpTestCase::class)->in('MediaHttpTest.php');
+uses(MediaHttpTestCase::class)->in('MediaHttpTest.php', 'MediaRegenerateTest.php');
 uses(MediaGateHttpTestCase::class)->in('MediaGateHttpTest.php');
 uses(PageLayoutHttpTestCase::class)->in('PageLayoutTest.php');
 uses(RunsMigrationsTestCase::class)->in('PackageMigrationsTest.php');
