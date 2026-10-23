@@ -9,7 +9,9 @@ Same wire grammar, same React client, same DSL method names. What differs:
 - **Data** goes through a `QueryDriver`, not Eloquent. Model binding,
   `relationship()` auto-loading and soft-delete macros are the host's code.
 - **Validation** knows Laravel's built-in rules; `unique`/`exists` and anything
-  database-bound are `hostRules`. An unknown rule throws.
+  database-bound are `hostRules`. An unknown rule throws. Input is trimmed
+  and empty strings become null first, as Laravel's middleware does; a
+  richtext document is not trimmed (`trimStrings` in [Data](data.md#validation)).
 - **No media library**: the `upload` field only. Image conversion is optional
   through `sharp`.
 - **Translations** are copied from the PHP lang files (`bun run sync:lang`).

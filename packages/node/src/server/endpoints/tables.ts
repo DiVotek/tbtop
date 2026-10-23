@@ -1,7 +1,8 @@
 import { Effects, type Row, type TableBuilder } from "../../dsl";
 import { keyOf } from "../driver";
-import { effectsBody, notFound, phpQuery, readBody, unprocessable } from "../http";
+import { effectsBody, notFound, phpQuery, unprocessable } from "../http";
 import { runTable } from "../tableQuery";
+import { readInput, trimInput } from "./input";
 import { respondOptions } from "./options";
 import { arg, type Endpoint, type EndpointCtx, requireDriver } from "./types";
 import { validated } from "./validateWith";
@@ -31,7 +32,7 @@ const tableData: Endpoint = {
 		if (found.queryClosure() === undefined) {
 			throw notFound(`Table "${found.name}" has no query on this page.`);
 		}
-		const params = phpQuery(new URL(ctx.request.url).searchParams);
+		const params = trimInput(phpQuery(new URL(ctx.request.url).searchParams), ctx.options);
 		return { data: await runTable(found, params, requireDriver(ctx.options)) };
 	},
 };
@@ -47,7 +48,7 @@ const saveCell: Endpoint = {
 		if (column?.st.onSave === undefined) {
 			throw notFound(`Column "${name}" is not editable on table "${found.name}".`);
 		}
-		const payload = ((await readBody(ctx.request)).payload ?? {}) as Row;
+		const payload = ((await readInput(ctx)).payload ?? {}) as Row;
 		const rules = column.st.editRules.length > 0 ? { [name]: column.st.editRules } : {};
 		const attributes = column.st.label === undefined ? {} : { [name]: column.st.label };
 		const data = await validated({ [name]: payload.value ?? null }, rules, {
@@ -86,7 +87,7 @@ const reorder: Endpoint = {
 			throw unprocessable(`Table "${found.name}" is not reorderable.`);
 		}
 		const body = await validated(
-			await readBody(ctx.request),
+			await readInput(ctx),
 			{ ids: ["required", "array", "min:1"], "ids.*": ["required", "distinct"] },
 			{},
 		);
@@ -121,7 +122,7 @@ const filterOptions: Endpoint = {
 				`Query-backed Select filter "${arg(ctx, 1)}" is not defined on table "${arg(ctx, 0)}".`,
 			);
 		}
-		return respondOptions(field, await readBody(ctx.request));
+		return respondOptions(field, await readInput(ctx));
 	},
 };
 
