@@ -6,7 +6,7 @@ Until the package is published, build it from this repo and install the tarball:
 
 ```bash
 cd packages/node && bun install && bun run build && npm pack
-cd /path/to/app && npm install /path/to/tbtop/packages/node/tbtop-admin-0.7.1.tgz
+cd /path/to/app && npm install /path/to/tbtop/packages/node/tbtop-admin-*.tgz
 npm install @tbtop/inertia-admin @inertiajs/react react react-dom
 ```
 
@@ -112,14 +112,20 @@ const login = definePage({
 });
 ```
 
-`POST {prefix}/logout` is built in. To read the user from your own auth
+`POST {prefix}/logout` is built in. With `cookieSessions` it clears the
+browser's cookie only: a copy of the cookie taken earlier works until its
+`maxAge` runs out (see [Sessions](data.md#sessions)). To read the user from your own auth
 instead, pass `user: (request, session) => ...`.
 
 A panel without `loginPath` answers guests with 401; `allowGuests: true` opens
 it (local tools only).
 
 State-changing requests from another origin are refused (403): the request's
-own host and `X-Forwarded-Host` pass, and `trustedOrigins` adds more. Bodies
-are read only when sent as `application/json`.
+own host and `X-Forwarded-Host` pass, and `trustedOrigins` adds more. This
+guards against a browser on another site; a script outside the browser picks
+any headers it likes, so it is the session, not this check, that stops it.
+Endpoint bodies are read only when sent as `application/json`; file uploads go
+to their own endpoint as `multipart/form-data`, and the form then submits the
+stored paths as JSON.
 
 `apps/node-demo` in this repo is a complete host on Bun with Vite.
