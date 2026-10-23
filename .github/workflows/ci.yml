@@ -18,6 +18,8 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          # Every file the node tests read. PHP DSL changes reach them through the
+          # kitchen-sink fixture (contracts) and the generated docs/ai/api.
           filters: |
             node:
               - "packages/node/**"

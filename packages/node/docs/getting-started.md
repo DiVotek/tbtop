@@ -45,7 +45,7 @@ export const admin = createAdmin({
 	pages: [posts, login],
 	driver: kyselyDriver(db),
 	loginPath: "/admin/login",
-	rootView: rootView({ head: viteTags({ entry: "src/admin.tsx", devServer: "http://localhost:5173" }) }),
+	rootView: rootView({ head: viteTags({ entry: "src/client.tsx", devServer: "http://localhost:5173" }) }),
 });
 ```
 
