@@ -25,4 +25,7 @@ Three tools, the same as the PHP server:
 - `execute`: runs an action or submits a form (`id` is `page:name`).
 
 A page's id is its path. Hide a page with `mcp: false` on it, an action with
-`.mcp(false)`. Requests with an `Origin` outside `allowedOrigins` get 403.
+`.mcp(false)`. A request with an `Origin` header outside `allowedOrigins` gets
+403; without `allowedOrigins` every browser origin is refused. A client that
+sends no `Origin` (a desktop agent, a CLI) is not a browser page, so the check
+lets it through to authentication.

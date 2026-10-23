@@ -20,7 +20,10 @@ async function assets(): Promise<string> {
 	return viteTags({ entry: ENTRY, manifest });
 }
 
-/** The host owns auth: this demo trusts any email, a real app checks a password hash. */
+/**
+ * DEMO ONLY: any email signs in, no password check. Never deploy this page;
+ * the server binds to loopback for that reason. A real app checks a password hash.
+ */
 const login = definePage({
 	path: "login",
 	title: "Sign in",

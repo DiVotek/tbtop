@@ -1,11 +1,14 @@
 import { admin } from "./src/admin";
 
 const port = Number(process.env.PORT ?? 3000);
+// Loopback only: the demo login lets anyone in. Set HOST to expose it on purpose.
+const hostname = process.env.HOST ?? "127.0.0.1";
 
 // Any Web-standard server works: the admin is one fetch handler that returns
 // null for URLs it does not own.
 Bun.serve({
 	port,
+	hostname,
 	async fetch(request) {
 		const { pathname } = new URL(request.url);
 		if (pathname.startsWith("/build/")) {
@@ -18,4 +21,4 @@ Bun.serve({
 		return (await admin.handle(request)) ?? new Response("Not found", { status: 404 });
 	},
 });
-console.log(`admin on http://localhost:${port}/admin`);
+console.log(`admin on http://${hostname}:${port}/admin`);
