@@ -15,7 +15,7 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 
 | Method | What it does |
 |---|---|
-| `variant(string $variant): self` | Typographic style applied to the rendered text. |
+| `variant(Closure\|string $variant): self` | Typographic style applied to the rendered text. |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
 
 ## AlertBlock
@@ -24,8 +24,8 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 
 | Method | What it does |
 |---|---|
-| `color(Color\|string $color): self` | Alert tint (e.g. info/success/warning/danger). Defaults to 'info'. |
-| `title(?string $title): self` | Optional heading rendered above the message; pass null to clear it. |
+| `color(Color\|Closure\|string $color): self` | Alert tint (e.g. info/success/warning/danger). Defaults to 'info'. |
+| `title(Closure\|string\|null $title): self` | Optional heading rendered above the message; pass null to clear it. |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
 
 ## MarkdownBlock
@@ -45,7 +45,7 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 |---|---|
 | `badge(array\|string $map): self` | Ships the raw value plus its color and label maps and lets the client render the badge — unlike date/money, nothing is baked server-side. $map is an inline map ['new' => ['label' => 'New', 'color' => Color::Info]] (both keys optional) or an enum class (HasLabel/HasColor, keyed by ->value, ->name for a pure enum). An unmatched value renders as stored, in gray. The color-only map ['paid' => Color::Success] is deprecated (removed in 1.0). |
 | `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): self` | Kind sugar: renders the value as a boolean icon (mirrors Column::boolean()); the raw value ships, the client renders the icon. |
-| `copyable(string $copyMessage = 'Copied', int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
+| `copyable(Closure\|string $copyMessage = 'Copied', Closure\|int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
 | `date(?string $format = null): self` | Formats server-side and bakes the string into the wire — no format meta ships. |
 | `datetime(?string $format = null): self` | Formats server-side and bakes the string into the wire — no format meta ships. |
 | `field(string $name): self` | Bind this block to a modal-data field by name (client resolves the raw value from useModalData() at render time, like a form field's `name`). Incompatible with baked kinds (date/datetime/number/money) since their formatting runs once at author time, before any live value exists. |
@@ -61,9 +61,9 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 
 | Method | What it does |
 |---|---|
-| `alt(string $alt): self` | Accessible alt text for the rendered image. |
+| `alt(Closure\|string $alt): self` | Accessible alt text for the rendered image. |
 | `asLink(): self` | Render as a file-download link instead of an inline image. |
-| `caption(string $caption): self` | Caption text rendered below the image/link. |
+| `caption(Closure\|string $caption): self` | Caption text rendered below the image/link. |
 | `circular(): self` | Circular image shape. Last shape call wins. |
 | `square(): self` | Square image shape (sharp corners). Last shape call wins. |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
@@ -74,20 +74,21 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 
 | Method | What it does |
 |---|---|
-| `color(Color\|string $color): self` | Tint for the value/icon (a Color or a registered color token). |
-| `delta(string $text, string $direction): self` | Change indicator (e.g. "+12%") rendered next to the value. $direction is 'up', 'down' or 'flat' and picks the arrow and tint. |
-| `description(?string $description, ?string $color = null): self` | Sub-label under the value, optionally tinted to carry meaning ('success'/'warning'/'danger'); the default is muted text. |
+| `color(Color\|Closure\|string $color): self` | Tint for the value/icon (a Color or a registered color token). |
+| `delta(Closure\|string $text, Closure\|string $direction): self` | Change indicator (e.g. "+12%") rendered next to the value. $direction is 'up', 'down' or 'flat' and picks the arrow and tint. |
+| `description(Closure\|string\|null $description, Closure\|string\|null $color = null): self` | Sub-label under the value, optionally tinted to carry meaning ('success'/'warning'/'danger'); the default is muted text. Either argument may be a Closure; a closure-supplied color is checked when it resolves. The description closure also re-runs on each poll() tick. |
+| `disabled(Closure\|bool $disabled = true): static` | Server-decided initial disabled state, e.g. disabled(fn () => ! $user->isAdmin()). The node still ships and its value still submits: this is a starting state, not access control — enforce permissions server-side, and use disabledIf() for state that follows the form. |
 | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side evaluation: the field still ships on the wire and its value still submits — only the input's interactivity is disabled. Contrast with when(), which drops the node from the wire entirely. Pass a Cond, or the shorthand ($field, $op, $value). |
 | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side visibility: the node still ships on the wire and its value still submits with the form even while hidden. Contrast with when(), which drops the node from the wire entirely and 404s its endpoints. Pass a Cond, or the shorthand ($field, $op, $value) — e.g. hiddenIf('type', '=', 'guest'). $field resolves against the enclosing form's values; on a table row action it resolves against the row's columns instead (hiddenIf('status', '!=', 'pending')). |
-| `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
+| `icon(Closure\|string $name, Closure\|string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. Either may be a Closure; a closure-supplied position is validated when it resolves. |
 | `meta(string $key, mixed $value): static` | Sets one of the node meta keys directly: id, hidden, disabled, hiddenIf, disabledIf. Unvalidated — any other key ships and the client ignores it. For an arbitrary wire *option* use set() instead. |
 | `openInNewTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
 | `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. No effect without url(). |
-| `poll(int $seconds): self` | Poll the stat's data endpoint every $seconds, re-invoking the value closure on each tick instead of once at page render. The 5-second floor is enforced twice: below it this throws, and the client clamps whatever reaches it. Stamps options.source so the client fetches from the page data endpoint, keyed by this stat's label. |
+| `poll(Closure\|int $seconds): self` | Poll the stat's data endpoint every $seconds, re-invoking the value closure on each tick instead of once at page render. The 5-second floor is enforced twice: below it this throws, and the client clamps whatever reaches it. Stamps options.source so the client fetches from the page data endpoint, keyed by this stat's label. A Closure's result is checked against the floor when it resolves. |
 | `sparkline(array $numbers, string $position = 'inline'): self` | Mini trend chart from a plain list of numbers — no axes or labels, so the series only has to be ordered, not scaled. |
-| `sparklineColor(string $color): self` | Tint applied to the sparkline chart. |
-| `tooltip(string $text): static` | Tooltip text shown on hover. |
-| `trend(string $direction): self` | Small trend arrow rendered after the description, inheriting its color. |
+| `sparklineColor(Closure\|string $color): self` | Tint applied to the sparkline chart. Default: current chart color. A Closure's result is checked when it resolves. |
+| `tooltip(Closure\|string $text): static` | Tooltip text shown on hover. |
+| `trend(Closure\|string $direction): self` | Small trend arrow rendered after the description, inheriting its color. A Closure's result is checked when it resolves. |
 | `url(string $url): self` | Make the whole card a link — an internal path navigates in place, an external URL opens as a plain link. |
 | `value(mixed $value): self` | The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick). |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
@@ -98,11 +99,12 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 
 | Method | What it does |
 |---|---|
+| `disabled(Closure\|bool $disabled = true): static` | Server-decided initial disabled state, e.g. disabled(fn () => ! $user->isAdmin()). The node still ships and its value still submits: this is a starting state, not access control — enforce permissions server-side, and use disabledIf() for state that follows the form. |
 | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side evaluation: the field still ships on the wire and its value still submits — only the input's interactivity is disabled. Contrast with when(), which drops the node from the wire entirely. Pass a Cond, or the shorthand ($field, $op, $value). |
 | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side visibility: the node still ships on the wire and its value still submits with the form even while hidden. Contrast with when(), which drops the node from the wire entirely and 404s its endpoints. Pass a Cond, or the shorthand ($field, $op, $value) — e.g. hiddenIf('type', '=', 'guest'). $field resolves against the enclosing form's values; on a table row action it resolves against the row's columns instead (hiddenIf('status', '!=', 'pending')). |
 | `meta(string $key, mixed $value): static` | Sets one of the node meta keys directly: id, hidden, disabled, hiddenIf, disabledIf. Unvalidated — any other key ships and the client ignores it. For an arbitrary wire *option* use set() instead. |
 | `params(array $fields): self` | Filter fields rendered above the chart (regular field builders, e.g. select('interval')->options([...])->default('month')). Their values reach the query() closure as $params['name']. Text-ish kinds debounce before refetching; every change costs one request, so keep the set small. |
-| `poll(int $seconds): self` | Re-fetch the chart's data endpoint every $seconds. The 5-second floor is enforced twice: below it this throws, and the client clamps whatever reaches it. Only meaningful together with ->query(). |
+| `poll(Closure\|int $seconds): self` | Re-fetch the chart's data endpoint every $seconds. The 5-second floor is enforced twice: below it this throws, and the client clamps whatever reaches it. Only meaningful together with ->query(). A Closure's result is checked against the floor when it resolves. |
 | `query(callable $fn): static` | Makes the chart dynamic: data comes from the page data endpoint instead of $opts. $fn: fn(Request $request, array $params): array — $params holds the current values of the params() fields keyed by field name (empty array without params()). Return a list of flat rows (arrays or a query result) containing the xKey/nameKey column and every series dataKey, e.g. [['period' => '2026-08', 'count' => 12], ...]. |
 | `set(string $key, mixed $value): self` | Escape hatch: writes $key directly into the serialized chart node options, bypassing any dedicated fluent method. Key names are NOT validated against the schema — a typo or unsupported key ships silently. Prefer a real fluent method when one exists. |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
@@ -113,6 +115,7 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 
 | Method | What it does |
 |---|---|
+| `disabled(Closure\|bool $disabled = true): static` | Server-decided initial disabled state, e.g. disabled(fn () => ! $user->isAdmin()). The node still ships and its value still submits: this is a starting state, not access control — enforce permissions server-side, and use disabledIf() for state that follows the form. |
 | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side evaluation: the field still ships on the wire and its value still submits — only the input's interactivity is disabled. Contrast with when(), which drops the node from the wire entirely. Pass a Cond, or the shorthand ($field, $op, $value). |
 | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side visibility: the node still ships on the wire and its value still submits with the form even while hidden. Contrast with when(), which drops the node from the wire entirely and 404s its endpoints. Pass a Cond, or the shorthand ($field, $op, $value) — e.g. hiddenIf('type', '=', 'guest'). $field resolves against the enclosing form's values; on a table row action it resolves against the row's columns instead (hiddenIf('status', '!=', 'pending')). |
 | `items(callable $fn): self` | Row source for the list. $fn runs server-side at serialization time (no request payload — same lazy-resolution shape as Stat::value) and returns each row either as ['title' => ..., 'meta'?, 'color'?, 'url'?, 'openUrlInNewTab'?] or as $s->listItem(...); the two forms mix freely. 'title' is required, 'color' is one of success\|warning\|danger\|muted, 'openUrlInNewTab' is a bool with no effect without 'url'. Unknown array keys are ignored. |
@@ -136,6 +139,7 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 | Method | What it does |
 |---|---|
 | `dependsOn(array\|string $fields): self` | Declare the form field(s) whose value changes reload this region. Their current values reach the render closure as ['field' => value]. |
+| `disabled(Closure\|bool $disabled = true): static` | Server-decided initial disabled state, e.g. disabled(fn () => ! $user->isAdmin()). The node still ships and its value still submits: this is a starting state, not access control — enforce permissions server-side, and use disabledIf() for state that follows the form. |
 | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side evaluation: the field still ships on the wire and its value still submits — only the input's interactivity is disabled. Contrast with when(), which drops the node from the wire entirely. Pass a Cond, or the shorthand ($field, $op, $value). |
 | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side visibility: the node still ships on the wire and its value still submits with the form even while hidden. Contrast with when(), which drops the node from the wire entirely and 404s its endpoints. Pass a Cond, or the shorthand ($field, $op, $value) — e.g. hiddenIf('type', '=', 'guest'). $field resolves against the enclosing form's values; on a table row action it resolves against the row's columns instead (hiddenIf('status', '!=', 'pending')). |
 | `meta(string $key, mixed $value): static` | Sets one of the node meta keys directly: id, hidden, disabled, hiddenIf, disabledIf. Unvalidated — any other key ships and the client ignores it. For an arbitrary wire *option* use set() instead. |

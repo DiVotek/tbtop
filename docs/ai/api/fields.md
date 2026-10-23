@@ -18,15 +18,16 @@ Every field builder and its wire kind. **Every field** comes first — those met
 | `columnSpan(array\|int $span): static` | Grid column span: int (1-8) or a breakpoint object {sm?, md?, lg?, xl?}. |
 | `columnStart(array\|int $start): static` | Grid column start: int (1-8) or a breakpoint object {sm?, md?, lg?, xl?}. |
 | `confirmed(): static` | Requires a sibling "{name}_confirmation" field to match. |
-| `copyable(string $copyMessage = 'Copied', int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
-| `default(mixed $value): static` | Seeds the form value when the record has no key for this field. An explicit key in the form's record() always wins — even record(['x' => null]) keeps the null instead of this default. An enum case, or each case in a list (multi-value fields), is stored as its string option value (->value, ->name for a pure enum), matching options(Enum::class). |
+| `copyable(Closure\|string $copyMessage = 'Copied', Closure\|int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
+| `default(mixed $value): static` | Seeds the form value when the record has no key for this field. An explicit key in the form's record() always wins — even record(['x' => null]) keeps the null instead of this default. An enum case, or each case in a list (multi-value fields), is stored as its string option value (->value, ->name for a pure enum), matching options(Enum::class). A Closure is resolved (and its enum cases keyed) on read. |
 | `different(string $field): static` | Value must differ from another field's value. |
+| `disabled(Closure\|bool $disabled = true): static` | Server-decided initial disabled state, e.g. disabled(fn () => ! $user->isAdmin()). The node still ships and its value still submits: this is a starting state, not access control — enforce permissions server-side, and use disabledIf() for state that follows the form. |
 | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side evaluation: the field still ships on the wire and its value still submits — only the input's interactivity is disabled. Contrast with when(), which drops the node from the wire entirely. Pass a Cond, or the shorthand ($field, $op, $value). |
 | `filterUsing(callable $fn): static` | Attach a server-side filter closure: fn($query, $value) => $query. Takes priority over kind-default mapping. NEVER serialized to the wire. |
-| `helperText(string $text): static` | Muted hint text rendered below the input, above any validation error. |
+| `helperText(Closure\|string $text): static` | Muted hint text rendered below the input, above any validation error. |
 | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Client-side visibility: the node still ships on the wire and its value still submits with the form even while hidden. Contrast with when(), which drops the node from the wire entirely and 404s its endpoints. Pass a Cond, or the shorthand ($field, $op, $value) — e.g. hiddenIf('type', '=', 'guest'). $field resolves against the enclosing form's values; on a table row action it resolves against the row's columns instead (hiddenIf('status', '!=', 'pending')). |
 | `in(array $values): static` | Value must be one of the allowed set. |
-| `label(string $label): static` | Display label rendered above the input; defaults to a humanized $name when unset. |
+| `label(Closure\|string $label): static` | Display label rendered above the input; defaults to a humanized $name when unset. |
 | `markAsRequired(bool $state = true): static` | Sets the static "required" asterisk/UI marker only, with no rule. For a field made required through some other mechanism (a composite rule, a cross-field requiredIf already covering it) that still needs the visual indicator. |
 | `meta(string $key, mixed $value): static` | Sets one of the node meta keys directly: id, hidden, disabled, hiddenIf, disabledIf. Unvalidated — any other key ships and the client ignores it. For an arbitrary wire *option* use set() instead. |
 | `notIn(array $values): static` | Value must NOT be one of the listed set. |
@@ -39,7 +40,7 @@ Every field builder and its wire kind. **Every field** comes first — those met
 | `rulesForLocale(string $locale, array\|string $rules): static` | Rule set for one locale of a translatable field, replacing — not adding to — whatever rules() would otherwise apply there. Only the default content locale falls back to rules() when it has no override; every other locale without one just gets 'nullable'. Unlike rules(), a pipe string here is not guarded against an inline regex: pattern. |
 | `same(string $field): static` | Value must equal another field's value (e.g. password match). |
 | `set(string $key, mixed $value): static` | Escape hatch: writes $key directly into the serialized node options, bypassing any dedicated fluent method. Key names are NOT validated against the schema — a typo or unsupported key ships silently and only fails (if at all) on the client. Prefer a real fluent method when one exists; use this only for a wire key with no builder support yet. |
-| `tooltip(string $text): static` | Tooltip text shown in an info-icon popover next to the field label. |
+| `tooltip(Closure\|string $text): static` | Tooltip text shown in an info-icon popover next to the field label. |
 | `translatable(bool $value = true): static` | Store the value as a per-locale map instead of a scalar. On a repeater, this cascades to its sub-fields rather than translating the repeater's own value (see isTranslatableField()); pair with rulesForLocale() to validate each locale independently. |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
 
@@ -119,7 +120,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `accept(array $mimes): static` | Filter which MIME types are visible/uploadable in the picker. |
 | `multiple(bool $value = true): static` | Allow selecting more than one item. |
 | `reorderable(bool $value = true): static` | Allow drag-to-reorder when multiple is enabled. |
-| `variant(string $variant): static` | Visual variant of the picker. Applies to single-select only — ->multiple() always renders preview chips regardless of variant. |
+| `variant(Closure\|string $variant): static` | Visual variant of the picker. Applies to single-select only — ->multiple() always renders preview chips regardless of variant. |
 
 ## Number (number)
 
@@ -133,9 +134,9 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `minValue(int\|float $value): static` | Smallest accepted value. |
 | `multipleOf(int\|float $value): static` | Value must be a multiple of the given step. |
 | `numeric(): static` | Value must be numeric. |
-| `placeholder(string $text): static` | Placeholder text shown in the empty input. |
+| `placeholder(Closure\|string $text): static` | Placeholder text shown in the empty input. |
 | `prefix(JsonSerializable\|string $content): static` | Content rendered before the input, inside the control (e.g. a currency symbol or icon block). A plain string becomes a TextBlock; any other JsonSerializable node is used as-is. Display nodes only — nesting a Field here throws (an affix decorates the control, it is not a second input, and its rules would never be collected). |
-| `step(string\|int\|float $step): static` | Granularity of each increment (structural — drives the input's step attribute). Pass 'any' to allow arbitrary precision. |
+| `step(Closure\|string\|int\|float $step): static` | Granularity of each increment (structural — drives the input's step attribute). Pass 'any' to allow arbitrary precision. A Closure's result is checked when it resolves. |
 | `suffix(JsonSerializable\|string $content): static` | Content rendered after the input, inside the control. Same rules as prefix() — display nodes only, a nested Field throws. |
 
 ## Otp (otp)
@@ -199,10 +200,10 @@ No methods beyond the shared base — see [Every field](#every-field).
 | Method | What it does |
 |---|---|
 | `collapsible(bool $collapsible = true): static` | Render each row collapsed to a one-line summary; click to expand the edit form. Off by default — existing repeaters stay fully expanded. |
-| `defaultItems(int $count): static` | Row count RecordDefaults pads the seeded record up to, but only when the repeater's key is absent from the record entirely — it never trims or tops up an explicitly supplied value. Rows beyond any default() content are created empty, so a repeater can ship pre-filled rows plus blank ones as a prompt. |
+| `defaultItems(Closure\|int $count): static` | Row count RecordDefaults pads the seeded record up to, but only when the repeater's key is absent from the record entirely — it never trims or tops up an explicitly supplied value. Rows beyond any default() content are created empty, so a repeater can ship pre-filled rows plus blank ones as a prompt. |
 | `fields(array $fields): static` | Child fields making up one row. May contain another repeater to nest — validation rules prefix through every level as `x.*.child.*.field`. |
-| `maxItems(int $max): static` | Client-enforced cap on row count (disables "Add row" at the limit). Not re-checked server-side — a direct request can still submit more rows. |
-| `minItems(int $min): static` | Client-enforced floor on row count (disables row removal at the limit). Not re-checked server-side. |
+| `maxItems(Closure\|int $max): static` | Client-enforced cap on row count (disables "Add row" at the limit). Not re-checked server-side — a direct request can still submit more rows. |
+| `minItems(Closure\|int $min): static` | Client-enforced floor on row count (disables row removal at the limit). Not re-checked server-side. |
 | `summary(string $field): static` | Sub-field name whose value fills the collapsed row's title (e.g. 'label'). Only read when collapsible. |
 
 ## Richtext (richtext)
@@ -213,7 +214,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 |---|---|
 | `embeds(array $embeds): static` | Block kinds the editor can insert as cards (slash menu "Blocks" group and the toolbar "Block" button). Each embed's data is validated against its fields on save, in every locale of a translatable field. |
 | `maxEmbeds(int $max): static` | Server-side cap on embeds per document (at least 1); a save with more fails on the field. No limit by default. |
-| `placeholder(string $text): static` | Placeholder text shown in the empty editor. |
+| `placeholder(Closure\|string $text): static` | Placeholder text shown in the empty editor. |
 
 ## Select (select)
 
@@ -244,13 +245,13 @@ No methods beyond the shared base — see [Every field](#every-field).
 |---|---|
 | `between(int\|float $min, int\|float $max): static` | Value must fall within the inclusive range. |
 | `integer(): static` | Value must be an integer. |
-| `max(int\|float $value): static` | Highest selectable value (structural — drives the track range). |
+| `max(Closure\|int\|float $value): static` | Highest selectable value (structural — drives the track range). |
 | `maxValue(int\|float $value): static` | Largest accepted value. |
-| `min(int\|float $value): static` | Lowest selectable value (structural — drives the track range). |
+| `min(Closure\|int\|float $value): static` | Lowest selectable value (structural — drives the track range). |
 | `minValue(int\|float $value): static` | Smallest accepted value. |
 | `multipleOf(int\|float $value): static` | Value must be a multiple of the given step. |
 | `numeric(): static` | Value must be numeric. |
-| `step(int\|float $value): static` | Granularity of each thumb move (structural — drives snapping). |
+| `step(Closure\|int\|float $value): static` | Granularity of each thumb move (structural — drives snapping). |
 
 ## Slug (slug)
 
@@ -288,10 +289,10 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `exists(string $table, ?string $column = null): static` | Value must exist in $table.$column (defaults column to field name). |
 | `ignore(string\|int $id, string $idColumn = 'id'): static` | Skip the given record when checking uniqueness (edit pages). Appends ",{id},{idColumn}" to the most recent unique rule. |
 | `length(int $length): static` | Exact character count. |
-| `mask(string $pattern): static` | Static input mask, Filament token alphabet: `9` = digit, `a` = letter, `*` = alphanumeric; any other character is a literal that the client inserts automatically (e.g. '(999) 999-9999'). No support for optional or repeating tokens — it's a fixed-length pattern only. |
+| `mask(Closure\|string $pattern): static` | Static input mask, Filament token alphabet: `9` = digit, `a` = letter, `*` = alphanumeric; any other character is a literal that the client inserts automatically (e.g. '(999) 999-9999'). No support for optional or repeating tokens — it's a fixed-length pattern only. |
 | `maxLength(int $length): static` | Maximum character count. |
 | `minLength(int $length): static` | Minimum character count. |
-| `placeholder(array\|string $text): static` | Placeholder text shown while the field is empty. Pass a locale map (`['en' => 'Page title', 'uk' => 'Назва сторінки']`) on a translatable field to show each locale's text on its own tab; a locale missing from the map shows none. A non-translatable field reads the default content locale. |
+| `placeholder(Closure\|array\|string $text): static` | Placeholder text shown while the field is empty. Pass a locale map (`['en' => 'Page title', 'uk' => 'Назва сторінки']`) on a translatable field to show each locale's text on its own tab; a locale missing from the map shows none. A non-translatable field reads the default content locale. A Closure may return either form; its map is checked when it resolves. |
 | `prefix(JsonSerializable\|string $content): static` | Content rendered before the input, inside the control (e.g. a currency symbol or icon block). A plain string becomes a TextBlock; any other JsonSerializable node is used as-is. Display nodes only — nesting a Field here throws (an affix decorates the control, it is not a second input, and its rules would never be collected). |
 | `regex(string $pattern): static` | Match a PCRE pattern. Passed as an array element so the rule collector does not split on '\|' inside the pattern. |
 | `startsWith(string ...$values): static` | Value must start with one of the given substrings. |
@@ -311,7 +312,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `length(int $length): static` | Exact character count. |
 | `maxLength(int $length): static` | Maximum character count. |
 | `minLength(int $length): static` | Minimum character count. |
-| `placeholder(array\|string $text): static` | Placeholder text shown while the field is empty. Pass a locale map (`['en' => 'Page title', 'uk' => 'Назва сторінки']`) on a translatable field to show each locale's text on its own tab; a locale missing from the map shows none. A non-translatable field reads the default content locale. |
+| `placeholder(Closure\|array\|string $text): static` | Placeholder text shown while the field is empty. Pass a locale map (`['en' => 'Page title', 'uk' => 'Назва сторінки']`) on a translatable field to show each locale's text on its own tab; a locale missing from the map shows none. A non-translatable field reads the default content locale. A Closure may return either form; its map is checked when it resolves. |
 | `regex(string $pattern): static` | Match a PCRE pattern. Passed as an array element so the rule collector does not split on '\|' inside the pattern. |
 | `startsWith(string ...$values): static` | Value must start with one of the given substrings. |
 
@@ -341,13 +342,13 @@ No methods beyond the shared base — see [Every field](#every-field).
 | Method | What it does |
 |---|---|
 | `accept(array\|string $accept): static` | Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list ['application/pdf', 'image/*'] to allow several. A list is joined with commas: the wire grammar types `accept` as a string, and the client passes it straight to the DOM attribute. |
-| `convertTo(string $format): static` | Convert the stored image to this format ('webp'\|'jpeg'\|'png'). |
+| `convertTo(Closure\|string $format): static` | Convert the stored image to this format ('webp'\|'jpeg'\|'png'). |
 | `directory(string $dir): static` | Subdirectory the file is stored under (default 'uploads'). |
 | `disk(string $disk): static` | Laravel filesystem disk name (default 'public'). |
-| `maxFiles(int $max): static` | Maximum number of files when multiple is enabled. |
+| `maxFiles(Closure\|int $max): static` | Maximum number of files when multiple is enabled. |
 | `maxSize(int $bytes): static` | Max upload size in bytes (default 5 MiB). |
 | `multiple(bool $value = true): static` | Allow selecting more than one value. |
-| `quality(int $q): static` | Encoder quality (1-100) for the converted image. |
+| `quality(Closure\|int $q): static` | Encoder quality (1-100) for the converted image. |
 | `reorderable(bool $value = true): static` | Allow drag-to-reorder when multiple is enabled. |
 | `saveUsing(Closure $fn): static` | Override how an uploaded file is stored. The closure receives the UploadedFile and the resolved UploadFieldConfig and must return the wire shape `{path, url}`. Default stores to the configured disk. Never serialized to the client. Bypasses UploadStorer::store() entirely, so SVG sanitization is skipped — the mime-guard (accept + text/html rejection) still runs first, but a custom closure that stores SVGs must sanitize them itself. |
 | `visibility(string $v): static` | Storage visibility: 'public' (default) or 'private'. |
