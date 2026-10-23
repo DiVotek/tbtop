@@ -1,6 +1,7 @@
 import { collectAttributes, collectRules, currentContext, type Embed, Richtext } from "../../dsl";
 import { fieldsByKey, type Rules } from "../../dsl/ruleWalker";
 import { trans } from "../../i18n";
+import { trimInput } from "../endpoints/input";
 import type { SessionStore } from "../inertia/session";
 import { bindUploads } from "../uploads/bind";
 import { dataHas, dataSet, emptyToNull } from "../validation/data";
@@ -16,13 +17,18 @@ export interface EmbedEnv {
 	session: SessionStore;
 	records: unknown[];
 	hostRules?: Record<string, HostRule>;
+	/** Turns embed data trimming off (`false`) or names more untrimmed keys. */
+	trimStrings?: false | { except?: string[] };
 }
 
-/** One embed's data against its own fields, uploads held to what `stored` already holds. */
+/**
+ * One embed's data against its own fields, uploads held to what `stored`
+ * already holds. The data is trimmed here: the document around it is not.
+ */
 export async function validateEmbed(embed: Embed, data: unknown, env: EmbedEnv) {
 	const fields = embed.includedFields();
 	const bound = await bindUploads(collectRules(fields), fields, env);
-	return validate(emptyToNull(data), bound.rules, {
+	return validate(emptyToNull(trimInput(data, env)), bound.rules, {
 		attributes: collectAttributes(fields),
 		hostRules: { ...env.hostRules, ...bound.hostRules },
 	});

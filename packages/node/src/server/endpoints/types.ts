@@ -9,6 +9,12 @@ export interface ServerOptions extends UploadOptions {
 	driver?: QueryDriver;
 	/** Rules only the host can check, e.g. `unique`/`exists` against its database. */
 	hostRules?: Record<string, HostRule>;
+	/**
+	 * Laravel's TrimStrings, on by default: request strings are trimmed before
+	 * validation, except password keys and richtext documents. `except` names
+	 * more keys (a field name, or a dotted tail like `links.*.label`); `false` turns it off.
+	 */
+	trimStrings?: false | { except?: string[] };
 }
 
 export interface EndpointCtx {

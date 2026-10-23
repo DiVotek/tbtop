@@ -27,6 +27,19 @@ createAdmin({ hostRules: kyselyRules(db) /* unique, exists */ });
 A host rule is `{ message, check(value, args) }`; `check` may return a string
 to fail with that message. `sometimes` and `bail` work as in Laravel.
 
+Input reaches the rules the way Laravel's default middleware leaves it:
+`TrimStrings`, then `ConvertEmptyStringsToNull`. Every string in a request
+(form submits, action payloads, cell saves, table query params, MCP calls) is
+trimmed, nested arrays and objects included, with zero-width spaces and the BOM.
+`password`, `password_confirmation` and `current_password` are never trimmed,
+nor is a richtext document (its Lexical JSON is stored as written; embed data
+inside it is trimmed). `trimStrings` takes more keys, by name or dotted tail,
+or `false` to turn trimming off:
+
+```ts
+createAdmin({ trimStrings: { except: ["signature", "links.*.label"] } });
+```
+
 ## Sessions
 
 `session` takes a resolver `(request) => SessionStore`:

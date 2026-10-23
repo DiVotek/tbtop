@@ -79,3 +79,44 @@ export function emptyToNull(value: unknown): unknown {
 	}
 	return value;
 }
+
+/** Keys TrimStrings never trims (Laravel's `TrimStrings::$neverTrim`). */
+export const NEVER_TRIM = ["current_password", "password", "password_confirmation"];
+
+/** Laravel's `Str::trim`: whitespace plus BOM, zero-width space and LTR mark. */
+const EDGES = /^[\s﻿​‎]+|[\s﻿​‎]+$/g;
+
+/** A Lexical editor state: a richtext value, whose text nodes keep their spacing. */
+function isEditorState(value: object): boolean {
+	const root = (value as Bag).root;
+	return root !== null && typeof root === "object" && (root as Bag).type === "root";
+}
+
+/** `except` entries match a key path by its tail: `password` at any depth, `*` any segment. */
+function excepted(path: string[], except: string[]): boolean {
+	return except.some((entry) => {
+		const tail = entry.split(".");
+		const at = path.slice(-tail.length);
+		return at.length === tail.length && tail.every((s, i) => s === "*" || s === at[i]);
+	});
+}
+
+/**
+ * Laravel's TrimStrings, run before emptyToNull: every string in the input,
+ * nested arrays and objects included, except password keys, the host's
+ * `except` keys and richtext documents (Lexical JSON is stored as written).
+ */
+export function trimStrings(value: unknown, except: string[] = [], path: string[] = []): unknown {
+	if (typeof value === "string") {
+		return excepted(path, [...NEVER_TRIM, ...except]) ? value : value.replaceAll(EDGES, "");
+	}
+	if (Array.isArray(value)) {
+		return value.map((v, i) => trimStrings(v, except, [...path, String(i)]));
+	}
+	if (value === null || typeof value !== "object" || isEditorState(value)) {
+		return value;
+	}
+	return Object.fromEntries(
+		Object.entries(value).map(([k, v]) => [k, trimStrings(v, except, [...path, k])]),
+	);
+}

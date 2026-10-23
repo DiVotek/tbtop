@@ -29,6 +29,7 @@ export async function applyEmbed(ctx: EndpointCtx, payload: Bag) {
 		session: ctx.session,
 		records: [],
 		hostRules: ctx.options.hostRules,
+		trimStrings: ctx.options.trimStrings,
 	});
 	if (!result.ok) {
 		throw invalid(result.errors);

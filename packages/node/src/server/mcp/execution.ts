@@ -1,6 +1,7 @@
 import { materialize } from "../../dsl";
 import type { ServerOptions } from "../endpoints";
 import { runActionWith, submitFormOutcome } from "../endpoints/forms";
+import { trimInput } from "../endpoints/input";
 import type { EndpointCtx } from "../endpoints/types";
 import { asJson, invalid } from "../http";
 import type { SessionStore } from "../inertia/session";
@@ -44,7 +45,8 @@ export class Execution {
 	}
 
 	/** `payload` is `{form?, row?, selection?}`; a redirect effect gains the page it opens. */
-	async action(name: string, payload: Record<string, unknown>) {
+	async action(name: string, input: Record<string, unknown>) {
+		const payload = trimInput(input, this.target.options);
 		const ctx = this.ctx(`/actions/${encodeURIComponent(name)}`, { payload });
 		const { effects } = await runActionWith(ctx, name, payload);
 		const wire = asJson<unknown>(await materialize(effects));
@@ -52,7 +54,8 @@ export class Execution {
 	}
 
 	/** Effects as the form flashes them; a handler that returns a URL is reported as `redirect`. */
-	async form(name: string, data: Record<string, unknown>) {
+	async form(name: string, input: Record<string, unknown>) {
+		const data = trimInput(input, this.target.options);
 		const ctx = this.ctx(`/forms/${encodeURIComponent(name)}`, data);
 		const outcome = await submitFormOutcome(ctx, name, data);
 		if ("errors" in outcome) {

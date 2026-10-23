@@ -11,11 +11,12 @@ import {
 import { applyEmbed, EMBED_ACTION } from "../embeds/apply";
 import { bindEmbeds } from "../embeds/rule";
 import { enclosingForm, enclosingQueryAction } from "../enclosingForm";
-import { asJson, effectsBody, notFound, readBody } from "../http";
+import { asJson, effectsBody, notFound } from "../http";
 import { back, redirectOrLocation } from "../inertia/protocol";
 import { bindUploads } from "../uploads/bind";
 import { dataGet, dataHas, dataSet, emptyToNull, expandKey } from "../validation/data";
 import { validate } from "../validation/validator";
+import { readInput } from "./input";
 import { arg, type Endpoint, type EndpointCtx } from "./types";
 import { validated } from "./validateWith";
 
@@ -48,6 +49,7 @@ async function formRules(form: FormBuilder, ctx: EndpointCtx, loaded: unknown[] 
 	const embeds = bindEmbeds(uploads.rules, children, {
 		...env,
 		hostRules: ctx.options.hostRules,
+		trimStrings: ctx.options.trimStrings,
 	});
 	return {
 		rules: embeds.rules,
@@ -95,7 +97,7 @@ const submitForm: Endpoint = {
 	method: "POST",
 	pattern: ["forms", ":name"],
 	async run(ctx) {
-		const outcome = await submitFormOutcome(ctx, arg(ctx, 0), await readBody(ctx.request));
+		const outcome = await submitFormOutcome(ctx, arg(ctx, 0), await readInput(ctx));
 		if ("errors" in outcome) {
 			return flashErrors(ctx, outcome.errors);
 		}
@@ -145,7 +147,7 @@ const runAction: Endpoint = {
 	method: "POST",
 	pattern: ["actions", ":name"],
 	async run(ctx) {
-		return runActionWith(ctx, arg(ctx, 0), bag((await readBody(ctx.request)).payload));
+		return runActionWith(ctx, arg(ctx, 0), bag((await readInput(ctx)).payload));
 	},
 };
 
@@ -223,7 +225,7 @@ const actionData: Endpoint = {
 		if (action == null || query === undefined) {
 			throw notFound(`Action "${arg(ctx, 0)}" has no data query on this page.`);
 		}
-		const payload = bag((await readBody(ctx.request)).payload);
+		const payload = bag((await readInput(ctx)).payload);
 		return { data: modalData(await query(baseCtx(ctx, payload)), action) };
 	},
 };

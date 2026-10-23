@@ -1,7 +1,8 @@
 import { collectAttributes, collectRules, type Relation } from "../../dsl";
 import { keyOf, type QueryDriver } from "../driver";
-import { notFound, readBody } from "../http";
+import { notFound } from "../http";
 import { pickTranslation } from "../translatable";
+import { readInput } from "./input";
 import { readDeps, respondOptions } from "./options";
 import { arg, type Endpoint, requireDriver } from "./types";
 import { validated } from "./validateWith";
@@ -17,7 +18,7 @@ const selectOptions: Endpoint = {
 				`Select field "${arg(ctx, 0)}" with query() is not defined on this page.`,
 			);
 		}
-		return respondOptions(field, await readBody(ctx.request));
+		return respondOptions(field, await readInput(ctx));
 	},
 };
 
@@ -35,7 +36,7 @@ const selectCreate: Endpoint = {
 		}
 		const fields = field.creatableFields();
 		const options = { attributes: collectAttributes(fields), hostRules: ctx.options.hostRules };
-		return create(await validated(await readBody(ctx.request), collectRules(fields), options));
+		return create(await validated(await readInput(ctx), collectRules(fields), options));
 	},
 };
 
@@ -51,7 +52,7 @@ const relationSearch: Endpoint = {
 				`Relation field "${arg(ctx, 0)}" with query() is not defined on this page.`,
 			);
 		}
-		return relationOptions(field, await readBody(ctx.request), requireDriver(ctx.options));
+		return relationOptions(field, await readInput(ctx), requireDriver(ctx.options));
 	},
 };
 
@@ -101,9 +102,7 @@ const daterangeRanges: Endpoint = {
 			);
 		}
 		return {
-			ranges: field.rangesWith(
-				readDeps(await readBody(ctx.request), field.dependsOnFields()),
-			),
+			ranges: field.rangesWith(readDeps(await readInput(ctx), field.dependsOnFields())),
 		};
 	},
 };
@@ -119,7 +118,7 @@ const liveRegion: Endpoint = {
 		}
 		return {
 			nodes: await region.renderWith(
-				readDeps(await readBody(ctx.request), region.dependsOnFields()),
+				readDeps(await readInput(ctx), region.dependsOnFields()),
 			),
 		};
 	},
