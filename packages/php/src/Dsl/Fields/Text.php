@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
 use Tbtop\Admin\Dsl\Concerns\HasAffixes;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasLocalePlaceholder;
@@ -14,6 +15,8 @@ final class Text extends Field
     use HasLocalePlaceholder;
     use HasStringRules;
 
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'placeholder', 'mask'];
+
     protected function kind(): string
     {
         return 'text';
@@ -24,8 +27,10 @@ final class Text extends Field
      * `*` = alphanumeric; any other character is a literal that the client
      * inserts automatically (e.g. '(999) 999-9999'). No support for optional
      * or repeating tokens — it's a fixed-length pattern only.
+     *
+     * @param  string|(Closure(): string)  $pattern
      */
-    public function mask(string $pattern): static
+    public function mask(string|Closure $pattern): static
     {
         return $this->set('mask', $pattern);
     }

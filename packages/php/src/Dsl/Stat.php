@@ -8,6 +8,7 @@ use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
 use Tbtop\Admin\Dsl\Concerns\HasTooltip;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 
 /**
@@ -20,6 +21,7 @@ final class Stat implements JsonSerializable
     use HasIcon;
     use HasTooltip;
     use HasWhen;
+    use ResolvesClosures;
     use WithMeta;
 
     private const SPARKLINE_POSITIONS = ['inline', 'bottom'];
@@ -30,26 +32,26 @@ final class Stat implements JsonSerializable
 
     private mixed $value = null;
 
-    private ?string $description = null;
+    private string|Closure|null $description = null;
 
-    private ?string $descriptionColor = null;
+    private string|Closure|null $descriptionColor = null;
 
-    /** @var 'up'|'down'|null */
-    private ?string $trend = null;
+    /** @var 'up'|'down'|Closure|null */
+    private string|Closure|null $trend = null;
 
-    /** @var array{text: string, direction: string}|null */
+    /** @var array{text: string|Closure, direction: string|Closure}|null */
     private ?array $delta = null;
 
-    private Color|string|null $color = null;
+    private Color|string|Closure|null $color = null;
 
-    private ?string $sparklineColor = null;
+    private string|Closure|null $sparklineColor = null;
 
     /** @var list<int|float>|null */
     private ?array $sparkline = null;
 
     private string $sparklinePosition = 'inline';
 
-    private ?int $pollSeconds = null;
+    private int|Closure|null $pollSeconds = null;
 
     private ?string $url = null;
 
@@ -76,14 +78,20 @@ final class Stat implements JsonSerializable
      * Sub-label under the value, optionally tinted to carry meaning
      * ('success'/'warning'/'danger'); the default is muted text.
      *
-     * @param  string|null  $color  One of self::SEMANTIC_COLORS ('success'|'warning'|'danger'),
-     *                              or null (default) for the current muted text.
+     * Either argument may be a Closure; a closure-supplied color is checked
+     * when it resolves. The description closure also re-runs on each poll() tick.
+     *
+     * @param  string|(Closure(): ?string)|null  $description
+     * @param  string|(Closure(): string)|null  $color  One of self::SEMANTIC_COLORS ('success'|'warning'|'danger'),
+     *                                                  or null (default) for the current muted text.
      */
-    public function description(?string $description, ?string $color = null): self
+    public function description(string|Closure|null $description, string|Closure|null $color = null): self
     {
         $this->description = $description;
         if ($color !== null) {
-            $this->descriptionColor = self::normalizeSemanticColor($color);
+            $this->descriptionColor = $color instanceof Closure
+                ? fn () => self::normalizeSemanticColor($color())
+                : self::normalizeSemanticColor($color);
         }
 
         return $this;
@@ -93,32 +101,39 @@ final class Stat implements JsonSerializable
      * Change indicator (e.g. "+12%") rendered next to the value. $direction
      * is 'up', 'down' or 'flat' and picks the arrow and tint.
      *
-     * @param  'up'|'down'|'flat'  $direction
+     * @param  string|(Closure(): string)  $text
+     * @param  'up'|'down'|'flat'|(Closure(): ('up'|'down'|'flat'))  $direction
      */
-    public function delta(string $text, string $direction): self
+    public function delta(string|Closure $text, string|Closure $direction): self
     {
         $this->delta = ['text' => $text, 'direction' => $direction];
 
         return $this;
     }
 
-    /** Tint for the value/icon (a Color or a registered color token). */
-    public function color(Color|string $color): self
+    /**
+     * Tint for the value/icon (a Color or a registered color token).
+     *
+     * @param  Color|string|(Closure(): (Color|string))  $color
+     */
+    public function color(Color|string|Closure $color): self
     {
         $this->color = $color;
 
         return $this;
     }
 
-    /** Small trend arrow rendered after the description, inheriting its color. */
-    public function trend(string $direction): self
+    /**
+     * Small trend arrow rendered after the description, inheriting its color.
+     * A Closure's result is checked when it resolves.
+     *
+     * @param  'up'|'down'|(Closure(): ('up'|'down'))  $direction
+     */
+    public function trend(string|Closure $direction): self
     {
-        if (! in_array($direction, ['up', 'down'], true)) {
-            throw new InvalidArgumentException(
-                "Invalid trend direction \"{$direction}\". Allowed: up, down."
-            );
-        }
-        $this->trend = $direction;
+        $this->trend = $direction instanceof Closure
+            ? fn () => self::checkedTrend($direction())
+            : self::checkedTrend($direction);
 
         return $this;
     }
@@ -145,16 +160,17 @@ final class Stat implements JsonSerializable
         return $this;
     }
 
-    /** Tint applied to the sparkline chart. @param  string  $color  One of success|warning|danger|primary. Default: current chart color. */
-    public function sparklineColor(string $color): self
+    /**
+     * Tint applied to the sparkline chart. Default: current chart color. A
+     * Closure's result is checked when it resolves.
+     *
+     * @param  string|(Closure(): string)  $color  One of success|warning|danger|primary.
+     */
+    public function sparklineColor(string|Closure $color): self
     {
-        $allowed = [...self::SEMANTIC_COLORS, 'primary'];
-        if (! in_array($color, $allowed, true)) {
-            throw new InvalidArgumentException(
-                "Invalid sparkline color \"{$color}\". Allowed: ".implode(', ', $allowed).'.'
-            );
-        }
-        $this->sparklineColor = $color;
+        $this->sparklineColor = $color instanceof Closure
+            ? fn () => self::checkedSparklineColor($color())
+            : self::checkedSparklineColor($color);
 
         return $this;
     }
@@ -198,16 +214,16 @@ final class Stat implements JsonSerializable
      * closure on each tick instead of once at page render. The 5-second floor
      * is enforced twice: below it this throws, and the client clamps whatever
      * reaches it. Stamps options.source so the client fetches from the page
-     * data endpoint, keyed by this stat's label.
+     * data endpoint, keyed by this stat's label. A Closure's result is
+     * checked against the floor when it resolves.
+     *
+     * @param  int|(Closure(): int)  $seconds
      */
-    public function poll(int $seconds): self
+    public function poll(int|Closure $seconds): self
     {
-        if ($seconds < self::MIN_POLL_SECONDS) {
-            throw new InvalidArgumentException(
-                'Stat poll interval must be at least '.self::MIN_POLL_SECONDS.' seconds.'
-            );
-        }
-        $this->pollSeconds = $seconds;
+        $this->pollSeconds = $seconds instanceof Closure
+            ? fn () => self::checkedPollSeconds($seconds())
+            : self::checkedPollSeconds($seconds);
 
         return $this;
     }
@@ -226,10 +242,9 @@ final class Stat implements JsonSerializable
         }
 
         return function (): array {
-            $resolved = $this->value instanceof Closure ? ($this->value)() : $this->value;
-            $out = ['value' => $resolved];
+            $out = ['value' => $this->resolveOpt($this->value)];
             if ($this->description !== null) {
-                $out['description'] = $this->description;
+                $out['description'] = $this->resolveOpt($this->description);
             }
             if ($this->sparkline !== null) {
                 $out['sparkline'] = $this->sparkline;
@@ -241,26 +256,26 @@ final class Stat implements JsonSerializable
 
     public function toNode(): Node
     {
-        $resolved = $this->value instanceof Closure ? ($this->value)() : $this->value;
-
-        $options = ['label' => $this->label, 'value' => $resolved];
+        $options = ['label' => $this->label, 'value' => $this->resolveOpt($this->value)];
 
         if ($this->description !== null) {
-            $options['description'] = $this->description;
+            $options['description'] = $this->resolveOpt($this->description);
         }
         if ($this->descriptionColor !== null) {
-            $options['descriptionColor'] = $this->descriptionColor;
+            $options['descriptionColor'] = $this->resolveOpt($this->descriptionColor);
         }
         if ($this->trend !== null) {
-            $options['trend'] = $this->trend;
+            $options['trend'] = $this->resolveOpt($this->trend);
         }
         if ($this->delta !== null) {
-            $options['delta'] = $this->delta;
+            $options['delta'] = [
+                'text' => $this->resolveOpt($this->delta['text']),
+                'direction' => $this->resolveOpt($this->delta['direction']),
+            ];
         }
         if ($this->color !== null) {
-            $options['color'] = $this->color instanceof Color
-                ? $this->color->value
-                : $this->color;
+            $color = $this->resolveOpt($this->color);
+            $options['color'] = $color instanceof Color ? $color->value : $color;
         }
         if ($this->sparkline !== null) {
             $options['sparkline'] = $this->sparkline;
@@ -269,7 +284,7 @@ final class Stat implements JsonSerializable
             }
         }
         if ($this->sparklineColor !== null) {
-            $options['sparklineColor'] = $this->sparklineColor;
+            $options['sparklineColor'] = $this->resolveOpt($this->sparklineColor);
         }
         if ($this->url !== null) {
             $options['url'] = $this->url;
@@ -278,11 +293,11 @@ final class Stat implements JsonSerializable
             }
         }
         if ($this->pollSeconds !== null) {
-            $options['poll'] = $this->pollSeconds;
+            $options['poll'] = $this->resolveOpt($this->pollSeconds);
             $options['source'] = $this->label;
         }
 
-        return (new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->metaBag))
+        return (new Node('stat', [...$options, ...$this->iconOption(), ...$this->tooltipOption()], null, $this->resolvedMeta()))
             ->when($this->isIncluded());
     }
 
@@ -292,14 +307,53 @@ final class Stat implements JsonSerializable
         return $this->toNode()->jsonSerialize();
     }
 
-    private static function normalizeSemanticColor(string $color): string
+    private static function normalizeSemanticColor(mixed $color): string
     {
-        if (! in_array($color, self::SEMANTIC_COLORS, true)) {
+        if (! is_string($color) || ! in_array($color, self::SEMANTIC_COLORS, true)) {
             throw new InvalidArgumentException(
-                "Invalid description color \"{$color}\". Allowed: ".implode(', ', self::SEMANTIC_COLORS).'.'
+                'Invalid description color "'.self::shown($color).'". Allowed: '.implode(', ', self::SEMANTIC_COLORS).'.'
             );
         }
 
         return $color;
+    }
+
+    private static function checkedTrend(mixed $direction): string
+    {
+        if (! is_string($direction) || ! in_array($direction, ['up', 'down'], true)) {
+            throw new InvalidArgumentException(
+                'Invalid trend direction "'.self::shown($direction).'". Allowed: up, down.'
+            );
+        }
+
+        return $direction;
+    }
+
+    private static function checkedSparklineColor(mixed $color): string
+    {
+        $allowed = [...self::SEMANTIC_COLORS, 'primary'];
+        if (! is_string($color) || ! in_array($color, $allowed, true)) {
+            throw new InvalidArgumentException(
+                'Invalid sparkline color "'.self::shown($color).'". Allowed: '.implode(', ', $allowed).'.'
+            );
+        }
+
+        return $color;
+    }
+
+    private static function checkedPollSeconds(mixed $seconds): int
+    {
+        if (! is_int($seconds) || $seconds < self::MIN_POLL_SECONDS) {
+            throw new InvalidArgumentException(
+                'Stat poll interval must be at least '.self::MIN_POLL_SECONDS.' seconds.'
+            );
+        }
+
+        return $seconds;
+    }
+
+    private static function shown(mixed $value): string
+    {
+        return is_scalar($value) ? (string) $value : get_debug_type($value);
     }
 }

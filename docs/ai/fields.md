@@ -22,22 +22,33 @@ Every field class extends `Field.php`. These methods are available on every fiel
 
 | Method | Signature | What it does |
 |---|---|---|
-| `label` | `label(string $label): static` | Human-readable field label shown above the input |
-| `helperText` | `helperText(string $text): static` | Muted hint text below the input, above any error |
-| `tooltip` | `tooltip(string $text): static` | Info-icon popover text next to the label |
+| `label` | `label(string\|Closure $label): static` | Human-readable field label shown above the input |
+| `helperText` | `helperText(string\|Closure $text): static` | Muted hint text below the input, above any error |
+| `tooltip` | `tooltip(string\|Closure $text): static` | Info-icon popover text next to the label |
 | `required` | `required(): static` | Marks the field required (adds `required` Laravel rule automatically) |
 | `rules` | `rules(string\|array $rules): static` | Appends Laravel validation rules; pipe-string or array. **Pass regex as an array** — the pipe separator would be split |
 | `rulesForLocale` | `rulesForLocale(string $locale, string\|array $rules): static` | Per-locale validation rules (for translatable fields) |
 | `translatable` | `translatable(bool $value = true): static` | Marks the field as translatable; enables locale-tab UI |
-| `default` | `default(mixed $value): static` | Sets the form default value |
+| `default` | `default(mixed $value): static` | Sets the form default value (a `Closure` is resolved per request) |
 | `set` | `set(string $key, mixed $value): static` | Escape hatch — writes an arbitrary option key to the wire node |
 | `meta` | `meta(string $key, mixed $value): static` | Writes to the meta bag (client-side, not serialized in `opts`) |
 | `filterUsing` | `filterUsing(callable $fn): static` | Server-only filter closure `fn($query, $value) => $query`; never sent to the wire |
 | `when` | `when(bool\|Closure $condition): static` | Conditional **existence** (server-evaluated): a `when(false)` field never reaches the wire and its endpoints (upload, select-options/create, relation-search) return 404. Contrast `hiddenIf`, which ships the field and hides it client-side |
 | `hiddenIf` | `hiddenIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Hides the field when a condition is met (client-evaluated) |
+| `disabled` | `disabled(bool\|Closure $disabled = true): static` | Server-decided initial disabled state (`meta.disabled`). The value still submits — not access control; use `when()`/permissions for that |
 | `disabledIf` | `disabledIf(Cond\|string $condOrField, string $op = '', mixed $value = null): static` | Disables the field when a condition is met (client-evaluated) |
 | `columnSpan` | `columnSpan(int\|array $span): static` | Grid column span inside a `grid`/`section(columns: ...)` parent: int (1-8) or a breakpoint object `{sm?, md?, lg?, xl?}` (each 1-8) |
 | `columnStart` | `columnStart(int\|array $start): static` | Grid column start offset inside a `grid`/`section(columns: ...)` parent; same int-or-breakpoint-object shape as `columnSpan` |
+
+> **Closure option values.** Presentation setters (`label`, `helperText`, `tooltip`,
+> `default`, `disabled`, `placeholder`, `mask`, `step`, `min`/`max`, `maxItems`/`minItems`/
+> `defaultItems`, `maxFiles`, `convertTo`/`quality`, `variant`, `copyable`) accept a
+> zero-arity `Closure` instead of a value — `->label(fn () => __('posts.title'))`,
+> `->disabled(fn () => ! auth()->user()->isAdmin())`. It is resolved server-side every
+> time the field is read (serialization, the validator's attribute name, record
+> defaults), so keep it cheap and side-effect free; the wire carries the result, never the
+> closure. A setter that validates its argument checks a closure's result when it
+> resolves. A field dropped by `when(false)` inside a form is never resolved.
 
 > **Validation is always PHP.** The client renders zod constraints for on-blur UX
 > feedback only — they are never trusted as the security boundary. All rules live in

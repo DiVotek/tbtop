@@ -2,9 +2,13 @@
 
 namespace Tbtop\Admin\Dsl\Concerns;
 
+use Closure;
+
 trait HasCopyable
 {
-    /** @var array{message: string, duration: int}|null */
+    use ResolvesClosures;
+
+    /** @var array{message: string|Closure, duration: int|Closure}|null */
     protected ?array $copyableDef = null;
 
     /**
@@ -15,8 +19,11 @@ trait HasCopyable
      * number) and formatUsing() bake their output into the wire, so a money
      * column copies "12.34 USD", not the cents. Kinds the client renders
      * (badge/boolean/icon) and form fields copy the raw value.
+     *
+     * @param  string|(Closure(): string)  $copyMessage
+     * @param  int|(Closure(): int)  $copyMessageDuration
      */
-    public function copyable(string $copyMessage = 'Copied', int $copyMessageDuration = 2000): static
+    public function copyable(string|Closure $copyMessage = 'Copied', int|Closure $copyMessageDuration = 2000): static
     {
         $this->copyableDef = ['message' => $copyMessage, 'duration' => $copyMessageDuration];
 
@@ -26,6 +33,13 @@ trait HasCopyable
     /** @return array<string, mixed> */
     protected function copyableOption(): array
     {
-        return $this->copyableDef !== null ? ['copyable' => $this->copyableDef] : [];
+        if ($this->copyableDef === null) {
+            return [];
+        }
+
+        return ['copyable' => [
+            'message' => $this->resolveOpt($this->copyableDef['message']),
+            'duration' => $this->resolveOpt($this->copyableDef['duration']),
+        ]];
     }
 }

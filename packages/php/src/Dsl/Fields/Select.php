@@ -20,6 +20,8 @@ class Select extends Field
     use HasOptions;
     use HasServerQuery;
 
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'placeholder'];
+
     /** Server-only closure resolving a stored value back to its label. */
     private ?Closure $resolveUsing = null;
 
