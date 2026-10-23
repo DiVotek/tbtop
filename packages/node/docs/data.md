@@ -68,6 +68,7 @@ is the default:
 import { localDisk } from "@tbtop/admin/local-disk";
 import { sharpImages } from "@tbtop/admin/sharp";
 import sharp from "sharp";
+import DOMPurify from "isomorphic-dompurify"; // any sanitizer; plain DOMPurify needs a DOM
 
 createAdmin({
 	disks: { public: localDisk("storage/app/public", "/storage") },

@@ -1,6 +1,7 @@
 import {
 	createAdmin,
 	definePage,
+	Effects,
 	memorySessions,
 	rootView,
 	SESSION_USER,
@@ -20,8 +21,10 @@ async function assets(): Promise<string> {
 	return viteTags({ entry: ENTRY, manifest });
 }
 
+const DEMO_PASSWORD = "password";
+
 /**
- * DEMO ONLY: any email signs in, no password check. Never deploy this page;
+ * DEMO ONLY: any email signs in with the shared demo password. Never deploy this page;
  * the server binds to loopback for that reason. A real app checks a password hash.
  */
 const login = definePage({
@@ -37,6 +40,9 @@ const login = definePage({
 				s.actionsRow([s.action("signIn").label("Sign in").color("primary").submit()]),
 			])
 			.onSubmit(async (ctx) => {
+				if (ctx.form.password !== DEMO_PASSWORD) {
+					return Effects.make().notify("Wrong password (the demo's is \"password\").", "error");
+				}
 				const email = String(ctx.form.email);
 				await (await admin.session(ctx.request)).set(SESSION_USER, {
 					name: email.split("@")[0],
