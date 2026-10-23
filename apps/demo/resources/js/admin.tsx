@@ -1,7 +1,14 @@
 // Package styles first: its :root token defaults must lose the cascade to the
-// app's own theme in app.css.
+// app's own theme in app.css. NOTE: admin.tsx is a Vite entry, so its CSS
+// lands in the admin-*.css bundle which @vite() emits AFTER app.css —
+// anything the package defines wins over app.css on equal specificity.
+// Theme presets therefore belong at the END of the entry (below), not in
+// app.css: they must come after the package import to override it.
 import "@tbtop/inertia-admin/styles.css";
 import "../css/app.css";
+import "../css/themes/shadcn-stone.css";
+import "../css/themes/shadcn-stone-emerald.css";
+// To return to the plain stone base, comment the emerald line above.
 
 import { createInertiaApp } from "@inertiajs/react";
 import {

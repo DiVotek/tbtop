@@ -8,6 +8,7 @@ import { useFieldSourceData } from "./fieldDependencies";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { slugify } from "./slugify";
 import { usePanelLocale } from "./translatableWrapper";
+import { useSourceBlur } from "./useSourceBlur";
 
 interface SlugOptionsBag {
 	fromField?: string;
@@ -48,9 +49,11 @@ export function SlugCell({ value }: FieldCellProps<string>) {
 
 /**
  * The input is permanently read-only: the slug is only ever machine-derived.
- * Clear empties it and stops auto-derivation (so it STAYS empty while the
- * source keeps changing); Generate re-derives from the source and re-engages
- * auto mode. Mounting over any pre-existing non-empty slug starts in manual
+ * It follows the source while the user types there; leaving the source field
+ * with a slug in place fixes it, so a later rename does not rewrite it. Clear
+ * empties it and stops auto-derivation (so it STAYS empty while the source
+ * keeps changing); Generate re-derives from the source and re-engages auto
+ * mode until the source is left again. Mounting over any pre-existing non-empty slug starts in manual
  * mode — a saved slug is treated as manually set regardless of whether it
  * still matches its source — so opening an edit form and renaming the page
  * never silently rewrites a published slug.
@@ -71,8 +74,19 @@ export function SlugForm({
 	const syncBroken = useRef(false);
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
+	const anchorRef = useRef<HTMLDivElement>(null);
 
 	const currentSlug = asString(value);
+	const currentSlugRef = useRef(currentSlug);
+	currentSlugRef.current = currentSlug;
+
+	// Leaving the source with nothing derived yet (tabbing past an empty
+	// title) keeps auto mode, so the slug still fills once a title is typed.
+	useSourceBlur(anchorRef, fromField, () => {
+		if (currentSlugRef.current !== "") {
+			syncBroken.current = true;
+		}
+	});
 	const sourceValue = sourceAt(sourceData, fromField, panelLocale ?? defaultLocale);
 
 	const emitDerived = useCallback((source: string, current: string) => {
@@ -123,7 +137,7 @@ export function SlugForm({
 
 	const t = useTranslation();
 	return (
-		<div data-field={name} className="flex flex-col gap-2">
+		<div ref={anchorRef} data-field={name} className="flex flex-col gap-2">
 			<div className="flex items-center gap-2">
 				<Input
 					id={fieldId({ id, name })}

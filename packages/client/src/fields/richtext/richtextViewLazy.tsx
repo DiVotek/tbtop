@@ -5,7 +5,7 @@ import { lazy, type ReactNode, Suspense } from "react";
 // static graph — mirrors richtextFormLazy. Renders nothing until resolved.
 const LazyView = lazy(() => import("./richtextView").then((m) => ({ default: m.RichtextView })));
 
-const defaultFallback = <div className="h-20 rounded-md bg-muted animate-pulse" />;
+const defaultFallback = <div className="h-20 rounded-surface bg-muted animate-pulse" />;
 
 export interface RichtextViewLazyProps {
 	state: SerializedEditorState | string;

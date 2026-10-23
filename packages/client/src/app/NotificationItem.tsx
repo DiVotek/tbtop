@@ -88,7 +88,10 @@ export function NotificationItem({ notification, onMarkRead, onDelete }: Notific
 						)}
 					</span>
 					{notification.body && (
-						<span className="mt-0.5 block line-clamp-2 text-sm text-muted-foreground">
+						<span
+							className="mt-0.5 block line-clamp-4 whitespace-pre-line break-words text-sm text-muted-foreground"
+							data-testid="notification-body"
+						>
 							{notification.body}
 						</span>
 					)}
@@ -104,7 +107,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete }: Notific
 				type="button"
 				onClick={() => onDelete(notification.id)}
 				aria-label={t("notifications.delete")}
-				className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground focus:opacity-100 group-hover:opacity-100"
+				className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-surface text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground focus:opacity-100 group-hover:opacity-100"
 				data-testid="notification-delete"
 			>
 				<XIcon className="size-4" aria-hidden />

@@ -50,7 +50,7 @@ describe("PageContentErrorBoundary", () => {
 			</PageContentErrorBoundary>,
 		);
 		const card = getByTestId("page-content-error-boundary");
-		expect(card.className).toContain("rounded-lg");
+		expect(card.className).toContain("rounded-surface-lg");
 		expect(card.className).toContain("border-destructive/50");
 		expect(card.className).toContain("bg-destructive/5");
 	});

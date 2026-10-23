@@ -18,7 +18,8 @@ export function CardLink({
 	testId: string;
 	children: ReactNode;
 }) {
-	const className = "grid rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring";
+	const className =
+		"grid rounded-surface-lg outline-none focus-visible:ring-2 focus-visible:ring-ring";
 	if (newTab || isExternalUrl(url)) {
 		return (
 			<a

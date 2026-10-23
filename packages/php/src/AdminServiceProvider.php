@@ -16,6 +16,7 @@ use Tbtop\Admin\Commands\ClearCachedPagesCommand;
 use Tbtop\Admin\Commands\InstallCommand;
 use Tbtop\Admin\Commands\MakePageCommand;
 use Tbtop\Admin\Commands\MakeResourceCommand;
+use Tbtop\Admin\Commands\RegenerateMediaCommand;
 use Tbtop\Admin\Http\PanelErrorPage;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelRegistry;
@@ -40,7 +41,8 @@ class AdminServiceProvider extends PackageServiceProvider
             ->hasCommand(ClearCachedPagesCommand::class)
             ->hasCommand(MakePageCommand::class)
             ->hasCommand(MakeResourceCommand::class)
-            ->hasCommand(InstallCommand::class);
+            ->hasCommand(InstallCommand::class)
+            ->hasCommand(RegenerateMediaCommand::class);
     }
 
     public function packageRegistered(): void

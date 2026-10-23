@@ -96,7 +96,7 @@ function ActionGroupButtons({ label, nodes, renderChild }: GroupProps) {
 			</Button>
 			{open && (
 				<div
-					className="absolute left-0 top-full z-50 mt-1 min-w-40 rounded-md border bg-popover p-1 shadow-md"
+					className="absolute left-0 top-full z-50 mt-1 min-w-40 rounded-surface border bg-popover p-1 shadow-md"
 					data-testid="action-group-menu"
 					onPointerDown={(e) => e.stopPropagation()}
 				>

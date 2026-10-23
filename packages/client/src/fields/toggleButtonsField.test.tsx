@@ -32,6 +32,23 @@ describe("ToggleButtons field — single", () => {
 	});
 });
 
+describe("ToggleButtons field — preset hooks", () => {
+	test("the group and its items carry data-orientation for the preset's joined borders", () => {
+		const { getByText } = render(
+			<ToggleButtonsForm
+				name="visibility"
+				value="public"
+				onChange={() => {}}
+				options={{ options: CHOICES }}
+			/>,
+		);
+		const item = getByText("Private").closest("[data-slot=toggle-group-item]");
+		expect(item?.getAttribute("data-orientation")).toBe("horizontal");
+		const group = item?.closest("[data-slot=toggle-group]");
+		expect(group?.getAttribute("data-orientation")).toBe("horizontal");
+	});
+});
+
 describe("ToggleButtons field — multiple", () => {
 	test("selecting a second option accumulates into the array", async () => {
 		const captured: (string | string[] | null)[] = [];

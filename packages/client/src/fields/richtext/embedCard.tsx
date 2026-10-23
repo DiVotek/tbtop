@@ -53,7 +53,7 @@ export function EmbedCard({ nodeKey, kind, data }: EmbedCardProps) {
 	return (
 		<div
 			className={cn(
-				"my-2 flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2 text-sm",
+				"my-2 flex items-center gap-3 rounded-surface border bg-muted/40 px-3 py-2 text-sm",
 				canEdit && "cursor-pointer hover:bg-muted",
 				isSelected && interactive && "ring-2 ring-ring/50",
 			)}

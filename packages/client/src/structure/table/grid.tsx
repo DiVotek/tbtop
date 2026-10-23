@@ -6,6 +6,7 @@ import { DndContext } from "@dnd-kit/core";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
+import { cn } from "../../lib/cn";
 import { useSectionFrameless } from "../../render/sectionChrome";
 import { ReloadOverlay } from "../../ui/spinner";
 import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
@@ -103,19 +104,20 @@ export function TableGrid(props: TableGridProps) {
 	// Inside a card-variant section the card draws the frame — drop our own border.
 	const frameless = useSectionFrameless();
 
+	// New-gen shape: container/table/body visuals come from the `cn-table*`
+	// rules in `ui/presets/style-preset-*.css` (the preset layer sits below
+	// utilities, so plain utility overrides win). Our deltas:
+	// `relative` stays explicit (the reload overlay anchors to it), the
+	// rounded border is ours and dropped when a card section draws the frame,
+	// and the empty-state cell stays a plain <td> because `cn-table-cell`
+	// forces `whitespace-nowrap`.
 	const shell = (
-		<div
-			className={
-				frameless
-					? "relative overflow-x-auto"
-					: "relative overflow-x-auto rounded-md border"
-			}
-		>
+		<div className={cn("cn-table-container relative", !frameless && "rounded-surface border")}>
 			{/* Reload overlay sits below the sticky header (z-20 > overlay z-10). */}
 			{props.isReloading && <ReloadOverlay testId="table-reloading-overlay" />}
 			{reorderFeature && !reorderActive && <ReorderHint />}
 
-			<table className="w-full text-sm">
+			<table className="cn-table">
 				<TableHead
 					columns={props.columns}
 					sort={props.sort}
@@ -129,7 +131,7 @@ export function TableGrid(props: TableGridProps) {
 					colSearchValues={props.colSearchValues}
 					onColSearchChange={props.onColSearchChange}
 				/>
-				<tbody>{body}</tbody>
+				<tbody className="cn-table-body">{body}</tbody>
 			</table>
 		</div>
 	);

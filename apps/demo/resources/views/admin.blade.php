@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ request()->cookie('tbtop_theme') === 'dark' ? 'dark' : '' }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ request()->cookie('tbtop_theme') === 'dark' ? 'dark' : '' }} {{ \App\Http\Middleware\DemoStylePreset::htmlClass() }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,5 +29,8 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+        @if (request()->attributes->get(\App\Http\Middleware\DemoStylePreset::SWITCHER))
+            @include('demo.style-switcher')
+        @endif
     </body>
 </html>

@@ -101,4 +101,19 @@ describe("Checkbox field", () => {
 		await user.click(getByText("I accept terms"));
 		await waitFor(() => expect(checkboxRoot.getAttribute("data-state")).toBe("checked"));
 	});
+
+	test("Checkbox shows an int-backed 1 as checked and 0 as unchecked", () => {
+		const state = (v: unknown) =>
+			render(<CheckboxForm name="agree" value={v as boolean} onChange={() => {}} />)
+				.container.querySelector('[data-slot="checkbox"]')
+				?.getAttribute("data-state");
+		expect(state(1)).toBe("checked");
+		expect(state("true")).toBe("checked");
+		expect(state(0)).toBe("unchecked");
+	});
+
+	test("CheckboxCell renders an em-dash for a string-encoded false", () => {
+		const { container } = render(<CheckboxCell value={"0" as unknown as boolean} />);
+		expect(container.textContent).toBe("—");
+	});
 });

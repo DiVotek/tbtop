@@ -25,7 +25,7 @@ export function RepeaterSummaryRow(props: RepeaterSummaryRowProps) {
 	const [editing, setEditing] = useState(false);
 
 	return (
-		<div className="rounded-md border" data-repeater-item={index}>
+		<div className="rounded-surface border" data-repeater-item={index}>
 			<div className="flex items-center gap-2 p-2">
 				<button
 					type="button"

@@ -14,6 +14,11 @@ describe("StatCard", () => {
 		expect(getByText("$12,400")).toBeTruthy();
 	});
 
+	test("the card follows the style preset's surface corners", () => {
+		const { getByTestId } = renderStat({ label: "Users", value: 500 });
+		expect(getByTestId("stat-card").className).toContain("rounded-surface-lg");
+	});
+
 	test("renders description when provided", () => {
 		const { getByText } = renderStat({
 			label: "Users",

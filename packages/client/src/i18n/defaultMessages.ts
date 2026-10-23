@@ -16,6 +16,7 @@ export const defaultMessages: Messages = {
 	"validation.min": "Must be at least {min}",
 	"validation.max": "Must be at most {max}",
 	"validation.integer": "Must be an integer",
+	"validation.url": "Invalid URL",
 	"validation.regex": "Invalid format",
 	"validation.in": "Invalid choice",
 	"entity.create.success": "Created",

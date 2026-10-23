@@ -48,6 +48,7 @@ return [
         'min' => 'Must be at least {min}',
         'max' => 'Must be at most {max}',
         'integer' => 'Must be an integer',
+        'url' => 'Invalid URL',
         'regex' => 'Invalid format',
         'in' => 'Invalid choice',
     ],

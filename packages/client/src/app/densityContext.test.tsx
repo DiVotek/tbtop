@@ -46,8 +46,9 @@ describe("density: Button", () => {
 		);
 		const button = getByText("Click");
 		expect(button.getAttribute("data-size")).toBe("sm");
-		expect(button.className).toContain("shadow-sm");
-		expect(button.className).toContain("text-xs");
+		// The preset's sm size owns font and shadow; no utility may pin them.
+		expect(button.className).toContain("cn-button-size-sm");
+		expect(button.className).not.toContain("text-xs");
 	});
 
 	test("an explicit size prop wins over compact density", () => {
@@ -58,7 +59,7 @@ describe("density: Button", () => {
 		);
 		const button = getByText("Click");
 		expect(button.getAttribute("data-size")).toBe("lg");
-		expect(button.className).not.toContain("shadow-sm");
+		expect(button.className).toContain("cn-button-size-lg");
 	});
 });
 
@@ -69,14 +70,16 @@ describe("density: Input", () => {
 				<Input defaultValue="hi" />
 			</DensityContext.Provider>,
 		);
-		expect(getByDisplayValue("hi").className).toContain("h-8");
+		expect(getByDisplayValue("hi").className).toContain("h-[var(--control-h-sm,2rem)]");
 	});
 
-	test("default density keeps the input at h-9", () => {
+	test("default density keeps the input at the default size", () => {
 		const { getByDisplayValue } = render(<Input defaultValue="hi" />);
 		const className = getByDisplayValue("hi").className;
-		expect(className).toContain("h-9");
-		expect(className).not.toContain("h-8");
+		// Default height comes from the preset's cn-input rule (per style),
+		// not an inline class; compact must stay off.
+		expect(className).toContain("cn-input");
+		expect(className).not.toContain("--control-h-sm");
 	});
 });
 
