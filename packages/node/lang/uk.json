@@ -33,6 +33,7 @@
 	"validation.min": "Мінімум {min}",
 	"validation.max": "Максимум {max}",
 	"validation.integer": "Має бути цілим числом",
+	"validation.url": "Невірне посилання",
 	"validation.regex": "Невірний формат",
 	"validation.in": "Невірний вибір",
 	"entity.create.success": "Створено",
