@@ -99,7 +99,7 @@ final class ActionBuilder implements JsonSerializable
      */
     public function badge(string|int|Closure $count, ?Color $color = null): self
     {
-        $this->opts['badge'] = $count instanceof Closure ? fn () => (string) $count() : (string) $count;
+        $this->opts['badge'] = $count instanceof Closure ? fn () => self::badgeText($count()) : (string) $count;
         if ($color !== null) {
             $this->opts['badgeColor'] = $color->value;
         }
@@ -287,6 +287,15 @@ final class ActionBuilder implements JsonSerializable
             : self::checkedButtonSize($size);
 
         return $this;
+    }
+
+    private static function badgeText(mixed $count): string
+    {
+        if (! is_string($count) && ! is_int($count)) {
+            throw new \InvalidArgumentException('badge() Closure must return string|int, got '.get_debug_type($count).'.');
+        }
+
+        return (string) $count;
     }
 
     private static function checkedButtonSize(mixed $size): string

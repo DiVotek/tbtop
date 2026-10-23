@@ -290,6 +290,10 @@ it('ActionBuilder: badge(Closure) resolves and is cast to string like the eager 
     expect($json['options']['badge'])->toBe('7');
 });
 
+it('ActionBuilder: a badge Closure returning null throws when the Node is read', function (): void {
+    (new S)->action('inbox')->visit('/x')->badge(fn (): ?int => null)->toNode();
+})->throws(InvalidArgumentException::class, 'badge() Closure must return string|int, got null.');
+
 it('ActionBuilder: confirm() title/description Closures resolve in the serialized Node', function (): void {
     $s = new S;
     $json = encodeResolved(
