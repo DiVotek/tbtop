@@ -10,7 +10,7 @@ cd /path/to/app && npm install /path/to/tbtop/packages/node/tbtop-admin-*.tgz
 npm install @tbtop/inertia-admin @inertiajs/react react react-dom
 ```
 
-The package is ESM only and needs Node 20+, Bun or Cloudflare Workers
+The package is ESM only and needs Node 22+, Bun or Cloudflare Workers
 (`nodejs_compat`). Entry points:
 
 | Import | What |
