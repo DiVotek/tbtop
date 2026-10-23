@@ -1,0 +1,66 @@
+import { currentContext, defaultLocale } from "../dsl/context";
+import { type AppearanceConfig, appearanceProp, type NavigationLayout } from "./chrome/appearance";
+import { type ChromeDef, serializeChrome } from "./chrome/chrome";
+import type { NavGroupDef } from "./chrome/navGroups";
+import { buildNav, linkItem, type NavLink } from "./chrome/navigation";
+import { type PaletteConfig, paletteProp } from "./chrome/palette";
+import type { PageDef } from "./page";
+
+/** The shell knobs of a panel (PanelConfig.php): layout, nav, chrome, palette, appearance. */
+export interface PanelLook {
+	/** Default `sidebar`. All layouts collapse to a burger drawer on mobile. */
+	navigation?: NavigationLayout;
+	/** Meta and order of the sidebar groups that pages name in `nav.group`. */
+	navigationGroups?: NavGroupDef[];
+	/** Always-shown links merged into the sidebar (an external link). */
+	navigationItems?: NavLink[];
+	/** Profile-menu links beside the fixed theme/locale/logout controls. */
+	userMenuItems?: NavLink[];
+	/** The shell in the DSL; default: user menu on top, logo and nav on the side. */
+	chrome?: ChromeDef;
+	appearance?: AppearanceConfig;
+	/** The ⌘K palette: on by default, false turns it off. */
+	commandPalette?: boolean | PaletteConfig;
+	/** Send the `breadcrumbs` page prop (default true). */
+	breadcrumbs?: boolean;
+}
+
+export interface PanelInfo extends PanelLook {
+	id: string;
+	prefix: string;
+	brand?: string;
+	pages: PageDef[];
+	/** UI locales the switcher offers. */
+	locales: string[];
+	/** Bell polling in seconds; null when the panel has no notifications store. */
+	pollInterval: number | null;
+}
+
+/** The `tbtop` shared prop (PanelSharedProps.php): the panel's chrome, locale and signed-in user. */
+export async function sharedProps(
+	panel: PanelInfo,
+	request: Request,
+): Promise<Record<string, unknown>> {
+	const context = currentContext();
+	return {
+		panel: panel.id,
+		user: context.user ?? null,
+		nav: await buildNav(panel, request),
+		userMenuItems: (panel.userMenuItems ?? []).map(linkItem),
+		chrome: await serializeChrome(panel.chrome),
+		brand: panel.brand ?? null,
+		navigation: panel.navigation ?? "sidebar",
+		appearance: appearanceProp(panel.appearance),
+		prefix: panel.prefix,
+		apiBase: `${panel.prefix}/api`,
+		locale: context.locale,
+		locales: panel.locales,
+		messages: context.messages,
+		contentLocales: context.contentLocales,
+		defaultContentLocale: defaultLocale(context),
+		notifications: {
+			pollInterval: panel.pollInterval === null ? null : panel.pollInterval * 1000,
+		},
+		palette: paletteProp(panel.commandPalette),
+	};
+}
