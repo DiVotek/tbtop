@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Navigation;
 
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 
 /**
  * A custom nav/user-menu entry: a label plus an external or internal URL.
@@ -11,6 +12,7 @@ use Tbtop\Admin\Dsl\Concerns\HasIcon;
 final class NavItem
 {
     use HasIcon;
+    use ResolvesClosures;
 
     private string $href = '';
 
@@ -97,7 +99,7 @@ final class NavItem
 
     public function label(): string
     {
-        return $this->label instanceof \Closure ? ($this->label)() : $this->label;
+        return $this->resolveOpt($this->label);
     }
 
     public function getHref(): string

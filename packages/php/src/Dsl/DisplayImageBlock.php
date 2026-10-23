@@ -2,8 +2,10 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 
 /**
  * Read-only full-size image or file-download link.
@@ -17,10 +19,11 @@ use Tbtop\Admin\Dsl\Concerns\HasWhen;
 final class DisplayImageBlock implements JsonSerializable
 {
     use HasWhen;
+    use ResolvesClosures;
 
-    private ?string $altValue = null;
+    private string|Closure|null $altValue = null;
 
-    private ?string $captionValue = null;
+    private string|Closure|null $captionValue = null;
 
     private bool $asLinkValue = false;
 
@@ -33,20 +36,28 @@ final class DisplayImageBlock implements JsonSerializable
         return new self($src);
     }
 
-    /** Accessible alt text for the rendered image. */
-    public function alt(string $alt): self
+    /**
+     * Accessible alt text for the rendered image.
+     *
+     * @param  string|(Closure(): string)  $alt
+     */
+    public function alt(string|Closure $alt): self
     {
         $clone = clone $this;
-        $clone->altValue = $alt;
+        $clone->altValue = self::typedDeferral($alt, 'string', 'DisplayImageBlock::alt');
 
         return $clone;
     }
 
-    /** Caption text rendered below the image/link. */
-    public function caption(string $caption): self
+    /**
+     * Caption text rendered below the image/link.
+     *
+     * @param  string|(Closure(): string)  $caption
+     */
+    public function caption(string|Closure $caption): self
     {
         $clone = clone $this;
-        $clone->captionValue = $caption;
+        $clone->captionValue = self::typedDeferral($caption, 'string', 'DisplayImageBlock::caption');
 
         return $clone;
     }
@@ -82,11 +93,13 @@ final class DisplayImageBlock implements JsonSerializable
     public function jsonSerialize(): array
     {
         $options = ['src' => $this->src];
-        if ($this->altValue !== null) {
-            $options['alt'] = $this->altValue;
+        $alt = $this->resolveOpt($this->altValue);
+        if ($alt !== null) {
+            $options['alt'] = $alt;
         }
-        if ($this->captionValue !== null) {
-            $options['caption'] = $this->captionValue;
+        $caption = $this->resolveOpt($this->captionValue);
+        if ($caption !== null) {
+            $options['caption'] = $caption;
         }
         if ($this->asLinkValue) {
             $options['asLink'] = true;

@@ -64,7 +64,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `collapsed(bool $collapsed = true): self` | Start the group collapsed (implies collapsible). |
 | `collapsible(bool $collapsible = true): self` | Render the group header as a collapse toggle. |
 | `description(Closure\|string $description): self` | One muted line under the group's title, in every navigation layout: the rail-sidebar column, the sidebar heading, and the top of a dropdown menu. Pass a Closure for the same request-time translation reason as label(). |
-| `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
+| `icon(Closure\|string $name, Closure\|string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. Either may be a Closure; a closure-supplied position is validated when it resolves. |
 | `label(Closure\|string $label): self` | Translated header text shown in the sidebar. Pass a Closure to defer translation to request time — panel config is built once (singleton), so a bare __() there would freeze on the first request's locale. |
 | `sections(array $sections): self` | Named sections inside the group, in render order, as key => heading. Pages opt in with nav()['section'] => key; items without a section render first, unheaded. Pass Closure labels for the same request-time translation reason as label(). |
 
@@ -75,7 +75,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | Method | What it does |
 |---|---|
 | `group(string $group): self` | Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. |
-| `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
+| `icon(Closure\|string $name, Closure\|string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. Either may be a Closure; a closure-supplied position is validated when it resolves. |
 | `newTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
 | `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. |
 | `section(string $section): self` | Section key within its group, declared on NavGroup::sections() (nav context only). Ignored for ungrouped items and in the user menu. |
@@ -103,7 +103,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 |---|---|
 | `group(string $group): self` | Group heading the command is listed under. |
 | `handler(string $name): self` | Run a client handler registered via definePaletteCommand() instead of navigating. |
-| `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
+| `icon(Closure\|string $name, Closure\|string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. Either may be a Closure; a closure-supplied position is validated when it resolves. |
 | `keywords(array $keywords): self` | Extra search terms beyond the label. |
 | `openInNewTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
 | `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. No effect when handler() is used instead of url(). |
