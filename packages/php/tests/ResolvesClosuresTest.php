@@ -391,7 +391,9 @@ it('Stat: a polled tick re-runs the value and description Closures', function ()
         ->value(function () use (&$tick): int {
             return ++$tick;
         })
-        ->description(fn (): string => "tick {$tick}")
+        ->description(function () use (&$tick): string {
+            return "tick {$tick}";
+        })
         ->poll(5);
 
     $query = $stat->queryClosure();

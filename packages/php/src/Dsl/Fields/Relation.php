@@ -15,8 +15,6 @@ final class Relation extends Field
     use HasDependencies;
     use HasServerQuery;
 
-    protected const RESOLVABLE = [...parent::RESOLVABLE, 'placeholder'];
-
     /** Server-only — never serialized to the wire. */
     private ?int $searchLimit = null;
 
