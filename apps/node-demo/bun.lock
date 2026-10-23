@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "start-host",
+      "name": "node-demo",
       "dependencies": {
         "@inertiajs/react": "^3.3.1",
         "react": "^19.2.0",

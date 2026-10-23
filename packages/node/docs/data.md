@@ -51,8 +51,8 @@ createAdmin({ trimStrings: { except: ["signature", "links.*.label"] } });
 - `cookieSessions({ secret, maxAge?, path?, secure? })`: everything in one
   encrypted cookie (AES-GCM, 4 KB limit). No store, so it works on Workers and
   behind a load balancer. `secret` needs 32+ characters. The expiry is sealed
-  inside, so a copied cookie stops working after `maxAge` even though logout
-  cannot revoke it earlier.
+  inside, so a copied cookie stops working after `maxAge` (default 7200 s, as
+  Laravel's session lifetime) even though logout cannot revoke it earlier.
 - Your own: `{ get, set, forget, commit? }` over Redis, a database, etc.
 
 `context: (request) => ({ can, timezone, ... })` gives the DSL a Gate-style
