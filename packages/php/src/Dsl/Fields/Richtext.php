@@ -26,7 +26,7 @@ final class Richtext extends Field
      */
     public function placeholder(string|Closure $text): static
     {
-        return $this->set('placeholder', $text);
+        return $this->set('placeholder', self::typedDeferral($text, 'string', 'Richtext::placeholder'));
     }
 
     /**

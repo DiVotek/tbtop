@@ -26,7 +26,7 @@ final class Number extends Field
      */
     public function placeholder(string|Closure $text): static
     {
-        return $this->set('placeholder', $text);
+        return $this->set('placeholder', self::typedDeferral($text, 'string', 'Number::placeholder'));
     }
 
     /**

@@ -32,6 +32,6 @@ final class Text extends Field
      */
     public function mask(string|Closure $pattern): static
     {
-        return $this->set('mask', $pattern);
+        return $this->set('mask', self::typedDeferral($pattern, 'string', 'Text::mask'));
     }
 }

@@ -87,7 +87,7 @@ final class Stat implements JsonSerializable
      */
     public function description(string|Closure|null $description, string|Closure|null $color = null): self
     {
-        $this->description = $description;
+        $this->description = self::typedDeferral($description, '?string', 'Stat::description');
         if ($color !== null) {
             $this->descriptionColor = $color instanceof Closure
                 ? fn () => self::normalizeSemanticColor($color())
@@ -106,7 +106,7 @@ final class Stat implements JsonSerializable
      */
     public function delta(string|Closure $text, string|Closure $direction): self
     {
-        $this->delta = ['text' => $text, 'direction' => $direction];
+        $this->delta = ['text' => self::typedDeferral($text, 'string', 'Stat::delta'), 'direction' => self::typedDeferral($direction, 'string', 'Stat::delta')];
 
         return $this;
     }
@@ -118,7 +118,7 @@ final class Stat implements JsonSerializable
      */
     public function color(Color|string|Closure $color): self
     {
-        $this->color = $color;
+        $this->color = self::typedDeferral($color, 'color', 'Stat::color');
 
         return $this;
     }

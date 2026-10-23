@@ -44,7 +44,7 @@ final class DisplayImageBlock implements JsonSerializable
     public function alt(string|Closure $alt): self
     {
         $clone = clone $this;
-        $clone->altValue = $alt;
+        $clone->altValue = self::typedDeferral($alt, 'string', 'DisplayImageBlock::alt');
 
         return $clone;
     }
@@ -57,7 +57,7 @@ final class DisplayImageBlock implements JsonSerializable
     public function caption(string|Closure $caption): self
     {
         $clone = clone $this;
-        $clone->captionValue = $caption;
+        $clone->captionValue = self::typedDeferral($caption, 'string', 'DisplayImageBlock::caption');
 
         return $clone;
     }

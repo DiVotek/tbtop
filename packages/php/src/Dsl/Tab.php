@@ -40,7 +40,7 @@ final class Tab
      */
     public function label(string|Closure|null $label): self
     {
-        $this->label = $label;
+        $this->label = self::typedDeferral($label, '?string', 'Tab::label');
 
         return $this;
     }
@@ -52,7 +52,7 @@ final class Tab
      */
     public function description(string|Closure $description): self
     {
-        $this->description = $description;
+        $this->description = self::typedDeferral($description, 'string', 'Tab::description');
 
         return $this;
     }

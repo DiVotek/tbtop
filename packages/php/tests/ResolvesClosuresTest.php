@@ -1,5 +1,7 @@
 <?php
 
+use Tbtop\Admin\Dsl\AlertBlock;
+use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\ListBuilder;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Stat;
@@ -476,3 +478,21 @@ it('ChartBuilder: poll() with a literal below the 5s minimum still throws eagerl
 it('ChartBuilder: poll(Closure) resolving below the 5s minimum throws lazily when the Node is read', function (): void {
     (new S)->chart('load', 'line')->poll(fn (): int => 4)->toNode();
 })->throws(InvalidArgumentException::class, 'Chart poll interval must be at least 5 seconds.');
+
+// ---------------------------------------------------------------------------
+// Closure result types are checked on resolve
+// ---------------------------------------------------------------------------
+
+it('a label Closure returning a non-string throws when the Node is read', function (): void {
+    (new S)->action('go')->visit('/x')->label(fn (): int => 5)->toNode();
+})->throws(InvalidArgumentException::class, 'ActionBuilder::label() Closure must return string, got int.');
+
+it('a copyable duration Closure returning a string throws when the Node is read', function (): void {
+    (new S)->text('code')->copyable('Copied', fn (): string => '2000')->toNode();
+})->throws(InvalidArgumentException::class, 'copyable() Closure must return int, got string.');
+
+it('an alert color Closure may return a Color but not an int', function (): void {
+    expect(encodeResolved(AlertBlock::make('Body')->color(fn (): Color => Color::Danger))['options']['color'])->toBe('danger');
+
+    encodeResolved(AlertBlock::make('Body')->color(fn (): int => 1));
+})->throws(InvalidArgumentException::class, 'AlertBlock::color() Closure must return color, got int.');

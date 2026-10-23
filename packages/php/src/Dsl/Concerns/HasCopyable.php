@@ -25,7 +25,10 @@ trait HasCopyable
      */
     public function copyable(string|Closure $copyMessage = 'Copied', int|Closure $copyMessageDuration = 2000): static
     {
-        $this->copyableDef = ['message' => $copyMessage, 'duration' => $copyMessageDuration];
+        $this->copyableDef = [
+            'message' => self::typedDeferral($copyMessage, 'string', 'copyable'),
+            'duration' => self::typedDeferral($copyMessageDuration, 'int', 'copyable'),
+        ];
 
         return $this;
     }

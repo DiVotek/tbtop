@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Dsl\Concerns;
 
 use Closure;
 use InvalidArgumentException;
+use Tbtop\Admin\Dsl\Color;
 
 /**
  * Deferred-value resolution for `T|Closure(): T` option values. Resolve at
@@ -23,7 +24,7 @@ trait ResolvesClosures
      * @template T
      *
      * @param  T  $value
-     * @param  'int'|'number'|'string'  $type
+     * @param  'int'|'number'|'string'|'?string'|'color'  $type
      * @return T
      */
     protected static function typedDeferral(mixed $value, string $type, string $setter): mixed
@@ -38,6 +39,8 @@ trait ResolvesClosures
                 'int' => is_int($resolved),
                 'number' => is_int($resolved) || is_float($resolved),
                 'string' => is_string($resolved),
+                '?string' => $resolved === null || is_string($resolved),
+                'color' => is_string($resolved) || $resolved instanceof Color,
             };
             if (! $isValid) {
                 throw new InvalidArgumentException("{$setter}() Closure must return {$type}, got ".get_debug_type($resolved).'.');

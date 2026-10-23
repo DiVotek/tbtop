@@ -75,7 +75,7 @@ final class ActionBuilder implements JsonSerializable
      */
     public function label(string|Closure $label): self
     {
-        $this->opts['label'] = $label;
+        $this->opts['label'] = self::typedDeferral($label, 'string', 'ActionBuilder::label');
 
         return $this;
     }
@@ -87,7 +87,7 @@ final class ActionBuilder implements JsonSerializable
      */
     public function color(string|Closure $color): self
     {
-        $this->opts['color'] = $color;
+        $this->opts['color'] = self::typedDeferral($color, 'string', 'ActionBuilder::color');
 
         return $this;
     }
@@ -203,7 +203,10 @@ final class ActionBuilder implements JsonSerializable
      */
     public function confirm(string|Closure $title, string|Closure|null $description = null): self
     {
-        $this->opts['confirm'] = ['title' => $title, 'description' => $description];
+        $this->opts['confirm'] = [
+            'title' => self::typedDeferral($title, 'string', 'ActionBuilder::confirm'),
+            'description' => self::typedDeferral($description, '?string', 'ActionBuilder::confirm'),
+        ];
 
         return $this;
     }

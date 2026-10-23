@@ -36,7 +36,7 @@ final class AlertBlock implements JsonSerializable
     public function title(string|Closure|null $title): self
     {
         $clone = clone $this;
-        $clone->titleValue = $title;
+        $clone->titleValue = self::typedDeferral($title, '?string', 'AlertBlock::title');
 
         return $clone;
     }
@@ -49,7 +49,7 @@ final class AlertBlock implements JsonSerializable
     public function color(Color|string|Closure $color): self
     {
         $clone = clone $this;
-        $clone->colorValue = $color;
+        $clone->colorValue = self::typedDeferral($color, 'color', 'AlertBlock::color');
 
         return $clone;
     }

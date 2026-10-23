@@ -17,7 +17,7 @@ trait HasTooltip
      */
     public function tooltip(string|Closure $text): static
     {
-        $this->tooltipText = $text;
+        $this->tooltipText = self::typedDeferral($text, 'string', 'tooltip');
 
         return $this;
     }

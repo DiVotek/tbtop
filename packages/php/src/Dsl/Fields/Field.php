@@ -69,7 +69,7 @@ abstract class Field implements JsonSerializable
      */
     public function label(string|Closure $label): static
     {
-        return $this->set('label', $label);
+        return $this->set('label', self::typedDeferral($label, 'string', 'label'));
     }
 
     /**
@@ -79,7 +79,7 @@ abstract class Field implements JsonSerializable
      */
     public function helperText(string|Closure $text): static
     {
-        return $this->set('helperText', $text);
+        return $this->set('helperText', self::typedDeferral($text, 'string', 'helperText'));
     }
 
     /**
@@ -89,7 +89,7 @@ abstract class Field implements JsonSerializable
      */
     public function tooltip(string|Closure $text): static
     {
-        return $this->set('tooltip', $text);
+        return $this->set('tooltip', self::typedDeferral($text, 'string', 'tooltip'));
     }
 
     /** Marks the field required: flags it on the wire and adds a `required` validation rule. */

@@ -29,7 +29,7 @@ trait HasIcon
             $this->assertValidIconPosition($position);
         }
 
-        $this->iconDef = ['name' => $name, 'position' => $position];
+        $this->iconDef = ['name' => self::typedDeferral($name, 'string', 'icon'), 'position' => $position];
 
         return $this;
     }

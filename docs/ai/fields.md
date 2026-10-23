@@ -47,8 +47,8 @@ Every field class extends `Field.php`. These methods are available on every fiel
 > `->disabled(fn () => ! auth()->user()->isAdmin())`. It is resolved server-side every
 > time the field is read (serialization, the validator's attribute name, record
 > defaults), so keep it cheap and side-effect free; the wire carries the result, never the
-> closure. A closure's result is checked when it resolves — its type, plus whatever the
-> setter validates for a literal. A field dropped by `when(false)` inside a form is never
+> closure. A closure's result is checked when it resolves — its type (the setter's literal
+> type), plus whatever the setter validates for a literal; a mismatch throws. A field dropped by `when(false)` inside a form is never
 > resolved. Setters that feed a server rule (`maxFiles`, `required`, `multiple`, `disk`)
 > take literals only.
 
