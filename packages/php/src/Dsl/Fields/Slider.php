@@ -23,7 +23,7 @@ final class Slider extends Field
      */
     public function min(int|float|Closure $value): static
     {
-        return $this->set('min', $value);
+        return $this->set('min', self::typedDeferral($value, 'number', 'Slider::min'));
     }
 
     /**
@@ -33,7 +33,7 @@ final class Slider extends Field
      */
     public function max(int|float|Closure $value): static
     {
-        return $this->set('max', $value);
+        return $this->set('max', self::typedDeferral($value, 'number', 'Slider::max'));
     }
 
     /**
@@ -43,6 +43,6 @@ final class Slider extends Field
      */
     public function step(int|float|Closure $value): static
     {
-        return $this->set('step', $value);
+        return $this->set('step', self::typedDeferral($value, 'number', 'Slider::step'));
     }
 }

@@ -345,7 +345,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `convertTo(Closure\|string $format): static` | Convert the stored image to this format ('webp'\|'jpeg'\|'png'). |
 | `directory(string $dir): static` | Subdirectory the file is stored under (default 'uploads'). |
 | `disk(string $disk): static` | Laravel filesystem disk name (default 'public'). |
-| `maxFiles(Closure\|int $max): static` | Maximum number of files when multiple is enabled. |
+| `maxFiles(int $max): static` | Maximum number of files when multiple is enabled. Not Closure-resolvable: RuleWalker turns it into the server-side `max:` rule, so it stays a literal. |
 | `maxSize(int $bytes): static` | Max upload size in bytes (default 5 MiB). |
 | `multiple(bool $value = true): static` | Allow selecting more than one value. |
 | `quality(Closure\|int $q): static` | Encoder quality (1-100) for the converted image. |

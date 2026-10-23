@@ -42,13 +42,15 @@ Every field class extends `Field.php`. These methods are available on every fiel
 
 > **Closure option values.** Presentation setters (`label`, `helperText`, `tooltip`,
 > `default`, `disabled`, `placeholder`, `mask`, `step`, `min`/`max`, `maxItems`/`minItems`/
-> `defaultItems`, `maxFiles`, `convertTo`/`quality`, `variant`, `copyable`) accept a
+> `defaultItems`, `convertTo`/`quality`, `variant`, `copyable`) accept a
 > zero-arity `Closure` instead of a value — `->label(fn () => __('posts.title'))`,
 > `->disabled(fn () => ! auth()->user()->isAdmin())`. It is resolved server-side every
 > time the field is read (serialization, the validator's attribute name, record
 > defaults), so keep it cheap and side-effect free; the wire carries the result, never the
-> closure. A setter that validates its argument checks a closure's result when it
-> resolves. A field dropped by `when(false)` inside a form is never resolved.
+> closure. A closure's result is checked when it resolves — its type, plus whatever the
+> setter validates for a literal. A field dropped by `when(false)` inside a form is never
+> resolved. Setters that feed a server rule (`maxFiles`, `required`, `multiple`, `disk`)
+> take literals only.
 
 > **Validation is always PHP.** The client renders zod constraints for on-blur UX
 > feedback only — they are never trusted as the security boundary. All rules live in

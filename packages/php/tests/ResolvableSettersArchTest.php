@@ -1,7 +1,5 @@
 <?php
 
-use Tbtop\Admin\Dsl\Fields\Field;
-
 /**
  * Guards RESOLVABLE against drifting from the setters it names: every key in
  * a builder's RESOLVABLE list must have a same-named public setter whose
@@ -102,10 +100,3 @@ function parameterAcceptsClosure(ReflectionParameter $parameter): bool
 
     return false;
 }
-
-it('Field::RESOLVABLE is exactly the keys this slice fixes', function (): void {
-    $reflection = new ReflectionClass(Field::class);
-
-    expect($reflection->hasConstant('RESOLVABLE'))->toBeTrue()
-        ->and($reflection->getConstant('RESOLVABLE'))->toBe(['label', 'default', 'helperText', 'tooltip']);
-});

@@ -301,12 +301,25 @@ abstract class Field implements JsonSerializable
 
     public function defaultValue(): mixed
     {
-        return $this->resolvedOpts()['default'] ?? null;
+        return $this->resolvedOpt('default');
     }
 
     public function labelText(): ?string
     {
-        return $this->resolvedOpts()['label'] ?? null;
+        return $this->resolvedOpt('label');
+    }
+
+    /** One opt, resolved alone: a reader must not run every other key's Closure (e.g. a query-backed default during validation). */
+    protected function resolvedOpt(string $key): mixed
+    {
+        $value = $this->opts[$key] ?? null;
+        if (! $value instanceof Closure || ! in_array($key, static::RESOLVABLE, true)) {
+            return $value;
+        }
+
+        $resolved = $this->resolveOpt($value);
+
+        return $key === 'default' ? self::defaultKey($resolved) : $resolved;
     }
 
     /**
@@ -320,9 +333,8 @@ abstract class Field implements JsonSerializable
     {
         $opts = $this->opts;
         foreach (static::RESOLVABLE as $key) {
-            if (array_key_exists($key, $opts) && $opts[$key] instanceof Closure) {
-                $resolved = $this->resolveOpt($opts[$key]);
-                $opts[$key] = $key === 'default' ? self::defaultKey($resolved) : $resolved;
+            if (array_key_exists($key, $opts)) {
+                $opts[$key] = $this->resolvedOpt($key);
             }
         }
 

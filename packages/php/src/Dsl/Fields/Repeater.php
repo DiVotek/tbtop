@@ -31,7 +31,7 @@ final class Repeater extends Field
      */
     public function maxItems(int|Closure $max): static
     {
-        return $this->set('maxItems', $max);
+        return $this->set('maxItems', self::typedDeferral($max, 'int', 'Repeater::maxItems'));
     }
 
     /**
@@ -41,7 +41,7 @@ final class Repeater extends Field
      */
     public function minItems(int|Closure $min): static
     {
-        return $this->set('minItems', $min);
+        return $this->set('minItems', self::typedDeferral($min, 'int', 'Repeater::minItems'));
     }
 
     /**
@@ -55,12 +55,12 @@ final class Repeater extends Field
      */
     public function defaultItems(int|Closure $count): static
     {
-        return $this->set('defaultItems', $count);
+        return $this->set('defaultItems', self::typedDeferral($count, 'int', 'Repeater::defaultItems'));
     }
 
     public function defaultItemCount(): int
     {
-        $count = $this->resolvedOpts()['defaultItems'] ?? 0;
+        $count = $this->resolvedOpt('defaultItems') ?? 0;
 
         return is_int($count) ? $count : 0;
     }

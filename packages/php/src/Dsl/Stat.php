@@ -243,8 +243,9 @@ final class Stat implements JsonSerializable
 
         return function (): array {
             $out = ['value' => $this->resolveOpt($this->value)];
-            if ($this->description !== null) {
-                $out['description'] = $this->resolveOpt($this->description);
+            $description = $this->resolveOpt($this->description);
+            if ($description !== null) {
+                $out['description'] = $description;
             }
             if ($this->sparkline !== null) {
                 $out['sparkline'] = $this->sparkline;
@@ -258,8 +259,9 @@ final class Stat implements JsonSerializable
     {
         $options = ['label' => $this->label, 'value' => $this->resolveOpt($this->value)];
 
-        if ($this->description !== null) {
-            $options['description'] = $this->resolveOpt($this->description);
+        $description = $this->resolveOpt($this->description);
+        if ($description !== null) {
+            $options['description'] = $description;
         }
         if ($this->descriptionColor !== null) {
             $options['descriptionColor'] = $this->resolveOpt($this->descriptionColor);

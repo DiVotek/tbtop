@@ -11,8 +11,6 @@ final class Upload extends Field
 {
     use HasMultiple;
 
-    protected const RESOLVABLE = [...parent::RESOLVABLE, 'maxFiles'];
-
     /** Opt keys nested under `image` whose value may be a zero-arity Closure. */
     private const IMAGE_RESOLVABLE = ['convertTo', 'quality'];
 
@@ -93,7 +91,7 @@ final class Upload extends Field
      */
     public function convertTo(string|Closure $format): static
     {
-        return $this->setImage('convertTo', $format);
+        return $this->setImage('convertTo', self::typedDeferral($format, 'string', 'Upload::convertTo'));
     }
 
     /**
@@ -103,15 +101,14 @@ final class Upload extends Field
      */
     public function quality(int|Closure $q): static
     {
-        return $this->setImage('quality', $q);
+        return $this->setImage('quality', self::typedDeferral($q, 'int', 'Upload::quality'));
     }
 
     /**
-     * Maximum number of files when multiple is enabled.
-     *
-     * @param  int|(Closure(): int)  $max
+     * Maximum number of files when multiple is enabled. Not Closure-resolvable:
+     * RuleWalker turns it into the server-side `max:` rule, so it stays a literal.
      */
-    public function maxFiles(int|Closure $max): static
+    public function maxFiles(int $max): static
     {
         return $this->set('maxFiles', $max);
     }

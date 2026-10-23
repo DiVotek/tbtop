@@ -51,6 +51,6 @@ final class MediaPicker extends Field
      */
     public function variant(string|Closure $variant): static
     {
-        return $this->set('variant', $variant);
+        return $this->set('variant', self::typedDeferral($variant, 'string', 'MediaPicker::variant'));
     }
 }

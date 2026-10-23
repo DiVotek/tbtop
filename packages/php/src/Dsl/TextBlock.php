@@ -34,7 +34,7 @@ final class TextBlock implements JsonSerializable
     public function variant(string|Closure $variant): self
     {
         $clone = clone $this;
-        $clone->variantValue = $variant;
+        $clone->variantValue = self::typedDeferral($variant, 'string', 'TextBlock::variant');
 
         return $clone;
     }

@@ -191,16 +191,25 @@ it('Upload: convertTo/quality Closures resolve inside the nested image bag', fun
     expect($json['options']['image'])->toBe(['convertTo' => 'webp', 'quality' => 80]);
 });
 
-it('Upload: maxFiles(Closure) still resolves to an int RuleWalker can auto-inject max from', function (): void {
-    $s = new S;
-    $form = $s->form('post', [
-        $s->upload('gallery')->multiple()->maxFiles(fn (): int => 5),
-    ]);
+it('a Closure result of the wrong type throws on resolve instead of reaching the wire', function (Closure $build): void {
+    expect(fn () => encodeResolved($build(new S)))->toThrow(InvalidArgumentException::class);
+})->with([
+    'slider min' => [fn (S $s) => $s->slider('v')->min(fn () => 'abc')],
+    'repeater maxItems' => [fn (S $s) => $s->repeater('r')->maxItems(fn () => 'many')],
+    'upload quality' => [fn (S $s) => $s->upload('a')->quality(fn () => '80')],
+]);
 
-    expect($form->collectRules())->toBe([
-        'gallery' => ['array', 'max:5'],
-        'gallery.*' => ['string'],
-    ]);
+it('Field: labelText() runs only the label Closure, not a query-backed default', function (): void {
+    $s = new S;
+    $defaultRuns = 0;
+    $field = $s->text('title')->label(fn (): string => 'Title')->default(function () use (&$defaultRuns): string {
+        $defaultRuns++;
+
+        return 'x';
+    });
+
+    expect($field->labelText())->toBe('Title')
+        ->and($defaultRuns)->toBe(0);
 });
 
 it('HasIcon: name/position Closures resolve in the serialized Node', function (): void {
@@ -343,6 +352,12 @@ it('Stat: description/delta Closures resolve in the serialized Node', function (
 it('Stat: description() with an invalid literal color still throws eagerly at call time', function (): void {
     Stat::make('MRR')->value(1)->description('All time', 'bogus');
 })->throws(InvalidArgumentException::class, 'Invalid description color "bogus"');
+
+it('Stat: a description Closure resolving to null drops the key, like a literal null', function (): void {
+    $json = encodeResolved(Stat::make('Users')->value(1)->description(fn (): ?string => null));
+
+    expect($json['options'])->not->toHaveKey('description');
+});
 
 it('Stat: description(Closure) color resolving to an invalid value throws lazily when the Node is read', function (): void {
     Stat::make('MRR')->value(1)->description('All time', fn (): string => 'bogus')->toNode();
