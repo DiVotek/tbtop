@@ -7,16 +7,59 @@ export function pageTag(page: InertiaPage, id = "app"): string {
 }
 
 const escapeHtml = (text: string) =>
-	text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+	text
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;");
 
-/** A minimal root document: the host's `<head>` tags (assets, fonts) plus the page. */
+/**
+ * Resolves the stored theme before paint, so the panel never flashes light:
+ * the `tbtop_theme` cookie the client writes, else the panel's default theme.
+ * A panel with dark mode off stays light whatever the cookie says.
+ */
+const themeScript = (fallback: string, darkMode: boolean) =>
+	"<script>(function(){" +
+	"var m=document.cookie.match(/tbtop_theme=([^;]*)/);" +
+	`var t=${darkMode ? `m?m[1]:${JSON.stringify(fallback).replaceAll("<", "\\u003c")}` : '"light"'};` +
+	"var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);" +
+	"document.documentElement.classList.toggle('dark',d);" +
+	"})();</script>";
+
+interface ShellLook {
+	locale?: unknown;
+	appearance?: { stylePreset?: unknown; defaultTheme?: unknown; darkMode?: unknown } | null;
+}
+
+/** What the admin.blade.php stub reads off the panel: lang, style preset class, theme. */
+function shellLook(page: InertiaPage) {
+	const tbtop = (page.props.tbtop ?? {}) as ShellLook;
+	const appearance = tbtop.appearance ?? {};
+	const preset = typeof appearance.stylePreset === "string" ? appearance.stylePreset : "vega";
+	const theme = typeof appearance.defaultTheme === "string" ? appearance.defaultTheme : "system";
+	return {
+		locale: typeof tbtop.locale === "string" ? tbtop.locale : undefined,
+		presetClass: `style-preset-${preset.replaceAll(/[^a-z]/g, "")}`,
+		theme,
+		darkMode: appearance.darkMode !== false,
+	};
+}
+
+/**
+ * A minimal root document, as the PHP install stub: `<html>` carries the
+ * locale and the style preset class, the theme resolves before paint, then
+ * the host's `<head>` tags (assets, fonts) and the page.
+ */
 export function rootView(options: { head?: string; lang?: string } = {}): RootView {
 	return (page) => {
 		const title = typeof page.props.title === "string" ? escapeHtml(page.props.title) : "";
+		const look = shellLook(page);
+		const lang = escapeHtml((options.lang ?? look.locale ?? "en").replaceAll("_", "-"));
 		return [
 			"<!DOCTYPE html>",
-			`<html lang="${options.lang ?? "en"}">`,
+			`<html lang="${lang}" class="${look.presetClass}">`,
 			'<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">',
+			themeScript(look.theme, look.darkMode),
 			`<title>${title}</title>${options.head ?? ""}</head>`,
 			`<body class="font-sans antialiased">${pageTag(page)}</body>`,
 			"</html>",

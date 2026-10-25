@@ -13,6 +13,9 @@ nav: { label: "Posts", group: "Content", section: "Blog", parent: "posts", icon:
 `parent` is another page's path and nests the item under it. Pages that fail
 `authorize` are left out; a child of a hidden parent moves up a level.
 
+The bare prefix (`/admin`) opens a page whose `path` is `""`; without one it
+redirects to the first sidebar page the user may open (external links are skipped).
+
 - `navigationGroups: [{ key, label, icon, description, collapsible, collapsed, sections }]`: group meta and order; `sections` maps a key to its heading.
 - `navigationItems: [{ label, url, icon, newTab }]`: extra links (external ones too).
 - `userMenuItems`: links in the profile menu.
@@ -22,7 +25,10 @@ nav: { label: "Posts", group: "Content", section: "Blog", parent: "posts", icon:
 
 - `navigation`: `sidebar` (default), `topbar`, `topbar-sidebar`, `rail-sidebar`.
 - `chrome: { header, sidebar, footer, headerItems, sidebarItems }`: the shell as DSL nodes, like PHP's chrome. Server actions are not allowed there.
-- `appearance: { darkMode, defaultThemeMode, maxContentWidth, density }`.
+- `appearance: { darkMode, defaultThemeMode, maxContentWidth, density, stylePreset }`.
+  `stylePreset` is a shadcn style (`vega` default, `nova`, `maia`, `lyra`, `mira`, `luma`, `sera`, `rhea`).
+- `rootView()` renders the document like PHP's `admin.blade.php` stub: `<html lang>` from the UI
+  locale, the `style-preset-<name>` class, and the stored theme applied before paint.
 - `commandPalette: false | { hotkey, commands: [{ label, url, icon, keywords }] }`.
 - `brand`, `unsavedGuard` (default true).
 

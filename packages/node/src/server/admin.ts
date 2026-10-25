@@ -1,6 +1,7 @@
 import { materialize, runWithContext } from "../dsl";
 import { assertAppearance } from "./chrome/appearance";
 import { expectsJson, notFoundOr, notFoundPage } from "./chrome/errorPage";
+import { buildNav, firstPageHref } from "./chrome/navigation";
 import type { AdminConfig } from "./config";
 import { ENDPOINTS, routeEndpoints } from "./endpoints";
 import { isCrossSite } from "./guard";
@@ -152,12 +153,17 @@ class AdminServer {
 		});
 	}
 
-	/** The panel's Route::fallback(): any other GET under the prefix is the 404 page. */
-	fallback(request: Request): Promise<Response> | null {
+	/** Route::fallback(): any other GET under the prefix is the 404 page; the bare prefix goes home. */
+	fallback(request: Request, path: string): Promise<Response> | null {
 		if (!["GET", "HEAD"].includes(request.method) || expectsJson(request)) {
 			return null;
 		}
-		return this.guarded(request, () => notFoundPage(this.panel, request));
+		return this.guarded(request, async () => {
+			// GET {prefix} with no page on "": the first sidebar page this user may open.
+			const nav = path === "" ? await buildNav(this.panel, request) : [];
+			const home = firstPageHref(nav, this.prefix);
+			return home === null ? notFoundPage(this.panel, request) : redirectTo(home);
+		});
 	}
 
 	/** POST {prefix}/mcp: the agent's token instead of the session, the tools as its user. */
@@ -191,7 +197,7 @@ class AdminServer {
 			(await panelRoute(this, request, path)) ??
 			(await this.endpoint(request, path)) ??
 			(await this.page(request, path)) ??
-			this.fallback(request)
+			this.fallback(request, path)
 		);
 	}
 }
