@@ -13,6 +13,20 @@ const MAX_WIDTHS = [
 	"prose",
 ] as const;
 
+/** Upstream shadcn styles shipped in the client's styles.css. */
+export const STYLE_PRESETS = [
+	"vega",
+	"nova",
+	"maia",
+	"lyra",
+	"mira",
+	"luma",
+	"sera",
+	"rhea",
+] as const;
+export type StylePreset = (typeof STYLE_PRESETS)[number];
+export const DEFAULT_STYLE_PRESET: StylePreset = "vega";
+
 export const NAVIGATIONS = ["sidebar", "topbar", "topbar-sidebar", "rail-sidebar"] as const;
 export type NavigationLayout = (typeof NAVIGATIONS)[number];
 
@@ -29,6 +43,11 @@ export interface AppearanceConfig {
 	maxContentWidth?: (typeof MAX_WIDTHS)[number];
 	/** `compact` tightens control heights, spacing and the sidebar. */
 	density?: "default" | "compact";
+	/**
+	 * Component style from ui.shadcn.com/create (default `vega`): sizes, spacing,
+	 * radii and shadows. `rootView()` puts its `style-preset-<name>` class on `<html>`.
+	 */
+	stylePreset?: StylePreset;
 }
 
 function oneOf(value: string | undefined, allowed: readonly string[], what: string): void {
@@ -43,6 +62,7 @@ export function assertAppearance(navigation?: string, appearance: AppearanceConf
 	oneOf(appearance.defaultThemeMode, ["light", "dark", "system"], "theme mode");
 	oneOf(appearance.maxContentWidth, MAX_WIDTHS, "max content width");
 	oneOf(appearance.density, ["default", "compact"], "density");
+	oneOf(appearance.stylePreset, STYLE_PRESETS, "style preset");
 }
 
 /** The sparse `tbtop.appearance` prop: only what differs from the defaults; null when nothing does. */
@@ -56,6 +76,9 @@ export function appearanceProp(appearance: AppearanceConfig = {}): Record<string
 			? { maxWidth: appearance.maxContentWidth }
 			: {}),
 		...(appearance.density === "compact" ? { density: "compact" } : {}),
+		...(appearance.stylePreset !== undefined && appearance.stylePreset !== DEFAULT_STYLE_PRESET
+			? { stylePreset: appearance.stylePreset }
+			: {}),
 	};
 	return Object.keys(out).length > 0 ? out : null;
 }

@@ -203,6 +203,77 @@ describe("shell props", () => {
 	});
 });
 
+describe("panel root", () => {
+	test("the bare prefix redirects to the first sidebar page, skipping external links", async () => {
+		const admin = panel({
+			navigationItems: [{ label: "Docs", url: "https://docs.x", newTab: true, sort: -1 }],
+		});
+		for (const url of ["/admin", "/admin/"]) {
+			const res = await browser(admin)(url);
+			expect([res.status, res.headers.get("location")]).toEqual([303, "/admin/dashboard"]);
+		}
+	});
+
+	test("a gated-out first page is skipped; a nested page counts", async () => {
+		const admin = panel({
+			pages: [
+				page("secret", { nav: { label: "Secret", order: 1 }, authorize: () => false }),
+				page("reports", { nav: { label: "Reports", group: "ops" } }),
+			],
+		});
+		expect((await browser(admin)("/admin")).headers.get("location")).toBe("/admin/reports");
+	});
+
+	test("a guest goes to the login page, even when every sidebar page is gated", async () => {
+		const admin = panel({
+			allowGuests: false,
+			loginPath: "/admin/login",
+			pages: [
+				page("login", { public: true, layout: "center" }),
+				page("reports", { nav: { label: "Reports" }, authorize: () => false }),
+			],
+		});
+		const res = await browser(admin)("/admin");
+		expect([res.status, res.headers.get("location")]).toEqual([303, "/admin/login"]);
+	});
+
+	test("a page on the root path wins; no sidebar page means the 404 page", async () => {
+		const root = panel({ pages: [...pages, page("", { title: "Home" })] });
+		expect((await browser(root)("/admin")).status).toBe(200);
+		const empty = panel({ pages: [page("hidden")] });
+		expect((await browser(empty)("/admin")).status).toBe(404);
+	});
+});
+
+describe("root view", () => {
+	const html = async (config: Partial<AdminConfig>) =>
+		(await browser(panel(config))("/admin/dashboard")).text();
+
+	test("<html> carries the locale and the default style preset; the theme resolves before paint", async () => {
+		const doc = await html({});
+		expect(doc).toContain('<html lang="en" class="style-preset-vega">');
+		expect(doc).toContain("document.cookie.match(/(?:^|;\\s*)tbtop_theme=([^;]*)/)");
+		expect(doc).toContain('var t=m?m[1]:"system";');
+	});
+
+	test("appearance picks the preset and the default theme; dark mode off stays light", async () => {
+		const doc = await html({ appearance: { stylePreset: "nova", defaultThemeMode: "dark" } });
+		expect(doc).toContain('class="style-preset-nova"');
+		expect(doc).toContain('var t=m?m[1]:"dark";');
+		expect(await html({ appearance: { darkMode: false } })).toContain('var t="light";');
+	});
+
+	test("stylePreset is sparse on the wire and checked at createAdmin()", async () => {
+		const tbtop = async (stylePreset: "vega" | "maia") =>
+			(await props(panel({ appearance: { stylePreset } }), "/admin/dashboard")).tbtop;
+		expect((await tbtop("vega")).appearance).toBe(null);
+		expect((await tbtop("maia")).appearance).toEqual({ stylePreset: "maia" });
+		expect(() => panel({ appearance: { stylePreset: "neo" as never } })).toThrow(
+			'Unknown style preset "neo"',
+		);
+	});
+});
+
 describe("error page", () => {
 	const login = page("login", { public: true, layout: "center" });
 	const admin = panel({

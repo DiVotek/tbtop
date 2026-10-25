@@ -139,3 +139,46 @@ export function linkItem(link: NavLink): { label: string; href: string } & Recor
 		...(link.newTab === true ? { newTab: true } : {}),
 	};
 }
+
+interface NavNode {
+	href?: unknown;
+	newTab?: unknown;
+	children?: NavNode[];
+}
+
+/**
+ * Where the bare panel URL lands: the first in-panel link of the built
+ * sidebar, depth-first in render order. External and new-tab links are skipped.
+ */
+export function firstPageHref(groups: { items: NavNode[] }[], prefix: string): string | null {
+	const walk = (items: NavNode[]): string | null => {
+		for (const item of items) {
+			const own = typeof item.href === "string" && item.href.startsWith(`${prefix}/`);
+			const found =
+				own && item.newTab !== true ? (item.href as string) : walk(item.children ?? []);
+			if (found !== null) {
+				return found;
+			}
+		}
+		return null;
+	};
+	for (const group of groups) {
+		const found = walk(group.items);
+		if (found !== null) {
+			return found;
+		}
+	}
+	return null;
+}
+
+/** GET {prefix} with no page on "": a guest signs in first, a user gets the first sidebar page. */
+export async function homeHref(
+	panel: NavPanel,
+	request: Request,
+	auth: { signedIn: () => Promise<boolean>; loginPath?: string },
+): Promise<string | null> {
+	if (auth.loginPath !== undefined && !(await auth.signedIn())) {
+		return auth.loginPath;
+	}
+	return firstPageHref(await buildNav(panel, request), panel.prefix);
+}
