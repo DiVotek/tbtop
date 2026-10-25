@@ -224,6 +224,19 @@ describe("panel root", () => {
 		expect((await browser(admin)("/admin")).headers.get("location")).toBe("/admin/reports");
 	});
 
+	test("a guest goes to the login page, even when every sidebar page is gated", async () => {
+		const admin = panel({
+			allowGuests: false,
+			loginPath: "/admin/login",
+			pages: [
+				page("login", { public: true, layout: "center" }),
+				page("reports", { nav: { label: "Reports" }, authorize: () => false }),
+			],
+		});
+		const res = await browser(admin)("/admin");
+		expect([res.status, res.headers.get("location")]).toEqual([303, "/admin/login"]);
+	});
+
 	test("a page on the root path wins; no sidebar page means the 404 page", async () => {
 		const root = panel({ pages: [...pages, page("", { title: "Home" })] });
 		expect((await browser(root)("/admin")).status).toBe(200);

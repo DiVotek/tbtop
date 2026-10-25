@@ -1,7 +1,7 @@
 import { materialize, runWithContext } from "../dsl";
 import { assertAppearance } from "./chrome/appearance";
 import { expectsJson, notFoundOr, notFoundPage } from "./chrome/errorPage";
-import { buildNav, firstPageHref } from "./chrome/navigation";
+import { homeHref } from "./chrome/navigation";
 import type { AdminConfig } from "./config";
 import { ENDPOINTS, routeEndpoints } from "./endpoints";
 import { isCrossSite } from "./guard";
@@ -159,9 +159,11 @@ class AdminServer {
 			return null;
 		}
 		return this.guarded(request, async () => {
-			// GET {prefix} with no page on "": the first sidebar page this user may open.
-			const nav = path === "" ? await buildNav(this.panel, request) : [];
-			const home = firstPageHref(nav, this.prefix);
+			const auth = {
+				signedIn: () => this.hasUser(request),
+				loginPath: this.config.loginPath,
+			};
+			const home = path === "" ? await homeHref(this.panel, request, auth) : null;
 			return home === null ? notFoundPage(this.panel, request) : redirectTo(home);
 		});
 	}

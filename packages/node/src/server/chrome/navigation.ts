@@ -170,3 +170,15 @@ export function firstPageHref(groups: { items: NavNode[] }[], prefix: string): s
 	}
 	return null;
 }
+
+/** GET {prefix} with no page on "": a guest signs in first, a user gets the first sidebar page. */
+export async function homeHref(
+	panel: NavPanel,
+	request: Request,
+	auth: { signedIn: () => Promise<boolean>; loginPath?: string },
+): Promise<string | null> {
+	if (auth.loginPath !== undefined && !(await auth.signedIn())) {
+		return auth.loginPath;
+	}
+	return firstPageHref(await buildNav(panel, request), panel.prefix);
+}

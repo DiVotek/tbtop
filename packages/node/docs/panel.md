@@ -14,7 +14,8 @@ nav: { label: "Posts", group: "Content", section: "Blog", parent: "posts", icon:
 `authorize` are left out; a child of a hidden parent moves up a level.
 
 The bare prefix (`/admin`) opens a page whose `path` is `""`; without one it
-redirects to the first sidebar page the user may open (external links are skipped).
+redirects to the first sidebar page the user may open (external links are skipped),
+or a guest to `loginPath`.
 
 - `navigationGroups: [{ key, label, icon, description, collapsible, collapsed, sections }]`: group meta and order; `sections` maps a key to its heading.
 - `navigationItems: [{ label, url, icon, newTab }]`: extra links (external ones too).
