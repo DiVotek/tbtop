@@ -12,12 +12,21 @@ import { driver, hostRules, pages } from "@tbtop/admin/example/posts";
 
 const production = process.env.NODE_ENV === "production";
 const ENTRY = "src/client.tsx";
+const MANIFEST = "public/build/.vite/manifest.json";
+
+/** The Inertia asset version: a hash of the build manifest, so a deploy reloads open tabs. */
+async function buildVersion(): Promise<string | null> {
+	if (!production) {
+		return null;
+	}
+	return Bun.hash(await Bun.file(MANIFEST).text()).toString(36);
+}
 
 async function assets(): Promise<string> {
 	if (!production) {
 		return viteTags({ entry: ENTRY, devServer: "http://localhost:5173" });
 	}
-	const manifest = (await Bun.file("public/build/.vite/manifest.json").json()) as ViteManifest;
+	const manifest = (await Bun.file(MANIFEST).json()) as ViteManifest;
 	return viteTags({ entry: ENTRY, manifest });
 }
 
@@ -68,6 +77,6 @@ export const admin = createAdmin({
 	hostRules,
 	session: memorySessions({ secure: production }),
 	loginPath: "/admin/login",
-	version: production ? "build" : null,
+	version: await buildVersion(),
 	rootView: rootView({ head: await assets() }),
 });
