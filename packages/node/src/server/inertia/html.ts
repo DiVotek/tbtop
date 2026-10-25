@@ -20,7 +20,7 @@ const escapeHtml = (text: string) =>
  */
 const themeScript = (fallback: string, darkMode: boolean) =>
 	"<script>(function(){" +
-	"var m=document.cookie.match(/tbtop_theme=([^;]*)/);" +
+	"var m=document.cookie.match(/(?:^|;\\s*)tbtop_theme=([^;]*)/);" +
 	`var t=${darkMode ? `m?m[1]:${JSON.stringify(fallback).replaceAll("<", "\\u003c")}` : '"light"'};` +
 	"var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);" +
 	"document.documentElement.classList.toggle('dark',d);" +

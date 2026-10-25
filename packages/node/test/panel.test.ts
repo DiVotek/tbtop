@@ -239,7 +239,7 @@ describe("root view", () => {
 	test("<html> carries the locale and the default style preset; the theme resolves before paint", async () => {
 		const doc = await html({});
 		expect(doc).toContain('<html lang="en" class="style-preset-vega">');
-		expect(doc).toContain("document.cookie.match(/tbtop_theme=([^;]*)/)");
+		expect(doc).toContain("document.cookie.match(/(?:^|;\\s*)tbtop_theme=([^;]*)/)");
 		expect(doc).toContain('var t=m?m[1]:"system";');
 	});
 
