@@ -4,12 +4,8 @@ import { admin } from "./src/admin";
 const BUILD = resolve("public/build");
 
 const port = Number(process.env.PORT ?? 3000);
-// Loopback only: the demo login uses a shared password.
-const hostname = process.env.HOST ?? "127.0.0.1";
-const LOOPBACK = ["127.0.0.1", "localhost", "::1"];
-if (!LOOPBACK.includes(hostname) && process.env.DEMO_ALLOW_PUBLIC !== "1") {
-	throw new Error(`HOST=${hostname} exposes the demo login; set DEMO_ALLOW_PUBLIC=1 to mean it.`);
-}
+// Loopback only, always: the demo login uses a shared password.
+const hostname = "127.0.0.1";
 
 // Any Web-standard server works: the admin is one fetch handler that returns
 // null for URLs it does not own.
