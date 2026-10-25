@@ -91,3 +91,6 @@ createAdmin({
 	},
 });
 ```
+
+Without `allowedOrigins` every browser origin is refused; a client that sends
+no `Origin` (a desktop agent, a CLI) goes on to `authenticate`.

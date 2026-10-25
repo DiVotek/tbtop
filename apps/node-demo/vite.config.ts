@@ -13,7 +13,12 @@ const local = (path: string) => fileURLToPath(new URL(`./${path}`, import.meta.u
 export default defineConfig(({ command }) => ({
 	base: command === "build" ? "/build/" : "/",
 	plugins: [react(), tailwindcss()],
-	server: { port: 5173, strictPort: true, cors: true, origin: "http://localhost:5173" },
+	server: {
+		port: 5173,
+		strictPort: true,
+		cors: { origin: /^http:\/\/(localhost|127\.0\.0\.1):3000$/ },
+		origin: "http://localhost:5173",
+	},
 	build: {
 		manifest: true,
 		outDir: "public/build",
