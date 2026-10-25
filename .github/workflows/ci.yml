@@ -18,7 +18,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          # Every file the node tests read, plus the PHP DSL they mirror.
+          # Every file the node tests read, plus the PHP DSL and fixture page they mirror.
           filters: |
             node:
               - "packages/node/**"
@@ -27,6 +27,7 @@ jobs:
               - "packages/client/**"
               - "packages/php/resources/lang/**"
               - "packages/php/src/Dsl/**"
+              - "packages/php/tests/Fixtures/KitchenSinkPage.php"
               - "docs/ai/api/**"
               - ".github/workflows/ci.yml"
 
