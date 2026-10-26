@@ -847,14 +847,44 @@ it('Column: individuallySearchable() on a group parent throws at serialize', fun
     ))->toThrow(InvalidArgumentException::class, 'car');
 });
 
-it('Column: sortable() on a group child throws at serialize', function (): void {
-    expect(fn () => encodeColumn(
-        Column::make('car')->group([Column::make('car_name')->sortable()])
-    ))->toThrow(InvalidArgumentException::class, 'car_name');
+it('Column: sortable group child joins sortableColumnNames, the parent does not', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('title')->sortable(),
+            Column::make('car')->group([
+                Column::make('car_name')->sortable(),
+                Column::make('car_plate'),
+            ]),
+        ]);
+
+    expect($table->sortableColumnNames())->toBe(['title', 'car_name']);
 });
 
-it('Column: translatable() on a group child throws at serialize', function (): void {
-    expect(fn () => encodeColumn(
-        Column::make('car')->group([Column::make('car_name')->translatable()])
-    ))->toThrow(InvalidArgumentException::class, 'car_name');
+it('Column: a hidden group keeps its sortable children off the whitelist', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->hidden()->group([Column::make('car_name')->sortable()]),
+        ]);
+
+    expect($table->sortableColumnNames())->toBe([]);
+});
+
+it('Column: findColumn() finds a group child so its sortBy() override applies', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->group([Column::make('car_name')->sortable()->sortBy('cars.name')]),
+        ]);
+
+    expect($table->findColumn('car_name')?->sortByField())->toBe('cars.name');
+});
+
+it('Column: translatable group child joins translatableColumns and serializes', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->group([Column::make('car_name')->translatable()]),
+        ]);
+
+    expect($table->translatableColumns())->toBe(['car_name'])
+        ->and(encodeColumn(Column::make('car')->group([Column::make('car_name')->sortable()->translatable()]))['columns'][0])
+        ->toMatchArray(['name' => 'car_name', 'sortable' => true]);
 });

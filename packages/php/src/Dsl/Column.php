@@ -559,8 +559,8 @@ final class Column implements JsonSerializable
      * Glue several leaf columns into one header and one cell (vertical stack).
      * Children remain query fields; the parent is display-only, so sortable()
      * and individuallySearchable() are rejected on it — put them on a child.
-     * searchable() unfolds into the children; sortable()/translatable() on a
-     * child are rejected until unfolding covers them too.
+     * searchable(), sortable() and translatable() on a child unfold into the
+     * query; the header sorts by the first sortable child.
      *
      * @param  list<Column>  $columns
      */
@@ -1004,19 +1004,6 @@ final class Column implements JsonSerializable
             if ($child->isIndividuallySearchable()) {
                 throw new InvalidArgumentException(
                     "Column \"{$child->name}\": individuallySearchable() is not supported inside a group.",
-                );
-            }
-            // Unlike searchable(), these are not unfolded into the query yet:
-            // sortableColumnNames()/translatableColumns() walk top-level
-            // columns only, so accepting them here would silently do nothing.
-            if ($child->isSortable()) {
-                throw new InvalidArgumentException(
-                    "Column \"{$child->name}\": sortable() inside a group is not implemented yet.",
-                );
-            }
-            if ($child->isTranslatable()) {
-                throw new InvalidArgumentException(
-                    "Column \"{$child->name}\": translatable() inside a group is not implemented yet.",
                 );
             }
         }

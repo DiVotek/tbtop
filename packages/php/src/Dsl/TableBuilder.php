@@ -567,11 +567,11 @@ final class TableBuilder implements JsonSerializable
         return $names;
     }
 
-    /** @return list<string> Column names declared translatable */
+    /** @return list<string> Column names declared translatable, group children included */
     public function translatableColumns(): array
     {
         $names = [];
-        foreach ($this->visibleColumns() as $col) {
+        foreach ($this->visibleLeafColumns() as $col) {
             if ($col->isTranslatable()) {
                 $names[] = $col->name;
             }
@@ -602,15 +602,16 @@ final class TableBuilder implements JsonSerializable
 
     /**
      * Names of visible columns that are explicitly declared sortable — a
-     * gated-out column would otherwise leak its ordering. The default-sort
-     * field is always implicitly allowed.
+     * gated-out column would otherwise leak its ordering. Group children are
+     * unfolded: a group header sorts by its first sortable child. The
+     * default-sort field is always implicitly allowed.
      *
      * @return list<string>
      */
     public function sortableColumnNames(): array
     {
         $names = [];
-        foreach ($this->visibleColumns() as $col) {
+        foreach ($this->visibleLeafColumns() as $col) {
             if ($col->isSortable()) {
                 $names[] = $col->name;
             }
@@ -619,16 +620,45 @@ final class TableBuilder implements JsonSerializable
         return $names;
     }
 
-    /** The declared Column matching $name, or null when there is none. */
+    /** The declared Column matching $name (a group child included), or null when there is none. */
     public function findColumn(string $name): ?Column
     {
         foreach ($this->columnObjects as $col) {
             if ($col->name === $name) {
                 return $col;
             }
+            foreach ($col->groupColumns() as $child) {
+                if ($child->name === $name) {
+                    return $child;
+                }
+            }
         }
 
         return null;
+    }
+
+    /**
+     * Visible columns with each group replaced by its children — the columns
+     * that carry a value of their own.
+     *
+     * @return list<Column>
+     */
+    private function visibleLeafColumns(): array
+    {
+        $leaves = [];
+        foreach ($this->visibleColumns() as $col) {
+            $children = $col->groupColumns();
+            if ($children === []) {
+                $leaves[] = $col;
+
+                continue;
+            }
+            foreach ($children as $child) {
+                $leaves[] = $child;
+            }
+        }
+
+        return $leaves;
     }
 
     /** @return array{field: string, dir: string}|null */

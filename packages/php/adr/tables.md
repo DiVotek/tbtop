@@ -38,8 +38,10 @@ domain: tables
   description), and the parent occupies one header and one stacked cell.
 - **Group rejects what it cannot honor.** The parent has no value, so `sortable()` and
   `individuallySearchable()` on it throw permanently — they belong on a child. On a child,
-  `sortable()`/`translatable()` throw as not-yet: only `searchable()` unfolds into the query
-  today, and accepting the others would silently do nothing (unfolding: DiVotek/tbtop#295). The schema pins the pairing
+  `searchable()`, `sortable()` and `translatable()` unfold into the query (DiVotek/tbtop#295);
+  the group's one header sorts by its first `sortable()` child, which keeps the wire shape
+  and needs no per-child control. Per-column search stays rejected inside a group: the
+  search row is one cell per top-level column. The schema pins the pairing
   both ways — `kind: "group"` requires a non-empty `columns`, and `columns` requires
   `kind: "group"`.
 - **Table rows are an allowlist.** `ColumnProjection` builds each row fresh: the record

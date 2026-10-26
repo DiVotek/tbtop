@@ -28,6 +28,9 @@ class CarsIndexPage extends Page
                     Column::make('name')->label('Name')->sortable(),
                     Column::make('location.name')->label('Location')->sortable(),
                     Column::make('display_price')->label('Price')->sortable()->sortBy('price'),
+                    Column::make('pricing')->label('Pricing')->group([
+                        Column::make('price')->label('Raw price')->sortable(),
+                    ]),
                     Column::make('rank')->label('Rank')->sortable()
                         ->sortUsing(fn (Builder $query, string $direction) => $query
                             ->orderByRaw('CASE WHEN price IS NULL THEN 1 ELSE 0 END') // nulls last, either direction
