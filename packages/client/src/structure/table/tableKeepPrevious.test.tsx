@@ -21,7 +21,6 @@ describe("TableKeepPrevious: skeleton only on first load", () => {
 	test("overlay shown on refetch, skeleton absent, stale rows still visible", async () => {
 		let resolveSecond: (v: unknown[]) => void = () => {};
 		let callCount = 0;
-		let handlerCalls = 0;
 
 		const node = s.table({
 			query: async () => {
@@ -35,16 +34,7 @@ describe("TableKeepPrevious: skeleton only on first load", () => {
 				});
 			},
 			columns: [{ name: "title", label: "Title" }],
-			bulkActions: [
-				{
-					name: "refresh",
-					handler: async (ctx) => {
-						handlerCalls += 1;
-						console.log("[diag] handler ctx.table", typeof ctx.table?.refresh, ctx.table?.rows?.length);
-						ctx.table?.refresh();
-					},
-				},
-			],
+			bulkActions: [{ name: "refresh", handler: async (ctx) => ctx.table?.refresh() }],
 		});
 
 		const Wrap = wrap(() => new Response("{}"));
@@ -63,9 +53,6 @@ describe("TableKeepPrevious: skeleton only on first load", () => {
 			fireEvent.click(btn);
 		});
 
-		console.log("[diag] after click", JSON.stringify({ handlerCalls, callCount, disabled: btn.hasAttribute("disabled"), ua: navigator.userAgent, tz: Intl.DateTimeFormat().resolvedOptions().timeZone }));
-		await new Promise((r) => setTimeout(r, 300));
-		console.log("[diag] after 300ms", JSON.stringify({ handlerCalls, callCount }));
 		// Overlay should appear, skeleton should NOT appear, row still visible
 		await waitFor(() => {
 			expect(queryByTestId("table-reloading-overlay")).toBeTruthy();

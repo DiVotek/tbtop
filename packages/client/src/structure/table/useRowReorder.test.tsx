@@ -5,22 +5,37 @@
  * - a superseded persist is ignored entirely: no rollback, no error toast
  * - server rows (a refetch) replace the local order
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { act, render, waitFor } from "@testing-library/react";
+import * as actionContextModule from "../actionContext";
 
 const mockNotify = mock(() => {});
 const mockRefresh = mock(() => {});
 
+// bun's mock.module is process-wide and outlives this file, so the fake is
+// gated to this file's tests: once they finish, every later file that calls
+// useClientActionContext gets the real hook again.
+const realUseClientActionContext = actionContextModule.useClientActionContext;
+let fakeActive = false;
+beforeAll(() => {
+	fakeActive = true;
+});
+afterAll(() => {
+	fakeActive = false;
+});
+
+const fakeActionContext = {
+	client: null,
+	user: null,
+	params: {},
+	navigate: mock(() => {}),
+	notify: mockNotify,
+	t: (k: string) => k,
+};
+
 mock.module("../actionContext", () => ({
-	useClientActionContext: () => ({
-		client: null,
-		user: null,
-		params: {},
-		navigate: mock(() => {}),
-		notify: mockNotify,
-		t: (k: string) => k,
-	}),
+	useClientActionContext: () => (fakeActive ? fakeActionContext : realUseClientActionContext()),
 }));
 
 import { useRowReorder } from "./useRowReorder";
