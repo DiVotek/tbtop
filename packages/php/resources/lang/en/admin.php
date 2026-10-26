@@ -30,12 +30,14 @@ return [
             'submit' => 'Email password reset link',
             'sent' => 'If that email is registered, a reset link is on its way.',
             'back' => 'Back to sign in',
+            'throttle' => 'Too many reset link requests. Please try again in :seconds seconds.',
         ],
         'reset' => [
             'title' => 'Reset password',
             'password' => 'New password',
             'confirm' => 'Confirm password',
             'submit' => 'Reset password',
+            'throttle' => 'Too many password reset attempts. Please try again in :seconds seconds.',
         ],
         'profile' => [
             'title' => 'Profile',

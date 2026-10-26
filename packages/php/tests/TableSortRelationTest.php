@@ -69,3 +69,13 @@ it('keeps the related model global scopes in the sort subquery', function (): vo
 
     expect(carNames('sort=location.name&dir=asc'))->toBe(['Car X', 'Car Y']);
 });
+
+it('sorts by a sortable child of a group column', function (): void {
+    CarModel::create(['name' => 'Pricey', 'price' => 90]);
+    CarModel::create(['name' => 'Cheap', 'price' => 10]);
+
+    // "price" is declared sortable only as a group child; before the unfold
+    // it was off the whitelist and the request fell back to insertion order.
+    expect(carNames('sort=price&dir=asc'))->toBe(['Cheap', 'Pricey']);
+    expect(carNames('sort=price&dir=desc'))->toBe(['Pricey', 'Cheap']);
+});

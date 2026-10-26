@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 use Tbtop\Admin\Actions\ActionCtx;
@@ -57,11 +58,13 @@ abstract class ForgotPasswordPage extends AuthPage
      */
     protected function sendLink(ActionCtx $ctx): Effects
     {
+        Validator::make($ctx->form, ['email' => ['required', 'string']])->validate();
+
         $key = 'tbtop-forgot|'.$ctx->request->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([
-                'email' => __('auth.throttle', ['seconds' => $seconds, 'minutes' => ceil($seconds / 60)]),
+                'email' => __('tbtop-admin::admin.auth.forgot.throttle', ['seconds' => $seconds]),
             ]);
         }
         RateLimiter::hit($key);

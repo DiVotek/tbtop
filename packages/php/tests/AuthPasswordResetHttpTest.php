@@ -102,7 +102,28 @@ it('throttles failed resets per IP so emails cannot be probed in bulk', function
     }
 
     $attempt('olena@example.com')->assertSessionHasErrors('email');
-    expect(session('errors')->first('email'))->toStartWith(substr(__('auth.throttle'), 0, 20));
+    expect(session('errors')->first('email'))->toStartWith('Too many password reset attempts');
+});
+
+it('throttles reset link requests per IP with its own message', function () {
+    foreach (range(1, 5) as $i) {
+        requestLink("probe{$i}@example.com");
+    }
+
+    requestLink('olena@example.com')->assertSessionHasErrors('email');
+    expect(session('errors')->first('email'))->toStartWith('Too many reset link requests');
+});
+
+it('answers array input on the forgot and reset forms with a validation error, not a 500', function () {
+    $this->from('/admin/forgot-password')->post('/admin/forgot-password/forms/forgot', ['email' => ['x']])
+        ->assertRedirect('/admin/forgot-password')
+        ->assertSessionHasErrors('email');
+
+    $this->from('/admin/reset-password/bogus')->post('/admin/reset-password/bogus/forms/reset', [
+        'email' => 'olena@example.com',
+        'password' => ['brand-new-password'],
+        'password_confirmation' => ['brand-new-password'],
+    ])->assertRedirect('/admin/reset-password/bogus')->assertSessionHasErrors('password');
 });
 
 function signInAs(string $password): void

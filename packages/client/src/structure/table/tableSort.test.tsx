@@ -101,6 +101,71 @@ describe("TableSort: sortable header", () => {
 		});
 	});
 
+	test("a group header sorts by its first sortable child", async () => {
+		const capturedSorts: Array<string | undefined> = [];
+		const node = s.table({
+			name: "cars",
+			query: async (ctx) => {
+				capturedSorts.push(ctx.table?.queryParams.sort);
+				return [{ id: "1", car_name: "Golf", car_plate: "AA1" }];
+			},
+			columns: [
+				{
+					name: "car",
+					label: "Car",
+					kind: "group",
+					columns: [
+						{ name: "car_plate", label: "Plate" },
+						{ name: "car_name", label: "Name", sortable: true },
+					],
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+
+		const getCarTh = () =>
+			Array.from(container.querySelectorAll("thead th")).find((th) =>
+				th.textContent?.includes("Car"),
+			) as HTMLElement;
+		expect(getCarTh().getAttribute("aria-sort")).toBe("none");
+
+		await act(async () => {
+			fireEvent.click(getCarTh());
+		});
+		await waitFor(() => {
+			expect(capturedSorts.some((s) => s === "car_name:asc")).toBe(true);
+		});
+		expect(getCarTh().getAttribute("aria-sort")).toBe("ascending");
+	});
+
+	test("a group with no sortable child stays a plain header", async () => {
+		const node = s.table({
+			name: "cars",
+			query: async () => [{ id: "1", car_name: "Golf" }],
+			columns: [
+				{
+					name: "car",
+					label: "Car",
+					kind: "group",
+					columns: [{ name: "car_name", label: "Name" }],
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+
+		const carTh = Array.from(container.querySelectorAll("thead th")).find((th) =>
+			th.textContent?.includes("Car"),
+		);
+		expect(carTh?.getAttribute("aria-sort")).toBeNull();
+		expect(container.querySelector("thead th button")).toBeNull();
+	});
+
 	test("a sortable header sorts from the keyboard", async () => {
 		const capturedSorts: Array<string | undefined> = [];
 		const node = s.table({
