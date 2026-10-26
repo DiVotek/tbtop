@@ -7,19 +7,27 @@ use InvalidArgumentException;
 /**
  * One `media.profiles` entry. Accepts the short `[maxW, maxH]` form or the
  * long `['width' => .., 'height' => .., 'format' => .., 'quality' => ..]` form;
- * format/quality fall back to `media.conversions`.
+ * format/quality fall back to `media.conversions`. Leaving the height out
+ * (`[maxW]`, or no `height` key) makes a width-only responsive profile: it
+ * bounds the width alone and is skipped for an image no wider than that.
  */
 final readonly class ConversionProfile
 {
     public function __construct(
         public int $maxWidth,
-        public int $maxHeight,
+        public ?int $maxHeight,
         public string $format,
         public ?int $quality,
     ) {
         if (! ImageEncoder::isKnownFormat($format)) {
             throw new InvalidArgumentException("Unknown conversion format '{$format}'.");
         }
+    }
+
+    /** True for a width-only profile, the kind a srcset is built from. */
+    public function isResponsive(): bool
+    {
+        return $this->maxHeight === null;
     }
 
     /**
@@ -48,8 +56,8 @@ final readonly class ConversionProfile
         $isShort = array_is_list($entry);
         $width = $isShort ? ($entry[0] ?? null) : ($entry['width'] ?? null);
         $height = $isShort ? ($entry[1] ?? null) : ($entry['height'] ?? null);
-        if (! is_int($width) || ! is_int($height) || $width < 1 || $height < 1) {
-            throw new InvalidArgumentException("Media profile '{$name}' needs positive integer width and height.");
+        if (! is_int($width) || $width < 1 || ($height !== null && (! is_int($height) || $height < 1))) {
+            throw new InvalidArgumentException("Media profile '{$name}' needs a positive integer width and, if set, height.");
         }
         $format = $isShort ? null : ($entry['format'] ?? null);
         $quality = $isShort ? null : ($entry['quality'] ?? null);

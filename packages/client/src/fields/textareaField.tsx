@@ -1,9 +1,11 @@
 import { Textarea } from "../ui/textarea";
 import { nullableCell, TruncatedTextCell } from "./cellHelpers";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
+import { useLocalePlaceholder } from "./localePlaceholder";
 
 interface TextareaOptionsBag {
-	placeholder?: string;
+	/** A string, or one per content locale. */
+	placeholder?: string | Record<string, string>;
 	rows?: number;
 	autoresize?: boolean;
 }
@@ -24,12 +26,13 @@ export function TextareaForm({
 	options,
 }: FieldFormProps<string, TextareaOptionsBag>) {
 	const className = options?.autoresize ? undefined : "field-sizing-fixed";
+	const placeholder = useLocalePlaceholder(options?.placeholder);
 	return (
 		<Textarea
 			id={fieldId({ id, name })}
 			name={name}
 			rows={options?.rows}
-			placeholder={options?.placeholder}
+			placeholder={placeholder}
 			className={className}
 			value={asString(value)}
 			onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
