@@ -41,14 +41,15 @@ export function assertEnvironment(environment?: string, indicator?: EnvironmentI
 		);
 	}
 	if (typeof indicator === "object") {
-		for (const [env, override] of Object.entries(indicator)) {
-			const ok = typeof override === "string" || override === false || isBadge(override);
-			if (!ok) {
-				throw new Error(
-					`environmentIndicator["${env}"] must be a color, a { label, color } badge, or false.`,
-				);
-			}
-		}
+		Object.entries(indicator).forEach(assertOverride);
+	}
+}
+
+function assertOverride([env, override]: [string, unknown]): void {
+	if (typeof override !== "string" && override !== false && !isBadge(override)) {
+		throw new Error(
+			`environmentIndicator["${env}"] must be a color, a { label, color } badge, or false.`,
+		);
 	}
 }
 
@@ -68,15 +69,21 @@ export async function environmentProp(
 		}
 		return payload(badge, environment);
 	}
-	const overrides = indicator === true ? {} : indicator;
-	if (!(environment in overrides)) {
-		return HIDDEN.includes(environment) ? null : payload({}, environment);
+	return fromOverrides(indicator === true ? {} : indicator, environment);
+}
+
+function fromOverrides(
+	overrides: Record<string, string | false | EnvironmentBadge>,
+	env: string,
+): { label: string; color: string } | null {
+	if (!(env in overrides)) {
+		return HIDDEN.includes(env) ? null : payload({}, env);
 	}
-	const override = overrides[environment];
+	const override = overrides[env];
 	if (override === false || override === undefined) {
 		return null;
 	}
-	return payload(typeof override === "string" ? { color: override } : override, environment);
+	return payload(typeof override === "string" ? { color: override } : override, env);
 }
 
 function payload(badge: EnvironmentBadge | null, env: string) {

@@ -1,7 +1,16 @@
 import { currentContext, defaultLocale } from "../dsl/context";
-import { type AppearanceConfig, appearanceProp, type NavigationLayout } from "./chrome/appearance";
+import {
+	type AppearanceConfig,
+	appearanceProp,
+	assertAppearance,
+	type NavigationLayout,
+} from "./chrome/appearance";
 import { type ChromeDef, serializeChrome } from "./chrome/chrome";
-import { type EnvironmentIndicator, environmentProp } from "./chrome/environment";
+import {
+	assertEnvironment,
+	type EnvironmentIndicator,
+	environmentProp,
+} from "./chrome/environment";
 import type { NavGroupDef } from "./chrome/navGroups";
 import { buildNav, linkItem, type NavLink } from "./chrome/navigation";
 import { type PaletteConfig, paletteProp } from "./chrome/palette";
@@ -28,6 +37,12 @@ export interface PanelLook {
 	environment?: string;
 	/** A badge in the header naming the environment (local, staging); off by default. */
 	environmentIndicator?: EnvironmentIndicator;
+}
+
+/** Fails at createAdmin() on a look the client cannot render. */
+export function assertPanelLook(look: PanelLook): void {
+	assertAppearance(look.navigation, look.appearance);
+	assertEnvironment(look.environment, look.environmentIndicator);
 }
 
 export interface PanelInfo extends PanelLook {

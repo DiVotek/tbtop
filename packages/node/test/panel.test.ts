@@ -375,12 +375,20 @@ describe("environment indicator (#393)", () => {
 	test("production hides unless listed; a map overrides or hides per environment", async () => {
 		expect(await env({ environment: "production", environmentIndicator: true })).toBeNull();
 		expect(
-			await env({ environment: "production", environmentIndicator: { production: "danger" } }),
+			await env({
+				environment: "production",
+				environmentIndicator: { production: "danger" },
+			}),
 		).toEqual({ label: "Production", color: "danger" });
 		expect(
-			await env({ environment: "local", environmentIndicator: { local: { label: "Dev box" } } }),
+			await env({
+				environment: "local",
+				environmentIndicator: { local: { label: "Dev box" } },
+			}),
 		).toEqual({ label: "Dev box", color: "success" });
-		expect(await env({ environment: "local", environmentIndicator: { local: false } })).toBeNull();
+		expect(
+			await env({ environment: "local", environmentIndicator: { local: false } }),
+		).toBeNull();
 	});
 
 	test("a function decides per request", async () => {
@@ -396,7 +404,10 @@ describe("environment indicator (#393)", () => {
 	test("createAdmin() refuses an indicator without an environment, or a bad override", () => {
 		expect(() => panel({ environmentIndicator: true })).toThrow("needs `environment`");
 		expect(() =>
-			panel({ environment: "local", environmentIndicator: { local: 3 as unknown as string } }),
+			panel({
+				environment: "local",
+				environmentIndicator: { local: 3 as unknown as string },
+			}),
 		).toThrow('environmentIndicator["local"]');
 	});
 });

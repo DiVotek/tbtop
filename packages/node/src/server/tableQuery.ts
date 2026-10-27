@@ -44,7 +44,7 @@ export async function runTable<Q>(
 	const result: TablePage = {
 		data: projectRows(table as TableBuilder, rows, keyOf(driver as QueryDriver)),
 		...(table.isSimplePagination()
-			? { hasMore: await hasMore(driver, query, page, perPage, rows.length) }
+			? { hasMore: await hasMore(driver, query, { page, perPage, got: rows.length }) }
 			: { total: await driver.count(query) }),
 		page,
 		perPage,
@@ -70,9 +70,7 @@ function pageWindow<Q>(table: TableBuilder<Q>, params: Record<string, unknown>) 
 async function hasMore<Q>(
 	driver: QueryDriver<Q>,
 	query: Q,
-	page: number,
-	perPage: number,
-	got: number,
+	{ page, perPage, got }: { page: number; perPage: number; got: number },
 ): Promise<boolean> {
 	if (got < perPage) {
 		return false;

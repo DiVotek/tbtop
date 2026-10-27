@@ -1,6 +1,4 @@
 import { materialize, runWithContext } from "../dsl";
-import { assertAppearance } from "./chrome/appearance";
-import { assertEnvironment } from "./chrome/environment";
 import { expectsJson, notFoundOr, notFoundPage } from "./chrome/errorPage";
 import { homeHref } from "./chrome/navigation";
 import type { AdminConfig } from "./config";
@@ -20,6 +18,7 @@ import { currentLocale, localeContext, uiLocales } from "./locale";
 import type { PageDef } from "./page";
 import { type AdminPageProps, buildPageProps } from "./pageProps";
 import { type PanelView, pageResponse } from "./pageResponse";
+import { assertPanelLook } from "./panel";
 import { findPage, resolvePage } from "./resolve";
 
 export type { AdminConfig } from "./config";
@@ -34,8 +33,7 @@ class AdminServer {
 
 	constructor(readonly config: AdminConfig) {
 		this.prefix = config.prefix.replace(/\/+$/, "");
-		assertAppearance(config.navigation, config.appearance);
-		assertEnvironment(config.environment, config.environmentIndicator);
+		assertPanelLook(config);
 		if (config.mcp !== undefined) {
 			assertNoCollision(config.mcp, config.pages);
 		}

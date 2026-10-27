@@ -12,16 +12,7 @@ export type Rules = Record<string, string[]>;
  * Whole-field rules: on `field.*` the implicit family never runs for `[]`.
  * `distinct` is not one: it compares sibling `field.*` values.
  */
-const FIELD_LEVEL = [
-	"nullable",
-	"array",
-	"min",
-	"max",
-	"size",
-	"between",
-	"present",
-	"filled",
-];
+const FIELD_LEVEL = ["nullable", "array", "min", "max", "size", "between", "present", "filled"];
 const FIELD_LEVEL_PREFIXES = ["required", "missing", "prohibited"];
 
 /**

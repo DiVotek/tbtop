@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { memoryDriver, memoryQuery } from "../src/adapters/memory";
 import { Column, createAdmin, definePage, S } from "../src";
+import { memoryDriver, memoryQuery } from "../src/adapters/memory";
 
 const rows = Array.from({ length: 4 }, (_, i) => ({ id: i + 1, title: `Post ${i + 1}` }));
 const driver = memoryDriver();
@@ -54,7 +54,11 @@ describe("simplePagination()", () => {
 	});
 
 	test("puts simple on the pagination wire", () => {
-		const node = new S().table("t").columns([Column.make("a")]).simplePagination().toJSON();
+		const node = new S()
+			.table("t")
+			.columns([Column.make("a")])
+			.simplePagination()
+			.toJSON();
 		expect((node as { options: { pagination: unknown } }).options.pagination).toEqual({
 			perPage: 25,
 			options: [10, 25, 50, 100],
@@ -117,7 +121,10 @@ describe("group children (#391)", () => {
 		const res = await groupAdmin.handle(
 			new Request("http://x/admin/people/tables/people?sort=email&dir=asc"),
 		);
-		const data = (await res?.json()).data.data;
+		if (res === null) {
+			throw new TypeError("not an admin endpoint");
+		}
+		const data = (await res.json()).data.data;
 		expect(data.map((r: { id: number }) => r.id)).toEqual([2, 1]);
 		expect(data[0].name).toBe("Amy");
 	});

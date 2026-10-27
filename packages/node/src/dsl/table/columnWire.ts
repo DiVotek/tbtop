@@ -17,14 +17,7 @@ export function columnWire(column: Column): Record<string, unknown> {
 			out.hiddenByDefault = true;
 		}
 	}
-	copyDefined(out, st, ["align", "icon", "width"]);
-	if (st.sticky === true) {
-		out.sticky = true;
-	}
-	copyDefined(out, st, ["wrap"]);
-	if (st.noWrap === true) {
-		out.noWrap = true;
-	}
+	copyLayout(out, st);
 	copyDefined(out, st, ["tooltip", "description"]);
 	for (const flag of FLAGS) {
 		if (st[flag] === true) {
@@ -44,6 +37,18 @@ export function columnWire(column: Column): Record<string, unknown> {
 		out.editable = editable;
 	}
 	return out;
+}
+
+/** align, icon, width, sticky, wrap, noWrap — in Column::jsonSerialize order. */
+function copyLayout(out: Record<string, unknown>, st: ColumnState): void {
+	copyDefined(out, st, ["align", "icon", "width"]);
+	if (st.sticky === true) {
+		out.sticky = true;
+	}
+	copyDefined(out, st, ["wrap"]);
+	if (st.noWrap === true) {
+		out.noWrap = true;
+	}
 }
 
 function copyDefined(
