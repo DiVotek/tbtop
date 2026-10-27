@@ -171,12 +171,13 @@ createAdmin({ /* … */ pages: [posts, login, profile],
 
 `users.sessionUser(id)` stands for the fields the panel shows (id, name,
 email), never the password hash: `cookieSessions` keeps the session in the
-browser. What PHP gives through Laravel stays the host's here: throttle wrong current
-passwords (as the login should), and sign the user's other sessions out after
-a password change. `memorySessions` and `cookieSessions` cannot list a user's
-sessions, so that needs a session store the host owns, or an auth library
-that revokes sessions (Better Auth's `changePassword({ revokeOtherSessions })`,
-which `@tbtop/cms/better-auth` uses for its own Profile page).
+browser. What PHP gives through Laravel stays the host's here: throttle wrong
+current passwords (as the login should), and sign the user's other sessions
+out after a password change. `memorySessions` and `cookieSessions` cannot list
+a user's sessions, so that needs a session store the host owns, or an auth
+library that revokes sessions (Better Auth's `changePassword({
+revokeOtherSessions })`, which `@tbtop/cms/better-auth` uses for its own
+Profile page).
 
 State-changing requests from another origin are refused (403): the request's
 own host and `X-Forwarded-Host` pass, and `trustedOrigins` adds more. This
