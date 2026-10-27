@@ -23,6 +23,7 @@ export interface ColumnState {
 	align?: string;
 	icon?: { name: string; position: string };
 	width?: string;
+	sticky?: boolean;
 	wrap?: boolean;
 	noWrap?: boolean;
 	tooltip?: string;
@@ -133,6 +134,19 @@ export class Column {
 	/** CSS width, e.g. '120px'. */
 	width(width: string): this {
 		return this.with({ width });
+	}
+
+	/**
+	 * Pin the column to the left edge while the table scrolls horizontally.
+	 * Sticky columns must lead the column list; the row-selection checkbox
+	 * and drag handle stay pinned with them.
+	 */
+	sticky(value = true): this {
+		return this.with({ sticky: value });
+	}
+
+	isSticky(): boolean {
+		return this.st.sticky === true;
 	}
 
 	/** Wrap onto multiple lines; last of wrap/truncate/noWrap wins. */

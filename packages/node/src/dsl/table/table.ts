@@ -10,6 +10,7 @@ import { Tab } from "./tab";
 
 const FILTERS_IN = ["modal", "inline"];
 const FILTER_WIDTHS = ["sm", "md", "lg", "full"];
+const MIN_POLL_SECONDS = 5;
 
 /** A Column, or the `{name: "Label"}` text-column shorthand. */
 export type ColumnEntry = Column | Record<string, string>;
@@ -30,6 +31,7 @@ export class TableBuilder<Q = unknown> {
 	private queryFn?: () => Q;
 	private perPage = 25;
 	private perPageOptions = [10, 25, 50, 100];
+	private simple = false;
 
 	constructor(readonly name: string) {}
 
@@ -44,6 +46,7 @@ export class TableBuilder<Q = unknown> {
 			}
 		}
 		assertUniqueNames(this.columnList);
+		assertStickyColumnsLead(this.columnList);
 		return this;
 	}
 
@@ -124,6 +127,18 @@ export class TableBuilder<Q = unknown> {
 		return this.set("defaultSort", { field, dir });
 	}
 
+	/**
+	 * Re-fetch the rows every `seconds`, keeping the current rows on screen with
+	 * no loading overlay. The client pauses while the tab is hidden or rows are
+	 * selected. Below the 5-second floor this throws; the client clamps too.
+	 */
+	poll(seconds: number): this {
+		if (!Number.isInteger(seconds) || seconds < MIN_POLL_SECONDS) {
+			throw new Error(`Table poll interval must be at least ${MIN_POLL_SECONDS} seconds.`);
+		}
+		return this.set("poll", seconds);
+	}
+
 	/** Group contiguous rows by a column; needs defaultSort(column) first. */
 	groups(column: string): this {
 		if (this.defaultSortSpec()?.field !== column) {
@@ -138,6 +153,15 @@ export class TableBuilder<Q = unknown> {
 	paginate(perPage = 25, options = [10, 25, 50, 100]): this {
 		this.perPage = perPage;
 		this.perPageOptions = options;
+		return this;
+	}
+
+	/**
+	 * Page without a total: no count() query, only previous/next in the footer.
+	 * For large tables where count() is the slow query; tab counts still run.
+	 */
+	simplePagination(value = true): this {
+		this.simple = value;
 		return this;
 	}
 
@@ -339,8 +363,13 @@ export class TableBuilder<Q = unknown> {
 		return (this.opts.groups as { column: string } | undefined)?.column ?? null;
 	}
 
-	paginationSpec(): { perPage: number; options: number[] } {
-		return { perPage: this.perPage, options: this.perPageOptions };
+	paginationSpec(): { perPage: number; options: number[]; simple?: true } {
+		const spec = { perPage: this.perPage, options: this.perPageOptions };
+		return this.simple ? { ...spec, simple: true } : spec;
+	}
+
+	isSimplePagination(): boolean {
+		return this.simple;
 	}
 
 	optionValue(key: string): unknown {
@@ -366,5 +395,26 @@ function assertUniqueNames(columns: Column[]): void {
 			throw new Error(`Duplicate column name "${name}".`);
 		}
 		seen.add(name);
+	}
+}
+
+/**
+ * Sticky columns stack from the left edge, so they lead the column list; a
+ * pinned column after a scrolling one would slide over it. Inside a group the
+ * group itself is the column that pins.
+ */
+function assertStickyColumnsLead(columns: Column[]): void {
+	let leading = true;
+	for (const col of columns) {
+		const child = col.groupColumns().find((c) => c.isSticky());
+		if (child !== undefined) {
+			throw new Error(
+				`Column "${child.name}": sticky() goes on the group "${col.name}", not on its children.`,
+			);
+		}
+		if (col.isSticky() && !leading) {
+			throw new Error(`Column "${col.name}": sticky columns must come first in columns().`);
+		}
+		leading = leading && col.isSticky();
 	}
 }

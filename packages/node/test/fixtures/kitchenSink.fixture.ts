@@ -390,6 +390,7 @@ function postsTable(s: S) {
 			Column.make("title")
 				.label("Title")
 				.kind("text")
+				.sticky()
 				.individuallySearchable()
 				.noWrap()
 				.description("Headline"),
@@ -441,6 +442,7 @@ function postsTable(s: S) {
 			]),
 		])
 		.deferFilters()
+		.poll(30)
 		.filtersIn("inline")
 		.filtersFormColumns(2)
 		.searchPlaceholder("Search posts…")
@@ -489,6 +491,7 @@ function postsTable(s: S) {
 				.hiddenIf("role", "=", "manager")
 				.handle(() => Effects.make(), ["selection"]),
 		])
+		.simplePagination()
 		.query(() => stubQuery)
 		.toNode();
 }

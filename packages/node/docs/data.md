@@ -5,6 +5,9 @@
 The ORM is the host's. Tables, relation selects and drag-reorder run through a
 `QueryDriver`: `where`, `searchAny`, `orderBy`, `count`, `rows`, `update`.
 A table's `.query()` returns a query object of the driver's type.
+A `simplePagination()` table never calls `count`: it reads the page, and on a
+full page one more row (`rows` with `perPage: 1`) to answer whether a next
+page exists.
 
 - `kyselyDriver(db, keyName = "id")` from `/kysely`: `.query()` returns a
   `selectFrom(...)` builder.

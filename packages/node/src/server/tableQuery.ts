@@ -6,7 +6,9 @@ import { applyFilters } from "./tableFilters";
 
 export interface TablePage {
 	data: Row[];
-	total: number;
+	/** Absent under simplePagination(), which answers `hasMore` instead. */
+	total?: number;
+	hasMore?: boolean;
 	page: number;
 	perPage: number;
 	tabCounts?: Record<string, number>;
@@ -38,13 +40,12 @@ export async function runTable<Q>(
 	});
 	const query = applySort(step, filtered);
 	const { page, perPage } = pageWindow(table, params);
+	const rows = await driver.rows(query, { page, perPage });
 	const result: TablePage = {
-		data: projectRows(
-			table as TableBuilder,
-			await driver.rows(query, { page, perPage }),
-			keyOf(driver as QueryDriver),
-		),
-		total: await driver.count(query),
+		data: projectRows(table as TableBuilder, rows, keyOf(driver as QueryDriver)),
+		...(table.isSimplePagination()
+			? { hasMore: await hasMore(driver, query, page, perPage, rows.length) }
+			: { total: await driver.count(query) }),
 		page,
 		perPage,
 	};
@@ -59,6 +60,25 @@ function pageWindow<Q>(table: TableBuilder<Q>, params: Record<string, unknown>) 
 		perPage: options.includes(requested) ? requested : fallback,
 		page: Math.max(Math.trunc(Number(params.page ?? 1)) || 1, 1),
 	};
+}
+
+/**
+ * simplePagination(): whether a row exists past this page, without count().
+ * A short page answers on its own; a full one probes the first row of the
+ * next page (`LIMIT 1 OFFSET page * perPage`), which needs no driver change.
+ */
+async function hasMore<Q>(
+	driver: QueryDriver<Q>,
+	query: Q,
+	page: number,
+	perPage: number,
+	got: number,
+): Promise<boolean> {
+	if (got < perPage) {
+		return false;
+	}
+	const next = await driver.rows(query, { page: page * perPage + 1, perPage: 1 });
+	return next.length > 0;
 }
 
 /** Counts per count-enabled tab, each on a fresh query with only its scope. */

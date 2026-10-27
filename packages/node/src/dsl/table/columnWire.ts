@@ -2,7 +2,6 @@ import { toConstraints } from "../rules";
 import type { Column, ColumnState } from "./column";
 
 const FLAGS = ["emphasized", "muted", "uppercase", "translatable"] as const;
-const PLAIN = ["align", "icon", "width", "wrap"] as const;
 
 /** Sparse wire shape of a column: only what was set (Column::jsonSerialize). */
 export function columnWire(column: Column): Record<string, unknown> {
@@ -18,7 +17,11 @@ export function columnWire(column: Column): Record<string, unknown> {
 			out.hiddenByDefault = true;
 		}
 	}
-	copyDefined(out, st, [...PLAIN]);
+	copyDefined(out, st, ["align", "icon", "width"]);
+	if (st.sticky === true) {
+		out.sticky = true;
+	}
+	copyDefined(out, st, ["wrap"]);
 	if (st.noWrap === true) {
 		out.noWrap = true;
 	}

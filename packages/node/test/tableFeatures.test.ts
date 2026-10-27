@@ -1,0 +1,87 @@
+import { describe, expect, test } from "bun:test";
+import { memoryDriver, memoryQuery } from "../src/adapters/memory";
+import { Column, createAdmin, definePage, S } from "../src";
+
+const rows = Array.from({ length: 4 }, (_, i) => ({ id: i + 1, title: `Post ${i + 1}` }));
+const driver = memoryDriver();
+let counted = 0;
+const countingDriver = {
+	...driver,
+	count: (query: Parameters<typeof driver.count>[0]) => {
+		counted += 1;
+		return driver.count(query);
+	},
+};
+
+const admin = createAdmin({
+	allowGuests: true,
+	prefix: "/admin",
+	driver: countingDriver as never,
+	pages: [
+		definePage({
+			path: "posts",
+			title: "Posts",
+			view: (s) =>
+				s
+					.table("posts")
+					.columns([Column.make("title")])
+					.paginate(2, [2, 10])
+					.simplePagination()
+					.query(() => memoryQuery(() => rows)),
+		}),
+	],
+});
+
+async function page(query: string) {
+	const res = await admin.handle(new Request(`http://x/admin/posts/tables/posts?${query}`));
+	if (res === null) {
+		throw new TypeError("not an admin endpoint");
+	}
+	return (await res.json()).data;
+}
+
+describe("simplePagination()", () => {
+	test("answers hasMore instead of a total, with no count query", async () => {
+		counted = 0;
+		const first = await page("page=1");
+		expect(first.hasMore).toBe(true);
+		expect(first.total).toBeUndefined();
+		expect(first.data.map((r: { id: number }) => r.id)).toEqual([1, 2]);
+		const last = await page("page=2");
+		expect(last.hasMore).toBe(false);
+		expect(last.data.map((r: { id: number }) => r.id)).toEqual([3, 4]);
+		expect(counted).toBe(0);
+	});
+
+	test("puts simple on the pagination wire", () => {
+		const node = new S().table("t").columns([Column.make("a")]).simplePagination().toJSON();
+		expect((node as { options: { pagination: unknown } }).options.pagination).toEqual({
+			perPage: 25,
+			options: [10, 25, 50, 100],
+			simple: true,
+		});
+	});
+});
+
+describe("poll()", () => {
+	test("refuses an interval under five seconds", () => {
+		expect(() => new S().table("t").poll(4)).toThrow("at least 5 seconds");
+		expect(new S().table("t").poll(5).optionValue("poll")).toBe(5);
+	});
+});
+
+describe("sticky()", () => {
+	test("sticky columns must lead the list", () => {
+		expect(() =>
+			new S().table("t").columns([Column.make("a"), Column.make("b").sticky()]),
+		).toThrow('Column "b": sticky columns must come first');
+	});
+
+	test("goes on a group, not on its children", () => {
+		expect(() =>
+			new S()
+				.table("t")
+				.columns([Column.make("g").group([Column.make("a").sticky(), Column.make("b")])]),
+		).toThrow('sticky() goes on the group "g"');
+	});
+});
