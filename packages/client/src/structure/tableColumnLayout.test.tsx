@@ -20,9 +20,10 @@ afterEach(() => {
 	localStorage.clear();
 });
 
-function makeTable() {
+function makeTable(embedded = false) {
 	return s.table({
 		name: "books",
+		embedded,
 		query: async () => [{ id: "1", title: "Dune", author: "Herbert", year: 1965 }],
 		columns: [
 			{ name: "title", label: "Title" },
@@ -32,9 +33,9 @@ function makeTable() {
 	} as Parameters<typeof s.table>[0]);
 }
 
-async function renderTable() {
+async function renderTable(embedded = false) {
 	const Wrap = wrap(() => new Response("{}"));
-	const view = render(<Wrap>{renderNode(makeTable())}</Wrap>);
+	const view = render(<Wrap>{renderNode(makeTable(embedded))}</Wrap>);
 	await view.findByText("Dune");
 	return view;
 }
@@ -64,6 +65,15 @@ describe("Table: column layout", () => {
 
 		expect(headers(container)).toEqual(["Year", "Title", "Author"]);
 		expect(firstRowCells(container)).toEqual(["1965", "Dune", "Herbert"]);
+	});
+
+	test("an embedded table keeps the declared order and widths", async () => {
+		localStorage.setItem(KEY, JSON.stringify({ order: ["year"], widths: { title: 200 } }));
+
+		const { container } = await renderTable(true);
+
+		expect(headers(container)).toEqual(["Title", "Author", "Year"]);
+		expect(container.querySelector<HTMLElement>("table thead th")?.style.width).toBe("");
 	});
 
 	test("a saved width applies to the header and the cells", async () => {

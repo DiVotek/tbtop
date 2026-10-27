@@ -27,6 +27,7 @@ import {
 	DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import type { TableColumn } from "../types";
+import { pinnedRun } from "./useColumnLayout";
 
 interface ColumnVisibilityProps {
 	/** Columns in the user's order. */
@@ -47,6 +48,8 @@ export function ColumnVisibilityDropdown({
 	const t = useTranslation();
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 	const names = columns.map((c) => c.name);
+	// Only the leading sticky run is pinned, matching the column order rules.
+	const pinnedCount = pinnedRun(columns).length;
 
 	function handleDragEnd({ active, over }: DragEndEvent) {
 		if (over && active.id !== over.id) {
@@ -79,8 +82,8 @@ export function ColumnVisibilityDropdown({
 										checked={visibleColumns.has(col.name)}
 										onToggle={onToggle}
 										// Pinned columns lead the table and never move.
-										onMove={col.sticky ? undefined : onMove}
-										pinned={Boolean(onMove && col.sticky)}
+										onMove={i < pinnedCount ? undefined : onMove}
+										pinned={Boolean(onMove) && i < pinnedCount}
 										prev={names[i - 1]}
 										next={names[i + 1]}
 									/>

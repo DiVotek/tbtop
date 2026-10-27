@@ -184,7 +184,9 @@ function TableBody(props: TableBodyProps) {
 		return () => setPageSubtitle(undefined);
 	}, [activeTabDescription, setPageSubtitle]);
 
-	const visibleCols = layout.orderedColumns.filter((c) => visibleColumns.has(c.name));
+	// Embedded tables can't reorder, so they keep the declared order.
+	const orderedCols = props.embedded ? props.columns : layout.orderedColumns;
+	const visibleCols = orderedCols.filter((c) => visibleColumns.has(c.name));
 
 	// Footer only when the server sends pagination config and a total, the
 	// table isn't embedded (embedded tables hide toolbar + pagination footer),
