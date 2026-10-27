@@ -93,7 +93,7 @@ abstract class ProfilePage extends Page
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique($user->getTable(), 'email')->ignore($user)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique($user::class, 'email')->ignore($user)],
         ];
     }
 

@@ -85,8 +85,8 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   password change keeps this session and signs the others out (see Other sessions). While
   the panel serves a subclass, the user menu gets a "Profile" entry ahead of `userMenuItems()`;
   delete the file and both go. Hooks: `profileForm()`, `passwordForm()`, `profileRules()`
-  (default: unique email in the user's table), `passwordRules()`; append sections in `view()`
-  after `parent::view()`. A changed email on a `MustVerifyEmail` user is marked unverified.
+  (default: unique email on the user model's connection and table), `passwordRules()`;
+  append sections in `view()` after `parent::view()`. A changed email on a `MustVerifyEmail` user is marked unverified.
   Needs an Eloquent user with `name`, `email` and `password`.
 - **Password broker.** `PanelConfig::passwordBroker('admins')`; null uses the app default.
   A panel guard on a non-default provider needs its own broker in `config/auth.php`.
