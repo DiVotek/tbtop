@@ -76,6 +76,25 @@ describe("Table: column layout", () => {
 		expect(container.querySelector<HTMLElement>("table thead th")?.style.width).toBe("");
 	});
 
+	test("without the Columns menu the declared order holds", async () => {
+		localStorage.setItem(KEY, JSON.stringify({ order: ["year"], widths: {} }));
+		const node = s.table({
+			name: "books",
+			columnToggle: false,
+			query: async () => [{ id: "1", title: "Dune", author: "Herbert", year: 1965 }],
+			columns: [
+				{ name: "title", label: "Title" },
+				{ name: "author", label: "Author" },
+				{ name: "year", label: "Year" },
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { container, findByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("Dune");
+
+		expect(headers(container)).toEqual(["Title", "Author", "Year"]);
+	});
+
 	test("a saved width applies to the header and the cells", async () => {
 		localStorage.setItem(KEY, JSON.stringify({ order: [], widths: { author: 180 } }));
 

@@ -184,8 +184,10 @@ function TableBody(props: TableBodyProps) {
 		return () => setPageSubtitle(undefined);
 	}, [activeTabDescription, setPageSubtitle]);
 
-	// Embedded tables can't reorder, so they keep the declared order.
-	const orderedCols = props.embedded ? props.columns : layout.orderedColumns;
+	// Without the Columns menu (embedded, or columnToggle(false)) there is no
+	// way to reorder or reset, so the declared order holds.
+	const reorderable = !props.embedded && props.columnToggle !== false;
+	const orderedCols = reorderable ? layout.orderedColumns : props.columns;
 	const visibleCols = orderedCols.filter((c) => visibleColumns.has(c.name));
 
 	// Footer only when the server sends pagination config and a total, the

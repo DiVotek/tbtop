@@ -150,6 +150,10 @@ function useStoredLayout(key: string): [ColumnLayoutState, UpdateLayout] {
 	const update = useCallback<UpdateLayout>(
 		(change, persist = true) => {
 			setState((prev) => {
+				// A queued update from before a key change must not land on the new key.
+				if (prev.key !== key) {
+					return prev;
+				}
 				const next = change(prev.layout);
 				if (persist) {
 					writeLayout(key, next);

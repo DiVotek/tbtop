@@ -693,7 +693,7 @@ restores the declared `width()`). Both are client-only and saved per table in
 `localStorage` (`tbtop:table.<name>.layout.v1`), next to the visibility choice; a column
 added later goes to the end of a saved order, the leading `sticky()` columns never move, and the menu's reset entry clears both. The
 declared column order stays the default. Without the Columns menu (`columnToggle(false)`,
-embedded tables) there is nothing to reorder from; embedded tables don't resize either.
+embedded tables) the declared order holds; embedded tables don't resize either.
 
 **Inline editing.** `toggle()`, `textInput()`, `numberInput()` and `selectColumn()` make
 a cell editable in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()`
