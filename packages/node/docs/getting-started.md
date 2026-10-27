@@ -124,8 +124,9 @@ it (local tools only).
 
 PHP's `ProfilePage` edits an Eloquent user on the panel guard; here the panel
 only knows what the login put in the session, so the profile page is the
-host's too. The same shape: one form per concern, the email change and the
-new password behind the current password, a link at the top of the user menu.
+host's too. The same shape: one form per concern, the new password behind the
+current password, a link at the top of the user menu. An email change, if you
+offer one, belongs behind the current password too: resets go to that address.
 
 ```ts
 const profile = definePage({
@@ -140,6 +141,7 @@ const profile = definePage({
 				s.actionsRow([s.action("save").label("Save").submit()]),
 			]).record({ name: me.name }).onSubmit(async (ctx) => {
 				await users.rename(me.id, String(ctx.form.name)); // your write
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.find(me.id)); // the menu shows the new name
 				return Effects.make().notify("Saved");
 			}),
 			s.form("password", [
@@ -152,7 +154,8 @@ const profile = definePage({
 					return Effects.make().notify("The current password is wrong.", "error");
 				}
 				await users.setPassword(me.id, String(ctx.form.password)); // your hash + write
-				await (await admin.session(ctx.request)).set(SESSION_USER, me); // a new session id
+				// The current row, not the `me` the page rendered with; memorySessions also moves to a new session id here.
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.find(me.id));
 				return Effects.make().notify("Password changed").resetForm("password");
 			}),
 		]);
