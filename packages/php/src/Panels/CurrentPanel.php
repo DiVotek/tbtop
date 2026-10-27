@@ -144,6 +144,12 @@ final class CurrentPanel
         return $this->config->appearance();
     }
 
+    /** Environment badge for the shell header, or null when hidden. @return array{label: string, color: string}|null */
+    public function environmentIndicator(): ?array
+    {
+        return $this->config->getEnvironmentIndicator();
+    }
+
     /** Style preset scope class for the root Blade's <html>, e.g. 'style-preset-vega'. */
     public function stylePresetClass(): string
     {
