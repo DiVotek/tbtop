@@ -289,6 +289,7 @@ class KitchenSinkPage extends Page
                     ]),
                 ])
                 ->deferFilters()
+                ->poll(30)
                 ->filtersIn('inline')
                 ->filtersFormColumns(2)
                 ->searchPlaceholder('Search posts…')
