@@ -14,7 +14,7 @@ import { rootView as defaultRootView } from "./inertia/html";
 import { memorySessions } from "./inertia/memorySession";
 import { isInertia, redirectTo } from "./inertia/protocol";
 import { SESSION_USER, type SessionStore, sessionCache } from "./inertia/session";
-import { currentLocale, localeContext, uiLocales } from "./locale";
+import { assertLocaleHooks, currentLocale, localeContext, uiLocales } from "./locale";
 import type { PageDef } from "./page";
 import { type AdminPageProps, buildPageProps } from "./pageProps";
 import { type PanelView, pageResponse } from "./pageResponse";
@@ -34,6 +34,7 @@ class AdminServer {
 	constructor(readonly config: AdminConfig) {
 		this.prefix = config.prefix.replace(/\/+$/, "");
 		assertPanelLook(config);
+		assertLocaleHooks(config);
 		if (config.mcp !== undefined) {
 			assertNoCollision(config.mcp, config.pages);
 		}

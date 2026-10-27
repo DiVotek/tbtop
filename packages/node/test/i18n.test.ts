@@ -105,6 +105,12 @@ describe("per-user UI locale", () => {
 		expect((await tbtop(browser(perUser))).locale).toBe("uk");
 	});
 
+	test("createAdmin() refuses userLocale without onLocaleChange", () => {
+		expect(() =>
+			createAdmin({ allowGuests: true, prefix: "/admin", pages, userLocale: () => "uk" }),
+		).toThrow("userLocale and onLocaleChange go together");
+	});
+
 	test("a refused locale is not saved", async () => {
 		who = "cat";
 		await browser(perUser)("/admin/locale", {

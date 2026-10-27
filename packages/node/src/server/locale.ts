@@ -21,11 +21,19 @@ export interface LocaleConfig {
 	defaultContentLocale?: string;
 	/**
 	 * The signed-in user's saved UI locale (e.g. a profile column), read before
-	 * the session's pick; null or a locale the panel lacks falls through.
+	 * the session's pick on every panel request, so keep it cheap; null or a
+	 * locale the panel lacks falls through. Pass it with onLocaleChange.
 	 */
 	userLocale?: (user: unknown) => string | null | Promise<string | null>;
 	/** Called after a valid switch in the user menu, to save the pick for the user. */
 	onLocaleChange?: (user: unknown, locale: string) => void | Promise<void>;
+}
+
+/** userLocale without onLocaleChange would make the menu switch a silent no-op. */
+export function assertLocaleHooks(config: LocaleConfig): void {
+	if ((config.userLocale === undefined) !== (config.onLocaleChange === undefined)) {
+		throw new Error("userLocale and onLocaleChange go together: pass both or neither.");
+	}
 }
 
 export function uiLocales(config: LocaleConfig): string[] {
@@ -68,11 +76,12 @@ export async function switchLocale(
 ): Promise<Response> {
 	const { locale } = await readBody(request);
 	if (typeof locale === "string" && uiLocales(config).includes(locale)) {
-		await session.set(SESSION_LOCALE, locale);
+		// Save for the user first: a failing hook leaves the session as it was.
 		const user = currentContext().user ?? null;
 		if (user !== null) {
 			await config.onLocaleChange?.(user, locale);
 		}
+		await session.set(SESSION_LOCALE, locale);
 	} else {
 		await session.set("errors", { locale: "The selected locale is invalid." });
 	}
