@@ -152,6 +152,7 @@ const profile = definePage({
 			]).guardUnsaved(false).onSubmit(async (ctx) => {
 				// The current row, not the `me` the page rendered with: the email may have changed since.
 				const current = await users.find(me.id);
+				// Yours to add (see below): a throttle on wrong current passwords here, and signing other sessions out after the write.
 				if (!(await users.verify(current.email, String(ctx.form.current_password)))) {
 					return Effects.make().notify("The current password is wrong.", "error");
 				}
