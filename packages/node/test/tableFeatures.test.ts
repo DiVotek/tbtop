@@ -85,3 +85,40 @@ describe("sticky()", () => {
 		).toThrow('sticky() goes on the group "g"');
 	});
 });
+
+describe("group children (#391)", () => {
+	const people = [
+		{ id: 1, name: { en: "Zed", uk: "Зед" }, email: "b@x" },
+		{ id: 2, name: { en: "Amy", uk: "Емі" }, email: "a@x" },
+	];
+	const groupAdmin = createAdmin({
+		allowGuests: true,
+		prefix: "/admin",
+		driver: driver as never,
+		pages: [
+			definePage({
+				path: "people",
+				title: "People",
+				view: (s) =>
+					s
+						.table("people")
+						.columns([
+							Column.make("who").group([
+								Column.make("email").sortable(),
+								Column.make("name").translatable(),
+							]),
+						])
+						.query(() => memoryQuery(() => people)),
+			}),
+		],
+	});
+
+	test("a child sorts and reads its locale map", async () => {
+		const res = await groupAdmin.handle(
+			new Request("http://x/admin/people/tables/people?sort=email&dir=asc"),
+		);
+		const data = (await res?.json()).data.data;
+		expect(data.map((r: { id: number }) => r.id)).toEqual([2, 1]);
+		expect(data[0].name).toBe("Amy");
+	});
+});

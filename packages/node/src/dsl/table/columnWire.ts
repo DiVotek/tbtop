@@ -120,10 +120,4 @@ function assertGroupChild(child: Column): void {
 	if (child.isIndividuallySearchable()) {
 		fail("individuallySearchable() is not supported inside a group.");
 	}
-	if (child.isSortable()) {
-		fail("sortable() inside a group is not implemented yet.");
-	}
-	if (child.isTranslatable()) {
-		fail("translatable() inside a group is not implemented yet.");
-	}
 }

@@ -323,8 +323,17 @@ export class TableBuilder<Q = unknown> {
 		return this.columnList.filter((c) => c.isVisible());
 	}
 
+	/** The declared column named `name`, a group child included. */
 	findColumn(name: string): Column | null {
-		return this.columnList.find((c) => c.name === name) ?? null;
+		const all = this.columnList.flatMap((c) => [c, ...c.groupColumns()]);
+		return all.find((c) => c.name === name) ?? null;
+	}
+
+	/** Visible columns with each group replaced by its children: the ones that carry a value. */
+	visibleLeafColumns(): Column[] {
+		return this.visibleColumns().flatMap((c) =>
+			c.groupColumns().length > 0 ? c.groupColumns() : [c],
+		);
 	}
 
 	searchableFields(): string[] {
@@ -338,13 +347,14 @@ export class TableBuilder<Q = unknown> {
 	}
 
 	translatableColumns(): string[] {
-		return this.visibleColumns()
+		return this.visibleLeafColumns()
 			.filter((c) => c.isTranslatable())
 			.map((c) => c.name);
 	}
 
+	/** Group children unfold: the client sorts a group header by its first sortable child. */
 	sortableColumnNames(): string[] {
-		return this.visibleColumns()
+		return this.visibleLeafColumns()
 			.filter((c) => c.isSortable())
 			.map((c) => c.name);
 	}
