@@ -96,20 +96,28 @@ describe("Table: column layout", () => {
 		]);
 	});
 
-	test("dragging the header grip sets the column width", async () => {
+	test("dragging the header grip previews the width and saves it on release", async () => {
 		const { container, getByTestId } = await renderTable();
 		const grip = getByTestId("column-resize-title");
 		grip.setPointerCapture = () => {};
+		const th = container.querySelector<HTMLElement>("table thead th");
 
 		act(() => {
 			fireEvent.pointerDown(grip, { button: 0, clientX: 100, pointerId: 1 });
 			fireEvent.pointerMove(grip, { clientX: 260, pointerId: 1 });
-			fireEvent.pointerUp(grip, { pointerId: 1 });
 		});
 
 		// happy-dom lays nothing out, so the drag starts from a 0px header.
-		const th = container.querySelector<HTMLElement>("table thead th");
 		await waitFor(() => expect(th?.style.width).toBe("160px"));
+		expect(localStorage.getItem(KEY)).toBeNull();
+
+		act(() => {
+			fireEvent.pointerMove(grip, { clientX: 300, pointerId: 1 });
+			fireEvent.pointerUp(grip, { pointerId: 1 });
+		});
+
+		await waitFor(() => expect(th?.style.width).toBe("200px"));
+		expect(JSON.parse(localStorage.getItem(KEY) ?? "{}").widths).toEqual({ title: 200 });
 	});
 
 	test("reset restores the declared order and widths", async () => {

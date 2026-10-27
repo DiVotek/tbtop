@@ -9,7 +9,7 @@ import { useTranslation } from "../../i18n/i18n";
 
 interface ColumnSizing {
 	widths: Record<string, number>;
-	setWidth: (name: string, width: number | undefined) => void;
+	setWidth: (name: string, width: number | undefined, persist?: boolean) => void;
 }
 
 const ColumnSizingContext = createContext<ColumnSizing | undefined>(undefined);
@@ -70,8 +70,19 @@ export function ColumnResizeHandle({ name, label }: ColumnResizeHandleProps) {
 		const { setWidth } = sizing;
 		handle.setPointerCapture(e.pointerId);
 
-		const onMove = (ev: PointerEvent) => setWidth(name, startWidth + ev.clientX - startX);
+		// Preview at most once a frame without saving; pointerup saves the last width.
+		let width = startWidth;
+		let frame = 0;
+		const onMove = (ev: PointerEvent) => {
+			width = startWidth + ev.clientX - startX;
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => setWidth(name, width, false));
+		};
 		const onUp = () => {
+			cancelAnimationFrame(frame);
+			if (width !== startWidth) {
+				setWidth(name, width);
+			}
 			handle.removeEventListener("pointermove", onMove);
 			handle.removeEventListener("pointerup", onUp);
 			handle.removeEventListener("pointercancel", onUp);

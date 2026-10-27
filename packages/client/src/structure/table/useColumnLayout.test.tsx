@@ -109,6 +109,14 @@ describe("useColumnLayout", () => {
 	});
 });
 
+test("an unpersisted width renders without touching storage", () => {
+	const layout = renderLayout();
+	act(() => layout.current().setWidth("title", 220, false));
+
+	expect(layout.current().widths).toEqual({ title: 220 });
+	expect(localStorage.getItem(KEY)).toBeNull();
+});
+
 describe("sticky columns", () => {
 	const STICKY: TableColumn[] = [
 		{ name: "number", sticky: true },

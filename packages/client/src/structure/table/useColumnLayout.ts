@@ -4,7 +4,7 @@
  * saved order doesn't know (added since) go to the end in declared order;
  * the leading `sticky()` columns stay in front.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { storageKey } from "../../app/storageKey";
 import type { TableColumn } from "../types";
 
@@ -20,8 +20,11 @@ export interface ColumnLayout {
 	widths: Record<string, number>;
 	/** Moves `name` to the slot `target` holds now. */
 	moveColumn: (name: string, target: string) => void;
-	/** Sets a column's width; `undefined` drops it back to the declared width. */
-	setWidth: (name: string, width: number | undefined) => void;
+	/**
+	 * Sets a column's width; `undefined` drops it back to the declared width.
+	 * `persist: false` only renders it — a drag previews per frame and saves once.
+	 */
+	setWidth: (name: string, width: number | undefined, persist?: boolean) => void;
 	resetLayout: () => void;
 	/** True once the user changed the order or any width. */
 	customized: boolean;
@@ -127,22 +130,31 @@ function withWidth(
 	return { ...rest, [name]: Math.max(MIN_COLUMN_WIDTH, Math.round(width)) };
 }
 
-type UpdateLayout = (change: (prev: ColumnLayoutState) => ColumnLayoutState) => void;
+type UpdateLayout = (
+	change: (prev: ColumnLayoutState) => ColumnLayoutState,
+	persist?: boolean,
+) => void;
 
-/** The stored layout under `key`, plus an updater that writes every change back. */
+/**
+ * The stored layout under `key`, plus an updater that writes changes back.
+ * State is tagged with its key and re-read during render when the key moves,
+ * so an unnamed table whose columns change never paints the old key's layout.
+ */
 function useStoredLayout(key: string): [ColumnLayoutState, UpdateLayout] {
-	const [layout, setLayout] = useState<ColumnLayoutState>(() => readLayout(key));
-
-	useEffect(() => {
-		setLayout(readLayout(key));
-	}, [key]);
+	const [state, setState] = useState(() => ({ key, layout: readLayout(key) }));
+	if (state.key !== key) {
+		setState({ key, layout: readLayout(key) });
+	}
+	const layout = state.key === key ? state.layout : readLayout(key);
 
 	const update = useCallback<UpdateLayout>(
-		(change) => {
-			setLayout((prev) => {
-				const next = change(prev);
-				writeLayout(key, next);
-				return next;
+		(change, persist = true) => {
+			setState((prev) => {
+				const next = change(prev.layout);
+				if (persist) {
+					writeLayout(key, next);
+				}
+				return { key, layout: next };
 			});
 		},
 		[key],
@@ -171,8 +183,8 @@ export function useColumnLayout(columns: TableColumn[], tableName: string): Colu
 	);
 
 	const setWidth = useCallback(
-		(name: string, width: number | undefined) => {
-			update((prev) => ({ ...prev, widths: withWidth(prev.widths, name, width) }));
+		(name: string, width: number | undefined, persist?: boolean) => {
+			update((prev) => ({ ...prev, widths: withWidth(prev.widths, name, width) }), persist);
 		},
 		[update],
 	);
