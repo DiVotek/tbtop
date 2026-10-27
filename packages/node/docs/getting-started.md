@@ -152,11 +152,12 @@ const profile = definePage({
 			]).guardUnsaved(false).onSubmit(async (ctx) => {
 				// The current row, not the `me` the page rendered with: the email may have changed since.
 				const current = await users.find(me.id);
-				// Yours to add (see below): a throttle on wrong current passwords here, and signing other sessions out after the write.
+				// Yours to add (see below): a throttle on wrong current passwords.
 				if (!(await users.verify(current.email, String(ctx.form.current_password)))) {
 					return Effects.make().notify("The current password is wrong.", "error");
 				}
 				await users.setPassword(current.id, String(ctx.form.password)); // your hash + write
+				// Yours to add (see below): other sessions stay signed in until you revoke them here.
 				// Like a sign-in, set(SESSION_USER) moves memorySessions to a new id (see Sessions).
 				await (await admin.session(ctx.request)).set(SESSION_USER, await users.sessionUser(current.id));
 				return Effects.make().notify("Password changed").resetForm("password");
