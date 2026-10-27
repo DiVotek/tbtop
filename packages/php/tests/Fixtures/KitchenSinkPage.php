@@ -241,7 +241,7 @@ class KitchenSinkPage extends Page
             ], ['name' => 'content']),
             $s->table('posts')
                 ->columns([
-                    Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap()->description('Headline'),
+                    Column::make('title')->label('Title')->kind('text')->sticky()->individuallySearchable()->noWrap()->description('Headline'),
                     'views' => 'Views',
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
@@ -289,6 +289,7 @@ class KitchenSinkPage extends Page
                     ]),
                 ])
                 ->deferFilters()
+                ->poll(30)
                 ->filtersIn('inline')
                 ->filtersFormColumns(2)
                 ->searchPlaceholder('Search posts…')
@@ -325,6 +326,7 @@ class KitchenSinkPage extends Page
                         ->hiddenIf('role', '=', 'manager')
                         ->handle(fn () => Effects::make(), needs: ['selection']),
                 ])
+                ->simplePagination()
                 ->query(fn () => null)
                 ->toNode(),
             $s->actionsRow([

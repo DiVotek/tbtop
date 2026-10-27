@@ -561,6 +561,21 @@ and the record-URL row link.
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
 
+**Simple pagination** — `simplePagination()` drops the `count()` query, which is the slow
+one on a large or heavily joined table. The page query reads `perPage + 1` rows: the extra
+row only answers "is there a next page", and the response carries `hasMore` instead of
+`total`. The footer shows previous / "Page N" / next and the per-page selector, with no
+"1–25 of 1,000" range and no page numbers; it hides on a first page that has no next one.
+Two things still count: a tab declared with `->count()` runs its own `count()` per request
+(drop `count()` on those tabs if the point is to avoid counting), and nothing else changes —
+search, filters, sort, tabs and URL state work the same. Cursor pagination is not offered.
+
+```php
+$s->table('events')
+    ->paginate(50, [50, 100])
+    ->simplePagination()
+```
+
 **What a row carries to the client** — an allowlist, never the full database row: the
 record key (under its own name and again under `_key`), the visible declared columns (toggleable and `hiddenByDefault()` columns
 included), the `groups()` column, and the `_recordUrl` / `_tooltips` / `_descriptions`
@@ -593,6 +608,27 @@ grouping entirely while reorder is active (`groupsActive = Boolean(groups) &&
 $s->table('posts')
     ->defaultSort('published', 'desc')
     ->groups('published') // requires defaultSort('published', ...) above
+```
+
+#### `poll()` — auto-refresh rows
+
+`->poll(int $seconds)` re-fetches the current page of rows every `$seconds` (minimum 5;
+below it throws) through the same table endpoint, with the user's search, filters, sort,
+tab and page. It is for lists that change under the user — an order queue, an import log.
+The refresh is silent: the old rows stay on screen with no loading overlay. One failed
+tick keeps them and tries again; a second failure in a row shows the table's error state
+with a retry button, so stale rows never pass for current ones. A tick that lands while a
+slow fetch is still running is skipped rather than cancelling it. Polling pauses while the browser tab is
+hidden (one refetch on return) and while any row is selected, because new rows clear the
+selection a bulk action is about to use. An inline cell with an unsaved edit keeps the
+edit. For a change the page itself makes, the `refreshTable` effect is still the right
+tool; `poll()` covers changes made elsewhere.
+
+```php
+$s->table('orders')
+    ->columns([...])
+    ->query(fn () => Order::query()->latest())
+    ->poll(10)
 ```
 
 #### `softDeletes()` — soft-delete convenience layer
@@ -666,6 +702,15 @@ search, per-column search and sort, so `?search=` and `?sort=` cannot probe it. 
 a field without showing it, name it in the table-level `->searchable(['email', ...])`
 instead: that list is by field name and needs no column.
 
+**Order and width.** The user arranges columns in the same Columns menu (drag an entry by
+its grip, or Alt+↑/↓) and resizes one by dragging its header's right edge (double-click
+restores the declared `width()`). Both are client-only and saved per table in
+`localStorage` (`tbtop:table.<name>.layout.v1`), next to the visibility choice; a column
+added later goes to the end of a saved order, the leading `sticky()` columns never move, and the menu's reset entry clears both. The
+declared column order stays the default. Without the Columns menu (`columnToggle(false)`,
+embedded tables) the declared order holds. `columnToggle(false)` tables still resize
+(double-click resets a width); embedded ones don't.
+
 **Inline editing.** `toggle()`, `textInput()`, `numberInput()` and `selectColumn()` make
 a cell editable in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()`
 for per-cell validation, `options()` for the select variant and `step()` for the number
@@ -723,6 +768,28 @@ Column::make('published_time')
     ->label('Published time')
     ->noWrap(),
 ```
+
+#### `sticky()` — columns pinned on horizontal scroll
+
+A wide table scrolls sideways inside its frame. `sticky()` pins a column to the left edge so
+the row stays identifiable while the rest slides under it:
+
+```php
+$s->table('orders')->columns([
+    Column::make('number')->label('Order')->sticky(),
+    Column::make('customer.name')->label('Customer')->sticky(),
+    Column::make('total')->money('EUR'),
+    // … more columns than the screen fits
+]);
+```
+
+- Sticky columns must **lead** `columns()`: a sticky column after a scrolling one throws
+  `InvalidArgumentException` (it would slide over its neighbour). Several stack left to right.
+- On a group column, call `sticky()` on the group, not on its children — a sticky child throws.
+- The row-selection checkbox (bulk actions) and the drag-reorder handle pin with them; row
+  actions scroll. A user hiding a sticky column via the column toggle just shortens the run.
+- Offsets are measured from the rendered header, so no `width()` is needed. A long sticky
+  column eats the scroll area — keep it short with `width()` or `truncate()`.
 
 #### `individuallySearchable()` — per-column search
 

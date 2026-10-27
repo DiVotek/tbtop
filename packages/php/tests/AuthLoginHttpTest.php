@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Auth\Events\Lockout;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Tbtop\Admin\Auth\LoginPage;
@@ -45,6 +47,26 @@ it('locks the email out after five failures, even for the right password', funct
         ->assertSessionHasErrors('email');
 
     expect(session('errors')->first('email'))->toStartWith('Too many login attempts');
+    $this->assertGuest('staff');
+});
+
+it('fires Laravel\'s Lockout event once the throttle trips', function () {
+    Event::fake([Lockout::class]);
+    foreach (range(1, 5) as $_) {
+        signIn(['email' => 'olena@example.com', 'password' => 'wrong']);
+    }
+    Event::assertNotDispatched(Lockout::class);
+
+    signIn(['email' => 'olena@example.com', 'password' => 'wrong']);
+
+    Event::assertDispatched(Lockout::class);
+});
+
+it('answers an array password with a validation error, not a 500', function () {
+    signIn(['email' => 'olena@example.com', 'password' => ['secret-pass']])
+        ->assertRedirect('/admin/login')
+        ->assertSessionHasErrors('password');
+
     $this->assertGuest('staff');
 });
 

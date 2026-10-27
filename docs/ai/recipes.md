@@ -434,6 +434,37 @@ return $panel
 All five serialize **sparsely** into the `tbtop.appearance` shared prop — a knob left at
 its default is omitted from the wire entirely, so an empty `appearance` is normal.
 
+### Environment indicator
+
+`->environmentIndicator()` puts the app environment in a colored badge at the start of the
+shell header and paints a thin strip along the top edge, so nobody edits staging thinking
+it is production. It is off until you call it, and hidden in `production` by default.
+
+```php
+return $panel->environmentIndicator();             // "Local" green, "Staging" amber, …
+
+return $panel->environmentIndicator([
+    'staging' => 'danger',                         // recolor
+    'qa' => ['label' => 'QA', 'color' => 'info'],  // relabel an unknown environment
+    'local' => false,                              // hide one
+    'production' => 'danger',                      // listing production shows it
+]);
+
+return $panel->environmentIndicator(              // full control, called per request
+    fn (): ?array => config('app.preview') ? ['label' => 'Preview', 'color' => 'info'] : null,
+);
+```
+
+- The environment is `app()->environment()`; the default label is its name capitalized.
+- Default colors: `local`/`development`/`dev` success, `testing`/`test` info,
+  `staging`/`stage` warning, anything else gray. Colors are the badge names (`gray`,
+  `primary`, `success`, `warning`, `danger`, `info`) or one added with `registerTableColor()`.
+- A closure may return only `label` or only `color`; the other falls back to the default.
+  Return `null` to hide the indicator for that request.
+- The badge is added in front of whatever the header renders, including a custom `Chrome`
+  or a React `header` slot. It ships as the `tbtop.environment` shared prop
+  (`$defs/environmentIndicator`, `null` when hidden).
+
 ---
 
 ## Recipe 9 — Navigation configuration
@@ -740,4 +771,4 @@ primitives — the result will be incomplete or broken.
 | **Global search over records** | Table-level `->searchable()` and per-column `->searchable()` work within a single table; there is no cross-model record search. Note the **⌘K command palette does exist** (`PanelConfig::commandPalette()`, `Command::make()`) — it searches nav items and author-declared commands, not table rows. Record-level global search remains an open gap. |
 | **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in `docs/backlog.md`. |
 | **Saved filters / filter presets** | No persistence layer for user-saved filter states. Listed as backlog 🟡. |
-| **2FA, email verification, registration** | Sign-in and password reset ship: `php artisan admin:install --auth` publishes them as subclasses of `Tbtop\Admin\Auth\*` (see [wiring.md](./wiring.md#auth-pages)). Second factor, email verification and registration do not. The demo's `TwoFactorChallengePage` / `TwoFactorSetupPage` show 2FA built on the `afterAuthenticated()` hook — copy them; there is no Fortify. |
+| **2FA, email verification, registration** | Sign-in, password reset and the profile page ship: `php artisan admin:install --auth` publishes them as subclasses of `Tbtop\Admin\Auth\*` (see [wiring.md](./wiring.md#auth-pages)). Second factor, email verification and registration do not. The demo's `TwoFactorChallengePage` / `TwoFactorSetupPage` show 2FA built on the `afterAuthenticated()` hook — copy them; there is no Fortify. |

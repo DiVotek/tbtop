@@ -22,7 +22,6 @@ export function TablePagination({
 	onChangeParams,
 }: PaginationProps): ReactNode {
 	const t = useTranslation();
-	const perPageLabelId = useId();
 	const perPage = queryParams.perPage ?? paginationOptions.perPage ?? 25;
 	const page = queryParams.page ?? 1;
 	const totalPages = Math.max(1, Math.ceil(total / perPage));
@@ -95,29 +94,48 @@ export function TablePagination({
 				</Button>
 			</div>
 
-			{/* Per-page selector */}
-			<div className="flex items-center justify-self-end gap-2 whitespace-nowrap">
-				<span id={perPageLabelId}>{t("table.pagination.per_page")}</span>
-				<Select
-					value={String(perPage)}
-					onValueChange={(v) => onChangeParams({ perPage: Number(v), page: 1 })}
+			<PerPageSelect
+				perPage={perPage}
+				options={perPageOptions}
+				onChangeParams={onChangeParams}
+			/>
+		</div>
+	);
+}
+
+interface PerPageSelectProps {
+	perPage: number;
+	options: number[];
+	onChangeParams: (patch: Partial<ListQueryParams>) => void;
+}
+
+/** Per-page selector; a change goes back to page 1. Shared with the simple footer. */
+export function PerPageSelect({ perPage, options, onChangeParams }: PerPageSelectProps): ReactNode {
+	const t = useTranslation();
+	const perPageLabelId = useId();
+
+	return (
+		<div className="flex items-center justify-self-end gap-2 whitespace-nowrap">
+			<span id={perPageLabelId}>{t("table.pagination.per_page")}</span>
+			<Select
+				value={String(perPage)}
+				onValueChange={(v) => onChangeParams({ perPage: Number(v), page: 1 })}
+			>
+				<SelectTrigger
+					className="h-8 w-16 text-xs"
+					aria-labelledby={perPageLabelId}
+					data-testid="pagination-per-page"
 				>
-					<SelectTrigger
-						className="h-8 w-16 text-xs"
-						aria-labelledby={perPageLabelId}
-						data-testid="pagination-per-page"
-					>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{perPageOptions.map((n) => (
-							<SelectItem key={n} value={String(n)}>
-								{n}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{options.map((n) => (
+						<SelectItem key={n} value={String(n)}>
+							{n}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 		</div>
 	);
 }

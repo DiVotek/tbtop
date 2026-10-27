@@ -26,26 +26,36 @@ export function isSelected(selectedIds: string[], row: Record<string, unknown>):
 	return id ? selectedIds.includes(id) : false;
 }
 
-export function normalizeRows(data: unknown): {
+interface NormalizedRows {
 	rows: Record<string, unknown>[];
 	total: number | undefined;
+	/** Sent instead of total by a simple-paginated table. */
+	hasMore: boolean | undefined;
 	tabCounts: Record<string, number> | undefined;
-} {
+}
+
+export function normalizeRows(data: unknown): NormalizedRows {
+	const empty = { total: undefined, hasMore: undefined, tabCounts: undefined };
 	if (Array.isArray(data)) {
-		return { rows: data as Record<string, unknown>[], total: undefined, tabCounts: undefined };
+		return { ...empty, rows: data as Record<string, unknown>[] };
 	}
 	if (data && typeof data === "object") {
-		const obj = data as { data?: unknown; total?: unknown; tabCounts?: unknown };
+		const obj = data as {
+			data?: unknown;
+			total?: unknown;
+			hasMore?: unknown;
+			tabCounts?: unknown;
+		};
 		if (Array.isArray(obj.data)) {
-			const total = typeof obj.total === "number" ? obj.total : undefined;
 			return {
 				rows: obj.data as Record<string, unknown>[],
-				total,
+				total: typeof obj.total === "number" ? obj.total : undefined,
+				hasMore: typeof obj.hasMore === "boolean" ? obj.hasMore : undefined,
 				tabCounts: readTabCounts(obj.tabCounts),
 			};
 		}
 	}
-	return { rows: [], total: undefined, tabCounts: undefined };
+	return { ...empty, rows: [] };
 }
 
 function readTabCounts(value: unknown): Record<string, number> | undefined {

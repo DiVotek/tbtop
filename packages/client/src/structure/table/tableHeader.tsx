@@ -7,7 +7,9 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { TableColumn } from "../types";
+import { ColumnResizeHandle, cellWidthStyle, useColumnSizing } from "./columnResize";
 import { resolveIcon } from "./iconRegistry";
+import { useStickyCell } from "./stickyColumns";
 
 interface SortableHeaderProps {
 	col: TableColumn;
@@ -18,7 +20,8 @@ interface SortableHeaderProps {
 // New-gen shape: padding, height, weight, nowrap and text colour come from
 // `cn-table-head` (`ui/presets/style-preset-*.css`). The preset pins
 // `text-left`; the center/right utilities below override it.
-// Our deltas: sortable hover tint + pointer, `aria-sort`, per-column width,
+// Our deltas: sortable hover tint + pointer, `aria-sort`, per-column width
+// (the user's dragged width wins over the declared one), the resize grip,
 // and the sort button's focus ring (the preset styles no inner trigger).
 function headerAlignClass(align: TableColumn["align"]): string | undefined {
 	if (align === "center") {
@@ -30,26 +33,42 @@ function headerAlignClass(align: TableColumn["align"]): string | undefined {
 	return undefined;
 }
 
+/**
+ * The field a header sorts by: the column itself, or — for a group, which has
+ * no value of its own — its first sortable child.
+ */
+function resolveSortKey(col: TableColumn): string | undefined {
+	if (col.columns && col.columns.length > 0) {
+		return col.columns.find((child) => child.sortable)?.name;
+	}
+	return col.sortable ? col.name : undefined;
+}
+
 export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 	const [currentCol, currentDir] = sort?.split(":") ?? [];
-	const isActive = currentCol === col.name;
+	const sortKey = resolveSortKey(col);
+	const sortable = sortKey !== undefined;
+	const isActive = sortable && currentCol === sortKey;
 	const dir = isActive ? (currentDir as "asc" | "desc") : undefined;
 
 	const alignClass = headerAlignClass(col.align);
-	const widthStyle = col.width ? { width: col.width } : undefined;
+	const pin = useStickyCell({ column: col.name });
+	const resized = useColumnSizing()?.widths[col.name];
+	const widthStyle = cellWidthStyle(col.width, resized, pin.style);
+	const label = col.label ?? col.name;
 
 	const HeadingIcon = col.icon ? resolveIcon(col.icon.name) : undefined;
 
 	function handleClick() {
-		if (!col.sortable) {
+		if (sortKey === undefined) {
 			return;
 		}
 		if (!isActive || !dir) {
-			onSort(col.name, "asc");
+			onSort(sortKey, "asc");
 		} else if (dir === "asc") {
-			onSort(col.name, "desc");
+			onSort(sortKey, "desc");
 		} else {
-			onSort(col.name);
+			onSort(sortKey);
 		}
 	}
 
@@ -57,7 +76,7 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 		if (isActive) {
 			return dir === "asc" ? "ascending" : "descending";
 		}
-		if (col.sortable) {
+		if (sortable) {
 			return "none";
 		}
 		return undefined;
@@ -65,27 +84,32 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 
 	return (
 		<th
+			{...pin}
 			className={cn(
-				"cn-table-head transition-colors",
+				"cn-table-head group/head transition-colors",
+				// A pinned header is already `sticky`, which anchors the resize grip too.
+				!pin.className && "relative",
 				alignClass,
-				col.sortable && "cursor-pointer select-none hover:bg-muted",
+				sortable && "cursor-pointer select-none hover:bg-muted",
+				pin.className,
 			)}
 			style={widthStyle}
-			onClick={col.sortable ? handleClick : undefined}
+			onClick={sortable ? handleClick : undefined}
 			aria-sort={resolveAriaSort()}
 		>
 			<HeaderTooltip tooltip={col.tooltip}>
-				<SortTrigger sortable={col.sortable}>
+				<SortTrigger sortable={sortable}>
 					{HeadingIcon && col.icon?.position !== "right" && (
 						<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
 					)}
-					{col.label ?? col.name}
+					{label}
 					{HeadingIcon && col.icon?.position === "right" && (
 						<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
 					)}
-					{col.sortable && <SortIndicator active={isActive} dir={dir} />}
+					{sortable && <SortIndicator active={isActive} dir={dir} />}
 				</SortTrigger>
 			</HeaderTooltip>
+			<ColumnResizeHandle name={col.name} label={label} />
 		</th>
 	);
 }

@@ -57,7 +57,7 @@ abstract class ResetPasswordPage extends AuthPage
     /** @return list<mixed> Laravel rules for the new password; `confirmed` pairs it with password_confirmation. */
     protected function passwordRules(): array
     {
-        return ['required', 'confirmed', PasswordRule::defaults()];
+        return ['required', 'string', 'confirmed', PasswordRule::defaults()];
     }
 
     /**
@@ -66,13 +66,16 @@ abstract class ResetPasswordPage extends AuthPage
      */
     protected function resetPassword(ActionCtx $ctx): Effects
     {
-        Validator::make($ctx->form, ['password' => $this->passwordRules()])->validate();
+        Validator::make($ctx->form, [
+            'email' => ['required', 'string'],
+            'password' => $this->passwordRules(),
+        ])->validate();
 
         $key = 'tbtop-reset|'.$ctx->request->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([
-                'email' => __('auth.throttle', ['seconds' => $seconds, 'minutes' => ceil($seconds / 60)]),
+                'email' => __('tbtop-admin::admin.auth.reset.throttle', ['seconds' => $seconds]),
             ]);
         }
 

@@ -5,14 +5,18 @@ import { TableSkeleton } from "./defaults";
 import { useSetPageSubtitle } from "./pageSubtitleContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { BulkActionsBar } from "./table/bulkActionsBar";
+import { ColumnSizingProvider } from "./table/columnResize";
 import { normalizeRows, TableGrid } from "./table/grid";
 import { TablePagination } from "./table/pagination";
 import { canReorder } from "./table/reorder";
+import { SimplePagination } from "./table/simplePagination";
 import { TableError } from "./table/tableError";
 import { TableTabBar, TableToolbar } from "./table/toolbar";
+import { useColumnLayout } from "./table/useColumnLayout";
 import { useColumnSearch } from "./table/useColumnSearch";
 import { countActiveFilters, useColumnVisibility } from "./table/useColumnVisibility";
 import { useTableParams } from "./table/useTableParams";
+import { useTablePoll } from "./table/useTablePoll";
 import {
 	type SaveCellArgs,
 	type TableBlockOptions,
@@ -58,7 +62,7 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 		[ctx, queryParams],
 	);
 
-	const { state, refetch } = useAsyncQuery({
+	const { state, refetch, refetchSilently } = useAsyncQuery({
 		query: options.query,
 		ctx: queryCtx,
 		deps: [queryParams],
@@ -82,12 +86,13 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 		return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 	}
 
-	const { rows, total, tabCounts } = normalizeRows(state.data);
+	const { rows, total, hasMore, tabCounts } = normalizeRows(state.data);
 
 	return (
 		<TableBody
 			rows={rows}
 			total={total}
+			hasMore={hasMore}
 			isReloading={state.kind === "reloading"}
 			columns={options.columns}
 			rowActions={options.rowActions}
@@ -95,6 +100,8 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 			queryParams={queryParams}
 			onChangeParams={mergeParams}
 			onRefresh={refetch}
+			onPoll={refetchSilently}
+			poll={options.poll}
 			searchable={options.searchable}
 			filters={options.filters}
 			filtersIn={options.filtersIn ?? "modal"}
@@ -131,6 +138,11 @@ function TableBody(props: TableBodyProps) {
 		onRefresh: props.onRefresh,
 	});
 	useRegisterTableController(props.tableName, ctrl);
+	useTablePoll({
+		seconds: props.poll,
+		paused: ctrl.selectedIds.length > 0,
+		poll: props.onPoll,
+	});
 
 	const hasBulk = (props.bulkActions ?? []).length > 0;
 	const hasRowActions = (props.rowActions ?? []).length > 0;
@@ -138,6 +150,11 @@ function TableBody(props: TableBodyProps) {
 	const hasFilters = (props.filters ?? []).length > 0;
 
 	const { visibleColumns, toggleColumn } = useColumnVisibility(props.columns, props.tableName);
+	const layout = useColumnLayout(props.columns, props.tableName);
+	const sizing = useMemo(
+		() => ({ widths: layout.widths, setWidth: layout.setWidth }),
+		[layout.widths, layout.setWidth],
+	);
 
 	// Seed filter UI state from URL-persisted params so controls reflect a pre-set URL.
 	const [filterValues, setFilterValues] = useState<Record<string, unknown>>(
@@ -169,19 +186,31 @@ function TableBody(props: TableBodyProps) {
 		return () => setPageSubtitle(undefined);
 	}, [activeTabDescription, setPageSubtitle]);
 
-	const visibleCols = props.columns.filter((c) => visibleColumns.has(c.name));
+	// Without the Columns menu (embedded, or columnToggle(false)) there is no
+	// way to reorder or reset the order, so the declared order holds. Widths
+	// still resize there unless embedded: a double-click resets each one.
+	const reorderable = !props.embedded && props.columnToggle !== false;
+	const orderedCols = reorderable ? layout.orderedColumns : props.columns;
+	const visibleCols = orderedCols.filter((c) => visibleColumns.has(c.name));
 
 	// Footer only when the server sends pagination config and a total, the
 	// table isn't embedded (embedded tables hide toolbar + pagination footer),
 	// and there's more than one page's worth of rows to page through — a
 	// first-page result that already fits within perPage has nothing to
 	// paginate, so the footer would just show inert controls.
-	const { total, pagination } = props;
+	// A simple-paginated table sends hasMore instead of a total; its footer
+	// hides on a first page with no next one, by the same rule.
+	const { total, hasMore, pagination } = props;
 	const perPage = props.queryParams.perPage ?? pagination?.perPage ?? 25;
 	const page = props.queryParams.page ?? 1;
 	const fitsOnFirstPage = total !== undefined && total <= perPage && page === 1;
 	const showPagination =
 		pagination !== undefined && total !== undefined && !props.embedded && !fitsOnFirstPage;
+	const showSimplePagination =
+		pagination?.simple === true &&
+		hasMore !== undefined &&
+		!props.embedded &&
+		(hasMore || page > 1);
 
 	// Reorder is allowed only while rows are shown in their persisted order —
 	// a per-column search narrows the rows just like the table-wide one.
@@ -226,9 +255,11 @@ function TableBody(props: TableBodyProps) {
 						filterValues={filterValues}
 						setFilterValues={setFilterValues}
 						activeFilterCount={activeFilterCount}
-						columns={props.columns}
+						columns={layout.orderedColumns}
 						visibleColumns={visibleColumns}
 						onToggleColumn={toggleColumn}
+						onMoveColumn={layout.moveColumn}
+						onResetLayout={layout.customized ? layout.resetLayout : undefined}
 						onChangeParams={props.onChangeParams}
 						searchValue={props.queryParams.search}
 						searchPlaceholder={props.searchPlaceholder}
@@ -246,34 +277,46 @@ function TableBody(props: TableBodyProps) {
 					/>
 				)}
 
-				<TableGrid
-					rows={props.rows}
-					columns={visibleCols}
-					rowActions={props.rowActions ?? []}
-					selectedIds={ctrl.selectedIds}
-					onToggle={ctrl.toggleSelection}
-					onSelectAll={ctrl.selectAll}
-					onClearSelection={ctrl.clearSelection}
-					hasBulk={hasBulk}
-					hasRowActions={hasRowActions}
-					sort={props.queryParams.sort}
-					onSort={handleSort}
-					isReloading={props.isReloading}
-					hasActiveFilters={hasActiveFilters}
-					onResetFilters={handleResetFilters}
-					rowClick={props.rowClick}
-					recordUrl={props.recordUrl}
-					recordUrlNewTab={props.recordUrlNewTab}
-					emptyState={props.emptyState}
-					saveCell={props.saveCell}
-					reorderColumn={props.reorderColumn}
-					reorderEnabled={reorderEnabled}
-					reorderRows={props.reorderRows}
-					onRefresh={props.onRefresh}
-					groups={props.groups}
-					colSearchValues={colSearchValues}
-					onColSearchChange={handleColSearchChange}
-				/>
+				{/* Embedded tables have no toolbar to reset from, so they don't resize. */}
+				<ColumnSizingProvider value={props.embedded ? undefined : sizing}>
+					<TableGrid
+						rows={props.rows}
+						columns={visibleCols}
+						rowActions={props.rowActions ?? []}
+						selectedIds={ctrl.selectedIds}
+						onToggle={ctrl.toggleSelection}
+						onSelectAll={ctrl.selectAll}
+						onClearSelection={ctrl.clearSelection}
+						hasBulk={hasBulk}
+						hasRowActions={hasRowActions}
+						sort={props.queryParams.sort}
+						onSort={handleSort}
+						isReloading={props.isReloading}
+						hasActiveFilters={hasActiveFilters}
+						onResetFilters={handleResetFilters}
+						rowClick={props.rowClick}
+						recordUrl={props.recordUrl}
+						recordUrlNewTab={props.recordUrlNewTab}
+						emptyState={props.emptyState}
+						saveCell={props.saveCell}
+						reorderColumn={props.reorderColumn}
+						reorderEnabled={reorderEnabled}
+						reorderRows={props.reorderRows}
+						onRefresh={props.onRefresh}
+						groups={props.groups}
+						colSearchValues={colSearchValues}
+						onColSearchChange={handleColSearchChange}
+					/>
+				</ColumnSizingProvider>
+
+				{showSimplePagination && (
+					<SimplePagination
+						hasMore={hasMore}
+						queryParams={props.queryParams}
+						paginationOptions={pagination}
+						onChangeParams={props.onChangeParams}
+					/>
+				)}
 
 				{showPagination && (
 					<TablePagination

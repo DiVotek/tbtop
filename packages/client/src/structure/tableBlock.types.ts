@@ -63,6 +63,8 @@ export interface TableBlockOptions extends AsyncBlock {
 	groups?: TableGroupsConfig;
 	/** Present when the table declares reorderable(); carries the sort column. */
 	reorder?: { column: string };
+	/** Server-declared poll interval in seconds (poll()); clamped to 5s on the client. */
+	poll?: number;
 	/** Materialized by materialize.ts — takes actionCtx + args; bound in TableBlock. */
 	saveCell?: (ctx: ClientActionContext, args: SaveCellArgs) => Promise<unknown>;
 	/** Materialized by materialize.ts — POSTs the new id order; bound in TableBlock. */
@@ -72,6 +74,7 @@ export interface TableBlockOptions extends AsyncBlock {
 export interface TableBodyProps {
 	rows: Record<string, unknown>[];
 	total: number | undefined;
+	hasMore: boolean | undefined;
 	isReloading: boolean;
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];
@@ -79,6 +82,9 @@ export interface TableBodyProps {
 	queryParams: ListQueryParams;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
 	onRefresh: () => void;
+	/** Background refetch for poll(): no overlay, rows stay on a failed tick. */
+	onPoll: () => void;
+	poll?: number;
 	searchable?: string[];
 	filters?: StructureNode[];
 	filtersIn: "modal" | "inline";

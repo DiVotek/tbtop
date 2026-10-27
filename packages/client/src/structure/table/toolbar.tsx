@@ -23,6 +23,10 @@ interface TableToolbarProps {
 	columns: TableColumn[];
 	visibleColumns: Set<string>;
 	onToggleColumn: (name: string) => void;
+	/** Moves a column to the slot another one holds; columns arrive in the user's order. */
+	onMoveColumn: (name: string, target: string) => void;
+	/** Clears the saved order and widths; absent while nothing is customized. */
+	onResetLayout?: () => void;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
 	/** Seeds the search input on mount — hydrated from the URL-persisted query param. */
 	searchValue?: string;
@@ -144,6 +148,8 @@ export function TableToolbar(props: TableToolbarProps) {
 						columns={dropdownCols}
 						visibleColumns={visibleColumns}
 						onToggle={onToggleColumn}
+						onMove={props.onMoveColumn}
+						onReset={props.onResetLayout}
 					/>
 				</div>
 			)}

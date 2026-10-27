@@ -179,3 +179,36 @@ describe("AdminLayout slots", () => {
 		expect(getByText("Page body").closest('[class*="max-w-"]')).toBeNull();
 	});
 });
+
+describe("AdminLayout environment indicator", () => {
+	test("renders no badge or strip when the panel hides it", () => {
+		const { queryByTestId } = render(
+			<AdminLayoutShell nav={[]} user={DEFAULT_USER} currentUrl="/">
+				<div />
+			</AdminLayoutShell>,
+		);
+		expect(queryByTestId("environment-badge")).toBeNull();
+		expect(queryByTestId("environment-strip")).toBeNull();
+	});
+
+	test("puts the labelled badge before the header items and paints the top strip", () => {
+		const { getByTestId } = render(
+			<AdminLayoutShell
+				nav={[]}
+				user={DEFAULT_USER}
+				currentUrl="/"
+				environment={{ label: "Staging", color: "warning" }}
+			>
+				<div />
+			</AdminLayoutShell>,
+		);
+		const badge = getByTestId("environment-badge");
+		expect(badge.textContent).toBe("Staging");
+		expect(badge.className).toContain("bg-warning");
+		expect(getByTestId("environment-strip").className).toContain("bg-warning");
+		const trigger = getByTestId("profile-trigger");
+		expect(
+			badge.compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+	});
+});
