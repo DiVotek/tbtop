@@ -2,6 +2,24 @@ import { Affixes } from "./affix";
 import { DatabaseRules, mixin, StringRules } from "./concerns";
 import { Field } from "./field";
 
+/** One placeholder, or one per content locale (HasLocalePlaceholder.php). */
+export type LocalePlaceholder = string | Record<string, string>;
+
+function checkedPlaceholder(text: LocalePlaceholder): LocalePlaceholder {
+	if (typeof text === "string") {
+		return text;
+	}
+	const valid =
+		text !== null &&
+		typeof text === "object" &&
+		!Array.isArray(text) &&
+		Object.values(text).every((v) => typeof v === "string");
+	if (!valid) {
+		throw new Error("A placeholder locale map needs locale keys and string values.");
+	}
+	return text;
+}
+
 /** Single-line text input (Text.php). */
 export class Text<N extends string = string> extends Field<N, string | null> {
 	readonly kind = "text";
@@ -11,9 +29,13 @@ export class Text<N extends string = string> extends Field<N, string | null> {
 		return this.set("mask", pattern);
 	}
 
-	/** Placeholder text shown in the empty input. */
-	placeholder(text: string): this {
-		return this.set("placeholder", text);
+	/**
+	 * Placeholder text shown in the empty input. Pass a locale map
+	 * (`{ en: "Page title", uk: "Назва сторінки" }`) on a translatable field to
+	 * show each locale's text on its own tab; a missing locale shows none.
+	 */
+	placeholder(text: LocalePlaceholder): this {
+		return this.set("placeholder", checkedPlaceholder(text));
 	}
 }
 export interface Text<N extends string = string> extends Affixes, DatabaseRules, StringRules {}
@@ -23,9 +45,9 @@ mixin(Text, [Affixes, DatabaseRules, StringRules]);
 export class Textarea<N extends string = string> extends Field<N, string | null> {
 	readonly kind = "textarea";
 
-	/** Placeholder text shown in the empty textarea. */
-	placeholder(text: string): this {
-		return this.set("placeholder", text);
+	/** Placeholder text shown in the empty textarea; a locale map as on Text. */
+	placeholder(text: LocalePlaceholder): this {
+		return this.set("placeholder", checkedPlaceholder(text));
 	}
 }
 export interface Textarea<N extends string = string> extends StringRules {}

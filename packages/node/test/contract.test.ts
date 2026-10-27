@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import Ajv2020 from "ajv/dist/2020";
 import schema from "../../contracts/structure.schema.json";
 import { driver, pages } from "../example/posts";
-import { createAdmin } from "../src";
+import { createAdmin, S } from "../src";
 
 const validateNode = new Ajv2020({ strict: false }).compile(schema);
 
@@ -18,4 +18,23 @@ describe("wire contract (the PHP package's own schema)", () => {
 			expect(validateNode(props.structure)).toBe(true);
 		});
 	}
+});
+
+describe("per-locale placeholder (#385)", () => {
+	test("text and textarea take a locale map and put it on the wire as given", () => {
+		const s = new S();
+		const map = { en: "Page title", uk: "Назва сторінки" };
+		expect(s.text("title").placeholder(map).toJSON()).toMatchObject({
+			options: { placeholder: map },
+		});
+		expect(s.textarea("body").placeholder("Write…").toJSON()).toMatchObject({
+			options: { placeholder: "Write…" },
+		});
+	});
+
+	test("a map with a non-string value is refused", () => {
+		expect(() =>
+			new S().text("title").placeholder({ en: 1 } as unknown as Record<string, string>),
+		).toThrow("locale keys and string values");
+	});
 });
