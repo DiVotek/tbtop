@@ -34,6 +34,7 @@ it('Column: defaults are omitted from wire (sparse serialization)', function ():
         ->and($json)->not->toHaveKey('align')
         ->and($json)->not->toHaveKey('wrap')
         ->and($json)->not->toHaveKey('noWrap')
+        ->and($json)->not->toHaveKey('sticky')
         ->and($json)->not->toHaveKey('translatable');
 });
 
@@ -82,6 +83,44 @@ it('Column: wrap emits wrap:true', function (): void {
 it('Column: truncate emits wrap:false', function (): void {
     $json = encodeColumn(Column::make('body')->truncate());
     expect($json['wrap'])->toBeFalse();
+});
+
+it('Column: sticky emits sticky:true, sticky(false) omits it', function (): void {
+    expect(encodeColumn(Column::make('title')->sticky())['sticky'])->toBeTrue()
+        ->and(encodeColumn(Column::make('title')->sticky(false)))->not->toHaveKey('sticky');
+});
+
+it('Table: leading sticky columns serialize in order', function (): void {
+    $table = new TableBuilder('posts')->columns([
+        Column::make('id')->sticky(),
+        Column::make('title')->sticky(),
+        Column::make('status'),
+    ]);
+    $columns = json_decode(json_encode($table->toNode()), true)['options']['columns'];
+
+    expect(array_map(fn (array $c) => $c['sticky'] ?? false, $columns))->toBe([true, true, false]);
+});
+
+it('Table: a sticky column after a scrolling one throws', function (): void {
+    new TableBuilder('posts')->columns([
+        Column::make('title'),
+        Column::make('status')->sticky(),
+    ]);
+})->throws(InvalidArgumentException::class, 'Column "status": sticky columns must come first in columns().');
+
+it('Table: sticky on a group child throws — the group pins as one column', function (): void {
+    new TableBuilder('posts')->columns([
+        Column::make('who')->group([Column::make('name')->sticky(), Column::make('email')]),
+    ]);
+})->throws(InvalidArgumentException::class, 'sticky() goes on the group "who"');
+
+it('Table: a sticky group column leads like any other', function (): void {
+    $table = new TableBuilder('posts')->columns([
+        Column::make('who')->group([Column::make('name'), Column::make('email')])->sticky(),
+        Column::make('status'),
+    ]);
+
+    expect(json_decode(json_encode($table->toNode()), true)['options']['columns'][0]['sticky'])->toBeTrue();
 });
 
 it('Column: noWrap emits noWrap:true', function (): void {

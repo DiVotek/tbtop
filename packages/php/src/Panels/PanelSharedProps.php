@@ -32,6 +32,7 @@ final class PanelSharedProps
             'brand' => $panel->brand(),
             'navigation' => $panel->navigation(),
             'appearance' => $panel->appearance() ?: null,
+            'environment' => $panel->environmentIndicator(),
             'prefix' => $prefix,
             'apiBase' => $prefix.'/api',
             'locale' => $locale,

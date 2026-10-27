@@ -14,6 +14,7 @@ import { TableTabBar, TableToolbar } from "./table/toolbar";
 import { useColumnSearch } from "./table/useColumnSearch";
 import { countActiveFilters, useColumnVisibility } from "./table/useColumnVisibility";
 import { useTableParams } from "./table/useTableParams";
+import { useTablePoll } from "./table/useTablePoll";
 import {
 	type SaveCellArgs,
 	type TableBlockOptions,
@@ -59,7 +60,7 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 		[ctx, queryParams],
 	);
 
-	const { state, refetch } = useAsyncQuery({
+	const { state, refetch, refetchSilently } = useAsyncQuery({
 		query: options.query,
 		ctx: queryCtx,
 		deps: [queryParams],
@@ -97,6 +98,8 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 			queryParams={queryParams}
 			onChangeParams={mergeParams}
 			onRefresh={refetch}
+			onPoll={refetchSilently}
+			poll={options.poll}
 			searchable={options.searchable}
 			filters={options.filters}
 			filtersIn={options.filtersIn ?? "modal"}
@@ -133,6 +136,11 @@ function TableBody(props: TableBodyProps) {
 		onRefresh: props.onRefresh,
 	});
 	useRegisterTableController(props.tableName, ctrl);
+	useTablePoll({
+		seconds: props.poll,
+		paused: ctrl.selectedIds.length > 0,
+		poll: props.onPoll,
+	});
 
 	const hasBulk = (props.bulkActions ?? []).length > 0;
 	const hasRowActions = (props.rowActions ?? []).length > 0;
