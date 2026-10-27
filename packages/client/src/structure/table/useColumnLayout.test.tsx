@@ -99,6 +99,15 @@ describe("useColumnLayout", () => {
 		expect(localStorage.getItem(KEY)).toBeNull();
 	});
 
+	test("a stored width below the minimum is clamped on read", () => {
+		localStorage.setItem(KEY, JSON.stringify({ order: [], widths: { title: 0, author: -20 } }));
+
+		expect(renderLayout().current().widths).toEqual({
+			title: MIN_COLUMN_WIDTH,
+			author: MIN_COLUMN_WIDTH,
+		});
+	});
+
 	test("a corrupt stored value falls back to the declared layout", () => {
 		localStorage.setItem(KEY, JSON.stringify({ order: "year", widths: { title: "wide" } }));
 

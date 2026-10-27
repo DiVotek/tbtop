@@ -93,8 +93,15 @@ function parseLayout(value: unknown): ColumnLayoutState {
 	const { order, widths } = value as Record<string, unknown>;
 	return {
 		order: Array.isArray(order) ? order.filter((n): n is string => typeof n === "string") : [],
-		widths: isWidths(widths) ? widths : {},
+		widths: isWidths(widths) ? clampWidths(widths) : {},
 	};
+}
+
+/** A hand-edited 0 would collapse the column and hide its grip; clamp on read too. */
+function clampWidths(widths: Record<string, number>): Record<string, number> {
+	return Object.fromEntries(
+		Object.entries(widths).map(([name, w]) => [name, Math.max(MIN_COLUMN_WIDTH, w)]),
+	);
 }
 
 function readLayout(key: string): ColumnLayoutState {
