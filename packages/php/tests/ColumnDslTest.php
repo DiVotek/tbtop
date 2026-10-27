@@ -512,6 +512,22 @@ it('TableBuilder: default pagination emits defaults when paginate() not called',
     ]);
 });
 
+it('TableBuilder: simplePagination() marks the pagination spec simple', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->paginate(10, [10, 20])
+        ->simplePagination()
+        ->query(fn () => null);
+
+    $json = json_decode(json_encode($table->toNode()), true);
+    expect($json['options']['pagination'])->toBe([
+        'perPage' => 10,
+        'options' => [10, 20],
+        'simple' => true,
+    ]);
+});
+
 // ---------------------------------------------------------------------------
 // Editable columns
 // ---------------------------------------------------------------------------

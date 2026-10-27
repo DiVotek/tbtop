@@ -52,3 +52,30 @@ it('reports counts for count-enabled tabs, unaffected by the active search', fun
     expect($response->json('data.tabCounts'))->toBe(['published' => 2, 'draft' => 1])
         ->and($response->json('data.total'))->toBe(1);
 });
+
+it('simplePagination() pages without a total and reports hasMore from one extra row', function () {
+    $first = $this->getJson('/admin/tab-posts/tables/simple-posts')->assertOk();
+    $last = $this->getJson('/admin/tab-posts/tables/simple-posts?page=2')->assertOk();
+
+    expect($first->json('data'))->not->toHaveKey('total')
+        ->and($first->json('data.hasMore'))->toBeTrue()
+        ->and(array_column($first->json('data.data'), 'title'))->toBe(['Alpha', 'Beta'])
+        ->and($last->json('data.hasMore'))->toBeFalse()
+        ->and(array_column($last->json('data.data'), 'title'))->toBe(['Gamma']);
+});
+
+it('simplePagination() reports no next page when the page is exactly full', function () {
+    $response = $this->getJson('/admin/tab-posts/tables/simple-posts?tab=published&perPage=2');
+
+    expect($response->json('data.hasMore'))->toBeFalse()
+        ->and($response->json('data.data'))->toHaveCount(2);
+});
+
+it('simplePagination() skips the row count query but keeps tab counts', function () {
+    DB::enableQueryLog();
+    $response = $this->getJson('/admin/tab-posts/tables/simple-posts?perPage=1');
+    $counts = array_filter(DB::getQueryLog(), fn (array $q) => str_contains(strtolower($q['query']), 'count('));
+
+    expect($response->json('data.tabCounts'))->toBe(['published' => 2])
+        ->and($counts)->toHaveCount(1);
+});

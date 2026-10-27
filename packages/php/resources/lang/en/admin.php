@@ -144,6 +144,7 @@ return [
         'pagination' => [
             'of' => 'of',
             'per_page' => 'Per page',
+            'page' => 'Page {page}',
             'prev' => 'Previous',
             'next' => 'Next',
         ],

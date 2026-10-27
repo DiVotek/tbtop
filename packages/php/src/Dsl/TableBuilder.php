@@ -59,6 +59,8 @@ final class TableBuilder implements JsonSerializable
     /** @var list<int> */
     private array $paginateOptions = [10, 25, 50, 100];
 
+    private bool $simplePagination = false;
+
     public function __construct(public readonly string $name) {}
 
     /**
@@ -316,6 +318,19 @@ final class TableBuilder implements JsonSerializable
     {
         $this->paginatePerPage = $perPage;
         $this->paginateOptions = $options;
+
+        return $this;
+    }
+
+    /**
+     * Page without a total: skip the count() query and fetch perPage + 1 rows to
+     * know whether a next page exists. The footer shows only previous/next, with
+     * no "X–Y of Z" range. For large tables where count() is the slow query;
+     * tab counts still run their own count per tab.
+     */
+    public function simplePagination(bool $value = true): self
+    {
+        $this->simplePagination = $value;
 
         return $this;
     }
@@ -674,13 +689,23 @@ final class TableBuilder implements JsonSerializable
         return $this->opts['groups']['column'] ?? null;
     }
 
-    /** @return array{perPage: int, options: list<int>} */
+    /** @return array{perPage: int, options: list<int>, simple?: true} */
     public function paginationSpec(): array
     {
-        return [
+        $spec = [
             'perPage' => $this->paginatePerPage,
             'options' => $this->paginateOptions,
         ];
+        if ($this->simplePagination) {
+            $spec['simple'] = true;
+        }
+
+        return $spec;
+    }
+
+    public function isSimplePagination(): bool
+    {
+        return $this->simplePagination;
     }
 
     public function toNode(): Node

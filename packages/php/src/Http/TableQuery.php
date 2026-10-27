@@ -13,7 +13,13 @@ use Tbtop\Admin\Support\ContainsMatch;
 
 final class TableQuery
 {
-    /** @return array{data: mixed, total: int, page: int, perPage: int} */
+    /**
+     * Length-aware by default: a count() for the total, then the page. A
+     * simplePagination() table skips the count and reads one extra row to
+     * answer hasMore instead of total.
+     *
+     * @return array{data: mixed, total?: int, hasMore?: bool, page: int, perPage: int}
+     */
     public static function run(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): array
     {
         self::applyTab($table, $request, $builder);
@@ -29,12 +35,29 @@ final class TableQuery
         $requestedPerPage = (int) $request->query('perPage', (string) $defaultPerPage);
         $perPage = in_array($requestedPerPage, $allowedPerPage, true) ? $requestedPerPage : $defaultPerPage;
         $page = max((int) $request->query('page', '1'), 1);
+        if ($table->isSimplePagination()) {
+            return self::simplePage($table, $builder, $page, $perPage);
+        }
         $total = (clone $builder)->count();
         $rows = $builder->forPage($page, $perPage)->get();
 
         return [
             'data' => ColumnProjection::apply($table, $rows),
             'total' => $total,
+            'page' => $page,
+            'perPage' => $perPage,
+        ];
+    }
+
+    /** @return array{data: mixed, hasMore: bool, page: int, perPage: int} */
+    private static function simplePage(TableBuilder $table, EloquentBuilder|QueryBuilder $builder, int $page, int $perPage): array
+    {
+        $rows = $builder->offset(($page - 1) * $perPage)->limit($perPage + 1)->get();
+        $hasMore = $rows->count() > $perPage;
+
+        return [
+            'data' => ColumnProjection::apply($table, $rows->take($perPage)),
+            'hasMore' => $hasMore,
             'page' => $page,
             'perPage' => $perPage,
         ];

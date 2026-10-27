@@ -325,6 +325,7 @@ class KitchenSinkPage extends Page
                         ->hiddenIf('role', '=', 'manager')
                         ->handle(fn () => Effects::make(), needs: ['selection']),
                 ])
+                ->simplePagination()
                 ->query(fn () => null)
                 ->toNode(),
             $s->actionsRow([

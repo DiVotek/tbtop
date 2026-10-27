@@ -8,6 +8,7 @@ import { BulkActionsBar } from "./table/bulkActionsBar";
 import { normalizeRows, TableGrid } from "./table/grid";
 import { TablePagination } from "./table/pagination";
 import { canReorder } from "./table/reorder";
+import { SimplePagination } from "./table/simplePagination";
 import { TableError } from "./table/tableError";
 import { TableTabBar, TableToolbar } from "./table/toolbar";
 import { useColumnSearch } from "./table/useColumnSearch";
@@ -82,12 +83,13 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 		return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 	}
 
-	const { rows, total, tabCounts } = normalizeRows(state.data);
+	const { rows, total, hasMore, tabCounts } = normalizeRows(state.data);
 
 	return (
 		<TableBody
 			rows={rows}
 			total={total}
+			hasMore={hasMore}
 			isReloading={state.kind === "reloading"}
 			columns={options.columns}
 			rowActions={options.rowActions}
@@ -176,12 +178,19 @@ function TableBody(props: TableBodyProps) {
 	// and there's more than one page's worth of rows to page through — a
 	// first-page result that already fits within perPage has nothing to
 	// paginate, so the footer would just show inert controls.
-	const { total, pagination } = props;
+	// A simple-paginated table sends hasMore instead of a total; its footer
+	// hides on a first page with no next one, by the same rule.
+	const { total, hasMore, pagination } = props;
 	const perPage = props.queryParams.perPage ?? pagination?.perPage ?? 25;
 	const page = props.queryParams.page ?? 1;
 	const fitsOnFirstPage = total !== undefined && total <= perPage && page === 1;
 	const showPagination =
 		pagination !== undefined && total !== undefined && !props.embedded && !fitsOnFirstPage;
+	const showSimplePagination =
+		pagination?.simple === true &&
+		hasMore !== undefined &&
+		!props.embedded &&
+		(hasMore || page > 1);
 
 	// Reorder is allowed only while rows are shown in their persisted order —
 	// a per-column search narrows the rows just like the table-wide one.
@@ -274,6 +283,15 @@ function TableBody(props: TableBodyProps) {
 					colSearchValues={colSearchValues}
 					onColSearchChange={handleColSearchChange}
 				/>
+
+				{showSimplePagination && (
+					<SimplePagination
+						hasMore={hasMore}
+						queryParams={props.queryParams}
+						paginationOptions={pagination}
+						onChangeParams={props.onChangeParams}
+					/>
+				)}
 
 				{showPagination && (
 					<TablePagination

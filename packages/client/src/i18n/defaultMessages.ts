@@ -139,6 +139,7 @@ export const defaultMessages: Messages = {
 	"table.error.retry": "Retry",
 	"table.pagination.of": "of",
 	"table.pagination.per_page": "Per page",
+	"table.pagination.page": "Page {page}",
 	"table.pagination.prev": "Previous",
 	"table.pagination.next": "Next",
 	"table.select_all": "Select all",
