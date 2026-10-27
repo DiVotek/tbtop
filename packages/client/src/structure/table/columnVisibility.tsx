@@ -140,7 +140,10 @@ function ColumnEntry({ col, checked, onToggle, onMove, prev, next }: ColumnEntry
 		<div
 			ref={setNodeRef}
 			style={{ transform: CSS.Translate.toString(transform), transition }}
-			className={cn("flex items-center", isDragging && "relative z-10 opacity-80")}
+			className={cn(
+				"flex items-center",
+				isDragging && "relative z-10 rounded-md bg-popover shadow-md",
+			)}
 			data-testid={`column-entry-${col.name}`}
 		>
 			<DropdownMenuCheckboxItem
