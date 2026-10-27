@@ -120,6 +120,56 @@ instead, pass `user: (request, session) => ...`.
 A panel without `loginPath` answers guests with 401; `allowGuests: true` opens
 it (local tools only).
 
+## Profile
+
+PHP's `ProfilePage` edits an Eloquent user on the panel guard; here the panel
+only knows what the login put in the session, so the profile page is the
+host's too. The same shape: one form per concern, the email change and the
+new password behind the current password, a link at the top of the user menu.
+
+```ts
+const profile = definePage({
+	path: "profile",
+	title: "Profile",
+	mcp: false,
+	view: (s, { request }) => {
+		const me = currentContext().user as User;
+		return s.stack([
+			s.form("profile", [
+				s.text("name").label("Name").required().rules("max:255"),
+				s.actionsRow([s.action("save").label("Save").submit()]),
+			]).record({ name: me.name }).onSubmit(async (ctx) => {
+				await users.rename(me.id, String(ctx.form.name)); // your write
+				return Effects.make().notify("Saved");
+			}),
+			s.form("password", [
+				s.password("current_password").label("Current password").required(),
+				s.password("password").label("New password").required().rules("min:8|confirmed"),
+				s.password("password_confirmation").label("Confirm").required(),
+				s.actionsRow([s.action("change").label("Change password").submit()]),
+			]).guardUnsaved(false).onSubmit(async (ctx) => {
+				if (!(await users.verify(me.email, String(ctx.form.current_password)))) {
+					return Effects.make().notify("The current password is wrong.", "error");
+				}
+				await users.setPassword(me.id, String(ctx.form.password)); // your hash + write
+				await (await admin.session(ctx.request)).set(SESSION_USER, me); // a new session id
+				return Effects.make().notify("Password changed").resetForm("password");
+			}),
+		]);
+	},
+});
+
+createAdmin({ /* … */ pages: [posts, login, profile],
+	userMenuItems: [{ label: "Profile", url: "/admin/profile", icon: "user" }] });
+```
+
+What PHP gives through Laravel stays the host's here: throttle wrong current
+passwords (as the login should), and sign the user's other sessions out after
+a password change. `memorySessions` and `cookieSessions` cannot list a user's
+sessions, so that needs a session store the host owns, or an auth library
+that revokes sessions (Better Auth's `changePassword({ revokeOtherSessions })`,
+which `@tbtop/cms/better-auth` uses for its own Profile page).
+
 State-changing requests from another origin are refused (403): the request's
 own host and `X-Forwarded-Host` pass, and `trustedOrigins` adds more. This
 guards against a browser on another site; a script outside the browser picks
