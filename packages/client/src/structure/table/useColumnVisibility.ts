@@ -3,8 +3,8 @@
  * localStorage under a table-name-derived key. Extracted from tableBlock.tsx.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { storageKey } from "../../app/storageKey";
 import type { TableColumn } from "../types";
+import { tableStateKey } from "./useColumnLayout";
 
 export interface ColumnVisibility {
 	visibleColumns: Set<string>;
@@ -43,13 +43,10 @@ function readOverrides(key: string): Record<string, boolean> {
 }
 
 export function useColumnVisibility(columns: TableColumn[], tableName: string): ColumnVisibility {
-	// Key by table name; unnamed tables fall back to a col-join so their state
-	// stays distinct from other tables on the page. `v2` marks the switch from
-	// a flat visible-names array to a map of explicit deviations from default;
-	// old-format entries are inert dead bytes, not migrated.
-	const key = tableName
-		? storageKey("table", tableName, "columns", "v2")
-		: storageKey("table", columns.map((c) => c.name).join("-"), "columns", "v2");
+	// `v2` marks the switch from a flat visible-names array to a map of
+	// explicit deviations from default; old-format entries are inert dead
+	// bytes, not migrated.
+	const key = tableStateKey(columns, tableName, "columns", "v2");
 
 	const [overrides, setOverrides] = useState<Record<string, boolean>>(() => readOverrides(key));
 

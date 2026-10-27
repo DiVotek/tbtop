@@ -132,7 +132,12 @@ return [
             'reset' => 'Reset',
             'apply' => 'Done',
         ],
-        'columns' => ['label' => 'Columns'],
+        'columns' => [
+            'label' => 'Columns',
+            'reset' => 'Reset order and widths',
+            'resize' => 'Drag to resize {column}, double-click to reset',
+            'reorder' => 'Drag to reorder {column}, or Alt+↑/↓',
+        ],
         'empty' => [
             'no_records' => 'No records',
             'no_records_hint' => 'There\'s nothing here yet.',
