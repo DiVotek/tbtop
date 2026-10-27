@@ -95,6 +95,7 @@ final class TableBuilder implements JsonSerializable
             }
         }
         $this->assertUniqueColumnNames();
+        $this->assertStickyColumnsLead();
 
         return $this;
     }
@@ -764,6 +765,31 @@ final class TableBuilder implements JsonSerializable
             foreach ($col->groupColumns() as $child) {
                 $this->claimColumnName($seen, $child->name);
             }
+        }
+    }
+
+    /**
+     * Sticky columns stack from the left edge, so they must be the leading run
+     * of the column list — a pinned column after a scrolling one would slide
+     * over it. Inside a group the group itself is the column that pins.
+     */
+    private function assertStickyColumnsLead(): void
+    {
+        $leading = true;
+        foreach ($this->columnObjects as $col) {
+            foreach ($col->groupColumns() as $child) {
+                if ($child->isSticky()) {
+                    throw new InvalidArgumentException(
+                        "Column \"{$child->name}\": sticky() goes on the group \"{$col->name}\", not on its children.",
+                    );
+                }
+            }
+            if ($col->isSticky() && ! $leading) {
+                throw new InvalidArgumentException(
+                    "Column \"{$col->name}\": sticky columns must come first in columns().",
+                );
+            }
+            $leading = $leading && $col->isSticky();
         }
     }
 

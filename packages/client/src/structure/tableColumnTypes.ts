@@ -60,6 +60,8 @@ export interface TableColumn<TRow = unknown> {
 	align?: "left" | "center" | "right";
 	icon?: TableColumnIcon;
 	width?: string;
+	/** Pinned to the left edge on horizontal scroll; sticky columns lead the list. */
+	sticky?: boolean;
 	wrap?: boolean;
 	/** Keeps the complete cell content on one line without truncating it. */
 	noWrap?: boolean;

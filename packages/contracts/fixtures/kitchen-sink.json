@@ -1257,6 +1257,7 @@
                             "label": "Title",
                             "kind": "text",
                             "columnSearchable": true,
+                            "sticky": true,
                             "noWrap": true,
                             "description": "Headline"
                         },

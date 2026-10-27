@@ -52,6 +52,8 @@ final class Column implements JsonSerializable
 
     private ?string $width = null;
 
+    private bool $sticky = false;
+
     /** null = not set, true = wrap, false = truncate */
     private ?bool $wrap = null;
 
@@ -266,6 +268,18 @@ final class Column implements JsonSerializable
     public function width(string $width): static
     {
         $this->width = $width;
+
+        return $this;
+    }
+
+    /**
+     * Pin the column to the left edge while the table scrolls horizontally.
+     * Sticky columns must lead the column list; the row-selection checkbox
+     * and drag handle stay pinned with them.
+     */
+    public function sticky(bool $value = true): static
+    {
+        $this->sticky = $value;
 
         return $this;
     }
@@ -811,6 +825,11 @@ final class Column implements JsonSerializable
         return true;
     }
 
+    public function isSticky(): bool
+    {
+        return $this->sticky;
+    }
+
     public function isSortable(): bool
     {
         return $this->sortable === true;
@@ -885,6 +904,9 @@ final class Column implements JsonSerializable
         }
         if ($this->width !== null) {
             $out['width'] = $this->width;
+        }
+        if ($this->sticky) {
+            $out['sticky'] = true;
         }
         if ($this->wrap !== null) {
             $out['wrap'] = $this->wrap;

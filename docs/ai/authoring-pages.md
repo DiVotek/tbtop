@@ -745,6 +745,28 @@ Column::make('published_time')
     ->noWrap(),
 ```
 
+#### `sticky()` — columns pinned on horizontal scroll
+
+A wide table scrolls sideways inside its frame. `sticky()` pins a column to the left edge so
+the row stays identifiable while the rest slides under it:
+
+```php
+$s->table('orders')->columns([
+    Column::make('number')->label('Order')->sticky(),
+    Column::make('customer.name')->label('Customer')->sticky(),
+    Column::make('total')->money('EUR'),
+    // … more columns than the screen fits
+]);
+```
+
+- Sticky columns must **lead** `columns()`: a sticky column after a scrolling one throws
+  `InvalidArgumentException` (it would slide over its neighbour). Several stack left to right.
+- On a group column, call `sticky()` on the group, not on its children — a sticky child throws.
+- The row-selection checkbox (bulk actions) and the drag-reorder handle pin with them; row
+  actions scroll. A user hiding a sticky column via the column toggle just shortens the run.
+- Offsets are measured from the rendered header, so no `width()` is needed. A long sticky
+  column eats the scroll area — keep it short with `width()` or `truncate()`.
+
 #### `individuallySearchable()` — per-column search
 
 Each `individuallySearchable()` column gets its own search box in the table header
