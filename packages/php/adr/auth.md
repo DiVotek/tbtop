@@ -38,8 +38,13 @@ domain: auth
 - **Reset mail URL is fixed at send time** (`ResetPasswordNotification`), not through the
   global `ResetPassword::createUrlUsing()`.
 - **Auth pages never become the panel home.**
-- **Base set is login + password reset.** 2FA, email verification, registration and
-  passkeys are deferred; the demo builds 2FA on `afterAuthenticated()`.
+- **Base set is login + password reset + profile.** 2FA, email verification, registration
+  and passkeys are deferred; the demo builds 2FA on `afterAuthenticated()`.
+- **The profile page is a base page too, behind the panel stack**, not an `AuthPage`: it
+  edits the signed-in user, so it needs `auth:{guard}`. `--auth` publishes it with the rest;
+  `--profile` alone serves hosts with their own sign-in. Its user-menu entry follows the
+  file (served subclass → entry), so there is no panel flag to keep in sync. Section-per-form
+  `view()` leaves room for package 2FA setup as one more section.
 
 ## Why
 

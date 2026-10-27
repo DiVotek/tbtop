@@ -100,8 +100,9 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   palette, database notifications (header bell), appearance (theme/density/max-width),
   UI + content locales. In `Panels/PanelConfig.php` and its traits in `Panels/Concerns/`
   (appearance: `ConfiguresAppearance.php`); see `docs/ai/api/panel.md`.
-- **Auth:** sign-in and password reset are package base pages (`packages/php/src/Auth/`)
-  that `admin:install --auth` publishes into the host as empty subclasses; logout is a
+- **Auth:** sign-in, password reset and the profile page are package base pages
+  (`packages/php/src/Auth/`) that `admin:install --auth` (or `--profile` alone) publishes into
+  the host as empty subclasses; logout is a
   package route. No controllers, no Breeze, no Fortify. The demo runs on the generated
   classes, plus its own 2FA (`TwoFactorChallengePage`, `TwoFactorSetupPage`, hooked in via
   `LoginPage::afterAuthenticated()`) and `ApiTokensPage`. Registration, email
