@@ -5,12 +5,14 @@ namespace Tbtop\Admin\Commands;
 use Illuminate\Support\Str;
 use Tbtop\Admin\Auth\ForgotPasswordPage;
 use Tbtop\Admin\Auth\LoginPage;
+use Tbtop\Admin\Auth\ProfilePage;
 use Tbtop\Admin\Auth\ResetPasswordPage;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\PanelConfig;
 
 /**
- * Writes the host's auth pages for `admin:install --auth`: one empty subclass
+ * Writes the host's auth pages for `admin:install --auth` (all of them) or
+ * `--profile` (the profile page alone): one empty subclass
  * per package base, so fixes arrive through the base while the host owns the
  * file. A page the panel already serves at the same slug or path (a login
  * copied from an older recipe) is left alone — two would break every request
@@ -21,11 +23,15 @@ use Tbtop\Admin\Panels\PanelConfig;
 final class AuthScaffold
 {
     /** @var array<string, class-string<Page>> */
-    private const array PAGES = [
+    public const array PAGES = [
         'LoginPage' => LoginPage::class,
         'ForgotPasswordPage' => ForgotPasswordPage::class,
         'ResetPasswordPage' => ResetPasswordPage::class,
+        'ProfilePage' => ProfilePage::class,
     ];
+
+    /** @var array<string, class-string<Page>> */
+    public const array PROFILE = ['ProfilePage' => ProfilePage::class];
 
     /** @var list<string> */
     public array $written = [];
@@ -36,11 +42,12 @@ final class AuthScaffold
     /** @var list<string> */
     public array $clashes = [];
 
-    public function __construct(public readonly PanelConfig $panel) {}
+    /** @param  array<string, class-string<Page>>  $pages  host class name => package base */
+    public function __construct(public readonly PanelConfig $panel, private readonly array $pages = self::PAGES) {}
 
     public function publish(bool $force): self
     {
-        foreach (self::PAGES as $class => $base) {
+        foreach ($this->pages as $class => $base) {
             $relative = 'app/Admin/Pages/Auth/'.$class.'.php';
             $target = base_path($relative);
             if (file_exists($target) && ! $force) {

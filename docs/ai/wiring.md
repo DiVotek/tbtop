@@ -60,8 +60,9 @@ anything not hidden reaches every page's HTML. The client reads only this prop.
 ### Auth pages
 
 The package owns no auth routes. `php artisan admin:install --auth` publishes
-`app/Admin/Pages/Auth/{LoginPage,ForgotPasswordPage,ResetPasswordPage}.php`, each an empty
-subclass of `Tbtop\Admin\Auth\*`; override a hook there or delete the file. They are
+`app/Admin/Pages/Auth/{LoginPage,ForgotPasswordPage,ResetPasswordPage,ProfilePage}.php`, each an empty
+subclass of `Tbtop\Admin\Auth\*`; override a hook there or delete the file. `--profile`
+publishes `ProfilePage` alone, for a host that signs users in through its own screens. They are
 ordinary page routes (`{prefix}/login`, `{prefix}/forgot-password`,
 `{prefix}/reset-password/{token}`; names `tbtop.{panel}.login-page` etc.), public through
 `middleware(): ['web', RedirectSignedInUsers::class]` — not the panel stack, which may hold an access
@@ -76,6 +77,18 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   e.g. to a 2FA challenge), `redirectTo()`, `throttleKey()`, `maxAttempts()`.
   `ResetPasswordPage`: `passwordRules()`. The cores — `authenticate()`, `sendLink()`,
   `resetPassword()` — are protected: call them from a rebuilt `view()`, or wrap via `parent::`.
+- **Profile.** `ProfilePage` (`{prefix}/profile`) is not public: it sits on the panel's
+  `authStack()` and edits the panel guard's user. One form holds name and email: a new email
+  needs the current password, or a hijacked session could redirect password resets. The other
+  changes the password and needs the current one. Wrong current passwords are throttled five
+  a minute per user across both forms. A password change keeps this session and signs the
+  others out (see Other sessions). While the panel serves a subclass, the user menu gets a
+  "Profile" entry ahead of `userMenuItems()`; delete the file and both go. Hooks:
+  `profileForm()`, `passwordForm()`, `profileRules()` (default: a new email must be
+  lowercase, unique on the user model's connection and table), `passwordRules()`; append
+  sections in `view()` after `parent::view()`. A changed email on a `MustVerifyEmail` user is
+  marked unverified and no mail is sent: resending the link is the host's verification flow
+  (the package has none). Needs an Eloquent user with `name`, `email` and `password`.
 - **Password broker.** `PanelConfig::passwordBroker('admins')`; null uses the app default.
   A panel guard on a non-default provider needs its own broker in `config/auth.php`.
 - **Other sessions.** `authStack()` ends in Laravel's `AuthenticateSession` (after

@@ -25,8 +25,9 @@ class InstallCommand extends Command
 {
     protected $signature = 'admin:install
         {--force : Overwrite files that already exist}
-        {--auth : Also publish sign-in and password reset pages for one panel}
-        {--panel= : The panel --auth targets, required when several are registered}';
+        {--auth : Also publish sign-in, password reset and profile pages for one panel}
+        {--profile : Also publish only the profile page, for a host that signs users in itself}
+        {--panel= : The panel --auth or --profile targets, required when several are registered}';
 
     protected $description = 'Publish the host wiring for the admin panel: root view, JS entry, and stylesheet.';
 
@@ -46,7 +47,7 @@ class InstallCommand extends Command
     public function handle(): int
     {
         $panel = null;
-        if ($this->option('auth')) {
+        if ($this->option('auth') || $this->option('profile')) {
             $panel = $this->authPanel();
             if ($panel === null) {
                 return self::FAILURE;
@@ -82,20 +83,21 @@ class InstallCommand extends Command
             $this->components->warn("Exists, left untouched: {$relative} (use --force to overwrite)");
         }
 
-        $auth = $panel === null ? null : (new AuthScaffold($panel))->publish((bool) $this->option('force'));
+        $pages = $this->option('auth') ? AuthScaffold::PAGES : AuthScaffold::PROFILE;
+        $auth = $panel === null ? null : (new AuthScaffold($panel, $pages))->publish((bool) $this->option('force'));
         if ($auth !== null) {
             $this->reportAuth($auth);
         }
 
         $this->manualSteps();
         if ($auth !== null) {
-            $this->authSteps($auth);
+            $this->authSteps($auth, (bool) $this->option('auth'));
         }
 
         return self::SUCCESS;
     }
 
-    /** The panel --auth targets; null after printing why there is none. */
+    /** The panel --auth or --profile targets; null after printing why there is none. */
     private function authPanel(): ?PanelConfig
     {
         $panels = PanelRegistry::fromConfig()->all();
@@ -125,7 +127,7 @@ class InstallCommand extends Command
 
     private function noPanelHint(): void
     {
-        $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth.');
+        $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth or --profile.');
         $this->line('  List your panel class in config/tbtop-admin.php:');
         $this->line("       'panels' => [\\App\\Admin\\AdminPanel::class],");
         $this->line('  Writing the panel class: '.self::PANEL_DOCS);
@@ -144,20 +146,25 @@ class InstallCommand extends Command
         }
     }
 
-    private function authSteps(AuthScaffold $auth): void
+    private function authSteps(AuthScaffold $auth, bool $login): void
     {
-        $panel = $auth->panel;
+        if ($login) {
+            $this->loginSteps($auth->panel);
+        }
+        if (! $auth->isDiscovered()) {
+            $this->newLine();
+            $this->line('  '.($login ? 7 : 6).". Panel [{$auth->panel->getId()}] does not discover app/Admin/Pages; register the published pages:");
+            $this->line('       ->discoverPages(in: app_path(\'Admin/Pages\'), for: \''.str_replace('\\Auth', '', $auth->namespace()).'\')');
+        }
+    }
+
+    private function loginSteps(PanelConfig $panel): void
+    {
         $login = '/'.trim($panel->getPrefix(), '/').'/login';
         $this->newLine();
         $this->line('  6. Send guests to the panel login (bootstrap/app.php, inside withMiddleware) — without it a guest gets a 500:');
         $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::currentUrl() ?? '{$login}');");
         $this->line('     LoginPage::currentUrl() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
-
-        if (! $auth->isDiscovered()) {
-            $this->newLine();
-            $this->line("  7. Panel [{$panel->getId()}] does not discover app/Admin/Pages; register the auth pages:");
-            $this->line('       ->discoverPages(in: app_path(\'Admin/Pages\'), for: \''.str_replace('\\Auth', '', $auth->namespace()).'\')');
-        }
     }
 
     private function stub(string $name): string

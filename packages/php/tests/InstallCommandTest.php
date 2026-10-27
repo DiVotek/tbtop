@@ -108,11 +108,32 @@ it('publishes each auth page as a subclass of its package base', function () {
         ->doesntExpectOutputToContain('does not discover')
         ->assertSuccessful();
 
-    foreach (['LoginPage', 'ForgotPasswordPage', 'ResetPasswordPage'] as $page) {
+    foreach (['LoginPage', 'ForgotPasswordPage', 'ResetPasswordPage', 'ProfilePage'] as $page) {
         expect(File::get($this->hostRoot."/app/Admin/Pages/Auth/{$page}.php"))
             ->toContain('namespace App\\Admin\\Pages\\Auth;')
             ->toContain("class {$page} extends \\Tbtop\\Admin\\Auth\\{$page} {}");
     }
+});
+
+it('publishes only the profile page with --profile, without the login steps', function () {
+    authHost($this->hostRoot, [InstallAuthPanel::class]);
+
+    $this->artisan('admin:install', ['--profile' => true])
+        ->expectsOutputToContain('Published: app/Admin/Pages/Auth/ProfilePage.php')
+        ->doesntExpectOutputToContain('redirectGuestsTo')
+        ->assertSuccessful();
+
+    expect(File::get($this->hostRoot.'/app/Admin/Pages/Auth/ProfilePage.php'))
+        ->toContain('class ProfilePage extends \\Tbtop\\Admin\\Auth\\ProfilePage {}')
+        ->and($this->hostRoot.'/app/Admin/Pages/Auth/LoginPage.php')->not->toBeFile();
+});
+
+it('refuses --profile without a panel', function () {
+    authHost($this->hostRoot, []);
+
+    $this->artisan('admin:install', ['--profile' => true])
+        ->expectsOutputToContain('before --auth or --profile')
+        ->assertFailed();
 });
 
 it('leaves a published auth page untouched on a second run', function () {

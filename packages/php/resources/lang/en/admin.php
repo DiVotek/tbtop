@@ -41,6 +41,16 @@ return [
         ],
         'profile' => [
             'title' => 'Profile',
+            'details' => 'Profile information',
+            'name' => 'Name',
+            'save' => 'Save',
+            'saved' => 'Profile saved.',
+            'password' => 'Change password',
+            'current' => 'Current password',
+            'current_for_email' => 'Needed only to change the email.',
+            'change' => 'Change password',
+            'changed' => 'Password changed.',
+            'throttle' => 'Too many attempts. Please try again in :seconds seconds.',
         ],
     ],
     'validation' => [
