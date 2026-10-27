@@ -120,6 +120,67 @@ instead, pass `user: (request, session) => ...`.
 A panel without `loginPath` answers guests with 401; `allowGuests: true` opens
 it (local tools only).
 
+## Profile
+
+PHP's `ProfilePage` edits an Eloquent user on the panel guard; here the panel
+only knows what the login put in the session, so the profile page is the
+host's too. The same shape: one form per concern, the new password behind the
+current password, a link at the top of the user menu. An email change, if you
+offer one, belongs behind the current password too: resets go to that address.
+
+```ts
+const profile = definePage({
+	path: "profile",
+	title: "Profile",
+	mcp: false,
+	view: (s, { request }) => {
+		const me = currentContext().user as User;
+		return s.stack([
+			s.form("profile", [
+				s.text("name").label("Name").required().rules("max:255"),
+				s.actionsRow([s.action("save").label("Save").submit()]),
+			]).record({ name: me.name }).onSubmit(async (ctx) => {
+				const id = (ctx.user as User).id; // the user of this submit
+				await users.rename(id, String(ctx.form.name)); // your write
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.sessionUser(id)); // the menu shows the new name
+				return Effects.make().notify("Saved");
+			}),
+			s.form("password", [
+				s.password("current_password").label("Current password").required(),
+				s.password("password").label("New password").required().rules("min:8|confirmed"),
+				s.password("password_confirmation").label("Confirm").required(),
+				s.actionsRow([s.action("change").label("Change password").submit()]),
+			]).guardUnsaved(false).onSubmit(async (ctx) => {
+				// The current row of this submit's user, not the `me` the page rendered with: the email may have changed since.
+				const current = await users.find((ctx.user as User).id);
+				// Yours to add (see below): a throttle on wrong current passwords.
+				if (!(await users.verify(current.email, String(ctx.form.current_password)))) {
+					return Effects.make().notify("The current password is wrong.", "error");
+				}
+				await users.setPassword(current.id, String(ctx.form.password)); // your hash + write
+				// Yours to add (see below): other sessions stay signed in until you revoke them here.
+				// Like a sign-in, set(SESSION_USER) moves memorySessions to a new id (see Sessions).
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.sessionUser(current.id));
+				return Effects.make().notify("Password changed").resetForm("password");
+			}),
+		]);
+	},
+});
+
+createAdmin({ /* … */ pages: [posts, login, profile],
+	userMenuItems: [{ label: "Profile", url: "/admin/profile", icon: "user" }] });
+```
+
+`users.sessionUser(id)` stands for the fields the panel shows (id, name,
+email), never the password hash: `cookieSessions` keeps the session in the
+browser. What PHP gives through Laravel stays the host's here: throttle wrong
+current passwords (as the login should), and sign the user's other sessions
+out after a password change. `memorySessions` and `cookieSessions` cannot list
+a user's sessions, so that needs a session store the host owns, or an auth
+library that revokes sessions (Better Auth's `changePassword({
+revokeOtherSessions })`, which `@tbtop/cms/better-auth` uses for its own
+Profile page).
+
 State-changing requests from another origin are refused (403): the request's
 own host and `X-Forwarded-Host` pass, and `trustedOrigins` adds more. This
 guards against a browser on another site; a script outside the browser picks

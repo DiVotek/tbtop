@@ -4,8 +4,10 @@ Same wire grammar, same React client, same DSL method names. What differs:
 
 - **Pages** are objects (`definePage`) with TanStack-style paths
   (`posts/$post/edit`), not classes with routes. The MCP page id is the path.
-- **Auth** is the host's: no published login pages, no guard. A login page
-  writes the user into the session.
+- **Auth** is the host's: this package publishes no login or profile page
+  and has no guard. A login page writes the user into the session; the
+  profile page is a recipe ([Getting started](getting-started.md#profile)).
+  An auth library on top (`@tbtop/cms/better-auth`) may ship its own.
 - **Data** goes through a `QueryDriver`, not Eloquent. Model binding,
   `relationship()` auto-loading and soft-delete macros are the host's code.
 - **Validation** knows Laravel's built-in rules; `unique`/`exists` and anything
