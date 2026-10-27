@@ -140,8 +140,9 @@ const profile = definePage({
 				s.text("name").label("Name").required().rules("max:255"),
 				s.actionsRow([s.action("save").label("Save").submit()]),
 			]).record({ name: me.name }).onSubmit(async (ctx) => {
-				await users.rename(me.id, String(ctx.form.name)); // your write
-				await (await admin.session(ctx.request)).set(SESSION_USER, await users.sessionUser(me.id)); // the menu shows the new name
+				const id = (ctx.user as User).id; // the user of this submit
+				await users.rename(id, String(ctx.form.name)); // your write
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.sessionUser(id)); // the menu shows the new name
 				return Effects.make().notify("Saved");
 			}),
 			s.form("password", [
@@ -150,8 +151,8 @@ const profile = definePage({
 				s.password("password_confirmation").label("Confirm").required(),
 				s.actionsRow([s.action("change").label("Change password").submit()]),
 			]).guardUnsaved(false).onSubmit(async (ctx) => {
-				// The current row, not the `me` the page rendered with: the email may have changed since.
-				const current = await users.find(me.id);
+				// The current row of this submit's user, not the `me` the page rendered with: the email may have changed since.
+				const current = await users.find((ctx.user as User).id);
 				// Yours to add (see below): a throttle on wrong current passwords.
 				if (!(await users.verify(current.email, String(ctx.form.current_password)))) {
 					return Effects.make().notify("The current password is wrong.", "error");
