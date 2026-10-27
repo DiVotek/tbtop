@@ -88,12 +88,12 @@ abstract class ProfilePage extends Page
             ->onSubmit(fn (ActionCtx $ctx): Effects => $this->updatePassword($ctx));
     }
 
-    /** @return array<string, list<mixed>> Laravel rules for the profile form; the email stays unique among users. */
+    /** @return array<string, list<mixed>> Laravel rules for the profile form; the email is lowercase (as Breeze) and unique among users. */
     protected function profileRules(Model $user): array
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique($user::class, 'email')->ignore($user)],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique($user::class, 'email')->ignore($user)],
         ];
     }
 
@@ -144,7 +144,7 @@ abstract class ProfilePage extends Page
     /** Throws under current_password unless it matches; wrong ones are throttled per user, five a minute. */
     protected function confirmCurrentPassword(Authenticatable $user, mixed $password): void
     {
-        $key = 'tbtop-profile-password|'.$user->getAuthIdentifier();
+        $key = 'tbtop-profile-password|'.$user::class.'|'.$user->getAuthIdentifier();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([

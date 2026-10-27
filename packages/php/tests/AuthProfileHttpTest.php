@@ -75,6 +75,15 @@ it('refuses an email another user has', function () {
     expect($this->user->fresh()->email)->toBe('olena@example.com');
 });
 
+it('refuses a case variant of an email another user has', function () {
+    $this->actingAs($this->user, 'staff');
+
+    saveProfile(['name' => 'Olena', 'email' => 'Taras@example.com', 'current_password' => 'old-password'])
+        ->assertSessionHasErrors('email');
+
+    expect($this->user->fresh()->email)->toBe('olena@example.com');
+});
+
 it('changes the password and keeps a session that signed in through the login form', function () {
     $this->from('/admin/login')->post('/admin/login/forms/login', ['email' => 'olena@example.com', 'password' => 'old-password'])
         ->assertSessionHasNoErrors();
