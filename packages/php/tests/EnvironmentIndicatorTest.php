@@ -81,3 +81,17 @@ it('turns the indicator back off with false', function () {
 it('rejects an override that is not keyed by environment', function () {
     (new PanelConfig)->environmentIndicator(['warning']);
 })->throws(InvalidArgumentException::class, 'environmentIndicator()');
+
+it('rejects an override array with unknown keys or non-string values', function (array $override) {
+    (new PanelConfig)->environmentIndicator(['staging' => $override]);
+})->with([
+    'typo key' => [['colr' => 'danger']],
+    'non-string label' => [['label' => 5]],
+])->throws(InvalidArgumentException::class, 'label');
+
+it('rejects a closure that returns an invalid indicator shape', function () {
+    inEnvironment('staging');
+
+    (new PanelConfig)->environmentIndicator(fn (): array => ['label' => 'QA', 'extra' => true])
+        ->getEnvironmentIndicator();
+})->throws(InvalidArgumentException::class, 'label');

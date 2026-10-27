@@ -28,7 +28,7 @@ trait ConfiguresEnvironmentIndicator
     /** Environments hidden unless the author lists them in the overrides array. */
     private const HIDDEN_ENVIRONMENTS = ['production'];
 
-    /** @var Closure(): (array{label?: string, color?: string}|null)|array<string, string|false|array{label?: string, color?: string}>|false */
+    /** The closure is the author's code, so its result is checked per request. @var Closure(): mixed|array<string, string|false|array{label?: string, color?: string}>|false */
     private Closure|array|false $environmentIndicator = false;
 
     /**
@@ -61,7 +61,12 @@ trait ConfiguresEnvironmentIndicator
             return null;
         }
         if ($this->environmentIndicator instanceof Closure) {
-            return self::environmentPayload(($this->environmentIndicator)(), self::currentEnvironment());
+            $indicator = ($this->environmentIndicator)();
+            if ($indicator !== null) {
+                self::assertIndicatorShape($indicator);
+            }
+
+            return self::environmentPayload($indicator, self::currentEnvironment());
         }
 
         return self::environmentFromOverrides($this->environmentIndicator, self::currentEnvironment());
@@ -109,6 +114,20 @@ trait ConfiguresEnvironmentIndicator
     {
         if (! is_string($env) || ! (is_string($override) || $override === false || is_array($override))) {
             throw new InvalidArgumentException('environmentIndicator() overrides map an environment name to a color, a [label, color] array, or false.');
+        }
+        if (is_array($override)) {
+            self::assertIndicatorShape($override);
+        }
+    }
+
+    /** @phpstan-assert array{label?: string, color?: string} $indicator */
+    private static function assertIndicatorShape(mixed $indicator): void
+    {
+        $valid = is_array($indicator)
+            && array_diff(array_keys($indicator), ['label', 'color']) === []
+            && array_filter($indicator, static fn (mixed $v): bool => ! is_string($v)) === [];
+        if (! $valid) {
+            throw new InvalidArgumentException('environmentIndicator() expects an indicator array with only string "label" and "color" keys, or null.');
         }
     }
 }
