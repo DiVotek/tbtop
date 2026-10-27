@@ -42,6 +42,9 @@ or a guest to `loginPath`.
 ## Locales
 
 - `locales: ["en", "uk"]`, `locale`: UI languages, switched per session.
+- `userLocale: (user) => locale | null` and `onLocaleChange: (user, locale) => void`: keep the
+  pick per user (a profile column). The saved locale is read before the session's; the hook
+  runs after a valid switch from the user menu. PHP's admin keeps the session only.
 - `messages: { uk: { "action.save": "..." } }`: host strings over the bundled ones.
 - `validationMessages`: per-locale rule templates.
 - `contentLocales`, `defaultContentLocale`: translatable fields.

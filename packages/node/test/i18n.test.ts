@@ -70,3 +70,49 @@ describe("UI locale", () => {
 		expect(page.props.errors).toEqual({ title: "Поле Title обов'язкове." });
 	});
 });
+
+describe("per-user UI locale", () => {
+	const saved = new Map<string, string>([["ann", "uk"]]);
+	let who = "ann";
+	const perUser = createAdmin({
+		allowGuests: true,
+		prefix: "/admin",
+		pages,
+		driver,
+		session: cookieSessions({ secret: "an-i18n-test-secret-long-enough!!!" }),
+		locales: ["en", "uk"],
+		user: () => ({ id: who }),
+		userLocale: (user) => saved.get((user as { id: string }).id) ?? null,
+		onLocaleChange: (user, locale) => {
+			saved.set((user as { id: string }).id, locale);
+		},
+	});
+
+	test("the user's saved locale wins over the default on a fresh session", async () => {
+		who = "ann";
+		expect((await tbtop(browser(perUser))).locale).toBe("uk");
+	});
+
+	test("a switch saves the pick for the user, and another browser follows it", async () => {
+		who = "bob";
+		await browser(perUser)("/admin/locale", {
+			method: "POST",
+			body: JSON.stringify({ locale: "uk" }),
+			inertia: true,
+			headers: { referer: "http://x/admin/posts" },
+		});
+		expect(saved.get("bob")).toBe("uk");
+		expect((await tbtop(browser(perUser))).locale).toBe("uk");
+	});
+
+	test("a refused locale is not saved", async () => {
+		who = "cat";
+		await browser(perUser)("/admin/locale", {
+			method: "POST",
+			body: JSON.stringify({ locale: "fr" }),
+			inertia: true,
+			headers: { referer: "http://x/admin/posts" },
+		});
+		expect(saved.has("cat")).toBe(false);
+	});
+});

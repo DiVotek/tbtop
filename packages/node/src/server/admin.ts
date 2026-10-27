@@ -61,7 +61,7 @@ class AdminServer {
 	): Promise<T | Response> {
 		const session = await this.sessions(request);
 		const user = as ?? (await this.readUser(request, session)) ?? null;
-		const locale = localeContext(this.config, await currentLocale(this.config, session));
+		const locale = localeContext(this.config, await currentLocale(this.config, session, user));
 		const extra = (await this.config.context?.(request)) ?? {};
 		const unsavedGuard = this.config.unsavedGuard ?? true;
 		return runWithContext({ user, unsavedGuard, ...locale, ...extra }, () =>

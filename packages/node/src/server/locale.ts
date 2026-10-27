@@ -1,4 +1,4 @@
-import type { AdminContext } from "../dsl";
+import { type AdminContext, currentContext } from "../dsl";
 import { BUNDLED_MESSAGES } from "../i18n";
 import { readBody } from "./http";
 import { back } from "./inertia/protocol";
@@ -19,20 +19,33 @@ export interface LocaleConfig {
 	/** Content locales of translatable fields; default `["en"]`. */
 	contentLocales?: string[];
 	defaultContentLocale?: string;
+	/**
+	 * The signed-in user's saved UI locale (e.g. a profile column), read before
+	 * the session's pick; null or a locale the panel lacks falls through.
+	 */
+	userLocale?: (user: unknown) => string | null | Promise<string | null>;
+	/** Called after a valid switch in the user menu, to save the pick for the user. */
+	onLocaleChange?: (user: unknown, locale: string) => void | Promise<void>;
 }
 
 export function uiLocales(config: LocaleConfig): string[] {
 	return config.locales ?? ["en"];
 }
 
-/** LocaleService::currentLocale(): the session's pick when the panel offers it, else the default. */
-export async function currentLocale(config: LocaleConfig, session: SessionStore): Promise<string> {
+/**
+ * LocaleService::currentLocale(): the user's saved locale, then the session's
+ * pick, when the panel offers it; else the default.
+ */
+export async function currentLocale(
+	config: LocaleConfig,
+	session: SessionStore,
+	user: unknown = null,
+): Promise<string> {
 	const available = uiLocales(config);
+	const saved = user !== null && config.userLocale ? await config.userLocale(user) : null;
 	const stored = await session.get(SESSION_LOCALE);
-	if (typeof stored === "string" && available.includes(stored)) {
-		return stored;
-	}
-	return config.locale ?? available[0] ?? "en";
+	const pick = [saved, stored].find((l) => typeof l === "string" && available.includes(l));
+	return (pick as string | undefined) ?? config.locale ?? available[0] ?? "en";
 }
 
 /** The request-context half of i18n: what trans() and the validator read. */
@@ -56,6 +69,10 @@ export async function switchLocale(
 	const { locale } = await readBody(request);
 	if (typeof locale === "string" && uiLocales(config).includes(locale)) {
 		await session.set(SESSION_LOCALE, locale);
+		const user = currentContext().user ?? null;
+		if (user !== null) {
+			await config.onLocaleChange?.(user, locale);
+		}
 	} else {
 		await session.set("errors", { locale: "The selected locale is invalid." });
 	}
