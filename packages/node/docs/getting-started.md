@@ -141,7 +141,7 @@ const profile = definePage({
 				s.actionsRow([s.action("save").label("Save").submit()]),
 			]).record({ name: me.name }).onSubmit(async (ctx) => {
 				await users.rename(me.id, String(ctx.form.name)); // your write
-				await (await admin.session(ctx.request)).set(SESSION_USER, await users.find(me.id)); // the menu shows the new name
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.sessionUser(me.id)); // the menu shows the new name
 				return Effects.make().notify("Saved");
 			}),
 			s.form("password", [
@@ -156,8 +156,8 @@ const profile = definePage({
 					return Effects.make().notify("The current password is wrong.", "error");
 				}
 				await users.setPassword(current.id, String(ctx.form.password)); // your hash + write
-				// memorySessions moves to a new session id here.
-				await (await admin.session(ctx.request)).set(SESSION_USER, await users.find(current.id));
+				// Like a sign-in, set(SESSION_USER) moves memorySessions to a new id (see Sessions).
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.sessionUser(current.id));
 				return Effects.make().notify("Password changed").resetForm("password");
 			}),
 		]);
@@ -168,7 +168,9 @@ createAdmin({ /* … */ pages: [posts, login, profile],
 	userMenuItems: [{ label: "Profile", url: "/admin/profile", icon: "user" }] });
 ```
 
-What PHP gives through Laravel stays the host's here: throttle wrong current
+`users.sessionUser(id)` stands for the fields the panel shows (id, name,
+email), never the password hash: `cookieSessions` keeps the session in the
+browser. What PHP gives through Laravel stays the host's here: throttle wrong current
 passwords (as the login should), and sign the user's other sessions out after
 a password change. `memorySessions` and `cookieSessions` cannot list a user's
 sessions, so that needs a session store the host owns, or an auth library
