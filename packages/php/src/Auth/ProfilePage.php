@@ -60,12 +60,14 @@ abstract class ProfilePage extends Page
             $s->section(['title' => __('tbtop-admin::admin.auth.profile.details'), 'variant' => 'card'], [
                 $s->text('name')->label(__('tbtop-admin::admin.auth.profile.name'))->required(),
                 $s->text('email')->label(__('tbtop-admin::admin.auth.login.email'))->required()->rules('email'),
+                $s->password('current_password')->label(__('tbtop-admin::admin.auth.profile.current'))
+                    ->helperText(__('tbtop-admin::admin.auth.profile.current_for_email')),
                 $s->actionsRow([
                     $s->action('save')->label(__('tbtop-admin::admin.auth.profile.save'))->color('primary')->submit(),
                 ]),
             ]),
         ])
-            ->record(['name' => (string) $user->getAttribute('name'), 'email' => (string) $user->getAttribute('email')])
+            ->record(['name' => (string) $user->getAttribute('name'), 'email' => (string) $user->getAttribute('email'), 'current_password' => ''])
             ->onSubmit(fn (ActionCtx $ctx): Effects => $this->updateProfile($ctx));
     }
 
@@ -101,29 +103,47 @@ abstract class ProfilePage extends Page
         return ['required', 'string', 'confirmed', PasswordRule::defaults()];
     }
 
-    /** A changed email on a MustVerifyEmail user is marked unverified, as Breeze does. */
+    /**
+     * A new email needs the current password: with it, a hijacked session
+     * could otherwise redirect password resets and take the account over.
+     * A changed email on a MustVerifyEmail user is marked unverified, as Breeze does.
+     */
     protected function updateProfile(ActionCtx $ctx): Effects
     {
         $user = $this->user();
         $user->forceFill(Validator::make($ctx->form, $this->profileRules($user))->validate());
-        if ($user instanceof MustVerifyEmail && $user->isDirty('email')) {
-            $user->setAttribute('email_verified_at', null);
+        if ($user->isDirty('email')) {
+            $this->confirmCurrentPassword($user, $ctx->form['current_password'] ?? null);
+            if ($user instanceof MustVerifyEmail) {
+                $user->setAttribute('email_verified_at', null);
+            }
         }
         $user->save();
 
-        return Effects::make()->notify(__('tbtop-admin::admin.auth.profile.saved'));
+        return Effects::make()->notify(__('tbtop-admin::admin.auth.profile.saved'))->resetForm('profile');
     }
 
     /**
-     * Wrong current passwords are throttled per user. The panel stack's
-     * AuthenticateSession signs other sessions and their remember cookies out
-     * (both carry the old hash) and re-stores this session's hash after the
-     * request, so this session stays signed in. remember_token is left alone:
-     * rotating it would also void this device's own remember cookie.
+     * The panel stack's AuthenticateSession signs other sessions and their
+     * remember cookies out (both carry the old hash) and re-stores this
+     * session's hash after the request, so this session stays signed in.
+     * remember_token is left alone: rotating it would also void this
+     * device's own remember cookie.
      */
     protected function updatePassword(ActionCtx $ctx): Effects
     {
         $user = $this->user();
+        $data = Validator::make($ctx->form, ['password' => $this->passwordRules()])->validate();
+        $this->confirmCurrentPassword($user, $ctx->form['current_password'] ?? null);
+
+        $user->forceFill(['password' => Hash::make($data['password'])])->save();
+
+        return Effects::make()->notify(__('tbtop-admin::admin.auth.profile.changed'))->resetForm('password');
+    }
+
+    /** Throws under current_password unless it matches; wrong ones are throttled per user, five a minute. */
+    protected function confirmCurrentPassword(Authenticatable $user, mixed $password): void
+    {
         $key = 'tbtop-profile-password|'.$user->getAuthIdentifier();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
@@ -131,20 +151,16 @@ abstract class ProfilePage extends Page
                 'current_password' => __('tbtop-admin::admin.auth.profile.throttle', ['seconds' => $seconds]),
             ]);
         }
-
-        $data = Validator::make($ctx->form, [
-            'current_password' => ['required', 'string'],
-            'password' => $this->passwordRules(),
-        ])->validate();
-        if (! Hash::check($data['current_password'], $user->getAuthPassword())) {
+        if (! is_string($password) || $password === '') {
+            throw ValidationException::withMessages([
+                'current_password' => __('validation.required', ['attribute' => __('tbtop-admin::admin.auth.profile.current')]),
+            ]);
+        }
+        if (! Hash::check($password, $user->getAuthPassword())) {
             RateLimiter::hit($key);
             throw ValidationException::withMessages(['current_password' => __('auth.password')]);
         }
         RateLimiter::clear($key);
-
-        $user->forceFill(['password' => Hash::make($data['password'])])->save();
-
-        return Effects::make()->notify(__('tbtop-admin::admin.auth.profile.changed'))->resetForm('password');
     }
 
     /** The panel guard's user; the page sits behind auth:{guard}, so there always is one. */

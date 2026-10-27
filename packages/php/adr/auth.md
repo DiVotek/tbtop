@@ -45,6 +45,9 @@ domain: auth
   `--profile` alone serves hosts with their own sign-in. Its user-menu entry follows the
   file (served subclass → entry), so there is no panel flag to keep in sync. Section-per-form
   `view()` leaves room for package 2FA setup as one more section.
+- **Changing the email asks for the current password**, unlike Breeze and Filament: the
+  email is where password resets go, so a hijacked session could otherwise take the
+  account. The name alone saves without it.
 
 ## Why
 

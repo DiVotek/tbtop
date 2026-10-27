@@ -78,8 +78,10 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   `ResetPasswordPage`: `passwordRules()`. The cores — `authenticate()`, `sendLink()`,
   `resetPassword()` — are protected: call them from a rebuilt `view()`, or wrap via `parent::`.
 - **Profile.** `ProfilePage` (`{prefix}/profile`) is not public: it sits on the panel's
-  `authStack()` and edits the panel guard's user — name and email in one form, the password
-  (current password required, wrong ones throttled five a minute per user) in another; a
+  `authStack()` and edits the panel guard's user — name and email in one form (a new email
+  needs the current password, or a hijacked session could redirect password resets), the
+  password in another (current password required; wrong ones throttled five a minute per
+  user across both forms); a
   password change keeps this session and signs the others out (see Other sessions). While
   the panel serves a subclass, the user menu gets a "Profile" entry ahead of `userMenuItems()`;
   delete the file and both go. Hooks: `profileForm()`, `passwordForm()`, `profileRules()`

@@ -40,17 +40,35 @@ it('leads the user menu with the profile page', function () {
     expect($items[0])->toMatchArray(['label' => 'Profile', 'href' => '/admin/profile']);
 });
 
-it('saves the name and email', function () {
-    $this->actingAs($this->user, 'staff')->from('/admin/profile')
-        ->post('/admin/profile/forms/profile', ['name' => 'Olena K.', 'email' => 'olena.k@example.com'])
-        ->assertSessionHasNoErrors();
+function saveProfile(array $form): TestResponse
+{
+    return test()->from('/admin/profile')->post('/admin/profile/forms/profile', $form);
+}
 
-    expect($this->user->fresh())->name->toBe('Olena K.')->email->toBe('olena.k@example.com');
+it('saves the name without asking for the password', function () {
+    $this->actingAs($this->user, 'staff');
+
+    saveProfile(['name' => 'Olena K.', 'email' => 'olena@example.com'])->assertSessionHasNoErrors();
+
+    expect($this->user->fresh()->name)->toBe('Olena K.');
+});
+
+it('changes the email only with the current password', function () {
+    $this->actingAs($this->user, 'staff');
+
+    saveProfile(['name' => 'Olena', 'email' => 'olena.k@example.com'])->assertSessionHasErrors('current_password');
+    saveProfile(['name' => 'Olena', 'email' => 'olena.k@example.com', 'current_password' => 'wrong'])
+        ->assertSessionHasErrors(['current_password' => __('auth.password')]);
+    expect($this->user->fresh()->email)->toBe('olena@example.com');
+
+    saveProfile(['name' => 'Olena', 'email' => 'olena.k@example.com', 'current_password' => 'old-password'])
+        ->assertSessionHasNoErrors();
+    expect($this->user->fresh()->email)->toBe('olena.k@example.com');
 });
 
 it('refuses an email another user has', function () {
     $this->actingAs($this->user, 'staff')->from('/admin/profile')
-        ->post('/admin/profile/forms/profile', ['name' => 'Olena', 'email' => 'taras@example.com'])
+        ->post('/admin/profile/forms/profile', ['name' => 'Olena', 'email' => 'taras@example.com', 'current_password' => 'old-password'])
         ->assertSessionHasErrors('email');
 
     expect($this->user->fresh()->email)->toBe('olena@example.com');
