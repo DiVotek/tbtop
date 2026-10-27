@@ -72,15 +72,19 @@ export function ColumnResizeHandle({ name, label }: ColumnResizeHandleProps) {
 
 		// Preview at most once a frame without saving; pointerup saves the last width.
 		let width = startWidth;
+		let moved = false;
 		let frame = 0;
 		const onMove = (ev: PointerEvent) => {
 			width = startWidth + ev.clientX - startX;
+			moved = true;
 			cancelAnimationFrame(frame);
 			frame = requestAnimationFrame(() => setWidth(name, width, false));
 		};
 		const onUp = () => {
 			cancelAnimationFrame(frame);
-			if (width !== startWidth) {
+			// Any move rendered a preview, so save even a drag that came back:
+			// rendered and saved widths must not drift apart.
+			if (moved) {
 				setWidth(name, width);
 			}
 			handle.removeEventListener("pointermove", onMove);

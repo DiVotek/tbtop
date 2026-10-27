@@ -73,7 +73,11 @@ export function ColumnVisibilityDropdown({
 						onDragEnd={handleDragEnd}
 						modifiers={[restrictToVerticalAxis, restrictToParentElement]}
 					>
-						<SortableContext items={names} strategy={verticalListSortingStrategy}>
+						{/* Pinned entries are no drop targets: nothing may shift past them. */}
+						<SortableContext
+							items={names.slice(pinnedCount)}
+							strategy={verticalListSortingStrategy}
+						>
 							<div className="relative">
 								{columns.map((col, i) => (
 									<ColumnEntry
@@ -84,7 +88,7 @@ export function ColumnVisibilityDropdown({
 										// Pinned columns lead the table and never move.
 										onMove={i < pinnedCount ? undefined : onMove}
 										pinned={Boolean(onMove) && i < pinnedCount}
-										prev={names[i - 1]}
+										prev={i - 1 >= pinnedCount ? names[i - 1] : undefined}
 										next={names[i + 1]}
 									/>
 								))}
