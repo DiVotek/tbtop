@@ -5,6 +5,7 @@ import type { Disk } from "../server/uploads/storage";
 /**
  * A directory on the server's filesystem (Laravel's `local`/`public` disks):
  * Bun and Node only. The host serves `baseUrl` from `root` for public files.
+ * The root check is on the path, so keep symlinks out of `root`.
  */
 export function localDisk(root: string, baseUrl = "/storage"): Disk {
 	const absolute = resolve(root);
@@ -25,7 +26,9 @@ export function localDisk(root: string, baseUrl = "/storage"): Disk {
 			const bytes = await readFile(within(path)).catch(() => null);
 			return bytes === null ? null : new Blob([new Uint8Array(bytes)]);
 		},
-		delete: (path) => rm(within(path), { force: true }),
+		delete: async (path) => {
+			await rm(within(path), { force: true });
+		},
 		url: (path) => `${baseUrl.replace(/\/+$/, "")}/${path}`,
 	};
 }
