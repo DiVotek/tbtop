@@ -78,16 +78,17 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   `ResetPasswordPage`: `passwordRules()`. The cores — `authenticate()`, `sendLink()`,
   `resetPassword()` — are protected: call them from a rebuilt `view()`, or wrap via `parent::`.
 - **Profile.** `ProfilePage` (`{prefix}/profile`) is not public: it sits on the panel's
-  `authStack()` and edits the panel guard's user — name and email in one form (a new email
-  needs the current password, or a hijacked session could redirect password resets), the
-  password in another (current password required; wrong ones throttled five a minute per
-  user across both forms); a
-  password change keeps this session and signs the others out (see Other sessions). While
-  the panel serves a subclass, the user menu gets a "Profile" entry ahead of `userMenuItems()`;
-  delete the file and both go. Hooks: `profileForm()`, `passwordForm()`, `profileRules()`
-  (default: a lowercase email, unique on the user model's connection and table), `passwordRules()`;
-  append sections in `view()` after `parent::view()`. A changed email on a `MustVerifyEmail` user is marked unverified.
-  Needs an Eloquent user with `name`, `email` and `password`.
+  `authStack()` and edits the panel guard's user. One form holds name and email: a new email
+  needs the current password, or a hijacked session could redirect password resets. The other
+  changes the password and needs the current one. Wrong current passwords are throttled five
+  a minute per user across both forms. A password change keeps this session and signs the
+  others out (see Other sessions). While the panel serves a subclass, the user menu gets a
+  "Profile" entry ahead of `userMenuItems()`; delete the file and both go. Hooks:
+  `profileForm()`, `passwordForm()`, `profileRules()` (default: a new email must be
+  lowercase, unique on the user model's connection and table), `passwordRules()`; append
+  sections in `view()` after `parent::view()`. A changed email on a `MustVerifyEmail` user is
+  marked unverified and no mail is sent: resending the link is the host's verification flow
+  (the package has none). Needs an Eloquent user with `name`, `email` and `password`.
 - **Password broker.** `PanelConfig::passwordBroker('admins')`; null uses the app default.
   A panel guard on a non-default provider needs its own broker in `config/auth.php`.
 - **Other sessions.** `authStack()` ends in Laravel's `AuthenticateSession` (after

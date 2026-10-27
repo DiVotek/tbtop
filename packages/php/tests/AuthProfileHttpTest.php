@@ -75,6 +75,15 @@ it('refuses an email another user has', function () {
     expect($this->user->fresh()->email)->toBe('olena@example.com');
 });
 
+it('saves the name of a user whose stored email has capitals', function () {
+    $this->user->forceFill(['email' => 'Olena@Example.com'])->save();
+    $this->actingAs($this->user, 'staff');
+
+    saveProfile(['name' => 'Olena K.', 'email' => 'Olena@Example.com'])->assertSessionHasNoErrors();
+
+    expect($this->user->fresh()->name)->toBe('Olena K.');
+});
+
 it('refuses a case variant of an email another user has', function () {
     $this->actingAs($this->user, 'staff');
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Fluent;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
@@ -88,12 +89,15 @@ abstract class ProfilePage extends Page
             ->onSubmit(fn (ActionCtx $ctx): Effects => $this->updatePassword($ctx));
     }
 
-    /** @return array<string, list<mixed>> Laravel rules for the profile form; the email is lowercase (as Breeze) and unique among users. */
+    /** @return array<string, list<mixed>> Laravel rules for the profile form; a new email is lowercase (as Breeze) and unique among users. */
     protected function profileRules(Model $user): array
     {
+        // Only a new email must be lowercase: a stored mixed-case one still saves the name.
+        $changed = static fn (Fluent $input): bool => $input->get('email') !== $user->getAttribute('email');
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique($user::class, 'email')->ignore($user)],
+            'email' => ['required', 'string', Rule::when($changed, ['lowercase']), 'email', 'max:255', Rule::unique($user::class, 'email')->ignore($user)],
         ];
     }
 
