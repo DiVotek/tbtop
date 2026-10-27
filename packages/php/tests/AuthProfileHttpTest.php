@@ -56,15 +56,22 @@ it('refuses an email another user has', function () {
     expect($this->user->fresh()->email)->toBe('olena@example.com');
 });
 
-it('changes the password, rotates the remember token and keeps this session', function () {
-    $this->actingAs($this->user, 'staff');
+it('changes the password and keeps a session that signed in through the login form', function () {
+    $this->from('/admin/login')->post('/admin/login/forms/login', ['email' => 'olena@example.com', 'password' => 'old-password'])
+        ->assertSessionHasNoErrors();
+    $this->get('/admin/profile')->assertOk()->assertSessionHas('password_hash_staff');
 
     changePassword('old-password')->assertSessionHasNoErrors();
 
-    $fresh = $this->user->fresh();
-    expect(Hash::check('brand-new-password', $fresh->password))->toBeTrue()
-        ->and($fresh->remember_token)->not->toBe('old-remember-token');
+    expect(Hash::check('brand-new-password', $this->user->fresh()->password))->toBeTrue();
     $this->get('/admin/profile')->assertOk();
+});
+
+it('signs out another session that still carries the old password hash', function () {
+    $this->actingAs($this->user, 'staff')->withSession(['password_hash_staff' => $this->user->password]);
+    $this->user->forceFill(['password' => Hash::make('changed-elsewhere')])->save();
+
+    $this->get('/admin/profile')->assertRedirect('/admin/login');
 });
 
 it('refuses a wrong current password and throttles after five', function () {

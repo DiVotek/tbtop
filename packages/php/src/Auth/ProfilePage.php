@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
@@ -117,8 +116,10 @@ abstract class ProfilePage extends Page
 
     /**
      * Wrong current passwords are throttled per user. The panel stack's
-     * AuthenticateSession signs other sessions out; rotating remember_token
-     * drops their remember cookies too. This session stays signed in.
+     * AuthenticateSession signs other sessions and their remember cookies out
+     * (both carry the old hash) and re-stores this session's hash after the
+     * request, so this session stays signed in. remember_token is left alone:
+     * rotating it would also void this device's own remember cookie.
      */
     protected function updatePassword(ActionCtx $ctx): Effects
     {
@@ -141,10 +142,7 @@ abstract class ProfilePage extends Page
         }
         RateLimiter::clear($key);
 
-        $user->forceFill([
-            'password' => Hash::make($data['password']),
-            'remember_token' => Str::random(60),
-        ])->save();
+        $user->forceFill(['password' => Hash::make($data['password'])])->save();
 
         return Effects::make()->notify(__('tbtop-admin::admin.auth.profile.changed'))->resetForm('password');
     }
