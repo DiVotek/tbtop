@@ -1087,6 +1087,7 @@
                         "title"
                     ],
                     "deferFilters": true,
+                    "poll": 30,
                     "filtersFormColumns": 2,
                     "searchPlaceholder": "Search posts\u2026",
                     "columnToggle": false,

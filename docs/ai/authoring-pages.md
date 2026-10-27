@@ -595,6 +595,27 @@ $s->table('posts')
     ->groups('published') // requires defaultSort('published', ...) above
 ```
 
+#### `poll()` — auto-refresh rows
+
+`->poll(int $seconds)` re-fetches the current page of rows every `$seconds` (minimum 5;
+below it throws) through the same table endpoint, with the user's search, filters, sort,
+tab and page. It is for lists that change under the user — an order queue, an import log.
+The refresh is silent: the old rows stay on screen with no loading overlay. One failed
+tick keeps them and tries again; a second failure in a row shows the table's error state
+with a retry button, so stale rows never pass for current ones. A tick that lands while a
+slow fetch is still running is skipped rather than cancelling it. Polling pauses while the browser tab is
+hidden (one refetch on return) and while any row is selected, because new rows clear the
+selection a bulk action is about to use. An inline cell with an unsaved edit keeps the
+edit. For a change the page itself makes, the `refreshTable` effect is still the right
+tool; `poll()` covers changes made elsewhere.
+
+```php
+$s->table('orders')
+    ->columns([...])
+    ->query(fn () => Order::query()->latest())
+    ->poll(10)
+```
+
 #### `softDeletes()` — soft-delete convenience layer
 
 For a model using the `SoftDeletes` trait, `->softDeletes($s, Model::class)` composes
