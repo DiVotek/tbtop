@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Tbtop\Admin\Tests\Fixtures\Auth\AuthUser;
@@ -83,6 +84,23 @@ it('changes the password and keeps a session that signed in through the login fo
 
     expect(Hash::check('brand-new-password', $this->user->fresh()->password))->toBeTrue();
     $this->get('/admin/profile')->assertOk();
+});
+
+it('voids a remember cookie issued before the password change', function () {
+    $login = $this->post('/admin/login/forms/login', ['email' => 'olena@example.com', 'password' => 'old-password', 'remember' => true]);
+    $name = Auth::guard('staff')->getRecallerName();
+    $cookie = (string) $login->getCookie($name, decrypt: false)?->getValue();
+    $fromCookieOnly = function () use ($name, $cookie) {
+        Auth::forgetGuards();
+        $this->flushSession();
+
+        return $this->withUnencryptedCookie($name, $cookie)->get('/admin/profile');
+    };
+
+    $fromCookieOnly()->assertOk();
+    changePassword('old-password')->assertSessionHasNoErrors();
+
+    $fromCookieOnly()->assertRedirect('/admin/login');
 });
 
 it('signs out another session that still carries the old password hash', function () {
