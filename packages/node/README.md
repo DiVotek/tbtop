@@ -86,7 +86,10 @@ host's; repeat the panel's role checks there):
 createAdmin({
 	// ...
 	mcp: {
-		authenticate: async (request) => users.byToken(request.headers.get("authorization")),
+		authenticate: async (request) => {
+			const [scheme, token] = (request.headers.get("authorization") ?? "").split(" ");
+			return scheme === "Bearer" && token ? users.byToken(token) : null;
+		},
 		allowedOrigins: ["https://admin.example.com"],
 	},
 });

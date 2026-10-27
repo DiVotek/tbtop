@@ -6,7 +6,10 @@ streamable HTTP, JSON-RPC 2.0, batches included). No SDK is involved, so it runs
 ```ts
 createAdmin({
 	mcp: {
-		authenticate: async (request) => users.byToken(request.headers.get("authorization")),
+		authenticate: async (request) => {
+			const [scheme, token] = (request.headers.get("authorization") ?? "").split(" ");
+			return scheme === "Bearer" && token ? users.byToken(token) : null;
+		},
 		allowedOrigins: ["https://admin.example.com"],
 		report: (error) => logger.error(error),
 		// path: "mcp",
