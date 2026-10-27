@@ -8,9 +8,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "../../i18n/i18n";
+import { cn } from "../../lib/cn";
 import type { TableColumn } from "../types";
 import { readId } from "./normalize";
 import type { RowActionEntry } from "./rowActions";
+import { useStickyCell } from "./stickyColumns";
 import { TableRow } from "./tableRow";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -41,8 +43,13 @@ export function SortableRow(props: SortableRowProps) {
 		opacity: isDragging ? 0.5 : undefined,
 	};
 
+	const pin = useStickyCell("reorder");
 	const handle = (
-		<td className="cn-table-cell w-8">
+		<td
+			className={cn("cn-table-cell w-8", pin.className)}
+			style={pin.style}
+			data-sticky-edge={pin["data-sticky-edge"]}
+		>
 			<button
 				type="button"
 				className="flex cursor-grab touch-none items-center rounded-surface-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"

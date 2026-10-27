@@ -8,6 +8,7 @@ import { cn } from "../../lib/cn";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { TableColumn } from "../types";
 import { resolveIcon } from "./iconRegistry";
+import { useStickyCell } from "./stickyColumns";
 
 interface SortableHeaderProps {
 	col: TableColumn;
@@ -49,7 +50,8 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 	const dir = isActive ? (currentDir as "asc" | "desc") : undefined;
 
 	const alignClass = headerAlignClass(col.align);
-	const widthStyle = col.width ? { width: col.width } : undefined;
+	const pin = useStickyCell({ column: col.name });
+	const widthStyle = col.width || pin.style ? { width: col.width, ...pin.style } : undefined;
 
 	const HeadingIcon = col.icon ? resolveIcon(col.icon.name) : undefined;
 
@@ -78,10 +80,12 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 
 	return (
 		<th
+			{...pin}
 			className={cn(
 				"cn-table-head transition-colors",
 				alignClass,
 				sortable && "cursor-pointer select-none hover:bg-muted",
+				pin.className,
 			)}
 			style={widthStyle}
 			onClick={sortable ? handleClick : undefined}

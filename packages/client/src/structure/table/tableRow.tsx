@@ -14,6 +14,7 @@ import { RowProvider } from "../rowContext";
 import type { ActionConfig, TableColumn } from "../types";
 import { readId } from "./normalize";
 import { isActionGroupEntry, type RowActionEntry, RowActionsCell } from "./rowActions";
+import { useStickyCell } from "./stickyColumns";
 import { RowDataCell } from "./tableCell";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -100,6 +101,7 @@ export function TableRow(props: TableRowProps) {
 	}
 
 	const isClickable = Boolean(props.rowClick) || Boolean(recordHref);
+	const bulkPin = useStickyCell("bulk");
 
 	// New-gen shape: border, hover tint and the selected tint come from
 	// `cn-table-row` (selection is signalled with `data-state="selected"`, the
@@ -122,7 +124,11 @@ export function TableRow(props: TableRowProps) {
 			<RowProvider value={props.row}>
 				{props.leadingCell}
 				{props.hasBulk && (
-					<td className="cn-table-cell">
+					<td
+						className={cn("cn-table-cell", bulkPin.className)}
+						style={bulkPin.style}
+						data-sticky-edge={bulkPin["data-sticky-edge"]}
+					>
 						<Checkbox
 							className="cursor-pointer"
 							checked={props.selected}

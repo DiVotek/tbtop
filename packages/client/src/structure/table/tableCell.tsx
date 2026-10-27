@@ -11,6 +11,7 @@ import { CellAffixes } from "./cellAffix";
 import { ImageCell, LinkCell } from "./cellHelpers";
 import { formatColumnValue } from "./columnValueFormat";
 import { EditableCell } from "./editableCell";
+import { useStickyCell } from "./stickyColumns";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
 
@@ -80,6 +81,7 @@ export function RowDataCell({
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
 }) {
 	const alignClass = rowColAlignClass(col.align);
+	const pin = useStickyCell({ column: col.name });
 	// New-gen shape: padding and vertical alignment come from `cn-table-cell`
 	// (`p-2`, was `px-3 py-2`). The preset sets `whitespace-nowrap`; our columns
 	// wrap by default, so `whitespace-normal` restores that unless the column
@@ -92,8 +94,9 @@ export function RowDataCell({
 	);
 	return (
 		<td
-			className={cn("cn-table-cell", alignClass, wrapClass)}
-			style={col.width ? { width: col.width } : undefined}
+			className={cn("cn-table-cell", alignClass, wrapClass, pin.className)}
+			style={col.width || pin.style ? { width: col.width, ...pin.style } : undefined}
+			data-sticky-edge={pin["data-sticky-edge"]}
 		>
 			{col.kind === "group" ? (
 				<GroupCell col={col} row={row} saveCell={saveCell} />

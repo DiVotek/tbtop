@@ -812,6 +812,7 @@
 					"align": { "type": "string", "enum": ["left", "center", "right"] },
 					"icon": { "$ref": "#/$defs/icon" },
 					"width": { "type": "string" },
+					"sticky": { "type": "boolean" },
 					"wrap": { "type": "boolean" },
 					"noWrap": { "type": "boolean" },
 					"tooltip": { "type": "string" },

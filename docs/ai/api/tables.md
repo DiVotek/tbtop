@@ -89,6 +89,7 @@ The table builder, its columns, and filter tabs.
 | `sortable(bool $sortable = true): static` | Allow the user to sort the table by this column. |
 | `square(): static` | Square shape (sharp corners). Last shape call wins. |
 | `step(string\|int\|float $step): static` | Increment granularity of the inline number editor (its step attribute). Accepts a positive number, a numeric string ('0.01' — shipped as a number, must be > 0), or 'any' for arbitrary precision. Requires numberInput() to also be called — without it, editInput is set but no editable column is emitted, so step() silently has no effect; that combination throws at serialization. |
+| `sticky(bool $value = true): static` | Pin the column to the left edge while the table scrolls horizontally. Sticky columns must lead the column list; the row-selection checkbox and drag handle stay pinned with them. |
 | `suffix(JsonSerializable\|string $content): static` | Display node rendered after the cell value (e.g. a currency code). Same rules as prefix(). |
 | `textInput(): static` | Make the column an inline text input; sets kind = 'text' when no kind is already set. Incompatible with formatUsing() — throws at serialization. |
 | `time(?string $format = null): static` | Kind sugar: sets kind = 'time' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'H:i'. |
