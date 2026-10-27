@@ -965,6 +965,20 @@
 		},
 		"nav": { "type": "array", "items": { "$ref": "#/$defs/navGroup" } },
 		"userMenuItems": { "type": "array", "items": { "$ref": "#/$defs/userMenuItem" } },
+		"environmentIndicator": {
+			"oneOf": [
+				{
+					"type": "object",
+					"required": ["label", "color"],
+					"properties": {
+						"label": { "type": "string" },
+						"color": { "type": "string" }
+					},
+					"additionalProperties": false
+				},
+				{ "type": "null" }
+			]
+		},
 		"listItem": {
 			"type": "object",
 			"required": ["title"],

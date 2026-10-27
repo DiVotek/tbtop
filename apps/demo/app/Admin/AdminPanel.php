@@ -52,6 +52,7 @@ class AdminPanel extends Panel
                 Command::make('tbtop on GitHub')->icon('globe')->url('https://github.com/DiVotek/tbtop')->openUrlInNewTab()->group('Links'),
             ]))
             ->maxContentWidth('7xl')
+            ->environmentIndicator()
             ->locales(['en', 'uk'])
             ->defaultLocale('en')
             ->chrome(DemoChrome::class)

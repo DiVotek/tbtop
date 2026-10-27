@@ -10,6 +10,7 @@ use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\Concerns\ConfiguresAppearance;
+use Tbtop\Admin\Panels\Concerns\ConfiguresEnvironmentIndicator;
 use Tbtop\Admin\Panels\Concerns\ConfiguresMcp;
 use Tbtop\Admin\Panels\Concerns\ConfiguresMedia;
 
@@ -19,6 +20,7 @@ use Tbtop\Admin\Panels\Concerns\ConfiguresMedia;
 final class PanelConfig
 {
     use ConfiguresAppearance;
+    use ConfiguresEnvironmentIndicator;
     use ConfiguresMcp;
     use ConfiguresMedia;
 
