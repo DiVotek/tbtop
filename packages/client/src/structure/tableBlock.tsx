@@ -185,7 +185,8 @@ function TableBody(props: TableBodyProps) {
 	}, [activeTabDescription, setPageSubtitle]);
 
 	// Without the Columns menu (embedded, or columnToggle(false)) there is no
-	// way to reorder or reset, so the declared order holds.
+	// way to reorder or reset the order, so the declared order holds. Widths
+	// still resize there unless embedded: a double-click resets each one.
 	const reorderable = !props.embedded && props.columnToggle !== false;
 	const orderedCols = reorderable ? layout.orderedColumns : props.columns;
 	const visibleCols = orderedCols.filter((c) => visibleColumns.has(c.name));
