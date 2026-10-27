@@ -100,6 +100,24 @@ async function checkKey(
 	return messages;
 }
 
+/**
+ * Laravel's distinct on `tags.*`: this element must differ from every other
+ * key the same pattern matches. Loose (string) comparison unless `strict`.
+ */
+function distinctAmongSiblings({ value, data, params }: RuleInput, target: Target): boolean {
+	const norm = (v: unknown) => {
+		if (params.includes("strict")) {
+			return v;
+		}
+		const text = typeof v === "string" || typeof v === "number" ? String(v) : JSON.stringify(v);
+		return params.includes("ignore_case") ? text.toLowerCase() : text;
+	};
+	const own = norm(value);
+	return expandKey(data, target.pattern)
+		.filter((key) => key !== target.key)
+		.every((key) => norm(dataGet(data, key)) !== own);
+}
+
 /** Rules that steer the run instead of checking the value. */
 const MARKERS = new Set(["sometimes", "bail", "nullable"]);
 
@@ -114,6 +132,9 @@ function ruleParams(name: string, raw: string | null): string[] {
 async function passes({ name, input, target, options }: RuleCall): Promise<boolean | string> {
 	if (name === "confirmed") {
 		return confirmedMatches(input.data, target.key, input.value);
+	}
+	if (name === "distinct" && target.pattern.includes("*")) {
+		return distinctAmongSiblings(input, target);
 	}
 	const check = CHECKS[name];
 	if (check !== undefined) {

@@ -75,6 +75,24 @@ describe("Laravel rule semantics", () => {
 });
 
 describe("collectRules (RuleWalker)", () => {
+	test("distinct on a multiple select rejects a repeated value", async () => {
+		const rules = collectRules([new S().select("tags").multiple().rules("distinct")]);
+		expect(rules["tags.*"]).toContain("distinct");
+		expect(await errorsOf({ tags: ["php", "go"] }, rules)).toEqual({});
+		expect(Object.keys(await errorsOf({ tags: ["php", "php"] }, rules))).toEqual([
+			"tags.0",
+			"tags.1",
+		]);
+	});
+
+	test("distinct compares loosely unless strict, and ignore_case folds case", async () => {
+		expect(await errorsOf({ ids: [1, "1"] }, { "ids.*": ["distinct"] })).not.toEqual({});
+		expect(await errorsOf({ ids: [1, "1"] }, { "ids.*": ["distinct:strict"] })).toEqual({});
+		expect(await errorsOf({ t: ["A", "a"] }, { "t.*": ["distinct:ignore_case"] })).not.toEqual(
+			{},
+		);
+	});
+
 	test("repeaters, multiple selects and translatable fields get their own keys", () => {
 		const s = new S();
 		const rules = runWithContext(

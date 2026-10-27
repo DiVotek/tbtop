@@ -8,7 +8,10 @@ import { descendants } from "./walk";
 
 export type Rules = Record<string, string[]>;
 
-/** Whole-field rules: on `field.*` the implicit family never runs for `[]`. */
+/**
+ * Whole-field rules: on `field.*` the implicit family never runs for `[]`.
+ * `distinct` is not one: it compares sibling `field.*` values.
+ */
 const FIELD_LEVEL = [
 	"nullable",
 	"array",
@@ -16,7 +19,6 @@ const FIELD_LEVEL = [
 	"max",
 	"size",
 	"between",
-	"distinct",
 	"present",
 	"filled",
 ];
