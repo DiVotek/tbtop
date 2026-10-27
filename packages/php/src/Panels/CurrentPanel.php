@@ -149,15 +149,9 @@ final class CurrentPanel
 
     private function profileMenuItem(): ?NavItem
     {
-        foreach ($this->pages() as $class) {
-            if (is_subclass_of($class, ProfilePage::class)) {
-                return NavItem::make(__('tbtop-admin::admin.auth.profile.title'))
-                    ->url(route('tbtop.'.$this->id().'.'.$class::slug(), absolute: false))
-                    ->icon('user');
-            }
-        }
+        $url = ProfilePage::currentUrl();
 
-        return null;
+        return $url === null ? null : NavItem::make(__('tbtop-admin::admin.auth.profile.title'))->url($url)->icon('user');
     }
 
     /** @return array<string, mixed> */
