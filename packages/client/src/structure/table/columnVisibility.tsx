@@ -80,6 +80,7 @@ export function ColumnVisibilityDropdown({
 										onToggle={onToggle}
 										// Pinned columns lead the table and never move.
 										onMove={col.sticky ? undefined : onMove}
+										pinned={Boolean(onMove && col.sticky)}
 										prev={names[i - 1]}
 										next={names[i + 1]}
 									/>
@@ -104,6 +105,8 @@ export function ColumnVisibilityDropdown({
 
 interface ColumnEntryProps {
 	col: TableColumn;
+	/** A sticky column in a reorderable menu: it stays put. */
+	pinned: boolean;
 	checked: boolean;
 	onToggle: (name: string) => void;
 	onMove?: (name: string, target: string) => void;
@@ -112,7 +115,7 @@ interface ColumnEntryProps {
 	next?: string;
 }
 
-function ColumnEntry({ col, checked, onToggle, onMove, prev, next }: ColumnEntryProps) {
+function ColumnEntry({ col, checked, onToggle, onMove, pinned, prev, next }: ColumnEntryProps) {
 	const t = useTranslation();
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: col.name,
@@ -171,6 +174,8 @@ function ColumnEntry({ col, checked, onToggle, onMove, prev, next }: ColumnEntry
 					<GripVertical className="size-4" aria-hidden />
 				</span>
 			)}
+			{/* A pinned entry keeps the grip's slot so the checks line up. */}
+			{!onMove && pinned && <span className="w-6 shrink-0" aria-hidden />}
 		</div>
 	);
 }
