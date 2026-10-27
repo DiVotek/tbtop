@@ -25,6 +25,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `defaultThemeMode(string $mode): static` | Initial theme when the visitor has no saved preference. |
 | `density(string $mode): static` | Shell density: 'compact' tightens control heights, spacing, and the sidebar width. |
 | `discoverPages(string $in, string $for): static` | Adds a recursive page discovery directory and its Composer-autoloadable namespace; rebuild the page cache after adding pages. |
+| `environmentIndicator(Closure\|array\|bool $indicator = true): static` | Show the app environment as a colored header badge and top strip; hidden in production. Pass an array to override per environment (`['staging' => 'warning', 'qa' => ['label' => 'QA', 'color' => 'info'], 'local' => false]` — listing `production` shows it), or a Closure returning `['label' => …, 'color' => …]` or null, called per request. Colors are the badge names: gray, primary, success, warning, danger, info. |
 | `guard(string $guard): static` | Auth guard checked by authStack(). Defaults to 'web'. |
 | `id(string $id): static` | Feeds the route-name namespace (`tbtop.{id}.*`) — changing it on an existing panel renames every route. |
 | `locales(array $locales): static` | Admin UI locales. First entry is the default unless defaultLocale() is set. |

@@ -315,3 +315,14 @@ it('userMenuItems serialization conforms to the nav contract', function () {
 
     validateAgainstSchema(json_decode(json_encode($panel->userMenuItems())), '#/$defs/userMenuItems');
 });
+
+it('environment indicator serialization conforms to its contract', function () {
+    app()['env'] = 'staging';
+    $panel = new CurrentPanel(
+        (new PanelConfig)->environmentIndicator(['qa' => ['label' => 'QA', 'color' => 'info']])
+    );
+    validateAgainstSchema(json_decode(json_encode($panel->environmentIndicator())), '#/$defs/environmentIndicator');
+
+    app()['env'] = 'production';
+    validateAgainstSchema(json_decode(json_encode($panel->environmentIndicator())), '#/$defs/environmentIndicator');
+});

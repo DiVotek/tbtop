@@ -30,6 +30,8 @@ final class TableBuilder implements JsonSerializable
 
     private const FILTERS_FORM_COLUMNS_MAX = 12;
 
+    private const MIN_POLL_SECONDS = 5;
+
     /**
      * All column descriptors, including hidden ones (they need to participate
      * in projection decisions but not in wire serialization).
@@ -93,6 +95,7 @@ final class TableBuilder implements JsonSerializable
             }
         }
         $this->assertUniqueColumnNames();
+        $this->assertStickyColumnsLead();
 
         return $this;
     }
@@ -273,6 +276,25 @@ final class TableBuilder implements JsonSerializable
     public function defaultSort(string $field, string $dir = 'asc'): self
     {
         $this->opts['defaultSort'] = ['field' => $field, 'dir' => $dir];
+
+        return $this;
+    }
+
+    /**
+     * Re-fetch the table's rows every $seconds, keeping the current rows on
+     * screen with no loading overlay. The client pauses while the tab is
+     * hidden or rows are selected, so a poll never drops a pending bulk
+     * selection. The 5-second floor is enforced twice: below it this throws,
+     * and the client clamps whatever reaches it.
+     */
+    public function poll(int $seconds): self
+    {
+        if ($seconds < self::MIN_POLL_SECONDS) {
+            throw new InvalidArgumentException(
+                'Table poll interval must be at least '.self::MIN_POLL_SECONDS.' seconds.'
+            );
+        }
+        $this->opts['poll'] = $seconds;
 
         return $this;
     }
@@ -743,6 +765,31 @@ final class TableBuilder implements JsonSerializable
             foreach ($col->groupColumns() as $child) {
                 $this->claimColumnName($seen, $child->name);
             }
+        }
+    }
+
+    /**
+     * Sticky columns stack from the left edge, so they must be the leading run
+     * of the column list — a pinned column after a scrolling one would slide
+     * over it. Inside a group the group itself is the column that pins.
+     */
+    private function assertStickyColumnsLead(): void
+    {
+        $leading = true;
+        foreach ($this->columnObjects as $col) {
+            foreach ($col->groupColumns() as $child) {
+                if ($child->isSticky()) {
+                    throw new InvalidArgumentException(
+                        "Column \"{$child->name}\": sticky() goes on the group \"{$col->name}\", not on its children.",
+                    );
+                }
+            }
+            if ($col->isSticky() && ! $leading) {
+                throw new InvalidArgumentException(
+                    "Column \"{$col->name}\": sticky columns must come first in columns().",
+                );
+            }
+            $leading = $leading && $col->isSticky();
         }
     }
 

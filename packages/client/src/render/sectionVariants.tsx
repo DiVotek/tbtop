@@ -23,7 +23,10 @@ export function CardSection({ header, children, frameless, class: className }: C
 	const bodyClass = frameless ? undefined : cn("px-4 pb-4", hasHeader ? "pt-3" : "pt-4");
 	return (
 		<section
-			className={cn("rounded-surface-lg border bg-card", className)}
+			className={cn(
+				"rounded-surface-lg border bg-card [--tbtop-table-surface:var(--card)]",
+				className,
+			)}
 			data-testid="section-card"
 		>
 			{hasHeader && <div className="border-b px-4 py-3">{header}</div>}

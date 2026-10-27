@@ -595,6 +595,27 @@ $s->table('posts')
     ->groups('published') // requires defaultSort('published', ...) above
 ```
 
+#### `poll()` — auto-refresh rows
+
+`->poll(int $seconds)` re-fetches the current page of rows every `$seconds` (minimum 5;
+below it throws) through the same table endpoint, with the user's search, filters, sort,
+tab and page. It is for lists that change under the user — an order queue, an import log.
+The refresh is silent: the old rows stay on screen with no loading overlay. One failed
+tick keeps them and tries again; a second failure in a row shows the table's error state
+with a retry button, so stale rows never pass for current ones. A tick that lands while a
+slow fetch is still running is skipped rather than cancelling it. Polling pauses while the browser tab is
+hidden (one refetch on return) and while any row is selected, because new rows clear the
+selection a bulk action is about to use. An inline cell with an unsaved edit keeps the
+edit. For a change the page itself makes, the `refreshTable` effect is still the right
+tool; `poll()` covers changes made elsewhere.
+
+```php
+$s->table('orders')
+    ->columns([...])
+    ->query(fn () => Order::query()->latest())
+    ->poll(10)
+```
+
 #### `softDeletes()` — soft-delete convenience layer
 
 For a model using the `SoftDeletes` trait, `->softDeletes($s, Model::class)` composes
@@ -723,6 +744,28 @@ Column::make('published_time')
     ->label('Published time')
     ->noWrap(),
 ```
+
+#### `sticky()` — columns pinned on horizontal scroll
+
+A wide table scrolls sideways inside its frame. `sticky()` pins a column to the left edge so
+the row stays identifiable while the rest slides under it:
+
+```php
+$s->table('orders')->columns([
+    Column::make('number')->label('Order')->sticky(),
+    Column::make('customer.name')->label('Customer')->sticky(),
+    Column::make('total')->money('EUR'),
+    // … more columns than the screen fits
+]);
+```
+
+- Sticky columns must **lead** `columns()`: a sticky column after a scrolling one throws
+  `InvalidArgumentException` (it would slide over its neighbour). Several stack left to right.
+- On a group column, call `sticky()` on the group, not on its children — a sticky child throws.
+- The row-selection checkbox (bulk actions) and the drag-reorder handle pin with them; row
+  actions scroll. A user hiding a sticky column via the column toggle just shortens the run.
+- Offsets are measured from the rendered header, so no `width()` is needed. A long sticky
+  column eats the scroll area — keep it short with `width()` or `truncate()`.
 
 #### `individuallySearchable()` — per-column search
 

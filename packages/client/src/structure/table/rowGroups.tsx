@@ -41,7 +41,8 @@ export function GroupHeaderRow({ value, colSpan, column }: GroupHeaderRowProps):
 	return (
 		<tr className="bg-muted/50">
 			<td colSpan={colSpan} className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
-				{label}
+				{/* Sticky inside the full-width cell: the label stays in view on horizontal scroll. */}
+				<span className="sticky left-3 inline-block">{label}</span>
 			</td>
 		</tr>
 	);
