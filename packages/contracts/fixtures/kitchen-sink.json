@@ -1248,7 +1248,8 @@
                             25,
                             50,
                             100
-                        ]
+                        ],
+                        "simple": true
                     },
                     "name": "posts",
                     "columns": [

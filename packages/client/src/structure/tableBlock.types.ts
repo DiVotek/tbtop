@@ -74,6 +74,7 @@ export interface TableBlockOptions extends AsyncBlock {
 export interface TableBodyProps {
 	rows: Record<string, unknown>[];
 	total: number | undefined;
+	hasMore: boolean | undefined;
 	isReloading: boolean;
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];

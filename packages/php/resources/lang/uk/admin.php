@@ -154,6 +154,7 @@ return [
         'pagination' => [
             'of' => 'з',
             'per_page' => 'На сторінці',
+            'page' => 'Сторінка {page}',
             'prev' => 'Назад',
             'next' => 'Вперед',
         ],

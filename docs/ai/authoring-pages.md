@@ -561,6 +561,21 @@ and the record-URL row link.
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
 
+**Simple pagination** — `simplePagination()` drops the `count()` query, which is the slow
+one on a large or heavily joined table. The page query reads `perPage + 1` rows: the extra
+row only answers "is there a next page", and the response carries `hasMore` instead of
+`total`. The footer shows previous / "Page N" / next and the per-page selector, with no
+"1–25 of 1,000" range and no page numbers; it hides on a first page that has no next one.
+Two things still count: a tab declared with `->count()` runs its own `count()` per request
+(drop `count()` on those tabs if the point is to avoid counting), and nothing else changes —
+search, filters, sort, tabs and URL state work the same. Cursor pagination is not offered.
+
+```php
+$s->table('events')
+    ->paginate(50, [50, 100])
+    ->simplePagination()
+```
+
 **What a row carries to the client** — an allowlist, never the full database row: the
 record key (under its own name and again under `_key`), the visible declared columns (toggleable and `hiddenByDefault()` columns
 included), the `groups()` column, and the `_recordUrl` / `_tooltips` / `_descriptions`
