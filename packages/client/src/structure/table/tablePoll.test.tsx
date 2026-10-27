@@ -1,7 +1,8 @@
 /**
  * Table poll(): background refetch on the server's interval — rows stay on
- * screen with no reload overlay, a failed tick keeps them, and a pending
- * selection pauses polling.
+ * screen with no reload overlay, one failed tick keeps them (two in a row
+ * show the error), a slow fetch is not cancelled by the next tick, and a
+ * pending selection pauses polling.
  */
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
 import { act, fireEvent, render } from "@testing-library/react";
@@ -91,6 +92,41 @@ describe("table polling", () => {
 
 		await advance(10_000);
 		expect(await findByText("Row v3")).toBeTruthy();
+	});
+
+	test("two failed ticks in a row show the error instead of stale rows", async () => {
+		const { node } = pollingTable(10, (call) =>
+			call === 1 ? rowsFor(call) : Promise.reject(new Error("offline")),
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText, findByTestId, getByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("Row v1");
+
+		await advance(10_000);
+		expect(getByText("Row v1")).toBeTruthy();
+
+		await advance(10_000);
+		expect((await findByTestId("table-error")).textContent).toContain("offline");
+	});
+
+	test("a fetch slower than the interval is not cancelled by the next tick", async () => {
+		const { state, node } = pollingTable(10, (call) =>
+			call === 2
+				? new Promise((resolve) =>
+						setTimeout(() => resolve([{ id: "a", title: "Row v2" }]), 15_000),
+					)
+				: rowsFor(call),
+		);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByText("Row v1");
+
+		await advance(10_000);
+		await advance(10_000);
+		expect(state.calls).toBe(2);
+
+		await advance(5_000);
+		expect(await findByText("Row v2")).toBeTruthy();
 	});
 
 	test("a selected row pauses polling until the selection clears", async () => {

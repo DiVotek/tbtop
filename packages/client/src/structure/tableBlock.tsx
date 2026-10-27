@@ -136,7 +136,7 @@ function TableBody(props: TableBodyProps) {
 	useRegisterTableController(props.tableName, ctrl);
 	useTablePoll({
 		seconds: props.poll,
-		paused: props.isReloading || ctrl.selectedIds.length > 0,
+		paused: ctrl.selectedIds.length > 0,
 		poll: props.onPoll,
 	});
 
