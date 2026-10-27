@@ -1,7 +1,8 @@
 /**
  * Column-layout state for a table: the user's column order and dragged
  * widths, persisted to localStorage next to the visibility state. Columns the
- * saved order doesn't know (added since) go to the end in declared order.
+ * saved order doesn't know (added since) go to the end in declared order;
+ * the leading `sticky()` columns stay in front.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { storageKey } from "../../app/storageKey";
@@ -44,11 +45,23 @@ export function tableStateKey(
 	return storageKey("table", id, ...path);
 }
 
+/**
+ * The columns in the user's order. The leading `sticky()` run stays in front in
+ * declared order — pinned columns must lead — and only the rest follow `order`.
+ */
 export function applyColumnOrder(columns: TableColumn[], order: string[]): TableColumn[] {
-	const byName = new Map(columns.map((c) => [c.name, c]));
+	const pinned = pinnedRun(columns);
+	const rest = columns.slice(pinned.length);
+	const byName = new Map(rest.map((c) => [c.name, c]));
 	const ordered = order.flatMap((name) => byName.get(name) ?? []);
 	const placed = new Set(ordered.map((c) => c.name));
-	return [...ordered, ...columns.filter((c) => !placed.has(c.name))];
+	return [...pinned, ...ordered, ...rest.filter((c) => !placed.has(c.name))];
+}
+
+/** The leading run of sticky columns: they never move. */
+export function pinnedRun(columns: TableColumn[]): TableColumn[] {
+	const end = columns.findIndex((c) => !c.sticky);
+	return end === -1 ? columns : columns.slice(0, end);
 }
 
 export function moveInOrder(names: string[], name: string, target: string): string[] {
@@ -149,7 +162,8 @@ export function useColumnLayout(columns: TableColumn[], tableName: string): Colu
 	const moveColumn = useCallback(
 		(name: string, target: string) => {
 			update((prev) => {
-				const names = applyColumnOrder(columns, prev.order).map((c) => c.name);
+				const ordered = applyColumnOrder(columns, prev.order);
+				const names = ordered.slice(pinnedRun(columns).length).map((c) => c.name);
 				return { ...prev, order: moveInOrder(names, name, target) };
 			});
 		},

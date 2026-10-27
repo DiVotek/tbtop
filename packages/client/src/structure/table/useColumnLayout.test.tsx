@@ -108,3 +108,24 @@ describe("useColumnLayout", () => {
 		expect(layout.widths).toEqual({});
 	});
 });
+
+describe("sticky columns", () => {
+	const STICKY: TableColumn[] = [
+		{ name: "number", sticky: true },
+		{ name: "title" },
+		{ name: "author" },
+	];
+
+	test("the leading sticky run stays in front whatever the saved order", () => {
+		const ordered = applyColumnOrder(STICKY, ["author", "number", "title"]);
+
+		expect(names(ordered)).toEqual(["number", "author", "title"]);
+	});
+
+	test("a column cannot move into the sticky run", () => {
+		const layout = renderLayout(STICKY);
+		act(() => layout.current().moveColumn("author", "number"));
+
+		expect(names(layout.current().orderedColumns)).toEqual(["number", "title", "author"]);
+	});
+});

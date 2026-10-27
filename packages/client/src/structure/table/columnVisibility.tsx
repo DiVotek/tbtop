@@ -78,7 +78,8 @@ export function ColumnVisibilityDropdown({
 										col={col}
 										checked={visibleColumns.has(col.name)}
 										onToggle={onToggle}
-										onMove={onMove}
+										// Pinned columns lead the table and never move.
+										onMove={col.sticky ? undefined : onMove}
 										prev={names[i - 1]}
 										next={names[i + 1]}
 									/>
