@@ -702,6 +702,15 @@ search, per-column search and sort, so `?search=` and `?sort=` cannot probe it. 
 a field without showing it, name it in the table-level `->searchable(['email', ...])`
 instead: that list is by field name and needs no column.
 
+**Order and width.** The user arranges columns in the same Columns menu (drag an entry by
+its grip, or Alt+↑/↓) and resizes one by dragging its header's right edge (double-click
+restores the declared `width()`). Both are client-only and saved per table in
+`localStorage` (`tbtop:table.<name>.layout.v1`), next to the visibility choice; a column
+added later goes to the end of a saved order, the leading `sticky()` columns never move, and the menu's reset entry clears both. The
+declared column order stays the default. Without the Columns menu (`columnToggle(false)`,
+embedded tables) the declared order holds. `columnToggle(false)` tables still resize
+(double-click resets a width); embedded ones don't.
+
 **Inline editing.** `toggle()`, `textInput()`, `numberInput()` and `selectColumn()` make
 a cell editable in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()`
 for per-cell validation, `options()` for the select variant and `step()` for the number

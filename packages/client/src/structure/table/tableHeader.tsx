@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type { TableColumn } from "../types";
+import { ColumnResizeHandle, cellWidthStyle, useColumnSizing } from "./columnResize";
 import { resolveIcon } from "./iconRegistry";
 import { useStickyCell } from "./stickyColumns";
 
@@ -19,7 +20,8 @@ interface SortableHeaderProps {
 // New-gen shape: padding, height, weight, nowrap and text colour come from
 // `cn-table-head` (`ui/presets/style-preset-*.css`). The preset pins
 // `text-left`; the center/right utilities below override it.
-// Our deltas: sortable hover tint + pointer, `aria-sort`, per-column width,
+// Our deltas: sortable hover tint + pointer, `aria-sort`, per-column width
+// (the user's dragged width wins over the declared one), the resize grip,
 // and the sort button's focus ring (the preset styles no inner trigger).
 function headerAlignClass(align: TableColumn["align"]): string | undefined {
 	if (align === "center") {
@@ -51,7 +53,9 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 
 	const alignClass = headerAlignClass(col.align);
 	const pin = useStickyCell({ column: col.name });
-	const widthStyle = col.width || pin.style ? { width: col.width, ...pin.style } : undefined;
+	const resized = useColumnSizing()?.widths[col.name];
+	const widthStyle = cellWidthStyle(col.width, resized, pin.style);
+	const label = col.label ?? col.name;
 
 	const HeadingIcon = col.icon ? resolveIcon(col.icon.name) : undefined;
 
@@ -82,7 +86,9 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 		<th
 			{...pin}
 			className={cn(
-				"cn-table-head transition-colors",
+				"cn-table-head group/head transition-colors",
+				// A pinned header is already `sticky`, which anchors the resize grip too.
+				!pin.className && "relative",
 				alignClass,
 				sortable && "cursor-pointer select-none hover:bg-muted",
 				pin.className,
@@ -96,13 +102,14 @@ export function SortableHeader({ col, sort, onSort }: SortableHeaderProps) {
 					{HeadingIcon && col.icon?.position !== "right" && (
 						<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
 					)}
-					{col.label ?? col.name}
+					{label}
 					{HeadingIcon && col.icon?.position === "right" && (
 						<HeadingIcon className="size-3.5 shrink-0" aria-hidden />
 					)}
 					{sortable && <SortIndicator active={isActive} dir={dir} />}
 				</SortTrigger>
 			</HeaderTooltip>
+			<ColumnResizeHandle name={col.name} label={label} />
 		</th>
 	);
 }
