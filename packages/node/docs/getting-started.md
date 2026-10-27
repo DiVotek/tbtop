@@ -150,12 +150,14 @@ const profile = definePage({
 				s.password("password_confirmation").label("Confirm").required(),
 				s.actionsRow([s.action("change").label("Change password").submit()]),
 			]).guardUnsaved(false).onSubmit(async (ctx) => {
-				if (!(await users.verify(me.email, String(ctx.form.current_password)))) {
+				// The current row, not the `me` the page rendered with: the email may have changed since.
+				const current = await users.find(me.id);
+				if (!(await users.verify(current.email, String(ctx.form.current_password)))) {
 					return Effects.make().notify("The current password is wrong.", "error");
 				}
-				await users.setPassword(me.id, String(ctx.form.password)); // your hash + write
-				// The current row, not the `me` the page rendered with; memorySessions also moves to a new session id here.
-				await (await admin.session(ctx.request)).set(SESSION_USER, await users.find(me.id));
+				await users.setPassword(current.id, String(ctx.form.password)); // your hash + write
+				// memorySessions moves to a new session id here.
+				await (await admin.session(ctx.request)).set(SESSION_USER, await users.find(current.id));
 				return Effects.make().notify("Password changed").resetForm("password");
 			}),
 		]);
