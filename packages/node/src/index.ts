@@ -15,6 +15,7 @@ export type {
 	NavigationLayout,
 } from "./server/chrome/appearance";
 export type { ChromeDef } from "./server/chrome/chrome";
+export type { EnvironmentBadge, EnvironmentIndicator } from "./server/chrome/environment";
 export type { NavGroupDef } from "./server/chrome/navGroups";
 export type { NavLink } from "./server/chrome/navigation";
 export type { PaletteCommand, PaletteConfig } from "./server/chrome/palette";

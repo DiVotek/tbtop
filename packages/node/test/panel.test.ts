@@ -355,3 +355,48 @@ describe("several panels", () => {
 		);
 	});
 });
+
+describe("environment indicator (#393)", () => {
+	const env = async (config: Partial<AdminConfig>) =>
+		(await props(panel(config), "/admin/dashboard")).tbtop.environment;
+
+	test("off by default; on, it names the environment in its built-in color", async () => {
+		expect(await env({ environment: "staging" })).toBeNull();
+		expect(await env({ environment: "staging", environmentIndicator: true })).toEqual({
+			label: "Staging",
+			color: "warning",
+		});
+		expect(await env({ environment: "qa", environmentIndicator: true })).toEqual({
+			label: "Qa",
+			color: "gray",
+		});
+	});
+
+	test("production hides unless listed; a map overrides or hides per environment", async () => {
+		expect(await env({ environment: "production", environmentIndicator: true })).toBeNull();
+		expect(
+			await env({ environment: "production", environmentIndicator: { production: "danger" } }),
+		).toEqual({ label: "Production", color: "danger" });
+		expect(
+			await env({ environment: "local", environmentIndicator: { local: { label: "Dev box" } } }),
+		).toEqual({ label: "Dev box", color: "success" });
+		expect(await env({ environment: "local", environmentIndicator: { local: false } })).toBeNull();
+	});
+
+	test("a function decides per request", async () => {
+		expect(
+			await env({
+				environment: "staging",
+				environmentIndicator: (request) =>
+					new URL(request.url).hostname === "x" ? { color: "info" } : null,
+			}),
+		).toEqual({ label: "Staging", color: "info" });
+	});
+
+	test("createAdmin() refuses an indicator without an environment, or a bad override", () => {
+		expect(() => panel({ environmentIndicator: true })).toThrow("needs `environment`");
+		expect(() =>
+			panel({ environment: "local", environmentIndicator: { local: 3 as unknown as string } }),
+		).toThrow('environmentIndicator["local"]');
+	});
+});

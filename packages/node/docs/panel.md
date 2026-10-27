@@ -32,6 +32,12 @@ or a guest to `loginPath`.
   locale, the `style-preset-<name>` class, and the stored theme applied before paint.
 - `commandPalette: false | { hotkey, commands: [{ label, url, icon, keywords }] }`.
 - `brand`, `unsavedGuard` (default true).
+- `environmentIndicator`: a header badge naming the environment, like PHP's
+  `->environmentIndicator()`. There is no `APP_ENV` on Workers, so pass the name
+  as `environment` (`environment: env.APP_ENV`); without it `createAdmin()` throws.
+  `true` shows the built-in label and color for anything but `production`; a map
+  overrides per environment (`{ production: "danger", local: { label: "Dev" }, qa: false }`);
+  a function `(request) => ({ label, color }) | null` decides per request.
 
 ## Locales
 

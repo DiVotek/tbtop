@@ -1,6 +1,7 @@
 import { currentContext, defaultLocale } from "../dsl/context";
 import { type AppearanceConfig, appearanceProp, type NavigationLayout } from "./chrome/appearance";
 import { type ChromeDef, serializeChrome } from "./chrome/chrome";
+import { type EnvironmentIndicator, environmentProp } from "./chrome/environment";
 import type { NavGroupDef } from "./chrome/navGroups";
 import { buildNav, linkItem, type NavLink } from "./chrome/navigation";
 import { type PaletteConfig, paletteProp } from "./chrome/palette";
@@ -23,6 +24,10 @@ export interface PanelLook {
 	commandPalette?: boolean | PaletteConfig;
 	/** Send the `breadcrumbs` page prop (default true). */
 	breadcrumbs?: boolean;
+	/** The app's environment name (`APP_ENV`, `NODE_ENV`), read by `environmentIndicator`. */
+	environment?: string;
+	/** A badge in the header naming the environment (local, staging); off by default. */
+	environmentIndicator?: EnvironmentIndicator;
 }
 
 export interface PanelInfo extends PanelLook {
@@ -51,6 +56,7 @@ export async function sharedProps(
 		brand: panel.brand ?? null,
 		navigation: panel.navigation ?? "sidebar",
 		appearance: appearanceProp(panel.appearance),
+		environment: await environmentProp(request, panel.environment, panel.environmentIndicator),
 		prefix: panel.prefix,
 		apiBase: `${panel.prefix}/api`,
 		locale: context.locale,

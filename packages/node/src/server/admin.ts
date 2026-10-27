@@ -1,5 +1,6 @@
 import { materialize, runWithContext } from "../dsl";
 import { assertAppearance } from "./chrome/appearance";
+import { assertEnvironment } from "./chrome/environment";
 import { expectsJson, notFoundOr, notFoundPage } from "./chrome/errorPage";
 import { homeHref } from "./chrome/navigation";
 import type { AdminConfig } from "./config";
@@ -34,6 +35,7 @@ class AdminServer {
 	constructor(readonly config: AdminConfig) {
 		this.prefix = config.prefix.replace(/\/+$/, "");
 		assertAppearance(config.navigation, config.appearance);
+		assertEnvironment(config.environment, config.environmentIndicator);
 		if (config.mcp !== undefined) {
 			assertNoCollision(config.mcp, config.pages);
 		}
