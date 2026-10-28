@@ -3,7 +3,23 @@
 	"version": "0.7.2",
 	"description": "Tabletop admin server for Bun, Node and Cloudflare Workers: pages in a TypeScript DSL, rendered by @tbtop/inertia-admin over Inertia.",
 	"license": "MIT",
-	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/DiVotek/tbtop.git",
+		"directory": "packages/node"
+	},
+	"homepage": "https://github.com/DiVotek/tbtop/tree/main/packages/node#readme",
+	"bugs": {
+		"url": "https://github.com/DiVotek/tbtop/issues"
+	},
+	"keywords": [
+		"admin",
+		"admin-panel",
+		"inertia",
+		"tbtop",
+		"bun",
+		"cloudflare-workers"
+	],
 	"type": "module",
 	"sideEffects": false,
 	"engines": {
@@ -12,7 +28,8 @@
 	"files": [
 		"dist",
 		"README.md",
-		"docs"
+		"docs",
+		"LICENSE"
 	],
 	"exports": {
 		".": {
@@ -44,7 +61,8 @@
 		"check:package": "bun run build && publint && attw --pack . --profile esm-only && bun scripts/smoke-pack.ts",
 		"check:workers": "bun workers/check.ts",
 		"sync:lang": "bun scripts/sync-lang.ts",
-		"check:lang": "bun scripts/sync-lang.ts --check"
+		"check:lang": "bun scripts/sync-lang.ts --check",
+		"prepublishOnly": "bun run build"
 	},
 	"dependencies": {
 		"markdown-it": "^15.0.3"
@@ -70,5 +88,8 @@
 		"sharp": "0.34",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.0"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }
