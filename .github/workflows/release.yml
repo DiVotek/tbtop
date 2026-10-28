@@ -83,6 +83,19 @@ jobs:
           echo "tag=v$v" >> "$GITHUB_OUTPUT"
           echo "resolved version $v"
 
+      # Checked before anything is published: a mismatch found after the
+      # client publish would leave the client on npm with no tag.
+      - name: Require the same version in packages/node
+        working-directory: packages/node
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$TAG" ]; then
+            echo "::error::packages/node is $v, the client is $TAG — bump both"
+            exit 1
+          fi
+
       # git ls-remote --exit-code returns 0 (ref matched), 2 (remote contacted,
       # no match), or other nonzero codes for real failures (network, auth).
       # Only 2 means "tag is free" — anything else must not be treated as such.
@@ -118,23 +131,12 @@ jobs:
             npm publish
           fi
 
-      # @tbtop/admin (node) ships lockstep with the client: version.test.ts
-      # keeps the two package.json versions equal. Published after the client
-      # (its peer) and still before the tag, so a failure leaves no tag.
+      # @tbtop/admin (node) ships lockstep with the client (version checked
+      # above). Published after the client (its peer) and still before the
+      # tag, so a failure leaves no tag.
       - name: Install @tbtop/admin (node)
         working-directory: packages/node
         run: bun install --frozen-lockfile
-
-      - name: Require the same version in packages/node
-        working-directory: packages/node
-        env:
-          TAG: ${{ steps.ver.outputs.tag }}
-        run: |
-          v="v$(node -p "require('./package.json').version")"
-          if [ "$v" != "$TAG" ]; then
-            echo "::error::packages/node is $v, the client is $TAG — bump both"
-            exit 1
-          fi
 
       - name: Publish @tbtop/admin (node) to npm
         working-directory: packages/node
