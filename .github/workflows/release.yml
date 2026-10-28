@@ -132,7 +132,7 @@ jobs:
           fi
 
       # @tbtop/admin (node) ships lockstep with the client (version checked
-      # above). Published after the client (its peer) and still before the
+      # above). Published after the client and still before the
       # tag, so a failure leaves no tag.
       - name: Install @tbtop/admin (node)
         working-directory: packages/node
