@@ -137,10 +137,24 @@ export const CHECKS: Record<string, Check> = {
 	starts_with: ({ value, params }) => params.some((p) => text(value).startsWith(p)),
 	string: ({ value }) => typeof value === "string",
 	uppercase: ({ value }) => text(value) === text(value).toUpperCase(),
-	url: ({ value }) => URL.canParse(text(value)) && /^[a-z][a-z0-9+.-]*:\/\//i.test(text(value)),
+	url: ({ value, params }) => isUrl(text(value), params),
 	uuid: ({ value }) =>
 		/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(text(value)),
 };
+
+/** Schemes that run script in an href; Laravel's url rule lists neither, and `javascript://%0A…` parses. */
+const SCRIPT_SCHEMES = ["javascript", "vbscript"];
+
+/** Laravel's validateUrl: `scheme://…`, the scheme limited to `url:http,https` when given; never a script scheme. */
+function isUrl(value: string, protocols: string[]): boolean {
+	const scheme = /^([a-z][a-z0-9+.-]*):\/\//i.exec(value)?.[1]?.toLowerCase();
+	if (scheme === undefined || !URL.canParse(value) || SCRIPT_SCHEMES.includes(scheme)) {
+		return false;
+	}
+	return (
+		protocols.length === 0 || protocols.some((protocol) => protocol.toLowerCase() === scheme)
+	);
+}
 
 function isJson(value: string): boolean {
 	try {

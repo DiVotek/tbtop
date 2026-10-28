@@ -15,6 +15,19 @@ describe("Laravel rule semantics", () => {
 		expect(await errorsOf({ a: null }, { a: ["nullable", "string"] })).toEqual({});
 	});
 
+	test("url refuses a script scheme and honours url:http,https", async () => {
+		const ok = async (value: string, rule = "url") =>
+			Object.keys(await errorsOf({ a: value }, { a: [rule] })).length === 0;
+		expect(await ok("https://example.com/a?b=1")).toBe(true);
+		expect(await ok("ftp://files.example.com")).toBe(true);
+		expect(await ok("javascript://%0Aalert(1)")).toBe(false);
+		expect(await ok("JavaScript://x%0Aalert(1)")).toBe(false);
+		expect(await ok("vbscript://x")).toBe(false);
+		expect(await ok("example.com")).toBe(false);
+		expect(await ok("ftp://files.example.com", "url:http,https")).toBe(false);
+		expect(await ok("HTTPS://example.com", "url:http,https")).toBe(true);
+	});
+
 	test("a failed implicit rule stops the key; other failures accumulate", async () => {
 		expect(await errorsOf({}, { a: ["required", "min:3"] })).toEqual({
 			a: ["The a field is required."],
