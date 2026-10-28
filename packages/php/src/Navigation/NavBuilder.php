@@ -20,7 +20,7 @@ final class NavBuilder
     /**
      * Builds the sidebar tree from the panel's pages' nav() declarations plus
      * any panel-level navigationItems(). Pages with route params, null nav(),
-     * or a failing gate are skipped. Items that declare no group land in a
+     * or a failing gate are skipped, and so is a NavItem whose can() fails. Items that declare no group land in a
      * single ungrouped bucket (wire `group: null`), which always renders
      * first. A nav()['parent'] nests a page under
      * another page's item (unknown/cyclic parents throw at build time); a
@@ -60,6 +60,9 @@ final class NavBuilder
         }
 
         foreach ($panel->navigationItems() as $item) {
+            if (! self::gatePasses($item->getGate())) {
+                continue;
+            }
             $node = self::customItemFrom($item);
             $groups[$item->getGroup() ?? self::UNGROUPED][] = self::withSection($node, $item->getGroup(), $item->getSection());
         }

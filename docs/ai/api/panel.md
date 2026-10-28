@@ -75,6 +75,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 
 | Method | What it does |
 |---|---|
+| `can(array\|string\|null $gate): self` | Show the item only to users the gate allows: an ability, or an ability plus the model class its policy resolves from — the same value a Page::can() returns, so `->can(SomePage::can())` hides a link to a page its user may not open. Null (the default) shows it to everyone. |
 | `group(string $group): self` | Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. |
 | `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
 | `newTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |

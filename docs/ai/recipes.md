@@ -507,12 +507,15 @@ leaf item as a plain link; a parent (has `children`) renders its own link plus a
 that expands to indented children — the same collapse affordance as a group header. The
 topbar layout nests the same way via a `DropdownMenuSub` (`navGroupDropdown.tsx`).
 
-### Custom nav items (no page, no gate)
+### Custom nav items (no page)
 
 `PanelConfig::navigationItems()` (`packages/php/src/Panels/PanelConfig.php`) adds
-always-shown entries — typically external links — merged into the built tree alongside
+entries — typically external links — merged into the built tree alongside
 page-derived items and grouped by label the same way `navigationGroups()` matches groups.
-Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class and no per-request gate:
+Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class. It is shown to
+everyone unless `->can($gate)` names a gate, checked per request like `Page::can()`; pass a
+page's own `SomePage::can()` to hide a link the user could not open. The same applies to
+user-menu items.
 
 ```php
 // apps/demo/app/Admin/AdminPanel.php
