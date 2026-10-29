@@ -1,26 +1,40 @@
 # Backlog
 
 > The open-work list for this repo. Items get built when a real consumer (EasyCar
-> first) or adoption pain demands them. Last revised: 2026-09-22.
+> first) or adoption pain demands them. Last revised: 2026-10-29 (after 0.7.3).
 >
-> Supersedes `docs/roadmap.md`, deleted 2026-09-09: its gap tables had drifted
-> ~12 weeks and listed shipped features (soft-delete, infolist, relation managers,
-> auth pages) as open. Phase/release sequencing now lives in git history and PRs.
->
-> **This file lags the code.** Shipped items are struck through as they land, but the
-> sweep is manual — never conclude a feature is missing from this file alone. The
-> source of truth for what exists is `docs/ai/api/` (generated) and the code itself.
+> **This file lags the code.** Shipped items are removed in periodic sweeps (git history
+> keeps them), so never conclude a feature is missing from this file alone. The source of
+> truth for what exists is `docs/ai/api/` (generated) and the code itself.
+
+## Planned for 0.8.0
+
+- **Drop Laravel 11** — `illuminate/contracts` still allows `^11.0`. Breaking. CI keeps
+  testing one cell (latest PHP × latest Laravel); no version matrix for now.
+- **`displayHtml()` sanitized by default** — `S::displayHtml()` renders its string as-is
+  ("the author owns escaping"). Sanitize by default, keep raw output behind an explicit
+  opt-in. Breaking.
+- **Semver and deprecation policy + changelog** — write the policy down and generate the
+  release notes with git-cliff (no `cliff.toml` yet).
+- **Email verification in the auth scaffold** — `admin:install --auth` publishes sign-in,
+  password reset and the profile page, but no verification flow. `ProfilePage` already
+  un-verifies a changed email on a `MustVerifyEmail` user; the notice/verify pages are
+  missing.
+
+## Small fixes
+
+Each fits the minor-fix loop: one change, one test.
+
+- **`simplePagination()` docblock** — says the footer shows "only previous/next"; it
+  also shows "Page N" and the per-page selector (`TableBuilder.php`). The next
+  `ApiReference` regeneration picks the wording up.
+- **Slug transliteration gaps** — `LATIN_MAP` in `packages/client/src/fields/slugify.ts`
+  covers ł đ ø ß æ œ; ı ð þ ħ still fold to dashes.
 
 ## Tables
 
-- ~~**Predefined filter tabs**~~ **Shipped** — `TableBuilder::tabs([Tab::make('active')
-  ->query(fn), ...])`, URL state `t[table][tab]`, opt-in count badges via `Tab::count()`.
-- **Reorderable rows (drag-and-drop)** — `TableBuilder::reorderable('sort_order')`;
-  dnd-kit (new client dep), handle column, `POST .../tables/{t}/reorder` with ordered
-  ids. Reorder disabled while sort/filters active (Filament behavior). **Shipped (M-94)** —
-  wire shape `reorder: {column}`, endpoint scopes ids to the table query. See
-  [./ai/wiring.md](./ai/wiring.md).
-- ~~Sticky table header~~ **Shipped** — `sticky top-0` on the grid `thead`.
+- **Collapsible row groups** — `rowGroups.tsx` renders group headers without a
+  collapse toggle.
 - Filter chips, saved filters.
 - **Sidebar filter placement** — `filtersIn()` is `modal|inline` (validated). A left
   sidebar variant needs the filter panel outside the toolbar row: a two-column shell in
@@ -30,21 +44,10 @@
   `numberInput()->step(...)->suffix(...)` over the raw stored value. If a consumer stores
   minor units, the framework would own ÷100 on projection and ×100 before `onSave`,
   mirroring `KindFormat`. Not needed while consumers store decimals.
-- ~~Per-column search~~ **Shipped** — `Column::individuallySearchable()`.
-- ~~Soft-delete macro~~ **Shipped** — `TableBuilder::softDeletes($s, Model::class)`.
 - CSV export / import (queued).
 
 ## Fields / forms
 
-- ~~**helperText + tooltip**~~ **Shipped** — `Field::helperText()` + `Field::tooltip()`.
-- ~~Infolist / read-only detail view~~ **Shipped** — the display-value family
-  (`displayValue`/`displayImage`/`displayRichtext`/`displayKeyValue`); see
-  `RecordDetailPage` in the demo.
-- **`UploadPreview` misses the validation props** — a filled upload field renders
-  `UploadPreview`, which receives neither `onBlur`, `invalid` nor `describedBy`
-  (`uploadField.tsx`); only the empty-state `UploadPicker` gets them. So a populated
-  but invalid upload never blur-validates and announces nothing to a screen reader.
-  Narrow, real, and cheap — same contract as the picker.
 - **Declarative autofill (`S::autofill`)** — third typed consumer of deps-driven
   server-computed field data (after liveRegion → display nodes, disabledRanges → widget
   params; here → field values): `autofill('car_defaults')->dependsOn('car_id')->fill(fn)`.
@@ -79,20 +82,9 @@
   against an empty context on non-form surfaces, so a condition on a page-level layout
   node never fires (static `hidden: true` works). Needs a page-level condition context
   (record + user) before conditions are promised outside forms.
-- ~~**`S::markdown($md)`**~~ **Shipped** — server-side commonmark → `displayHtml`;
-  `->allowHtml()` for trusted content only.
-- ~~**Flex options on `row`/`stack`**~~ **Shipped** — `justify`/`align`/`gap`/`wrap`, plus
-  `S::flex()` with a `card` variant and a `class` escape hatch.
 
 ## Modal
 
-- ~~Fix open animation — appears from the left; broken center positioning in revola
-  classes.~~ Done: #106 dropped the directional slide-in/out utilities — the desktop
-  dialog fades and scales in from center (`enter` keyframes carry no translate).
-  DEMO-4 also wired `slideOver()`/`modalWidth()` through wire materialization
-  (they were serialized but dropped client-side).
-- ~~Hide scrollbar on the scrollable body (shadcn dialog parity)~~ **Shipped** —
-  `scrollbar-none` on the `ModalShell` body.
 - **Footer actions slot** — `ModalShell` supports a sticky footer (every built-in dialog
   uses it) but the DSL modal renders one body only; an `actionsRow` at the end of the body
   scrolls with the content. Design: `ActionBuilder::footer([...])` → `spec.footer`, the
@@ -101,48 +93,39 @@
 
 ## DX
 
-- ~~**`tbtop:page` scaffold command**~~ **Shipped** — `make:tbtop-page`, alongside
-  `admin:install` (publishes the host wiring).
-- ~~**Resource generator**~~ **Shipped** — `make:tbtop-resource {model}` writes list,
-  create and edit pages from the model's table (`--simple/--view/--soft-deletes/--policy/--tests`).
 - **Consumer testing kit** — Pest/PHPUnit helpers for host apps to test their own pages
   through the wire contract, e.g. `page(CarsPage::class)->assertColumn('vin')
-  ->callAction('delete', $car)->assertEffect('refreshTable')`. Filament-parity adoption
-  item; parked 2026-09-24.
+  ->callAction('delete', $car)->assertEffect('refreshTable')`, plus `--tests` output of
+  `make:tbtop-resource` built on it.
+
+## Auth
+
+The host owns authentication; `admin:install --auth` publishes sign-in, password reset
+and the profile page as empty subclasses of the package base pages
+(`Tbtop\Admin\Auth\*`); `--2fa` adds TOTP two-factor sign-in. Open:
+
+- **Demo on the package 2FA** — the demo still runs its own `TwoFactorSetupPage`,
+  `TwoFactorChallengePage` and `RequireFullAuth`; move it onto `--2fa` and drop them.
+- **`--auth` on a second panel** — the scaffold always writes `app/Admin/Pages/Auth`, so a
+  second `--panel=` run reports "Exists" and does nothing, and its discovery hint would pull
+  the first panel's pages in. Per-panel target dir/namespace, or refuse with a manual step.
+- **Forgot-password timing** (deferred) — the reset mail is sent inline, so an existing
+  account answers slower than an unknown one. Breeze has the same gap; `Timebox` or a
+  queued notification closes it if a consumer asks.
+- Registration, passkeys.
 
 ## Platform
 
-- ~~**Database notifications center**~~ **Shipped (polling)** — `$s->notifications()` bell,
-  `Notification::make()->sendToDatabase()`, `PanelConfig::notificationsPolling()`.
-  Broadcasting still open.
-- ~~**MCP server**~~ **Shipped** — `PanelConfig::mcp()` (laravel/mcp, suggested):
-  `search`/`query`/`execute` over the page registry, gates and validation via the page
-  controllers; `->mcp(false)` opt-out. Design in `packages/php/adr/mcp.md`. Open: a token
-  auth story in the demo (no Sanctum there yet).
+- **Broadcast notifications** — the database notifications bell refreshes by polling
+  (`PanelConfig::notificationsPolling()`); no broadcasting channel yet.
+- **MCP tokens in the demo** — the demo panel guards MCP with
+  `auth:sanctum` + `abilities:tbtop-mcp`, but `ApiTokensPage` is a placeholder: there is
+  no UI that issues such a token.
+- **Lexical dark mode, visual check** — the richtext theme in `core.css` uses only colour
+  tokens, but nobody has looked at the editor in the dark theme yet.
+- Multi-tenancy (post-panels; panels ≠ tenancy).
+- **Cross-model record search** — the ⌘K palette searches nav items plus declared
+  commands (`CommandPaletteConfig::commands()`); what is missing is searching *records*
+  across models from one box. Needs a layout-slot design session.
 - **Log viewer** — separate package: pretty log browser inside the admin, so nobody
   tails files over SSH. Not urgent.
-- ~~**Auth backend**~~ **Shipped as a scaffold** — the host owns authentication;
-  `admin:install --auth` publishes sign-in and password reset as empty subclasses of the
-  package base pages (`Tbtop\Admin\Auth\*`), so fixes arrive through the base. No
-  controllers or routes. The profile/password page ships too (`--profile` alone), and so does
-  TOTP 2FA (`--2fa`: challenge page, profile section, recovery codes). Open: email
-  verification, registration. Replaces the 2026-09-24 "non-goal" decision.
-  - **`--auth` on a second panel** — the scaffold always writes `app/Admin/Pages/Auth`, so a
-    second `--panel=` run reports "Exists" and does nothing, and its discovery hint would pull
-    the first panel's pages in. Per-panel target dir/namespace, or refuse with a manual step.
-  - **Forgot-password timing** (deferred) — the reset mail is sent inline, so an existing
-    account answers slower than an unknown one. Breeze has the same gap; `Timebox` or a
-    queued notification closes it if a consumer asks.
-- Multi-tenancy (post-panels; panels ≠ tenancy).
-- **Cross-model record search** — the ⌘K palette ships and searches nav items plus
-  declared commands (`CommandPaletteConfig::commands()`); what is missing is searching
-  *records* across models from one box. Needs a layout-slot design session.
-- ~~Mobile sidebar (drawer)~~ **Shipped** — `SidebarDrawer`, wired into both shell
-  frames, auto-closes on Inertia navigate.
-- Dark-mode completeness — recharts is done (`useChartColors` re-resolves the
-  `--chart-N` tokens on theme flip); the Lexical richtext theme is unverified.
-
-## Media
-
-- Media v2 ideas — TBD (carried from the pre-extraction backlog). No acceptance
-  criteria, so nothing here can be called done or missing: write them or drop the entry.
