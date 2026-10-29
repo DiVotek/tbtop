@@ -79,8 +79,7 @@ class SelectCreatableTest extends TestCase
         $this->app['auth']->forgetGuards();
         $post = $this->makePost();
 
-        // The panel guard (auth:web) rejects JSON guests with 401 — it runs
-        // before RequireFullAuth, which used to redirect.
+        // The panel guard (auth:web) rejects JSON guests with 401.
         $this->postJson(
             "/admin/posts/{$post->id}/edit/select-create/author_id",
             ['name' => 'Bob', 'email' => 'bob@example.com'],

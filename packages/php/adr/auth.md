@@ -23,7 +23,7 @@ domain: auth
 - **Everything runs on the panel guard**, never the app default — auth pages sit on
   `['web']`, so `auth:{guard}` never sets it for them.
 - **Auth pages do not inherit the panel's middleware.** The panel stack may hold an access
-  check (the demo's `RequireFullAuth`) that would bounce a guest off the login itself. A
+  check (an app's own "signed in" gate) that would bounce a guest off the login itself. A
   host whose panel-wide allowlist must cover sign-in overrides `middleware()` in its subclass.
 - **The password broker is a panel setting**, `PanelConfig::passwordBroker()`, null
   meaning the app default — as Filament's `authPasswordBroker()`. Not a page hook: the

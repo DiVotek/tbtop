@@ -104,8 +104,6 @@ The host owns authentication; `admin:install --auth` publishes sign-in, password
 and the profile page as empty subclasses of the package base pages
 (`Tbtop\Admin\Auth\*`); `--2fa` adds TOTP two-factor sign-in. Open:
 
-- **Demo on the package 2FA** — the demo still runs its own `TwoFactorSetupPage`,
-  `TwoFactorChallengePage` and `RequireFullAuth`; move it onto `--2fa` and drop them.
 - **`--auth` on a second panel** — the scaffold always writes `app/Admin/Pages/Auth`, so a
   second `--panel=` run reports "Exists" and does nothing, and its discovery hint would pull
   the first panel's pages in. Per-panel target dir/namespace, or refuse with a manual step.

@@ -6,8 +6,8 @@ use App\Models\User;
 
 // Browser smoke for the public auth pages: the scaffolded LoginPage /
 // ForgotPasswordPage (app/Admin/Pages/Auth, from `admin:install --auth`) and the
-// demo's TwoFactorChallengePage. Unlike SmokePagesTest, these must render while
-// LOGGED OUT — they skip the panel's auth guard and RequireFullAuth. We assert the
+// TwoFactorChallengePage (from `admin:install --2fa`). Unlike SmokePagesTest, these must
+// render while LOGGED OUT — they skip the panel's auth stack. We assert the
 // Inertia root mounts a form (center layout has no admin <main> shell) with no
 // console errors, and that a guarded page sends an anonymous visitor to login.
 
@@ -45,14 +45,31 @@ it('signs a bounced guest in and returns them to the page they asked for', funct
         ->assertNoJavaScriptErrors();
 });
 
-it('renders a code field on the public two-factor challenge page', function () {
-    // The challenge page is public (middleware ['web']); the session check
-    // only fires on submit. A direct visit must render the code field — a
-    // text input so both a 6-digit TOTP and a recovery code can be entered.
-    visit('/admin/two-factor-challenge')
-        ->assertVisible('#app form')
+it('sends a user with a second factor from the login to the code field', function () {
+    User::factory()->create([
+        'email' => 'admin@admin.com',
+        'password' => 'password',
+        'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+        'two_factor_recovery_codes' => encrypt(json_encode(['spare-code'])),
+        'two_factor_confirmed_at' => now(),
+    ]);
+
+    // A text input, not otp: both a 6-digit TOTP and a recovery code go in it.
+    visit('/admin/login')
+        ->type('email', 'admin@admin.com')
+        ->type('password', 'password')
+        ->click('button[type="submit"]')
+        ->assertPathIs('/admin/two-factor-challenge')
         ->assertVisible('code')
-        ->assertNoSmoke();
+        ->type('code', 'spare-code')
+        ->click('button[type="submit"]')
+        ->assertVisible('#app main')
+        ->assertNoJavaScriptErrors();
+});
+
+it('sends a direct visit of the challenge with nothing pending to the login', function () {
+    visit('/admin/two-factor-challenge')
+        ->assertPathIs('/admin/login');
 });
 
 it('redirects a guarded admin page to the admin login when logged out', function () {

@@ -106,8 +106,7 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   package route. No controllers, no Breeze, no Fortify. `--2fa` adds TOTP two-factor sign-in:
   a `TwoFactorChallengePage` base, a 2FA section on the profile page and `RequireTwoFactor`
   in `authStack()`, all switched on by the published challenge page (`src/Auth/TwoFactor/`).
-  The demo runs on the generated classes, plus its own older 2FA (`TwoFactorChallengePage`,
-  `TwoFactorSetupPage`, hooked in via `LoginPage::afterAuthenticated()`) and `ApiTokensPage`.
+  The demo runs on the generated classes (`--2fa` included) plus its own `ApiTokensPage`.
   Registration, email verification and passkeys do not exist.
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
   `apps/demo/resources/js/admin.tsx` for the rating-field example (PHP half:

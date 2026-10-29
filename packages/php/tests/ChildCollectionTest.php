@@ -22,7 +22,7 @@ function gatedCollectedAction(S $s, string $name): mixed
 // The pass runs inside Node, so it catches every way a node gets built
 // ---------------------------------------------------------------------------
 // `new Node($kind, [...])` is the only way to author a custom block in PHP —
-// the demo does it (TwoFactorSetupPage), and registerBlock/defineFieldClient
+// hosts do it for their own blocks, and registerBlock/defineFieldClient
 // makes it a documented extension point. Filtering only inside the S factories
 // leaves those nodes unfiltered.
 
