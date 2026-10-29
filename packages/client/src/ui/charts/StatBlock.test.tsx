@@ -156,6 +156,23 @@ describe("stat params", () => {
 		expect(getByText("for 30d")).toBeTruthy();
 	});
 
+	test("a failed param change blanks the value instead of keeping the old one", async () => {
+		const query = async () => {
+			throw new Error("boom");
+		};
+		const Wrap = wrapForStructure(() => new Response("{}"));
+		const { getByText, container } = render(
+			<Wrap>{renderNode(statNode({ params: [periodParam], source: "Users", query }))}</Wrap>,
+		);
+		await flush();
+		const input = container.querySelector("input[name='period']") as HTMLInputElement;
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+		await user.type(input, "x");
+		await advance(300);
+
+		expect(getByText("—")).toBeTruthy();
+	});
+
 	test("a poll tick sends the current param values", async () => {
 		const calls: Array<Record<string, string> | undefined> = [];
 		const query = async (_ctx: unknown, params?: Record<string, string>) => {

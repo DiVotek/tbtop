@@ -26,6 +26,12 @@ export interface StatBlockOptions extends StatDescriptor {
 	query?: StatQuery;
 }
 
+const BLANK_VALUE = "—";
+
+function paramsKey(params: StatParams): string {
+	return JSON.stringify(params);
+}
+
 /** Refreshed descriptor slice returned by the stat data endpoint. */
 interface StatPollPayload {
 	value?: unknown;
@@ -59,8 +65,9 @@ interface LiveStatCardProps {
 
 /**
  * The server renders the value for the params' defaults, so the first fetch
- * waits for a param change or a poll tick. Failed fetches keep the last shown
- * value — a KPI tile has no error surface.
+ * waits for a param change or a poll tick. A failed poll keeps the last shown
+ * value — a KPI tile has no error surface — but a failed param change blanks
+ * it: the controls already show the new choice, the old number would lie.
  */
 function LiveStatCard({ options, query, intervalMs, paramNodes }: LiveStatCardProps) {
 	const ctx = useClientActionContext();
@@ -69,6 +76,8 @@ function LiveStatCard({ options, query, intervalMs, paramNodes }: LiveStatCardPr
 		defaultsFromParamNodes(paramNodes),
 	);
 	const latest = useRef(0);
+	// The params the shown value belongs to; starts at the server-rendered defaults.
+	const shownFor = useRef(paramsKey(paramValues));
 	// Read through a ref: a debounced control may call a stale onChange.
 	const paramsRef = useRef(paramValues);
 
@@ -79,10 +88,16 @@ function LiveStatCard({ options, query, intervalMs, paramNodes }: LiveStatCardPr
 				.then((data) => {
 					// A slower earlier response must not overwrite a newer param choice.
 					if (ticket === latest.current) {
+						shownFor.current = paramsKey(params);
 						setFresh(data as StatPollPayload);
 					}
 				})
-				.catch(() => {});
+				.catch(() => {
+					if (ticket === latest.current && shownFor.current !== paramsKey(params)) {
+						shownFor.current = paramsKey(params);
+						setFresh({ value: BLANK_VALUE });
+					}
+				});
 		},
 		[query, ctx],
 	);
