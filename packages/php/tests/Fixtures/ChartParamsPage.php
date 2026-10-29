@@ -42,7 +42,7 @@ class ChartParamsPage extends Page
                     $s->select('period')->set('options', [
                         ['value' => '7d', 'label' => '7 days'],
                         ['value' => '30d', 'label' => '30 days'],
-                    ])->default('7d'),
+                    ])->default('7d')->rules('in:7d,30d'),
                     $s->date('from')->default('2026-01-01'),
                 ])
                 ->toNode(),

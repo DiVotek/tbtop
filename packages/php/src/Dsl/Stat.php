@@ -227,6 +227,8 @@ final class Stat implements JsonSerializable
      * values reach the value() closure as $params['name']; each change
      * refetches the stat from the page data endpoint, keyed by its label.
      * Text-ish kinds debounce first; keep the set small — a tile has little room.
+     * Values arrive from the query string: give each field rules() (e.g.
+     * 'in:7,30') — a failing value answers 422 before the closure runs.
      * Not combinable with url(): toNode() throws, a control can't live inside a link.
      * Build the stat with $s->stat(): a bare Stat::make() isn't registered for the endpoint.
      *

@@ -42,6 +42,12 @@ it('parameterized stat falls back to param defaults and ignores undeclared keys'
         ->assertExactJson(['data' => ['value' => '7d from 2026-01-01']]);
 });
 
+it('parameterized stat rejects a param value its rules refuse', function (): void {
+    $this->getJson('/admin/chart-params/data/Signups?period=999999d')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('period');
+});
+
 it('unknown data source still responds 404', function (): void {
     $this->getJson('/admin/chart-params/data/nope')->assertNotFound();
 });

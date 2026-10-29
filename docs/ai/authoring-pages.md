@@ -1055,7 +1055,9 @@ indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the va
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
 clamped again client-side**. `params()` renders filter fields in the card (same field
 builders as chart params); each change refetches the stat, and the value closure receives
-their current values as `array $params` — their defaults at first render. `url($href)` makes
+their current values as `array $params` — their defaults at first render. Param values come
+from the query string: give each field `rules()` (`->rules('in:7,30')`), a failing value
+answers 422 before the closure runs. `url($href)` makes
 the whole card a link (a dashboard KPI that opens its list); `openUrlInNewTab()` opens it in
 a new browser tab. **`url()` and `params()` don't combine** — `toNode()` throws, a control
 can't sit inside a link. **`poll()` and `params()` need `$s->stat()`**: it registers the stat
@@ -1075,7 +1077,7 @@ Stat::make('Total Posts')
 $s->stat('Signups')
     ->params([$s->select('period')->options([
         ['value' => '7', 'label' => '7 days'], ['value' => '30', 'label' => '30 days'],
-    ])->default('7')])
+    ])->default('7')->rules('in:7,30')])
     ->value(fn (array $params) => User::where('created_at', '>=', now()->subDays((int) $params['period']))->count())
     ->toNode()
 ```

@@ -133,7 +133,7 @@ class DashboardPage extends Page
                         ['value' => '1', 'label' => 'Last month'],
                         ['value' => '6', 'label' => 'Last 6 months'],
                         ['value' => '12', 'label' => 'Last year'],
-                    ])->default('6'),
+                    ])->default('6')->rules('in:1,6,12'),
                 ])
                 ->value($recentTrend)
                 ->description('Posts created recently')

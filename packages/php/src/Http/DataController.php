@@ -4,9 +4,11 @@ namespace Tbtop\Admin\Http;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Dsl\ChartBuilder;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\RuleWalker;
 
 final class DataController
 {
@@ -46,7 +48,9 @@ final class DataController
     }
 
     /**
-     * Build the param bag: only declared param names, query-string value or default.
+     * Build the param bag: only declared param names, query-string value or
+     * default, held to each field's rules() — the values come from the query
+     * string, so a failing one answers 422 before the closure runs.
      *
      * @param  list<Field>  $fields
      * @return array<string, mixed>
@@ -57,6 +61,7 @@ final class DataController
         foreach ($fields as $field) {
             $bag[$field->name] = $request->query($field->name, $field->defaultValue());
         }
+        Validator::make($bag, RuleWalker::collect($fields))->validate();
 
         return $bag;
     }
