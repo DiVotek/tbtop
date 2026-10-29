@@ -461,10 +461,6 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 - **richtext:** align the editor with the admin design system ([#146](https://github.com/DiVotek/tbtop/pull/146))
 - **i18n:** translate client chrome and media library (M-136) ([#147](https://github.com/DiVotek/tbtop/pull/147))
 
-### media
-
-- centralize the upload size ceiling ([#145](https://github.com/DiVotek/tbtop/pull/145))
-
 ## [0.2.35](https://github.com/DiVotek/tbtop/releases/tag/v0.2.35) — 2026-07-27
 
 ### Fixes

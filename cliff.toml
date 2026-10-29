@@ -55,4 +55,6 @@ commit_parsers = [
   { message = "^revert", group = "<!-- 4 -->Reverts" },
   { message = "^docs", group = "<!-- 5 -->Documentation" },
   { message = "^(refactor|chore|ci|build|test|style)", skip = true },
+  # Any other type (e.g. a stray `media:`) has no section: keep it out.
+  { message = ".*", skip = true },
 ]
