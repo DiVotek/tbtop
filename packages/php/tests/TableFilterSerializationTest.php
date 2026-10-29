@@ -59,6 +59,34 @@ it('TableSerialization: filtersIn inline serializes correctly', function (): voi
     expect($json['options']['filtersIn'])->toBe('inline');
 });
 
+it('TableSerialization: filtersIn aside carries filtersCollapsed when set', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->filters([Text::make('q')])
+        ->filtersIn('aside')
+        ->filtersCollapsed()
+        ->query(fn () => null);
+
+    $json = encodeTable($table->toNode());
+
+    expect($json['options']['filtersIn'])->toBe('aside')
+        ->and($json['options']['filtersCollapsed'])->toBeTrue();
+});
+
+it('TableSerialization: filtersCollapsed is absent unless declared', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->filters([Text::make('q')])
+        ->filtersIn('aside')
+        ->query(fn () => null);
+
+    $json = encodeTable($table->toNode());
+
+    expect($json['options'])->not->toHaveKey('filtersCollapsed');
+});
+
 it('TableSerialization: filtersIn rejects a mode the client cannot render', function (): void {
     $s = new S;
 

@@ -94,7 +94,8 @@
 									"recordUrlNewTab": { "type": "boolean" },
 									"deferFilters": { "type": "boolean" },
 									"poll": { "type": "integer", "minimum": 5 },
-									"filtersIn": { "type": "string", "enum": ["modal", "inline"] },
+									"filtersIn": { "type": "string", "enum": ["modal", "inline", "aside"] },
+									"filtersCollapsed": { "type": "boolean" },
 									"filtersFormColumns": { "type": "integer" },
 									"filtersFormWidth": {
 										"type": "string",
