@@ -42,7 +42,9 @@ export interface TableBlockOptions extends AsyncBlock {
 	bulkActions?: ActionConfig[];
 	searchable?: string[];
 	filters?: StructureNode[];
-	filtersIn?: "modal" | "inline";
+	filtersIn?: "modal" | "inline" | "aside";
+	/** filtersIn === "aside": start with the panel hidden until the toolbar opens it. */
+	filtersCollapsed?: boolean;
 	tabs?: TableTab[];
 	pagination?: TablePaginationOptions;
 	rowClick?: string;
@@ -91,7 +93,8 @@ export interface TableBodyProps {
 	poll?: number;
 	searchable?: string[];
 	filters?: StructureNode[];
-	filtersIn: "modal" | "inline";
+	filtersIn: "modal" | "inline" | "aside";
+	filtersCollapsed?: boolean;
 	tabs?: TableTab[];
 	tabCounts?: Record<string, number>;
 	pagination?: TablePaginationOptions;
