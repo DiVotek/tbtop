@@ -6,6 +6,10 @@ Patches never need a step here. The rules behind it: [VERSIONING.md](VERSIONING.
 Before upgrading, read the host's `deprecations` log channel: every deprecated
 call it lists is a candidate for removal in the next minor.
 
+Each breaking change gets a `###` entry under its release's heading, in the PR
+that makes the change. The release tooling refuses a breaking release whose
+heading has none.
+
 ## 0.7 → 0.8
 
 0.8.0 is the first release under this policy. Its breaking changes are listed

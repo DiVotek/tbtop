@@ -41,6 +41,17 @@ if [ -n "$breaking" ] && [ "$(line "$previous")" = "$(line "$tag")" ]; then
 	echo "see VERSIONING.md" >&2
 	exit 1
 fi
+# A breaking release needs host steps: at least one ### entry under its UPGRADE.md heading.
+minor="${tag#v}"
+minor="${minor%.*}"
+if [ -n "$breaking" ] && ! awk -v want="→ $minor" '
+	/^## / { inside = index($0, want) > 0 && substr($0, length($0) - length(want) + 1) == want; next }
+	inside && /^### / { found = 1 }
+	END { exit !found }' UPGRADE.md; then
+	echo "error: breaking commits since $previous, but UPGRADE.md has no entry under '## … → $minor':" >&2
+	echo "$breaking" >&2
+	exit 1
+fi
 
 if [ "${1:-}" = "--notes" ]; then
 	# The release title already names the version: drop the heading line.

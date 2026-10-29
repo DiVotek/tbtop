@@ -15,7 +15,8 @@ covers, and how an API is retired.
 | Minor — 0.**8**.0   | Everything a patch may contain, plus breaking changes.                        |
 
 A breaking change waits for the next minor. Every breaking minor comes with a
-section in [UPGRADE.md](UPGRADE.md) that says what to change in the host.
+section in [UPGRADE.md](UPGRADE.md) that says what to change in the host; the
+release tooling refuses a breaking release without one.
 
 Keep the two packages on the same version: they speak one wire format, and
 a mixed pair is not supported. Pin both exactly and bump them in one change:
