@@ -1,3 +1,4 @@
+import { resolvedMeta } from "./meta";
 import { mixin, WithMeta } from "./mixin";
 import { Node } from "./node";
 
@@ -60,7 +61,12 @@ export class ListBuilder {
 	}
 
 	toNode(): Node {
-		return new Node("list", { items: this.resolveItems() }, this.name, this.metaBag);
+		return new Node(
+			"list",
+			{ items: this.resolveItems() },
+			this.name,
+			resolvedMeta(this.metaBag),
+		);
 	}
 
 	toJSON(): unknown {

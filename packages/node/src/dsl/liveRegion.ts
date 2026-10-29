@@ -1,5 +1,6 @@
 import { dependencyValues } from "./dependencies";
 import { Field } from "./fields/field";
+import { resolvedMeta } from "./meta";
 import { HasWhen, mixin, WithMeta } from "./mixin";
 import { includes, Node } from "./node";
 import { S } from "./s";
@@ -56,7 +57,9 @@ export class LiveRegion {
 			initialDeps: this.initialDeps,
 			initial: this.renderWith(this.initialDeps),
 		};
-		return new Node("liveRegion", options, this.name, this.metaBag).when(this.isIncluded());
+		return new Node("liveRegion", options, this.name, resolvedMeta(this.metaBag)).when(
+			this.isIncluded(),
+		);
 	}
 
 	toJSON(): unknown {

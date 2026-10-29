@@ -1,4 +1,5 @@
 import type { Field } from "./fields/field";
+import { resolvedMeta } from "./meta";
 import { HasWhen, mixin, WithMeta } from "./mixin";
 import { Node } from "./node";
 
@@ -171,9 +172,12 @@ export class Stat {
 		if (this.hasSource()) {
 			options.source = this.label;
 		}
-		return new Node("stat", { ...options, ...this.tail }, null, this.metaBag).when(
-			this.isIncluded(),
-		);
+		return new Node(
+			"stat",
+			{ ...options, ...this.tail },
+			null,
+			resolvedMeta(this.metaBag),
+		).when(this.isIncluded());
 	}
 
 	toJSON(): unknown {

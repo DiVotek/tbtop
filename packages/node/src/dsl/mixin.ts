@@ -27,6 +27,16 @@ export class WithMeta {
 		return this;
 	}
 
+	/**
+	 * Server-decided initial disabled state, e.g. disabled(() => !user.isAdmin).
+	 * The node still ships and its value still submits: a starting state, not
+	 * access control. Use disabledIf() for state that follows the form.
+	 */
+	disabled(disabled: boolean | (() => boolean) = true): this {
+		metaOf(this).disabled = disabled;
+		return this;
+	}
+
 	/** Client-side visibility: the node still ships, its value still submits. */
 	hiddenIf(condOrField: Cond | string, op?: CondOp, value?: unknown): this {
 		metaOf(this).hiddenIf = Cond.from(condOrField, op, value);

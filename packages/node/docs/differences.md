@@ -17,6 +17,10 @@ Same wire grammar, same React client, same DSL method names. What differs:
 - **No media library**: the `upload` field only. Image conversion is optional
   through `sharp`.
 - **Translations** are copied from the PHP lang files (`bun run sync:lang`).
+- **Presentation closures**: PHP setters such as `label()`, `tooltip()` or
+  `Stat::description()` also take a closure resolved at serialization (#388).
+  Here `view` already runs per request, so pass the computed value. Only
+  `disabled()` takes a closure, as in PHP.
 - **Parity is soft**: the node package catches up with PHP releases, never
   blocks them. The DSL is held to PHP by the kitchen-sink fixture and a
   method-parity test.

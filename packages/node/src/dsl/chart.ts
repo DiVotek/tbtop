@@ -1,5 +1,5 @@
 import type { Field } from "./fields/field";
-import { splitMeta } from "./meta";
+import { resolvedMeta, splitMeta } from "./meta";
 import { HasWhen, mixin, WithMeta } from "./mixin";
 import { Node } from "./node";
 
@@ -74,7 +74,7 @@ export class ChartBuilder {
 		if (this.paramList.length > 0) {
 			options.params = this.paramList.map((f) => f.toNode());
 		}
-		const meta = { ...optMeta, ...this.metaBag };
+		const meta = resolvedMeta({ ...optMeta, ...this.metaBag });
 		return new Node(
 			`chart:${this.type}`,
 			{ ...options, type: this.type },

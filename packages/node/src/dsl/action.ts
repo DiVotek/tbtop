@@ -1,6 +1,7 @@
 // oxlint-disable max-lines -- DSL builder: fluent method lists are exempt (CLAUDE.md)
 import type { ActionCtx, ActionHandler, Need } from "./actionCtx";
 import { currentContext } from "./context";
+import { resolvedMeta } from "./meta";
 import { HasWhen, mixin, WithMeta } from "./mixin";
 import { includes, Node } from "./node";
 
@@ -215,7 +216,9 @@ export class ActionBuilder {
 		}
 		const spec = this.finalSpec(this.spec);
 		const options = { ...this.opts, ...this.tail, spec };
-		return new Node("action", options, this.name, this.metaBag).when(this.isIncluded());
+		return new Node("action", options, this.name, resolvedMeta(this.metaBag)).when(
+			this.isIncluded(),
+		);
 	}
 
 	toJSON(): unknown {
