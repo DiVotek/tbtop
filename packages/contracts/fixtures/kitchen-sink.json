@@ -224,6 +224,35 @@
                             }
                         },
                         {
+                            "kind": "stat",
+                            "options": {
+                                "label": "Signups",
+                                "value": 7,
+                                "params": [
+                                    {
+                                        "kind": "select",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "7d",
+                                                    "label": "7 days"
+                                                },
+                                                {
+                                                    "value": "30d",
+                                                    "label": "30 days"
+                                                }
+                                            ],
+                                            "default": "7d"
+                                        },
+                                        "meta": {},
+                                        "name": "range"
+                                    }
+                                ],
+                                "source": "Signups"
+                            },
+                            "meta": {}
+                        },
+                        {
                             "kind": "chart:line",
                             "options": {
                                 "data": [

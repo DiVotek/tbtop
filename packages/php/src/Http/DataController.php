@@ -26,8 +26,8 @@ final class DataController
 
         $stat = $resolved->s->reachableStat($name);
         $query = $stat?->queryClosure();
-        if ($query !== null) {
-            return response()->json(['data' => $query()]);
+        if ($stat !== null && $query !== null) {
+            return response()->json(['data' => $query($this->resolveParams($stat->paramFields(), $request))]);
         }
 
         throw new NotFoundHttpException("Data source \"{$name}\" is not defined on this page.");

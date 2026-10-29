@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
 import { act, render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { clearBlockRegistry } from "../../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../../render/registerBuiltins";
 import { renderNode } from "../../render/structureRenderer";
@@ -124,5 +125,59 @@ describe("stat polling", () => {
 		await advance(10_000);
 		expect(calls).toBe(2);
 		expect(getByText("fresh")).toBeTruthy();
+	});
+});
+
+describe("stat params", () => {
+	const periodParam = { kind: "text", name: "period", options: { default: "7d" }, meta: {} };
+
+	test("renders param controls and changing one refetches with the new value", async () => {
+		const calls: Array<Record<string, string> | undefined> = [];
+		const query = async (_ctx: unknown, params?: Record<string, string>) => {
+			calls.push(params);
+			return { value: `for ${params?.period}` };
+		};
+		const Wrap = wrapForStructure(() => new Response("{}"));
+		const { getByTestId, getByText, container } = render(
+			<Wrap>{renderNode(statNode({ params: [periodParam], source: "Users", query }))}</Wrap>,
+		);
+		await flush();
+		// The server already rendered the value for the defaults — no eager fetch.
+		expect(getByTestId("stat-params")).toBeTruthy();
+		expect(calls).toHaveLength(0);
+
+		const input = container.querySelector("input[name='period']") as HTMLInputElement;
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+		await user.clear(input);
+		await user.type(input, "30d");
+		await advance(300);
+
+		expect(calls).toEqual([{ period: "30d" }]);
+		expect(getByText("for 30d")).toBeTruthy();
+	});
+
+	test("a poll tick sends the current param values", async () => {
+		const calls: Array<Record<string, string> | undefined> = [];
+		const query = async (_ctx: unknown, params?: Record<string, string>) => {
+			calls.push(params);
+			return { value: "2" };
+		};
+		const Wrap = wrapForStructure(() => new Response("{}"));
+		render(
+			<Wrap>
+				{renderNode(statNode({ params: [periodParam], poll: 10, source: "Users", query }))}
+			</Wrap>,
+		);
+		await advance(10_000);
+		expect(calls).toEqual([{ period: "7d" }]);
+	});
+
+	test("without a query the param controls are not rendered", async () => {
+		const Wrap = wrapForStructure(() => new Response("{}"));
+		const { queryByTestId } = render(
+			<Wrap>{renderNode(statNode({ params: [periodParam] }))}</Wrap>,
+		);
+		await flush();
+		expect(queryByTestId("stat-params")).toBeNull();
 	});
 });

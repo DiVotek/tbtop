@@ -83,13 +83,14 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 | `meta(string $key, mixed $value): static` | Sets one of the node meta keys directly: id, hidden, disabled, hiddenIf, disabledIf. Unvalidated — any other key ships and the client ignores it. For an arbitrary wire *option* use set() instead. |
 | `openInNewTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |
 | `openUrlInNewTab(bool $condition = true): self` | Open url() in a new browser tab instead of navigating in place. No effect without url(). |
+| `params(array $fields): self` | Filter fields rendered in the card above the value (regular field builders, e.g. select('period')->options([...])->default('7d')). Their values reach the value() closure as $params['name']; each change refetches the stat from the page data endpoint, keyed by its label. Text-ish kinds debounce first; keep the set small — a tile has little room. Not combinable with url(): toNode() throws, a control can't live inside a link. |
 | `poll(int $seconds): self` | Poll the stat's data endpoint every $seconds, re-invoking the value closure on each tick instead of once at page render. The 5-second floor is enforced twice: below it this throws, and the client clamps whatever reaches it. Stamps options.source so the client fetches from the page data endpoint, keyed by this stat's label. |
 | `sparkline(array $numbers, string $position = 'inline'): self` | Mini trend chart from a plain list of numbers — no axes or labels, so the series only has to be ordered, not scaled. |
 | `sparklineColor(string $color): self` | Tint applied to the sparkline chart. |
 | `tooltip(string $text): static` | Tooltip text shown on hover. |
 | `trend(string $direction): self` | Small trend arrow rendered after the description, inheriting its color. |
 | `url(string $url): self` | Make the whole card a link — an internal path navigates in place, an external URL opens as a plain link. |
-| `value(mixed $value): self` | The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick). |
+| `value(mixed $value): self` | The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick or params() change). The closure may take array $params: the current params() values keyed by field name — their defaults at render (empty array without params()). |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
 
 ## ChartBuilder
