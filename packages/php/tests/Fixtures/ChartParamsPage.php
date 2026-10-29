@@ -36,6 +36,16 @@ class ChartParamsPage extends Page
                 ->poll(10)
                 ->toNode(),
             $s->stat('Plain stat')->value(fn (): int => 5)->toNode(),
+            $s->stat('Signups')
+                ->value(fn (array $params): string => "{$params['period']} from {$params['from']}")
+                ->params([
+                    $s->select('period')->set('options', [
+                        ['value' => '7d', 'label' => '7 days'],
+                        ['value' => '30d', 'label' => '30 days'],
+                    ])->default('7d')->rules('in:7d,30d'),
+                    $s->date('from')->default('2026-01-01'),
+                ])
+                ->toNode(),
             $s->chart('withParams', 'bar')
                 ->params([
                     $s->select('interval')->set('options', [

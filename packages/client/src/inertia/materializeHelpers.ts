@@ -174,7 +174,7 @@ export function materializeChart(node: StructureNode, basePath: string): Structu
 }
 
 // ---------------------------------------------------------------------------
-// Stat materialization (polling stats only — plain stats stay static)
+// Stat materialization (polling / parameterized stats only — plain stats stay static)
 // ---------------------------------------------------------------------------
 
 export function materializeStat(node: StructureNode, basePath: string): StructureNode {
@@ -189,8 +189,8 @@ export function materializeStat(node: StructureNode, basePath: string): Structur
 		...node,
 		options: {
 			...opts,
-			query: (actionCtx: ClientActionContext) =>
-				actionCtx.client.get(endpoint).then(unwrapData),
+			query: (actionCtx: ClientActionContext, params: Record<string, string> = {}) =>
+				actionCtx.client.get(endpoint, params).then(unwrapData),
 		},
 	};
 }

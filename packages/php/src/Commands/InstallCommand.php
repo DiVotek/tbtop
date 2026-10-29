@@ -25,7 +25,7 @@ class InstallCommand extends Command
 {
     protected $signature = 'admin:install
         {--force : Overwrite files that already exist}
-        {--auth : Also publish sign-in, password reset and profile pages for one panel}
+        {--auth : Also publish sign-in, password reset, profile and email verification pages for one panel}
         {--profile : Also publish only the profile page, for a host that signs users in itself}
         {--2fa : Also publish the auth pages with two-factor sign-in: the challenge page and the user-table migration}
         {--panel= : The panel --auth, --2fa or --profile targets, required when several are registered}';
@@ -175,6 +175,7 @@ class InstallCommand extends Command
         $this->line('  6. Send guests to the panel login (bootstrap/app.php, inside withMiddleware) — without it a guest gets a 500:');
         $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::currentUrl() ?? '{$login}');");
         $this->line('     LoginPage::currentUrl() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
+        $this->line('     EmailVerificationPage holds back users whose model implements MustVerifyEmail until they confirm their email; other users never see it.');
     }
 
     private function twoFactorSteps(int $step): void

@@ -79,6 +79,16 @@ return [
             'disabled' => 'Two-factor authentication is off.',
             'regenerated' => 'New recovery codes issued. The old ones no longer work.',
         ],
+        'verify' => [
+            'title' => 'Verify your email',
+            'prompt' => 'Before you continue, confirm your email address :email through the link we send to it.',
+            'send' => 'Email verification link',
+            'sent' => 'A verification link is on its way to your email.',
+            'verified' => 'Your email is verified.',
+            'continue' => 'Continue',
+            'logout' => 'Sign out',
+            'throttle' => 'Too many verification link requests. Please try again in :seconds seconds.',
+        ],
     ],
     'validation' => [
         'required' => 'Required',
@@ -168,6 +178,13 @@ return [
             'label' => 'Filters',
             'reset' => 'Reset',
             'apply' => 'Done',
+            'clear' => 'Clear filters',
+            'remove' => 'Remove filter {filter}',
+            'chip' => [
+                'no' => 'No',
+                'from' => 'from {date}',
+                'until' => 'until {date}',
+            ],
         ],
         'columns' => [
             'label' => 'Columns',

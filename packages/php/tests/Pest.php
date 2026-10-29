@@ -28,7 +28,7 @@ uses(PageLayoutHttpTestCase::class)->in('PageLayoutTest.php');
 uses(RunsMigrationsTestCase::class)->in('PackageMigrationsTest.php');
 uses(PanelsHttpTestCase::class)->in('PanelsHttpTest.php', 'PanelErrorHttpTest.php', 'PanelSessionHttpTest.php');
 uses(NotificationsHttpTestCase::class)->in('NotificationsHttpTest.php');
-uses(AuthHttpTestCase::class)->in('AuthLoginHttpTest.php', 'AuthPasswordResetHttpTest.php', 'AuthProfileHttpTest.php');
+uses(AuthHttpTestCase::class)->in('AuthLoginHttpTest.php', 'AuthPasswordResetHttpTest.php', 'AuthProfileHttpTest.php', 'AuthEmailVerificationHttpTest.php');
 uses(TwoFactorHttpTestCase::class)->in('AuthTwoFactorHttpTest.php', 'AuthTwoFactorProfileHttpTest.php');
 uses(HeaderActionsHttpTestCase::class)->in('HeaderActionsHttpTest.php');
 uses(RouteCacheSerializationTestCase::class)->in('RouteCacheSerializationTest.php');

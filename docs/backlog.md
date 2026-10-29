@@ -16,10 +16,6 @@
   opt-in. Breaking.
 - **Semver and deprecation policy + changelog** — write the policy down and generate the
   release notes with git-cliff (no `cliff.toml` yet).
-- **Email verification in the auth scaffold** — `admin:install --auth` publishes sign-in,
-  password reset and the profile page, but no verification flow. `ProfilePage` already
-  un-verifies a changed email on a `MustVerifyEmail` user; the notice/verify pages are
-  missing.
 
 ## Small fixes
 
@@ -100,8 +96,8 @@ Each fits the minor-fix loop: one change, one test.
 
 ## Auth
 
-The host owns authentication; `admin:install --auth` publishes sign-in, password reset
-and the profile page as empty subclasses of the package base pages
+The host owns authentication; `admin:install --auth` publishes sign-in, password reset,
+email verification and the profile page as empty subclasses of the package base pages
 (`Tbtop\Admin\Auth\*`); `--2fa` adds TOTP two-factor sign-in. Open:
 
 - **`--auth` on a second panel** — the scaffold always writes `app/Admin/Pages/Auth`, so a

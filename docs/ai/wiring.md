@@ -41,6 +41,7 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
 | `POST` | `{prefix}/logout` | `tbtop.{panel}.logout` | `LogoutController` | Inertia-compatible redirect | Logs out the panel's guard, invalidates the session, redirects to `{prefix}` (the host's guest redirect takes it to login). An expired-session POST (419) redirects the same way |
+| `GET` | `{prefix}/verify-email/{id}/{hash}` | `tbtop.{panel}.{slug}.verify` | `VerifyEmailController` | 302 redirect | The signed link in the verification mail. Registered only while the panel serves an `EmailVerificationPage` subclass, at that page's path, under `signed` + `throttle:6,1`. Marks the signed-in user verified (`Verified` event), flashes a toast and redirects to the URL the user was sent away from, else `{prefix}`. A bad signature, another user's link, or a hash of an old email answers 403 |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
 | `POST` | `{prefix}/{mcp path}` (default `mcp`) | `tbtop.{panel}.mcp` | `TbtopMcpServer` (laravel/mcp) | JSON-RPC (MCP streamable HTTP) | MCP `tools/call` results for `search` / `query` / `execute`. Only when the panel calls `mcp()`; runs `[SetCurrentPanel, ValidateMcpOrigin, ...mcp($middleware), SetAdminLocale]` instead of the panel stack. `GET`/`DELETE` on the same path answer 405 — see [MCP server](#mcp-server) |
 
@@ -60,7 +61,7 @@ anything not hidden reaches every page's HTML. The client reads only this prop.
 ### Auth pages
 
 The package owns no auth routes. `php artisan admin:install --auth` publishes
-`app/Admin/Pages/Auth/{LoginPage,ForgotPasswordPage,ResetPasswordPage,ProfilePage}.php`, each an empty
+`app/Admin/Pages/Auth/{LoginPage,ForgotPasswordPage,ResetPasswordPage,ProfilePage,EmailVerificationPage}.php`, each an empty
 subclass of `Tbtop\Admin\Auth\*`; override a hook there or delete the file. `--profile`
 publishes `ProfilePage` alone, for a host that signs users in through its own screens. They are
 ordinary page routes (`{prefix}/login`, `{prefix}/forgot-password`,
@@ -87,8 +88,8 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   `profileForm()`, `passwordForm()`, `profileRules()` (default: a new email must be
   lowercase, unique on the user model's connection and table), `passwordRules()`; append
   sections in `view()` after `parent::view()`. A changed email on a `MustVerifyEmail` user is
-  marked unverified and no mail is sent: resending the link is the host's verification flow
-  (the package has none). Needs an Eloquent user with `name`, `email` and `password`.
+  marked unverified and, while the panel serves an `EmailVerificationPage`, mailed a link to
+  the new address. Needs an Eloquent user with `name`, `email` and `password`.
 - **Two-factor.** `admin:install --2fa` publishes the auth pages plus
   `TwoFactorChallengePage` (`{prefix}/two-factor-challenge`) and a migration for Fortify's
   columns (`two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed_at`) plus
@@ -100,16 +101,30 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   confirm with the first code; eight recovery codes shown once; new codes and turning off
   take a code); the login checks the password without signing in a user who has a factor
   and parks them for the challenge (TOTP or recovery code, five tries a minute, then the
-  password again; a parked sign-in lasts ten minutes and ends if the password changes; the "remember me" choice carries over); `authStack()`'s last layer,
-  `RequireTwoFactor`, sends any session that has not passed (one a remember cookie restored,
+  password again; a parked sign-in lasts ten minutes and ends if the password changes; the "remember me" choice carries
+  over); `RequireTwoFactor` in `authStack()` (after `AuthenticateSession`, before
+  `RequireVerifiedEmail`) sends any session that has not passed (one a remember cookie restored,
   say) to the challenge, and answers JSON with 403; logout stays open, and a page whose own
   `middleware()` leaves out `authStack()` opts out. The pass belongs to
   the user who earned it in this session. `LoginPage::afterAuthenticated()` runs only for
   users without a factor; the challenge page has its own `redirectTo()`. Delete the
   challenge page to turn it all off.
+- **Email verification.** `EmailVerificationPage` (`{prefix}/verify-email`) is opt-in twice:
+  the panel serves a subclass, and the user model implements Laravel's `MustVerifyEmail`
+  (with an `email_verified_at` column). Then `authStack()`'s last middleware,
+  `RequireVerifiedEmail`, sends an unverified user from every panel page to it (a JSON
+  request gets 403); the page itself, the profile (to fix a mistyped address) and logout
+  stay open. The page is chrome-less: a button mails the link (six a minute per user,
+  `maxAttempts()`), plus profile and sign-out. The link is a temporary signed URL valid for
+  `auth.verification.expire` minutes (default 60), sent as `VerifyEmailNotification` with
+  the URL baked in, so Laravel's `VerifyEmail::createUrlUsing()` and the skeleton's
+  `verification.*` routes stay the host's. Nothing is mailed on sign-in: a user created by
+  an admin asks for the link from the page. To send one from host code (after a host-side
+  registration, say): `EmailVerificationPage::sendVerificationLink($user)` — false when
+  the current panel serves no subclass. Delete the file and the check goes with it.
 - **Password broker.** `PanelConfig::passwordBroker('admins')`; null uses the app default.
   A panel guard on a non-default provider needs its own broker in `config/auth.php`.
-- **Other sessions.** `authStack()` ends in Laravel's `AuthenticateSession` (after
+- **Other sessions.** `authStack()` holds Laravel's `AuthenticateSession` (after
   `auth:{guard}`), so a password change — a reset or any host-side update — signs every other
   session out on its next panel request; a remember cookie is rotated with the reset. A page
   that returns its own `middleware()` without spreading `authStack()` opts out.

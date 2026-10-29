@@ -108,7 +108,7 @@ it('publishes each auth page as a subclass of its package base', function () {
         ->doesntExpectOutputToContain('does not discover')
         ->assertSuccessful();
 
-    foreach (['LoginPage', 'ForgotPasswordPage', 'ResetPasswordPage', 'ProfilePage'] as $page) {
+    foreach (['LoginPage', 'ForgotPasswordPage', 'ResetPasswordPage', 'ProfilePage', 'EmailVerificationPage'] as $page) {
         expect(File::get($this->hostRoot."/app/Admin/Pages/Auth/{$page}.php"))
             ->toContain('namespace App\\Admin\\Pages\\Auth;')
             ->toContain("class {$page} extends \\Tbtop\\Admin\\Auth\\{$page} {}");

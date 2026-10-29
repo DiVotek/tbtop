@@ -16,7 +16,7 @@ import { TableHead } from "./gridHead";
 import { isSelected, readId } from "./normalize";
 import { ReorderHint } from "./reorderHint";
 import type { RowActionEntry } from "./rowActions";
-import { GroupHeaderRow, partitionRowGroups } from "./rowGroups";
+import { GroupedRows } from "./rowGroups";
 import { SortableRow } from "./sortableRow";
 import { resolveStickyLayout, StickyColumnsProvider, useStickyOffsets } from "./stickyColumns";
 import { TableRow } from "./tableRow";
@@ -250,8 +250,14 @@ function renderGroupedRows(
 	// The grouped column may be hidden or never displayed — fall back to a bare
 	// column so the header still renders, as plain text.
 	const column = props.columns.find((c) => c.name === columnName) ?? { name: columnName };
-	return partitionRowGroups(rows, columnName).flatMap((group, i) => [
-		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} column={column} />,
-		...group.rows.map((row) => renderRow(row, props, false)),
-	]);
+	return (
+		<GroupedRows
+			rows={rows}
+			column={column}
+			colSpan={colSpan}
+			collapsible={props.groups?.collapsible === true || props.groups?.collapsed === true}
+			collapsedByDefault={props.groups?.collapsed === true}
+			renderRow={(row) => renderRow(row, props, false)}
+		/>
+	);
 }
