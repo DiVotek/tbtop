@@ -104,10 +104,10 @@ it('HtmlBlock keeps http, mailto and relative links and images', function () {
         ->toContain('target="_blank" rel="noopener"');
 });
 
-it('HtmlBlock keeps class but drops style attributes', function () {
-    $out = encodeDisplay(HtmlBlock::make('<p class="text-muted" style="position:fixed">x</p>'))['options']['html'];
+it('HtmlBlock drops class and style attributes', function () {
+    $out = encodeDisplay(HtmlBlock::make('<p class="fixed inset-0 z-50" style="position:fixed">x</p>'))['options']['html'];
 
-    expect($out)->toBe('<p class="text-muted">x</p>');
+    expect($out)->toBe('<p>x</p>');
 });
 
 it('HtmlBlock sanitizes input well above the sanitizer default length', function () {

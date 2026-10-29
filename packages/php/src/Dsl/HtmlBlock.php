@@ -12,7 +12,7 @@ use Tbtop\Admin\Dsl\Concerns\HasWhen;
  *
  * Sanitized server-side by default (symfony/html-sanitizer, W3C safe
  * baseline): scripts, event handlers, iframes and javascript: URLs are
- * dropped (and so are style, data-* and inline SVG; class stays), so the
+ * dropped (and so are class, style, data-* and inline SVG), so the
  * content may come from a record. Call ->trusted() to emit
  * the HTML unchanged when the author controls every byte of it.
  *
@@ -61,7 +61,6 @@ final class HtmlBlock implements JsonSerializable
         return $sanitizer ??= new HtmlSanitizer(
             (new HtmlSanitizerConfig)
                 ->allowSafeElements()
-                ->allowAttribute('class', '*')
                 ->allowLinkSchemes(['http', 'https', 'mailto', 'tel'])
                 ->allowRelativeLinks()
                 ->allowRelativeMedias()
