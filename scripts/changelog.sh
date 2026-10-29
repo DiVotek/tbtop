@@ -9,7 +9,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-cliff() { bunx git-cliff@2.14.2 "$@"; }
+# The root devDependency, so bun.lock pins its integrity (run `bun install` first).
+cliff() { ./node_modules/.bin/git-cliff "$@"; }
 
 version="$(bun -p "require('./packages/client/package.json').version")"
 tag="v$version"

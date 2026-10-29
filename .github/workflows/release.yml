@@ -82,6 +82,11 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
+      # git-cliff for scripts/changelog.sh, pinned by the root bun.lock.
+      - name: Install root tooling
+        working-directory: ${{ github.workspace }}
+        run: bun install --frozen-lockfile
+
       - name: Read version
         id: ver
         run: |
