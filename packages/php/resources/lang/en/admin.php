@@ -52,6 +52,16 @@ return [
             'changed' => 'Password changed.',
             'throttle' => 'Too many attempts. Please try again in :seconds seconds.',
         ],
+        'verify' => [
+            'title' => 'Verify your email',
+            'prompt' => 'Before you continue, confirm your email address :email through the link we send to it.',
+            'send' => 'Email verification link',
+            'sent' => 'A verification link is on its way to your email.',
+            'verified' => 'Your email is verified.',
+            'continue' => 'Continue',
+            'logout' => 'Sign out',
+            'throttle' => 'Too many verification link requests. Please try again in :seconds seconds.',
+        ],
     ],
     'validation' => [
         'required' => 'Required',

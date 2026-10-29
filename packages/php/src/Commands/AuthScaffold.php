@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Commands;
 
 use Illuminate\Support\Str;
+use Tbtop\Admin\Auth\EmailVerificationPage;
 use Tbtop\Admin\Auth\ForgotPasswordPage;
 use Tbtop\Admin\Auth\LoginPage;
 use Tbtop\Admin\Auth\ProfilePage;
@@ -28,6 +29,7 @@ final class AuthScaffold
         'ForgotPasswordPage' => ForgotPasswordPage::class,
         'ResetPasswordPage' => ResetPasswordPage::class,
         'ProfilePage' => ProfilePage::class,
+        'EmailVerificationPage' => EmailVerificationPage::class,
     ];
 
     /** @var array<string, class-string<Page>> */
