@@ -172,7 +172,7 @@ touch the demo and you have to run them yourself.
 
 ## Stack
 
-- **PHP 8.4+**, Laravel 11/12/13, Inertia v3, Pest 4, larastan, Pint.
+- **PHP 8.4+**, Laravel 12/13, Inertia v3, Pest 4, larastan, Pint.
 - **React 19**, Inertia React adapter, Lexical (richtext), Radix (a11y primitives), recharts,
   Tailwind, zod (client grammar mirror), bun test + Testing Library.
 - Transport rule: **persistence → Inertia** (`router.post`, native errors bag + flash);

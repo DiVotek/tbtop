@@ -61,7 +61,7 @@ it('TextBlock is accessible via S::displayText', function () {
 // HtmlBlock
 // ---------------------------------------------------------------------------
 
-it('HtmlBlock serializes raw html', function () {
+it('HtmlBlock keeps safe markup', function () {
     $html = '<p>Hello <strong>world</strong></p>';
     $block = HtmlBlock::make($html);
     $json = encodeDisplay($block);
@@ -77,6 +77,58 @@ it('HtmlBlock is accessible via S::displayHtml', function () {
 
     expect($json['kind'])->toBe('displayHtml')
         ->and($json['options']['html'])->toBe('<em>italic</em>');
+});
+
+it('HtmlBlock strips scripts, event handlers and javascript: links by default', function () {
+    $html = '<p onclick="steal()">Hi</p><script>alert(1)</script>'
+        .'<a href="javascript:alert(1)">x</a><iframe src="https://evil.test"></iframe>';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect($out)->toContain('<p>Hi</p>')
+        ->not->toContain('script')
+        ->not->toContain('onclick')
+        ->not->toContain('javascript:')
+        ->not->toContain('iframe');
+});
+
+it('HtmlBlock keeps http, mailto and relative links and images', function () {
+    $html = '<a href="https://example.test/a">a</a><a href="mailto:a@example.test">m</a>'
+        .'<a href="/admin/posts">r</a><img src="/storage/x.png" alt="x">';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect($out)->toContain('href="https://example.test/a"')
+        ->toContain('href="mailto:a')
+        ->toContain('href="/admin/posts"')
+        ->toContain('src="/storage/x.png"');
+});
+
+it('HtmlBlock keeps class but drops style attributes', function () {
+    $out = encodeDisplay(HtmlBlock::make('<p class="text-muted" style="position:fixed">x</p>'))['options']['html'];
+
+    expect($out)->toBe('<p class="text-muted">x</p>');
+});
+
+it('HtmlBlock sanitizes input above the sanitizer default length', function () {
+    $html = str_repeat('<p>row</p>', 5000).'<script>alert(1)</script>';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect($out)->toStartWith('<p>row</p>')
+        ->and(substr_count($out, '<p>row</p>'))->toBe(5000)
+        ->and($out)->not->toContain('script');
+});
+
+it('HtmlBlock passes markup through unchanged when trusted', function () {
+    $html = '<div onclick="go()"><script>init()</script></div>';
+    $json = encodeDisplay((new S)->displayHtml($html)->trusted());
+
+    expect($json['options']['html'])->toBe($html);
+});
+
+it('HtmlBlock trusted() returns a new instance', function () {
+    $block = HtmlBlock::make('<script>x</script>');
+    $block->trusted();
+
+    expect(encodeDisplay($block)['options']['html'])->toBe('');
 });
 
 // ---------------------------------------------------------------------------

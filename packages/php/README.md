@@ -21,7 +21,7 @@ Full source, the reference demo app, and docs live at
 | | |
 |---|---|
 | PHP | `^8.4` |
-| Laravel | 11, 12 or 13 (`illuminate/contracts ^11.0\|\|^12.0\|\|^13.0`) |
+| Laravel | 12 or 13 (`illuminate/contracts ^12.0\|\|^13.0`) |
 | Inertia | `inertiajs/inertia-laravel ^3.1` |
 | React | `react` and `react-dom` `^19` (peer deps of the npm package) |
 | Build | Vite with **Tailwind v4** — the client ships a Tailwind source, not built CSS |
