@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Auth\TwoFactor;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\RateLimiter;
@@ -32,17 +33,13 @@ final class TwoFactorCodes
     /** True for a valid TOTP or an unused recovery code (then consumed). Always false while locked out. */
     public static function verify(Model $user, string $code): bool
     {
-        // hit() is an atomic increment: deciding on its result, not on a separate read,
-        // keeps a parallel burst from getting more than MAX_ATTEMPTS codes checked.
-        if (RateLimiter::hit(self::throttleKey($user)) > self::MAX_ATTEMPTS) {
-            return false;
-        }
-        if (! self::acceptTotp($user, $code) && ! self::consumeRecoveryCode($user, $code)) {
-            return false;
-        }
-        RateLimiter::clear(self::throttleKey($user));
+        return self::throttled($user, static fn (): bool => self::acceptTotp($user, $code) || self::consumeRecoveryCode($user, $code));
+    }
 
-        return true;
+    /** True for a valid TOTP only, under the same throttle: enrolment has no recovery codes yet. */
+    public static function verifyTotp(Model $user, string $code): bool
+    {
+        return self::throttled($user, static fn (): bool => self::acceptTotp($user, $code));
     }
 
     public static function isLockedOut(Model $user): bool
@@ -89,6 +86,19 @@ final class TwoFactorCodes
         }
 
         return new Google2FA;
+    }
+
+    /** @param  Closure(): bool  $check */
+    private static function throttled(Model $user, Closure $check): bool
+    {
+        // hit() is an atomic increment: deciding on its result, not on a separate read,
+        // keeps a parallel burst from getting more than MAX_ATTEMPTS codes checked.
+        if (RateLimiter::hit(self::throttleKey($user)) > self::MAX_ATTEMPTS || ! $check()) {
+            return false;
+        }
+        RateLimiter::clear(self::throttleKey($user));
+
+        return true;
     }
 
     /** Conditional update, so two concurrent requests with the same code cannot both pass. */

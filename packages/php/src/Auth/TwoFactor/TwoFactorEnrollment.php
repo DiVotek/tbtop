@@ -61,7 +61,7 @@ final class TwoFactorEnrollment
      */
     public static function confirm(Model $user, string $code): ?array
     {
-        if (self::pendingSecret($user) === null || ! TwoFactorCodes::acceptTotp($user, $code)) {
+        if (self::pendingSecret($user) === null || ! TwoFactorCodes::verifyTotp($user, $code)) {
             return null;
         }
         $codes = self::newRecoveryCodes();

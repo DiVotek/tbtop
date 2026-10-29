@@ -50,6 +50,18 @@ it('turns the factor on with the first code, shows the recovery codes once and d
     $this->get('/admin/nav-demo')->assertOk();
 });
 
+it('throttles wrong codes at the confirm step', function () {
+    submitTwoFactor('two_factor_enable', ['current_password' => 'secret-pass']);
+    foreach (range(1, 5) as $_) {
+        submitTwoFactor('two_factor_confirm', ['code' => '000000']);
+    }
+
+    submitTwoFactor('two_factor_confirm', ['code' => $this->totp(pendingSecret($this->user))])->assertSessionHasErrors('code');
+
+    expect(session('errors')->first('code'))->toStartWith('Too many attempts')
+        ->and($this->user->fresh()->two_factor_confirmed_at)->toBeNull();
+});
+
 it('cancels a pending enrolment', function () {
     submitTwoFactor('two_factor_enable', ['current_password' => 'secret-pass']);
 

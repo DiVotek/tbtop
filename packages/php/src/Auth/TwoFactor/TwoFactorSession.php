@@ -20,24 +20,37 @@ final readonly class TwoFactorSession
 
     private const string PASSED = 'tbtop_two_factor.passed';
 
+    /** How long a parked sign-in waits for its code before the password is needed again. */
+    private const int PARKED_SECONDS = 600;
+
     public function __construct(private Session $session, private string $guard) {}
 
     /** Holds a password-checked user, not yet signed in, until the challenge passes. */
     public function park(Authenticatable $user, bool $remember): void
     {
-        $this->session->put(self::PENDING, ['guard' => $this->guard, 'id' => $user->getAuthIdentifier(), 'remember' => $remember]);
+        $this->session->put(self::PENDING, [
+            'guard' => $this->guard,
+            'id' => $user->getAuthIdentifier(),
+            'remember' => $remember,
+            'at' => now()->getTimestamp(),
+            'hash' => $this->passwordHash($user),
+        ]);
     }
 
-    /** The parked user, if they still exist. */
+    /**
+     * The parked user, while the sign-in is under ten minutes old and their
+     * password has not changed since: AuthenticateSession guards only
+     * signed-in sessions, so a reset elsewhere has to end a parked one here.
+     */
     public function parkedUser(): ?Authenticatable
     {
         $pending = $this->session->get(self::PENDING);
-        if (! is_array($pending) || ($pending['guard'] ?? null) !== $this->guard) {
+        if (! is_array($pending) || ($pending['guard'] ?? null) !== $this->guard || now()->getTimestamp() - (int) ($pending['at'] ?? 0) > self::PARKED_SECONDS) {
             return null;
         }
-        $provider = Auth::createUserProvider(config("auth.guards.{$this->guard}.provider"));
+        $user = Auth::createUserProvider(config("auth.guards.{$this->guard}.provider"))?->retrieveById($pending['id']);
 
-        return $provider?->retrieveById($pending['id']);
+        return $user !== null && hash_equals((string) ($pending['hash'] ?? ''), $this->passwordHash($user)) ? $user : null;
     }
 
     /**
@@ -69,6 +82,12 @@ final readonly class TwoFactorSession
     public function hasPassed(Authenticatable $user): bool
     {
         return $this->session->get(self::PASSED.'.'.$this->guard) === $this->identity($user);
+    }
+
+    /** A digest, not the hash itself, so the session never holds the user's password hash. */
+    private function passwordHash(Authenticatable $user): string
+    {
+        return hash_hmac('sha256', (string) $user->getAuthPassword(), (string) config('app.key'));
     }
 
     private function identity(Authenticatable $user): string

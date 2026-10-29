@@ -109,6 +109,22 @@ it('drops the parked sign-in after five wrong codes', function () {
     $this->assertGuest('staff');
 });
 
+it('drops a parked sign-in after ten minutes', function () {
+    login();
+    $this->travel(11)->minutes();
+
+    answer($this->totp($this->secret))->assertRedirect('/admin/login');
+    $this->assertGuest('staff');
+});
+
+it('drops a parked sign-in once the password changes elsewhere', function () {
+    login();
+    $this->user->forceFill(['password' => Hash::make('reset-elsewhere')])->save();
+
+    answer($this->totp($this->secret))->assertRedirect('/admin/login');
+    $this->assertGuest('staff');
+});
+
 it('sends anyone who owes no code from the challenge to the login', function () {
     $this->get('/admin/two-factor-challenge')->assertRedirect('/admin/login');
     answer('000000')->assertRedirect('/admin/login');

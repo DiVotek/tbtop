@@ -100,7 +100,7 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   confirm with the first code; eight recovery codes shown once; new codes and turning off
   take a code); the login checks the password without signing in a user who has a factor
   and parks them for the challenge (TOTP or recovery code, five tries a minute, then the
-  password again; the "remember me" choice carries over); `authStack()`'s last layer,
+  password again; a parked sign-in lasts ten minutes and ends if the password changes; the "remember me" choice carries over); `authStack()`'s last layer,
   `RequireTwoFactor`, sends any session that has not passed (one a remember cookie restored,
   say) to the challenge, and answers JSON with 403; logout stays open, and a page whose own
   `middleware()` leaves out `authStack()` opts out. The pass belongs to

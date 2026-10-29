@@ -107,6 +107,9 @@ trait ManagesTwoFactor
     private function confirmTwoFactor(ActionCtx $ctx): Effects
     {
         $user = $this->user();
+        if (TwoFactorCodes::isLockedOut($user)) {
+            throw ValidationException::withMessages(['code' => TwoFactorCodes::lockoutMessage($user)]);
+        }
         $codes = TwoFactorEnrollment::confirm($user, (string) $ctx->form['code']);
         if ($codes === null) {
             throw ValidationException::withMessages(['code' => __('tbtop-admin::admin.auth.two_factor.invalid')]);
