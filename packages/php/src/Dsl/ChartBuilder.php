@@ -6,6 +6,7 @@ use Closure;
 use JsonSerializable;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Fields\Field;
 
@@ -18,6 +19,7 @@ final class ChartBuilder implements JsonSerializable
 {
     use HasServerQuery;
     use HasWhen;
+    use ResolvesClosures;
     use WithMeta;
 
     private const MIN_POLL_SECONDS = 5;
@@ -74,18 +76,29 @@ final class ChartBuilder implements JsonSerializable
     /**
      * Re-fetch the chart's data endpoint every $seconds. The 5-second floor is
      * enforced twice: below it this throws, and the client clamps whatever
-     * reaches it. Only meaningful together with ->query().
+     * reaches it. Only meaningful together with ->query(). A Closure's result
+     * is checked against the floor when it resolves.
+     *
+     * @param  int|(Closure(): int)  $seconds
      */
-    public function poll(int $seconds): self
+    public function poll(int|Closure $seconds): self
     {
-        if ($seconds < self::MIN_POLL_SECONDS) {
+        $this->opts['poll'] = $seconds instanceof Closure
+            ? fn () => self::checkedPollSeconds($seconds())
+            : self::checkedPollSeconds($seconds);
+
+        return $this;
+    }
+
+    private static function checkedPollSeconds(mixed $seconds): int
+    {
+        if (! is_int($seconds) || $seconds < self::MIN_POLL_SECONDS) {
             throw new \InvalidArgumentException(
                 'Chart poll interval must be at least '.self::MIN_POLL_SECONDS.' seconds.'
             );
         }
-        $this->opts['poll'] = $seconds;
 
-        return $this;
+        return $seconds;
     }
 
     /**
@@ -103,7 +116,7 @@ final class ChartBuilder implements JsonSerializable
 
     public function toNode(): Node
     {
-        [$options, $optMeta] = Meta::split($this->opts);
+        [$options, $optMeta] = Meta::split($this->resolvedOpts());
         if ($this->isIncluded() && ! array_key_exists('data', $options) && $this->queryClosure === null) {
             throw new \InvalidArgumentException(
                 "Chart \"{$this->name}\" requires static data or a query."
@@ -112,13 +125,24 @@ final class ChartBuilder implements JsonSerializable
         if (array_key_exists('data', $options)) {
             $this->assertScalarRows($options['data']);
         }
-        $meta = [...$optMeta, ...$this->metaBag];
+        $meta = [...$optMeta, ...$this->resolvedMeta()];
         if ($this->paramFields !== []) {
             $options['params'] = array_map(fn (Field $f) => $f->toNode(), $this->paramFields);
         }
 
         return (new Node("chart:{$this->type}", [...$options, 'type' => $this->type], $this->name, $meta))
             ->when($this->isIncluded());
+    }
+
+    /** @return array<string, mixed> */
+    private function resolvedOpts(): array
+    {
+        $opts = $this->opts;
+        if (array_key_exists('poll', $opts)) {
+            $opts['poll'] = $this->resolveOpt($opts['poll']);
+        }
+
+        return $opts;
     }
 
     /**

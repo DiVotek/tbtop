@@ -2,10 +2,13 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
 use InvalidArgumentException;
 
 final class Richtext extends Field
 {
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'placeholder'];
+
     /** @var list<Embed> */
     private array $embeds = [];
 
@@ -16,10 +19,14 @@ final class Richtext extends Field
         return 'richtext';
     }
 
-    /** Placeholder text shown in the empty editor. */
-    public function placeholder(string $text): static
+    /**
+     * Placeholder text shown in the empty editor.
+     *
+     * @param  string|(Closure(): string)  $text
+     */
+    public function placeholder(string|Closure $text): static
     {
-        return $this->set('placeholder', $text);
+        return $this->set('placeholder', self::typedDeferral($text, 'string', 'Richtext::placeholder'));
     }
 
     /**

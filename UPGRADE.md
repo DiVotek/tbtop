@@ -38,3 +38,11 @@ $s->displayHtml($html)->trusted();
 Only call `trusted()` on markup the author controls. Never on record data.
 
 `markdown()` is unchanged (it already stripped embedded HTML unless `->allowHtml()`).
+
+### `meta.disabled` is always a boolean
+
+`disabled()` now exists on every builder that carries meta and accepts a Closure
+(`->disabled(fn () => ! $user->isAdmin())`). The value on the wire is cast to a
+boolean, so `meta('disabled', 0)` now serializes as `false` and `meta('disabled', 'yes')`
+as `true`. A client block that read a non-boolean `meta.disabled` gets a boolean instead.
+Nothing changes for `disabled()` / `disabled(false)` or `meta('disabled', true)`.

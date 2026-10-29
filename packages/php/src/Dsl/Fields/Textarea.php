@@ -10,6 +10,8 @@ final class Textarea extends Field
     use HasLocalePlaceholder;
     use HasStringRules;
 
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'placeholder'];
+
     protected function kind(): string
     {
         return 'textarea';
