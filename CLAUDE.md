@@ -249,8 +249,8 @@ What a patch vs. a minor may carry, what is public API, and the deprecation rule
 
 Process (manual button, one run does both):
 1. Bump `version` in `packages/client/package.json` in a PR, and the same in
-   `packages/node/package.json` (`@tbtop/admin` for Bun/Node, not published yet; a node test
-   fails when the two differ); run `bun run changelog` (git-cliff, `cliff.toml`) to regenerate
+   `packages/node/package.json` (`@tbtop/admin` for Bun/Node, published in the same run; a node
+   test fails when the two differ); run `bun run changelog` (git-cliff, `cliff.toml`) to regenerate
    `CHANGELOG.md` with the release, review it; merge to `main`. The script refuses a patch bump
    over a breaking commit.
 2. GitHub → Actions → **Release** → Run (from `main`). The `release.yml` workflow reads the
