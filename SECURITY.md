@@ -23,4 +23,5 @@ this repository uses them.
 Tabletop is pre-1.0. Both packages ship in lockstep from a single version —
 the `version` field in `packages/client/package.json` is the source of truth.
 Only the latest published release is supported; please upgrade before
-reporting an issue against an older version.
+reporting an issue against an older version. What each version bump may
+contain: [VERSIONING.md](VERSIONING.md).

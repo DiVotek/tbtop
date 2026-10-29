@@ -383,7 +383,7 @@ $s->flex([$badge, $s->unsavedIndicator(), $s->spacer(), $save], variant: 'card')
 | Method | Signature | Purpose |
 |---|---|---|
 | `displayText` | `displayText(string $content): TextBlock` | Static text; call `->variant('heading'\|'subheading'\|'body'\|'muted')` on the result |
-| `displayHtml` | `displayHtml(string $rawHtml): HtmlBlock` | Raw HTML passthrough |
+| `displayHtml` | `displayHtml(string $rawHtml): HtmlBlock` | HTML, sanitized by default; `->trusted()` passes it through unchanged |
 | `markdown` | `markdown(string $content): MarkdownBlock` | Converts markdown server-side; call `->allowHtml()` only for trusted content |
 | `displayDivider` | `displayDivider(): Node` | Horizontal rule |
 | `displayAlert` | `displayAlert(string $message): AlertBlock` | Alert box; chain `->title(string)` and `->color(Color\|string)` on the result |
@@ -548,9 +548,20 @@ Returned by `$s->table(string $name)`.
 
 The shape of a table: `columns()` + `query()` are the minimum. Everything else is opt-in —
 search (`searchable()`, `Column::individuallySearchable()`), filters (`filters()` +
-`filtersIn()`, which accepts only `'modal'` or `'inline'` and throws otherwise), tabs,
+`filtersIn()`, which accepts only `'modal'`, `'inline'` or `'aside'` and throws otherwise), tabs,
 sorting, pagination, row/bulk/header actions, drag-reorder, grouping, inline-editable cells,
 and the record-URL row link.
+
+**Filter layouts** — `filtersIn()` picks one of three:
+
+- `'modal'` (default): a Filters button opens a dialog; `filtersFormColumns()` and
+  `filtersFormWidth()` shape it.
+- `'inline'`: the fields sit in the toolbar row; `filtersFormColumns()` puts them on a grid.
+- `'aside'`: a panel left of the table, stacked one field per row, with a Filters button in the
+  toolbar that hides and shows it. The user's toggle is remembered per table in localStorage;
+  `filtersCollapsed()` only sets the first-visit default. Below the `lg` breakpoint there is no
+  room for the panel, so the button opens the same fields in a right-hand side sheet instead.
+  `deferFilters()` adds the Done button at the bottom of the panel.
 
 **Toolbar visibility** — three knobs that are easy to confuse:
 

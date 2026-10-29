@@ -106,7 +106,7 @@ Available display primitives (all in `S.php`, confirmed):
 |---|---|---|
 | `$s->displayText($content)->variant('heading')` | `displayText` | Section headings (variants: `heading`, `subheading`, `body`, `muted`) |
 | `$s->displayText($content)` | `displayText` | Body copy |
-| `$s->displayHtml($rawHtml)` | `displayHtml` | Pre-rendered HTML |
+| `$s->displayHtml($rawHtml)` | `displayHtml` | Pre-rendered HTML, sanitized (`->trusted()` to skip) |
 | `$s->markdown($content)` | `displayHtml` | Markdown converted server-side to HTML |
 | `$s->displayAlert($message)` | `displayAlert` | Callout / info box |
 | `$s->displayDivider()` | `displayDivider` | Visual separator |
