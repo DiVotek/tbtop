@@ -129,8 +129,8 @@ Register the **panel** (not each page) in `config/tbtop-admin.php`:
 
 The guard defaults to `web` and `auth:{guard}` is applied on top of the panel's
 middleware. The login screen itself is not shipped ready-made: `php artisan admin:install
---auth` publishes sign-in and password reset pages and prints the guest-redirect step
-(see `docs/ai/wiring.md`, "Auth pages"). `->guard()`,
+--auth` publishes sign-in and password reset pages and prints the guest-redirect step;
+`--2fa` adds a two-factor challenge (see `docs/ai/wiring.md`, "Auth pages"). `->guard()`,
 `->middleware()`, `->navigation()` and `->locales()` override the defaults.
 
 Scaffold a page with `php artisan make:tbtop-page Brands` — it lands in the

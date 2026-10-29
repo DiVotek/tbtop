@@ -38,13 +38,34 @@ domain: auth
 - **Reset mail URL is fixed at send time** (`ResetPasswordNotification`), not through the
   global `ResetPassword::createUrlUsing()`.
 - **Auth pages never become the panel home.**
-- **Base set is login + password reset + profile.** 2FA, email verification, registration
-  and passkeys are deferred; the demo builds 2FA on `afterAuthenticated()`.
+- **Base set is login + password reset + profile, plus opt-in TOTP 2FA.** Email
+  verification, registration and passkeys are deferred.
+  > Replaces previous decision (see git history) — 2FA was deferred to the demo's own pages.
+- **2FA follows the file, like the profile menu entry.** `--2fa` publishes
+  `TwoFactorChallengePage`; while the panel serves a subclass, the login checks the password
+  with `once()` and parks a 2FA user in the session instead of signing them in, the profile
+  page grows a 2FA section, and `RequireTwoFactor` (last in `authStack()`) sends back any
+  session that has not passed. No panel flag to keep in sync. Without the page, the login
+  keeps plain `attempt()`.
+- **The pass names the user and lives in the session.** The demo's `auth.2fa.completed`
+  was a bare boolean, set only by its challenge: a remember-cookie session or a user who had
+  just enrolled had none and looped between the panel and a challenge with nothing pending.
+  Now a remember-restored session is challenged like a parked one, enrolling passes the
+  session, and the pass is `class|id`, so it never covers another account.
+- **Storage is Fortify's**: `two_factor_secret` (`encrypt()`), `two_factor_recovery_codes`
+  (encrypted JSON), `two_factor_confirmed_at`, plus `two_factor_last_used_step` for replay.
+  A Fortify host keeps its enrolled users; the migration adds only the missing columns.
+- **pragmarx/google2fa and bacon/bacon-qr-code are suggested, not required**: a host
+  without 2FA does not carry them. `--2fa` prints the `composer require`.
+- **Every change to the factor proves something**: turning it on takes the current
+  password, then the first code; new recovery codes and turning it off take a code (TOTP or
+  recovery). Recovery codes are shown once, flashed to the next render. The QR code is an
+  SVG data URI in `displayImage`, so the section is plain DSL with no client block.
 - **The profile page is a base page too, behind the panel stack**, not an `AuthPage`: it
   edits the signed-in user, so it needs `auth:{guard}`. `--auth` publishes it with the rest;
   `--profile` alone serves hosts with their own sign-in. Its user-menu entry follows the
   file (served subclass → entry), so there is no panel flag to keep in sync. Section-per-form
-  `view()` leaves room for package 2FA setup as one more section.
+  `view()` takes the 2FA section as one more form.
 - **Changing the email asks for the current password**, unlike Breeze and Filament: the
   email is where password resets go, so a hijacked session could otherwise take the
   account. The name alone saves without it.

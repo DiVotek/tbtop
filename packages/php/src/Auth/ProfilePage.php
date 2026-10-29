@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 use LogicException;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
+use Tbtop\Admin\Auth\TwoFactor\ManagesTwoFactor;
 use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
@@ -25,11 +26,12 @@ use Tbtop\Admin\Pages\Page;
  * The signed-in user's own name, email and password, behind the panel's auth
  * stack. A panel that serves a subclass gets a "Profile" entry at the top of
  * the user menu. Hooks: view(), profileForm(), passwordForm(), profileRules(),
- * passwordRules().
+ * passwordRules(), twoFactorForms().
  */
 abstract class ProfilePage extends Page
 {
     use FindsHostPage;
+    use ManagesTwoFactor;
 
     public static function path(): string
     {
@@ -47,10 +49,10 @@ abstract class ProfilePage extends Page
         return __('tbtop-admin::admin.auth.profile.title');
     }
 
-    /** One section per concern; a subclass appends its own (e.g. two-factor setup) after parent::view(). */
+    /** One section per concern, two-factor last while the panel serves a challenge page; a subclass appends its own after parent::view(). */
     public function view(S $s): Node
     {
-        return $s->stack([$this->profileForm($s), $this->passwordForm($s)]);
+        return $s->stack([$this->profileForm($s), $this->passwordForm($s), ...$this->twoFactorForms($s)]);
     }
 
     protected function profileForm(S $s): FormBuilder
