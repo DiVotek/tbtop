@@ -28,6 +28,13 @@ domain: tables
   the pre-drag snapshot and notifies. The order math (`computeReorder` →
   `arrayMove`) and the disable predicate are pure and unit-tested; the drag
   gesture itself is covered by a real-browser Pest test, not happy-dom.
+- **Active-filter chips read the applied params, not the filter form.**
+  `queryParams.filters` is what narrowed the rows, so a deferred table's pending
+  edits get no chip until Apply. Removing a chip drops that key from both the
+  applied params and the form values, leaving the other pending edits alone;
+  "Clear filters" keeps the search (unlike the form's Reset). Client-only, no
+  wire change: labels come from the filter node's own options, and an async
+  select resolves through the same `onLoad` its control uses.
 
 ## Why
 

@@ -561,6 +561,15 @@ and the record-URL row link.
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
 
+**Active-filter chips** — every applied filter shows as a chip under the toolbar
+(`Status: Published, Draft`), with a × that drops that one filter; two or more chips add a
+"Clear filters" link that drops them all and keeps the search. There is no PHP API: the
+chip text is the filter's `label()` plus its value — option labels for select/in/radio
+(an async select resolves its label through `resolveUsing()`, like the control does),
+formatted dates and ranges, and the label alone for a boolean that is on. With
+`deferFilters()` a chip appears only after Apply, since pending edits don't narrow the rows
+yet. An `embedded(true)` table shows no chips.
+
 **Simple pagination** — `simplePagination()` drops the `count()` query, which is the slow
 one on a large or heavily joined table. The page query reads `perPage + 1` rows: the extra
 row only answers "is there a next page", and the response carries `hasMore` instead of
