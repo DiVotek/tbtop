@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+/**
+ * Email verification at {prefix}/verify-email. While this file exists, a
+ * signed-in user whose model implements MustVerifyEmail and whose email is
+ * unverified is sent here from every panel page but the profile; the mailed
+ * link lands on {prefix}/verify-email/{id}/{hash}. Behaviour lives in the
+ * package base. Hooks:
+ *
+ *   view(S $s)       the screen
+ *   maxAttempts()    link requests per user per minute (default 6)
+ *
+ * Delete this file to drop email verification.
+ */
+class EmailVerificationPage extends \Tbtop\Admin\Auth\EmailVerificationPage {}

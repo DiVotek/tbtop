@@ -29,6 +29,17 @@ class TabbedPostsPage extends Page
                 ])
                 ->query(fn () => DB::table('posts'))
                 ->toNode(),
+            $s->table('simple-posts')
+                ->columns(['title' => 'Title'])
+                ->defaultSort('title', 'asc')
+                ->tabs([
+                    Tab::make('all'),
+                    Tab::make('published')->query(fn ($q) => $q->where('published', true))->count(),
+                ])
+                ->paginate(2, [1, 2])
+                ->simplePagination()
+                ->query(fn () => DB::table('posts'))
+                ->toNode(),
         ]);
     }
 }

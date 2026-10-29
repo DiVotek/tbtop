@@ -7,7 +7,8 @@ use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 
 /**
  * A custom nav/user-menu entry: a label plus an external or internal URL.
- * No page class, no server closure — always shown, no per-request gate.
+ * No page class, no server closure; shown to everyone unless can() names a
+ * gate, which is checked per request like Page::can().
  */
 final class NavItem
 {
@@ -23,6 +24,9 @@ final class NavItem
     private int $order = 0;
 
     private bool $newTab = false;
+
+    /** @var string|array{0: string, 1: class-string}|null */
+    private string|array|null $gate = null;
 
     /** @param string|(\Closure(): string) $label */
     private function __construct(private readonly string|\Closure $label) {}
@@ -83,6 +87,21 @@ final class NavItem
     }
 
     /**
+     * Show the item only to users the gate allows: an ability, or an ability
+     * plus the model class its policy resolves from — the same value a
+     * Page::can() returns, so `->can(SomePage::can())` hides a link to a page
+     * its user may not open. Null (the default) shows it to everyone.
+     *
+     * @param  string|array{0: string, 1: class-string}|null  $gate
+     */
+    public function can(string|array|null $gate): self
+    {
+        $this->gate = $gate;
+
+        return $this;
+    }
+
+    /**
      * Deprecated (removed in 1.0): use url()->openUrlInNewTab().
      *
      * @deprecated Use openUrlInNewTab().
@@ -115,6 +134,12 @@ final class NavItem
     public function getSection(): ?string
     {
         return $this->section;
+    }
+
+    /** @return string|array{0: string, 1: class-string}|null */
+    public function getGate(): string|array|null
+    {
+        return $this->gate;
     }
 
     public function getOrder(): int

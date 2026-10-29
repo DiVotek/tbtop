@@ -24,11 +24,13 @@ final class TableBuilder implements JsonSerializable
 
     private const FILTERS_FORM_WIDTHS = ['sm', 'md', 'lg', 'full'];
 
-    private const FILTERS_IN_MODES = ['modal', 'inline'];
+    private const FILTERS_IN_MODES = ['modal', 'inline', 'aside'];
 
     private const FILTERS_FORM_COLUMNS_MIN = 1;
 
     private const FILTERS_FORM_COLUMNS_MAX = 12;
+
+    private const MIN_POLL_SECONDS = 5;
 
     /**
      * All column descriptors, including hidden ones (they need to participate
@@ -58,6 +60,8 @@ final class TableBuilder implements JsonSerializable
 
     /** @var list<int> */
     private array $paginateOptions = [10, 25, 50, 100];
+
+    private bool $simplePagination = false;
 
     public function __construct(public readonly string $name) {}
 
@@ -93,6 +97,7 @@ final class TableBuilder implements JsonSerializable
             }
         }
         $this->assertUniqueColumnNames();
+        $this->assertStickyColumnsLead();
 
         return $this;
     }
@@ -185,11 +190,12 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Where declared filters() render: a dismissible modal, or inline in the
-     * toolbar. Any other mode throws — the client renders no filters for an
-     * unknown value.
+     * Where declared filters() render: a dismissible modal, inline in the
+     * toolbar, or an aside panel left of the table that a toolbar button
+     * shows and hides (a side sheet below the lg breakpoint). Any other mode
+     * throws — the client renders no filters for an unknown value.
      *
-     * @param  string  $mode  One of self::FILTERS_IN_MODES ('modal'|'inline')
+     * @param  string  $mode  One of self::FILTERS_IN_MODES ('modal'|'inline'|'aside')
      */
     public function filtersIn(string $mode): self
     {
@@ -222,6 +228,18 @@ final class TableBuilder implements JsonSerializable
         }
 
         return null;
+    }
+
+    /**
+     * Start the aside filters panel hidden until the toolbar button opens it.
+     * The user's own toggle then wins on later visits. Only meaningful when
+     * filtersIn('aside').
+     */
+    public function filtersCollapsed(bool $value = true): self
+    {
+        $this->opts['filtersCollapsed'] = $value;
+
+        return $this;
     }
 
     /** Require an explicit Apply action before filter changes narrow the query. */
@@ -278,9 +296,31 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first.
+     * Re-fetch the table's rows every $seconds, keeping the current rows on
+     * screen with no loading overlay. The client pauses while the tab is
+     * hidden or rows are selected, so a poll never drops a pending bulk
+     * selection. The 5-second floor is enforced twice: below it this throws,
+     * and the client clamps whatever reaches it.
      */
-    public function groups(string $column): self
+    public function poll(int $seconds): self
+    {
+        if ($seconds < self::MIN_POLL_SECONDS) {
+            throw new InvalidArgumentException(
+                'Table poll interval must be at least '.self::MIN_POLL_SECONDS.' seconds.'
+            );
+        }
+        $this->opts['poll'] = $seconds;
+
+        return $this;
+    }
+
+    /**
+     * Group contiguous rows sharing $column's value under a header row.
+     * Requires defaultSort($column, ...) first. $collapsible makes the header
+     * a toggle that hides or shows its rows; $collapsed starts every group
+     * closed and implies $collapsible.
+     */
+    public function groups(string $column, bool $collapsible = false, bool $collapsed = false): self
     {
         $sortField = $this->defaultSortSpec()['field'] ?? null;
         if ($sortField !== $column) {
@@ -288,7 +328,14 @@ final class TableBuilder implements JsonSerializable
                 "groups(\"{$column}\") requires defaultSort(\"{$column}\", ...) to be set first."
             );
         }
-        $this->opts['groups'] = ['column' => $column];
+        $groups = ['column' => $column];
+        if ($collapsible || $collapsed) {
+            $groups['collapsible'] = true;
+        }
+        if ($collapsed) {
+            $groups['collapsed'] = true;
+        }
+        $this->opts['groups'] = $groups;
 
         return $this;
     }
@@ -316,6 +363,19 @@ final class TableBuilder implements JsonSerializable
     {
         $this->paginatePerPage = $perPage;
         $this->paginateOptions = $options;
+
+        return $this;
+    }
+
+    /**
+     * Page without a total: skip the count() query and fetch perPage + 1 rows to
+     * know whether a next page exists. The footer shows only previous/next, with
+     * no "X–Y of Z" range. For large tables where count() is the slow query;
+     * tab counts still run their own count per tab.
+     */
+    public function simplePagination(bool $value = true): self
+    {
+        $this->simplePagination = $value;
 
         return $this;
     }
@@ -567,11 +627,11 @@ final class TableBuilder implements JsonSerializable
         return $names;
     }
 
-    /** @return list<string> Column names declared translatable */
+    /** @return list<string> Column names declared translatable, group children included */
     public function translatableColumns(): array
     {
         $names = [];
-        foreach ($this->visibleColumns() as $col) {
+        foreach ($this->visibleLeafColumns() as $col) {
             if ($col->isTranslatable()) {
                 $names[] = $col->name;
             }
@@ -602,15 +662,16 @@ final class TableBuilder implements JsonSerializable
 
     /**
      * Names of visible columns that are explicitly declared sortable — a
-     * gated-out column would otherwise leak its ordering. The default-sort
-     * field is always implicitly allowed.
+     * gated-out column would otherwise leak its ordering. Group children are
+     * unfolded: a group header sorts by its first sortable child. The
+     * default-sort field is always implicitly allowed.
      *
      * @return list<string>
      */
     public function sortableColumnNames(): array
     {
         $names = [];
-        foreach ($this->visibleColumns() as $col) {
+        foreach ($this->visibleLeafColumns() as $col) {
             if ($col->isSortable()) {
                 $names[] = $col->name;
             }
@@ -619,16 +680,45 @@ final class TableBuilder implements JsonSerializable
         return $names;
     }
 
-    /** The declared Column matching $name, or null when there is none. */
+    /** The declared Column matching $name (a group child included), or null when there is none. */
     public function findColumn(string $name): ?Column
     {
         foreach ($this->columnObjects as $col) {
             if ($col->name === $name) {
                 return $col;
             }
+            foreach ($col->groupColumns() as $child) {
+                if ($child->name === $name) {
+                    return $child;
+                }
+            }
         }
 
         return null;
+    }
+
+    /**
+     * Visible columns with each group replaced by its children — the columns
+     * that carry a value of their own.
+     *
+     * @return list<Column>
+     */
+    private function visibleLeafColumns(): array
+    {
+        $leaves = [];
+        foreach ($this->visibleColumns() as $col) {
+            $children = $col->groupColumns();
+            if ($children === []) {
+                $leaves[] = $col;
+
+                continue;
+            }
+            foreach ($children as $child) {
+                $leaves[] = $child;
+            }
+        }
+
+        return $leaves;
     }
 
     /** @return array{field: string, dir: string}|null */
@@ -644,13 +734,23 @@ final class TableBuilder implements JsonSerializable
         return $this->opts['groups']['column'] ?? null;
     }
 
-    /** @return array{perPage: int, options: list<int>} */
+    /** @return array{perPage: int, options: list<int>, simple?: true} */
     public function paginationSpec(): array
     {
-        return [
+        $spec = [
             'perPage' => $this->paginatePerPage,
             'options' => $this->paginateOptions,
         ];
+        if ($this->simplePagination) {
+            $spec['simple'] = true;
+        }
+
+        return $spec;
+    }
+
+    public function isSimplePagination(): bool
+    {
+        return $this->simplePagination;
     }
 
     public function toNode(): Node
@@ -713,6 +813,31 @@ final class TableBuilder implements JsonSerializable
             foreach ($col->groupColumns() as $child) {
                 $this->claimColumnName($seen, $child->name);
             }
+        }
+    }
+
+    /**
+     * Sticky columns stack from the left edge, so they must be the leading run
+     * of the column list — a pinned column after a scrolling one would slide
+     * over it. Inside a group the group itself is the column that pins.
+     */
+    private function assertStickyColumnsLead(): void
+    {
+        $leading = true;
+        foreach ($this->columnObjects as $col) {
+            foreach ($col->groupColumns() as $child) {
+                if ($child->isSticky()) {
+                    throw new InvalidArgumentException(
+                        "Column \"{$child->name}\": sticky() goes on the group \"{$col->name}\", not on its children.",
+                    );
+                }
+            }
+            if ($col->isSticky() && ! $leading) {
+                throw new InvalidArgumentException(
+                    "Column \"{$col->name}\": sticky columns must come first in columns().",
+                );
+            }
+            $leading = $leading && $col->isSticky();
         }
     }
 

@@ -52,6 +52,8 @@ final class Column implements JsonSerializable
 
     private ?string $width = null;
 
+    private bool $sticky = false;
+
     /** null = not set, true = wrap, false = truncate */
     private ?bool $wrap = null;
 
@@ -266,6 +268,18 @@ final class Column implements JsonSerializable
     public function width(string $width): static
     {
         $this->width = $width;
+
+        return $this;
+    }
+
+    /**
+     * Pin the column to the left edge while the table scrolls horizontally.
+     * Sticky columns must lead the column list; the row-selection checkbox
+     * and drag handle stay pinned with them.
+     */
+    public function sticky(bool $value = true): static
+    {
+        $this->sticky = $value;
 
         return $this;
     }
@@ -559,8 +573,8 @@ final class Column implements JsonSerializable
      * Glue several leaf columns into one header and one cell (vertical stack).
      * Children remain query fields; the parent is display-only, so sortable()
      * and individuallySearchable() are rejected on it — put them on a child.
-     * searchable() unfolds into the children; sortable()/translatable() on a
-     * child are rejected until unfolding covers them too.
+     * searchable(), sortable() and translatable() on a child unfold into the
+     * query; the header sorts by the first sortable child.
      *
      * @param  list<Column>  $columns
      */
@@ -811,6 +825,11 @@ final class Column implements JsonSerializable
         return true;
     }
 
+    public function isSticky(): bool
+    {
+        return $this->sticky;
+    }
+
     public function isSortable(): bool
     {
         return $this->sortable === true;
@@ -885,6 +904,9 @@ final class Column implements JsonSerializable
         }
         if ($this->width !== null) {
             $out['width'] = $this->width;
+        }
+        if ($this->sticky) {
+            $out['sticky'] = true;
         }
         if ($this->wrap !== null) {
             $out['wrap'] = $this->wrap;
@@ -1004,19 +1026,6 @@ final class Column implements JsonSerializable
             if ($child->isIndividuallySearchable()) {
                 throw new InvalidArgumentException(
                     "Column \"{$child->name}\": individuallySearchable() is not supported inside a group.",
-                );
-            }
-            // Unlike searchable(), these are not unfolded into the query yet:
-            // sortableColumnNames()/translatableColumns() walk top-level
-            // columns only, so accepting them here would silently do nothing.
-            if ($child->isSortable()) {
-                throw new InvalidArgumentException(
-                    "Column \"{$child->name}\": sortable() inside a group is not implemented yet.",
-                );
-            }
-            if ($child->isTranslatable()) {
-                throw new InvalidArgumentException(
-                    "Column \"{$child->name}\": translatable() inside a group is not implemented yet.",
                 );
             }
         }

@@ -8,8 +8,7 @@ import { s } from "./structure";
 import { wrapForStructure as wrap } from "./testFixtures";
 
 describe("Form integration", () => {
-	// TODO: flaky on GitHub Actions runners (passes locally + in Docker linux/amd64). Debug separately.
-	test.skip("Form initial mirrors resolved query payload and renders form-block", async () => {
+	test("Form initial mirrors resolved query payload and renders form-block", async () => {
 		const node = s.form(
 			{
 				query: async () => ({ id: "p1", title: "Hello", body: "World" }),
@@ -249,8 +248,7 @@ const makeBlockingSchema = () => ({
 });
 
 describe("Form validation cadence", () => {
-	// TODO: flaky on GitHub Actions runners (passes locally + in Docker linux/amd64). Debug separately.
-	test.skip("Form unchanged touched field is not revalidated on blur", async () => {
+	test("Form unchanged touched field is not revalidated on blur", async () => {
 		const schema = makeBlockingSchema();
 		const node = s.form({ query: async () => ({ title: "ab" }), schema }, [
 			s.text({ name: "title" }),

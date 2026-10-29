@@ -2,10 +2,12 @@
 
 namespace Tbtop\Admin\Auth;
 
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use LogicException;
@@ -91,8 +93,14 @@ abstract class LoginPage extends AuthPage
     /** The security core — throttle, attempt, regenerate. A subclass that rebuilds view() calls it; override it only to wrap parent::authenticate(). */
     protected function authenticate(ActionCtx $ctx): string
     {
+        Validator::make($ctx->form, [
+            'email' => ['required', 'string'],
+            'password' => ['required', 'string'],
+        ])->validate();
+
         $key = 'tbtop-login|'.$this->throttleKey($ctx);
         if (RateLimiter::tooManyAttempts($key, $this->maxAttempts())) {
+            event(new Lockout($ctx->request));
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([
                 'email' => __('auth.throttle', ['seconds' => $seconds, 'minutes' => ceil($seconds / 60)]),

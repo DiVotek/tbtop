@@ -5,7 +5,7 @@
 import { DndContext } from "@dnd-kit/core";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { cn } from "../../lib/cn";
 import { useSectionFrameless } from "../../render/sectionChrome";
 import { ReloadOverlay } from "../../ui/spinner";
@@ -16,8 +16,9 @@ import { TableHead } from "./gridHead";
 import { isSelected, readId } from "./normalize";
 import { ReorderHint } from "./reorderHint";
 import type { RowActionEntry } from "./rowActions";
-import { GroupHeaderRow, partitionRowGroups } from "./rowGroups";
+import { GroupedRows } from "./rowGroups";
 import { SortableRow } from "./sortableRow";
+import { resolveStickyLayout, StickyColumnsProvider, useStickyOffsets } from "./stickyColumns";
 import { TableRow } from "./tableRow";
 import { useRowReorder } from "./useRowReorder";
 
@@ -104,6 +105,14 @@ export function TableGrid(props: TableGridProps) {
 	// Inside a card-variant section the card draws the frame — drop our own border.
 	const frameless = useSectionFrameless();
 
+	const containerRef = useRef<HTMLDivElement>(null);
+	const tableRef = useRef<HTMLTableElement>(null);
+	const sticky = resolveStickyLayout(props.columns, {
+		reorder: reorderActive,
+		bulk: props.hasBulk,
+	});
+	useStickyOffsets(containerRef, tableRef, sticky);
+
 	// New-gen shape: container/table/body visuals come from the `cn-table*`
 	// rules in `ui/presets/style-preset-*.css` (the preset layer sits below
 	// utilities, so plain utility overrides win). Our deltas:
@@ -112,12 +121,15 @@ export function TableGrid(props: TableGridProps) {
 	// and the empty-state cell stays a plain <td> because `cn-table-cell`
 	// forces `whitespace-nowrap`.
 	const shell = (
-		<div className={cn("cn-table-container relative", !frameless && "rounded-surface border")}>
+		<div
+			ref={containerRef}
+			className={cn("cn-table-container relative", !frameless && "rounded-surface border")}
+		>
 			{/* Reload overlay sits below the sticky header (z-20 > overlay z-10). */}
 			{props.isReloading && <ReloadOverlay testId="table-reloading-overlay" />}
 			{reorderFeature && !reorderActive && <ReorderHint />}
 
-			<table className="cn-table">
+			<table ref={tableRef} className="cn-table">
 				<TableHead
 					columns={props.columns}
 					sort={props.sort}
@@ -135,9 +147,10 @@ export function TableGrid(props: TableGridProps) {
 			</table>
 		</div>
 	);
+	const pinned = <StickyColumnsProvider value={sticky}>{shell}</StickyColumnsProvider>;
 
 	if (!reorderActive) {
-		return shell;
+		return pinned;
 	}
 
 	// DndContext wraps the table (not its <tbody>) so dnd-kit's hidden a11y
@@ -149,7 +162,7 @@ export function TableGrid(props: TableGridProps) {
 			modifiers={[restrictToVerticalAxis, restrictToParentElement]}
 		>
 			<SortableContext items={allIds} strategy={verticalListSortingStrategy}>
-				{shell}
+				{pinned}
 			</SortableContext>
 		</DndContext>
 	);
@@ -237,8 +250,14 @@ function renderGroupedRows(
 	// The grouped column may be hidden or never displayed — fall back to a bare
 	// column so the header still renders, as plain text.
 	const column = props.columns.find((c) => c.name === columnName) ?? { name: columnName };
-	return partitionRowGroups(rows, columnName).flatMap((group, i) => [
-		<GroupHeaderRow key={`group-${i}`} value={group.value} colSpan={colSpan} column={column} />,
-		...group.rows.map((row) => renderRow(row, props, false)),
-	]);
+	return (
+		<GroupedRows
+			rows={rows}
+			column={column}
+			colSpan={colSpan}
+			collapsible={props.groups?.collapsible === true || props.groups?.collapsed === true}
+			collapsedByDefault={props.groups?.collapsed === true}
+			renderRow={(row) => renderRow(row, props, false)}
+		/>
+	);
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "../lib/cn";
 import { Badge } from "../ui/badge";
 import type { ModalSize } from "../ui/modal-shell";
 import { NodeIcon } from "../ui/node-icon";
@@ -93,6 +94,15 @@ export function actionVariant(opts: ActionOptionsBag): ActionButtonVariant {
 /** Resolve the trigger button size; undefined → the Button default (medium). */
 export function actionButtonSize(opts: ActionOptionsBag): "sm" | "default" | "lg" | undefined {
 	return opts.size ? SIZE_TO_BUTTON[opts.size] : undefined;
+}
+
+/**
+ * Trigger classes: the outline tint, plus `relative` when the action carries
+ * a badge — the badge is absolutely placed on the button's corner, and
+ * without a positioned button it anchors to the page and overflows it.
+ */
+export function actionTriggerClass(opts: ActionOptionsBag, plain: boolean): string {
+	return cn(opts.badge && "relative overflow-visible", !plain && outlinedTintClass(opts));
 }
 
 /** Color-tint classes for an outlined trigger (neutral for other colors). */

@@ -5,21 +5,15 @@ namespace Tbtop\Admin\Http\Media;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Tbtop\Admin\Media\MediaIngest;
+use Tbtop\Admin\Media\MediaIngestException;
 use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\MediaUploadLimit;
-use Tbtop\Admin\Media\MimePolicy;
-use Tbtop\Admin\Media\Models\Media;
-use Tbtop\Admin\Media\SvgSanitizeException;
-use Tbtop\Admin\Media\SvgSanitizer;
-use Tbtop\Admin\Uploads\ConversionProfile;
 
 final class MediaUploadController
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, MediaIngest $ingest): JsonResponse
     {
-        $config = $this->mediaConfig();
-        $accept = (array) ($config['accept'] ?? []);
-
         $request->validate([
             'file' => 'required|file|max:'.MediaUploadLimit::kilobytes(),
             'folderId' => 'nullable|integer|exists:tbtop_media_folders,id',
@@ -28,51 +22,24 @@ final class MediaUploadController
         /** @var UploadedFile $file */
         $file = $request->file('file');
 
-        $this->assertMime($file, $accept);
-
-        $disk = (string) ($config['disk'] ?? 'public');
-        $dir = 'tbtop-media';
-        $path = $file->store($dir, $disk);
-        if ($path === false) {
-            abort(500, 'Upload failed.');
-        }
-
         try {
-            SvgSanitizer::sanitizeStored($disk, $path, $file->getClientOriginalName());
-        } catch (SvgSanitizeException $e) {
-            abort(422, __('tbtop-admin::admin.media.errors.'.$e->reason));
+            $media = $ingest->store(
+                $file,
+                $request->input('folderId') !== null ? (int) $request->input('folderId') : null,
+            );
+        } catch (MediaIngestException $e) {
+            $this->abortWith($e);
         }
-
-        $profiles = ConversionProfile::fromConfig($config);
-        $image = MediaResource::imageAttributes($file, $path, $disk, $profiles);
-
-        $media = Media::create([
-            'folder_id' => $request->input('folderId') !== null ? (int) $request->input('folderId') : null,
-            'name' => $file->getClientOriginalName(),
-            'disk' => $disk,
-            'path' => $path,
-            'mime' => (string) $file->getMimeType(),
-            'size' => (int) $file->getSize(),
-            ...$image,
-            'alt' => null,
-        ]);
 
         return response()->json(MediaResource::toItem($media), 201);
     }
 
-    /** @return array<string, mixed> */
-    private function mediaConfig(): array
+    private function abortWith(MediaIngestException $e): never
     {
-        $cfg = config('tbtop-admin.media');
-
-        return is_array($cfg) ? $cfg : [];
-    }
-
-    /** @param list<string> $accept */
-    private function assertMime(UploadedFile $file, array $accept): void
-    {
-        if (! MimePolicy::allows((string) $file->getMimeType(), $accept)) {
-            abort(422, __('tbtop-admin::admin.media.errors.mime_not_allowed'));
+        if ($e->reason === MediaIngestException::STORE_FAILED) {
+            abort(500, 'Upload failed.');
         }
+
+        abort(422, __('tbtop-admin::admin.media.errors.'.$e->reason));
     }
 }

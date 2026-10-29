@@ -41,6 +41,7 @@ Route file: `packages/php/routes/admin.php`
 | `GET` | `{prefix}/` | *(unnamed)* | closure | 302 redirect | Sends the panel root — the logo link target — to the panel's home page. Default panel only, and only when a page qualifies as home |
 | `POST` | `{prefix}/locale` | `tbtop.{panel}.locale` | `LocaleController` | Inertia-compatible redirect | `redirect()->back()` |
 | `POST` | `{prefix}/logout` | `tbtop.{panel}.logout` | `LogoutController` | Inertia-compatible redirect | Logs out the panel's guard, invalidates the session, redirects to `{prefix}` (the host's guest redirect takes it to login). An expired-session POST (419) redirects the same way |
+| `GET` | `{prefix}/verify-email/{id}/{hash}` | `tbtop.{panel}.{slug}.verify` | `VerifyEmailController` | 302 redirect | The signed link in the verification mail. Registered only while the panel serves an `EmailVerificationPage` subclass, at that page's path, under `signed` + `throttle:6,1`. Marks the signed-in user verified (`Verified` event), flashes a toast and redirects to the URL the user was sent away from, else `{prefix}`. A bad signature, another user's link, or a hash of an old email answers 403 |
 | `GET` | `{prefix}/{any}` (fallback) | `tbtop.{panel}.fallback` | `PanelErrorController` | Inertia page `admin/error` (404) | `{status: 404, title, message}` + the shared `tbtop` chrome props |
 | `POST` | `{prefix}/{mcp path}` (default `mcp`) | `tbtop.{panel}.mcp` | `TbtopMcpServer` (laravel/mcp) | JSON-RPC (MCP streamable HTTP) | MCP `tools/call` results for `search` / `query` / `execute`. Only when the panel calls `mcp()`; runs `[SetCurrentPanel, ValidateMcpOrigin, ...mcp($middleware), SetAdminLocale]` instead of the panel stack. `GET`/`DELETE` on the same path answer 405 — see [MCP server](#mcp-server) |
 
@@ -60,8 +61,9 @@ anything not hidden reaches every page's HTML. The client reads only this prop.
 ### Auth pages
 
 The package owns no auth routes. `php artisan admin:install --auth` publishes
-`app/Admin/Pages/Auth/{LoginPage,ForgotPasswordPage,ResetPasswordPage}.php`, each an empty
-subclass of `Tbtop\Admin\Auth\*`; override a hook there or delete the file. They are
+`app/Admin/Pages/Auth/{LoginPage,ForgotPasswordPage,ResetPasswordPage,ProfilePage,EmailVerificationPage}.php`, each an empty
+subclass of `Tbtop\Admin\Auth\*`; override a hook there or delete the file. `--profile`
+publishes `ProfilePage` alone, for a host that signs users in through its own screens. They are
 ordinary page routes (`{prefix}/login`, `{prefix}/forgot-password`,
 `{prefix}/reset-password/{token}`; names `tbtop.{panel}.login-page` etc.), public through
 `middleware(): ['web', RedirectSignedInUsers::class]` — not the panel stack, which may hold an access
@@ -76,9 +78,34 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   e.g. to a 2FA challenge), `redirectTo()`, `throttleKey()`, `maxAttempts()`.
   `ResetPasswordPage`: `passwordRules()`. The cores — `authenticate()`, `sendLink()`,
   `resetPassword()` — are protected: call them from a rebuilt `view()`, or wrap via `parent::`.
+- **Profile.** `ProfilePage` (`{prefix}/profile`) is not public: it sits on the panel's
+  `authStack()` and edits the panel guard's user. One form holds name and email: a new email
+  needs the current password, or a hijacked session could redirect password resets. The other
+  changes the password and needs the current one. Wrong current passwords are throttled five
+  a minute per user across both forms. A password change keeps this session and signs the
+  others out (see Other sessions). While the panel serves a subclass, the user menu gets a
+  "Profile" entry ahead of `userMenuItems()`; delete the file and both go. Hooks:
+  `profileForm()`, `passwordForm()`, `profileRules()` (default: a new email must be
+  lowercase, unique on the user model's connection and table), `passwordRules()`; append
+  sections in `view()` after `parent::view()`. A changed email on a `MustVerifyEmail` user is
+  marked unverified and, while the panel serves an `EmailVerificationPage`, mailed a link to
+  the new address. Needs an Eloquent user with `name`, `email` and `password`.
+- **Email verification.** `EmailVerificationPage` (`{prefix}/verify-email`) is opt-in twice:
+  the panel serves a subclass, and the user model implements Laravel's `MustVerifyEmail`
+  (with an `email_verified_at` column). Then `authStack()`'s last middleware,
+  `RequireVerifiedEmail`, sends an unverified user from every panel page to it (a JSON
+  request gets 403); the page itself, the profile (to fix a mistyped address) and logout
+  stay open. The page is chrome-less: a button mails the link (six a minute per user,
+  `maxAttempts()`), plus profile and sign-out. The link is a temporary signed URL valid for
+  `auth.verification.expire` minutes (default 60), sent as `VerifyEmailNotification` with
+  the URL baked in, so Laravel's `VerifyEmail::createUrlUsing()` and the skeleton's
+  `verification.*` routes stay the host's. Nothing is mailed on sign-in: a user created by
+  an admin asks for the link from the page. To send one from host code (after a host-side
+  registration, say): `EmailVerificationPage::sendVerificationLink($user)` — false when
+  the current panel serves no subclass. Delete the file and the check goes with it.
 - **Password broker.** `PanelConfig::passwordBroker('admins')`; null uses the app default.
   A panel guard on a non-default provider needs its own broker in `config/auth.php`.
-- **Other sessions.** `authStack()` ends in Laravel's `AuthenticateSession` (after
+- **Other sessions.** `authStack()` holds Laravel's `AuthenticateSession` (after
   `auth:{guard}`), so a password change — a reset or any host-side update — signs every other
   session out on its next panel request; a remember cookie is rotated with the reset. A page
   that returns its own `middleware()` without spreading `authStack()` opts out.
@@ -148,7 +175,7 @@ notification action is a **link only** — it can never carry a server closure.
 | `POST` | `{page-path}/forms/{tbtopForm}` | `{slug}.form` | `FormSubmitController` | Inertia | `redirect()->back()` + `Inertia::flash('tbtop.effects', […])` |
 | `POST` | `{page-path}/actions/{tbtopAction}` | `{slug}.action` | `ActionController` | JSON | `{effects: Effect[]}` |
 | `POST` | `{page-path}/actions/{tbtopAction}/data` | `{slug}.actionData` | `ActionDataController` | JSON | `{data: <query result>}` |
-| `GET` | `{page-path}/tables/{tbtopTable}` | `{slug}.table` | `TableController` | JSON | `{data: {data: Row[], total, page, perPage, tabCounts?}}` |
+| `GET` | `{page-path}/tables/{tbtopTable}` | `{slug}.table` | `TableController` | JSON | `{data: {data: Row[], total, page, perPage, tabCounts?}}`; a `simplePagination()` table sends `hasMore` (bool) in place of `total` |
 | `GET` | `{page-path}/data/{tbtopData}` | `{slug}.data` | `DataController` | JSON | `{data: <query result>}` |
 | `POST` | `{page-path}/select-create/{tbtopField}` | `{slug}.selectCreate` | `SelectCreateController` | JSON | `{value, label}` |
 | `POST` | `{page-path}/select-options/{tbtopField}` | `{slug}.selectOptions` | `SelectOptionsController` | JSON | three modes, picked by the body: `{search}` → `{options: [{value, label, display?}]}` · `{value}` → `{option: {value, label}\|null}` · `{values: []}` → `{options: [...]}` (resolve many saved values in one round-trip) |
@@ -193,8 +220,8 @@ array via `Inertia::flash`. The effect set is closed; see
 `PanelConfig::mcp()` exposes a panel to AI agents (Claude Desktop, OpenAI, …) over
 [MCP](https://modelcontextprotocol.io). It needs `composer require laravel/mcp`; enabling it
 without the package throws at route registration. **The MCP server needs Laravel ≥ 12.41**:
-laravel/mcp 1.x requires `illuminate/json-schema ^12.41.1`, so it cannot be installed on
-Laravel 11, which the rest of `tbtop/admin` still supports.
+laravel/mcp 1.x requires `illuminate/json-schema ^12.41.1`, so an older Laravel 12 patch
+must be updated first.
 
 ```php
 return $panel

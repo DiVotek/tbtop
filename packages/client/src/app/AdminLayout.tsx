@@ -16,6 +16,11 @@ import {
 import { CommandPalette } from "./commandPalette/CommandPalette";
 import type { CommandPaletteData } from "./commandPalette/types";
 import { DensityContext } from "./densityContext";
+import {
+	EnvironmentBadge,
+	type EnvironmentIndicatorData,
+	EnvironmentStrip,
+} from "./EnvironmentIndicator";
 import { useRailActiveGroup } from "./navRail";
 import { RailSidebarFrame } from "./RailSidebarFrame";
 import { type ShellFrameProps, SidebarFrame, TopbarFrame } from "./shellFrames";
@@ -41,6 +46,7 @@ interface SharedProps {
 		navigation?: NavigationLayout;
 		notifications?: { pollInterval?: number | null };
 		appearance?: Appearance | null;
+		environment?: EnvironmentIndicatorData | null;
 		palette?: CommandPaletteData | null;
 		prefix?: string;
 		panel?: string;
@@ -79,6 +85,8 @@ interface AdminLayoutShellProps {
 	navigation?: NavigationLayout;
 	notificationsPollInterval?: number | null;
 	appearance?: Appearance | null;
+	/** Environment badge + top strip; absent when the panel hides it. */
+	environment?: EnvironmentIndicatorData | null;
 	userMenuItems?: NavItem[];
 	homeUrl?: string | null;
 	/** rail-sidebar: the page's nav() group, a fallback when no nav item matches the URL. */
@@ -111,6 +119,7 @@ export function AdminLayoutShell({
 	navigation = "sidebar",
 	notificationsPollInterval,
 	appearance,
+	environment,
 	userMenuItems,
 	homeUrl,
 	pageNavGroup,
@@ -144,9 +153,17 @@ export function AdminLayoutShell({
 	const sidebar = slots?.sidebar
 		? slots.sidebar(slotProps)
 		: renderArea(chrome?.sidebar, <DefaultSidebar />);
-	const header = slots?.header
+	const headerArea = slots?.header
 		? slots.header(slotProps)
 		: renderArea(chrome?.header, <DefaultHeader />);
+	const header = environment ? (
+		<>
+			<EnvironmentBadge indicator={environment} />
+			{headerArea}
+		</>
+	) : (
+		headerArea
+	);
 	const footer = slots?.footer ? slots.footer(slotProps) : renderArea(chrome?.footer, null);
 
 	const frameProps: ShellFrameProps = { sidebar, header, footer, children, maxWidth };
@@ -156,6 +173,7 @@ export function AdminLayoutShell({
 			<ChromeDataContext.Provider value={chromeData}>
 				<ThemeSync />
 				<StylePresetSync preset={appearance?.stylePreset} />
+				{environment ? <EnvironmentStrip indicator={environment} /> : null}
 				<Frame {...frameProps} />
 			</ChromeDataContext.Provider>
 		</DensityContext.Provider>
@@ -185,6 +203,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 				navigation={props.tbtop?.navigation ?? "sidebar"}
 				notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
 				appearance={props.tbtop?.appearance}
+				environment={props.tbtop?.environment}
 				userMenuItems={props.tbtop?.userMenuItems}
 				homeUrl={props.tbtop?.prefix}
 				pageNavGroup={typeof props.navGroup === "string" ? props.navGroup : undefined}

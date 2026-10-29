@@ -55,6 +55,8 @@ final class ChartBuilder implements JsonSerializable
      * select('interval')->options([...])->default('month')). Their values
      * reach the query() closure as $params['name']. Text-ish kinds debounce
      * before refetching; every change costs one request, so keep the set small.
+     * Values arrive from the query string: give each field rules() (e.g.
+     * 'in:day,month') — a failing value answers 422 before the query runs.
      *
      * @param  list<Field>  $fields
      */

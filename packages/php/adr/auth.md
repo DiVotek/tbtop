@@ -38,8 +38,29 @@ domain: auth
 - **Reset mail URL is fixed at send time** (`ResetPasswordNotification`), not through the
   global `ResetPassword::createUrlUsing()`.
 - **Auth pages never become the panel home.**
-- **Base set is login + password reset.** 2FA, email verification, registration and
-  passkeys are deferred; the demo builds 2FA on `afterAuthenticated()`.
+- **Base set is login + password reset + profile + email verification.** 2FA, registration
+  and passkeys are deferred; the demo builds 2FA on `afterAuthenticated()`.
+  > Replaces previous decision (see git history) — email verification was deferred too.
+- **Email verification follows the file and the model, no panel flag.** It acts only while
+  the panel serves an `EmailVerificationPage` subclass and the user implements
+  `MustVerifyEmail`. The check is `RequireVerifiedEmail`, last in `authStack()`, so a page
+  that spreads `authStack()` gets it and one that replaces it opts out. It exempts the
+  verification page, the profile (a mistyped new email must stay fixable) and logout.
+- **The verify link is the one other package route**, `{page path}/{id}/{hash}`, registered
+  with the page's cluster only while a subclass is served — a GET with side effects cannot be
+  a page `view()`. As Laravel's `EmailVerificationRequest`, it is checked against the
+  signed-in user, not used to sign anyone in. Its URL is baked in at send time
+  (`VerifyEmailNotification`), as the reset mail's.
+- **No mail on sign-in.** Without registration, users are created by admins or seeders; the
+  page sends the link on request, and the profile sends one when the email changes.
+- **The profile page is a base page too, behind the panel stack**, not an `AuthPage`: it
+  edits the signed-in user, so it needs `auth:{guard}`. `--auth` publishes it with the rest;
+  `--profile` alone serves hosts with their own sign-in. Its user-menu entry follows the
+  file (served subclass → entry), so there is no panel flag to keep in sync. Section-per-form
+  `view()` leaves room for package 2FA setup as one more section.
+- **Changing the email asks for the current password**, unlike Breeze and Filament: the
+  email is where password resets go, so a hijacked session could otherwise take the
+  account. The name alone saves without it.
 
 ## Why
 

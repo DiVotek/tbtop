@@ -2,12 +2,13 @@
 	"name": "tbtop",
 	"private": true,
 	"type": "module",
-	"packageManager": "bun@1.3.14",
+	"packageManager": "bun@1.4.4",
 	"scripts": {
 		"lint": "oxlint",
 		"lint:fix": "oxlint --fix && biome check --write --linter-enabled=false",
 		"format": "biome check --write --linter-enabled=false",
 		"format:check": "biome check --linter-enabled=false",
+		"changelog": "scripts/changelog.sh",
 		"prepare": "simple-git-hooks"
 	},
 	"simple-git-hooks": {
@@ -22,6 +23,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.15",
+		"git-cliff": "2.14.2",
 		"lint-staged": "^17.0.4",
 		"oxlint": "^1.68.0",
 		"simple-git-hooks": "^2.13.1",

@@ -30,6 +30,36 @@ it('stat without poll is not exposed on the data endpoint', function (): void {
         ->assertNotFound();
 });
 
+it('parameterized stat is served from the data endpoint with query-string params', function (): void {
+    $this->getJson('/admin/chart-params/data/Signups?period=30d&from=2026-10-01')
+        ->assertOk()
+        ->assertExactJson(['data' => ['value' => '30d from 2026-10-01']]);
+});
+
+it('parameterized stat falls back to param defaults and ignores undeclared keys', function (): void {
+    $this->getJson('/admin/chart-params/data/Signups?page=2')
+        ->assertOk()
+        ->assertExactJson(['data' => ['value' => '7d from 2026-01-01']]);
+});
+
+it('parameterized stat rejects a param value its rules refuse', function (): void {
+    $this->getJson('/admin/chart-params/data/Signups?period=999999d')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('period');
+});
+
+it('an empty param value falls back to the default', function (): void {
+    $this->getJson('/admin/chart-params/data/Signups?period=&from=2026-10-01')
+        ->assertOk()
+        ->assertExactJson(['data' => ['value' => '7d from 2026-10-01']]);
+});
+
+it('params without rules() still reject an array-shaped value', function (): void {
+    $this->getJson('/admin/chart-params/data/withParams?interval[]=day')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('interval');
+});
+
 it('unknown data source still responds 404', function (): void {
     $this->getJson('/admin/chart-params/data/nope')->assertNotFound();
 });

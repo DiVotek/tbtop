@@ -3,7 +3,6 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Translate } from "../i18n/i18n";
 import { fieldErrorsFromZodIssues, liftNestedErrors } from "../inertia/fieldErrors";
-import { cn } from "../lib/cn";
 import { isExternalUrl } from "../lib/externalUrl";
 import { Button } from "../ui/button";
 import {
@@ -12,9 +11,9 @@ import {
 	type ActionRenderProps,
 	actionButtonSize,
 	actionKey,
+	actionTriggerClass,
 	actionVariant,
 	MaybeTooltip,
-	outlinedTintClass,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { useNearestFormHandle } from "./formContext";
@@ -49,7 +48,7 @@ function PlainActionBlock({
 	const plain = useNearestTriggerVariant() === "plain";
 	const variant = plain ? "plain" : actionVariant(opts);
 	const buttonSize = plain ? "full" : actionButtonSize(opts);
-	const tint = plain ? undefined : outlinedTintClass(opts);
+	const triggerClass = actionTriggerClass(opts, plain);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 
 	useEffect(() => {
@@ -77,7 +76,7 @@ function PlainActionBlock({
 						ref={buttonRef}
 						variant={variant}
 						size={buttonSize}
-						className={tint}
+						className={triggerClass}
 						disabled
 						data-testid={`action-${actionKey(opts)}`}
 					>
@@ -93,7 +92,7 @@ function PlainActionBlock({
 					ref={buttonRef}
 					variant={variant}
 					size={buttonSize}
-					className={cn(opts.badge && "relative overflow-visible", tint)}
+					className={triggerClass}
 					data-testid={`action-${actionKey(opts)}`}
 				>
 					{isExternalUrl(interpolated) || opts.newTab ? (
@@ -141,7 +140,7 @@ function PlainActionBlock({
 				ref={buttonRef}
 				variant={variant}
 				size={buttonSize}
-				className={tint}
+				className={triggerClass}
 				disabled={pending || disabled}
 				onClick={onClick}
 				data-testid={`action-${actionKey(opts)}`}

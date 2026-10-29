@@ -18,6 +18,11 @@ function toKebabCase(name: string): string {
 		.toLowerCase();
 }
 
+/** lucide.dev puts a hyphen before a trailing number: "Share2" -> "share-2", "Grid2x2" -> "grid-2x2". */
+function toLucideSlug(name: string): string {
+	return toKebabCase(name).replaceAll(/(?<!\d)([a-z])(\d)/g, "$1-$2");
+}
+
 // lucide-react's namespace re-exports every icon component under its
 // PascalCase name (plus an "Icon"-suffixed alias, and legacy aliases for
 // renamed icons) — filter to components (ForwardRefExoticComponent objects,
@@ -25,7 +30,11 @@ function toKebabCase(name: string): string {
 const builtins: Record<string, LucideIcon> = Object.fromEntries(
 	Object.entries(LucideIcons)
 		.filter((entry): entry is [string, LucideIcon] => isIconComponent(entry[1]))
-		.map(([pascalName, Icon]) => [toKebabCase(pascalName), Icon]),
+		// The lucide.dev slug ("share-2"), plus the digit-joined name ("share2") resolved before.
+		.flatMap(([pascalName, Icon]) => [
+			[toKebabCase(pascalName), Icon],
+			[toLucideSlug(pascalName), Icon],
+		]),
 );
 
 function isIconComponent(value: unknown): value is LucideIcon {

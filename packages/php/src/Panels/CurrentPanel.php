@@ -3,6 +3,8 @@
 namespace Tbtop\Admin\Panels;
 
 use Illuminate\Container\Container;
+use Tbtop\Admin\Auth\ProfilePage;
+use Tbtop\Admin\Http\PageGate;
 use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
@@ -132,16 +134,37 @@ final class CurrentPanel
         return $this->config->getNavigationItems();
     }
 
-    /** Sparse wire payloads for the profile-dropdown custom entries. @return list<array<string, mixed>> */
+    /**
+     * Sparse wire payloads for the profile-dropdown custom entries, led by the
+     * panel's ProfilePage when it serves one; an entry whose can() fails is left out.
+     *
+     * @return list<array<string, mixed>>
+     */
     public function userMenuItems(): array
     {
-        return array_map(static fn (NavItem $item): array => $item->toArray(), $this->config->getUserMenuItems());
+        $items = array_filter($this->config->getUserMenuItems(), static fn (NavItem $item): bool => PageGate::passes($item->getGate()));
+        $profile = $this->profileMenuItem();
+
+        return array_map(static fn (NavItem $item): array => $item->toArray(), $profile === null ? array_values($items) : [$profile, ...$items]);
+    }
+
+    private function profileMenuItem(): ?NavItem
+    {
+        $url = ProfilePage::currentUrl();
+
+        return $url === null ? null : NavItem::make(__('tbtop-admin::admin.auth.profile.title'))->url($url)->icon('user');
     }
 
     /** @return array<string, mixed> */
     public function appearance(): array
     {
         return $this->config->appearance();
+    }
+
+    /** Environment badge for the shell header, or null when hidden. @return array{label: string, color: string}|null */
+    public function environmentIndicator(): ?array
+    {
+        return $this->config->getEnvironmentIndicator();
     }
 
     /** Style preset scope class for the root Blade's <html>, e.g. 'style-preset-vega'. */

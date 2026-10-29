@@ -15,7 +15,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 
 | Method | What it does |
 |---|---|
-| `authStack(): array` | The panel's auth/app middleware layer a page spreads to add to it, e.g. middleware(PanelConfig $p): array { return [...$p->authStack(), 'throttle:30,1']; }. Access rules belong in Page::can(), which MCP calls also enforce. Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those. AuthenticateSession follows auth: it reads the user that `auth:{guard}` resolves, and ends a session whose password hash no longer matches the user's (a reset elsewhere). |
+| `authStack(): array` | The panel's auth/app middleware layer a page spreads to add to it, e.g. middleware(PanelConfig $p): array { return [...$p->authStack(), 'throttle:30,1']; }. Access rules belong in Page::can(), which MCP calls also enforce. Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those. AuthenticateSession follows auth: it reads the user that `auth:{guard}` resolves, and ends a session whose password hash no longer matches the user's (a reset elsewhere). RequireVerifiedEmail comes last: while the panel serves an EmailVerificationPage, a MustVerifyEmail user with an unverified email is sent there. |
 | `brand(string $brand): static` | Brand name shown in the chrome (sidebar/topbar header). |
 | `breadcrumbs(bool $enabled = true): static` | Whether pages build and send the breadcrumbs prop. |
 | `chrome(string $chrome): static` | Class-string of a Chrome subclass that authors the shell (header/sidebar/ footer). Override headerItems()/sidebarItems() and spread the parent to append to the stock shell; override header()/sidebar()/footer() to replace an area outright. |
@@ -25,6 +25,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `defaultThemeMode(string $mode): static` | Initial theme when the visitor has no saved preference. |
 | `density(string $mode): static` | Shell density: 'compact' tightens control heights, spacing, and the sidebar width. |
 | `discoverPages(string $in, string $for): static` | Adds a recursive page discovery directory and its Composer-autoloadable namespace; rebuild the page cache after adding pages. |
+| `environmentIndicator(Closure\|array\|bool $indicator = true): static` | Show the app environment as a colored header badge and top strip; hidden in production. Pass an array to override per environment (`['staging' => 'warning', 'qa' => ['label' => 'QA', 'color' => 'info'], 'local' => false]` — listing `production` shows it), or a Closure returning `['label' => …, 'color' => …]` or null, called per request. Colors are the badge names: gray, primary, success, warning, danger, info. |
 | `guard(string $guard): static` | Auth guard checked by authStack(). Defaults to 'web'. |
 | `id(string $id): static` | Feeds the route-name namespace (`tbtop.{id}.*`) — changing it on an existing panel renames every route. |
 | `locales(array $locales): static` | Admin UI locales. First entry is the default unless defaultLocale() is set. |
@@ -32,7 +33,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | `mcp(array $middleware, string $path = 'mcp'): static` | Expose this panel to AI agents over MCP at `POST {prefix}/{$path}` (needs `composer require laravel/mcp`). $middleware is the route's whole auth and access stack — it REPLACES the panel's middleware, which does not run for MCP calls: name stateless token auth and repeat the panel's role checks, e.g. `['auth:sanctum', 'abilities:tbtop-mcp', 'role:admin', 'throttle:60,1']`. A page's own restriction belongs in Page::can(), which MCP enforces. An empty list throws: it would serve the panel without authentication. |
 | `mcpAllowedOrigins(array $origins): static` | Browser origins, besides the origin of `app.url`, that may call the MCP endpoint (`https://agent.example.com`). A request whose Origin is neither gets 403; one with no Origin — a desktop or CLI client — is not affected. |
 | `mediaGate(?string $ability): static` | Gate ability every media-manager endpoint (list, show, download, upload, URL import, edit, replace, delete, folders) requires; a user who fails it gets 403. Null, the default, leaves the API open to every user who passes the panel's middleware. |
-| `middleware(array $middleware): static` | Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}` and AuthenticateSession on top at read time. |
+| `middleware(array $middleware): static` | Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}`, AuthenticateSession and RequireVerifiedEmail on top at read time. |
 | `navigation(string $navigation): static` | Shell navigation layout: 'sidebar' (default), 'topbar', 'topbar-sidebar' (full-width bar with a sidebar beneath it), or 'rail-sidebar' (a rail of labeled nav-group icons beside a sidebar listing only the active group). The client renders the same chrome blocks; only their arrangement changes. All layouts collapse to a burger drawer on mobile. |
 | `navigationGroups(array $groups): static` | Per-group nav metadata as a list of NavGroup::make('Content')->icon('file-text') ->collapsible(), matched to a page's nav()['group'] by that label. |
 | `navigationItems(array $items): static` | Extra always-shown nav entries with no page/gate (e.g. an external link), merged into the built tree alongside page-derived items, grouped by label the same way navigationGroups() matches groups. |
@@ -74,6 +75,7 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 
 | Method | What it does |
 |---|---|
+| `can(array\|string\|null $gate): self` | Show the item only to users the gate allows: an ability, or an ability plus the model class its policy resolves from — the same value a Page::can() returns, so `->can(SomePage::can())` hides a link to a page its user may not open. Null (the default) shows it to everyone. |
 | `group(string $group): self` | Sidebar group heading this item is listed under (nav context only); unset = ungrouped, no heading. |
 | `icon(Closure\|string $name, Closure\|string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. Either may be a Closure; a closure-supplied position is validated when it resolves. |
 | `newTab(bool $newTab = true): self` | Deprecated (removed in 1.0): use url()->openUrlInNewTab(). |

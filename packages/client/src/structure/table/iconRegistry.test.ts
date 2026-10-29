@@ -13,6 +13,18 @@ describe("iconRegistry", () => {
 		expect(Icon).toBeTruthy();
 	});
 
+	// lucide.dev names numbered icons with a hyphen ("share-2"); the derived
+	// keys used to join the digit ("share2"), so the documented names missed.
+	test.each([
+		"share-2",
+		"trash-2",
+		"heading-1",
+		"grid-2x2",
+		"share2",
+	])("resolves the numbered icon %s", (name) => {
+		expect(resolveIcon(name)).toBeTruthy();
+	});
+
 	test("returns undefined for unknown name", () => {
 		expect(resolveIcon("no-such-icon-xyz")).toBeUndefined();
 	});

@@ -2,9 +2,11 @@
 
 namespace App\Admin\Pages;
 
+use App\Models\Post;
 use Illuminate\Support\Facades\DB;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Color;
+use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Stat;
@@ -38,9 +40,34 @@ class DashboardPage extends Page
     {
         return $s->stack([
             $this->statsRow($s),
+            $this->latestPosts($s),
             $this->notifyDemo($s),
             $this->chartsGrid($s),
             $this->displayShowcase($s),
+        ]);
+    }
+
+    private function latestPosts(S $s): Node
+    {
+        return $s->stack([
+            $s->displayText('Latest posts')->variant('heading'),
+            $s->displayText('Refreshes every 10 seconds: a post created in another tab shows up here on its own.')->variant('muted'),
+            $s->table('latestPosts')
+                ->columns([
+                    Column::make('title')->label('Title')->translatable(),
+                    Column::make('status')
+                        ->label('Status')
+                        ->formatUsing(fn ($value, Post $post) => $post->published ? 'published' : 'draft')
+                        ->badge([
+                            'published' => ['label' => 'Live', 'color' => Color::Success],
+                            'draft' => ['label' => 'Draft', 'color' => Color::Gray],
+                        ]),
+                    Column::make('created_at')->label('Created')->datetime(),
+                ])
+                ->query(fn () => Post::query()->latest('id'))
+                ->paginate(5, [5])
+                ->embedded()
+                ->poll(10),
         ]);
     }
 
@@ -73,9 +100,9 @@ class DashboardPage extends Page
         $totalPosts = fn () => DB::table('posts')->count();
         $published = fn () => DB::table('posts')->where('published', true)->count();
         $draft = fn () => DB::table('posts')->where('published', false)->count();
-        $recentTrend = fn () => DB::table('posts')
+        $recentTrend = fn (array $params) => DB::table('posts')
             ->selectRaw('count(*) as n')
-            ->whereRaw("created_at >= date('now', '-6 months')")
+            ->whereRaw("created_at >= date('now', ?)", ['-'.(int) $params['months'].' months'])
             ->value('n') ?? 0;
 
         return $s->grid(['cols' => 4], [
@@ -100,7 +127,14 @@ class DashboardPage extends Page
                 ->color(Color::Warning)
                 ->toNode(),
 
-            Stat::make('Last 6 months')
+            $s->stat('Recent posts')
+                ->params([
+                    $s->select('months')->options([
+                        ['value' => '1', 'label' => 'Last month'],
+                        ['value' => '6', 'label' => 'Last 6 months'],
+                        ['value' => '12', 'label' => 'Last year'],
+                    ])->default('6')->rules('in:1,6,12'),
+                ])
                 ->value($recentTrend)
                 ->description('Posts created recently')
                 ->icon('clock')
@@ -126,7 +160,7 @@ class DashboardPage extends Page
                 ->title('Warning')
                 ->color(Color::Warning),
             $s->displayDivider(),
-            $s->displayHtml('<p>Raw <strong>HTML</strong> block: embed <em>any markup</em> authored in the DSL.</p>'),
+            $s->displayHtml('<p><strong>HTML</strong> block: sanitized server-side, <em>safe markup</em> only. Chain ->trusted() for author-owned HTML.</p>'),
         ]);
     }
 

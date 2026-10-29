@@ -297,6 +297,37 @@
 	}
 }
 
+/* ── Sticky table columns ─────────────────────────────────────────── */
+/* Column::sticky() cells (structure/table/stickyColumns.tsx). A pinned cell  */
+/* needs an opaque fill or scrolled cells show through, so it repaints the    */
+/* row's hover/selected tint over the surface it sits on (`--tbtop-table-     */
+/* surface`, set to the card colour by card sections). z-index 1 keeps it      */
+/* above scrolling cells but below the reload overlay (z-10).                  */
+.tbtop-sticky-cell {
+	position: sticky;
+	z-index: 1;
+	background-color: var(--tbtop-table-surface, var(--background));
+}
+
+.cn-table-row:hover > .tbtop-sticky-cell {
+	background-color: color-mix(
+		in oklab,
+		var(--muted) 50%,
+		var(--tbtop-table-surface, var(--background))
+	);
+}
+
+.cn-table-row[data-state="selected"] > .tbtop-sticky-cell,
+thead .tbtop-sticky-cell {
+	background-color: var(--muted);
+}
+
+[data-scrolled-x] .tbtop-sticky-cell[data-sticky-edge] {
+	box-shadow:
+		inset -1px 0 0 var(--border),
+		6px 0 8px -6px color-mix(in oklab, var(--foreground) 25%, transparent);
+}
+
 /* ── Lexical rich-text editor ─────────────────────────────────────── */
 
 .tabletop-editor {

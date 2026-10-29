@@ -106,7 +106,7 @@ Available display primitives (all in `S.php`, confirmed):
 |---|---|---|
 | `$s->displayText($content)->variant('heading')` | `displayText` | Section headings (variants: `heading`, `subheading`, `body`, `muted`) |
 | `$s->displayText($content)` | `displayText` | Body copy |
-| `$s->displayHtml($rawHtml)` | `displayHtml` | Pre-rendered HTML |
+| `$s->displayHtml($rawHtml)` | `displayHtml` | Pre-rendered HTML, sanitized (`->trusted()` to skip) |
 | `$s->markdown($content)` | `displayHtml` | Markdown converted server-side to HTML |
 | `$s->displayAlert($message)` | `displayAlert` | Callout / info box |
 | `$s->displayDivider()` | `displayDivider` | Visual separator |
@@ -434,6 +434,37 @@ return $panel
 All five serialize **sparsely** into the `tbtop.appearance` shared prop — a knob left at
 its default is omitted from the wire entirely, so an empty `appearance` is normal.
 
+### Environment indicator
+
+`->environmentIndicator()` puts the app environment in a colored badge at the start of the
+shell header and paints a thin strip along the top edge, so nobody edits staging thinking
+it is production. It is off until you call it, and hidden in `production` by default.
+
+```php
+return $panel->environmentIndicator();             // "Local" green, "Staging" amber, …
+
+return $panel->environmentIndicator([
+    'staging' => 'danger',                         // recolor
+    'qa' => ['label' => 'QA', 'color' => 'info'],  // relabel an unknown environment
+    'local' => false,                              // hide one
+    'production' => 'danger',                      // listing production shows it
+]);
+
+return $panel->environmentIndicator(              // full control, called per request
+    fn (): ?array => config('app.preview') ? ['label' => 'Preview', 'color' => 'info'] : null,
+);
+```
+
+- The environment is `app()->environment()`; the default label is its name capitalized.
+- Default colors: `local`/`development`/`dev` success, `testing`/`test` info,
+  `staging`/`stage` warning, anything else gray. Colors are the badge names (`gray`,
+  `primary`, `success`, `warning`, `danger`, `info`) or one added with `registerTableColor()`.
+- A closure may return only `label` or only `color`; the other falls back to the default.
+  Return `null` to hide the indicator for that request.
+- The badge is added in front of whatever the header renders, including a custom `Chrome`
+  or a React `header` slot. It ships as the `tbtop.environment` shared prop
+  (`$defs/environmentIndicator`, `null` when hidden).
+
 ---
 
 ## Recipe 9 — Navigation configuration
@@ -476,12 +507,15 @@ leaf item as a plain link; a parent (has `children`) renders its own link plus a
 that expands to indented children — the same collapse affordance as a group header. The
 topbar layout nests the same way via a `DropdownMenuSub` (`navGroupDropdown.tsx`).
 
-### Custom nav items (no page, no gate)
+### Custom nav items (no page)
 
 `PanelConfig::navigationItems()` (`packages/php/src/Panels/PanelConfig.php`) adds
-always-shown entries — typically external links — merged into the built tree alongside
+entries — typically external links — merged into the built tree alongside
 page-derived items and grouped by label the same way `navigationGroups()` matches groups.
-Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class and no per-request gate:
+Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class. It is shown to
+everyone unless `->can($gate)` names a gate, checked per request like `Page::can()`; pass a
+page's own `SomePage::can()` to hide a link the user could not open. The same applies to
+user-menu items.
 
 ```php
 // apps/demo/app/Admin/AdminPanel.php
@@ -740,4 +774,4 @@ primitives — the result will be incomplete or broken.
 | **Global search over records** | Table-level `->searchable()` and per-column `->searchable()` work within a single table; there is no cross-model record search. Note the **⌘K command palette does exist** (`PanelConfig::commandPalette()`, `Command::make()`) — it searches nav items and author-declared commands, not table rows. Record-level global search remains an open gap. |
 | **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in `docs/backlog.md`. |
 | **Saved filters / filter presets** | No persistence layer for user-saved filter states. Listed as backlog 🟡. |
-| **2FA, email verification, registration** | Sign-in and password reset ship: `php artisan admin:install --auth` publishes them as subclasses of `Tbtop\Admin\Auth\*` (see [wiring.md](./wiring.md#auth-pages)). Second factor, email verification and registration do not. The demo's `TwoFactorChallengePage` / `TwoFactorSetupPage` show 2FA built on the `afterAuthenticated()` hook — copy them; there is no Fortify. |
+| **2FA, registration** | Sign-in, password reset, the profile page and email verification ship: `php artisan admin:install --auth` publishes them as subclasses of `Tbtop\Admin\Auth\*` (see [wiring.md](./wiring.md#auth-pages)). Second factor and registration do not. The demo's `TwoFactorChallengePage` / `TwoFactorSetupPage` show 2FA built on the `afterAuthenticated()` hook — copy them; there is no Fortify. |

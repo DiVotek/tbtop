@@ -10,11 +10,12 @@ use Tbtop\Admin\Dsl\Concerns\HasTooltip;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
 use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
+use Tbtop\Admin\Dsl\Fields\Field;
 
 /**
  * Stat metric card — a scalar KPI tile with optional delta, icon, color, and sparkline.
  * Value may be a plain scalar or a Closure resolved server-side at page render (and,
- * with ->poll(), re-resolved on each data-endpoint request).
+ * with ->poll() or ->params(), re-resolved on each data-endpoint request).
  */
 final class Stat implements JsonSerializable
 {
@@ -57,6 +58,9 @@ final class Stat implements JsonSerializable
 
     private bool $newTab = false;
 
+    /** @var list<Field> */
+    private array $paramFields = [];
+
     public function __construct(
         private readonly string $label,
     ) {}
@@ -66,7 +70,13 @@ final class Stat implements JsonSerializable
         return new self($label);
     }
 
-    /** The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick). */
+    /**
+     * The headline number/text. Accepts a scalar or a Closure resolved
+     * server-side at render time (and on each poll() tick or params() change).
+     * The closure may take array $params: the current params() values keyed by
+     * field name — their defaults at render, null for a field without one
+     * (empty array without params()).
+     */
     public function value(mixed $value): self
     {
         $this->value = $value;
@@ -229,20 +239,46 @@ final class Stat implements JsonSerializable
     }
 
     /**
-     * Data-endpoint resolver for polling: re-invokes the value closure and
-     * returns the refreshed descriptor. Null when poll() was never called —
-     * DataController falls through to "not found" in that case.
+     * Filter fields rendered in the card above the value (regular field
+     * builders, e.g. select('period')->options([...])->default('7d')). Their
+     * values reach the value() closure as $params['name']; each change
+     * refetches the stat from the page data endpoint, keyed by its label.
+     * Text-ish kinds debounce first; keep the set small — a tile has little room.
+     * Values arrive from the query string: give each field rules() (e.g.
+     * 'in:7,30') — a failing value answers 422 before the closure runs.
+     * Not combinable with url(): toNode() throws, a control can't live inside a link.
+     * Build the stat with $s->stat(): a bare Stat::make() isn't registered for the endpoint.
      *
-     * @return null|Closure(): array{value: mixed, description?: string, sparkline?: list<int|float>}
+     * @param  list<Field>  $fields
+     */
+    public function params(array $fields): self
+    {
+        $this->paramFields = $fields;
+
+        return $this;
+    }
+
+    /** @return list<Field> */
+    public function paramFields(): array
+    {
+        return $this->paramFields;
+    }
+
+    /**
+     * Data-endpoint resolver for polling: re-invokes the value closure and
+     * returns the refreshed descriptor. Null when neither poll() nor params()
+     * was called — DataController falls through to "not found" in that case.
+     *
+     * @return null|Closure(array<string, mixed>): array{value: mixed, description?: string, sparkline?: list<int|float>}
      */
     public function queryClosure(): ?Closure
     {
-        if ($this->pollSeconds === null) {
+        if (! $this->hasSource()) {
             return null;
         }
 
-        return function (): array {
-            $out = ['value' => $this->resolveOpt($this->value)];
+        return function (array $params = []): array {
+            $out = ['value' => $this->resolveValue($params)];
             $description = $this->resolveOpt($this->description);
             if ($description !== null) {
                 $out['description'] = $description;
@@ -257,7 +293,13 @@ final class Stat implements JsonSerializable
 
     public function toNode(): Node
     {
-        $options = ['label' => $this->label, 'value' => $this->resolveOpt($this->value)];
+        if ($this->url !== null && $this->paramFields !== []) {
+            throw new InvalidArgumentException(
+                "Stat \"{$this->label}\" cannot combine url() with params(): its controls would sit inside the link."
+            );
+        }
+
+        $options = ['label' => $this->label, 'value' => $this->resolveValue($this->defaultParams())];
 
         $description = $this->resolveOpt($this->description);
         if ($description !== null) {
@@ -296,6 +338,11 @@ final class Stat implements JsonSerializable
         }
         if ($this->pollSeconds !== null) {
             $options['poll'] = $this->resolveOpt($this->pollSeconds);
+        }
+        if ($this->paramFields !== []) {
+            $options['params'] = array_map(fn (Field $f) => $f->toNode(), $this->paramFields);
+        }
+        if ($this->hasSource()) {
             $options['source'] = $this->label;
         }
 
@@ -307,6 +354,28 @@ final class Stat implements JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->toNode()->jsonSerialize();
+    }
+
+    private function hasSource(): bool
+    {
+        return $this->pollSeconds !== null || $this->paramFields !== [];
+    }
+
+    /** @param  array<string, mixed>  $params */
+    private function resolveValue(array $params): mixed
+    {
+        return $this->value instanceof Closure ? ($this->value)($params) : $this->value;
+    }
+
+    /** @return array<string, mixed> */
+    private function defaultParams(): array
+    {
+        $bag = [];
+        foreach ($this->paramFields as $field) {
+            $bag[$field->name] = $field->defaultValue();
+        }
+
+        return $bag;
     }
 
     private static function normalizeSemanticColor(mixed $color): string

@@ -19,6 +19,10 @@ import type {
 /** Row-grouping config: partitions contiguous rows sharing `column`'s value. */
 export interface TableGroupsConfig {
 	column: string;
+	/** The group header is a toggle that hides or shows its rows. */
+	collapsible?: boolean;
+	/** Every group starts collapsed, showing only its header. */
+	collapsed?: boolean;
 }
 
 export type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -38,7 +42,9 @@ export interface TableBlockOptions extends AsyncBlock {
 	bulkActions?: ActionConfig[];
 	searchable?: string[];
 	filters?: StructureNode[];
-	filtersIn?: "modal" | "inline";
+	filtersIn?: "modal" | "inline" | "aside";
+	/** filtersIn === "aside": start with the panel hidden until the toolbar opens it. */
+	filtersCollapsed?: boolean;
 	tabs?: TableTab[];
 	pagination?: TablePaginationOptions;
 	rowClick?: string;
@@ -63,6 +69,8 @@ export interface TableBlockOptions extends AsyncBlock {
 	groups?: TableGroupsConfig;
 	/** Present when the table declares reorderable(); carries the sort column. */
 	reorder?: { column: string };
+	/** Server-declared poll interval in seconds (poll()); clamped to 5s on the client. */
+	poll?: number;
 	/** Materialized by materialize.ts — takes actionCtx + args; bound in TableBlock. */
 	saveCell?: (ctx: ClientActionContext, args: SaveCellArgs) => Promise<unknown>;
 	/** Materialized by materialize.ts — POSTs the new id order; bound in TableBlock. */
@@ -72,6 +80,7 @@ export interface TableBlockOptions extends AsyncBlock {
 export interface TableBodyProps {
 	rows: Record<string, unknown>[];
 	total: number | undefined;
+	hasMore: boolean | undefined;
 	isReloading: boolean;
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];
@@ -79,9 +88,13 @@ export interface TableBodyProps {
 	queryParams: ListQueryParams;
 	onChangeParams: (patch: Partial<ListQueryParams>) => void;
 	onRefresh: () => void;
+	/** Background refetch for poll(): no overlay, rows stay on a failed tick. */
+	onPoll: () => void;
+	poll?: number;
 	searchable?: string[];
 	filters?: StructureNode[];
-	filtersIn: "modal" | "inline";
+	filtersIn: "modal" | "inline" | "aside";
+	filtersCollapsed?: boolean;
 	tabs?: TableTab[];
 	tabCounts?: Record<string, number>;
 	pagination?: TablePaginationOptions;

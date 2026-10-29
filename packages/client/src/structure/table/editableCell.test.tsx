@@ -6,10 +6,11 @@
  * - client pre-validation blocks save when constraints fail
  * - missing row id prevents save (no crash)
  */
-import { beforeAll, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { defaultMessages } from "../../i18n/defaultMessages";
+import * as actionContextModule from "../actionContext";
 
 // ---------------------------------------------------------------------------
 // Module mocks — must be declared before any import of the mocked module.
@@ -18,26 +19,40 @@ import { defaultMessages } from "../../i18n/defaultMessages";
 const mockNotify = mock(() => {});
 const mockRefresh = mock(() => {});
 
+// bun's mock.module is process-wide and outlives this file, so the fake is
+// gated to this file's tests: once they finish, every later file that calls
+// useClientActionContext gets the real hook again.
+const realUseClientActionContext = actionContextModule.useClientActionContext;
+let fakeActive = false;
+beforeAll(() => {
+	fakeActive = true;
+});
+afterAll(() => {
+	fakeActive = false;
+});
+
+const fakeActionContext = {
+	client: null,
+	user: null,
+	params: {},
+	navigate: mock(() => {}),
+	notify: mockNotify,
+	// Mirrors useTranslation()'s no-provider fallback (defaultMessages lookup,
+	// else the key itself) so EditableCell's translated pre-validation
+	// messages (translateValidationMessage) resolve the same way they do
+	// in the real app instead of leaking a raw "validation.required" key.
+	t: (k: string, fallback?: string) => defaultMessages[k] ?? fallback ?? k,
+	table: {
+		refresh: mockRefresh,
+		rows: [],
+		selectedIds: [],
+		queryParams: {},
+		setQuery: mock(() => {}),
+	},
+};
+
 mock.module("../actionContext", () => ({
-	useClientActionContext: () => ({
-		client: null,
-		user: null,
-		params: {},
-		navigate: mock(() => {}),
-		notify: mockNotify,
-		// Mirrors useTranslation()'s no-provider fallback (defaultMessages lookup,
-		// else the key itself) so EditableCell's translated pre-validation
-		// messages (translateValidationMessage) resolve the same way they do
-		// in the real app instead of leaking a raw "validation.required" key.
-		t: (k: string, fallback?: string) => defaultMessages[k] ?? fallback ?? k,
-		table: {
-			refresh: mockRefresh,
-			rows: [],
-			selectedIds: [],
-			queryParams: {},
-			setQuery: mock(() => {}),
-		},
-	}),
+	useClientActionContext: () => (fakeActive ? fakeActionContext : realUseClientActionContext()),
 }));
 
 mock.module("@inertiajs/react", () => ({

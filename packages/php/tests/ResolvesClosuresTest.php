@@ -239,7 +239,7 @@ it('Tab: icon(Closure) resolves through the shared HasIcon concern', function ()
 
 it('HasTooltip: a Closure tooltip resolves via the shared trait on ActionBuilder', function (): void {
     $s = new S;
-    $json = encodeResolved($s->action('approve')->visit('/x')->tooltip(fn (): string => 'Approve this record'));
+    $json = encodeResolved($s->action('approve')->url('/x')->tooltip(fn (): string => 'Approve this record'));
 
     expect($json['options']['tooltip'])->toBe('Approve this record');
 });
@@ -276,7 +276,7 @@ it('ActionBuilder: label/color Closures resolve in the serialized Node', functio
     $s = new S;
     $json = encodeResolved(
         $s->action('approve')
-            ->visit('/x')
+            ->url('/x')
             ->label(fn (): string => 'Approve')
             ->color(fn (): string => 'success')
     );
@@ -287,19 +287,19 @@ it('ActionBuilder: label/color Closures resolve in the serialized Node', functio
 
 it('ActionBuilder: badge(Closure) resolves and is cast to string like the eager path', function (): void {
     $s = new S;
-    $json = encodeResolved($s->action('inbox')->visit('/x')->badge(fn (): int => 7));
+    $json = encodeResolved($s->action('inbox')->url('/x')->badge(fn (): int => 7));
 
     expect($json['options']['badge'])->toBe('7');
 });
 
 it('ActionBuilder: a badge Closure returning null throws when the Node is read', function (): void {
-    (new S)->action('inbox')->visit('/x')->badge(fn (): ?int => null)->toNode();
+    (new S)->action('inbox')->url('/x')->badge(fn (): ?int => null)->toNode();
 })->throws(InvalidArgumentException::class, 'badge() Closure must return string|int, got null.');
 
 it('ActionBuilder: confirm() title/description Closures resolve in the serialized Node', function (): void {
     $s = new S;
     $json = encodeResolved(
-        $s->action('delete')->visit('/x')->confirm(
+        $s->action('delete')->url('/x')->confirm(
             fn (): string => 'Are you sure?',
             fn (): string => 'This cannot be undone.',
         )
@@ -312,30 +312,30 @@ it('ActionBuilder: confirm() title/description Closures resolve in the serialize
 });
 
 it('ActionBuilder: confirm() with a Closure description resolving to null drops the key', function (): void {
-    $json = encodeResolved((new S)->action('delete')->visit('/x')->confirm('Sure?', fn (): ?string => null));
+    $json = encodeResolved((new S)->action('delete')->url('/x')->confirm('Sure?', fn (): ?string => null));
 
     expect($json['options']['confirm'])->toBe(['title' => 'Sure?']);
 });
 
 it('ActionBuilder: disabled(Closure) resolves meta.disabled', function (): void {
-    $json = encodeResolved((new S)->action('publish')->visit('/x')->disabled(fn (): bool => false));
+    $json = encodeResolved((new S)->action('publish')->url('/x')->disabled(fn (): bool => false));
 
     expect($json['meta']['disabled'])->toBeFalse();
 });
 
 it('ActionBuilder: size(Closure) resolves to a valid size in the serialized Node', function (): void {
     $s = new S;
-    $json = encodeResolved($s->action('go')->visit('/x')->size(fn (): string => 'lg'));
+    $json = encodeResolved($s->action('go')->url('/x')->size(fn (): string => 'lg'));
 
     expect($json['options']['size'])->toBe('lg');
 });
 
 it('ActionBuilder: size() with an invalid literal still throws eagerly at call time', function (): void {
-    (new S)->action('go')->visit('/x')->size('huge');
+    (new S)->action('go')->url('/x')->size('huge');
 })->throws(InvalidArgumentException::class, 'Invalid button size "huge"');
 
 it('ActionBuilder: size(Closure) resolving to an invalid value throws lazily when the Node is read', function (): void {
-    (new S)->action('go')->visit('/x')->size(fn (): string => 'huge')->toNode();
+    (new S)->action('go')->url('/x')->size(fn (): string => 'huge')->toNode();
 })->throws(InvalidArgumentException::class, 'Invalid button size "huge"');
 
 // ---------------------------------------------------------------------------
@@ -484,7 +484,7 @@ it('ChartBuilder: poll(Closure) resolving below the 5s minimum throws lazily whe
 // ---------------------------------------------------------------------------
 
 it('a label Closure returning a non-string throws when the Node is read', function (): void {
-    (new S)->action('go')->visit('/x')->label(fn (): int => 5)->toNode();
+    (new S)->action('go')->url('/x')->label(fn (): int => 5)->toNode();
 })->throws(InvalidArgumentException::class, 'ActionBuilder::label() Closure must return string, got int.');
 
 it('a copyable duration Closure returning a string throws when the Node is read', function (): void {

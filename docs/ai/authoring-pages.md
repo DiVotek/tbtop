@@ -383,7 +383,7 @@ $s->flex([$badge, $s->unsavedIndicator(), $s->spacer(), $save], variant: 'card')
 | Method | Signature | Purpose |
 |---|---|---|
 | `displayText` | `displayText(string $content): TextBlock` | Static text; call `->variant('heading'\|'subheading'\|'body'\|'muted')` on the result |
-| `displayHtml` | `displayHtml(string $rawHtml): HtmlBlock` | Raw HTML passthrough |
+| `displayHtml` | `displayHtml(string $rawHtml): HtmlBlock` | HTML, sanitized by default; `->trusted()` passes it through unchanged |
 | `markdown` | `markdown(string $content): MarkdownBlock` | Converts markdown server-side; call `->allowHtml()` only for trusted content |
 | `displayDivider` | `displayDivider(): Node` | Horizontal rule |
 | `displayAlert` | `displayAlert(string $message): AlertBlock` | Alert box; chain `->title(string)` and `->color(Color\|string)` on the result |
@@ -548,9 +548,20 @@ Returned by `$s->table(string $name)`.
 
 The shape of a table: `columns()` + `query()` are the minimum. Everything else is opt-in —
 search (`searchable()`, `Column::individuallySearchable()`), filters (`filters()` +
-`filtersIn()`, which accepts only `'modal'` or `'inline'` and throws otherwise), tabs,
+`filtersIn()`, which accepts only `'modal'`, `'inline'` or `'aside'` and throws otherwise), tabs,
 sorting, pagination, row/bulk/header actions, drag-reorder, grouping, inline-editable cells,
 and the record-URL row link.
+
+**Filter layouts** — `filtersIn()` picks one of three:
+
+- `'modal'` (default): a Filters button opens a dialog; `filtersFormColumns()` and
+  `filtersFormWidth()` shape it.
+- `'inline'`: the fields sit in the toolbar row; `filtersFormColumns()` puts them on a grid.
+- `'aside'`: a panel left of the table, stacked one field per row, with a Filters button in the
+  toolbar that hides and shows it. The user's toggle is remembered per table in localStorage;
+  `filtersCollapsed()` only sets the first-visit default. Below the `lg` breakpoint there is no
+  room for the panel, so the button opens the same fields in a right-hand side sheet instead.
+  `deferFilters()` adds the Done button at the bottom of the panel.
 
 **Toolbar visibility** — three knobs that are easy to confuse:
 
@@ -560,6 +571,30 @@ and the record-URL row link.
 - `embedded(true)` is the stronger one: it drops the whole toolbar **including filters**,
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
+
+**Active-filter chips** — every applied filter shows as a chip under the toolbar
+(`Status: Published, Draft`), with a × that drops that one filter; two or more chips add a
+"Clear filters" link that drops them all and keeps the search. There is no PHP API: the
+chip text is the filter's `label()` plus its value — option labels for select/in/radio
+(an async select resolves its label through `resolveUsing()`, like the control does),
+formatted dates and ranges, and the label alone for a boolean that is on. With
+`deferFilters()` a chip appears only after Apply, since pending edits don't narrow the rows
+yet. An `embedded(true)` table shows no chips.
+
+**Simple pagination** — `simplePagination()` drops the `count()` query, which is the slow
+one on a large or heavily joined table. The page query reads `perPage + 1` rows: the extra
+row only answers "is there a next page", and the response carries `hasMore` instead of
+`total`. The footer shows previous / "Page N" / next and the per-page selector, with no
+"1–25 of 1,000" range and no page numbers; it hides on a first page that has no next one.
+Two things still count: a tab declared with `->count()` runs its own `count()` per request
+(drop `count()` on those tabs if the point is to avoid counting), and nothing else changes —
+search, filters, sort, tabs and URL state work the same. Cursor pagination is not offered.
+
+```php
+$s->table('events')
+    ->paginate(50, [50, 100])
+    ->simplePagination()
+```
 
 **What a row carries to the client** — an allowlist, never the full database row: the
 record key (under its own name and again under `_key`), the visible declared columns (toggleable and `hiddenByDefault()` columns
@@ -576,8 +611,12 @@ carries the formatted column value. A URL template takes the key as `{row._key}`
 
 #### `groups()` — row grouping
 
-`->groups(string $column)` partitions contiguous rows sharing `$column`'s value under a
-group header row. It requires `->defaultSort($column, ...)` to already be set (throws
+`->groups(string $column, bool $collapsible = false, bool $collapsed = false)` partitions
+contiguous rows sharing `$column`'s value under a group header row. `collapsible: true`
+turns each header into a toggle that hides or shows its group; `collapsed: true` starts
+every group closed (and implies `collapsible`), so the table opens as a list of headers.
+The open/closed state lives in the page only: it survives a refetch, poll or page change
+for the same group value, and resets on a browser reload. It requires `->defaultSort($column, ...)` to already be set (throws
 `InvalidArgumentException` otherwise) — grouping only makes sense on a sorted column,
 since it partitions *contiguous* runs, not a full re-bucketing.
 
@@ -593,6 +632,32 @@ grouping entirely while reorder is active (`groupsActive = Boolean(groups) &&
 $s->table('posts')
     ->defaultSort('published', 'desc')
     ->groups('published') // requires defaultSort('published', ...) above
+
+// Collapsible groups, every one closed at first
+$s->table('orders')
+    ->defaultSort('status')
+    ->groups('status', collapsed: true)
+```
+
+#### `poll()` — auto-refresh rows
+
+`->poll(int $seconds)` re-fetches the current page of rows every `$seconds` (minimum 5;
+below it throws) through the same table endpoint, with the user's search, filters, sort,
+tab and page. It is for lists that change under the user — an order queue, an import log.
+The refresh is silent: the old rows stay on screen with no loading overlay. One failed
+tick keeps them and tries again; a second failure in a row shows the table's error state
+with a retry button, so stale rows never pass for current ones. A tick that lands while a
+slow fetch is still running is skipped rather than cancelling it. Polling pauses while the browser tab is
+hidden (one refetch on return) and while any row is selected, because new rows clear the
+selection a bulk action is about to use. An inline cell with an unsaved edit keeps the
+edit. For a change the page itself makes, the `refreshTable` effect is still the right
+tool; `poll()` covers changes made elsewhere.
+
+```php
+$s->table('orders')
+    ->columns([...])
+    ->query(fn () => Order::query()->latest())
+    ->poll(10)
 ```
 
 #### `softDeletes()` — soft-delete convenience layer
@@ -666,6 +731,15 @@ search, per-column search and sort, so `?search=` and `?sort=` cannot probe it. 
 a field without showing it, name it in the table-level `->searchable(['email', ...])`
 instead: that list is by field name and needs no column.
 
+**Order and width.** The user arranges columns in the same Columns menu (drag an entry by
+its grip, or Alt+↑/↓) and resizes one by dragging its header's right edge (double-click
+restores the declared `width()`). Both are client-only and saved per table in
+`localStorage` (`tbtop:table.<name>.layout.v1`), next to the visibility choice; a column
+added later goes to the end of a saved order, the leading `sticky()` columns never move, and the menu's reset entry clears both. The
+declared column order stays the default. Without the Columns menu (`columnToggle(false)`,
+embedded tables) the declared order holds. `columnToggle(false)` tables still resize
+(double-click resets a width); embedded ones don't.
+
 **Inline editing.** `toggle()`, `textInput()`, `numberInput()` and `selectColumn()` make
 a cell editable in place; each requires `onSave(fn)` or `columns()` throws. Add `rules()`
 for per-cell validation, `options()` for the select variant and `step()` for the number
@@ -723,6 +797,28 @@ Column::make('published_time')
     ->label('Published time')
     ->noWrap(),
 ```
+
+#### `sticky()` — columns pinned on horizontal scroll
+
+A wide table scrolls sideways inside its frame. `sticky()` pins a column to the left edge so
+the row stays identifiable while the rest slides under it:
+
+```php
+$s->table('orders')->columns([
+    Column::make('number')->label('Order')->sticky(),
+    Column::make('customer.name')->label('Customer')->sticky(),
+    Column::make('total')->money('EUR'),
+    // … more columns than the screen fits
+]);
+```
+
+- Sticky columns must **lead** `columns()`: a sticky column after a scrolling one throws
+  `InvalidArgumentException` (it would slide over its neighbour). Several stack left to right.
+- On a group column, call `sticky()` on the group, not on its children — a sticky child throws.
+- The row-selection checkbox (bulk actions) and the drag-reorder handle pin with them; row
+  actions scroll. A user hiding a sticky column via the column toggle just shortens the run.
+- Offsets are measured from the rendered header, so no `width()` is needed. A long sticky
+  column eats the scroll area — keep it short with `width()` or `truncate()`.
 
 #### `individuallySearchable()` — per-column search
 
@@ -986,8 +1082,16 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 `value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
-clamped again client-side**. `url($href)` makes the whole card a link (a dashboard KPI
-that opens its list); `openUrlInNewTab()` opens it in a new browser tab. Call `->toNode()` to embed a `Stat` in a layout node.
+clamped again client-side**. `params()` renders filter fields in the card (same field
+builders as chart params); each change refetches the stat, and the value closure receives
+their current values as `array $params` — their defaults at first render. Param values come
+from the query string: give each field `rules()` (`->rules('in:7,30')`), a failing value
+answers 422 before the closure runs. `url($href)` makes
+the whole card a link (a dashboard KPI that opens its list); `openUrlInNewTab()` opens it in
+a new browser tab. **`url()` and `params()` don't combine** — `toNode()` throws, a control
+can't sit inside a link. **`poll()` and `params()` need `$s->stat()`**: it registers the stat
+for the data endpoint, a bare `Stat::make()` answers 404 there. Call `->toNode()` to embed a
+`Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php
@@ -997,7 +1101,17 @@ Stat::make('Total Posts')
     ->icon('file-text')
     ->color(Color::Primary)
     ->toNode()
+
+// A KPI with a period switch: the closure re-runs on every change.
+$s->stat('Signups')
+    ->params([$s->select('period')->options([
+        ['value' => '7', 'label' => '7 days'], ['value' => '30', 'label' => '30 days'],
+    ])->default('7')->rules('in:7,30')])
+    ->value(fn (array $params) => User::where('created_at', '>=', now()->subDays((int) $params['period']))->count())
+    ->toNode()
 ```
+
+Only `value` is re-resolved; `description`, `delta` and `sparkline` stay as declared.
 
 ### ChartBuilder
 

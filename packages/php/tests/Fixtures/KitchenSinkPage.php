@@ -73,6 +73,14 @@ class KitchenSinkPage extends Page
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
                     ->icon('dollar-sign')->tooltip('Monthly revenue')->url('/admin/orders')
                     ->hiddenIf('period', '=', 'all')->toNode(),
+                $s->stat('Signups')->value(fn (array $params): int => 7)
+                    ->params([
+                        $s->select('range')->set('options', [
+                            ['value' => '7d', 'label' => '7 days'],
+                            ['value' => '30d', 'label' => '30 days'],
+                        ])->default('7d'),
+                    ])
+                    ->toNode(),
                 $s->chart('byMonth', 'line', [
                     'data' => [['month' => 'Jan', 'count' => 3]],
                     'series' => [['dataKey' => 'count', 'label' => 'Posts']],
@@ -241,7 +249,7 @@ class KitchenSinkPage extends Page
             ], ['name' => 'content']),
             $s->table('posts')
                 ->columns([
-                    Column::make('title')->label('Title')->kind('text')->individuallySearchable()->noWrap()->description('Headline'),
+                    Column::make('title')->label('Title')->kind('text')->sticky()->individuallySearchable()->noWrap()->description('Headline'),
                     'views' => 'Views',
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
@@ -289,6 +297,7 @@ class KitchenSinkPage extends Page
                     ]),
                 ])
                 ->deferFilters()
+                ->poll(30)
                 ->filtersIn('inline')
                 ->filtersFormColumns(2)
                 ->searchPlaceholder('Search posts…')
@@ -301,7 +310,7 @@ class KitchenSinkPage extends Page
                 ->openRecordUrlInNewTab()
                 ->defaultSort('views', 'desc')
                 ->reorderable('sort_order')
-                ->groups('views')
+                ->groups('views', collapsed: true)
                 ->tabs([
                     Tab::make('all'),
                     Tab::make('published')->label('Published')
@@ -325,6 +334,7 @@ class KitchenSinkPage extends Page
                         ->hiddenIf('role', '=', 'manager')
                         ->handle(fn () => Effects::make(), needs: ['selection']),
                 ])
+                ->simplePagination()
                 ->query(fn () => null)
                 ->toNode(),
             $s->actionsRow([

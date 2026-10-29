@@ -4,17 +4,13 @@ namespace Tbtop\Admin\Http\Media;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Tbtop\Admin\Media\MediaIngest;
+use Tbtop\Admin\Media\MediaIngestException;
 use Tbtop\Admin\Media\MediaResource;
-use Tbtop\Admin\Media\Models\Media;
-use Tbtop\Admin\Media\SvgSanitizeException;
-use Tbtop\Admin\Media\SvgSanitizer;
-use Tbtop\Admin\Media\UrlFetcher;
-use Tbtop\Admin\Media\UrlFetchException;
-use Tbtop\Admin\Uploads\ConversionProfile;
 
 final class MediaImportController
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, MediaIngest $ingest): JsonResponse
     {
         $request->validate([
             'url' => 'required|string',
@@ -22,66 +18,23 @@ final class MediaImportController
             'folderId' => 'nullable|integer|exists:tbtop_media_folders,id',
         ]);
 
-        $url = (string) $request->input('url');
-        $config = $this->mediaConfig();
-
-        /** @var list<string> $accept */
-        $accept = (array) ($config['accept'] ?? []);
+        $customName = $request->input('name');
 
         try {
-            $file = UrlFetcher::fetch($url, $accept);
-        } catch (UrlFetchException $e) {
-            return $this->error422('media.errors.'.$e->reason);
+            $media = $ingest->import(
+                (string) $request->input('url'),
+                $request->input('folderId') !== null ? (int) $request->input('folderId') : null,
+                is_string($customName) ? $customName : null,
+            );
+        } catch (MediaIngestException $e) {
+            $reason = $e->reason === MediaIngestException::STORE_FAILED
+                ? MediaIngestException::DOWNLOAD_FAILED
+                : $e->reason;
+
+            return $this->error422('media.errors.'.$reason);
         }
 
-        $tmpPath = $file->getPathname();
-
-        try {
-            $disk = (string) ($config['disk'] ?? 'public');
-            $filename = $file->getClientOriginalName();
-            $detectedMime = (string) $file->getMimeType();
-            $size = (int) filesize($tmpPath);
-
-            $path = $file->store('tbtop-media', $disk);
-            if ($path === false) {
-                return $this->error422('media.errors.download_failed');
-            }
-
-            try {
-                SvgSanitizer::sanitizeStored($disk, $path, $filename);
-            } catch (SvgSanitizeException $e) {
-                return $this->error422('media.errors.'.$e->reason);
-            }
-
-            $profiles = ConversionProfile::fromConfig($config);
-            $image = MediaResource::imageAttributes($file, $path, $disk, $profiles);
-
-            $customName = $request->input('name');
-            $name = (is_string($customName) && $customName !== '') ? $customName : $filename;
-
-            $media = Media::create([
-                'folder_id' => $request->input('folderId') !== null ? (int) $request->input('folderId') : null,
-                'name' => $name,
-                'disk' => $disk,
-                'path' => $path,
-                'mime' => $detectedMime,
-                'size' => $size,
-                ...$image,
-                'alt' => null,
-            ]);
-
-            return response()->json(MediaResource::toItem($media), 201);
-        } finally {
-            @unlink($tmpPath);
-        }
-    }
-
-    /** @return array<string, mixed> */
-    private function mediaConfig(): array
-    {
-        $cfg = config('tbtop-admin.media');
-
-        return is_array($cfg) ? $cfg : [];
+        return response()->json(MediaResource::toItem($media), 201);
     }
 
     private function error422(string $langKey): JsonResponse

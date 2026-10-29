@@ -224,6 +224,35 @@
                             }
                         },
                         {
+                            "kind": "stat",
+                            "options": {
+                                "label": "Signups",
+                                "value": 7,
+                                "params": [
+                                    {
+                                        "kind": "select",
+                                        "options": {
+                                            "options": [
+                                                {
+                                                    "value": "7d",
+                                                    "label": "7 days"
+                                                },
+                                                {
+                                                    "value": "30d",
+                                                    "label": "30 days"
+                                                }
+                                            ],
+                                            "default": "7d"
+                                        },
+                                        "meta": {},
+                                        "name": "range"
+                                    }
+                                ],
+                                "source": "Signups"
+                            },
+                            "meta": {}
+                        },
+                        {
                             "kind": "chart:line",
                             "options": {
                                 "data": [
@@ -1087,6 +1116,7 @@
                         "title"
                     ],
                     "deferFilters": true,
+                    "poll": 30,
                     "filtersFormColumns": 2,
                     "searchPlaceholder": "Search posts\u2026",
                     "columnToggle": false,
@@ -1123,7 +1153,9 @@
                         "column": "sort_order"
                     },
                     "groups": {
-                        "column": "views"
+                        "column": "views",
+                        "collapsible": true,
+                        "collapsed": true
                     },
                     "rowActions": [
                         {
@@ -1247,7 +1279,8 @@
                             25,
                             50,
                             100
-                        ]
+                        ],
+                        "simple": true
                     },
                     "name": "posts",
                     "columns": [
@@ -1256,6 +1289,7 @@
                             "label": "Title",
                             "kind": "text",
                             "columnSearchable": true,
+                            "sticky": true,
                             "noWrap": true,
                             "description": "Headline"
                         },

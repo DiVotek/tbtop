@@ -74,6 +74,8 @@ class PostsIndexPage extends Page
                 ->columns([
                     Column::make('id')
                         ->label('ID')
+                        // Pinned with the selection checkbox on horizontal scroll.
+                        ->sticky()
                         // A formatted key column: rows stay identified by `_key`.
                         ->formatUsing(fn ($value) => "#{$value}"),
                     Column::make('cover_url')->image()->square()->label('Cover')->alt('Cover'),
@@ -167,7 +169,7 @@ class PostsIndexPage extends Page
                         ->count(),
                 ])
                 ->defaultSort('published', 'desc')
-                ->groups('published')
+                ->groups('published', collapsible: true)
                 ->paginate(25, [10, 25, 50, 100])
                 ->query(fn () => Post::query())
                 ->rowActions([

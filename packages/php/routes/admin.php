@@ -7,6 +7,8 @@ use Symfony\Component\Console\Exception\ExceptionInterface as InputException;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputOption;
 use Tbtop\Admin\Auth\AuthPage;
+use Tbtop\Admin\Auth\EmailVerificationPage;
+use Tbtop\Admin\Auth\ProfilePage;
 use Tbtop\Admin\Http\ActionController;
 use Tbtop\Admin\Http\ActionDataController;
 use Tbtop\Admin\Http\DataController;
@@ -35,6 +37,7 @@ use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Http\TableController;
 use Tbtop\Admin\Http\TableFilterOptionsController;
 use Tbtop\Admin\Http\TableReorderController;
+use Tbtop\Admin\Http\VerifyEmailController;
 use Tbtop\Admin\Mcp\McpRoute;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\PanelConfig;
@@ -115,6 +118,14 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/tables/{tbtopTable}/reorder", TableReorderController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.tableReorder');
+        // The signed link from the verification mail; the hash pattern keeps it off the cluster's two-segment routes.
+        if (is_subclass_of($class, EmailVerificationPage::class)) {
+            Route::get("{$path}/{id}/{hash}", VerifyEmailController::class)
+                ->defaults('tbtopPage', $class)
+                ->where('hash', '[0-9a-f]{40}')
+                ->middleware([ValidateSignature::class, 'throttle:6,1'])
+                ->name($class::slug().'.verify');
+        }
     }
 };
 
@@ -158,7 +169,7 @@ $registerChromeRoutes = static function (?string $mediaGate): void {
 
 /**
  * The path the panel root should redirect to: the first declared page with a
- * static (parameter-less) path, auth pages aside. Null when no page qualifies, or when a page
+ * static (parameter-less) path, auth, profile and verification pages aside. Null when no page qualifies, or when a page
  * already owns the root path — registering a redirect would shadow it.
  */
 $panelHomePath = static function (PanelConfig $panel): ?string {
@@ -169,7 +180,8 @@ $panelHomePath = static function (PanelConfig $panel): ?string {
             return null;
         }
         // Discovery orders by FQCN, so App\Admin\Pages\Auth\* would otherwise win.
-        if ($home === null && ! str_contains($path, '{') && ! is_subclass_of($class, AuthPage::class)) {
+        if ($home === null && ! str_contains($path, '{') && ! is_subclass_of($class, AuthPage::class) && ! is_subclass_of($class, ProfilePage::class)
+            && ! is_subclass_of($class, EmailVerificationPage::class)) {
             $home = $path;
         }
     }

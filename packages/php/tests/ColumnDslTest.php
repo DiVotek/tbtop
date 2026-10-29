@@ -34,6 +34,7 @@ it('Column: defaults are omitted from wire (sparse serialization)', function ():
         ->and($json)->not->toHaveKey('align')
         ->and($json)->not->toHaveKey('wrap')
         ->and($json)->not->toHaveKey('noWrap')
+        ->and($json)->not->toHaveKey('sticky')
         ->and($json)->not->toHaveKey('translatable');
 });
 
@@ -82,6 +83,44 @@ it('Column: wrap emits wrap:true', function (): void {
 it('Column: truncate emits wrap:false', function (): void {
     $json = encodeColumn(Column::make('body')->truncate());
     expect($json['wrap'])->toBeFalse();
+});
+
+it('Column: sticky emits sticky:true, sticky(false) omits it', function (): void {
+    expect(encodeColumn(Column::make('title')->sticky())['sticky'])->toBeTrue()
+        ->and(encodeColumn(Column::make('title')->sticky(false)))->not->toHaveKey('sticky');
+});
+
+it('Table: leading sticky columns serialize in order', function (): void {
+    $table = new TableBuilder('posts')->columns([
+        Column::make('id')->sticky(),
+        Column::make('title')->sticky(),
+        Column::make('status'),
+    ]);
+    $columns = json_decode(json_encode($table->toNode()), true)['options']['columns'];
+
+    expect(array_map(fn (array $c) => $c['sticky'] ?? false, $columns))->toBe([true, true, false]);
+});
+
+it('Table: a sticky column after a scrolling one throws', function (): void {
+    new TableBuilder('posts')->columns([
+        Column::make('title'),
+        Column::make('status')->sticky(),
+    ]);
+})->throws(InvalidArgumentException::class, 'Column "status": sticky columns must come first in columns().');
+
+it('Table: sticky on a group child throws — the group pins as one column', function (): void {
+    new TableBuilder('posts')->columns([
+        Column::make('who')->group([Column::make('name')->sticky(), Column::make('email')]),
+    ]);
+})->throws(InvalidArgumentException::class, 'sticky() goes on the group "who"');
+
+it('Table: a sticky group column leads like any other', function (): void {
+    $table = new TableBuilder('posts')->columns([
+        Column::make('who')->group([Column::make('name'), Column::make('email')])->sticky(),
+        Column::make('status'),
+    ]);
+
+    expect(json_decode(json_encode($table->toNode()), true)['options']['columns'][0]['sticky'])->toBeTrue();
 });
 
 it('Column: noWrap emits noWrap:true', function (): void {
@@ -512,6 +551,22 @@ it('TableBuilder: default pagination emits defaults when paginate() not called',
     ]);
 });
 
+it('TableBuilder: simplePagination() marks the pagination spec simple', function (): void {
+    $s = new S;
+    $table = $s->table('posts')
+        ->columns(['title' => 'Title'])
+        ->paginate(10, [10, 20])
+        ->simplePagination()
+        ->query(fn () => null);
+
+    $json = json_decode(json_encode($table->toNode()), true);
+    expect($json['options']['pagination'])->toBe([
+        'perPage' => 10,
+        'options' => [10, 20],
+        'simple' => true,
+    ]);
+});
+
 // ---------------------------------------------------------------------------
 // Editable columns
 // ---------------------------------------------------------------------------
@@ -847,14 +902,44 @@ it('Column: individuallySearchable() on a group parent throws at serialize', fun
     ))->toThrow(InvalidArgumentException::class, 'car');
 });
 
-it('Column: sortable() on a group child throws at serialize', function (): void {
-    expect(fn () => encodeColumn(
-        Column::make('car')->group([Column::make('car_name')->sortable()])
-    ))->toThrow(InvalidArgumentException::class, 'car_name');
+it('Column: sortable group child joins sortableColumnNames, the parent does not', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('title')->sortable(),
+            Column::make('car')->group([
+                Column::make('car_name')->sortable(),
+                Column::make('car_plate'),
+            ]),
+        ]);
+
+    expect($table->sortableColumnNames())->toBe(['title', 'car_name']);
 });
 
-it('Column: translatable() on a group child throws at serialize', function (): void {
-    expect(fn () => encodeColumn(
-        Column::make('car')->group([Column::make('car_name')->translatable()])
-    ))->toThrow(InvalidArgumentException::class, 'car_name');
+it('Column: a hidden group keeps its sortable children off the whitelist', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->hidden()->group([Column::make('car_name')->sortable()]),
+        ]);
+
+    expect($table->sortableColumnNames())->toBe([]);
+});
+
+it('Column: findColumn() finds a group child so its sortBy() override applies', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->group([Column::make('car_name')->sortable()->sortBy('cars.name')]),
+        ]);
+
+    expect($table->findColumn('car_name')?->sortByField())->toBe('cars.name');
+});
+
+it('Column: translatable group child joins translatableColumns and serializes', function (): void {
+    $table = (new TableBuilder('posts'))
+        ->columns([
+            Column::make('car')->group([Column::make('car_name')->translatable()]),
+        ]);
+
+    expect($table->translatableColumns())->toBe(['car_name'])
+        ->and(encodeColumn(Column::make('car')->group([Column::make('car_name')->sortable()->translatable()]))['columns'][0])
+        ->toMatchArray(['name' => 'car_name', 'sortable' => true]);
 });
