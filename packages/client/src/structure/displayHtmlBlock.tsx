@@ -5,11 +5,13 @@ interface DisplayHtmlOptions {
 	html: string;
 }
 
-// The server sanitizes displayHtml unless the author opted out with
-// ->trusted(), so the client renders it as given.
+// The client renders html as given. The server produces it: displayHtml()
+// sanitizes unless the author chains ->trusted(), and markdown() strips raw
+// HTML unless the author chains ->allowHtml(). Both opt-outs are for
+// author-controlled content only.
 export function DisplayHtmlBlock({ options }: RenderProps<DisplayHtmlOptions>) {
 	return (
-		// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized server-side (HtmlBlock)
+		// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized server-side unless the author opted out
 		<div dangerouslySetInnerHTML={{ __html: options.html }} />
 	);
 }

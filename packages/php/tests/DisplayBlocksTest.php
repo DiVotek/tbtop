@@ -119,6 +119,15 @@ it('HtmlBlock sanitizes input well above the sanitizer default length', function
         ->and($out)->not->toContain('script');
 });
 
+it('HtmlBlock truncates input above the 1 MB cap instead of throwing', function () {
+    $html = str_repeat('<p>row</p>', 120_000).'<p>tail</p>';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect(strlen($out))->toBeLessThanOrEqual(1_000_000)
+        ->and($out)->toStartWith('<p>row</p>')
+        ->not->toContain('tail');
+});
+
 it('HtmlBlock passes markup through unchanged when trusted', function () {
     $html = '<div onclick="go()"><script>init()</script></div>';
     $json = encodeDisplay((new S)->displayHtml($html)->trusted());

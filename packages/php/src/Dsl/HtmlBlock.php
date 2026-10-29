@@ -24,7 +24,7 @@ final class HtmlBlock implements JsonSerializable
 
     private bool $trustedValue = false;
 
-    /** Sanitizer input cap; longer HTML is truncated before it is parsed. */
+    /** Sanitizer input cap in bytes (strlen); longer HTML is truncated before it is parsed. */
     private const MAX_INPUT_BYTES = 1_000_000;
 
     private function __construct(private readonly string $html) {}
