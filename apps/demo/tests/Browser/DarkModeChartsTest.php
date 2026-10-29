@@ -73,10 +73,15 @@ async () => {
     style.textContent = 'html.dark {' + palette.map((c, i) => `--chart-${i + 1}: ${c};`).join(' ') + '}';
     document.head.appendChild(style);
     document.documentElement.classList.add('dark');
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const el = document.querySelector('.recharts-rectangle, .recharts-sector');
-    const fill = el ? getComputedStyle(el).fill : 'NO_CHART_PATH';
-    return { fill, palette };
+    const read = () => {
+        const el = document.querySelector('.recharts-rectangle, .recharts-sector');
+        return el ? getComputedStyle(el).fill : 'NO_CHART_PATH';
+    };
+    // The observer re-resolves, then React and recharts repaint: poll, bounded at 3s.
+    for (let waited = 0; waited < 3000 && !palette.includes(read()); waited += 50) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return { fill: read(), palette };
 }
 JS;
 
