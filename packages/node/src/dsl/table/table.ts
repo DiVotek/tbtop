@@ -164,8 +164,12 @@ export class TableBuilder<Q = unknown> {
 			);
 		}
 		const groups: { column: string; collapsible?: true; collapsed?: true } = { column };
-		if (opts.collapsible || opts.collapsed) groups.collapsible = true;
-		if (opts.collapsed) groups.collapsed = true;
+		if (opts.collapsible || opts.collapsed) {
+			groups.collapsible = true;
+		}
+		if (opts.collapsed) {
+			groups.collapsed = true;
+		}
 		return this.set("groups", groups);
 	}
 

@@ -97,7 +97,11 @@ describe("groups()", () => {
 
 describe("filtersIn('aside')", () => {
 	const s = new S();
-	const aside = () => s.table("t").filters([s.text("q")]).filtersIn("aside");
+	const aside = () =>
+		s
+			.table("t")
+			.filters([s.text("q")])
+			.filtersIn("aside");
 
 	test("carries filtersCollapsed when set", () => {
 		const opts = aside().filtersCollapsed().toNode().options as Record<string, unknown>;
