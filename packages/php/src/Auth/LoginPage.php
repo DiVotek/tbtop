@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Auth;
 
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 use Tbtop\Admin\Actions\ActionCtx;
+use Tbtop\Admin\Auth\TwoFactor\TwoFactorCodes;
+use Tbtop\Admin\Auth\TwoFactor\TwoFactorSession;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
@@ -62,11 +65,23 @@ abstract class LoginPage extends AuthPage
 
     /**
      * Runs after the session is established. A URL sends the user there instead
-     * of redirectTo() — e.g. a second-factor challenge after logging back out.
+     * of redirectTo(). For a user the package's two-factor challenge diverts, it
+     * runs once the code passes, ahead of the challenge page's redirectTo().
      */
     protected function afterAuthenticated(Authenticatable $user, ActionCtx $ctx): ?string
     {
         return null;
+    }
+
+    /**
+     * @internal The challenge page's way into the host's afterAuthenticated(); null
+     *           when the panel serves no login page.
+     */
+    public static function afterTwoFactor(Authenticatable $user, ActionCtx $ctx): ?string
+    {
+        $class = static::hostClass();
+
+        return $class === null ? null : app($class)->afterAuthenticated($user, $ctx);
     }
 
     /** The URL the guest was bounced from, else the panel root. */
@@ -108,15 +123,32 @@ abstract class LoginPage extends AuthPage
         }
 
         $guard = Auth::guard(static::panel()->guard());
-        if (! $guard->attempt($this->credentials($ctx), (bool) ($ctx->form['remember'] ?? false))) {
+        $remember = (bool) ($ctx->form['remember'] ?? false);
+        $challenge = TwoFactorChallengePage::currentUrl();
+        // With a challenge page, once() checks the password without signing in (it fires Attempting and Failed
+        // as attempt() does): a user with a second factor is signed in once the code passes.
+        if (! ($challenge === null ? $guard->attempt($this->credentials($ctx), $remember) : $guard->once($this->credentials($ctx)))) {
             RateLimiter::hit($key);
             throw ValidationException::withMessages(['email' => __('auth.failed')]);
         }
 
         RateLimiter::clear($key);
-        $ctx->request->session()->regenerate();
-
         $user = $guard->user() ?? throw new LogicException('The guard accepted the credentials but holds no user.');
+        $ctx->request->session()->regenerate();
+        $twoFactor = new TwoFactorSession($ctx->request->session(), static::panel()->guard());
+        // A sign-in parked earlier in this browser must not outlive this one: the challenge would complete it.
+        $twoFactor->forgetParked();
+        if ($challenge !== null && TwoFactorCodes::isEnabled($user)) {
+            $twoFactor->park($user, $remember);
+            if ($guard instanceof SessionGuard) {
+                $guard->forgetUser();
+            }
+
+            return $challenge;
+        }
+        if ($challenge !== null) {
+            $guard->login($user, $remember);
+        }
 
         return $this->afterAuthenticated($user, $ctx) ?? $this->redirectTo($ctx);
     }

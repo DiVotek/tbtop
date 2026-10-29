@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 /**
  * A guest who requests a deep admin URL must land back on it after signing in,
- * not on the panel root. RequireFullAuth stashes url.intended; the package
+ * not on the panel root. The panel's auth:web stashes url.intended; the package
  * LoginPage base reads it in redirectTo().
  */
 class RedirectAfterLoginTest extends TestCase

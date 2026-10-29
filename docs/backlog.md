@@ -98,10 +98,8 @@ Each fits the minor-fix loop: one change, one test.
 
 The host owns authentication; `admin:install --auth` publishes sign-in, password reset,
 email verification and the profile page as empty subclasses of the package base pages
-(`Tbtop\Admin\Auth\*`). Open:
+(`Tbtop\Admin\Auth\*`); `--2fa` adds TOTP two-factor sign-in. Open:
 
-- **Two-factor (`--2fa`)** — setup, challenge and recovery codes as base pages; the
-  demo's `TwoFactorSetupPage`/`TwoFactorChallengePage` are the reference.
 - **`--auth` on a second panel** — the scaffold always writes `app/Admin/Pages/Auth`, so a
   second `--panel=` run reports "Exists" and does nothing, and its discovery hint would pull
   the first panel's pages in. Per-panel target dir/namespace, or refuse with a manual step.

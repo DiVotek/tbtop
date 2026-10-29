@@ -8,11 +8,13 @@ use Tbtop\Admin\Auth\ForgotPasswordPage;
 use Tbtop\Admin\Auth\LoginPage;
 use Tbtop\Admin\Auth\ProfilePage;
 use Tbtop\Admin\Auth\ResetPasswordPage;
+use Tbtop\Admin\Auth\TwoFactorChallengePage;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\PanelConfig;
 
 /**
- * Writes the host's auth pages for `admin:install --auth` (all of them) or
+ * Writes the host's auth pages for `admin:install --auth` (all of them),
+ * `--2fa` (all of them plus the two-factor challenge and its migration) or
  * `--profile` (the profile page alone): one empty subclass
  * per package base, so fixes arrive through the base while the host owns the
  * file. A page the panel already serves at the same slug or path (a login
@@ -34,6 +36,11 @@ final class AuthScaffold
 
     /** @var array<string, class-string<Page>> */
     public const array PROFILE = ['ProfilePage' => ProfilePage::class];
+
+    /** @var array<string, class-string<Page>> */
+    public const array TWO_FACTOR = [...self::PAGES, 'TwoFactorChallengePage' => TwoFactorChallengePage::class];
+
+    private const string MIGRATION = 'add_two_factor_columns_to_users_table';
 
     /** @var list<string> */
     public array $written = [];
@@ -70,6 +77,25 @@ final class AuthScaffold
             file_put_contents($target, $this->contents($class));
             $this->written[] = $relative;
         }
+
+        return $this;
+    }
+
+    /** Writes the two-factor columns migration once; a second run finds it under any timestamp. */
+    public function publishTwoFactorMigration(): self
+    {
+        $existing = glob(base_path('database/migrations/*_'.self::MIGRATION.'.php')) ?: [];
+        if ($existing !== []) {
+            $this->existing[] = 'database/migrations/'.basename($existing[0]);
+
+            return $this;
+        }
+        $relative = 'database/migrations/'.date('Y_m_d_His').'_'.self::MIGRATION.'.php';
+        if (! is_dir(base_path('database/migrations'))) {
+            mkdir(base_path('database/migrations'), 0755, true);
+        }
+        copy(__DIR__.'/../../stubs/install/auth/two_factor_migration.php.stub', base_path($relative));
+        $this->written[] = $relative;
 
         return $this;
     }

@@ -90,6 +90,26 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   sections in `view()` after `parent::view()`. A changed email on a `MustVerifyEmail` user is
   marked unverified and, while the panel serves an `EmailVerificationPage`, mailed a link to
   the new address. Needs an Eloquent user with `name`, `email` and `password`.
+- **Two-factor.** `admin:install --2fa` publishes the auth pages plus
+  `TwoFactorChallengePage` (`{prefix}/two-factor-challenge`) and a migration for Fortify's
+  columns (`two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed_at`) plus
+  `two_factor_last_used_step`; it adds only the missing ones, so Fortify-enrolled users keep
+  their factor. Needs `composer require pragmarx/google2fa bacon/bacon-qr-code`, and the two
+  secret columns in the user model's `$hidden`; don't give them a cast, the package encrypts
+  them itself. While the panel serves the challenge page: the profile page shows a
+  "Two-factor authentication" section (turn on with the current password, scan the QR code,
+  confirm with the first code; eight recovery codes shown once; new codes and turning off
+  take a code); the login checks the password without signing in a user who has a factor
+  and parks them for the challenge (TOTP or recovery code, five tries a minute, then the
+  password again; a parked sign-in lasts ten minutes and ends if the password changes; the "remember me" choice carries
+  over); `RequireTwoFactor` in `authStack()` (after `AuthenticateSession`, before
+  `RequireVerifiedEmail`) sends any session that has not passed (one a remember cookie restored,
+  say) to the challenge, and answers JSON with 403; logout stays open, and a page whose own
+  `middleware()` leaves out `authStack()` opts out. The pass belongs to
+  the user who earned it in this session. `LoginPage::afterAuthenticated()` runs for a user
+  with a factor once the code passes, signed in by then; a URL it returns wins over the
+  challenge page's own `redirectTo()`. Delete the
+  challenge page to turn it all off.
 - **Email verification.** `EmailVerificationPage` (`{prefix}/verify-email`) is opt-in twice:
   the panel serves a subclass, and the user model implements Laravel's `MustVerifyEmail`
   (with an `email_verified_at` column). Then `authStack()`'s last middleware,
@@ -418,7 +438,7 @@ matters when authoring:
 
 | Command | What it does |
 |---|---|
-| `php artisan admin:install` | Publishes three host files — `resources/views/admin.blade.php`, `resources/js/admin.tsx`, `resources/css/admin.css` — and prints the steps it deliberately does **not** patch (Vite input list, `->rootView('admin')`, Tailwind v4, `npm install`, and the optional Inertia middleware step for a host whose `web` group has none). It does **not** publish the config; that is `vendor:publish --tag="tbtop-admin-config"`. `--force` overwrites existing files. `--auth` also publishes the [auth pages](#auth-pages) for one panel (`--panel=<id>` when several are registered) and prints the `redirectGuestsTo` step. |
+| `php artisan admin:install` | Publishes three host files — `resources/views/admin.blade.php`, `resources/js/admin.tsx`, `resources/css/admin.css` — and prints the steps it deliberately does **not** patch (Vite input list, `->rootView('admin')`, Tailwind v4, `npm install`, and the optional Inertia middleware step for a host whose `web` group has none). It does **not** publish the config; that is `vendor:publish --tag="tbtop-admin-config"`. `--force` overwrites existing files. `--auth` also publishes the [auth pages](#auth-pages) for one panel (`--panel=<id>` when several are registered) and prints the `redirectGuestsTo` step; `--2fa` does the same plus the [two-factor](#auth-pages) challenge page and its user-table migration. |
 | `php artisan vendor:publish --tag="tbtop-admin-config"` | Publishes `config/tbtop-admin.php`. Migrations need no step — the provider declares `runsMigrations()`; publish them with `--tag="tbtop-admin-migrations"` only to customize them first. |
 | `php artisan make:tbtop-page {name}` | Scaffolds a `Page` class. `--path=` sets the route URI, `--group=` the nav group, `--no-nav` omits nav registration, `--force` overwrites. The name must be a valid class identifier. Reports which panel discovers the new page, or tells you to register it with `pages()` when none does. |
 | `php artisan make:tbtop-resource {model}` | Writes `app/Admin/Pages/{Models}/` for an Eloquent model: `IndexPage` (table with search, sort, edit and delete), `CreatePage`, `EditPage` and a `{Model}FormFields` trait, with fields, columns and rules read from the model's table (types, nullability, unique indexes, foreign keys, enum casts, translatable attributes; json columns become a TODO). It skips the key, timestamps, `password`, `remember_token`, `email_verified_at`, the model's `$hidden` attributes and any column mass assignment would drop (not in `$fillable`, or in `$guarded`); a model with neither keeps every column, and the command warns so you can drop the ones editors must not set. `--simple` puts create/edit in modals on one page, `--view` adds a read-only `ViewPage` at `{models}/{model}/view` (not with `--simple`), trashed tabs with restore and force delete come with the `SoftDeletes` trait (`--soft-deletes` without it is refused), `--policy` gates the pages through the model policy (`create` on the create page and `viewAny` on the others, since a page gate has no record; `view`/`update`/`delete` per record) and creates it when missing (a new policy denies everything until you fill it in, and the command says so); without it, anyone who can open the panel can write every row, `--tests` writes a feature test, `--group=`/`--no-nav` as for pages, `--force` overwrites. Without the table it writes TODO pages. Refuses to write anything when a target file exists, unless `--force`, or when a page already registered on a panel holds one of the generated paths or slugs. |

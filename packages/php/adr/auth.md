@@ -23,7 +23,7 @@ domain: auth
 - **Everything runs on the panel guard**, never the app default — auth pages sit on
   `['web']`, so `auth:{guard}` never sets it for them.
 - **Auth pages do not inherit the panel's middleware.** The panel stack may hold an access
-  check (the demo's `RequireFullAuth`) that would bounce a guest off the login itself. A
+  check (an app's own "signed in" gate) that would bounce a guest off the login itself. A
   host whose panel-wide allowlist must cover sign-in overrides `middleware()` in its subclass.
 - **The password broker is a panel setting**, `PanelConfig::passwordBroker()`, null
   meaning the app default — as Filament's `authPasswordBroker()`. Not a page hook: the
@@ -38,9 +38,33 @@ domain: auth
 - **Reset mail URL is fixed at send time** (`ResetPasswordNotification`), not through the
   global `ResetPassword::createUrlUsing()`.
 - **Auth pages never become the panel home.**
-- **Base set is login + password reset + profile + email verification.** 2FA, registration
-  and passkeys are deferred; the demo builds 2FA on `afterAuthenticated()`.
-  > Replaces previous decision (see git history) — email verification was deferred too.
+- **Base set is login + password reset + profile + email verification, plus opt-in TOTP
+  2FA.** Registration and passkeys are deferred.
+  > Replaces previous decision (see git history) — email verification and 2FA were deferred.
+- **2FA follows the file, like the profile menu entry.** `--2fa` publishes
+  `TwoFactorChallengePage`; while the panel serves a subclass, the login checks the password
+  with `once()` and parks a 2FA user in the session instead of signing them in, the profile
+  page grows a 2FA section, and `RequireTwoFactor` (in `authStack()`, ahead of
+  `RequireVerifiedEmail`: the factor comes first) sends back any session that has not passed. No panel flag to keep in sync. Without the page, the login
+  keeps plain `attempt()`.
+- **`afterAuthenticated()` runs for 2FA users too, after the code.** A post-login host
+  policy (audit, forced password change, onboarding) must not depend on whether the user has
+  a second factor. The challenge calls the host's `LoginPage` hook once the user is signed
+  in, and a URL it returns wins over the challenge's `redirectTo()`.
+- **The pass names the user and lives in the session.** The demo's `auth.2fa.completed`
+  was a bare boolean, set only by its challenge: a remember-cookie session or a user who had
+  just enrolled had none and looped between the panel and a challenge with nothing pending.
+  Now a remember-restored session is challenged like a parked one, enrolling passes the
+  session, and the pass is `class|id`, so it never covers another account.
+- **Storage is Fortify's**: `two_factor_secret` (`encrypt()`), `two_factor_recovery_codes`
+  (encrypted JSON), `two_factor_confirmed_at`, plus `two_factor_last_used_step` for replay.
+  A Fortify host keeps its enrolled users; the migration adds only the missing columns.
+- **pragmarx/google2fa and bacon/bacon-qr-code are suggested, not required**: a host
+  without 2FA does not carry them. `--2fa` prints the `composer require`.
+- **Every change to the factor proves something**: turning it on takes the current
+  password, then the first code; new recovery codes and turning it off take a code (TOTP or
+  recovery). Recovery codes are shown once, flashed to the next render. The QR code is an
+  SVG data URI in `displayImage`, so the section is plain DSL with no client block.
 - **Email verification follows the file and the model, no panel flag.** It acts only while
   the panel serves an `EmailVerificationPage` subclass and the user implements
   `MustVerifyEmail`. The check is `RequireVerifiedEmail`, last in `authStack()`, so a page
@@ -57,7 +81,7 @@ domain: auth
   edits the signed-in user, so it needs `auth:{guard}`. `--auth` publishes it with the rest;
   `--profile` alone serves hosts with their own sign-in. Its user-menu entry follows the
   file (served subclass → entry), so there is no panel flag to keep in sync. Section-per-form
-  `view()` leaves room for package 2FA setup as one more section.
+  `view()` takes the 2FA section as one more form.
 - **Changing the email asks for the current password**, unlike Breeze and Filament: the
   email is where password resets go, so a hijacked session could otherwise take the
   account. The name alone saves without it.

@@ -39,13 +39,21 @@ trait FindsHostPage
     /** Route name of the current panel's page extending the called class. */
     public static function routeName(): ?string
     {
-        $panel = CurrentPanel::current();
-        if ($panel === null) {
-            return null;
-        }
-        foreach ($panel->pages() as $class) {
+        $class = static::hostClass();
+
+        return $class === null ? null : 'tbtop.'.static::panel()->id().'.'.$class::slug();
+    }
+
+    /**
+     * The current panel's page class extending the called class, null when it has none.
+     *
+     * @return class-string<static>|null
+     */
+    protected static function hostClass(): ?string
+    {
+        foreach (CurrentPanel::current()?->pages() ?? [] as $class) {
             if (is_a($class, static::class, true)) {
-                return 'tbtop.'.$panel->id().'.'.$class::slug();
+                return $class;
             }
         }
 
