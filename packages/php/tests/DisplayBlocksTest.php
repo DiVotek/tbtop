@@ -93,13 +93,15 @@ it('HtmlBlock strips scripts, event handlers and javascript: links by default', 
 
 it('HtmlBlock keeps http, mailto and relative links and images', function () {
     $html = '<a href="https://example.test/a">a</a><a href="mailto:a@example.test">m</a>'
-        .'<a href="/admin/posts">r</a><img src="/storage/x.png" alt="x">';
+        .'<a href="/admin/posts">r</a><img src="/storage/x.png" alt="x">'
+        .'<a href="https://example.test/b" target="_blank" rel="noopener">t</a>';
     $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
 
     expect($out)->toContain('href="https://example.test/a"')
         ->toContain('href="mailto:a')
         ->toContain('href="/admin/posts"')
-        ->toContain('src="/storage/x.png"');
+        ->toContain('src="/storage/x.png"')
+        ->toContain('target="_blank" rel="noopener"');
 });
 
 it('HtmlBlock keeps class but drops style attributes', function () {
@@ -108,7 +110,7 @@ it('HtmlBlock keeps class but drops style attributes', function () {
     expect($out)->toBe('<p class="text-muted">x</p>');
 });
 
-it('HtmlBlock sanitizes input above the sanitizer default length', function () {
+it('HtmlBlock sanitizes input well above the sanitizer default length', function () {
     $html = str_repeat('<p>row</p>', 5000).'<script>alert(1)</script>';
     $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
 

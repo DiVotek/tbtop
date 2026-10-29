@@ -16,7 +16,7 @@ use Tbtop\Admin\Dsl\Concerns\HasWhen;
  * content may come from a record. Call ->trusted() to emit
  * the HTML unchanged when the author controls every byte of it.
  *
- * @method static self make(string $html)
+ * @method static self make(string $rawHtml)
  */
 final class HtmlBlock implements JsonSerializable
 {
@@ -24,11 +24,14 @@ final class HtmlBlock implements JsonSerializable
 
     private bool $trustedValue = false;
 
+    /** Sanitizer input cap; longer HTML is truncated before it is parsed. */
+    private const MAX_INPUT_BYTES = 1_000_000;
+
     private function __construct(private readonly string $html) {}
 
-    public static function make(string $html): self
+    public static function make(string $rawHtml): self
     {
-        return new self($html);
+        return new self($rawHtml);
     }
 
     /**
@@ -62,7 +65,7 @@ final class HtmlBlock implements JsonSerializable
                 ->allowLinkSchemes(['http', 'https', 'mailto', 'tel'])
                 ->allowRelativeLinks()
                 ->allowRelativeMedias()
-                ->withMaxInputLength(-1),
+                ->withMaxInputLength(self::MAX_INPUT_BYTES),
         );
     }
 }

@@ -489,9 +489,9 @@ final class S
      * javascript: URLs are dropped). Chain ->trusted() to emit author-controlled
      * markup unchanged.
      */
-    public function displayHtml(string $html): HtmlBlock
+    public function displayHtml(string $rawHtml): HtmlBlock
     {
-        return HtmlBlock::make($html);
+        return HtmlBlock::make($rawHtml);
     }
 
     /**
