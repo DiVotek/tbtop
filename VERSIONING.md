@@ -17,20 +17,20 @@ covers, and how an API is retired.
 A breaking change waits for the next minor. Every breaking minor comes with a
 section in [UPGRADE.md](UPGRADE.md) that says what to change in the host.
 
-Constrain both packages to the minor line, which both package managers already
-treat as the compatibility boundary for 0.x:
+Keep the two packages on the same version: they speak one wire format, and
+a mixed pair is not supported. Pin both exactly and bump them in one change:
 
 ```json
-"tbtop/admin": "^0.7"
+"tbtop/admin": "0.7.3"
 ```
 
 ```json
-"@tbtop/inertia-admin": "^0.7.3"
+"@tbtop/inertia-admin": "0.7.3"
 ```
 
-Composer's `^0.7` and npm's `^0.7.3` both stop before 0.8.0. Keep the two
-packages on the same version: they speak one wire format, and a mixed pair is
-not supported.
+A caret range is safe against breaking changes but not against drift:
+Composer's `^0.7.3` and npm's `^0.7.3` both stop before 0.8.0, yet a
+`composer update` alone can move PHP to a newer patch while npm stays put.
 
 ### From 1.0
 
