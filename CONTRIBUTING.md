@@ -80,6 +80,13 @@ Commit subjects follow `type(scope): subject` (e.g.
 `fix(uploads): close the svg and text/html gap`). Keep the scope to the
 domain the change is about, not just the directory.
 
+PRs are squash-merged, so the PR title becomes the commit on `main` and its
+line in [CHANGELOG.md](CHANGELOG.md), which git-cliff generates from those
+subjects. Write the title for a reader of the changelog. A breaking change
+marks the type with `!` (`feat(php)!: drop Laravel 11`) and adds a section to
+[UPGRADE.md](UPGRADE.md) in the same PR. What counts as breaking, and how to
+deprecate first: [VERSIONING.md](VERSIONING.md).
+
 ## Language
 
 This repo is open source. README, docs, code comments, commit messages, and
