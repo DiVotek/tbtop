@@ -119,9 +119,9 @@ export class S extends Registry {
 		return new TextBlock(content);
 	}
 
-	/** Raw HTML, unsanitized. */
-	displayHtml(rawHtml: string): HtmlBlock {
-		return new HtmlBlock(rawHtml);
+	/** HTML, sanitized server-side; chain trusted() for author-controlled markup. */
+	displayHtml(html: string): HtmlBlock {
+		return new HtmlBlock(html);
 	}
 
 	/** Markdown rendered server-side; embedded HTML escaped unless allowHtml(). */

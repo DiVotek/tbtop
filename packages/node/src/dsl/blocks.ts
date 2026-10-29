@@ -1,3 +1,4 @@
+import { sanitizeHtml } from "./htmlSanitizer";
 import { WhenGate } from "./inclusion";
 import { Node } from "./node";
 
@@ -51,14 +52,29 @@ export class TextBlock extends Block {
 	}
 }
 
-/** Raw HTML, rendered unsanitized: the author owns escaping. */
+/**
+ * HTML, sanitized server-side by default (the W3C safe baseline, as
+ * symfony/html-sanitizer in HtmlBlock.php): scripts, event handlers, iframes
+ * and javascript: URLs are dropped, and so are class, style, data-* and inline
+ * SVG, so the content may come from a record. trusted() emits it unchanged.
+ * Input over 1 MB is cut before sanitizing.
+ */
 export class HtmlBlock extends Block {
-	constructor(private readonly rawHtml: string) {
+	private trustedValue = false;
+
+	constructor(private readonly html: string) {
 		super();
 	}
 
+	/** Skip sanitizing and emit the HTML as given; for author-controlled markup only. */
+	trusted(): this {
+		return this.copy({ trustedValue: true });
+	}
+
 	toNode(): Node {
-		return new Node("displayHtml", { html: this.rawHtml });
+		return new Node("displayHtml", {
+			html: this.trustedValue ? this.html : sanitizeHtml(this.html),
+		});
 	}
 }
 
