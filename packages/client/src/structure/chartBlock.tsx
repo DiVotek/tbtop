@@ -2,16 +2,20 @@ import type { ComponentType, ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { pollIntervalMs } from "../lib/pollInterval";
 import { useChartColors } from "../lib/useChartColors";
-import { useDebounce } from "../lib/useDebounce";
 import { usePolling } from "../lib/usePolling";
 import type { RenderProps } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
-import { invokeBlock } from "../render/renderDescriptor";
 import { ChartCard } from "../ui/charts/ChartCard";
 import { useClientActionContext } from "./actionContext";
+import {
+	defaultsFromParamNodes,
+	extractParamNodes,
+	isParamNode,
+	ParamControls,
+} from "./blockParams";
 import { ChartError, ChartSkeleton } from "./chartDefaults";
 import { renderAsyncError } from "./renderAsyncError";
-import type { ClientActionContext, StructureNode } from "./types";
+import type { ClientActionContext } from "./types";
 import { useAsyncQuery } from "./useAsyncQuery";
 
 export type ChartType = "line" | "bar" | "area" | "pie" | "donut";
@@ -52,30 +56,6 @@ type ChartRenderer = (
 	options: ChartBlockOptions,
 	colors: string[],
 ) => ReactNode;
-
-const DEBOUNCE_KINDS = new Set(["text", "textarea", "number", "password"]);
-
-function isParamNode(item: unknown): item is StructureNode {
-	return typeof item === "object" && item !== null && "kind" in item && "options" in item;
-}
-
-function extractParamNodes(params: unknown[]): StructureNode[] {
-	return params.filter(isParamNode);
-}
-
-function defaultsFromParamNodes(nodes: StructureNode[]): Record<string, string> {
-	const out: Record<string, string> = {};
-	for (const node of nodes) {
-		if (!node.name) {
-			continue;
-		}
-		const def = (node.options as Record<string, unknown>).default;
-		if (def !== undefined && def !== null) {
-			out[node.name] = String(def);
-		}
-	}
-	return out;
-}
 
 export function createChartBlock(
 	renderFn: ChartRenderer,
@@ -131,16 +111,13 @@ export function createChartBlock(
 		// Params render via ChartCard's toolbar slot, ABOVE the fixed-height
 		// canvas — inside it they steal height and push the legend out of the card.
 		const toolbar = hasParams ? (
-			<div className="mb-3 flex flex-wrap gap-2" data-testid="chart-params">
-				{paramNodes.map((pNode) => (
-					<ParamControl
-						key={pNode.name}
-						node={pNode}
-						value={paramValues[pNode.name ?? ""] ?? null}
-						onChange={onChange}
-					/>
-				))}
-			</div>
+			<ParamControls
+				nodes={paramNodes}
+				values={paramValues}
+				onChange={onChange}
+				className="mb-3 flex flex-wrap gap-2"
+				testId="chart-params"
+			/>
 		) : undefined;
 
 		return (
@@ -154,41 +131,4 @@ export function createChartBlock(
 			</ChartCard>
 		);
 	};
-}
-
-interface ParamControlProps {
-	node: StructureNode;
-	value: string | null;
-	onChange: (name: string, value: unknown) => void;
-}
-
-function ParamControl({ node, value, onChange }: ParamControlProps) {
-	const name = node.name ?? "";
-	const isDebounced = DEBOUNCE_KINDS.has(node.kind);
-
-	const handleChange = useCallback(
-		(next: unknown) => {
-			onChange(name, next);
-		},
-		[name, onChange],
-	);
-
-	const debouncedChange = useDebounce(handleChange, 300);
-	const onChangeForField = isDebounced ? debouncedChange : handleChange;
-
-	const binding = useMemo(
-		() => ({ name, value, onChange: onChangeForField }),
-		[name, value, onChangeForField],
-	);
-
-	return (
-		<>
-			{invokeBlock({
-				kind: node.kind,
-				options: { name, ...(node.options as Record<string, unknown>) },
-				meta: {},
-				ctx: { surface: "form", binding },
-			})}
-		</>
-	);
 }

@@ -5,7 +5,7 @@
  * - colSpan accounts for the handle column only when reorder is active
  */
 import { describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
 import { wrapForStructure } from "../testFixtures";
 import type { TableColumn } from "../types";
@@ -32,8 +32,8 @@ interface Overrides {
 	columns?: TableColumn[];
 }
 
-function renderGrid(over: Overrides = {}) {
-	return render(
+function gridElement(over: Overrides = {}) {
+	return (
 		<Wrap>
 			<TableGrid
 				rows={over.rows ?? ROWS}
@@ -56,8 +56,12 @@ function renderGrid(over: Overrides = {}) {
 				recordUrl={over.recordUrl}
 				groups={over.groups}
 			/>
-		</Wrap>,
+		</Wrap>
 	);
+}
+
+function renderGrid(over: Overrides = {}) {
+	return render(gridElement(over));
 }
 
 describe("TableGrid reorder rendering", () => {
@@ -161,6 +165,34 @@ describe("TableGrid row grouping", () => {
 		expect(headerRows).toHaveLength(2);
 		expect(headerRows[0]?.textContent).toContain("draft");
 		expect(headerRows[1]?.textContent).toContain("published");
+	});
+
+	// A refetch, poll or page change swaps rows in place (useAsyncQuery keeps
+	// the grid mounted while reloading), so the collapse state must survive it.
+	test("keeps a collapsed group collapsed when the rows are replaced", () => {
+		const over = {
+			rows: GROUPED_ROWS,
+			groups: { column: "status", collapsible: true },
+			columns: GROUPABLE_COLUMNS,
+		};
+		const { getAllByTestId, queryByText, rerender } = renderGrid(over);
+		const [draftToggle] = getAllByTestId("table-group-toggle");
+		if (!draftToggle) {
+			throw new Error("missing toggle");
+		}
+		fireEvent.click(draftToggle);
+
+		rerender(
+			gridElement({
+				...over,
+				rows: [{ id: "4", title: "d", status: "draft" }, ...GROUPED_ROWS],
+			}),
+		);
+
+		const toggles = getAllByTestId("table-group-toggle");
+		expect(toggles.map((t) => t.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
+		expect(queryByText("d")).toBeNull();
+		expect(queryByText("c")).toBeTruthy();
 	});
 
 	test("skips grouping entirely while reorder is active, even with groups set", () => {

@@ -15,13 +15,11 @@ import {
 	AdminErrorPage,
 	defineFieldClient,
 	Input,
-	registerBlock,
 	registerIcon,
 } from "@tbtop/inertia-admin";
 import { Home, Image, List, Settings } from "lucide-react";
 import { createRoot } from "react-dom/client";
 import { route as routeFn } from "ziggy-js";
-import { TwoFactorSetupBlock } from "./admin/TwoFactorSetupBlock";
 
 declare global {
 	const route: typeof routeFn;
@@ -60,13 +58,6 @@ function RatingForm({
 
 // Register the custom rating field for admin pages.
 defineFieldClient<"rating", number>("rating", { form: RatingForm, cell: RatingCell });
-
-// Register the custom two-factor setup block (owns its own JSON fetches).
-registerBlock<"twoFactorSetup", { setupUrl: string; confirmUrl: string }>({
-	kind: "twoFactorSetup",
-	behavior: "leaf",
-	render: TwoFactorSetupBlock,
-});
 
 // Register extra sidebar nav icons (adds to the built-in icon set).
 registerIcon("home", Home);

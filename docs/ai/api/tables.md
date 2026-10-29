@@ -23,10 +23,11 @@ The table builder, its columns, and filter tabs.
 | `embedded(bool $value = true): self` | Render the table without its toolbar (search/filters/column-visibility) or pagination footer — for embedding inside a section/card alongside other content. Rows, badges, recordUrl, and perPage still apply. |
 | `emptyState(string $heading, ?string $description = null, ?string $icon = null): self` | Customize the empty-table message. $icon is a registered client icon name. |
 | `filters(array $fields): self` | Declare filter fields (same Field instances used in forms); renders in a modal unless filtersIn() says otherwise. Kinds with a built-in WHERE mapping: select/radio/number/date/datetime/time (=), boolean, in/tags (IN), daterange (between). Any other kind — text, relation, … — throws at request time unless it carries a filterUsing() closure. |
+| `filtersCollapsed(bool $value = true): self` | Start the aside filters panel hidden until the toolbar button opens it. The user's own toggle then wins on later visits. Only meaningful when filtersIn('aside'). |
 | `filtersFormColumns(int $columns): self` | Number of grid columns for the filters form layout (1-12). |
 | `filtersFormWidth(string $width): self` | Width of the filters modal. Only meaningful when filtersIn('modal'). |
-| `filtersIn(string $mode): self` | Where declared filters() render: a dismissible modal, or inline in the toolbar. Any other mode throws — the client renders no filters for an unknown value. |
-| `groups(string $column): self` | Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first. |
+| `filtersIn(string $mode): self` | Where declared filters() render: a dismissible modal, inline in the toolbar, or an aside panel left of the table that a toolbar button shows and hides (a side sheet below the lg breakpoint). Any other mode throws — the client renders no filters for an unknown value. |
+| `groups(string $column, bool $collapsible = false, bool $collapsed = false): self` | Group contiguous rows sharing $column's value under a header row. Requires defaultSort($column, ...) first. $collapsible makes the header a toggle that hides or shows its rows; $collapsed starts every group closed and implies $collapsible. |
 | `headerActions(array $actions): self` | Actions rendered above the table (e.g. a Create button). |
 | `openRecordUrlInNewTab(bool $newTab = true): self` | Open the record URL in a new browser tab. |
 | `paginate(int $perPage = 25, array $options = [10, 25, 50, 100]): self` | Configure pagination. Pagination is always active; this method just customises the defaults. |

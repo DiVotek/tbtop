@@ -9,9 +9,9 @@ import {
 	type ActionOptionsBag,
 	actionButtonSize,
 	actionKey,
+	actionTriggerClass,
 	actionVariant,
 	MaybeTooltip,
-	outlinedTintClass,
 } from "./actionBlock.shared";
 import { useClientActionContext } from "./actionContext";
 import { FormError, FormSkeleton } from "./defaults";
@@ -41,7 +41,7 @@ export function ModalActionBlock({
 	const plain = useNearestTriggerVariant() === "plain";
 	const variant = plain ? "plain" : actionVariant(opts);
 	const buttonSize = plain ? "full" : actionButtonSize(opts);
-	const tint = plain ? undefined : outlinedTintClass(opts);
+	const triggerClass = actionTriggerClass(opts, plain);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [open, setOpen] = useState(false);
 
@@ -64,7 +64,7 @@ export function ModalActionBlock({
 					ref={buttonRef}
 					variant={variant}
 					size={buttonSize}
-					className={tint}
+					className={triggerClass}
 					disabled={disabled}
 					onClick={() => setOpen(true)}
 					data-testid={`action-${actionKey(opts)}`}

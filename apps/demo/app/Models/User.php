@@ -53,9 +53,4 @@ class User extends Authenticatable
             'two_factor_last_used_step' => 'integer',
         ];
     }
-
-    public function hasTwoFactorEnabled(): bool
-    {
-        return $this->two_factor_confirmed_at !== null;
-    }
 }

@@ -146,3 +146,9 @@ it('refuses a new password that does not match its confirmation', function () {
         'password_confirmation' => 'something-else',
     ])->assertSessionHasErrors('password');
 });
+
+it('offers no two-factor section while the panel serves no challenge page', function () {
+    $page = $this->actingAs($this->user, 'staff')->get('/admin/profile', ['X-Inertia' => 'true'])->assertOk()->json();
+
+    expect(json_encode($page['props']))->not->toContain('two_factor_enable');
+});

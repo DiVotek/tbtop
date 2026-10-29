@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Panels;
 
 use Illuminate\Container\Container;
 use Tbtop\Admin\Auth\ProfilePage;
+use Tbtop\Admin\Http\PageGate;
 use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
@@ -135,16 +136,16 @@ final class CurrentPanel
 
     /**
      * Sparse wire payloads for the profile-dropdown custom entries, led by the
-     * panel's ProfilePage when it serves one.
+     * panel's ProfilePage when it serves one; an entry whose can() fails is left out.
      *
      * @return list<array<string, mixed>>
      */
     public function userMenuItems(): array
     {
-        $items = $this->config->getUserMenuItems();
+        $items = array_filter($this->config->getUserMenuItems(), static fn (NavItem $item): bool => PageGate::passes($item->getGate()));
         $profile = $this->profileMenuItem();
 
-        return array_map(static fn (NavItem $item): array => $item->toArray(), $profile === null ? $items : [$profile, ...$items]);
+        return array_map(static fn (NavItem $item): array => $item->toArray(), $profile === null ? array_values($items) : [$profile, ...$items]);
     }
 
     private function profileMenuItem(): ?NavItem

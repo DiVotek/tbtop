@@ -19,6 +19,10 @@ import type {
 /** Row-grouping config: partitions contiguous rows sharing `column`'s value. */
 export interface TableGroupsConfig {
 	column: string;
+	/** The group header is a toggle that hides or shows its rows. */
+	collapsible?: boolean;
+	/** Every group starts collapsed, showing only its header. */
+	collapsed?: boolean;
 }
 
 export type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -38,7 +42,9 @@ export interface TableBlockOptions extends AsyncBlock {
 	bulkActions?: ActionConfig[];
 	searchable?: string[];
 	filters?: StructureNode[];
-	filtersIn?: "modal" | "inline";
+	filtersIn?: "modal" | "inline" | "aside";
+	/** filtersIn === "aside": start with the panel hidden until the toolbar opens it. */
+	filtersCollapsed?: boolean;
 	tabs?: TableTab[];
 	pagination?: TablePaginationOptions;
 	rowClick?: string;
@@ -87,7 +93,8 @@ export interface TableBodyProps {
 	poll?: number;
 	searchable?: string[];
 	filters?: StructureNode[];
-	filtersIn: "modal" | "inline";
+	filtersIn: "modal" | "inline" | "aside";
+	filtersCollapsed?: boolean;
 	tabs?: TableTab[];
 	tabCounts?: Record<string, number>;
 	pagination?: TablePaginationOptions;

@@ -319,3 +319,29 @@ describe("Action trigger variants", () => {
 		expect(isExternalUrl(`${window.location.origin}/admin/x`)).toBe(false);
 	});
 });
+
+// The corner badge is absolutely placed: a trigger that is not positioned lets
+// it anchor to the page, where it is hidden and widens the page past the viewport.
+describe("Action badge sits on its own trigger", () => {
+	// The badge is a server-side option (->badge()), not part of the client config.
+	const withBadge = (node: StructureNode): StructureNode =>
+		({
+			...node,
+			options: { ...(node as { options: object }).options, badge: "3" },
+		}) as StructureNode;
+	const cases: Array<[string, StructureNode]> = [
+		["modal", s.action({ name: "revisions", modal: { title: "Revisions" } })],
+		["handler", s.action({ name: "revisions", handler: async () => {} })],
+		["link", s.action({ name: "revisions", url: "/admin/revisions" })],
+	];
+	for (const [kind, node] of cases) {
+		test(`${kind} action with a badge positions it against the trigger`, async () => {
+			const Wrap = wrap(() => new Response("{}"));
+			const { findByTestId } = render(<Wrap>{renderNode(withBadge(node))}</Wrap>);
+			const trigger = await findByTestId("action-revisions");
+			const badge = await findByTestId("action-badge");
+			expect(trigger.contains(badge)).toBe(true);
+			expect(trigger.className.split(/\s+/)).toContain("relative");
+		});
+	}
+});

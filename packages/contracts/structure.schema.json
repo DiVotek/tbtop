@@ -63,7 +63,9 @@
 										"type": "object",
 										"required": ["column"],
 										"properties": {
-											"column": { "type": "string" }
+											"column": { "type": "string" },
+											"collapsible": { "type": "boolean" },
+											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
 									},
@@ -92,7 +94,8 @@
 									"recordUrlNewTab": { "type": "boolean" },
 									"deferFilters": { "type": "boolean" },
 									"poll": { "type": "integer", "minimum": 5 },
-									"filtersIn": { "type": "string", "enum": ["modal", "inline"] },
+									"filtersIn": { "type": "string", "enum": ["modal", "inline", "aside"] },
+									"filtersCollapsed": { "type": "boolean" },
 									"filtersFormColumns": { "type": "integer" },
 									"filtersFormWidth": {
 										"type": "string",
@@ -102,7 +105,9 @@
 										"type": "object",
 										"required": ["column"],
 										"properties": {
-											"column": { "type": "string" }
+											"column": { "type": "string" },
+											"collapsible": { "type": "boolean" },
+											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
 									}

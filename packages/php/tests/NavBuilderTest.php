@@ -356,6 +356,29 @@ it('PanelConfig: exposes userMenuItems as sparse wire payloads through the curre
     ]);
 });
 
+it('NavItem: can() hides a nav and user-menu entry from users the gate refuses', function () {
+    Gate::define('see-reports', fn (?object $user) => false);
+    Gate::define('see-docs', fn (?object $user) => true);
+    $panel = new CurrentPanel(
+        (new PanelConfig)
+            ->id('admin')
+            ->prefix('admin')
+            ->pages([])
+            ->navigationItems([
+                NavItem::make('Reports')->url('/admin/reports')->can('see-reports'),
+                NavItem::make('Docs')->url('https://example.test')->can('see-docs'),
+                NavItem::make('Status')->url('https://status.test')->can(null),
+            ])
+            ->userMenuItems([
+                NavItem::make('Billing')->url('/admin/billing')->can('see-reports'),
+                NavItem::make('API Tokens')->url('/admin/api-tokens'),
+            ])
+    );
+
+    expect(array_column(NavBuilder::build($panel)[0]['items'], 'label'))->toBe(['Docs', 'Status'])
+        ->and(array_column($panel->userMenuItems(), 'label'))->toBe(['API Tokens']);
+});
+
 // Regression: panel config is built once at boot, so an eager __() label
 // froze on the boot locale. A Closure must resolve per serialization.
 it('NavItem: a Closure label resolves at serialization time, not construction', function () {

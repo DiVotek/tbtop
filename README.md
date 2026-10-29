@@ -177,4 +177,4 @@ phpstan runs at level 5 (the skeleton default; raise it in `phpstan.neon.dist`).
 ## Status
 
 See `docs/backlog.md` for the current gap list. Sign-in, password reset and the profile page come
-from `php artisan admin:install --auth`. Per-package contributor notes live in the root `CLAUDE.md`.
+from `php artisan admin:install --auth`; `--2fa` adds TOTP two-factor sign-in. Per-package contributor notes live in the root `CLAUDE.md`.

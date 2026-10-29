@@ -28,6 +28,19 @@ domain: tables
   the pre-drag snapshot and notifies. The order math (`computeReorder` →
   `arrayMove`) and the disable predicate are pure and unit-tested; the drag
   gesture itself is covered by a real-browser Pest test, not happy-dom.
+- **Active-filter chips read the applied params, not the filter form.**
+  `queryParams.filters` is what narrowed the rows, so a deferred table's pending
+  edits get no chip until Apply. Removing a chip drops that key from both the
+  applied params and the form values, leaving the other pending edits alone;
+  "Clear filters" keeps the search (unlike the form's Reset). Client-only, no
+  wire change: labels come from the filter node's own options, and an async
+  select resolves through the same `onLoad` its control uses.
+
+- **Row groups collapse per value, client-side only, opt-in.** Headers toggle only with
+  `groups.collapsible` (or `collapsed`, which implies it). `useGroupCollapse` stores the
+  groups the user flipped away from the declared default (`groups.collapsed`), keyed by
+  the JSON of the group value, so the state survives a refetch or page change and a group
+  that appears later opens in the default. Nothing is persisted or sent to the server.
 
 ## Why
 
