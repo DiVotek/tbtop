@@ -160,7 +160,7 @@ class DashboardPage extends Page
                 ->title('Warning')
                 ->color(Color::Warning),
             $s->displayDivider(),
-            $s->displayHtml('<p>Raw <strong>HTML</strong> block: embed <em>any markup</em> authored in the DSL.</p>'),
+            $s->displayHtml('<p><strong>HTML</strong> block: sanitized server-side, <em>safe markup</em> only. Chain ->trusted() for author-owned HTML.</p>'),
         ]);
     }
 

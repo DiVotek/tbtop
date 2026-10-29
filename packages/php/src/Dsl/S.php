@@ -484,7 +484,11 @@ final class S
         return TextBlock::make($content);
     }
 
-    /** Raw HTML block, rendered unsanitized — the author owns escaping. */
+    /**
+     * HTML block, sanitized server-side by default (scripts, event handlers and
+     * javascript: URLs are dropped). Chain ->trusted() to emit author-controlled
+     * markup unchanged.
+     */
     public function displayHtml(string $rawHtml): HtmlBlock
     {
         return HtmlBlock::make($rawHtml);

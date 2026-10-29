@@ -383,7 +383,7 @@ $s->flex([$badge, $s->unsavedIndicator(), $s->spacer(), $save], variant: 'card')
 | Method | Signature | Purpose |
 |---|---|---|
 | `displayText` | `displayText(string $content): TextBlock` | Static text; call `->variant('heading'\|'subheading'\|'body'\|'muted')` on the result |
-| `displayHtml` | `displayHtml(string $rawHtml): HtmlBlock` | Raw HTML passthrough |
+| `displayHtml` | `displayHtml(string $rawHtml): HtmlBlock` | HTML, sanitized by default; `->trusted()` passes it through unchanged |
 | `markdown` | `markdown(string $content): MarkdownBlock` | Converts markdown server-side; call `->allowHtml()` only for trusted content |
 | `displayDivider` | `displayDivider(): Node` | Horizontal rule |
 | `displayAlert` | `displayAlert(string $message): AlertBlock` | Alert box; chain `->title(string)` and `->color(Color\|string)` on the result |

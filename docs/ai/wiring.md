@@ -220,8 +220,8 @@ array via `Inertia::flash`. The effect set is closed; see
 `PanelConfig::mcp()` exposes a panel to AI agents (Claude Desktop, OpenAI, …) over
 [MCP](https://modelcontextprotocol.io). It needs `composer require laravel/mcp`; enabling it
 without the package throws at route registration. **The MCP server needs Laravel ≥ 12.41**:
-laravel/mcp 1.x requires `illuminate/json-schema ^12.41.1`, so it cannot be installed on
-Laravel 11, which the rest of `tbtop/admin` still supports.
+laravel/mcp 1.x requires `illuminate/json-schema ^12.41.1`, so an older Laravel 12 patch
+must be updated first.
 
 ```php
 return $panel
