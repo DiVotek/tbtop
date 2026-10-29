@@ -1,4 +1,5 @@
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { useChartColors } from "../../lib/useChartColors";
 import { resolveColorClasses } from "../../structure/table/colorRegistry";
@@ -71,9 +72,11 @@ export function resolveSparklineColor(
 
 interface StatCardProps {
 	options: StatDescriptor;
+	/** Param controls rendered between the label and the value. */
+	toolbar?: ReactNode;
 }
 
-export function StatCard({ options }: StatCardProps) {
+export function StatCard({ options, toolbar }: StatCardProps) {
 	const { label, value, description, delta, icon, tooltip, color, sparkline } = options;
 	const hasSparkline = sparkline !== undefined && sparkline.length > 0;
 	const bottomSparkline = hasSparkline && (options.sparklinePosition ?? "inline") === "bottom";
@@ -88,6 +91,7 @@ export function StatCard({ options }: StatCardProps) {
 			data-testid="stat-card"
 		>
 			<StatHeader label={label} icon={icon} color={color} />
+			{toolbar}
 			<div className="text-3xl font-semibold tracking-tight">{String(value ?? "")}</div>
 			{delta !== undefined && <DeltaBadge delta={delta} />}
 			{description !== undefined && (

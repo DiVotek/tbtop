@@ -1053,8 +1053,16 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 `value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
-clamped again client-side**. `url($href)` makes the whole card a link (a dashboard KPI
-that opens its list); `openUrlInNewTab()` opens it in a new browser tab. Call `->toNode()` to embed a `Stat` in a layout node.
+clamped again client-side**. `params()` renders filter fields in the card (same field
+builders as chart params); each change refetches the stat, and the value closure receives
+their current values as `array $params` — their defaults at first render. Param values come
+from the query string: give each field `rules()` (`->rules('in:7,30')`), a failing value
+answers 422 before the closure runs. `url($href)` makes
+the whole card a link (a dashboard KPI that opens its list); `openUrlInNewTab()` opens it in
+a new browser tab. **`url()` and `params()` don't combine** — `toNode()` throws, a control
+can't sit inside a link. **`poll()` and `params()` need `$s->stat()`**: it registers the stat
+for the data endpoint, a bare `Stat::make()` answers 404 there. Call `->toNode()` to embed a
+`Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php
@@ -1064,7 +1072,17 @@ Stat::make('Total Posts')
     ->icon('file-text')
     ->color(Color::Primary)
     ->toNode()
+
+// A KPI with a period switch: the closure re-runs on every change.
+$s->stat('Signups')
+    ->params([$s->select('period')->options([
+        ['value' => '7', 'label' => '7 days'], ['value' => '30', 'label' => '30 days'],
+    ])->default('7')->rules('in:7,30')])
+    ->value(fn (array $params) => User::where('created_at', '>=', now()->subDays((int) $params['period']))->count())
+    ->toNode()
 ```
+
+Only `value` is re-resolved; `description`, `delta` and `sparkline` stay as declared.
 
 ### ChartBuilder
 
