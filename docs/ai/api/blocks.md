@@ -90,7 +90,7 @@ Read-only content blocks plus the stat, chart, list and live-region builders. La
 | `tooltip(string $text): static` | Tooltip text shown on hover. |
 | `trend(string $direction): self` | Small trend arrow rendered after the description, inheriting its color. |
 | `url(string $url): self` | Make the whole card a link — an internal path navigates in place, an external URL opens as a plain link. |
-| `value(mixed $value): self` | The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick or params() change). The closure may take array $params: the current params() values keyed by field name — their defaults at render (empty array without params()). |
+| `value(mixed $value): self` | The headline number/text. Accepts a scalar or a Closure resolved server-side at render time (and on each poll() tick or params() change). The closure may take array $params: the current params() values keyed by field name — their defaults at render, null for a field without one (empty array without params()). |
 | `when(Closure\|bool $condition): static` | Server-side existence gate: false (or a closure resolving falsy) means the node is dropped before serialization — absent from the wire, and any endpoint scoped to it (action, query, data) answers 404. Not the same as hiddenIf()/disabledIf(), which ship the node and let the client hide/disable it while its value still submits. |
 
 ## ChartBuilder

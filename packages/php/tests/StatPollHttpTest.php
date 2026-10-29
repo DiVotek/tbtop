@@ -48,6 +48,12 @@ it('parameterized stat rejects a param value its rules refuse', function (): voi
         ->assertJsonValidationErrors('period');
 });
 
+it('an empty param value falls back to the default', function (): void {
+    $this->getJson('/admin/chart-params/data/Signups?period=&from=2026-10-01')
+        ->assertOk()
+        ->assertExactJson(['data' => ['value' => '7d from 2026-10-01']]);
+});
+
 it('params without rules() still reject an array-shaped value', function (): void {
     $this->getJson('/admin/chart-params/data/withParams?interval[]=day')
         ->assertUnprocessable()

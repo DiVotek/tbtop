@@ -50,7 +50,7 @@ final class DataController
 
     /**
      * Build the param bag: only declared param names, query-string value or
-     * default, held to each field's rules() and to a scalar value — the values
+     * default (also for an empty value), held to each field's rules() and to a scalar value — the values
      * come from the query string, so a failing one answers 422 before the closure runs.
      *
      * @param  list<Field>  $fields
@@ -60,7 +60,9 @@ final class DataController
     {
         $bag = [];
         foreach ($fields as $field) {
-            $bag[$field->name] = $request->query($field->name, $field->defaultValue());
+            $value = $request->query($field->name);
+            // A cleared control sends `name=` (null after ConvertEmptyStringsToNull): fall back to the default.
+            $bag[$field->name] = $value === null || $value === '' ? $field->defaultValue() : $value;
         }
         $rules = RuleWalker::collect($fields);
         foreach (array_keys($bag) as $name) {

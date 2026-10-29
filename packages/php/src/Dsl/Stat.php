@@ -72,7 +72,8 @@ final class Stat implements JsonSerializable
      * The headline number/text. Accepts a scalar or a Closure resolved
      * server-side at render time (and on each poll() tick or params() change).
      * The closure may take array $params: the current params() values keyed by
-     * field name — their defaults at render (empty array without params()).
+     * field name — their defaults at render, null for a field without one
+     * (empty array without params()).
      */
     public function value(mixed $value): self
     {
