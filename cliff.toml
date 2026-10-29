@@ -1,0 +1,58 @@
+# git-cliff config — renders CHANGELOG.md and the GitHub Release notes from
+# the squash-merge subjects on main (`type(scope): subject (#PR)`).
+# Policy behind the sections: VERSIONING.md. Regenerate with `bun run changelog`.
+
+[changelog]
+header = """
+# Changelog
+
+Every release of `tbtop/admin` (Packagist) and `@tbtop/inertia-admin` (npm) —
+both ship in lockstep from one tag. Versioning rules: [VERSIONING.md](VERSIONING.md).
+Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
+"""
+body = """
+{% if version -%}
+## [{{ version | trim_start_matches(pat="v") }}](https://github.com/DiVotek/tbtop/releases/tag/{{ version }}) — {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+## Unreleased
+{% endif -%}
+{% set breaking = commits | filter(attribute="breaking", value=true) -%}
+{% if breaking | length > 0 %}
+### ⚠ Breaking changes
+{% for commit in breaking %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }}\
+  {% if commit.breaking_description and commit.breaking_description != commit.message %} — {{ commit.breaking_description }}{% endif %}
+{%- endfor %}
+{% endif -%}
+{% for group, commits in commits | filter(attribute="breaking", value=false) | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }}
+{%- endfor %}
+{% endfor %}
+"""
+footer = ""
+trim = false
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+protect_breaking_commits = true
+filter_commits = false
+tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+topo_order = false
+sort_commits = "oldest"
+commit_preprocessors = [
+  { pattern = '\(#(\d+)\)', replace = "([#${1}](https://github.com/DiVotek/tbtop/pull/${1}))" },
+]
+# The <!-- n --> prefixes only order the sections; the template strips them.
+commit_parsers = [
+  { message = "^chore\\(release\\)", skip = true },
+  { message = "^feat", group = "<!-- 1 -->Features" },
+  { message = "^fix", group = "<!-- 2 -->Fixes" },
+  { message = "^perf", group = "<!-- 3 -->Performance" },
+  { message = "^revert", group = "<!-- 4 -->Reverts" },
+  { message = "^docs", group = "<!-- 5 -->Documentation" },
+  { message = "^(refactor|chore|ci|build|test|style)", skip = true },
+]

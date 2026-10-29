@@ -6,7 +6,10 @@
 #   2. fails if that tag already exists
 #   3. npm publish (Trusted Publishing / OIDC, no token) -> @tbtop/inertia-admin
 #   4. creates and pushes the tag  -> Packagist publishes tbtop/admin via webhook
-#   5. creates a GitHub Release with generated notes
+#   5. creates a GitHub Release with notes rendered by git-cliff (cliff.toml)
+#
+# Before anything is published it also refuses a version without a
+# CHANGELOG.md entry, or a patch bump over a breaking commit (VERSIONING.md).
 #
 # npm goes BEFORE the tag on purpose: a npm failure then leaves no dangling tag,
 # so a re-run stays clean (the tag-exists guard wouldn't block it).
@@ -42,7 +45,11 @@ jobs:
       run:
         working-directory: packages/client
     steps:
+      # Full history + tags: git-cliff renders the notes from the commits
+      # since the previous tag.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Require dispatch from main
         env:
@@ -103,6 +110,21 @@ jobs:
           fi
           echo "$TAG is free"
 
+      # The bump PR adds the release to CHANGELOG.md (scripts/changelog.sh).
+      - name: Require a CHANGELOG entry
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          if ! grep -q "^## \[${TAG#v}\]" ../../CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no ${TAG#v} entry — run scripts/changelog.sh in the version-bump PR"
+            exit 1
+          fi
+
+      # Rendered before npm publish: a breaking commit under a patch bump
+      # fails here, while nothing is published yet.
+      - name: Render release notes
+        run: ../../scripts/changelog.sh --notes "$RUNNER_TEMP/release-notes.md"
+
       # npm first: if this fails, no tag is pushed, so a re-run stays clean.
       # OIDC is auto-detected; provenance is generated automatically.
       - name: Publish to npm
@@ -145,4 +167,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.ver.outputs.tag }}
-        run: gh release create "$TAG" --title "$TAG" --generate-notes
+        run: gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"

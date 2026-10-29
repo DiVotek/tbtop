@@ -8,6 +8,7 @@
 		"lint:fix": "oxlint --fix && biome check --write --linter-enabled=false",
 		"format": "biome check --write --linter-enabled=false",
 		"format:check": "biome check --linter-enabled=false",
+		"changelog": "scripts/changelog.sh",
 		"prepare": "simple-git-hooks"
 	},
 	"simple-git-hooks": {
