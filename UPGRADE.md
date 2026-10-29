@@ -12,5 +12,29 @@ heading has none.
 
 ## 0.7 → 0.8
 
-0.8.0 is the first release under this policy. Its breaking changes are listed
-here as they land.
+0.8.0 is the first release under this policy.
+
+### Laravel 11 is no longer supported
+
+`tbtop/admin` now requires `illuminate/contracts ^12.0||^13.0`. Upgrade the host to
+Laravel 12 or 13 before `composer update tbtop/admin`. Composer refuses the update on
+Laravel 11. PHP stays `^8.4`.
+
+### `displayHtml()` is sanitized by default
+
+`$s->displayHtml($html)` now runs the HTML through `symfony/html-sanitizer` (W3C safe
+baseline) on the server. Dropped: `<script>`, `<iframe>`, `<style>`, inline SVG, event
+handlers (`on*`), `class`, `style` and `data-*` attributes, `javascript:` URLs. Kept: ordinary
+text markup, tables, images, links with http(s)/mailto/tel or relative URLs,
+`target`/`rel` on links. Images only from http(s) or relative URLs (no `data:`). Input over 1 MB is truncated before sanitizing.
+
+If a page renders author-owned markup that relies on dropped parts (inline SVG icons,
+`class`/`style` styling, embeds), opt out on that block:
+
+```php
+$s->displayHtml($html)->trusted();
+```
+
+Only call `trusted()` on markup the author controls. Never on record data.
+
+`markdown()` is unchanged (it already stripped embedded HTML unless `->allowHtml()`).
