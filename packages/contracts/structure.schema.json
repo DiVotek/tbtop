@@ -63,7 +63,8 @@
 										"type": "object",
 										"required": ["column"],
 										"properties": {
-											"column": { "type": "string" }
+											"column": { "type": "string" },
+											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
 									},
@@ -102,7 +103,8 @@
 										"type": "object",
 										"required": ["column"],
 										"properties": {
-											"column": { "type": "string" }
+											"column": { "type": "string" },
+											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
 									}

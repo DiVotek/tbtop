@@ -302,7 +302,7 @@ class KitchenSinkPage extends Page
                 ->openRecordUrlInNewTab()
                 ->defaultSort('views', 'desc')
                 ->reorderable('sort_order')
-                ->groups('views')
+                ->groups('views', collapsed: true)
                 ->tabs([
                     Tab::make('all'),
                     Tab::make('published')->label('Published')

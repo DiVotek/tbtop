@@ -26,7 +26,7 @@ The table builder, its columns, and filter tabs.
 | `filtersFormColumns(int $columns): self` | Number of grid columns for the filters form layout (1-12). |
 | `filtersFormWidth(string $width): self` | Width of the filters modal. Only meaningful when filtersIn('modal'). |
 | `filtersIn(string $mode): self` | Where declared filters() render: a dismissible modal, or inline in the toolbar. Any other mode throws — the client renders no filters for an unknown value. |
-| `groups(string $column): self` | Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first. |
+| `groups(string $column, bool $collapsed = false): self` | Group contiguous rows sharing $column's value under a header the user clicks to collapse or expand. Requires defaultSort($column, ...) first. $collapsed starts every group closed, showing only the headers. |
 | `headerActions(array $actions): self` | Actions rendered above the table (e.g. a Create button). |
 | `openRecordUrlInNewTab(bool $newTab = true): self` | Open the record URL in a new browser tab. |
 | `paginate(int $perPage = 25, array $options = [10, 25, 50, 100]): self` | Configure pagination. Pagination is always active; this method just customises the defaults. |

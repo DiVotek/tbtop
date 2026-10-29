@@ -1124,7 +1124,8 @@
                         "column": "sort_order"
                     },
                     "groups": {
-                        "column": "views"
+                        "column": "views",
+                        "collapsed": true
                     },
                     "rowActions": [
                         {

@@ -19,6 +19,8 @@ import type {
 /** Row-grouping config: partitions contiguous rows sharing `column`'s value. */
 export interface TableGroupsConfig {
 	column: string;
+	/** Every group starts collapsed, showing only its header. */
+	collapsed?: boolean;
 }
 
 export type SaveCellArgs = { column: string; id: string; value: unknown };

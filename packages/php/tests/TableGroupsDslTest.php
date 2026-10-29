@@ -18,6 +18,15 @@ it('TableBuilder: groups() matching defaultSort serializes options.groups', func
     expect($json['options']['groups'])->toBe(['column' => 'views']);
 });
 
+it('TableBuilder: groups() with collapsed serializes collapsed: true', function (): void {
+    $node = (new TableBuilder('t'))
+        ->defaultSort('views', 'desc')
+        ->groups('views', collapsed: true)
+        ->toNode();
+
+    expect(encodeGroups($node)['options']['groups'])->toBe(['column' => 'views', 'collapsed' => true]);
+});
+
 it('TableBuilder: groups() without a matching defaultSort throws', function (): void {
     (new TableBuilder('t'))->groups('views');
 })->throws(InvalidArgumentException::class);
