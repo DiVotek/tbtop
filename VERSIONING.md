@@ -114,7 +114,9 @@ subjects on `main`, so a PR title is its changelog line. Titles follow
 | `docs`                                        | Documentation     |
 | `refactor`, `chore`, `ci`, `build`, `test`, `style` | not listed  |
 
-A breaking change puts `!` before the colon, `feat(php)!: drop Laravel 11`,
-and can explain itself in a `BREAKING CHANGE: …` footer of the squash commit.
-Either lands it under "Breaking changes", whatever its type. The release
+A breaking change puts `!` before the colon in its PR title,
+`feat(php)!: drop Laravel 11`. That `!` is the required marker: it lands the
+change under "Breaking changes", whatever its type. A `BREAKING CHANGE: …`
+footer adds an explanation, but only counts when it ends up in the squash
+commit body; one written only in the PR description never reaches `main`. The release
 tooling refuses a patch bump over a breaking commit.

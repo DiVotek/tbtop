@@ -82,10 +82,11 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      # git-cliff for scripts/changelog.sh, pinned by the root bun.lock.
+      # git-cliff for scripts/changelog.sh, pinned by the root bun.lock. No
+      # lifecycle scripts: this job holds npm publish rights.
       - name: Install root tooling
         working-directory: ${{ github.workspace }}
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Read version
         id: ver
