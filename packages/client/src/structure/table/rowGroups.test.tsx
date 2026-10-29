@@ -109,10 +109,9 @@ describe("GroupHeaderRow", () => {
 				</tbody>
 			</table>,
 		);
-		// BooleanIconCell renders an SVG icon (aria-hidden), never the literal "true";
-		// the other SVG is the collapse chevron.
+		// BooleanIconCell renders an SVG icon (aria-hidden), never the literal "true".
 		expect(queryByText("true")).toBeNull();
-		expect(container.querySelectorAll("svg")).toHaveLength(2);
+		expect(container.querySelector("svg")).toBeTruthy();
 	});
 
 	test("renders a badge column through the same Badge component the cell uses, not a bare text node", () => {
@@ -134,7 +133,7 @@ const GROUPED = [
 	{ id: "3", status: "published" },
 ];
 
-function renderGrouped(collapsedByDefault: boolean) {
+function renderGrouped(collapsedByDefault: boolean, collapsible = true) {
 	return render(
 		<table>
 			<tbody>
@@ -142,6 +141,7 @@ function renderGrouped(collapsedByDefault: boolean) {
 					rows={GROUPED}
 					column={textCol}
 					colSpan={2}
+					collapsible={collapsible}
 					collapsedByDefault={collapsedByDefault}
 					renderRow={(row) => (
 						<tr key={String(row.id)} data-testid="data-row">
@@ -155,6 +155,13 @@ function renderGrouped(collapsedByDefault: boolean) {
 }
 
 describe("GroupedRows", () => {
+	test("without collapsible renders plain headers and every row", () => {
+		const { getAllByTestId, queryAllByTestId, getByText } = renderGrouped(false, false);
+		expect(queryAllByTestId("table-group-toggle")).toHaveLength(0);
+		expect(getAllByTestId("data-row")).toHaveLength(3);
+		expect(getByText("draft").closest("button")).toBeNull();
+	});
+
 	test("renders every group expanded by default", () => {
 		const { getAllByTestId } = renderGrouped(false);
 		expect(getAllByTestId("data-row")).toHaveLength(3);

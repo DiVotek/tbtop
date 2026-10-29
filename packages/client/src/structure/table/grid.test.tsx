@@ -172,7 +172,7 @@ describe("TableGrid row grouping", () => {
 	test("keeps a collapsed group collapsed when the rows are replaced", () => {
 		const over = {
 			rows: GROUPED_ROWS,
-			groups: { column: "status" },
+			groups: { column: "status", collapsible: true },
 			columns: GROUPABLE_COLUMNS,
 		};
 		const { getAllByTestId, queryByText, rerender } = renderGrid(over);

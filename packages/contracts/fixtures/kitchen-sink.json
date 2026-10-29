@@ -1125,6 +1125,7 @@
                     },
                     "groups": {
                         "column": "views",
+                        "collapsible": true,
                         "collapsed": true
                     },
                     "rowActions": [

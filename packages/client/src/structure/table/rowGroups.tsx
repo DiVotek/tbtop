@@ -1,7 +1,7 @@
 /**
  * Row grouping: partitions already-sorted rows into contiguous runs by a
- * column's value and renders a full-width header before each run. A header
- * click collapses or expands its run.
+ * column's value and renders a full-width header before each run. With
+ * `collapsible`, a header click collapses or expands its run.
  */
 import { ChevronRightIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -68,6 +68,7 @@ interface GroupHeaderRowProps {
 	/** The grouped column's config — reused so the header matches the cell's own formatting. */
 	column: TableColumn;
 	collapsed?: boolean;
+	/** Makes the header a collapse toggle; without it the header is a plain label. */
 	onToggle?: () => void;
 }
 
@@ -79,6 +80,19 @@ export function GroupHeaderRow({
 	onToggle,
 }: GroupHeaderRowProps): ReactNode {
 	const label = value == null || value === "" ? "—" : formatColumnValue(column, value);
+	if (!onToggle) {
+		return (
+			<tr className="bg-muted/50">
+				<td
+					colSpan={colSpan}
+					className="px-3 py-1.5 text-xs font-medium text-muted-foreground"
+				>
+					{/* Sticky inside the full-width cell: the label stays in view on horizontal scroll. */}
+					<span className="sticky left-3 inline-block">{label}</span>
+				</td>
+			</tr>
+		);
+	}
 	return (
 		<tr className="bg-muted/50">
 			<td colSpan={colSpan} className="p-0 text-xs font-medium text-muted-foreground">
@@ -110,6 +124,8 @@ interface GroupedRowsProps {
 	rows: Record<string, unknown>[];
 	column: TableColumn;
 	colSpan: number;
+	/** Group headers toggle their rows; off renders every group open with plain headers. */
+	collapsible: boolean;
 	collapsedByDefault: boolean;
 	renderRow: (row: Record<string, unknown>) => ReactNode;
 }
@@ -118,7 +134,7 @@ interface GroupedRowsProps {
 export function GroupedRows(props: GroupedRowsProps): ReactNode {
 	const collapse = useGroupCollapse(props.collapsedByDefault);
 	return partitionRowGroups(props.rows, props.column.name).flatMap((group, i) => {
-		const collapsed = collapse.isCollapsed(group.value);
+		const collapsed = props.collapsible && collapse.isCollapsed(group.value);
 		const header = (
 			<GroupHeaderRow
 				key={`group-${i}`}
@@ -126,7 +142,7 @@ export function GroupedRows(props: GroupedRowsProps): ReactNode {
 				colSpan={props.colSpan}
 				column={props.column}
 				collapsed={collapsed}
-				onToggle={() => collapse.toggle(group.value)}
+				onToggle={props.collapsible ? () => collapse.toggle(group.value) : undefined}
 			/>
 		);
 		return collapsed ? [header] : [header, ...group.rows.map(props.renderRow)];

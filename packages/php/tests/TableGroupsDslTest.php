@@ -18,13 +18,23 @@ it('TableBuilder: groups() matching defaultSort serializes options.groups', func
     expect($json['options']['groups'])->toBe(['column' => 'views']);
 });
 
-it('TableBuilder: groups() with collapsed serializes collapsed: true', function (): void {
+it('TableBuilder: groups() with collapsible serializes collapsible: true', function (): void {
+    $node = (new TableBuilder('t'))
+        ->defaultSort('views', 'desc')
+        ->groups('views', collapsible: true)
+        ->toNode();
+
+    expect(encodeGroups($node)['options']['groups'])->toBe(['column' => 'views', 'collapsible' => true]);
+});
+
+it('TableBuilder: groups() with collapsed implies collapsible', function (): void {
     $node = (new TableBuilder('t'))
         ->defaultSort('views', 'desc')
         ->groups('views', collapsed: true)
         ->toNode();
 
-    expect(encodeGroups($node)['options']['groups'])->toBe(['column' => 'views', 'collapsed' => true]);
+    expect(encodeGroups($node)['options']['groups'])
+        ->toBe(['column' => 'views', 'collapsible' => true, 'collapsed' => true]);
 });
 
 it('TableBuilder: groups() without a matching defaultSort throws', function (): void {

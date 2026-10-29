@@ -19,6 +19,8 @@ import type {
 /** Row-grouping config: partitions contiguous rows sharing `column`'s value. */
 export interface TableGroupsConfig {
 	column: string;
+	/** The group header is a toggle that hides or shows its rows. */
+	collapsible?: boolean;
 	/** Every group starts collapsed, showing only its header. */
 	collapsed?: boolean;
 }

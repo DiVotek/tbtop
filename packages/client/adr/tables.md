@@ -29,7 +29,8 @@ domain: tables
   `arrayMove`) and the disable predicate are pure and unit-tested; the drag
   gesture itself is covered by a real-browser Pest test, not happy-dom.
 
-- **Row groups collapse per value, client-side only.** `useGroupCollapse` stores the
+- **Row groups collapse per value, client-side only, opt-in.** Headers toggle only with
+  `groups.collapsible` (or `collapsed`, which implies it). `useGroupCollapse` stores the
   groups the user flipped away from the declared default (`groups.collapsed`), keyed by
   the JSON of the group value, so the state survives a refetch or page change and a group
   that appears later opens in the default. Nothing is persisted or sent to the server.

@@ -255,6 +255,7 @@ function renderGroupedRows(
 			rows={rows}
 			column={column}
 			colSpan={colSpan}
+			collapsible={props.groups?.collapsible === true || props.groups?.collapsed === true}
 			collapsedByDefault={props.groups?.collapsed === true}
 			renderRow={(row) => renderRow(row, props, false)}
 		/>

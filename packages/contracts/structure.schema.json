@@ -64,6 +64,7 @@
 										"required": ["column"],
 										"properties": {
 											"column": { "type": "string" },
+											"collapsible": { "type": "boolean" },
 											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
@@ -104,6 +105,7 @@
 										"required": ["column"],
 										"properties": {
 											"column": { "type": "string" },
+											"collapsible": { "type": "boolean" },
 											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
