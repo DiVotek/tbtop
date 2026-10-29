@@ -74,6 +74,27 @@ describe("poll()", () => {
 	});
 });
 
+describe("groups()", () => {
+	const grouped = (opts?: { collapsible?: boolean; collapsed?: boolean }) =>
+		new S().table("t").defaultSort("views", "desc").groups("views", opts).optionValue("groups");
+
+	test("stays a plain label without flags", () => {
+		expect(grouped()).toEqual({ column: "views" });
+	});
+
+	test("collapsible serializes collapsible: true", () => {
+		expect(grouped({ collapsible: true })).toEqual({ column: "views", collapsible: true });
+	});
+
+	test("collapsed implies collapsible", () => {
+		expect(grouped({ collapsed: true })).toEqual({
+			column: "views",
+			collapsible: true,
+			collapsed: true,
+		});
+	});
+});
+
 describe("sticky()", () => {
 	test("sticky columns must lead the list", () => {
 		expect(() =>

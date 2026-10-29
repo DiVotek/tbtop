@@ -139,14 +139,22 @@ export class TableBuilder<Q = unknown> {
 		return this.set("poll", seconds);
 	}
 
-	/** Group contiguous rows by a column; needs defaultSort(column) first. */
-	groups(column: string): this {
+	/**
+	 * Group contiguous rows by a column under a header row; needs
+	 * defaultSort(column) first. `collapsible` makes the header a toggle that
+	 * hides or shows its rows; `collapsed` starts every group closed and
+	 * implies `collapsible`.
+	 */
+	groups(column: string, opts: { collapsible?: boolean; collapsed?: boolean } = {}): this {
 		if (this.defaultSortSpec()?.field !== column) {
 			throw new Error(
 				`groups("${column}") requires defaultSort("${column}", ...) to be set first.`,
 			);
 		}
-		return this.set("groups", { column });
+		const groups: { column: string; collapsible?: true; collapsed?: true } = { column };
+		if (opts.collapsible || opts.collapsed) groups.collapsible = true;
+		if (opts.collapsed) groups.collapsed = true;
+		return this.set("groups", groups);
 	}
 
 	/** Default page size and the sizes offered. */

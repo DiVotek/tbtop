@@ -455,7 +455,7 @@ function postsTable(s: S) {
 		.openRecordUrlInNewTab()
 		.defaultSort("views", "desc")
 		.reorderable("sort_order")
-		.groups("views")
+		.groups("views", { collapsed: true })
 		.tabs([
 			Tab.make<Query>("all"),
 			Tab.make<Query>("published")
