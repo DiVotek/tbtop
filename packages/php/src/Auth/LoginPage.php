@@ -2,11 +2,9 @@
 
 namespace Tbtop\Admin\Auth;
 
-use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -116,8 +114,9 @@ abstract class LoginPage extends AuthPage
         $guard = Auth::guard(static::panel()->guard());
         $remember = (bool) ($ctx->form['remember'] ?? false);
         $challenge = TwoFactorChallengePage::currentUrl();
-        // With a challenge page, the password is checked without signing in: a user with a second factor is signed in once the code passes.
-        if (! ($challenge === null ? $guard->attempt($this->credentials($ctx), $remember) : $this->checkPassword($guard, $ctx))) {
+        // With a challenge page, once() checks the password without signing in (it fires Attempting and Failed
+        // as attempt() does): a user with a second factor is signed in once the code passes.
+        if (! ($challenge === null ? $guard->attempt($this->credentials($ctx), $remember) : $guard->once($this->credentials($ctx)))) {
             RateLimiter::hit($key);
             throw ValidationException::withMessages(['email' => __('auth.failed')]);
         }
@@ -141,17 +140,5 @@ abstract class LoginPage extends AuthPage
         }
 
         return $this->afterAuthenticated($user, $ctx) ?? $this->redirectTo($ctx);
-    }
-
-    /** attempt() without the sign-in: once() sets the user for this request only, and Failed is fired as attempt() would. */
-    private function checkPassword(StatefulGuard $guard, ActionCtx $ctx): bool
-    {
-        $credentials = $this->credentials($ctx);
-        if ($guard->once($credentials)) {
-            return true;
-        }
-        event(new Failed(static::panel()->guard(), $guard instanceof SessionGuard ? $guard->getLastAttempted() : null, $credentials));
-
-        return false;
     }
 }

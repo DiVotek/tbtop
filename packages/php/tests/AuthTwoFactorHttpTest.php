@@ -49,12 +49,13 @@ it('signs a user without a second factor straight in, remember cookie included',
     Event::assertDispatched(Login::class);
 });
 
-it('fires Failed for a wrong password, as attempt() does', function () {
+it('fires Failed once for a wrong password, as attempt() does', function () {
     Event::fake([Failed::class]);
 
     test()->from('/admin/login')->post('/admin/login/forms/login', ['email' => 'olena@example.com', 'password' => 'wrong'])
         ->assertSessionHasErrors(['email' => __('auth.failed')]);
 
+    Event::assertDispatchedTimes(Failed::class, 1);
     Event::assertDispatched(Failed::class, fn (Failed $event): bool => $event->guard === 'staff' && $event->user?->is($this->user));
 });
 
