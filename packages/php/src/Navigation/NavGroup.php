@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Navigation;
 
 use Tbtop\Admin\Dsl\Concerns\HasIcon;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 
 /**
  * Panel-level metadata for a sidebar nav group. Groups are keyed by the
@@ -17,6 +18,7 @@ use Tbtop\Admin\Dsl\Concerns\HasIcon;
 final class NavGroup
 {
     use HasIcon;
+    use ResolvesClosures;
 
     private bool $collapsible = false;
 
@@ -109,11 +111,7 @@ final class NavGroup
     /** The display text, falling back to the key when none was set. */
     public function displayLabel(): string
     {
-        if ($this->label instanceof \Closure) {
-            return ($this->label)();
-        }
-
-        return $this->label ?? $this->key;
+        return $this->resolveOpt($this->label) ?? $this->key;
     }
 
     /**
@@ -124,7 +122,7 @@ final class NavGroup
     public function getSectionLabels(): array
     {
         return array_map(
-            static fn (string|\Closure $label): string => $label instanceof \Closure ? $label() : $label,
+            fn (string|\Closure $label): string => $this->resolveOpt($label),
             $this->sections,
         );
     }
@@ -146,7 +144,7 @@ final class NavGroup
             $meta['collapsed'] = true;
         }
         if ($this->description !== null) {
-            $meta['description'] = $this->description instanceof \Closure ? ($this->description)() : $this->description;
+            $meta['description'] = $this->resolveOpt($this->description);
         }
 
         return $meta;

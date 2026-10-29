@@ -51,7 +51,7 @@ final class ListBuilder implements JsonSerializable
         $items = $this->itemsClosure !== null ? ($this->itemsClosure)() : [];
         $items = array_map(self::normalizeItem(...), $items);
 
-        return new Node('list', ['items' => $items], $this->name, $this->metaBag);
+        return new Node('list', ['items' => $items], $this->name, $this->resolvedMeta());
     }
 
     /** @return array<string, mixed> */

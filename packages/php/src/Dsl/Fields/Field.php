@@ -9,6 +9,7 @@ use Tbtop\Admin\Dsl\Concerns\CollectsRules;
 use Tbtop\Admin\Dsl\Concerns\HasCopyable;
 use Tbtop\Admin\Dsl\Concerns\HasGenericRules;
 use Tbtop\Admin\Dsl\Concerns\HasWhen;
+use Tbtop\Admin\Dsl\Concerns\ResolvesClosures;
 use Tbtop\Admin\Dsl\Concerns\WithMeta;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\CondToRequiredRule;
@@ -31,7 +32,11 @@ abstract class Field implements JsonSerializable
     use HasCopyable;
     use HasGenericRules;
     use HasWhen;
+    use ResolvesClosures;
     use WithMeta;
+
+    /** Opt keys whose value may be a zero-arity Closure, resolved on read. */
+    protected const RESOLVABLE = ['label', 'default', 'helperText', 'tooltip'];
 
     /** @var array<string, mixed> */
     protected array $opts = [];
@@ -57,22 +62,34 @@ abstract class Field implements JsonSerializable
         return new static($name);
     }
 
-    /** Display label rendered above the input; defaults to a humanized $name when unset. */
-    public function label(string $label): static
+    /**
+     * Display label rendered above the input; defaults to a humanized $name when unset.
+     *
+     * @param  string|(Closure(): string)  $label
+     */
+    public function label(string|Closure $label): static
     {
-        return $this->set('label', $label);
+        return $this->set('label', self::typedDeferral($label, 'string', 'label'));
     }
 
-    /** Muted hint text rendered below the input, above any validation error. */
-    public function helperText(string $text): static
+    /**
+     * Muted hint text rendered below the input, above any validation error.
+     *
+     * @param  string|(Closure(): string)  $text
+     */
+    public function helperText(string|Closure $text): static
     {
-        return $this->set('helperText', $text);
+        return $this->set('helperText', self::typedDeferral($text, 'string', 'helperText'));
     }
 
-    /** Tooltip text shown in an info-icon popover next to the field label. */
-    public function tooltip(string $text): static
+    /**
+     * Tooltip text shown in an info-icon popover next to the field label.
+     *
+     * @param  string|(Closure(): string)  $text
+     */
+    public function tooltip(string|Closure $text): static
     {
-        return $this->set('tooltip', $text);
+        return $this->set('tooltip', self::typedDeferral($text, 'string', 'tooltip'));
     }
 
     /** Marks the field required: flags it on the wire and adds a `required` validation rule. */
@@ -201,13 +218,22 @@ abstract class Field implements JsonSerializable
      * record(['x' => null]) keeps the null instead of this default. An enum
      * case, or each case in a list (multi-value fields), is stored as its
      * string option value (->value, ->name for a pure enum), matching
-     * options(Enum::class).
+     * options(Enum::class). A Closure is resolved (and its enum cases keyed)
+     * on read.
+     *
+     * @param  mixed|(Closure(): mixed)  $value
      */
     public function default(mixed $value): static
     {
+        return $this->set('default', $value instanceof Closure ? $value : self::defaultKey($value));
+    }
+
+    /** Enum cases (or a list of them) become their string option value. */
+    private static function defaultKey(mixed $value): mixed
+    {
         $toKey = fn (mixed $v) => $v instanceof UnitEnum ? EnumOptions::key($v) : $v;
 
-        return $this->set('default', is_array($value) ? array_map($toKey, $value) : $toKey($value));
+        return is_array($value) ? array_map($toKey, $value) : $toKey($value);
     }
 
     /** Grid column span: int (1-8) or a breakpoint object {sm?, md?, lg?, xl?}. */
@@ -275,12 +301,44 @@ abstract class Field implements JsonSerializable
 
     public function defaultValue(): mixed
     {
-        return $this->opts['default'] ?? null;
+        return $this->resolvedOpt('default');
     }
 
     public function labelText(): ?string
     {
-        return $this->opts['label'] ?? null;
+        return $this->resolvedOpt('label');
+    }
+
+    /** One opt, resolved alone: a reader must not run every other key's Closure (e.g. a query-backed default during validation). */
+    protected function resolvedOpt(string $key): mixed
+    {
+        $value = $this->opts[$key] ?? null;
+        if (! $value instanceof Closure || ! in_array($key, static::RESOLVABLE, true)) {
+            return $value;
+        }
+
+        $resolved = $this->resolveOpt($value);
+
+        return $key === 'default' ? self::defaultKey($resolved) : $resolved;
+    }
+
+    /**
+     * $opts with every RESOLVABLE Closure called. The one read path for opts:
+     * toNode() and the readers above go through it, so a deferred value never
+     * reaches the wire, the validator, or a record default as a Closure.
+     *
+     * @return array<string, mixed>
+     */
+    protected function resolvedOpts(): array
+    {
+        $opts = $this->opts;
+        foreach (static::RESOLVABLE as $key) {
+            if (array_key_exists($key, $opts)) {
+                $opts[$key] = $this->resolvedOpt($key);
+            }
+        }
+
+        return $opts;
     }
 
     /**
@@ -333,7 +391,7 @@ abstract class Field implements JsonSerializable
 
     public function toNode(): Node
     {
-        $options = [...$this->opts, ...$this->copyableOption()];
+        $options = [...$this->resolvedOpts(), ...$this->copyableOption()];
         $constraints = ConstraintMap::toConstraints($this->ruleList);
         if ($constraints !== []) {
             $options['constraints'] = $constraints;
@@ -345,7 +403,7 @@ abstract class Field implements JsonSerializable
             $options['translatable'] = true;
         }
 
-        return (new Node($this->kind(), $options, $this->name, $this->metaBag))
+        return (new Node($this->kind(), $options, $this->name, $this->resolvedMeta()))
             ->when($this->isIncluded());
     }
 

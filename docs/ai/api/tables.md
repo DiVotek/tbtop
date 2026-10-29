@@ -60,7 +60,7 @@ The table builder, its columns, and filter tabs.
 | `boolean(?string $trueIcon = null, ?string $falseIcon = null, Color\|string\|null $trueColor = null, Color\|string\|null $falseColor = null): static` | Kind sugar: sets kind = 'boolean' with optional icon/color overrides for true/false; the client renders the icon, no server formatting involved. |
 | `circular(): static` | Circular shape. Last shape call wins. |
 | `color(): static` | Render the column value as a color swatch; sets kind = 'color'. |
-| `copyable(string $copyMessage = 'Copied', int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
+| `copyable(Closure\|string $copyMessage = 'Copied', Closure\|int $copyMessageDuration = 2000): static` | Renders a copy-to-clipboard button next to the value. What lands on the clipboard is whatever reached the client, which is not always the stored value: server-formatted kinds (money/date/datetime/ number) and formatUsing() bake their output into the wire, so a money column copies "12.34 USD", not the cents. Kinds the client renders (badge/boolean/icon) and form fields copy the raw value. |
 | `date(?string $format = null): static` | Kind sugar: sets kind = 'date' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'Y-m-d'. |
 | `datetime(?string $format = null): static` | Kind sugar: sets kind = 'datetime' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'Y-m-d H:i:s'. |
 | `description(Closure\|string $description): static` | Muted secondary line under the cell's primary content. String → static description, serialized as-is. Closure → per-row resolver, run server-side in ColumnProjection and never serialized (mirrors tooltip()). |
@@ -113,8 +113,8 @@ The table builder, its columns, and filter tabs.
 | Method | What it does |
 |---|---|
 | `count(bool $count = true): self` | Opt into a count badge for this tab (off by default). |
-| `description(string $description): self` | Optional subtitle shown under the page title while this tab is active. |
-| `icon(string $name, string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. |
-| `label(?string $label): self` | Display text for the tab; falls back to the raw tab name when unset. |
+| `description(Closure\|string $description): self` | Optional subtitle shown under the page title while this tab is active. |
+| `icon(Closure\|string $name, Closure\|string $position = 'left'): static` | $name is a kebab-case Lucide icon name (e.g. 'circle-check') resolved against the client's icon registry; register custom names client-side via registerIcon before using them here. $position is 'left' (default) or 'right', placing the icon relative to the label. Either may be a Closure; a closure-supplied position is validated when it resolves. |
+| `label(Closure\|string\|null $label): self` | Display text for the tab; falls back to the raw tab name when unset. |
 | `query(callable $fn): static` | Server-side data closure — never serialized, re-resolved from the page tree on each request. The closure contract depends on the adopter: TableBuilder — fn(): Builder, must return a FRESH builder each call (it is invoked once for rows and once per tab for counts); Tab — fn(Builder $q): void, narrow the table builder in place; Relation — fn(array $deps): Builder, the Eloquent query to pick from, $deps holding the dependsOn() parents' current values — search text and the result cap are applied on top by the endpoint (labelKey() LIKE, searchLimit()). |
-| `tooltip(string $text): static` | Tooltip text shown on hover. |
+| `tooltip(Closure\|string $text): static` | Tooltip text shown on hover. |
