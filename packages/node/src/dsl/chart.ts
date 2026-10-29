@@ -1,5 +1,5 @@
 import type { Field } from "./fields/field";
-import { splitMeta } from "./meta";
+import { resolvedMeta, splitMeta } from "./meta";
 import { HasWhen, mixin, WithMeta } from "./mixin";
 import { Node } from "./node";
 
@@ -30,7 +30,11 @@ export class ChartBuilder {
 		return this;
 	}
 
-	/** Filter fields above the chart; their values reach query() as params. */
+	/**
+	 * Filter fields above the chart; their values reach query() as params.
+	 * Values arrive from the query string: give each field rules() (e.g.
+	 * 'in:day,month'), a failing value answers 422 before the query runs.
+	 */
 	params(fields: Field[]): this {
 		this.paramList = fields;
 		return this;
@@ -70,7 +74,7 @@ export class ChartBuilder {
 		if (this.paramList.length > 0) {
 			options.params = this.paramList.map((f) => f.toNode());
 		}
-		const meta = { ...optMeta, ...this.metaBag };
+		const meta = resolvedMeta({ ...optMeta, ...this.metaBag });
 		return new Node(
 			`chart:${this.type}`,
 			{ ...options, type: this.type },

@@ -57,11 +57,25 @@ it('TextBlock is accessible via S::displayText', function () {
         ->and($json['options']['content'])->toBe('Via DSL');
 });
 
+it('TextBlock resolves a Closure variant in the serialized options', function () {
+    $json = encodeDisplay(TextBlock::make('Title')->variant(fn (): string => 'heading'));
+
+    expect($json['options']['variant'])->toBe('heading');
+});
+
+it('TextBlock: a Closure variant survives clone-on-write', function () {
+    $block = TextBlock::make('Title')->variant(fn (): string => 'heading');
+    $clone = $block->variant(fn (): string => 'muted');
+
+    expect(encodeDisplay($block)['options']['variant'])->toBe('heading')
+        ->and(encodeDisplay($clone)['options']['variant'])->toBe('muted');
+});
+
 // ---------------------------------------------------------------------------
 // HtmlBlock
 // ---------------------------------------------------------------------------
 
-it('HtmlBlock serializes raw html', function () {
+it('HtmlBlock keeps safe markup', function () {
     $html = '<p>Hello <strong>world</strong></p>';
     $block = HtmlBlock::make($html);
     $json = encodeDisplay($block);
@@ -77,6 +91,76 @@ it('HtmlBlock is accessible via S::displayHtml', function () {
 
     expect($json['kind'])->toBe('displayHtml')
         ->and($json['options']['html'])->toBe('<em>italic</em>');
+});
+
+it('HtmlBlock strips scripts, event handlers and javascript: links by default', function () {
+    $html = '<p onclick="steal()">Hi</p><script>alert(1)</script>'
+        .'<a href="javascript:alert(1)">x</a><iframe src="https://evil.test"></iframe>';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect($out)->toContain('<p>Hi</p>')
+        ->not->toContain('script')
+        ->not->toContain('onclick')
+        ->not->toContain('javascript:')
+        ->not->toContain('iframe');
+});
+
+it('HtmlBlock keeps http, mailto and relative links and images', function () {
+    $html = '<a href="https://example.test/a">a</a><a href="mailto:a@example.test">m</a>'
+        .'<a href="/admin/posts">r</a><img src="/storage/x.png" alt="x">'
+        .'<a href="https://example.test/b" target="_blank" rel="noopener">t</a>';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect($out)->toContain('href="https://example.test/a"')
+        ->toContain('href="mailto:a')
+        ->toContain('href="/admin/posts"')
+        ->toContain('src="/storage/x.png"')
+        ->toContain('target="_blank" rel="noopener"');
+});
+
+it('HtmlBlock drops data: and other non-http image sources', function () {
+    $out = encodeDisplay(HtmlBlock::make('<img src="data:image/png;base64,AAA"><img src="ftp://x/y.png">'))['options']['html'];
+
+    expect($out)->not->toContain('data:')
+        ->not->toContain('ftp:');
+});
+
+it('HtmlBlock drops class and style attributes', function () {
+    $out = encodeDisplay(HtmlBlock::make('<p class="fixed inset-0 z-50" style="position:fixed">x</p>'))['options']['html'];
+
+    expect($out)->toBe('<p>x</p>');
+});
+
+it('HtmlBlock sanitizes input well above the sanitizer default length', function () {
+    $html = str_repeat('<p>row</p>', 5000).'<script>alert(1)</script>';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect($out)->toStartWith('<p>row</p>')
+        ->and(substr_count($out, '<p>row</p>'))->toBe(5000)
+        ->and($out)->not->toContain('script');
+});
+
+it('HtmlBlock truncates input above the 1 MB cap instead of throwing', function () {
+    $html = str_repeat('<p>row</p>', 120_000).'<p>tail</p>';
+    $out = encodeDisplay(HtmlBlock::make($html))['options']['html'];
+
+    expect(strlen($out))->toBeLessThanOrEqual(1_000_000)
+        ->and($out)->toStartWith('<p>row</p>')
+        ->not->toContain('tail');
+});
+
+it('HtmlBlock passes markup through unchanged when trusted', function () {
+    $html = '<div onclick="go()"><script>init()</script></div>';
+    $json = encodeDisplay((new S)->displayHtml($html)->trusted());
+
+    expect($json['options']['html'])->toBe($html);
+});
+
+it('HtmlBlock trusted() returns a new instance', function () {
+    $block = HtmlBlock::make('<script>x</script>');
+    $block->trusted();
+
+    expect(encodeDisplay($block)['options']['html'])->toBe('');
 });
 
 // ---------------------------------------------------------------------------
@@ -131,6 +215,25 @@ it('AlertBlock is accessible via S::displayAlert', function () {
     expect($json['kind'])->toBe('displayAlert')
         ->and($json['options']['color'])->toBe('warning')
         ->and($json['options']['title'])->toBe('Note');
+});
+
+it('AlertBlock resolves a Closure title and Closure color in the serialized options', function () {
+    $json = encodeDisplay(
+        AlertBlock::make('Body')
+            ->title(fn (): string => 'Heads up')
+            ->color(fn (): Color => Color::Danger),
+    );
+
+    expect($json['options']['title'])->toBe('Heads up')
+        ->and($json['options']['color'])->toBe('danger');
+});
+
+it('AlertBlock: a Closure title survives clone-on-write', function () {
+    $block = AlertBlock::make('Body')->title(fn (): string => 'Original');
+    $clone = $block->color('danger');
+
+    expect(encodeDisplay($block)['options']['title'])->toBe('Original')
+        ->and(encodeDisplay($clone)['options']['title'])->toBe('Original');
 });
 
 // ---------------------------------------------------------------------------
@@ -358,6 +461,25 @@ it('DisplayImageBlock square()->circular() is last-wins (circular)', function ()
     $json = encodeDisplay(DisplayImageBlock::make('/img/a.png')->square()->circular());
 
     expect($json['options']['shape'])->toBe('circular');
+});
+
+it('DisplayImageBlock resolves Closure alt and caption in the serialized options', function () {
+    $json = encodeDisplay(
+        DisplayImageBlock::make('/img/a.png')
+            ->alt(fn (): string => 'A')
+            ->caption(fn (): string => 'Figure 1'),
+    );
+
+    expect($json['options']['alt'])->toBe('A')
+        ->and($json['options']['caption'])->toBe('Figure 1');
+});
+
+it('DisplayImageBlock: a Closure alt survives clone-on-write', function () {
+    $block = DisplayImageBlock::make('/img/a.png')->alt(fn (): string => 'Original');
+    $clone = $block->caption('Figure 1');
+
+    expect(encodeDisplay($block)['options']['alt'])->toBe('Original')
+        ->and(encodeDisplay($clone)['options']['alt'])->toBe('Original');
 });
 
 // ---------------------------------------------------------------------------

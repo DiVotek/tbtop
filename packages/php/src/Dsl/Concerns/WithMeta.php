@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl\Concerns;
 
+use Closure;
 use Tbtop\Admin\Dsl\Cond;
 
 /**
@@ -10,10 +11,14 @@ use Tbtop\Admin\Dsl\Cond;
  *
  * The wire grammar already makes node.meta universal (see structure.schema.json);
  * this trait is the builder-side counterpart so any builder participates with a
- * single `use`. Adopters pass $this->metaBag to the Node they emit.
+ * single `use`. Adopters pass resolvedMeta() (not $this->metaBag directly) to
+ * the Node they emit, so a deferred disabled() value resolves without each
+ * adopter remembering to do it.
  */
 trait WithMeta
 {
+    use ResolvesClosures;
+
     /** @var array<string, mixed> */
     protected array $metaBag = [];
 
@@ -60,5 +65,31 @@ trait WithMeta
             : Cond::fromShorthand($condOrField, $op, $value);
 
         return $this;
+    }
+
+    /**
+     * Server-decided initial disabled state, e.g. disabled(fn () => ! $user->isAdmin()).
+     * The node still ships and its value still submits: this is a starting
+     * state, not access control — enforce permissions server-side, and use
+     * disabledIf() for state that follows the form.
+     *
+     * @param  bool|(Closure(): bool)  $disabled
+     */
+    public function disabled(bool|Closure $disabled = true): static
+    {
+        $this->metaBag['disabled'] = $disabled;
+
+        return $this;
+    }
+
+    /** @return array<string, mixed> */
+    protected function resolvedMeta(): array
+    {
+        $meta = $this->metaBag;
+        if (array_key_exists('disabled', $meta)) {
+            $meta['disabled'] = (bool) $this->resolveOpt($meta['disabled']);
+        }
+
+        return $meta;
     }
 }

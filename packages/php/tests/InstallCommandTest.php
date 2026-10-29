@@ -108,7 +108,7 @@ it('publishes each auth page as a subclass of its package base', function () {
         ->doesntExpectOutputToContain('does not discover')
         ->assertSuccessful();
 
-    foreach (['LoginPage', 'ForgotPasswordPage', 'ResetPasswordPage', 'ProfilePage'] as $page) {
+    foreach (['LoginPage', 'ForgotPasswordPage', 'ResetPasswordPage', 'ProfilePage', 'EmailVerificationPage'] as $page) {
         expect(File::get($this->hostRoot."/app/Admin/Pages/Auth/{$page}.php"))
             ->toContain('namespace App\\Admin\\Pages\\Auth;')
             ->toContain("class {$page} extends \\Tbtop\\Admin\\Auth\\{$page} {}");
@@ -132,7 +132,7 @@ it('refuses --profile without a panel', function () {
     authHost($this->hostRoot, []);
 
     $this->artisan('admin:install', ['--profile' => true])
-        ->expectsOutputToContain('before --auth or --profile')
+        ->expectsOutputToContain('before --auth, --2fa or --profile')
         ->assertFailed();
 });
 
@@ -186,6 +186,33 @@ it('names the discovery root when the panel does not pick the pages up', functio
     $this->artisan('admin:install', ['--auth' => true, '--panel' => 'legacy'])
         ->expectsOutputToContain('does not discover app/Admin/Pages')
         ->assertSuccessful();
+});
+
+it('publishes the auth pages, the challenge page and the migration once with --2fa', function () {
+    authHost($this->hostRoot, [InstallAuthPanel::class]);
+
+    $this->artisan('admin:install', ['--2fa' => true])
+        ->expectsOutputToContain('Published: app/Admin/Pages/Auth/TwoFactorChallengePage.php')
+        ->expectsOutputToContain('redirectGuestsTo')
+        ->expectsOutputToContain('composer require pragmarx/google2fa bacon/bacon-qr-code')
+        ->assertSuccessful();
+
+    expect(File::get($this->hostRoot.'/app/Admin/Pages/Auth/TwoFactorChallengePage.php'))
+        ->toContain('class TwoFactorChallengePage extends \\Tbtop\\Admin\\Auth\\TwoFactorChallengePage {}')
+        ->and($this->hostRoot.'/app/Admin/Pages/Auth/LoginPage.php')->toBeFile()
+        ->and(File::glob($this->hostRoot.'/database/migrations/*_add_two_factor_columns_to_users_table.php'))->toHaveCount(1);
+
+    $this->artisan('admin:install', ['--2fa' => true])->expectsOutputToContain('Exists, left untouched: database/migrations/')->assertSuccessful();
+    expect(File::glob($this->hostRoot.'/database/migrations/*.php'))->toHaveCount(1);
+});
+
+it('publishes no challenge page with --auth alone', function () {
+    authHost($this->hostRoot, [InstallAuthPanel::class]);
+
+    $this->artisan('admin:install', ['--auth' => true])->doesntExpectOutputToContain('google2fa')->assertSuccessful();
+
+    expect($this->hostRoot.'/app/Admin/Pages/Auth/TwoFactorChallengePage.php')->not->toBeFile()
+        ->and($this->hostRoot.'/database/migrations')->not->toBeDirectory();
 });
 
 final class InstallAuthPanel extends Panel

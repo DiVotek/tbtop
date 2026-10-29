@@ -106,7 +106,7 @@ Available display primitives (all in `S.php`, confirmed):
 |---|---|---|
 | `$s->displayText($content)->variant('heading')` | `displayText` | Section headings (variants: `heading`, `subheading`, `body`, `muted`) |
 | `$s->displayText($content)` | `displayText` | Body copy |
-| `$s->displayHtml($rawHtml)` | `displayHtml` | Pre-rendered HTML |
+| `$s->displayHtml($rawHtml)` | `displayHtml` | Pre-rendered HTML, sanitized (`->trusted()` to skip) |
 | `$s->markdown($content)` | `displayHtml` | Markdown converted server-side to HTML |
 | `$s->displayAlert($message)` | `displayAlert` | Callout / info box |
 | `$s->displayDivider()` | `displayDivider` | Visual separator |
@@ -507,12 +507,15 @@ leaf item as a plain link; a parent (has `children`) renders its own link plus a
 that expands to indented children — the same collapse affordance as a group header. The
 topbar layout nests the same way via a `DropdownMenuSub` (`navGroupDropdown.tsx`).
 
-### Custom nav items (no page, no gate)
+### Custom nav items (no page)
 
 `PanelConfig::navigationItems()` (`packages/php/src/Panels/PanelConfig.php`) adds
-always-shown entries — typically external links — merged into the built tree alongside
+entries — typically external links — merged into the built tree alongside
 page-derived items and grouped by label the same way `navigationGroups()` matches groups.
-Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class and no per-request gate:
+Built from `Tbtop\Admin\Navigation\NavItem`, which has no page class. It is shown to
+everyone unless `->can($gate)` names a gate, checked per request like `Page::can()`; pass a
+page's own `SomePage::can()` to hide a link the user could not open. The same applies to
+user-menu items.
 
 ```php
 // apps/demo/app/Admin/AdminPanel.php
@@ -771,4 +774,4 @@ primitives — the result will be incomplete or broken.
 | **Global search over records** | Table-level `->searchable()` and per-column `->searchable()` work within a single table; there is no cross-model record search. Note the **⌘K command palette does exist** (`PanelConfig::commandPalette()`, `Command::make()`) — it searches nav items and author-declared commands, not table rows. Record-level global search remains an open gap. |
 | **Multi-tenancy** | No tenant-scoping middleware or team-switching mechanism exists. Listed as backlog in `docs/backlog.md`. |
 | **Saved filters / filter presets** | No persistence layer for user-saved filter states. Listed as backlog 🟡. |
-| **2FA, email verification, registration** | Sign-in, password reset and the profile page ship: `php artisan admin:install --auth` publishes them as subclasses of `Tbtop\Admin\Auth\*` (see [wiring.md](./wiring.md#auth-pages)). Second factor, email verification and registration do not. The demo's `TwoFactorChallengePage` / `TwoFactorSetupPage` show 2FA built on the `afterAuthenticated()` hook — copy them; there is no Fortify. |
+| **Registration** | Sign-in, password reset, the profile page and email verification ship: `php artisan admin:install --auth` publishes them as subclasses of `Tbtop\Admin\Auth\*` (see [wiring.md](./wiring.md#auth-pages)). `--2fa` adds TOTP two-factor sign-in with recovery codes, on Fortify's columns. Registration does not ship; there is no Fortify. |

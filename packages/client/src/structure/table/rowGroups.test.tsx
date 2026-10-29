@@ -1,12 +1,12 @@
 /**
- * Row grouping: partitionRowGroups contiguous-run partitioning, and
- * GroupHeaderRow's rendered label/colSpan.
+ * Row grouping: partitionRowGroups contiguous-run partitioning,
+ * GroupHeaderRow's rendered label/colSpan, and GroupedRows' collapse toggle.
  */
 import { beforeAll, describe, expect, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { ensureBuiltinsRegistered } from "../../render/registerBuiltins";
 import type { TableColumn } from "../types";
-import { GroupHeaderRow, partitionRowGroups } from "./rowGroups";
+import { GroupedRows, GroupHeaderRow, partitionRowGroups } from "./rowGroups";
 
 beforeAll(() => {
 	ensureBuiltinsRegistered();
@@ -124,5 +124,73 @@ describe("GroupHeaderRow", () => {
 			</table>,
 		);
 		expect(container.querySelector('[data-slot="badge"]')).toBeTruthy();
+	});
+});
+
+const GROUPED = [
+	{ id: "1", status: "draft" },
+	{ id: "2", status: "draft" },
+	{ id: "3", status: "published" },
+];
+
+function renderGrouped(collapsedByDefault: boolean, collapsible = true) {
+	return render(
+		<table>
+			<tbody>
+				<GroupedRows
+					rows={GROUPED}
+					column={textCol}
+					colSpan={2}
+					collapsible={collapsible}
+					collapsedByDefault={collapsedByDefault}
+					renderRow={(row) => (
+						<tr key={String(row.id)} data-testid="data-row">
+							<td>{String(row.id)}</td>
+						</tr>
+					)}
+				/>
+			</tbody>
+		</table>,
+	);
+}
+
+describe("GroupedRows", () => {
+	test("without collapsible renders plain headers and every row", () => {
+		const { getAllByTestId, queryAllByTestId, getByText } = renderGrouped(false, false);
+		expect(queryAllByTestId("table-group-toggle")).toHaveLength(0);
+		expect(getAllByTestId("data-row")).toHaveLength(3);
+		expect(getByText("draft").closest("button")).toBeNull();
+	});
+
+	test("renders every group expanded by default", () => {
+		const { getAllByTestId } = renderGrouped(false);
+		expect(getAllByTestId("data-row")).toHaveLength(3);
+		const toggles = getAllByTestId("table-group-toggle");
+		expect(toggles.map((t) => t.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+	});
+
+	test("a header click hides only that group's rows, a second click shows them again", () => {
+		const { getAllByTestId } = renderGrouped(false);
+		const [draftToggle] = getAllByTestId("table-group-toggle");
+		if (!draftToggle) {
+			throw new Error("missing toggle");
+		}
+		fireEvent.click(draftToggle);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+		expect(draftToggle.getAttribute("aria-expanded")).toBe("false");
+		fireEvent.click(draftToggle);
+		expect(getAllByTestId("data-row")).toHaveLength(3);
+	});
+
+	test("collapsedByDefault renders headers only until a group is opened", () => {
+		const { getAllByTestId, queryAllByTestId } = renderGrouped(true);
+		expect(queryAllByTestId("data-row")).toHaveLength(0);
+		expect(getAllByTestId("table-group-toggle")).toHaveLength(2);
+		const publishedToggle = getAllByTestId("table-group-toggle")[1];
+		if (!publishedToggle) {
+			throw new Error("missing toggle");
+		}
+		fireEvent.click(publishedToggle);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
 	});
 });

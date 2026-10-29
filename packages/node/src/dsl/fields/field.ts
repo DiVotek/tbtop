@@ -1,6 +1,6 @@
 import { Cond, type CondOp } from "../cond";
 import { WhenGate } from "../inclusion";
-import { type Columns, validateColumns } from "../meta";
+import { type Columns, resolvedMeta, validateColumns } from "../meta";
 import { mixin } from "../mixin";
 import { CHILD_LIST_KEYS, includes, Node } from "../node";
 import { appendRules, condToRequiredRule, toConstraints } from "../rules";
@@ -126,6 +126,16 @@ export abstract class Field<N extends string = string, V = unknown> {
 		return this;
 	}
 
+	/**
+	 * Server-decided initial disabled state, e.g. disabled(() => !user.isAdmin).
+	 * The node still ships and its value still submits: a starting state, not
+	 * access control. Use disabledIf() for state that follows the form.
+	 */
+	disabled(disabled: boolean | (() => boolean) = true): this {
+		this.metaBag.disabled = disabled;
+		return this;
+	}
+
 	/** Client-side visibility; the value still submits while hidden. */
 	hiddenIf(condOrField: Cond | string, op?: CondOp, value?: unknown): this {
 		this.metaBag.hiddenIf = Cond.from(condOrField, op, value);
@@ -214,7 +224,9 @@ export abstract class Field<N extends string = string, V = unknown> {
 		if (this.isTranslatableField()) {
 			options.translatable = true;
 		}
-		return new Node(this.kind, options, this.name, this.metaBag).when(this.isIncluded());
+		return new Node(this.kind, options, this.name, resolvedMeta(this.metaBag)).when(
+			this.isIncluded(),
+		);
 	}
 
 	toJSON(): unknown {

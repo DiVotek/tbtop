@@ -24,7 +24,7 @@ final class TableBuilder implements JsonSerializable
 
     private const FILTERS_FORM_WIDTHS = ['sm', 'md', 'lg', 'full'];
 
-    private const FILTERS_IN_MODES = ['modal', 'inline'];
+    private const FILTERS_IN_MODES = ['modal', 'inline', 'aside'];
 
     private const FILTERS_FORM_COLUMNS_MIN = 1;
 
@@ -190,11 +190,12 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Where declared filters() render: a dismissible modal, or inline in the
-     * toolbar. Any other mode throws — the client renders no filters for an
-     * unknown value.
+     * Where declared filters() render: a dismissible modal, inline in the
+     * toolbar, or an aside panel left of the table that a toolbar button
+     * shows and hides (a side sheet below the lg breakpoint). Any other mode
+     * throws — the client renders no filters for an unknown value.
      *
-     * @param  string  $mode  One of self::FILTERS_IN_MODES ('modal'|'inline')
+     * @param  string  $mode  One of self::FILTERS_IN_MODES ('modal'|'inline'|'aside')
      */
     public function filtersIn(string $mode): self
     {
@@ -227,6 +228,18 @@ final class TableBuilder implements JsonSerializable
         }
 
         return null;
+    }
+
+    /**
+     * Start the aside filters panel hidden until the toolbar button opens it.
+     * The user's own toggle then wins on later visits. Only meaningful when
+     * filtersIn('aside').
+     */
+    public function filtersCollapsed(bool $value = true): self
+    {
+        $this->opts['filtersCollapsed'] = $value;
+
+        return $this;
     }
 
     /** Require an explicit Apply action before filter changes narrow the query. */
@@ -302,9 +315,12 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first.
+     * Group contiguous rows sharing $column's value under a header row.
+     * Requires defaultSort($column, ...) first. $collapsible makes the header
+     * a toggle that hides or shows its rows; $collapsed starts every group
+     * closed and implies $collapsible.
      */
-    public function groups(string $column): self
+    public function groups(string $column, bool $collapsible = false, bool $collapsed = false): self
     {
         $sortField = $this->defaultSortSpec()['field'] ?? null;
         if ($sortField !== $column) {
@@ -312,7 +328,14 @@ final class TableBuilder implements JsonSerializable
                 "groups(\"{$column}\") requires defaultSort(\"{$column}\", ...) to be set first."
             );
         }
-        $this->opts['groups'] = ['column' => $column];
+        $groups = ['column' => $column];
+        if ($collapsible || $collapsed) {
+            $groups['collapsible'] = true;
+        }
+        if ($collapsed) {
+            $groups['collapsed'] = true;
+        }
+        $this->opts['groups'] = $groups;
 
         return $this;
     }

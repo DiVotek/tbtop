@@ -52,7 +52,7 @@ export { formatPhpDate } from "./phpDate";
 export { modalData, recordData, seedDefaults } from "./record";
 export { collectAttributes, collectRules, type Rules } from "./ruleWalker";
 export { type Container, S } from "./s";
-export { Stat } from "./stat";
+export { Stat, type StatParams } from "./stat";
 export { Column, type Row, type RowFn } from "./table/column";
 export { Tab } from "./table/tab";
 export { type ColumnEntry, TableBuilder } from "./table/table";

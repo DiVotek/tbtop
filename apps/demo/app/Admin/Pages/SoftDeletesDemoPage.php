@@ -8,6 +8,8 @@ use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
+use Tbtop\Admin\Dsl\Fields\Daterange;
+use Tbtop\Admin\Dsl\Fields\InFilter;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Pages\Page;
@@ -15,7 +17,8 @@ use Tbtop\Admin\Pages\Page;
 /**
  * Soft-delete demo over Post (which uses the SoftDeletes trait). The table's
  * own Delete action soft-deletes; ->softDeletes() then layers the
- * active/trashed/all tabs plus restore/forceDelete row + bulk actions.
+ * active/trashed/all tabs plus restore/forceDelete row + bulk actions. Its
+ * filters use the aside layout.
  */
 class SoftDeletesDemoPage extends Page
 {
@@ -43,6 +46,17 @@ class SoftDeletesDemoPage extends Page
                     Column::make('published')->label('Published')->boolean(),
                 ])
                 ->searchable(['title'])
+                // Filters sit in a panel beside the table; the toolbar button hides it.
+                ->filters([
+                    InFilter::make('published')
+                        ->label('Status')
+                        ->options([
+                            ['value' => '1', 'label' => 'Published'],
+                            ['value' => '0', 'label' => 'Draft'],
+                        ]),
+                    Daterange::make('published_at')->label('Published date'),
+                ])
+                ->filtersIn('aside')
                 ->defaultSort('id', 'desc')
                 ->query(fn () => Post::query())
                 ->rowActions([

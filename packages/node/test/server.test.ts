@@ -92,6 +92,21 @@ function view(s: S) {
 			.poll(10)
 			.toNode(),
 		s
+			.stat("Signups")
+			.value((params) => `${String(params.period)} from ${String(params.from)}`)
+			.params([
+				s
+					.select("period")
+					.options([
+						{ value: "7d", label: "7 days" },
+						{ value: "30d", label: "30 days" },
+					])
+					.default("7d")
+					.rules("in:7d,30d"),
+				s.date("from").default("2026-01-01"),
+			])
+			.toNode(),
+		s
 			.table<MemoryQuery>("people")
 			.columns([
 				Column.make("name").individuallySearchable(),
@@ -189,6 +204,28 @@ describe("page-scoped endpoints", () => {
 	test("data: chart params default from the declared fields; stats answer their query", async () => {
 		expect((await call("data/signups")).body).toEqual({ data: [{ month: "year", count: 3 }] });
 		expect((await call("data/People")).body).toEqual({ data: { value: 3 } });
+	});
+
+	test("data: a parameterized stat reads its params from the query string", async () => {
+		const signups = async (query: string) => (await call(`data/Signups?${query}`)).body;
+		expect(await signups("period=30d&from=2026-10-01")).toEqual({
+			data: { value: "30d from 2026-10-01" },
+		});
+		expect(await signups("page=2")).toEqual({ data: { value: "7d from 2026-01-01" } });
+		expect(await signups("period=&from=2026-10-01")).toEqual({
+			data: { value: "7d from 2026-10-01" },
+		});
+	});
+
+	test("data: a param value its rules refuse, or an array-shaped one, answers 422", async () => {
+		const refused = await call("data/Signups?period=999999d");
+		expect(refused.status).toBe(422);
+		expect(Object.keys(refused.body.errors)).toEqual(["period"]);
+		for (const query of ["range[]=year", "range=year&range=month"]) {
+			const array = await call(`data/signups?${query}`);
+			expect(array.status).toBe(422);
+			expect(array.body.errors.range).toEqual(["The range param must be a single value."]);
+		}
 	});
 
 	test("an action validates its enclosing form, unless withoutValidation()", async () => {

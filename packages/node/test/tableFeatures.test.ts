@@ -74,6 +74,46 @@ describe("poll()", () => {
 	});
 });
 
+describe("groups()", () => {
+	const grouped = (opts?: { collapsible?: boolean; collapsed?: boolean }) =>
+		new S().table("t").defaultSort("views", "desc").groups("views", opts).optionValue("groups");
+
+	test("stays a plain label without flags", () => {
+		expect(grouped()).toEqual({ column: "views" });
+	});
+
+	test("collapsible serializes collapsible: true", () => {
+		expect(grouped({ collapsible: true })).toEqual({ column: "views", collapsible: true });
+	});
+
+	test("collapsed implies collapsible", () => {
+		expect(grouped({ collapsed: true })).toEqual({
+			column: "views",
+			collapsible: true,
+			collapsed: true,
+		});
+	});
+});
+
+describe("filtersIn('aside')", () => {
+	const s = new S();
+	const aside = () =>
+		s
+			.table("t")
+			.filters([s.text("q")])
+			.filtersIn("aside");
+
+	test("carries filtersCollapsed when set", () => {
+		const opts = aside().filtersCollapsed().toNode().options as Record<string, unknown>;
+		expect(opts.filtersIn).toBe("aside");
+		expect(opts.filtersCollapsed).toBe(true);
+	});
+
+	test("leaves filtersCollapsed out unless declared", () => {
+		expect(aside().toNode().options).not.toHaveProperty("filtersCollapsed");
+	});
+});
+
 describe("sticky()", () => {
 	test("sticky columns must lead the list", () => {
 		expect(() =>

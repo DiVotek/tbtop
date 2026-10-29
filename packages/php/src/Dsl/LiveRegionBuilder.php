@@ -136,7 +136,7 @@ final class LiveRegionBuilder implements JsonSerializable
             'initial' => $this->renderWith($this->initialDeps),
         ];
 
-        return (new Node('liveRegion', $options, $this->name, $this->metaBag))
+        return (new Node('liveRegion', $options, $this->name, $this->resolvedMeta()))
             ->when($this->isIncluded());
     }
 

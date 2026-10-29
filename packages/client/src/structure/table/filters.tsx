@@ -44,6 +44,10 @@ interface FiltersProps {
 	formColumns?: number;
 	/** Width of the filters modal; only meaningful for ModalFilters. */
 	formWidth?: ModalSize;
+	/** ModalFilters only: open as a right-edge slide-over sheet instead of a dialog. */
+	slideOver?: boolean;
+	/** ModalFilters only: extra classes for the trigger button. */
+	triggerClassName?: string;
 }
 
 // Shared count badge, used by both inline + modal so the active indicator reads
@@ -112,6 +116,8 @@ export function ModalFilters({
 	onApply,
 	formColumns,
 	formWidth,
+	slideOver,
+	triggerClassName,
 }: FiltersProps) {
 	const t = useTranslation();
 	const [open, setOpen] = useState(false);
@@ -131,6 +137,7 @@ export function ModalFilters({
 		<>
 			<Button
 				variant="outline"
+				className={triggerClassName}
 				data-testid="table-filters-trigger"
 				onClick={() => setOpen(true)}
 			>
@@ -141,7 +148,8 @@ export function ModalFilters({
 				open={open}
 				onOpenChange={setOpen}
 				title={t("table.filters.label")}
-				size={formWidth}
+				size={formWidth ?? (slideOver ? "sm" : undefined)}
+				slideOver={slideOver}
 				footer={
 					<div className="flex items-center justify-end gap-2">
 						{activeCount > 0 && (

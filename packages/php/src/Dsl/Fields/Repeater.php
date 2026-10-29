@@ -2,8 +2,12 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
+
 final class Repeater extends Field
 {
+    protected const RESOLVABLE = [...parent::RESOLVABLE, 'maxItems', 'minItems', 'defaultItems'];
+
     protected function kind(): string
     {
         return 'repeater';
@@ -20,16 +24,24 @@ final class Repeater extends Field
         return $this->set('fields', $fields);
     }
 
-    /** Client-enforced cap on row count (disables "Add row" at the limit). Not re-checked server-side — a direct request can still submit more rows. */
-    public function maxItems(int $max): static
+    /**
+     * Client-enforced cap on row count (disables "Add row" at the limit). Not re-checked server-side — a direct request can still submit more rows.
+     *
+     * @param  int|(Closure(): int)  $max
+     */
+    public function maxItems(int|Closure $max): static
     {
-        return $this->set('maxItems', $max);
+        return $this->set('maxItems', self::typedDeferral($max, 'int', 'Repeater::maxItems'));
     }
 
-    /** Client-enforced floor on row count (disables row removal at the limit). Not re-checked server-side. */
-    public function minItems(int $min): static
+    /**
+     * Client-enforced floor on row count (disables row removal at the limit). Not re-checked server-side.
+     *
+     * @param  int|(Closure(): int)  $min
+     */
+    public function minItems(int|Closure $min): static
     {
-        return $this->set('minItems', $min);
+        return $this->set('minItems', self::typedDeferral($min, 'int', 'Repeater::minItems'));
     }
 
     /**
@@ -38,15 +50,17 @@ final class Repeater extends Field
      * trims or tops up an explicitly supplied value. Rows beyond any
      * default() content are created empty, so a repeater can ship pre-filled
      * rows plus blank ones as a prompt.
+     *
+     * @param  int|(Closure(): int)  $count
      */
-    public function defaultItems(int $count): static
+    public function defaultItems(int|Closure $count): static
     {
-        return $this->set('defaultItems', $count);
+        return $this->set('defaultItems', self::typedDeferral($count, 'int', 'Repeater::defaultItems'));
     }
 
     public function defaultItemCount(): int
     {
-        $count = $this->opts['defaultItems'] ?? 0;
+        $count = $this->resolvedOpt('defaultItems') ?? 0;
 
         return is_int($count) ? $count : 0;
     }

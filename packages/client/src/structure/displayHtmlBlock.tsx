@@ -5,11 +5,13 @@ interface DisplayHtmlOptions {
 	html: string;
 }
 
-// Content is author-supplied from the DSL, not end-user input — no
-// sanitization is needed or applied here.
+// The client renders html as given. The server produces it: displayHtml()
+// sanitizes unless the author chains ->trusted(), and markdown() strips raw
+// HTML unless the author chains ->allowHtml(). Both opt-outs are for
+// author-controlled content only.
 export function DisplayHtmlBlock({ options }: RenderProps<DisplayHtmlOptions>) {
 	return (
-		// biome-ignore lint/security/noDangerouslySetInnerHtml: DSL-authored content, not user input
+		// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized server-side unless the author opted out
 		<div dangerouslySetInnerHTML={{ __html: options.html }} />
 	);
 }

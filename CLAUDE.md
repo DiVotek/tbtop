@@ -100,19 +100,21 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   palette, database notifications (header bell), appearance (theme/density/max-width),
   UI + content locales. In `Panels/PanelConfig.php` and its traits in `Panels/Concerns/`
   (appearance: `ConfiguresAppearance.php`); see `docs/ai/api/panel.md`.
-- **Auth:** sign-in, password reset and the profile page are package base pages
+- **Auth:** sign-in, password reset, email verification and the profile page are package base pages
   (`packages/php/src/Auth/`) that `admin:install --auth` (or `--profile` alone) publishes into
   the host as empty subclasses; logout is a
-  package route. No controllers, no Breeze, no Fortify. The demo runs on the generated
-  classes, plus its own 2FA (`TwoFactorChallengePage`, `TwoFactorSetupPage`, hooked in via
-  `LoginPage::afterAuthenticated()`) and `ApiTokensPage`. Registration, email
-  verification and passkeys do not exist.
+  package route. No controllers, no Breeze, no Fortify. `--2fa` adds TOTP two-factor sign-in:
+  a `TwoFactorChallengePage` base, a 2FA section on the profile page and `RequireTwoFactor`
+  in `authStack()`, all switched on by the published challenge page (`src/Auth/TwoFactor/`).
+  Email verification is a base page too (`EmailVerificationPage`, for `MustVerifyEmail`
+  users). The demo runs on the generated classes (`--2fa` included) plus its own
+  `ApiTokensPage`. Registration and passkeys do not exist.
 - **Custom field without touching core:** `registerBlock` / `defineFieldClient` (client) — see
   `apps/demo/resources/js/admin.tsx` for the rating-field example (PHP half:
   `apps/demo/app/Admin/Fields/Rating.php`, registered via `S::register` in
   `AppServiceProvider`). Use this for app-specific fields instead of editing the packages.
 
-Known stubs/gaps (don't assume these work): no package-side 2FA, no CSV
+Known stubs/gaps (don't assume these work): no CSV
 export/import, no **cross-model** record search (per-table search ships; the ⌘K palette
 searches nav items and declared commands, not rows), no multi-tenancy. Full list in
 `docs/backlog.md` — it lags the code, so verify against source before trusting a "gap".
@@ -138,7 +140,7 @@ searches nav items and declared commands, not rows), no multi-tenancy. Full list
   notifications); `data/` (`client.tsx` = `apiBase`, `entityRoutes.ts`).
 - **Links:** every client href goes through `lib/externalUrl.ts` (`isExternalUrl`).
 - **Deprecating a public PHP method:** `@deprecated` docblock + `trigger_error(...,
-  E_USER_DEPRECATED)` (see `Navigation/NavItem.php`). Laravel drops deprecations in tests —
+  E_USER_DEPRECATED)` (see `Navigation/NavItem.php`); when it may be removed: `VERSIONING.md`. Laravel drops deprecations in tests —
   assert them with the `set_error_handler` capture in `packages/php/tests/LinkCanonTest.php`.
 
 Most client files are `.tsx` even without JSX — glob `name.ts*` rather than guessing.
@@ -173,7 +175,7 @@ touch the demo and you have to run them yourself.
 
 ## Stack
 
-- **PHP 8.4+**, Laravel 11/12/13, Inertia v3, Pest 4, larastan, Pint.
+- **PHP 8.4+**, Laravel 12/13, Inertia v3, Pest 4, larastan, Pint.
 - **React 19**, Inertia React adapter, Lexical (richtext), Radix (a11y primitives), recharts,
   Tailwind, zod (client grammar mirror), bun test + Testing Library.
 - Transport rule: **persistence → Inertia** (`router.post`, native errors bag + flash);
@@ -241,24 +243,32 @@ Both packages ship **lockstep** from one tag — `@tbtop/inertia-admin` (npm) an
 `packages/client/package.json`; the git tag is derived from it (PHP has no version field — its
 version *is* the tag).
 
+What a patch vs. a minor may carry, what is public API, and the deprecation rules:
+`VERSIONING.md`. In 0.x a breaking change waits for the next minor, its PR title carries
+`!` (`feat(php)!: …`), and it adds its steps to `UPGRADE.md`.
+
 Process (manual button, one run does both):
 1. Bump `version` in `packages/client/package.json` in a PR, and the same in
    `packages/node/package.json` (`@tbtop/admin` for Bun/Node, not published yet; a node test
-   fails when the two differ); merge to `main`.
+   fails when the two differ); run `bun run changelog` (git-cliff, `cliff.toml`) to regenerate
+   `CHANGELOG.md` with the release, review it; merge to `main`. The script refuses a patch bump
+   over a breaking commit.
 2. GitHub → Actions → **Release** → Run (from `main`). The `release.yml` workflow reads the
    version, refuses if that tag exists, pushes `vX.Y.Z`, then:
    - **npm** publishes inside the workflow via **Trusted Publishing (OIDC)** — no token. The
      workflow filename `release.yml` is registered as the trusted publisher on npmjs.com;
      renaming it breaks publishing.
    - **Packagist** publishes itself from the pushed tag via its GitHub webhook (no step needed).
-   - A GitHub Release is created with generated notes.
+   - A GitHub Release is created with notes rendered by git-cliff. The run stops before npm if
+     `CHANGELOG.md` has no entry for the version.
 
 The build runs on **bun** (`prepublishOnly` → tsup), but `npm publish` needs **Node ≥ 22 /
 npm ≥ 11.5.1** for OIDC — the release job sets up both. The published npm package ships `dist`
 (see `tsup.config.ts`); the demo aliases the package to `src` in its Vite config for HMR.
 
-## Changesets
+## Changelog
 
-One per PR, only when public API changes (anything reachable from a package's `exports` /
-composer autoload). Skip for internal refactors, tests, docs. **Currently off** until first real
-consumer (EasyCar) — flips on at the internal release.
+No changesets: `CHANGELOG.md` is generated by git-cliff from the squash-merge subjects, so the
+PR title is the changelog line. `feat`/`fix`/`perf`/`revert`/`docs` are listed; `chore`, `ci`,
+`refactor`, `test`, `build`, `style` and `chore(release)` are not. Never hand-edit it: change `cliff.toml`
+(or the history) and regenerate — `scripts/changelog.sh` rewrites the whole file.

@@ -23,7 +23,7 @@ Everything reachable from the `S` instance injected into `view(S $s)`. Field fac
 | `collapsible(array $opts, array $children): Node` | Collapsible layout node: a section with a chevron toggle. $opts must include 'label'; 'collapsed' defaults to false. |
 | `displayAlert(string $message): AlertBlock` | Inline alert/callout box; chain ->color() / ->title() on the returned block. |
 | `displayDivider(): Node` | Horizontal rule. |
-| `displayHtml(string $rawHtml): HtmlBlock` | Raw HTML block, rendered unsanitized — the author owns escaping. |
+| `displayHtml(string $rawHtml): HtmlBlock` | HTML block, sanitized server-side by default (scripts, event handlers and javascript: URLs are dropped). Chain ->trusted() to emit author-controlled markup unchanged. |
 | `displayImage(string $src): DisplayImageBlock` | Read-only full-size image (or file-download link via ->asLink()). The author passes a URL they already hold; chain ->alt() / ->caption(). |
 | `displayKeyValue(array $map): DisplayKeyValueBlock` | Read-only <dl> map render of key/value pairs. |
 | `displayRichtext(array $state): DisplayRichtextBlock` | Read-only render of a stored Lexical SerializedEditorState map. |

@@ -7,7 +7,10 @@
 #   3. npm publish (Trusted Publishing / OIDC, no token) -> @tbtop/inertia-admin,
 #      then packages/node -> @tbtop/admin (same version, checked)
 #   4. creates and pushes the tag  -> Packagist publishes tbtop/admin via webhook
-#   5. creates a GitHub Release with generated notes
+#   5. creates a GitHub Release with notes rendered by git-cliff (cliff.toml)
+#
+# Before anything is published it also refuses a version without a
+# CHANGELOG.md entry, or a patch bump over a breaking commit (VERSIONING.md).
 #
 # npm goes BEFORE the tag on purpose: a npm failure then leaves no dangling tag,
 # so a re-run stays clean (the tag-exists guard wouldn't block it).
@@ -36,8 +39,51 @@ permissions:
   id-token: write # OIDC for npm trusted publishing
 
 jobs:
+  # Renders the notes in a job without publish rights, so git-cliff and the
+  # root devDependencies never run next to the npm OIDC token.
+  notes:
+    name: CHANGELOG check + release notes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Full history + tags: git-cliff renders the notes from the commits
+      # since the previous tag.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+
+      # git-cliff, pinned by the root bun.lock.
+      - name: Install root tooling
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      # The bump PR adds the release to CHANGELOG.md (scripts/changelog.sh).
+      - name: Require a CHANGELOG entry
+        run: |
+          v="$(bun -p "require('./packages/client/package.json').version")"
+          if ! grep -q "^## \[$v\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no $v entry — run scripts/changelog.sh in the version-bump PR"
+            exit 1
+          fi
+
+      # Fails on a breaking commit under a patch bump, before anything publishes.
+      - name: Render release notes
+        run: scripts/changelog.sh --notes "$RUNNER_TEMP/release-notes.md"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
+
   release:
     name: Tag + publish both packages
+    needs: notes
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -117,6 +163,12 @@ jobs:
           fi
           echo "$TAG is free"
 
+      - name: Fetch release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}
+
       # npm first: if this fails, no tag is pushed, so a re-run stays clean.
       # OIDC is auto-detected; provenance is generated automatically.
       # Skips a version already on npm, so a re-run after a later step failed
@@ -185,4 +237,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.ver.outputs.tag }}
-        run: gh release create "$TAG" --title "$TAG" --generate-notes
+        run: gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"

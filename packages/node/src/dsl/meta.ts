@@ -92,3 +92,23 @@ export function normalizeIcon(icon: IconSpec): { name: string; position: string 
 		? { name: icon, position: "left" }
 		: { name: icon.name, position: icon.position ?? "left" };
 }
+
+/** PHP's (bool) cast: false for false, 0, "", "0", null and []. */
+function phpBool(value: unknown): boolean {
+	if (Array.isArray(value)) {
+		return value.length > 0;
+	}
+	return !(value === false || value === 0 || value === "" || value === "0" || value == null);
+}
+
+/**
+ * The meta bag as it goes on the wire (WithMeta::resolvedMeta()): a deferred
+ * disabled() resolves, and disabled is cast to a bool.
+ */
+export function resolvedMeta(meta: Record<string, unknown>): Record<string, unknown> {
+	if (!("disabled" in meta)) {
+		return meta;
+	}
+	const disabled = meta.disabled;
+	return { ...meta, disabled: phpBool(typeof disabled === "function" ? disabled() : disabled) };
+}

@@ -219,7 +219,9 @@ export interface TableOptions<TRow = unknown, TBuilder = unknown> extends AsyncB
 	bulkActions?: ActionConfig<TBuilder>[];
 	searchable?: string[];
 	filters?: StructureNode[];
-	filtersIn?: "modal" | "inline";
+	filtersIn?: "modal" | "inline" | "aside";
+	/** filtersIn === "aside": start with the panel hidden until the toolbar opens it. */
+	filtersCollapsed?: boolean;
 	/** Predefined filter tabs rendered above the toolbar. */
 	tabs?: TableTab[];
 	/** Server-provided pagination config. */

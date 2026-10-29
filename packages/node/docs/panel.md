@@ -18,8 +18,10 @@ redirects to the first sidebar page the user may open (external links are skippe
 or a guest to `loginPath`.
 
 - `navigationGroups: [{ key, label, icon, description, collapsible, collapsed, sections }]`: group meta and order; `sections` maps a key to its heading.
-- `navigationItems: [{ label, url, icon, newTab }]`: extra links (external ones too).
-- `userMenuItems`: links in the profile menu.
+- `navigationItems: [{ label, url, icon, newTab, authorize }]`: extra links (external ones too).
+  `authorize` hides a link per request when it returns false; pass a page's own
+  `authorize` to hide a link to a page its user may not open.
+- `userMenuItems`: links in the profile menu, with the same `authorize`.
 - `breadcrumbs: false` turns crumbs off; a page can set its own `breadcrumbs`.
 
 ## Shell and look

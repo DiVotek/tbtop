@@ -12,7 +12,7 @@ import {
 	environmentProp,
 } from "./chrome/environment";
 import type { NavGroupDef } from "./chrome/navGroups";
-import { buildNav, linkItem, type NavLink } from "./chrome/navigation";
+import { allowedLinks, buildNav, linkItem, type NavLink } from "./chrome/navigation";
 import { type PaletteConfig, paletteProp } from "./chrome/palette";
 import type { PageDef } from "./page";
 
@@ -66,7 +66,7 @@ export async function sharedProps(
 		panel: panel.id,
 		user: context.user ?? null,
 		nav: await buildNav(panel, request),
-		userMenuItems: (panel.userMenuItems ?? []).map(linkItem),
+		userMenuItems: (await allowedLinks(panel.userMenuItems ?? [], request)).map(linkItem),
 		chrome: await serializeChrome(panel.chrome),
 		brand: panel.brand ?? null,
 		navigation: panel.navigation ?? "sidebar",

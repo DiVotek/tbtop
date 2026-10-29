@@ -169,7 +169,7 @@ class PostsIndexPage extends Page
                         ->count(),
                 ])
                 ->defaultSort('published', 'desc')
-                ->groups('published')
+                ->groups('published', collapsible: true)
                 ->paginate(25, [10, 25, 50, 100])
                 ->query(fn () => Post::query())
                 ->rowActions([
