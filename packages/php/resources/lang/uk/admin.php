@@ -151,6 +151,13 @@ return [
             'label' => 'Фільтри',
             'reset' => 'Скинути',
             'apply' => 'Готово',
+            'clear' => 'Очистити фільтри',
+            'remove' => 'Прибрати фільтр {filter}',
+            'chip' => [
+                'no' => 'Ні',
+                'from' => 'з {date}',
+                'until' => 'до {date}',
+            ],
         ],
         'columns' => [
             'label' => 'Колонки',

@@ -151,6 +151,13 @@ return [
             'label' => 'Filters',
             'reset' => 'Reset',
             'apply' => 'Done',
+            'clear' => 'Clear filters',
+            'remove' => 'Remove filter {filter}',
+            'chip' => [
+                'no' => 'No',
+                'from' => 'from {date}',
+                'until' => 'until {date}',
+            ],
         ],
         'columns' => [
             'label' => 'Columns',
