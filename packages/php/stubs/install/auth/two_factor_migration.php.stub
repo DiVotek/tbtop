@@ -24,7 +24,9 @@ return new class extends Migration
                 $table->timestamp('two_factor_confirmed_at')->nullable();
             }
             // The time step of the last accepted code: the same code cannot sign in twice.
-            $table->unsignedBigInteger('two_factor_last_used_step')->nullable();
+            if (! Schema::hasColumn($this->table, 'two_factor_last_used_step')) {
+                $table->unsignedBigInteger('two_factor_last_used_step')->nullable();
+            }
         });
     }
 

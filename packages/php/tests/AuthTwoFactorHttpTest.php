@@ -125,6 +125,14 @@ it('drops a parked sign-in once the password changes elsewhere', function () {
     $this->assertGuest('staff');
 });
 
+it('drops a parked sign-in when another account signs in with its password', function () {
+    login();
+    login('taras@example.com');
+
+    $this->get('/admin/two-factor-challenge')->assertRedirect('/admin/login');
+    $this->assertAuthenticatedAs($this->plain, 'staff');
+});
+
 it('sends anyone who owes no code from the challenge to the login', function () {
     $this->get('/admin/two-factor-challenge')->assertRedirect('/admin/login');
     answer('000000')->assertRedirect('/admin/login');

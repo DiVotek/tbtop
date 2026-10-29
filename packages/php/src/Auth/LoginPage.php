@@ -125,8 +125,11 @@ abstract class LoginPage extends AuthPage
         RateLimiter::clear($key);
         $user = $guard->user() ?? throw new LogicException('The guard accepted the credentials but holds no user.');
         $ctx->request->session()->regenerate();
+        $twoFactor = new TwoFactorSession($ctx->request->session(), static::panel()->guard());
+        // A sign-in parked earlier in this browser must not outlive this one: the challenge would complete it.
+        $twoFactor->forgetParked();
         if ($challenge !== null && TwoFactorCodes::isEnabled($user)) {
-            (new TwoFactorSession($ctx->request->session(), static::panel()->guard()))->park($user, $remember);
+            $twoFactor->park($user, $remember);
             if ($guard instanceof SessionGuard) {
                 $guard->forgetUser();
             }
