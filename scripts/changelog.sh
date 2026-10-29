@@ -14,7 +14,9 @@ cliff() { ./node_modules/.bin/git-cliff "$@"; }
 
 version="$(bun -p "require('./packages/client/package.json').version")"
 tag="v$version"
-previous="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' || echo v0.0.0)"
+# Same tags cliff.toml's tag_pattern counts: plain vX.Y.Z, no pre-release suffix.
+previous="$(git tag --merged HEAD --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+previous="${previous:-v0.0.0}"
 
 breaking="$(cliff --unreleased --context |
 	bun -e 'const r = JSON.parse(await Bun.stdin.text()); console.log(r[0]?.commits.filter((c) => c.conventional && c.breaking).map((c) => `  ${c.message}`).join("\n") ?? "")')"
