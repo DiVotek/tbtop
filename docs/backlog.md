@@ -16,9 +16,10 @@
   opt-in. Breaking.
 - **Semver and deprecation policy + changelog** — write the policy down and generate the
   release notes with git-cliff (no `cliff.toml` yet).
-- **Email verification in the auth scaffold** — `admin:install --auth` publishes sign-in
-  and password reset only. `ProfilePage` already un-verifies a changed email on a
-  `MustVerifyEmail` user; the notice/verify pages are missing.
+- **Email verification in the auth scaffold** — `admin:install --auth` publishes sign-in,
+  password reset and the profile page, but no verification flow. `ProfilePage` already
+  un-verifies a changed email on a `MustVerifyEmail` user; the notice/verify pages are
+  missing.
 
 ## Small fixes
 
