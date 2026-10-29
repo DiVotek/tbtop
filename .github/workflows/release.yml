@@ -38,18 +38,57 @@ permissions:
   id-token: write # OIDC for npm trusted publishing
 
 jobs:
-  release:
-    name: Tag + publish both packages
+  # Renders the notes in a job without publish rights, so git-cliff and the
+  # root devDependencies never run next to the npm OIDC token.
+  notes:
+    name: CHANGELOG check + release notes
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/client
+    permissions:
+      contents: read
     steps:
       # Full history + tags: git-cliff renders the notes from the commits
       # since the previous tag.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+
+      # git-cliff, pinned by the root bun.lock.
+      - name: Install root tooling
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      # The bump PR adds the release to CHANGELOG.md (scripts/changelog.sh).
+      - name: Require a CHANGELOG entry
+        run: |
+          v="$(bun -p "require('./packages/client/package.json').version")"
+          if ! grep -q "^## \[$v\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no $v entry — run scripts/changelog.sh in the version-bump PR"
+            exit 1
+          fi
+
+      # Fails on a breaking commit under a patch bump, before anything publishes.
+      - name: Render release notes
+        run: scripts/changelog.sh --notes "$RUNNER_TEMP/release-notes.md"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
+
+  release:
+    name: Tag + publish both packages
+    needs: notes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/client
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Require dispatch from main
         env:
@@ -82,12 +121,6 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      # git-cliff for scripts/changelog.sh, pinned by the root bun.lock. No
-      # lifecycle scripts: this job holds npm publish rights.
-      - name: Install root tooling
-        working-directory: ${{ github.workspace }}
-        run: bun install --frozen-lockfile --ignore-scripts
-
       - name: Read version
         id: ver
         run: |
@@ -116,20 +149,11 @@ jobs:
           fi
           echo "$TAG is free"
 
-      # The bump PR adds the release to CHANGELOG.md (scripts/changelog.sh).
-      - name: Require a CHANGELOG entry
-        env:
-          TAG: ${{ steps.ver.outputs.tag }}
-        run: |
-          if ! grep -q "^## \[${TAG#v}\]" ../../CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no ${TAG#v} entry — run scripts/changelog.sh in the version-bump PR"
-            exit 1
-          fi
-
-      # Rendered before npm publish: a breaking commit under a patch bump
-      # fails here, while nothing is published yet.
-      - name: Render release notes
-        run: ../../scripts/changelog.sh --notes "$RUNNER_TEMP/release-notes.md"
+      - name: Fetch release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}
 
       # npm first: if this fails, no tag is pushed, so a re-run stays clean.
       # OIDC is auto-detected; provenance is generated automatically.
