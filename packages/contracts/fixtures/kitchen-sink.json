@@ -1153,7 +1153,9 @@
                         "column": "sort_order"
                     },
                     "groups": {
-                        "column": "views"
+                        "column": "views",
+                        "collapsible": true,
+                        "collapsed": true
                     },
                     "rowActions": [
                         {

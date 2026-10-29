@@ -63,7 +63,9 @@
 										"type": "object",
 										"required": ["column"],
 										"properties": {
-											"column": { "type": "string" }
+											"column": { "type": "string" },
+											"collapsible": { "type": "boolean" },
+											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
 									},
@@ -102,7 +104,9 @@
 										"type": "object",
 										"required": ["column"],
 										"properties": {
-											"column": { "type": "string" }
+											"column": { "type": "string" },
+											"collapsible": { "type": "boolean" },
+											"collapsed": { "type": "boolean" }
 										},
 										"additionalProperties": false
 									}

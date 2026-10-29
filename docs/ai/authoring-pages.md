@@ -600,8 +600,12 @@ carries the formatted column value. A URL template takes the key as `{row._key}`
 
 #### `groups()` — row grouping
 
-`->groups(string $column)` partitions contiguous rows sharing `$column`'s value under a
-group header row. It requires `->defaultSort($column, ...)` to already be set (throws
+`->groups(string $column, bool $collapsible = false, bool $collapsed = false)` partitions
+contiguous rows sharing `$column`'s value under a group header row. `collapsible: true`
+turns each header into a toggle that hides or shows its group; `collapsed: true` starts
+every group closed (and implies `collapsible`), so the table opens as a list of headers.
+The open/closed state lives in the page only: it survives a refetch, poll or page change
+for the same group value, and resets on a browser reload. It requires `->defaultSort($column, ...)` to already be set (throws
 `InvalidArgumentException` otherwise) — grouping only makes sense on a sorted column,
 since it partitions *contiguous* runs, not a full re-bucketing.
 
@@ -617,6 +621,11 @@ grouping entirely while reorder is active (`groupsActive = Boolean(groups) &&
 $s->table('posts')
     ->defaultSort('published', 'desc')
     ->groups('published') // requires defaultSort('published', ...) above
+
+// Collapsible groups, every one closed at first
+$s->table('orders')
+    ->defaultSort('status')
+    ->groups('status', collapsed: true)
 ```
 
 #### `poll()` — auto-refresh rows

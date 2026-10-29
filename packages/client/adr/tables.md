@@ -36,6 +36,12 @@ domain: tables
   wire change: labels come from the filter node's own options, and an async
   select resolves through the same `onLoad` its control uses.
 
+- **Row groups collapse per value, client-side only, opt-in.** Headers toggle only with
+  `groups.collapsible` (or `collapsed`, which implies it). `useGroupCollapse` stores the
+  groups the user flipped away from the declared default (`groups.collapsed`), keyed by
+  the JSON of the group value, so the state survives a refetch or page change and a group
+  that appears later opens in the default. Nothing is persisted or sent to the server.
+
 ## Why
 
 A table that authors its own drag layer would re-solve pointer sensors,
