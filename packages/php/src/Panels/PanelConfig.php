@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Panels;
 use Closure;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use InvalidArgumentException;
+use Tbtop\Admin\Auth\RequireVerifiedEmail;
 use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
 use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
@@ -110,7 +111,7 @@ final class PanelConfig
         return $this;
     }
 
-    /** Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}` and AuthenticateSession on top at read time. @param  list<string>  $middleware */
+    /** Replaces the default `['web']` app-middleware stack rather than appending to it; authStack() adds `auth:{guard}`, AuthenticateSession and RequireVerifiedEmail on top at read time. @param  list<string>  $middleware */
     public function middleware(array $middleware): static
     {
         $this->middleware = $middleware;
@@ -331,12 +332,14 @@ final class PanelConfig
      * Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those.
      * AuthenticateSession follows auth: it reads the user that `auth:{guard}` resolves, and
      * ends a session whose password hash no longer matches the user's (a reset elsewhere).
+     * RequireVerifiedEmail comes last: while the panel serves an EmailVerificationPage, a
+     * MustVerifyEmail user with an unverified email is sent there.
      *
      * @return list<string>
      */
     public function authStack(): array
     {
-        return [...$this->middleware, 'auth:'.$this->guard, AuthenticateSession::class];
+        return [...$this->middleware, 'auth:'.$this->guard, AuthenticateSession::class, RequireVerifiedEmail::class];
     }
 
     /** @return list<class-string<Page>> */
