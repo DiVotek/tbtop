@@ -8,7 +8,7 @@ import { Column, type Row } from "./column";
 import { searchableNames } from "./search";
 import { Tab } from "./tab";
 
-const FILTERS_IN = ["modal", "inline"];
+const FILTERS_IN = ["modal", "inline", "aside"];
 const FILTER_WIDTHS = ["sm", "md", "lg", "full"];
 const MIN_POLL_SECONDS = 5;
 
@@ -90,13 +90,25 @@ export class TableBuilder<Q = unknown> {
 		return this;
 	}
 
-	/** Where filters render: 'modal' or 'inline'. */
-	filtersIn(mode: "modal" | "inline"): this {
+	/**
+	 * Where filters render: a modal, inline in the toolbar, or an aside panel
+	 * left of the table that a toolbar button shows and hides (a side sheet
+	 * below the lg breakpoint).
+	 */
+	filtersIn(mode: "modal" | "inline" | "aside"): this {
 		if (!FILTERS_IN.includes(mode)) {
 			throw new Error(`Invalid filters mode "${mode}". Allowed: ${FILTERS_IN.join(", ")}.`);
 		}
 		this.filtersInMode = mode;
 		return this;
+	}
+
+	/**
+	 * Start the aside filters panel hidden until the toolbar button opens it;
+	 * the user's own toggle wins on later visits. Only for filtersIn('aside').
+	 */
+	filtersCollapsed(value = true): this {
+		return this.set("filtersCollapsed", value);
 	}
 
 	/** Filters apply only on an explicit Apply. */
