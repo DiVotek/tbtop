@@ -120,6 +120,8 @@ and the profile page as empty subclasses of the package base pages
 - **MCP tokens in the demo** — the demo panel guards MCP with
   `auth:sanctum` + `abilities:tbtop-mcp`, but `ApiTokensPage` is a placeholder: there is
   no UI that issues such a token.
+- **Lexical dark mode, visual check** — the richtext theme in `core.css` uses only colour
+  tokens, but nobody has looked at the editor in the dark theme yet.
 - Multi-tenancy (post-panels; panels ≠ tenancy).
 - **Cross-model record search** — the ⌘K palette searches nav items plus declared
   commands (`CommandPaletteConfig::commands()`); what is missing is searching *records*
