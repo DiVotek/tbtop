@@ -48,6 +48,12 @@ it('parameterized stat rejects a param value its rules refuse', function (): voi
         ->assertJsonValidationErrors('period');
 });
 
+it('params without rules() still reject an array-shaped value', function (): void {
+    $this->getJson('/admin/chart-params/data/withParams?interval[]=day')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('interval');
+});
+
 it('unknown data source still responds 404', function (): void {
     $this->getJson('/admin/chart-params/data/nope')->assertNotFound();
 });
