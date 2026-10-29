@@ -84,19 +84,22 @@ export function GroupHeaderRow({
 			<td colSpan={colSpan} className="p-0 text-xs font-medium text-muted-foreground">
 				<button
 					type="button"
-					className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left hover:text-foreground"
+					className="block w-full px-3 py-1.5 text-left hover:text-foreground"
 					onClick={onToggle}
 					aria-expanded={!collapsed}
 					data-testid="table-group-toggle"
 				>
-					<ChevronRightIcon
-						aria-hidden
-						className={cn(
-							"size-3.5 shrink-0 transition-transform",
-							!collapsed && "rotate-90",
-						)}
-					/>
-					{label}
+					{/* Sticky inside the full-width cell: the label stays in view on horizontal scroll. */}
+					<span className="sticky left-3 inline-flex items-center gap-1.5">
+						<ChevronRightIcon
+							aria-hidden
+							className={cn(
+								"size-3.5 shrink-0 transition-transform",
+								!collapsed && "rotate-90",
+							)}
+						/>
+						{label}
+					</span>
 				</button>
 			</td>
 		</tr>
