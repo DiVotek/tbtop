@@ -302,9 +302,12 @@ final class TableBuilder implements JsonSerializable
     }
 
     /**
-     * Group contiguous rows sharing $column's value. Requires defaultSort($column, ...) first.
+     * Group contiguous rows sharing $column's value under a header row.
+     * Requires defaultSort($column, ...) first. $collapsible makes the header
+     * a toggle that hides or shows its rows; $collapsed starts every group
+     * closed and implies $collapsible.
      */
-    public function groups(string $column): self
+    public function groups(string $column, bool $collapsible = false, bool $collapsed = false): self
     {
         $sortField = $this->defaultSortSpec()['field'] ?? null;
         if ($sortField !== $column) {
@@ -312,7 +315,14 @@ final class TableBuilder implements JsonSerializable
                 "groups(\"{$column}\") requires defaultSort(\"{$column}\", ...) to be set first."
             );
         }
-        $this->opts['groups'] = ['column' => $column];
+        $groups = ['column' => $column];
+        if ($collapsible || $collapsed) {
+            $groups['collapsible'] = true;
+        }
+        if ($collapsed) {
+            $groups['collapsed'] = true;
+        }
+        $this->opts['groups'] = $groups;
 
         return $this;
     }

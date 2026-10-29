@@ -100,9 +100,9 @@ class DashboardPage extends Page
         $totalPosts = fn () => DB::table('posts')->count();
         $published = fn () => DB::table('posts')->where('published', true)->count();
         $draft = fn () => DB::table('posts')->where('published', false)->count();
-        $recentTrend = fn () => DB::table('posts')
+        $recentTrend = fn (array $params) => DB::table('posts')
             ->selectRaw('count(*) as n')
-            ->whereRaw("created_at >= date('now', '-6 months')")
+            ->whereRaw("created_at >= date('now', ?)", ['-'.(int) $params['months'].' months'])
             ->value('n') ?? 0;
 
         return $s->grid(['cols' => 4], [
@@ -127,7 +127,14 @@ class DashboardPage extends Page
                 ->color(Color::Warning)
                 ->toNode(),
 
-            Stat::make('Last 6 months')
+            $s->stat('Recent posts')
+                ->params([
+                    $s->select('months')->options([
+                        ['value' => '1', 'label' => 'Last month'],
+                        ['value' => '6', 'label' => 'Last 6 months'],
+                        ['value' => '12', 'label' => 'Last year'],
+                    ])->default('6')->rules('in:1,6,12'),
+                ])
                 ->value($recentTrend)
                 ->description('Posts created recently')
                 ->icon('clock')

@@ -6,6 +6,8 @@ import { useSetPageSubtitle } from "./pageSubtitleContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { BulkActionsBar } from "./table/bulkActionsBar";
 import { ColumnSizingProvider } from "./table/columnResize";
+import { FilterChips } from "./table/filterChips";
+import { activeFilters } from "./table/filterChipValue";
 import { normalizeRows, TableGrid } from "./table/grid";
 import { TablePagination } from "./table/pagination";
 import { canReorder } from "./table/reorder";
@@ -169,10 +171,15 @@ function TableBody(props: TableBodyProps) {
 		props.onChangeParams,
 	);
 
-	const { handleResetFilters, handleSort, handleSelectTab } = useTableParams(
-		props.onChangeParams,
-		setFilterValues,
-	);
+	const params = useTableParams(props.onChangeParams, {
+		applied: props.queryParams.filters,
+		values: filterValues,
+		setValues: setFilterValues,
+	});
+	const { handleResetFilters, handleSort, handleSelectTab } = params;
+	// Chips read the applied filters, not the form: a deferred table's pending
+	// edits don't narrow the rows until Apply, so they get no chip either.
+	const appliedFilters = activeFilters(props.filters ?? [], props.queryParams.filters);
 
 	const tabs = props.tabs ?? [];
 	const activeTab = props.queryParams.tab ?? tabs[0]?.name;
@@ -267,6 +274,13 @@ function TableBody(props: TableBodyProps) {
 						filtersFormColumns={props.filtersFormColumns}
 						filtersFormWidth={props.filtersFormWidth}
 						columnToggle={props.columnToggle}
+					/>
+				)}
+				{!props.embedded && (
+					<FilterChips
+						filters={appliedFilters}
+						onRemove={params.handleRemoveFilter}
+						onClear={params.handleClearFilters}
 					/>
 				)}
 

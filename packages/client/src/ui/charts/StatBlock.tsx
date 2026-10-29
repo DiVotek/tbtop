@@ -1,19 +1,35 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { pollIntervalMs } from "../../lib/pollInterval";
 import { usePolling } from "../../lib/usePolling";
 import type { RenderProps } from "../../render/blockRegistry";
 import { useClientActionContext } from "../../structure/actionContext";
-import type { ClientActionContext } from "../../structure/types";
+import {
+	defaultsFromParamNodes,
+	extractParamNodes,
+	ParamControls,
+} from "../../structure/blockParams";
+import type { ClientActionContext, StructureNode } from "../../structure/types";
 import type { StatDescriptor } from "./StatCard";
 import { StatCard } from "./StatCard";
+
+type StatParams = Record<string, string>;
+type StatQuery = (ctx: ClientActionContext, params?: StatParams) => Promise<unknown>;
 
 export interface StatBlockOptions extends StatDescriptor {
 	/** Server-declared refresh interval in seconds; clamped to a 5s minimum. */
 	poll?: number;
-	/** Page data-endpoint key (the stat's label); set only when poll() was used. */
+	/** Param field nodes rendered in the card; each change refetches the stat. */
+	params?: unknown[];
+	/** Page data-endpoint key (the stat's label); set when poll() or params() was used. */
 	source?: string;
 	/** Injected by materializeStat when `source` is present. */
-	query?: (ctx: ClientActionContext) => Promise<unknown>;
+	query?: StatQuery;
+}
+
+const BLANK_VALUE = "—";
+
+function paramsKey(params: StatParams): string {
+	return JSON.stringify(params);
 }
 
 /** Refreshed descriptor slice returned by the stat data endpoint. */
@@ -26,30 +42,88 @@ interface StatPollPayload {
 export function StatBlock({ options }: RenderProps<StatBlockOptions>) {
 	const { query } = options;
 	const intervalMs = query ? pollIntervalMs(options.poll) : null;
-	if (intervalMs === null || query === undefined) {
+	const paramNodes = extractParamNodes(options.params ?? []);
+	if (query === undefined || (intervalMs === null && paramNodes.length === 0)) {
 		return <StatCard options={options} />;
 	}
-	return <PollingStatCard options={options} query={query} intervalMs={intervalMs} />;
+	return (
+		<LiveStatCard
+			options={options}
+			query={query}
+			intervalMs={intervalMs}
+			paramNodes={paramNodes}
+		/>
+	);
 }
 
-interface PollingStatCardProps {
+interface LiveStatCardProps {
 	options: StatBlockOptions;
-	query: (ctx: ClientActionContext) => Promise<unknown>;
-	intervalMs: number;
+	query: StatQuery;
+	intervalMs: number | null;
+	paramNodes: StructureNode[];
 }
 
-function PollingStatCard({ options, query, intervalMs }: PollingStatCardProps) {
+/**
+ * The server renders the value for the params' defaults, so the first fetch
+ * waits for a param change or a poll tick. A failed poll keeps the last shown
+ * value — a KPI tile has no error surface — but a failed param change blanks
+ * it: the controls already show the new choice, the old number would lie.
+ */
+function LiveStatCard({ options, query, intervalMs, paramNodes }: LiveStatCardProps) {
 	const ctx = useClientActionContext();
 	const [fresh, setFresh] = useState<StatPollPayload | null>(null);
+	const [paramValues, setParamValues] = useState<StatParams>(() =>
+		defaultsFromParamNodes(paramNodes),
+	);
+	const latest = useRef(0);
+	// The params the shown value belongs to; starts at the server-rendered defaults.
+	const shownFor = useRef(paramsKey(paramValues));
+	// Read through a ref: a debounced control may call a stale onChange.
+	const paramsRef = useRef(paramValues);
 
-	// Failed polls keep the last shown value — a KPI tile has no error surface.
-	const tick = useCallback(() => {
-		query(ctx)
-			.then((data) => setFresh(data as StatPollPayload))
-			.catch(() => {});
-	}, [query, ctx]);
+	const load = useCallback(
+		(params: StatParams) => {
+			const ticket = ++latest.current;
+			query(ctx, params)
+				.then((data) => {
+					// A slower earlier response must not overwrite a newer param choice.
+					if (ticket === latest.current) {
+						shownFor.current = paramsKey(params);
+						setFresh(data as StatPollPayload);
+					}
+				})
+				.catch(() => {
+					if (ticket === latest.current && shownFor.current !== paramsKey(params)) {
+						shownFor.current = paramsKey(params);
+						setFresh({ value: BLANK_VALUE });
+					}
+				});
+		},
+		[query, ctx],
+	);
 
-	usePolling(tick, intervalMs);
+	usePolling(() => load(paramsRef.current), intervalMs);
 
-	return <StatCard options={{ ...options, ...fresh }} />;
+	const onChange = useCallback(
+		(name: string, value: unknown) => {
+			const next = { ...paramsRef.current, [name]: String(value ?? "") };
+			paramsRef.current = next;
+			setParamValues(next);
+			load(next);
+		},
+		[load],
+	);
+
+	const toolbar =
+		paramNodes.length > 0 ? (
+			<ParamControls
+				nodes={paramNodes}
+				values={paramValues}
+				onChange={onChange}
+				className="mt-1 flex w-full flex-wrap gap-2"
+				testId="stat-params"
+			/>
+		) : undefined;
+
+	return <StatCard options={{ ...options, ...fresh }} toolbar={toolbar} />;
 }
