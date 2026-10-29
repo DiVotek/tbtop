@@ -11,7 +11,7 @@ covers, and how an API is retired.
 
 | Bump                | May contain                                                                   |
 | ------------------- | ----------------------------------------------------------------------------- |
-| Patch — 0.7.**3**   | Fixes, new features and options, deprecations. Nothing that breaks a host.    |
+| Patch — 0.7.**3**   | Fixes, new features and options, deprecations. Nothing that breaks documented behaviour. |
 | Minor — 0.**8**.0   | Everything a patch may contain, plus breaking changes.                        |
 
 A breaking change waits for the next minor. Every breaking minor comes with a
@@ -67,9 +67,11 @@ major after 1.0).
   appearance APIs are covered; the pixels they produce are not.
 - The demo app, the test suites, and the generated API reference's layout.
 
-**Bug fixes.** A fix restores documented behaviour and ships in a patch, even
-when a host could have relied on the bug. When a fix is likely to break real
-hosts anyway, it waits for the next minor and gets an UPGRADE.md entry.
+**Bug fixes.** A fix restores documented behaviour, so it ships in a patch.
+When the maintainers judge that hosts likely rely on the old, buggy behaviour
+(the fix changes output or rejects input that used to pass), the fix ships in
+the next minor instead, with a `!` title and an UPGRADE.md entry. The
+maintainer merging the fix makes that call.
 
 ## Deprecations
 

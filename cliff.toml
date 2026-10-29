@@ -49,12 +49,12 @@ commit_preprocessors = [
 # The <!-- n --> prefixes only order the sections; the template strips them.
 commit_parsers = [
   { message = "^chore\\(release\\)", skip = true },
-  { message = "^feat", group = "<!-- 1 -->Features" },
-  { message = "^fix", group = "<!-- 2 -->Fixes" },
-  { message = "^perf", group = "<!-- 3 -->Performance" },
-  { message = "^revert", group = "<!-- 4 -->Reverts" },
-  { message = "^docs", group = "<!-- 5 -->Documentation" },
-  { message = "^(refactor|chore|ci|build|test|style)", skip = true },
+  { message = "^feat(\\(.*\\))?!?:", group = "<!-- 1 -->Features" },
+  { message = "^fix(\\(.*\\))?!?:", group = "<!-- 2 -->Fixes" },
+  { message = "^perf(\\(.*\\))?!?:", group = "<!-- 3 -->Performance" },
+  { message = "^revert(\\(.*\\))?!?:", group = "<!-- 4 -->Reverts" },
+  { message = "^docs(\\(.*\\))?!?:", group = "<!-- 5 -->Documentation" },
+  { message = "^(refactor|chore|ci|build|test|style)(\\(.*\\))?!?:", skip = true },
   # Any other type (e.g. a stray `media:`) has no section: keep it out.
   { message = ".*", skip = true },
 ]
