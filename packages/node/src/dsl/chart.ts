@@ -30,7 +30,11 @@ export class ChartBuilder {
 		return this;
 	}
 
-	/** Filter fields above the chart; their values reach query() as params. */
+	/**
+	 * Filter fields above the chart; their values reach query() as params.
+	 * Values arrive from the query string: give each field rules() (e.g.
+	 * 'in:day,month'), a failing value answers 422 before the query runs.
+	 */
 	params(fields: Field[]): this {
 		this.paramList = fields;
 		return this;

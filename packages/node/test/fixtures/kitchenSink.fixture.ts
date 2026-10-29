@@ -86,6 +86,19 @@ export function kitchenSink(s: S = new S()): Node {
 				.hiddenIf("period", "=", "all")
 				.toNode(),
 			s
+				.stat("Signups")
+				.value(() => 7)
+				.params([
+					s
+						.select("range")
+						.set("options", [
+							{ value: "7d", label: "7 days" },
+							{ value: "30d", label: "30 days" },
+						])
+						.default("7d"),
+				])
+				.toNode(),
+			s
 				.chart("byMonth", "line", {
 					data: [{ month: "Jan", count: 3 }],
 					series: [{ dataKey: "count", label: "Posts" }],
