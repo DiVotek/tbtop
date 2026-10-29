@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import { ActionBlock } from "./actionBlock";
 import { useClientActionContext } from "./actionContext";
 import { TableSkeleton } from "./defaults";
 import { useSetPageSubtitle } from "./pageSubtitleContext";
 import { renderAsyncError } from "./renderAsyncError";
-import { AsideFilters } from "./table/asideFilters";
+import { ASIDE_MIN_WIDTH, AsideFilters, AsideFiltersLayout } from "./table/asideFilters";
 import { BulkActionsBar } from "./table/bulkActionsBar";
 import { ColumnSizingProvider } from "./table/columnResize";
 import { FilterChips } from "./table/filterChips";
@@ -174,7 +175,10 @@ function TableBody(props: TableBodyProps) {
 		onChangeParams: props.onChangeParams,
 		deferFilters: props.deferFilters,
 	});
-	const showAside = hasFilters && !props.embedded && props.filtersIn === "aside" && aside.open;
+	const asideLayout = hasFilters && !props.embedded && props.filtersIn === "aside";
+	// Below lg the sheet takes over; don't mount a second, invisible copy of the fields.
+	const wide = useMediaQuery(ASIDE_MIN_WIDTH);
+	const showAside = asideLayout && aside.open && wide !== false;
 	const hasActiveFilters = activeFilterCount > 0 || Boolean(props.queryParams.search);
 
 	const { colSearchValues, handleColSearchChange } = useColumnSearch(
@@ -264,92 +268,94 @@ function TableBody(props: TableBodyProps) {
 					/>
 				)}
 
-				<div className="flex items-start gap-4">
-					{showAside && (
-						<AsideFilters
-							filters={props.filters ?? []}
-							filterValues={filterValues}
-							onFilterChange={filterHandlers.handleFilterChange}
-							onReset={filterHandlers.handleReset}
-							activeCount={activeFilterCount}
-							deferred={props.deferFilters}
-							onApply={filterHandlers.handleApply}
-						/>
-					)}
-					<div className="flex min-w-0 flex-1 flex-col gap-2">
-						{!props.embedded && (
-							<TableToolbar
-								hasSearch={hasSearch}
-								hasFilters={hasFilters}
-								filtersIn={props.filtersIn}
+				<AsideFiltersLayout
+					enabled={asideLayout}
+					panel={
+						showAside && (
+							<AsideFilters
 								filters={props.filters ?? []}
 								filterValues={filterValues}
-								setFilterValues={setFilterValues}
-								activeFilterCount={activeFilterCount}
-								columns={layout.orderedColumns}
-								visibleColumns={visibleColumns}
-								onToggleColumn={toggleColumn}
-								onMoveColumn={layout.moveColumn}
-								onResetLayout={layout.customized ? layout.resetLayout : undefined}
-								onChangeParams={props.onChangeParams}
-								searchValue={props.queryParams.search}
-								searchPlaceholder={props.searchPlaceholder}
-								deferFilters={props.deferFilters}
-								filtersFormColumns={props.filtersFormColumns}
-								filtersFormWidth={props.filtersFormWidth}
-								columnToggle={props.columnToggle}
-								asideOpen={aside.open}
-								onToggleAside={aside.toggle}
+								onFilterChange={filterHandlers.handleFilterChange}
+								onReset={filterHandlers.handleReset}
+								activeCount={activeFilterCount}
+								deferred={props.deferFilters}
+								onApply={filterHandlers.handleApply}
 							/>
-						)}
-						{!props.embedded && (
-							<FilterChips
-								filters={appliedFilters}
-								onRemove={params.handleRemoveFilter}
-								onClear={params.handleClearFilters}
-							/>
-						)}
+						)
+					}
+				>
+					{!props.embedded && (
+						<TableToolbar
+							hasSearch={hasSearch}
+							hasFilters={hasFilters}
+							filtersIn={props.filtersIn}
+							filters={props.filters ?? []}
+							filterValues={filterValues}
+							setFilterValues={setFilterValues}
+							activeFilterCount={activeFilterCount}
+							columns={layout.orderedColumns}
+							visibleColumns={visibleColumns}
+							onToggleColumn={toggleColumn}
+							onMoveColumn={layout.moveColumn}
+							onResetLayout={layout.customized ? layout.resetLayout : undefined}
+							onChangeParams={props.onChangeParams}
+							searchValue={props.queryParams.search}
+							searchPlaceholder={props.searchPlaceholder}
+							deferFilters={props.deferFilters}
+							filtersFormColumns={props.filtersFormColumns}
+							filtersFormWidth={props.filtersFormWidth}
+							columnToggle={props.columnToggle}
+							asideOpen={aside.open}
+							onToggleAside={aside.toggle}
+						/>
+					)}
+					{!props.embedded && (
+						<FilterChips
+							filters={appliedFilters}
+							onRemove={params.handleRemoveFilter}
+							onClear={params.handleClearFilters}
+						/>
+					)}
 
-						{hasBulk && (
-							<BulkActionsBar
-								actions={props.bulkActions ?? []}
-								selectedCount={ctrl.selectedIds.length}
-							/>
-						)}
+					{hasBulk && (
+						<BulkActionsBar
+							actions={props.bulkActions ?? []}
+							selectedCount={ctrl.selectedIds.length}
+						/>
+					)}
 
-						{/* Embedded tables have no toolbar to reset from, so they don't resize. */}
-						<ColumnSizingProvider value={props.embedded ? undefined : sizing}>
-							<TableGrid
-								rows={props.rows}
-								columns={visibleCols}
-								rowActions={props.rowActions ?? []}
-								selectedIds={ctrl.selectedIds}
-								onToggle={ctrl.toggleSelection}
-								onSelectAll={ctrl.selectAll}
-								onClearSelection={ctrl.clearSelection}
-								hasBulk={hasBulk}
-								hasRowActions={hasRowActions}
-								sort={props.queryParams.sort}
-								onSort={handleSort}
-								isReloading={props.isReloading}
-								hasActiveFilters={hasActiveFilters}
-								onResetFilters={handleResetFilters}
-								rowClick={props.rowClick}
-								recordUrl={props.recordUrl}
-								recordUrlNewTab={props.recordUrlNewTab}
-								emptyState={props.emptyState}
-								saveCell={props.saveCell}
-								reorderColumn={props.reorderColumn}
-								reorderEnabled={reorderEnabled}
-								reorderRows={props.reorderRows}
-								onRefresh={props.onRefresh}
-								groups={props.groups}
-								colSearchValues={colSearchValues}
-								onColSearchChange={handleColSearchChange}
-							/>
-						</ColumnSizingProvider>
-					</div>
-				</div>
+					{/* Embedded tables have no toolbar to reset from, so they don't resize. */}
+					<ColumnSizingProvider value={props.embedded ? undefined : sizing}>
+						<TableGrid
+							rows={props.rows}
+							columns={visibleCols}
+							rowActions={props.rowActions ?? []}
+							selectedIds={ctrl.selectedIds}
+							onToggle={ctrl.toggleSelection}
+							onSelectAll={ctrl.selectAll}
+							onClearSelection={ctrl.clearSelection}
+							hasBulk={hasBulk}
+							hasRowActions={hasRowActions}
+							sort={props.queryParams.sort}
+							onSort={handleSort}
+							isReloading={props.isReloading}
+							hasActiveFilters={hasActiveFilters}
+							onResetFilters={handleResetFilters}
+							rowClick={props.rowClick}
+							recordUrl={props.recordUrl}
+							recordUrlNewTab={props.recordUrlNewTab}
+							emptyState={props.emptyState}
+							saveCell={props.saveCell}
+							reorderColumn={props.reorderColumn}
+							reorderEnabled={reorderEnabled}
+							reorderRows={props.reorderRows}
+							onRefresh={props.onRefresh}
+							groups={props.groups}
+							colSearchValues={colSearchValues}
+							onColSearchChange={handleColSearchChange}
+						/>
+					</ColumnSizingProvider>
+				</AsideFiltersLayout>
 
 				{showSimplePagination && (
 					<SimplePagination

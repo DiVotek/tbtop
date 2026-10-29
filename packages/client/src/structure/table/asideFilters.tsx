@@ -1,11 +1,38 @@
 /** AsideFilters — filters stacked in a side panel next to the table. */
-import { useRef } from "react";
+import { type ReactNode, useRef } from "react";
 import { FieldDependencyProvider } from "../../fields/fieldDependencies";
 import { useTranslation } from "../../i18n/i18n";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import type { StructureNode } from "../types";
 import { renderFilterField } from "./filters";
+
+/** Tailwind's lg breakpoint — the panel's `lg:flex`; below it the sheet stands in. */
+export const ASIDE_MIN_WIDTH = "(min-width: 1024px)";
+
+/**
+ * Puts the panel beside the table body. Tables without the aside layout get
+ * their children back unwrapped, so their spacing is untouched.
+ */
+export function AsideFiltersLayout({
+	enabled,
+	panel,
+	children,
+}: {
+	enabled: boolean;
+	panel: ReactNode;
+	children: ReactNode;
+}) {
+	if (!enabled) {
+		return <>{children}</>;
+	}
+	return (
+		<div className="flex items-start gap-4">
+			{panel}
+			<div className="flex min-w-0 flex-1 flex-col gap-2">{children}</div>
+		</div>
+	);
+}
 
 interface AsideFiltersProps {
 	filters: StructureNode[];

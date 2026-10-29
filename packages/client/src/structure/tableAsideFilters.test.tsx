@@ -91,4 +91,21 @@ describe("filtersIn aside", () => {
 			timeout: 1000,
 		});
 	});
+
+	test("below lg the panel is not mounted, the sheet trigger stands in", async () => {
+		const original = window.matchMedia;
+		window.matchMedia = ((query: string) => ({
+			...original(query),
+			matches: false,
+			addEventListener: () => {},
+			removeEventListener: () => {},
+		})) as typeof window.matchMedia;
+		try {
+			const { queryByTestId, getByTestId } = await renderTable();
+			await waitFor(() => expect(queryByTestId("table-filters-aside")).toBeNull());
+			expect(getByTestId("table-filters-trigger")).toBeTruthy();
+		} finally {
+			window.matchMedia = original;
+		}
+	});
 });
