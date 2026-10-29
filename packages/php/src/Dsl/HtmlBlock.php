@@ -14,7 +14,8 @@ use Tbtop\Admin\Dsl\Concerns\HasWhen;
  * baseline): scripts, event handlers, iframes and javascript: URLs are
  * dropped (and so are class, style, data-* and inline SVG), so the
  * content may come from a record. Call ->trusted() to emit
- * the HTML unchanged when the author controls every byte of it.
+ * the HTML unchanged when the author controls every byte of it. Input over
+ * 1 MB is silently truncated before sanitizing.
  *
  * @method static self make(string $rawHtml)
  */
@@ -63,6 +64,7 @@ final class HtmlBlock implements JsonSerializable
                 ->allowSafeElements()
                 ->allowLinkSchemes(['http', 'https', 'mailto', 'tel'])
                 ->allowRelativeLinks()
+                ->allowMediaSchemes(['http', 'https'])
                 ->allowRelativeMedias()
                 ->withMaxInputLength(self::MAX_INPUT_BYTES),
         );

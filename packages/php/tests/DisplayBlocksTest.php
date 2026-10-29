@@ -104,6 +104,13 @@ it('HtmlBlock keeps http, mailto and relative links and images', function () {
         ->toContain('target="_blank" rel="noopener"');
 });
 
+it('HtmlBlock drops data: and other non-http image sources', function () {
+    $out = encodeDisplay(HtmlBlock::make('<img src="data:image/png;base64,AAA"><img src="ftp://x/y.png">'))['options']['html'];
+
+    expect($out)->not->toContain('data:')
+        ->not->toContain('ftp:');
+});
+
 it('HtmlBlock drops class and style attributes', function () {
     $out = encodeDisplay(HtmlBlock::make('<p class="fixed inset-0 z-50" style="position:fixed">x</p>'))['options']['html'];
 
