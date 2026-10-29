@@ -101,6 +101,24 @@ describe("navigation", () => {
 		});
 	});
 
+	test("a link whose authorize fails is left out of the sidebar and the user menu", async () => {
+		const billing = pages.find((p) => p.path === "billing")?.authorize;
+		const gated = panel({
+			navigationItems: [
+				{ label: "Invoices", url: "/admin/billing/invoices", authorize: billing },
+				{ label: "Status", url: "https://status.x", authorize: async () => true },
+			],
+			userMenuItems: [
+				{ label: "Billing", url: "/admin/billing", authorize: billing },
+				{ label: "Help", url: "/help" },
+			],
+		});
+		const { tbtop } = await props(gated, "/admin/dashboard");
+		const [ungrouped] = tbtop.nav as { items: { label: string }[] }[];
+		expect(ungrouped?.items.map((item) => item.label)).toEqual(["Status", "Dashboard"]);
+		expect(tbtop.userMenuItems).toEqual([{ label: "Help", href: "/help" }]);
+	});
+
 	test("an unknown parent fails for every visitor", async () => {
 		const broken = panel({ pages: [page("a", { nav: { label: "A", parent: "nowhere" } })] });
 		await expect(props(broken, "/admin/a")).rejects.toThrow('nav.parent "nowhere"');

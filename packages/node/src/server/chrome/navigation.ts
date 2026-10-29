@@ -1,13 +1,19 @@
 import type { IconSpec } from "../../dsl";
 import { normalizeIcon } from "../../dsl/meta";
-import type { NavEntry, PageDef } from "../page";
+import type { NavEntry, PageDef, ViewCtx } from "../page";
 import { assembleGroups, type NavGroupDef, UNGROUPED, type WireItem } from "./navGroups";
 import { type Text, text } from "./text";
 
-/** NavItem.php as data: a link with no page and no gate, in the sidebar or the profile menu. */
+/** NavItem.php as data: a link with no page, in the sidebar or the profile menu. */
 export interface NavLink {
 	label: Text;
 	url: string;
+	/**
+	 * Show the link only when this returns true (NavItem::can()), checked per
+	 * request; pass a page's own `authorize` to hide a link to a page its user
+	 * may not open. Unset shows it to everyone.
+	 */
+	authorize?: PageDef["authorize"];
 	icon?: IconSpec;
 	newTab?: boolean;
 	/** Sidebar group (nav only); unset = ungrouped. */
@@ -51,7 +57,7 @@ export async function buildNav(panel: NavPanel, request: Request) {
 			push(entry.nav.group, withChildren(path, entries), entry.nav.section);
 		}
 	}
-	for (const link of panel.navigationItems ?? []) {
+	for (const link of await allowedLinks(panel.navigationItems ?? [], request)) {
 		const { label, href, ...rest } = linkItem(link);
 		push(link.group, { label, href, order: link.sort ?? 0, ...rest }, link.section);
 	}
@@ -128,6 +134,13 @@ function pageItem(nav: NavEntry, href: string): WireItem {
 			? { badgeColor: nav.badgeColor }
 			: {}),
 	};
+}
+
+/** The links whose `authorize` passes for this request, in their order. */
+export async function allowedLinks(links: NavLink[], request: Request): Promise<NavLink[]> {
+	const ctx: ViewCtx = { params: {}, request };
+	const verdicts = await Promise.all(links.map(async (l) => (await l.authorize?.(ctx)) ?? true));
+	return links.filter((_, i) => verdicts[i]);
 }
 
 /** NavItem::toArray(): label/href always; icon and newTab only when set. */
