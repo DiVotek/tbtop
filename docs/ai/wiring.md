@@ -106,8 +106,9 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   `RequireVerifiedEmail`) sends any session that has not passed (one a remember cookie restored,
   say) to the challenge, and answers JSON with 403; logout stays open, and a page whose own
   `middleware()` leaves out `authStack()` opts out. The pass belongs to
-  the user who earned it in this session. `LoginPage::afterAuthenticated()` runs only for
-  users without a factor; the challenge page has its own `redirectTo()`. Delete the
+  the user who earned it in this session. `LoginPage::afterAuthenticated()` runs for a user
+  with a factor once the code passes, signed in by then; a URL it returns wins over the
+  challenge page's own `redirectTo()`. Delete the
   challenge page to turn it all off.
 - **Email verification.** `EmailVerificationPage` (`{prefix}/verify-email`) is opt-in twice:
   the panel serves a subclass, and the user model implements Laravel's `MustVerifyEmail`

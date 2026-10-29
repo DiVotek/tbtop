@@ -47,6 +47,10 @@ domain: auth
   page grows a 2FA section, and `RequireTwoFactor` (in `authStack()`, ahead of
   `RequireVerifiedEmail`: the factor comes first) sends back any session that has not passed. No panel flag to keep in sync. Without the page, the login
   keeps plain `attempt()`.
+- **`afterAuthenticated()` runs for 2FA users too, after the code.** A post-login host
+  policy (audit, forced password change, onboarding) must not depend on whether the user has
+  a second factor. The challenge calls the host's `LoginPage` hook once the user is signed
+  in, and a URL it returns wins over the challenge's `redirectTo()`.
 - **The pass names the user and lives in the session.** The demo's `auth.2fa.completed`
   was a bare boolean, set only by its challenge: a remember-cookie session or a user who had
   just enrolled had none and looped between the panel and a challenge with nothing pending.

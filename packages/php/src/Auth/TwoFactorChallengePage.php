@@ -18,7 +18,8 @@ use Tbtop\Admin\Panels\PanelConfig;
  * code. While the panel serves a subclass, the login sends users with a
  * second factor here instead of signing them in, the panel stack sends back
  * any session that has not passed it, and the profile page offers to turn it
- * on. Hooks: view(), redirectTo().
+ * on. Hooks: view(), redirectTo(); the login page's afterAuthenticated() runs
+ * first, once the code passes.
  */
 abstract class TwoFactorChallengePage extends AuthPage
 {
@@ -91,6 +92,6 @@ abstract class TwoFactorChallengePage extends AuthPage
         $session->pass($user);
         $ctx->request->session()->regenerate();
 
-        return $this->redirectTo($ctx);
+        return LoginPage::afterTwoFactor($user, $ctx) ?? $this->redirectTo($ctx);
     }
 }

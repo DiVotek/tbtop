@@ -65,12 +65,23 @@ abstract class LoginPage extends AuthPage
 
     /**
      * Runs after the session is established. A URL sends the user there instead
-     * of redirectTo(). A user the package's two-factor challenge diverts skips
-     * it: they are signed in on the challenge page, which has its own redirectTo().
+     * of redirectTo(). For a user the package's two-factor challenge diverts, it
+     * runs once the code passes, ahead of the challenge page's redirectTo().
      */
     protected function afterAuthenticated(Authenticatable $user, ActionCtx $ctx): ?string
     {
         return null;
+    }
+
+    /**
+     * @internal The challenge page's way into the host's afterAuthenticated(); null
+     *           when the panel serves no login page.
+     */
+    public static function afterTwoFactor(Authenticatable $user, ActionCtx $ctx): ?string
+    {
+        $class = static::hostClass();
+
+        return $class === null ? null : app($class)->afterAuthenticated($user, $ctx);
     }
 
     /** The URL the guest was bounced from, else the panel root. */

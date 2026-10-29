@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Tbtop\Admin\Tests\Fixtures\Auth\AuthUser;
+use Tbtop\Admin\Tests\Fixtures\Auth\LoginPage;
 
 /**
  * Sign-in on a panel that serves the published TwoFactorChallengePage: the
@@ -18,6 +19,10 @@ beforeEach(function () {
         $this->secret,
     );
     $this->plain = AuthUser::create(['name' => 'Taras', 'email' => 'taras@example.com', 'password' => Hash::make('secret-pass')]);
+});
+
+afterEach(function () {
+    LoginPage::$afterAuthenticated = null;
 });
 
 function login(string $email = 'olena@example.com', bool $remember = false): TestResponse
@@ -69,6 +74,21 @@ it('signs in with the authenticator code and returns to the intended page', func
     $this->assertAuthenticatedAs($this->user, 'staff');
     expect(session()->getId())->not->toBe($before);
     $this->get('/admin/nav-demo')->assertOk();
+});
+
+it('runs the login page\'s afterAuthenticated() once the code passes, and follows its URL', function () {
+    $seen = [];
+    LoginPage::$afterAuthenticated = function ($user) use (&$seen): string {
+        $seen[] = [$user->getKey(), auth()->guard('staff')->check()];
+
+        return '/admin/onboarding';
+    };
+
+    login()->assertRedirect('/admin/two-factor-challenge');
+    expect($seen)->toBe([]);
+
+    answer($this->totp($this->secret))->assertRedirect('/admin/onboarding');
+    expect($seen)->toBe([[$this->user->getKey(), true]]);
 });
 
 it('keeps the remember choice from the password step', function () {
