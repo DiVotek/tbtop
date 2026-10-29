@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use InvalidArgumentException;
 use Tbtop\Admin\Auth\RequireVerifiedEmail;
+use Tbtop\Admin\Auth\TwoFactor\RequireTwoFactor;
 use Tbtop\Admin\CommandPalette\CommandPaletteConfig;
 use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
@@ -332,6 +333,8 @@ final class PanelConfig
      * Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those.
      * AuthenticateSession follows auth: it reads the user that `auth:{guard}` resolves, and
      * ends a session whose password hash no longer matches the user's (a reset elsewhere).
+     * RequireTwoFactor follows it: while the panel serves a TwoFactorChallengePage subclass, a
+     * user with a second factor who has not passed it in this session goes to the challenge.
      * RequireVerifiedEmail comes last: while the panel serves an EmailVerificationPage, a
      * MustVerifyEmail user with an unverified email is sent there.
      *
@@ -339,7 +342,7 @@ final class PanelConfig
      */
     public function authStack(): array
     {
-        return [...$this->middleware, 'auth:'.$this->guard, AuthenticateSession::class, RequireVerifiedEmail::class];
+        return [...$this->middleware, 'auth:'.$this->guard, AuthenticateSession::class, RequireTwoFactor::class, RequireVerifiedEmail::class];
     }
 
     /** @return list<class-string<Page>> */

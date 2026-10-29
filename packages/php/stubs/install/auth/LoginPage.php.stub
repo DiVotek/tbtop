@@ -8,7 +8,7 @@ namespace {{ namespace }};
  *
  *   view(S $s)                     the screen
  *   credentials(ActionCtx $ctx)    what the user is matched by
- *   afterAuthenticated($user, $ctx) return a URL to send the user elsewhere (e.g. a 2FA challenge)
+ *   afterAuthenticated($user, $ctx) return a URL to send the user elsewhere (for a 2FA user, once the code passes)
  *   redirectTo(ActionCtx $ctx)     where a signed-in user lands
  *   throttleKey(ActionCtx $ctx), maxAttempts()
  *   authenticate(ActionCtx $ctx)   the sign-in core; call it from a rebuilt view()'s onSubmit

@@ -24,8 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        // Admin panel is the canonical surface: the auth middleware (priority-sorted
-        // ahead of RequireFullAuth) sends all guests to the DSL login page.
+        // Admin panel is the canonical surface: the panel's auth:web sends all guests to
+        // the DSL login page; its RequireTwoFactor sends a session that owes a code to the challenge.
         $middleware->alias(['abilities' => CheckAbilities::class]);
 
         $middleware->redirectGuestsTo(fn (): string => LoginPage::currentUrl() ?? route('tbtop.admin.login-page'));

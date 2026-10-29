@@ -27,7 +27,8 @@ class InstallCommand extends Command
         {--force : Overwrite files that already exist}
         {--auth : Also publish sign-in, password reset, profile and email verification pages for one panel}
         {--profile : Also publish only the profile page, for a host that signs users in itself}
-        {--panel= : The panel --auth or --profile targets, required when several are registered}';
+        {--2fa : Also publish the auth pages with two-factor sign-in: the challenge page and the user-table migration}
+        {--panel= : The panel --auth, --2fa or --profile targets, required when several are registered}';
 
     protected $description = 'Publish the host wiring for the admin panel: root view, JS entry, and stylesheet.';
 
@@ -47,7 +48,8 @@ class InstallCommand extends Command
     public function handle(): int
     {
         $panel = null;
-        if ($this->option('auth') || $this->option('profile')) {
+        $login = $this->option('auth') || $this->option('2fa');
+        if ($login || $this->option('profile')) {
             $panel = $this->authPanel();
             if ($panel === null) {
                 return self::FAILURE;
@@ -83,15 +85,18 @@ class InstallCommand extends Command
             $this->components->warn("Exists, left untouched: {$relative} (use --force to overwrite)");
         }
 
-        $pages = $this->option('auth') ? AuthScaffold::PAGES : AuthScaffold::PROFILE;
+        $pages = $this->option('2fa') ? AuthScaffold::TWO_FACTOR : ($login ? AuthScaffold::PAGES : AuthScaffold::PROFILE);
         $auth = $panel === null ? null : (new AuthScaffold($panel, $pages))->publish((bool) $this->option('force'));
+        if ($auth !== null && $this->option('2fa')) {
+            $auth->publishTwoFactorMigration();
+        }
         if ($auth !== null) {
             $this->reportAuth($auth);
         }
 
         $this->manualSteps();
         if ($auth !== null) {
-            $this->authSteps($auth, (bool) $this->option('auth'));
+            $this->authSteps($auth, $login, (bool) $this->option('2fa'));
         }
 
         return self::SUCCESS;
@@ -127,7 +132,7 @@ class InstallCommand extends Command
 
     private function noPanelHint(): void
     {
-        $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth or --profile.');
+        $this->components->error('No panel registered: add one to tbtop-admin.panels before --auth, --2fa or --profile.');
         $this->line('  List your panel class in config/tbtop-admin.php:');
         $this->line("       'panels' => [\\App\\Admin\\AdminPanel::class],");
         $this->line('  Writing the panel class: '.self::PANEL_DOCS);
@@ -146,14 +151,19 @@ class InstallCommand extends Command
         }
     }
 
-    private function authSteps(AuthScaffold $auth, bool $login): void
+    private function authSteps(AuthScaffold $auth, bool $login, bool $twoFactor): void
     {
+        $step = 6;
         if ($login) {
             $this->loginSteps($auth->panel);
+            $step++;
+        }
+        if ($twoFactor) {
+            $this->twoFactorSteps($step++);
         }
         if (! $auth->isDiscovered()) {
             $this->newLine();
-            $this->line('  '.($login ? 7 : 6).". Panel [{$auth->panel->getId()}] does not discover app/Admin/Pages; register the published pages:");
+            $this->line("  {$step}. Panel [{$auth->panel->getId()}] does not discover app/Admin/Pages; register the published pages:");
             $this->line('       ->discoverPages(in: app_path(\'Admin/Pages\'), for: \''.str_replace('\\Auth', '', $auth->namespace()).'\')');
         }
     }
@@ -166,6 +176,15 @@ class InstallCommand extends Command
         $this->line("       \$middleware->redirectGuestsTo(fn () => \\Tbtop\\Admin\\Auth\\LoginPage::currentUrl() ?? '{$login}');");
         $this->line('     LoginPage::currentUrl() is the login of the panel the request belongs to; the fallback serves routes outside panels.');
         $this->line('     EmailVerificationPage holds back users whose model implements MustVerifyEmail until they confirm their email; other users never see it.');
+    }
+
+    private function twoFactorSteps(int $step): void
+    {
+        $this->newLine();
+        $this->line("  {$step}. Install the TOTP and QR code libraries, run the published migration, and hide the secrets on the user model:");
+        $this->line('       composer require pragmarx/google2fa bacon/bacon-qr-code && php artisan migrate');
+        $this->line("       protected \$hidden = [..., 'two_factor_secret', 'two_factor_recovery_codes'];");
+        $this->line('     Users turn it on from the profile page; the login then asks for the code.');
     }
 
     private function stub(string $name): string

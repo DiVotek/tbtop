@@ -83,7 +83,14 @@ class PanelNotFoundTest extends TestCase
     public function test_authenticated_404_on_a_public_page_route_still_gets_the_panel_chrome(): void
     {
         // Not LoginPage: the scaffolded auth pages send a signed-in user into the
-        // panel before routing. The 2FA challenge page stays public to everyone.
+        // panel before routing. The 2FA challenge page is the one a signed-in user
+        // still reaches: a remembered session that owes its second factor.
+        $this->actingAs(User::factory()->create([
+            'role' => 'admin',
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_confirmed_at' => now(),
+        ]));
+
         $this->get('/admin/two-factor-challenge/data/bogus')
             ->assertNotFound()
             ->assertInertia(function (Assert $page) {
