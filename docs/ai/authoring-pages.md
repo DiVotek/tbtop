@@ -1058,7 +1058,9 @@ builders as chart params); each change refetches the stat, and the value closure
 their current values as `array $params` — their defaults at first render. `url($href)` makes
 the whole card a link (a dashboard KPI that opens its list); `openUrlInNewTab()` opens it in
 a new browser tab. **`url()` and `params()` don't combine** — `toNode()` throws, a control
-can't sit inside a link. Call `->toNode()` to embed a `Stat` in a layout node.
+can't sit inside a link. **`poll()` and `params()` need `$s->stat()`**: it registers the stat
+for the data endpoint, a bare `Stat::make()` answers 404 there. Call `->toNode()` to embed a
+`Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php
