@@ -266,6 +266,54 @@ it('Stat: queryClosure re-invokes the value closure and returns the descriptor s
         ->and($query())->toBe(['value' => 2, 'description' => 'online', 'sparkline' => [1, 2]]);
 });
 
+it('Stat: params emits field nodes and stamps source without poll', function (): void {
+    $s = new S;
+    $json = encodeStat(Stat::make('Signups')->value(fn () => 1)->params([
+        $s->select('period')->set('options', [['value' => '7d', 'label' => '7 days']])->default('7d'),
+    ]));
+
+    expect($json['options']['source'])->toBe('Signups')
+        ->and($json['options'])->not->toHaveKey('poll')
+        ->and($json['options']['params'])->toHaveCount(1)
+        ->and($json['options']['params'][0])->toMatchArray(['kind' => 'select', 'name' => 'period'])
+        ->and($json['options']['params'][0]['options']['default'])->toBe('7d');
+});
+
+it('Stat: without params no params key is emitted (back-compat)', function (): void {
+    expect(encodeStat(Stat::make('Plain')->value(1))['options'])->not->toHaveKey('params');
+});
+
+it('Stat: the value closure renders with the params defaults', function (): void {
+    $s = new S;
+    $json = encodeStat(Stat::make('Signups')
+        ->value(fn (array $params): string => "for {$params['period']}")
+        ->params([$s->select('period')->default('30d'), $s->date('from')]));
+
+    expect($json['options']['value'])->toBe('for 30d');
+});
+
+it('Stat: a zero-argument value closure still works with params', function (): void {
+    $s = new S;
+    $stat = Stat::make('Signups')->value(fn (): int => 9)->params([$s->select('period')]);
+
+    expect(encodeStat($stat)['options']['value'])->toBe(9)
+        ->and($stat->queryClosure()(['period' => '7d']))->toBe(['value' => 9]);
+});
+
+it('Stat: queryClosure exists with params alone and passes them to the value closure', function (): void {
+    $s = new S;
+    $stat = Stat::make('Signups')
+        ->value(fn (array $params): string => "for {$params['period']}")
+        ->params([$s->select('period')->default('7d')]);
+
+    expect($stat->queryClosure()(['period' => '90d']))->toBe(['value' => 'for 90d']);
+});
+
+it('Stat: url() combined with params() throws', function (): void {
+    $s = new S;
+    Stat::make('Signups')->value(1)->url('/admin/users')->params([$s->select('period')])->toNode();
+})->throws(InvalidArgumentException::class, 'cannot combine url() with params()');
+
 it('Stat: url makes the card a link, newTab only when requested', function (): void {
     $inPlace = encodeStat(Stat::make('Orders')->value(3)->url('/admin/orders'));
     $newTab = encodeStat(Stat::make('Orders')->value(3)->url('https://example.test')->openUrlInNewTab());

@@ -73,6 +73,14 @@ class KitchenSinkPage extends Page
                 $s->stat('Revenue')->value(42)->delta('+8%', 'up')
                     ->icon('dollar-sign')->tooltip('Monthly revenue')->url('/admin/orders')
                     ->hiddenIf('period', '=', 'all')->toNode(),
+                $s->stat('Signups')->value(fn (array $params): int => 7)
+                    ->params([
+                        $s->select('range')->set('options', [
+                            ['value' => '7d', 'label' => '7 days'],
+                            ['value' => '30d', 'label' => '30 days'],
+                        ])->default('7d'),
+                    ])
+                    ->toNode(),
                 $s->chart('byMonth', 'line', [
                     'data' => [['month' => 'Jan', 'count' => 3]],
                     'series' => [['dataKey' => 'count', 'label' => 'Posts']],
@@ -302,7 +310,7 @@ class KitchenSinkPage extends Page
                 ->openRecordUrlInNewTab()
                 ->defaultSort('views', 'desc')
                 ->reorderable('sort_order')
-                ->groups('views')
+                ->groups('views', collapsed: true)
                 ->tabs([
                     Tab::make('all'),
                     Tab::make('published')->label('Published')

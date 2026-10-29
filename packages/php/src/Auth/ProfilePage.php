@@ -110,21 +110,28 @@ abstract class ProfilePage extends Page
     /**
      * A new email needs the current password: with it, a hijacked session
      * could otherwise redirect password resets and take the account over.
-     * A changed email on a MustVerifyEmail user is marked unverified, as Breeze does.
+     * A changed email on a MustVerifyEmail user is marked unverified, as Breeze does,
+     * and gets a verification link while the panel serves an EmailVerificationPage.
      */
     protected function updateProfile(ActionCtx $ctx): Effects
     {
         $user = $this->user();
         $user->forceFill(Validator::make($ctx->form, $this->profileRules($user))->validate());
+        $reverify = $user->isDirty('email') && $user instanceof MustVerifyEmail ? $user : null;
         if ($user->isDirty('email')) {
             $this->confirmCurrentPassword($user, $ctx->form['current_password'] ?? null);
-            if ($user instanceof MustVerifyEmail) {
-                $user->setAttribute('email_verified_at', null);
-            }
+        }
+        if ($reverify !== null) {
+            $user->setAttribute('email_verified_at', null);
         }
         $user->save();
 
-        return Effects::make()->notify(__('tbtop-admin::admin.auth.profile.saved'))->resetForm('profile');
+        $effects = Effects::make()->notify(__('tbtop-admin::admin.auth.profile.saved'))->resetForm('profile');
+        if ($reverify !== null && EmailVerificationPage::sendVerificationLink($reverify)) {
+            $effects->notify(__('tbtop-admin::admin.auth.verify.sent'));
+        }
+
+        return $effects;
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Tests\Fixtures\Panels;
 
 use Tbtop\Admin\Panels\Panel;
 use Tbtop\Admin\Panels\PanelConfig;
+use Tbtop\Admin\Tests\Fixtures\Auth\EmailVerificationPage;
 use Tbtop\Admin\Tests\Fixtures\Auth\ForgotPasswordPage;
 use Tbtop\Admin\Tests\Fixtures\Auth\LoginPage;
 use Tbtop\Admin\Tests\Fixtures\Auth\ProfilePage;
@@ -21,6 +22,6 @@ class AuthPanel extends Panel
             ->guard('staff')
             ->middleware(['web'])
             ->passwordBroker('staff')
-            ->pages([ForgotPasswordPage::class, LoginPage::class, ProfilePage::class, ResetPasswordPage::class, NavPage::class]);
+            ->pages([EmailVerificationPage::class, ForgotPasswordPage::class, LoginPage::class, ProfilePage::class, ResetPasswordPage::class, NavPage::class]);
     }
 }

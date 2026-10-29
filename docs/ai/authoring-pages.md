@@ -561,6 +561,15 @@ and the record-URL row link.
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
 
+**Active-filter chips** — every applied filter shows as a chip under the toolbar
+(`Status: Published, Draft`), with a × that drops that one filter; two or more chips add a
+"Clear filters" link that drops them all and keeps the search. There is no PHP API: the
+chip text is the filter's `label()` plus its value — option labels for select/in/radio
+(an async select resolves its label through `resolveUsing()`, like the control does),
+formatted dates and ranges, and the label alone for a boolean that is on. With
+`deferFilters()` a chip appears only after Apply, since pending edits don't narrow the rows
+yet. An `embedded(true)` table shows no chips.
+
 **Simple pagination** — `simplePagination()` drops the `count()` query, which is the slow
 one on a large or heavily joined table. The page query reads `perPage + 1` rows: the extra
 row only answers "is there a next page", and the response carries `hasMore` instead of
@@ -591,8 +600,12 @@ carries the formatted column value. A URL template takes the key as `{row._key}`
 
 #### `groups()` — row grouping
 
-`->groups(string $column)` partitions contiguous rows sharing `$column`'s value under a
-group header row. It requires `->defaultSort($column, ...)` to already be set (throws
+`->groups(string $column, bool $collapsible = false, bool $collapsed = false)` partitions
+contiguous rows sharing `$column`'s value under a group header row. `collapsible: true`
+turns each header into a toggle that hides or shows its group; `collapsed: true` starts
+every group closed (and implies `collapsible`), so the table opens as a list of headers.
+The open/closed state lives in the page only: it survives a refetch, poll or page change
+for the same group value, and resets on a browser reload. It requires `->defaultSort($column, ...)` to already be set (throws
 `InvalidArgumentException` otherwise) — grouping only makes sense on a sorted column,
 since it partitions *contiguous* runs, not a full re-bucketing.
 
@@ -608,6 +621,11 @@ grouping entirely while reorder is active (`groupsActive = Boolean(groups) &&
 $s->table('posts')
     ->defaultSort('published', 'desc')
     ->groups('published') // requires defaultSort('published', ...) above
+
+// Collapsible groups, every one closed at first
+$s->table('orders')
+    ->defaultSort('status')
+    ->groups('status', collapsed: true)
 ```
 
 #### `poll()` — auto-refresh rows
@@ -1053,8 +1071,16 @@ Instantiate with `Stat::make(string $label)` (or via `$s->stat(string $label)`).
 `value()` takes a scalar or a `Closure` resolved at render time. `delta()` adds a trend
 indicator and `sparkline()` a mini chart. `poll(int $seconds)` re-invokes the value closure
 on an interval via the page data endpoint — **the 5-second floor throws in PHP and is
-clamped again client-side**. `url($href)` makes the whole card a link (a dashboard KPI
-that opens its list); `openUrlInNewTab()` opens it in a new browser tab. Call `->toNode()` to embed a `Stat` in a layout node.
+clamped again client-side**. `params()` renders filter fields in the card (same field
+builders as chart params); each change refetches the stat, and the value closure receives
+their current values as `array $params` — their defaults at first render. Param values come
+from the query string: give each field `rules()` (`->rules('in:7,30')`), a failing value
+answers 422 before the closure runs. `url($href)` makes
+the whole card a link (a dashboard KPI that opens its list); `openUrlInNewTab()` opens it in
+a new browser tab. **`url()` and `params()` don't combine** — `toNode()` throws, a control
+can't sit inside a link. **`poll()` and `params()` need `$s->stat()`**: it registers the stat
+for the data endpoint, a bare `Stat::make()` answers 404 there. Call `->toNode()` to embed a
+`Stat` in a layout node.
 
 ```php
 // from apps/demo/app/Admin/Pages/DashboardPage.php
@@ -1064,7 +1090,17 @@ Stat::make('Total Posts')
     ->icon('file-text')
     ->color(Color::Primary)
     ->toNode()
+
+// A KPI with a period switch: the closure re-runs on every change.
+$s->stat('Signups')
+    ->params([$s->select('period')->options([
+        ['value' => '7', 'label' => '7 days'], ['value' => '30', 'label' => '30 days'],
+    ])->default('7')->rules('in:7,30')])
+    ->value(fn (array $params) => User::where('created_at', '>=', now()->subDays((int) $params['period']))->count())
+    ->toNode()
 ```
+
+Only `value` is re-resolved; `description`, `delta` and `sparkline` stay as declared.
 
 ### ChartBuilder
 

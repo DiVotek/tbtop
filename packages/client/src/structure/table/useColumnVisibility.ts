@@ -80,7 +80,8 @@ export function countActiveFilters(filterValues: Record<string, unknown>): numbe
 	return Object.values(filterValues).filter(isActiveFilterValue).length;
 }
 
-function isActiveFilterValue(v: unknown): boolean {
+/** A filter value that narrows the query: not empty, not an empty list, a range with a bound. */
+export function isActiveFilterValue(v: unknown): boolean {
 	if (v === null || v === undefined || v === "") {
 		return false;
 	}
