@@ -429,3 +429,36 @@ describe("environment indicator (#393)", () => {
 		).toThrow('environmentIndicator["local"]');
 	});
 });
+
+describe("branding (#421)", () => {
+	const tbtop = async (config: Partial<AdminConfig>) =>
+		(await props(panel(config), "/admin/dashboard")).tbtop;
+
+	test("no logo or favicon until configured", async () => {
+		expect(await tbtop({})).toMatchObject({ brandLogo: null, favicon: null });
+		expect((await tbtop({ darkModeBrandLogo: "/logo-dark.svg" })).brandLogo).toBeNull();
+	});
+
+	test("the logo prop carries only the keys a host set", async () => {
+		expect((await tbtop({ brandLogo: "/logo.svg" })).brandLogo).toEqual({ src: "/logo.svg" });
+		const full = await tbtop({
+			brandLogo: "/logo.svg",
+			darkModeBrandLogo: "/logo-dark.svg",
+			brandLogoHeight: "2.5rem",
+			favicon: "/favicon.svg",
+		});
+		expect(full.brandLogo).toEqual({
+			src: "/logo.svg",
+			darkSrc: "/logo-dark.svg",
+			height: "2.5rem",
+		});
+		expect(full.favicon).toBe("/favicon.svg");
+	});
+
+	test("a bad logo height or an empty URL fails at createAdmin()", () => {
+		for (const height of ["2", "auto", "10%", "1rem; color: red", "2rem\n"]) {
+			expect(() => panel({ brandLogoHeight: height })).toThrow("Invalid brand logo height");
+		}
+		expect(() => panel({ favicon: "  " })).toThrow("favicon needs a non-empty URL");
+	});
+});

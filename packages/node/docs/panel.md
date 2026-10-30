@@ -34,6 +34,11 @@ or a guest to `loginPath`.
   locale, the `style-preset-<name>` class, and the stored theme applied before paint.
 - `commandPalette: false | { hotkey, commands: [{ label, url, icon, keywords }] }`.
 - `brand`, `unsavedGuard` (default true).
+- `brandLogo`, `darkModeBrandLogo`, `brandLogoHeight`, `favicon`: like PHP's methods of the same
+  names. The logo replaces the brand name in the `logo` block (the name becomes its alt text); the
+  dark variant follows the theme toggle; the height is a px, rem or em length (default `1.5rem`).
+  `favicon` is set through Inertia's `<Head>`, so `rootView()` keeps the host's icon until the
+  client boots. URLs are used as given; a bad height or an empty URL throws at `createAdmin()`.
 - `environmentIndicator`: a header badge naming the environment, like PHP's
   `->environmentIndicator()`. There is no `APP_ENV` on Workers, so pass the name
   as `environment` (`environment: env.APP_ENV`); without it `createAdmin()` throws.
