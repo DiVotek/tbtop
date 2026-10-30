@@ -47,7 +47,7 @@ const DELTA_ICONS: Record<DeltaDirection, React.ElementType> = {
 
 const DELTA_COLORS: Record<DeltaDirection, string> = {
 	up: "text-success",
-	down: "text-destructive",
+	down: "text-destructive-text",
 	flat: "text-muted-foreground",
 };
 

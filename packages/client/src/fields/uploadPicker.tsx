@@ -55,7 +55,7 @@ export function UploadError({ error }: { error: string | null }) {
 		return null;
 	}
 	return (
-		<p role="alert" className="text-sm text-destructive">
+		<p role="alert" className="text-sm text-destructive-text">
 			{error}
 		</p>
 	);

@@ -108,7 +108,7 @@ export function DateTypedInput({
 				aria-describedby={invalid ? errorId : undefined}
 			/>
 			{invalid ? (
-				<p id={errorId} className="text-xs text-destructive">
+				<p id={errorId} className="text-xs text-destructive-text">
 					{t("field.date.invalid")}
 				</p>
 			) : null}

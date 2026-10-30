@@ -130,7 +130,7 @@ export function EditableCell({ col, row, saveCell }: EditableCellProps) {
 			})}
 			{error && (
 				<span
-					className="text-xs text-destructive block mt-0.5"
+					className="text-xs text-destructive-text block mt-0.5"
 					data-testid={`cell-error-${col.name}`}
 				>
 					{error}

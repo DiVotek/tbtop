@@ -92,7 +92,7 @@ describe("Password field", () => {
 		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
 		const label = container.querySelector("label");
 		expect(label?.textContent).toContain("Password");
-		expect(label?.querySelector("span.text-destructive")?.textContent).toBe("*");
+		expect(label?.querySelector("span.text-destructive-text")?.textContent).toBe("*");
 	});
 
 	test("Password renders empty string when value is null", () => {

@@ -99,7 +99,7 @@ export function KeyvalueForm({
 							aria-label={t("field.keyvalue.remove")}
 							disabled={disabled}
 							onClick={() => removeRow(row.id)}
-							className="text-destructive hover:text-destructive"
+							className="text-destructive-text hover:text-destructive-text"
 						>
 							{t("field.keyvalue.remove")}
 						</Button>

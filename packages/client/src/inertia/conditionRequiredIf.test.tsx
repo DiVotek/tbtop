@@ -26,7 +26,7 @@ function serverNode(
  */
 function fieldAsterisk(container: HTMLElement, fieldName: string): Element | null {
 	const field = container.querySelector(`[data-field-name="${fieldName}"]`);
-	return field?.querySelector(".text-destructive") ?? null;
+	return field?.querySelector(".text-destructive-text") ?? null;
 }
 
 describe("ConditionFormBlock: requiredIf via materialize", () => {

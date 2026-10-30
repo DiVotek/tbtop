@@ -136,7 +136,7 @@ function ExpandedRow({
 						aria-label={t("field.repeater.remove")}
 						disabled={disabled || itemCount <= minItems}
 						onClick={onRemove}
-						className="text-destructive hover:text-destructive"
+						className="text-destructive-text hover:text-destructive-text"
 					>
 						{t("field.repeater.remove")}
 					</Button>

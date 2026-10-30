@@ -29,6 +29,18 @@
 	@apply border-primary/20 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/20;
 }
 
+/* Destructive text on the presets' tinted surfaces: upstream draws
+   text-destructive on bg-destructive/10–/30, which lands near 4:1 (3.3:1 on
+   hover). The text-destructive-text mix (core.css) clears 4.5:1 in both themes. Doubled
+   classes tie the scoped `.style-preset-X .cn-…` rules and win on order. */
+.cn-button.cn-button-variant-destructive,
+.cn-badge.cn-badge-variant-destructive,
+.cn-alert.cn-alert-variant-destructive,
+.cn-dropdown-menu-item.cn-dropdown-menu-item[data-variant="destructive"],
+.cn-dropdown-menu-item.cn-dropdown-menu-item[data-variant="destructive"]:focus {
+	@apply text-destructive-text;
+}
+
 /* Upstream's CLI rewrites `cn-font-heading` to the heading font at install;
    at runtime it reads the preset's --font-heading, falling back to body. */
 .cn-font-heading {

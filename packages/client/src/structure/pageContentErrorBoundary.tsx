@@ -53,7 +53,7 @@ export function PageContentErrorPanel({
 			className="rounded-surface-lg border border-destructive/50 bg-destructive/5 p-6"
 			data-testid="page-content-error-boundary"
 		>
-			<h2 className="text-base font-semibold text-destructive">
+			<h2 className="text-base font-semibold text-destructive-text">
 				{t("state.error", "Something went wrong")}
 			</h2>
 			<p className="mt-2 text-sm text-muted-foreground">{error.message}</p>

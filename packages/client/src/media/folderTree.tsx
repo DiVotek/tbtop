@@ -197,7 +197,7 @@ export function FolderTree({
 			))}
 
 			{error && (
-				<p className="px-2 text-xs text-destructive" role="alert">
+				<p className="px-2 text-xs text-destructive-text" role="alert">
 					{error}
 				</p>
 			)}
@@ -329,7 +329,7 @@ function ContextMenuButton({
 				{onDelete && (
 					<DropdownMenuItem
 						onSelect={onDelete}
-						className="text-destructive"
+						className="text-destructive-text"
 						data-testid="folder-menu-delete"
 					>
 						{t("media.folder.delete")}

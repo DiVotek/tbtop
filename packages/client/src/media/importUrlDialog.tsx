@@ -121,7 +121,7 @@ export function ImportUrlDialog({
 				{error && (
 					<p
 						role="alert"
-						className="text-sm text-destructive"
+						className="text-sm text-destructive-text"
 						data-testid="import-url-error"
 					>
 						{error}
