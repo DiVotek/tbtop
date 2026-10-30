@@ -2,11 +2,16 @@
 
 namespace Tbtop\Admin\Dsl\Fields;
 
+use Closure;
+use InvalidArgumentException;
+use LogicException;
 use Tbtop\Admin\Dsl\Concerns\HasAffixes;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasDependencies;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\RelationSearchLimit;
+use Tbtop\Admin\Dsl\S;
 
 final class Relation extends Field
 {
@@ -17,6 +22,12 @@ final class Relation extends Field
 
     /** Server-only — never serialized to the wire. */
     private ?int $searchLimit = null;
+
+    /** Server-only — never serialized to the wire. */
+    private ?Closure $creatableUsing = null;
+
+    /** @var list<Field> Fields of the create mini-form (validated server-side). */
+    private array $creatableFieldList = [];
 
     protected function kind(): string
     {
@@ -52,5 +63,73 @@ final class Relation extends Field
     public function getSearchLimit(): int
     {
         return RelationSearchLimit::resolve($this->searchLimit);
+    }
+
+    /**
+     * Create a related record from the picker: a "+ Create" link under the field
+     * opens a mini-form, and the saved record becomes the field's value.
+     *
+     * $fields: the mini-form; each field's own rules validate it server-side.
+     * $using: fn(array $validated, array $deps): Model — omit it to fill a new
+     *         instance of the query() model with the validated data and save it
+     *         (each mini-form field must be in $fillable, or it throws). Required
+     *         with dependsOn() or a where() in query(), a global scope's included:
+     *         those constraints are not copied onto the new row,
+     *         so the closure sets them; the default path refuses otherwise.
+     *
+     * @param  list<Field>  $fields
+     */
+    public function creatable(array $fields, ?callable $using = null): static
+    {
+        foreach ($fields as $field) {
+            // The endpoint reads the dependsOn() parents from the body's `deps` key.
+            if ($field->name === 'deps') {
+                throw new InvalidArgumentException("Relation \"{$this->name}\": a creatable() field cannot be named \"deps\".");
+            }
+        }
+
+        $this->creatableUsing = $using === null ? null : Closure::fromCallable($using);
+        $this->creatableFieldList = $fields;
+
+        // Serialize only the field nodes — the closure stays server-side.
+        $this->opts['create'] = ['fields' => array_map(
+            fn (Field $f) => $f->toNode(),
+            S::normalizeChildren($fields),
+        )];
+
+        return $this;
+    }
+
+    public function isCreatable(): bool
+    {
+        return isset($this->opts['create']);
+    }
+
+    /** Returns the creation closure, null for the default fill-and-save (never sent to the wire). */
+    public function creatableClosure(): ?Closure
+    {
+        return $this->creatableUsing;
+    }
+
+    /**
+     * Returns the field list passed to creatable() for validation.
+     *
+     * @return list<Field>
+     */
+    public function creatableFields(): array
+    {
+        return $this->creatableFieldList;
+    }
+
+    /** A dependent relation without a creatable() closure fails when the page renders, not on submit. */
+    public function toNode(): Node
+    {
+        if ($this->isCreatable() && $this->creatableUsing === null && $this->dependsOnFields() !== []) {
+            throw new LogicException(
+                "Relation field \"{$this->name}\" uses dependsOn(): pass creatable() a closure that sets the parent.",
+            );
+        }
+
+        return parent::toNode();
     }
 }

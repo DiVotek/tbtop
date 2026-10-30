@@ -4,16 +4,15 @@ import { FieldSkeleton } from "../structure/defaults";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { AsyncOptionCombobox } from "./asyncOptionCombobox";
 import type { OptionMap } from "./asyncOptions";
+import { CreateAffordance } from "./createAffordance";
 import type { DependencyState } from "./fieldDependencies";
 import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { InputGroup } from "./inputGroup";
-import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectMultiForm } from "./selectMulti";
 import { ComboboxOption, matchesQuery } from "./selectMultiOption";
 import { SelectOptionContent } from "./selectOptionContent";
 import {
 	coerceSelectValue,
-	type SelectCreateConfig,
 	type SelectOptionsBag,
 	type SelectSingleOptionsBag,
 	type SelectValueType,
@@ -58,77 +57,14 @@ export function SelectForm(rawProps: FieldFormProps<SelectValueType, SelectOptio
 	return <StaticSingleSelectWithCreate {...props} />;
 }
 
-// ─── Create affordance wrapper ────────────────────────────────────────────────
-
-interface WithCreateProps extends FieldFormProps<SelectValueType, SelectOptionsBag> {
-	resolvedLabels?: OptionMap;
-	onCreated?: () => void;
-	children: React.ReactNode;
-}
-
-function WithCreateAffordance({
-	name,
-	onChange,
-	disabled,
-	invalid,
-	options,
-	resolvedLabels,
-	onCreated,
-	children,
-}: WithCreateProps) {
-	const [open, setOpen] = useState(false);
-	const t = useTranslation();
-	const create = options?.create as SelectCreateConfig | undefined;
-	const control = (
-		<InputGroup options={options} disabled={disabled} invalid={invalid}>
-			{children}
-		</InputGroup>
-	);
-	if (!create) {
-		return control;
-	}
-
-	function handleSuccess(value: string, label: string) {
-		if (resolvedLabels) {
-			resolvedLabels[value] = { value, label };
-		}
-		onChange(value);
-		onCreated?.();
-		setOpen(false);
-	}
-
-	return (
-		<div className="flex flex-col gap-1">
-			{control}
-			<button
-				type="button"
-				data-testid={`select-create-${name}`}
-				disabled={disabled}
-				onClick={() => !disabled && setOpen(true)}
-				className="self-start text-xs text-primary underline"
-			>
-				+ {t("action.create")}
-			</button>
-			{open && (
-				<SelectCreateDialog
-					fieldName={name}
-					config={create}
-					onSuccess={handleSuccess}
-					onClose={() => setOpen(false)}
-				/>
-			)}
-		</div>
-	);
-}
-
 // ─── Static single select ─────────────────────────────────────────────────────
 
 function StaticSingleSelectWithCreate(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
 	const resolvedLabels = useRef<OptionMap>({}).current;
 	return (
-		<WithCreateAffordance {...props} resolvedLabels={resolvedLabels}>
+		<CreateAffordance {...props} resolvedLabels={resolvedLabels}>
 			<StaticSingleSelect {...props} resolvedLabels={resolvedLabels} />
-		</WithCreateAffordance>
+		</CreateAffordance>
 	);
 }
 
@@ -196,9 +132,9 @@ function SearchableStaticSelectWithCreate(
 ) {
 	const resolvedLabels = useRef<OptionMap>({}).current;
 	return (
-		<WithCreateAffordance {...props} resolvedLabels={resolvedLabels}>
+		<CreateAffordance {...props} resolvedLabels={resolvedLabels}>
 			<SearchableStaticSelect {...props} resolvedLabels={resolvedLabels} />
-		</WithCreateAffordance>
+		</CreateAffordance>
 	);
 }
 
@@ -265,7 +201,7 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 	}
 
 	return (
-		<WithCreateAffordance
+		<CreateAffordance
 			{...props}
 			resolvedLabels={remote.labels}
 			onCreated={() => setRefetchKey((k) => k + 1)}
@@ -279,7 +215,7 @@ function AsyncSingleSelectWithCreate(props: FieldFormProps<SelectValueType, Sele
 				dep={remote.dep}
 				onRowsSeen={remote.noteRowsSeen}
 			/>
-		</WithCreateAffordance>
+		</CreateAffordance>
 	);
 }
 

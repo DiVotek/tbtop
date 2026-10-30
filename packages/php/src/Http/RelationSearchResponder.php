@@ -98,7 +98,7 @@ final class RelationSearchResponder
     }
 
     /** @return array{value: string, label: string} */
-    private static function toOption(Model $model, string $labelKey): array
+    public static function toOption(Model $model, string $labelKey): array
     {
         $label = TranslatableValue::pick($model->getRawOriginal($labelKey) ?? $model->{$labelKey});
 
