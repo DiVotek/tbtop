@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import * as dsl from "../src/dsl";
+import * as testing from "../src/testing";
 
 const API_DIR = `${import.meta.dir}/../../../docs/ai/api`;
 
@@ -40,19 +41,22 @@ function documentedMethods(page: string): Map<string, string[]> {
 	return sections;
 }
 
-function exportFor(phpClass: string): Ctor {
+/** Where each reference page's classes are exported from. */
+const MODULES: Record<string, object> = { testing };
+
+function exportFor(phpClass: string, page: string): Ctor {
 	const name = RENAMED[phpClass] ?? phpClass;
-	const ctor = (dsl as unknown as Record<string, Ctor | undefined>)[name];
+	const ctor = ((MODULES[page] ?? dsl) as Record<string, Ctor | undefined>)[name];
 	if (ctor === undefined) {
 		throw new Error(`No TS export for PHP class ${phpClass} (looked for ${name}).`);
 	}
 	return ctor;
 }
 
-for (const page of ["fields", "blocks", "builder", "tables", "actions"]) {
+for (const page of ["fields", "blocks", "builder", "tables", "actions", "testing"]) {
 	for (const [phpClass, methods] of documentedMethods(page)) {
 		test(`${page}: ${phpClass} has every documented PHP method`, () => {
-			const ctor = exportFor(phpClass);
+			const ctor = exportFor(phpClass, page);
 			const missing = methods.filter(
 				(m) =>
 					!(m in ctor.prototype) &&

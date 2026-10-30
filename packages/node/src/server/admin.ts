@@ -4,7 +4,7 @@ import { homeHref } from "./chrome/navigation";
 import type { AdminConfig } from "./config";
 import { ENDPOINTS, routeEndpoints } from "./endpoints";
 import { isCrossSite } from "./guard";
-import { errorResponse, HttpError, json, stripPrefix } from "./http";
+import { decodable, errorResponse, HttpError, json, stripPrefix } from "./http";
 import { assertNoCollision, type McpConfig, mcpPath, mcpRoute, serveMcp } from "./mcp";
 import { panelRoute } from "./panelRoutes";
 
@@ -20,6 +20,7 @@ import { type AdminPageProps, buildPageProps } from "./pageProps";
 import { type PanelView, pageResponse } from "./pageResponse";
 import { assertPanelLook } from "./panel";
 import { findPage, resolvePage } from "./resolve";
+import { actingUser, registerVersion } from "./testing";
 
 export type { AdminConfig } from "./config";
 export type { AdminPageProps } from "./pageProps";
@@ -61,7 +62,7 @@ class AdminServer {
 		as?: unknown,
 	): Promise<T | Response> {
 		const session = await this.sessions(request);
-		const user = as ?? (await this.readUser(request, session)) ?? null;
+		const user = as ?? actingUser(request) ?? (await this.readUser(request, session)) ?? null;
 		const locale = localeContext(this.config, await currentLocale(this.config, session, user));
 		const extra = (await this.config.context?.(request)) ?? {};
 		const unsavedGuard = this.config.unsavedGuard ?? true;
@@ -111,7 +112,9 @@ class AdminServer {
 	}
 
 	async hasUser(request: Request): Promise<boolean> {
-		return (await this.readUser(request, await this.sessions(request))) != null;
+		const user =
+			actingUser(request) ?? (await this.readUser(request, await this.sessions(request)));
+		return user != null;
 	}
 
 	async endpoint(request: Request, path: string): Promise<Response | null> {
@@ -205,19 +208,9 @@ class AdminServer {
 	}
 }
 
-/** A path segment like `%E0` would throw in every decodeURIComponent below: a 400, not a 500. */
-function decodable(path: string): boolean {
-	try {
-		decodeURIComponent(path);
-		return true;
-	} catch {
-		return false;
-	}
-}
-
 export function createAdmin(config: AdminConfig) {
 	const server = new AdminServer(config);
-	return {
+	return registerVersion(server.panel.version, {
 		/**
 		 * The whole panel as one Web-standard handler: pages (Inertia), the
 		 * endpoint cluster, logout. Mount it in Bun.serve, Hono, Elysia or a Start
@@ -230,7 +223,7 @@ export function createAdmin(config: AdminConfig) {
 		id: server.panel.id,
 		prefix: server.prefix,
 		endpoints: ENDPOINTS,
-	};
+	});
 }
 
 export type Admin = ReturnType<typeof createAdmin>;

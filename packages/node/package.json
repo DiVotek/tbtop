@@ -52,6 +52,10 @@
 			"types": "./dist/sharp.d.ts",
 			"import": "./dist/sharp.js"
 		},
+		"./testing": {
+			"types": "./dist/testing.d.ts",
+			"import": "./dist/testing.js"
+		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {
