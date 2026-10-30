@@ -126,7 +126,7 @@ describe("Keyvalue field", () => {
 		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
 		const label = container.querySelector("label");
 		expect(label?.textContent).toContain("Metadata");
-		expect(label?.querySelector("span.text-destructive")?.textContent).toBe("*");
+		expect(label?.querySelector("span.text-destructive-text")?.textContent).toBe("*");
 	});
 	test("Keyvalue wires the first key input to the field id so a label[htmlFor] focuses it", () => {
 		const { getAllByRole } = render(

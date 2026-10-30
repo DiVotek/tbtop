@@ -111,7 +111,7 @@ export function outlinedTintClass(opts: ActionOptionsBag): string | undefined {
 		return undefined;
 	}
 	if (opts.color === "danger") {
-		return "border-destructive text-destructive hover:bg-destructive/10";
+		return "border-destructive text-destructive-text hover:bg-destructive/10";
 	}
 	if (opts.color === "primary") {
 		return "border-primary text-primary hover:bg-primary/10";

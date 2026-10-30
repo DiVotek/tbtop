@@ -83,7 +83,7 @@ export function SelectCreateDialog({
 						// biome-ignore lint/suspicious/noArrayIndexKey: positional
 						<div key={i}>{renderMiniField(node, ctrl)}</div>
 					))}
-					{submitError && <p className="text-sm text-destructive">{submitError}</p>}
+					{submitError && <p className="text-sm text-destructive-text">{submitError}</p>}
 				</div>
 			</FormControllerProvider>
 		</ModalShell>
@@ -126,12 +126,15 @@ function renderMiniField(node: StructureNode, ctrl: Ctrl): ReactNode {
 				{label && (
 					<Label htmlFor={name}>
 						{label}
-						{required && <span className="text-destructive">*</span>}
+						{required && <span className="text-destructive-text">*</span>}
 					</Label>
 				)}
 				{control}
 				{fieldError && (
-					<p className="text-sm text-destructive" data-testid={`field-error-${name}`}>
+					<p
+						className="text-sm text-destructive-text"
+						data-testid={`field-error-${name}`}
+					>
 						{fieldError}
 					</p>
 				)}

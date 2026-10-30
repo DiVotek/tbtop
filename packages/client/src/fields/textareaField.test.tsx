@@ -137,7 +137,7 @@ describe("Textarea field", () => {
 		await waitFor(() => expect(getByTestId("form-block")).toBeTruthy());
 		const label = container.querySelector("label");
 		expect(label?.textContent).toContain("Body");
-		expect(label?.querySelector("span.text-destructive")?.textContent).toBe("*");
+		expect(label?.querySelector("span.text-destructive-text")?.textContent).toBe("*");
 	});
 
 	test("Textarea renders empty string when value is null", () => {
