@@ -1,0 +1,9 @@
+it('edits a {{ labelLower }}', function () {
+    $record = {{ record }};
+
+    tbtop(EditPage::class, ['{{ var }}' => $record]){{ editPrefill }}
+        ->fill({{ editFill }})
+        ->submit()
+        ->assertHasNoErrors()
+        ->assertNotified('Saved');{{ editCheck }}
+});

@@ -1,0 +1,7 @@
+it('lists {{ pluralLower }}', function () {
+    $records = {{ records }};
+
+    tbtop(IndexPage::class)->assertOk()
+        ->table()
+        ->assertCanSeeRecords($records);{{ searchCase }}
+});

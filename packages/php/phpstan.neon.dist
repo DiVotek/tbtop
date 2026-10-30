@@ -8,3 +8,8 @@ parameters:
         - config
         - database
     tmpDir: build/phpstan
+    ignoreErrors:
+        # A host's test cases use it; nothing under src/ does.
+        -
+            identifier: trait.unused
+            path: src/Testing/InteractsWithTbtop.php

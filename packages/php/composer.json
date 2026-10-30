@@ -49,7 +49,10 @@
         "psr-4": {
             "Tbtop\\Admin\\": "src/",
             "Tbtop\\Admin\\Database\\Factories\\": "database/factories/"
-        }
+        },
+        "files": [
+            "src/Testing/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
