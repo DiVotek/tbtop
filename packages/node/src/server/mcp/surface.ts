@@ -20,10 +20,10 @@ export function exposedAction(resolved: Resolved, name: string): ActionBuilder |
  * and onSubmit forms are one kind, executables; then the queryable tables and
  * what was left out, and why.
  */
-export async function describeSurface(resolved: Resolved) {
+export async function describeSurface(resolved: Resolved, withValues = false) {
 	const listing: Listing = { executables: [], excluded: [] };
-	await listActions(resolved, listing);
-	await listForms(resolved, listing);
+	await listActions(resolved, listing, withValues);
+	await listForms(resolved, listing, withValues);
 	return {
 		executables: listing.executables,
 		tables: await tables(resolved),
@@ -49,7 +49,11 @@ async function list(
 	}
 }
 
-async function listActions(resolved: Resolved, listing: Listing): Promise<void> {
+async function listActions(
+	resolved: Resolved,
+	listing: Listing,
+	withValues: boolean,
+): Promise<void> {
 	const tableOf = actionTables([resolved.tree, ...resolved.headerActions], null);
 	for (const name of resolved.s.collectedActions().keys()) {
 		const id = `${resolved.page.path}:${name}`;
@@ -67,12 +71,12 @@ async function listActions(resolved: Resolved, listing: Listing): Promise<void> 
 		const form = enclosingForm(resolved, name);
 		const reason = await unfillableReason(form, !action.skipsFormValidation());
 		await list(listing, { id, reason }, () =>
-			describeAction(id, action, { form, table: tableOf.get(name) }),
+			describeAction(id, action, { form, table: tableOf.get(name), withValues }),
 		);
 	}
 }
 
-async function listForms(resolved: Resolved, listing: Listing): Promise<void> {
+async function listForms(resolved: Resolved, listing: Listing, withValues: boolean): Promise<void> {
 	for (const name of resolved.s.collectedForms().keys()) {
 		const form = resolved.s.reachableForm(name);
 		if (form?.submitHandler() === undefined || resolved.s.collectedActions().has(name)) {
@@ -83,9 +87,28 @@ async function listForms(resolved: Resolved, listing: Listing): Promise<void> {
 		await list(listing, { id, reason }, async () => ({
 			id,
 			kind: "form",
-			...(await describeForm(form)),
+			...(await describeForm(form, withValues)),
 		}));
 	}
+}
+
+/**
+ * PageSurface::brief(): describeSurface() cut to an index for the bare
+ * search(): executables as id, kind and label, tables by name, no forms.
+ */
+export async function briefSurface(resolved: Resolved) {
+	const surface = await describeSurface(resolved);
+	return {
+		executables: surface.executables.map((entry) =>
+			Object.fromEntries(
+				Object.entries({ id: entry.id, kind: entry.kind, label: entry.label }).filter(
+					([, v]) => v !== undefined && v !== null,
+				),
+			),
+		),
+		tables: surface.tables.map((table) => table.table),
+		excluded: surface.excluded,
+	};
 }
 
 /**
@@ -120,7 +143,7 @@ export async function executable(resolved: Resolved, name: string) {
 async function describeAction(
 	id: string,
 	action: ActionBuilder,
-	at: { form: FormBuilder | null; table: string | undefined },
+	at: { form: FormBuilder | null; table: string | undefined; withValues: boolean },
 ): Promise<Entry> {
 	const options = resolveActionNode(action)?.options ?? {};
 	const confirm = options.confirm as { title?: unknown } | undefined;
@@ -133,7 +156,7 @@ async function describeAction(
 			confirm: confirm?.title,
 			needs: needs.length > 0 ? needs : undefined,
 			table: at.table,
-			form: at.form === null ? undefined : await describeForm(at.form),
+			form: at.form === null ? undefined : await describeForm(at.form, at.withValues),
 		}).filter(([, v]) => v !== undefined && v !== null),
 	);
 }

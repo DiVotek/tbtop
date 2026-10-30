@@ -36,9 +36,16 @@ async function analyse(form: FormBuilder) {
 	return { described: out, required: described.required };
 }
 
-/** FormArguments::describe(): kind, label, options and Laravel rules per field. */
-export async function describeForm(form: FormBuilder): Promise<FormDescription> {
-	return (await analyse(form)).described;
+/**
+ * FormArguments::describe(): kind, label, options and Laravel rules per field.
+ * `values` only with `withValues`: they are the bulk of a record form.
+ */
+export async function describeForm(
+	form: FormBuilder,
+	withValues = false,
+): Promise<FormDescription> {
+	const { values, ...rest } = (await analyse(form)).described;
+	return withValues && values !== undefined ? { ...rest, values } : rest;
 }
 
 /**

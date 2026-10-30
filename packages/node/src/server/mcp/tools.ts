@@ -10,7 +10,7 @@ import { type McpPages, pathParams, routeParams } from "./pages";
 import { optionsLookup } from "./queryOptions";
 import type { McpTool } from "./rpc";
 import { SCHEMAS } from "./schemas";
-import { describeSurface, executable } from "./surface";
+import { briefSurface, describeSurface, executable } from "./surface";
 import { checkTableArgs } from "./tableArgs";
 
 export interface ToolEnv {
@@ -35,14 +35,18 @@ async function search(env: ToolEnv, args: Args): Promise<Record<string, unknown>
 	if (typeof args.page === "string" && args.page !== "") {
 		const { page, resolved } = await open(env, args);
 		const title = typeof page.title === "function" ? page.title(resolved.ctx) : page.title;
-		return { page: page.path, title, ...(await describeSurface(resolved)) };
+		return {
+			page: page.path,
+			title,
+			...(await describeSurface(resolved, args.values === true)),
+		};
 	}
 	const pages = await Promise.all(env.pages.all().map((page) => listed(env, page)));
 	return { pages: pages.filter((entry) => entry !== null) };
 }
 
 /**
- * A page in the bare listing. One with route params is listed with them: its
+ * A page in the bare listing, as an index (briefSurface). One with route params is listed with them: its
  * gate runs when the agent opens it with real params. One whose gate or view()
  * fails is listed with an error, never failing the whole search.
  */
@@ -57,7 +61,9 @@ async function listed(env: ToolEnv, page: PageDef): Promise<Record<string, unkno
 		if (!((await page.authorize?.({ params: {}, request })) ?? true)) {
 			return null;
 		}
-		return await search(env, { page: page.path });
+		const { resolved } = await open(env, { page: page.path });
+		const title = typeof page.title === "function" ? page.title(resolved.ctx) : page.title;
+		return { page: page.path, title, ...(await briefSurface(resolved)) };
 	} catch (error) {
 		env.report(error);
 		return { page: page.path, error: "This page failed to build; see the application log." };

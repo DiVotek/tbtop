@@ -5,12 +5,14 @@ const int = (description: string) => ({ type: "integer", description });
 /** Tool descriptions and input schemas, as the PHP server (SearchTool/QueryTool/ExecuteTool) lists them. */
 export const SCHEMAS = {
 	search: {
-		description: `Discover what you can do in this admin panel. Without arguments: every page you may open, plus the
-executables (actions/forms) and tables of pages that take no params. With \`page\` (+ \`params\` for a
-page whose path has params, e.g. a record id, as strings): that page's executables and tables. Each
-executable lists its \`needs\` (form/row/selection) and form fields with Laravel validation rules;
-a \`translatable\` field takes an object keyed by locale (see its nestedRules). A form's \`values\` are
-its current data: build edits from them, not from query() rows, which are formatted for display.
+		description: `Discover what you can do in this admin panel. Without arguments: an index of every page you may
+open, with the executable ids (actions/forms) and table names of pages that take no params. With
+\`page\` (+ \`params\` for a page whose path has params, e.g. a record id, as strings): that page's
+executables with their arguments, and its tables. Each executable lists its \`needs\`
+(form/row/selection) and form fields with Laravel validation rules and \`help\` text;
+a \`translatable\` field takes an object keyed by locale (see its nestedRules).
+Pass \`values: true\` to get each form's current data as \`values\`; do that before an edit: build
+it from \`values\`, not from query() rows, which are formatted for display.
 A field you omit is absent from the handler's input; resend \`values\` for fields you keep.
 A container's row fields follow it as \`name.*.child\`; send rows as a list of objects.
 Fields listed in a form's \`excludedFields\` cannot be changed: omit them, or send the value \`values\`
@@ -27,6 +29,10 @@ or digit, any other character literal; send the value as the mask formats it, li
 			properties: {
 				page: str("Page id (its path) from a previous search()."),
 				params: obj('Route params of the page as strings, e.g. {"post": "12"}.'),
+				values: {
+					type: "boolean",
+					description: "With `page`: include each form's current `values`.",
+				},
 			},
 		},
 		annotations: { readOnlyHint: true },

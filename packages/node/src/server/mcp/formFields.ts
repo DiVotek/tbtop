@@ -103,6 +103,10 @@ async function describeField(
 			name,
 			kind: node.kind,
 			label: field.labelText(),
+			help:
+				typeof options.helperText === "string" && options.helperText !== ""
+					? options.helperText
+					: undefined,
 			rules: rules[name] ?? [],
 			nestedRules: Object.keys(nested).length > 0 ? nested : undefined,
 			mask: typeof options.mask === "string" ? options.mask : undefined,

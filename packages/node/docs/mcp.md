@@ -23,7 +23,8 @@ are the host's. The session gate does not run for agents, but every page
 
 Three tools, the same as the PHP server:
 
-- `search`: lists pages, or describes one page (its tables, forms, actions and their arguments).
+- `search`: an index of pages (executable ids, table names), or one page described: its
+  tables, forms, actions and their arguments, with each form's `values` on `values: true`.
 - `query`: reads a table with search, filters, sort and paging, or a field's options.
 - `execute`: runs an action or submits a form (`id` is `page:name`).
 
