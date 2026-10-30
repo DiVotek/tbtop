@@ -26,10 +26,14 @@ export interface StaticOption {
 
 export interface SelectCreateConfig {
 	fields: StructureNode[];
-	/** Injected by materialize — POSTs to the select-create endpoint and returns {value, label}. */
+	/**
+	 * Injected by materialize — POSTs to the select-create (or relation-create)
+	 * endpoint and returns {value, label}. `deps` reaches a relation's closure.
+	 */
 	post: (
 		ctx: unknown,
 		data: Record<string, unknown>,
+		deps?: Record<string, string>,
 	) => Promise<{ value: string; label: string }>;
 }
 
