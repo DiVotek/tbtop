@@ -6,7 +6,6 @@ use App\Admin\Fields\Rating;
 use App\Models\User;
 use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Fields\Embed;
-use Tbtop\Admin\Dsl\Fields\Field;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 
@@ -16,7 +15,7 @@ use Tbtop\Admin\Dsl\S;
  */
 trait PostFormFields
 {
-    /** @return list<Node|Field> */
+    /** @return list<Node|\Tbtop\Admin\Dsl\Fields\Field> */
     protected function postFormSections(S $s, string $slugUniqueRule): array
     {
         return [
@@ -91,7 +90,7 @@ trait PostFormFields
     private function authorOptions(): array
     {
         return User::query()->orderBy('name')->get()
-            ->map(fn (User $user): array => [
+            ->map(fn(User $user): array => [
                 'value' => (string) $user->id,
                 'label' => $user->name ?? $user->email,
             ])

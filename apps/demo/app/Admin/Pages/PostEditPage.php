@@ -36,7 +36,7 @@ class PostEditPage extends Page
                         Post::query()->whereKey($ctx->request->route('post'))->update(
                             [
                                 'published' => false,
-                                'published_at' => null,
+                                'published_at' => null
                             ]
                         );
 
