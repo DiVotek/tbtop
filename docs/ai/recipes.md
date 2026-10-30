@@ -338,8 +338,8 @@ Notes:
 
 ## Recipe 8 — Theming and appearance
 
-**What Filament calls it:** `->colors()`, `->font()`, `->brandLogo()`, `->maxContentWidth()`
-on the panel.
+**What Filament calls it:** `->colors()`, `->font()`, `->brandLogo()`, `->favicon()`,
+`->maxContentWidth()` on the panel. `brandLogo()` / `favicon()` exist here under the same names.
 
 **How it works here:** tbtop renders on **shadcn theme tokens** (the `--background` /
 `--primary` / `--radius` … CSS variables) and **shadcn style presets** (the component
@@ -464,6 +464,30 @@ return $panel->environmentIndicator(              // full control, called per re
 - The badge is added in front of whatever the header renders, including a custom `Chrome`
   or a React `header` slot. It ships as the `tbtop.environment` shared prop
   (`$defs/environmentIndicator`, `null` when hidden).
+
+### Brand name, logo and favicon
+
+```php
+return $panel
+    ->brand('Acme')                                    // name in the logo block; the logo's alt text
+    ->brandLogo(asset('images/logo.svg'))              // image instead of the name
+    ->darkModeBrandLogo(asset('images/logo-dark.svg')) // optional, swapped in while dark
+    ->brandLogoHeight('2rem')                          // px/rem/em; default 1.5rem
+    ->favicon(asset('favicon.svg'));                   // tab icon on every panel page
+```
+
+- URLs are used as given: pass `asset()` for a file in `public/`, or any absolute URL.
+- The logo replaces the brand name in the stock `logo` chrome block and keeps linking to the
+  panel root. The dark variant is chosen by the `.dark` class on `<html>`, so it follows a
+  theme flip without a reload. `darkModeBrandLogo()` alone changes nothing.
+- In the `rail-sidebar` rail the logo is fitted into the same square as the first letter;
+  a square mark reads best there. A client `logo` slot still replaces everything.
+- `brandLogoHeight()` throws `InvalidArgumentException` for anything but a px, rem or em length.
+- `favicon()` is added through Inertia's `<Head>` (key `favicon`), like the page title, so each
+  panel can carry its own. A panel without one leaves the root Blade's icon alone; keep a
+  `<link rel="icon">` there if you want an icon before the client boots.
+- Both ship as shared props: `tbtop.brandLogo` (`$defs/brandLogo`, `null` when unset) and
+  `tbtop.favicon` (`null` when unset).
 
 ---
 

@@ -91,6 +91,17 @@ final class CurrentPanel
         return $this->config->getBrand();
     }
 
+    /** @return array{src: string, darkSrc?: string, height?: string}|null */
+    public function brandLogo(): ?array
+    {
+        return $this->config->getBrandLogo();
+    }
+
+    public function favicon(): ?string
+    {
+        return $this->config->getFavicon();
+    }
+
     /** @return 'sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar' */
     public function navigation(): string
     {

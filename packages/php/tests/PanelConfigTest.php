@@ -73,3 +73,40 @@ it('serializes a chosen style preset and its html scope class', function () {
 it('rejects an unknown style preset', function () {
     (new PanelConfig)->stylePreset('new-york');
 })->throws(InvalidArgumentException::class, 'Unknown style preset');
+
+it('has no brand logo or favicon until configured', function () {
+    $panel = new PanelConfig;
+
+    expect($panel->getBrandLogo())->toBeNull()
+        ->and($panel->getFavicon())->toBeNull();
+});
+
+it('serializes the brand logo with only the keys an author set', function () {
+    expect((new PanelConfig)->brandLogo('/img/logo.svg')->getBrandLogo())
+        ->toBe(['src' => '/img/logo.svg']);
+
+    $logo = (new PanelConfig)
+        ->brandLogo('/img/logo.svg')
+        ->darkModeBrandLogo('/img/logo-dark.svg')
+        ->brandLogoHeight('2.5rem')
+        ->getBrandLogo();
+
+    expect($logo)->toBe(['src' => '/img/logo.svg', 'darkSrc' => '/img/logo-dark.svg', 'height' => '2.5rem']);
+});
+
+it('keeps the brand name when only a dark-mode logo is set', function () {
+    expect((new PanelConfig)->darkModeBrandLogo('/img/logo-dark.svg')->getBrandLogo())->toBeNull();
+});
+
+it('rejects a brand logo height that is not a px, rem or em length', function (string $height) {
+    (new PanelConfig)->brandLogoHeight($height);
+})->with(['2', 'auto', '10%', '1rem; color: red'])->throws(InvalidArgumentException::class, 'Invalid brand logo height');
+
+it('rejects an empty logo or favicon URL', function (string $method) {
+    (new PanelConfig)->{$method}('  ');
+})->with(['brandLogo', 'darkModeBrandLogo', 'favicon'])->throws(InvalidArgumentException::class, 'needs a non-empty URL');
+
+it('keeps the favicon URL as given', function () {
+    expect((new PanelConfig)->favicon('https://cdn.example.com/favicon.svg')->getFavicon())
+        ->toBe('https://cdn.example.com/favicon.svg');
+});
