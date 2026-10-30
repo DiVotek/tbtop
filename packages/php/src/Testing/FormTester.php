@@ -25,10 +25,12 @@ final class FormTester
      */
     public function fill(array $data): self
     {
-        $fields = $this->visit->fieldNames($this->name);
+        // A page that did not render has no fields to check against: post blind.
+        $rendered = $this->visit->response->getStatusCode() === 200;
+        $fields = $rendered ? $this->visit->fieldNames($this->name) : [];
         foreach ($data as $key => $value) {
             $root = explode('.', (string) $key)[0];
-            if (! in_array($root, $fields, true) && ! array_key_exists($root, $this->data)) {
+            if ($rendered && ! in_array($root, $fields, true) && ! array_key_exists($root, $this->data)) {
                 Assert::fail("Form [{$this->name}] has no field [{$root}]. Fields: ".($fields === [] ? 'none' : implode(', ', $fields)).'.');
             }
             data_set($this->data, (string) $key, $value);

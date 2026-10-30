@@ -1,0 +1,10 @@
+it('deletes one {{ labelLower }} and a selection', function () {
+    [$one, $two] = {{ records }}->all();
+    $table = tbtop(IndexPage::class)->table();
+
+    $table->callRowAction('delete', $one)->assertTableRefreshed();
+    expect({{ model }}::query()->find($one->getKey()))->toBeNull();
+
+    $table->callBulkAction('delete-selected', [$two])->assertTableRefreshed();
+    expect({{ model }}::query()->count())->toBe(0);
+});

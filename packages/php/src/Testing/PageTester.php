@@ -141,6 +141,9 @@ final class PageTester
     /** A form on the page, outside any modal. The name may be left out when there is only one. */
     public function form(?string $name = null): FormTester
     {
+        if ($name !== null && $this->visit->response->getStatusCode() !== 200) {
+            return new FormTester($this->visit, $name, []);
+        }
         $forms = array_values(array_filter(Wire::ofKind($this->visit->trees(), 'form'), static fn (array $e): bool => $e['modal'] === null));
         $name ??= count($forms) === 1 ? (string) $forms[0]['node']['name'] : null;
         if ($name === null) {

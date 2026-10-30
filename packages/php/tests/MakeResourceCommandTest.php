@@ -204,9 +204,13 @@ it('refuses pages whose path an existing page already holds, and writes nothing'
 it('writes a feature test with --tests', function () {
     $this->artisan('make:tbtop-resource', ['model' => 'Writer', '--tests' => true])->assertSuccessful();
 
-    expect(file_get_contents(base_path('tests/Feature/Admin/WritersTest.php')))
+    $test = (string) file_get_contents(base_path('tests/Feature/Admin/WritersTest.php'));
+
+    expect($test)
         ->toContain('use App\\Admin\\Pages\\Writers\\IndexPage;')
-        ->toContain('$this->get(IndexPage::url())->assertOk();');
+        ->toContain('tbtop(CreatePage::class)')
+        ->toContain('->callBulkAction(\'delete-selected\', [$two])')
+        ->toContain('function writerAttributes(): array');
 });
 
 it('leaves the sidebar alone with --no-nav and uses --group otherwise', function () {

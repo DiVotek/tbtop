@@ -1,0 +1,10 @@
+it('refuses the page and every endpoint to a user the policy turns away', function () {
+    $record = {{ record }};
+    $this->allowed = false;
+
+    tbtop(IndexPage::class)->assertForbidden();
+    tbtop(IndexPage::class)->table('{{ slug }}')->assertForbidden();
+    tbtop(IndexPage::class)->table('{{ slug }}')->callRowAction('delete', $record)->assertForbidden();
+
+    expect({{ model }}::query()->count())->toBe(1);
+});

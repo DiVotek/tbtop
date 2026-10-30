@@ -1,0 +1,12 @@
+it('restores and force deletes a trashed {{ labelLower }}', function () {
+    $record = {{ record }};
+    $record->delete();
+    $trashed = tbtop(IndexPage::class)->table()->tab('trashed');
+
+    $trashed->callRowAction('restore', $record)->assertTableRefreshed();
+    expect($record->fresh()->trashed())->toBeFalse();
+
+    $record->delete();
+    $trashed->callRowAction('forceDelete', $record)->assertTableRefreshed();
+    expect({{ model }}::withTrashed()->find($record->getKey()))->toBeNull();
+});

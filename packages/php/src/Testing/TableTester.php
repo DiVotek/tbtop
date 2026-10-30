@@ -43,7 +43,8 @@ final class TableTester
     /** Table-wide search over the searchable columns. */
     public function search(string $text): self
     {
-        Assert::assertNotEmpty($this->options()['searchable'] ?? null, "Table [{$this->name}] is not searchable.");
+        $columns = array_filter($this->options()['columns'] ?? [], static fn (mixed $c): bool => is_array($c) && ($c['searchable'] ?? false) === true);
+        Assert::assertTrue(! empty($this->options()['searchable']) || $columns !== [], "Table [{$this->name}] is not searchable.");
 
         return $this->with('search', $text);
     }
@@ -72,6 +73,10 @@ final class TableTester
     public function sort(string $column, string $direction = 'asc'): self
     {
         $this->column($column);
+        $sortable = array_filter($this->options()['columns'] ?? [], static fn (mixed $c): bool => is_array($c) && ($c['name'] ?? null) === $column && ($c['sortable'] ?? false) === true);
+        if ($sortable === [] && ($this->options()['defaultSort']['field'] ?? null) !== $column) {
+            Assert::fail("Column [{$column}] of table [{$this->name}] is not sortable: the server would ignore the sort.");
+        }
 
         return $this->with('sort', $column)->with('dir', $direction);
     }
@@ -189,7 +194,7 @@ final class TableTester
      */
     public function callRowAction(string $name, mixed $record, array $form = []): Result
     {
-        return $this->visit->run($this->visit->action($name, $this->node), $form, $this->row($record), []);
+        return $this->refreshed($this->visit->run($this->visit->action($name, $this->node), $form, $this->row($record), []));
     }
 
     /** Open a row's modal action: its query() runs with that row. */
@@ -206,7 +211,7 @@ final class TableTester
      */
     public function callBulkAction(string $name, iterable|Model|int|string $records, array $form = []): Result
     {
-        return $this->visit->run($this->visit->action($name, $this->node), $form, [], Records::keys($records));
+        return $this->refreshed($this->visit->run($this->visit->action($name, $this->node), $form, [], Records::keys($records)));
     }
 
     /**
@@ -216,7 +221,7 @@ final class TableTester
      */
     public function callAction(string $name, array $form = []): Result
     {
-        return $this->visit->run($this->visit->action($name, $this->node), $form, [], []);
+        return $this->refreshed($this->visit->run($this->visit->action($name, $this->node), $form, [], []));
     }
 
     /**
@@ -229,6 +234,14 @@ final class TableTester
         $rows = $this->data()['data'] ?? [];
 
         return is_array($rows) ? array_values($rows) : [];
+    }
+
+    /** An action may change the rows: the next assertion fetches them again. */
+    private function refreshed(Result $result): Result
+    {
+        $this->response = null;
+
+        return $result;
     }
 
     private function with(string $key, mixed $value): self

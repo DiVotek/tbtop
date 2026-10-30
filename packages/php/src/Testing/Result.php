@@ -60,6 +60,8 @@ final class Result
     /** Validation passed — or, given field names, none of these fields failed. */
     public function assertHasNoErrors(string|array $keys = []): self
     {
+        $status = $this->response->getStatusCode();
+        Assert::assertLessThan(500, $status, "{$this->subject} failed with {$status}: ".mb_substr((string) $this->response->getContent(), 0, 500));
         if ($keys === []) {
             Assert::assertSame([], $this->errors, "{$this->subject} has validation errors: ".json_encode($this->errors));
 

@@ -85,7 +85,7 @@ final class PageVisit
      */
     public function labels(?string $form): array
     {
-        if ($form === null) {
+        if ($form === null || $this->response->getStatusCode() !== 200) {
             return [];
         }
         $labels = [];

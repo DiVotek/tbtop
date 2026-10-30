@@ -1,0 +1,10 @@
+it('edits a {{ labelLower }} in the modal', function () {
+    $record = {{ record }};
+
+    tbtop(IndexPage::class)->table()
+        ->openRowAction('edit', $record){{ modalPrefill }}
+        ->fill({{ editFill }})
+        ->submit()
+        ->assertHasNoErrors()
+        ->assertModalClosed();{{ editCheck }}
+});

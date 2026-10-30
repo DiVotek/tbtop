@@ -35,14 +35,6 @@ final class ResourceStubs
         return $this->options->view ? [...$files, 'ViewPage.php' => $this->render('view')] : $files;
     }
 
-    public function test(string $userClass): string
-    {
-        return $this->render('test', [
-            '{{ userClass }}' => $userClass,
-            '{{ userModel }}' => class_basename($userClass),
-        ]);
-    }
-
     /** @param  array<string, string>  $extra */
     private function render(string $stub, array $extra = []): string
     {
@@ -54,7 +46,7 @@ final class ResourceStubs
     }
 
     /** Orders the file's leading `use` block alphabetically, as Pint would, without duplicates. */
-    private static function sortImports(string $php): string
+    public static function sortImports(string $php): string
     {
         return (string) preg_replace_callback('/^(?:use [^;\n]+;\n)+/m', function (array $block): string {
             $lines = array_values(array_unique(explode("\n", rtrim($block[0], "\n"))));

@@ -1,0 +1,8 @@
+it('creates a {{ labelLower }} in the modal', function () {
+    tbtop(IndexPage::class)->table()
+        ->callAction('create', form: {{ attributes }})
+        ->assertHasNoErrors()
+        ->assertModalClosed();
+
+    expect({{ model }}::query()->count())->toBe(1);
+});{{ requiredCase }}
