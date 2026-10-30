@@ -12,7 +12,7 @@ import { fieldsByKey } from "../../dsl/ruleWalker";
 import { RICHTEXT_NODE_TYPES } from "./richtext";
 
 /** Keys a remote reference may carry; any other key makes the value an ordinary one. */
-const KEYS = ["url", "alt", "name"];
+const KEYS = ["url", "name"];
 
 /** RemoteFiles::isRemote(): a `{url: "https://…"}` reference. */
 export function isRemote(value: unknown): value is { url: string; name?: string } {

@@ -72,6 +72,9 @@ async function fetchRemote(url: string): Promise<Response> {
 		});
 		return new Response(stream, { headers: { "content-type": "image/png" } });
 	}
+	if (url.endsWith("/empty.png")) {
+		return new Response(null, { headers: { "content-type": "image/png" } });
+	}
 	if (url.endsWith("/page.html")) {
 		return new Response("<html></html>", { headers: { "content-type": "text/html" } });
 	}
@@ -206,6 +209,10 @@ describe("MCP upload fields by URL", () => {
 			],
 			["https://cdn.example/huge.png", "cover: The file exceeds the maximum allowed size."],
 			["https://cdn.example/stream.png", "cover: The file exceeds the maximum allowed size."],
+			[
+				"https://cdn.example/empty.png",
+				"cover: Could not download the file from the given URL.",
+			],
 			["https://cdn.example/page.html", "cover: File type text/html is not allowed."],
 		];
 		for (const [url, message] of cases) {

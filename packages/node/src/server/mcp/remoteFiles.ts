@@ -156,17 +156,21 @@ const httpUrl = (raw: string): URL | null => {
 	return url !== null && ["http:", "https:"].includes(url.protocol) ? url : null;
 };
 
-/** The response body, or the error key when it is over `maxSize` or breaks off; read until the cap, no further. */
+/** The response body, or the error key when it is over `maxSize`, empty or breaks off; read until the cap, no further. */
 async function body(
 	response: Response,
 	maxSize: number,
 ): Promise<Uint8Array<ArrayBuffer> | string> {
 	if (Number(response.headers.get("content-length") ?? 0) > maxSize) {
+		await response.body?.cancel().catch(() => null);
 		return "file_too_large";
 	}
 	const chunks = await readCapped(response, maxSize).catch(() => "download_failed");
 	if (typeof chunks === "string") {
 		return chunks;
+	}
+	if (chunks.length === 0) {
+		return "download_failed";
 	}
 	const bytes = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0));
 	let offset = 0;
