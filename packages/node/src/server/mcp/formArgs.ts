@@ -25,15 +25,10 @@ export function formShape(form: FormBuilder): { fields: Record<string, Field>; r
 	return { fields: fieldsByKey(children), rules: collectRules(children) };
 }
 
-async function analyse(form: FormBuilder, files: boolean) {
+async function analyse(form: FormBuilder, at: SurfaceOptions) {
 	const { fields, rules } = formShape(form);
-	const described = await describeFields(fields, rules, files);
-	const shown = new Set(
-		described.fields.filter((f) => f.kind !== "password").map((f) => String(f.name)),
-	);
-	const values = Object.fromEntries(
-		Object.entries(form.recordData()).filter(([key]) => shown.has(key)),
-	);
+	const described = await describeFields(fields, rules, at.files === true);
+	const values = at.withValues === true ? shownValues(form, described.fields) : {};
 	const out: FormDescription = {
 		form: form.name,
 		fields: described.fields,
@@ -41,6 +36,12 @@ async function analyse(form: FormBuilder, files: boolean) {
 		...(Object.keys(values).length > 0 ? { values } : {}),
 	};
 	return { described: out, required: described.required };
+}
+
+/** The record's values for the listed fields, passwords left out. */
+function shownValues(form: FormBuilder, fields: Record<string, unknown>[]) {
+	const shown = new Set(fields.filter((f) => f.kind !== "password").map((f) => String(f.name)));
+	return Object.fromEntries(Object.entries(form.recordData()).filter(([key]) => shown.has(key)));
 }
 
 /**
@@ -52,8 +53,7 @@ export async function describeForm(
 	form: FormBuilder,
 	at: SurfaceOptions = {},
 ): Promise<FormDescription> {
-	const { values, ...rest } = (await analyse(form, at.files === true)).described;
-	return at.withValues === true && values !== undefined ? { ...rest, values } : rest;
+	return (await analyse(form, at)).described;
 }
 
 /**
@@ -68,7 +68,7 @@ export async function unfillableReason(
 	if (form === null) {
 		return null;
 	}
-	const { described, required } = await analyse(form, files);
+	const { described, required } = await analyse(form, { files });
 	if (described.fields.length === 0 && described.excludedFields !== undefined) {
 		return ALL_EXCLUDED;
 	}
