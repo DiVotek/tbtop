@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tbtop\Admin\Dsl\Fields\MediaPicker;
 use Tbtop\Admin\Dsl\Fields\Upload;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Mcp\AgentError;
 use Tbtop\Admin\Mcp\RemoteFiles;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Panels\CurrentPanel;
@@ -137,3 +139,11 @@ it('refuses a {url} nested where the field takes no file, before fetching', func
     'list' => [[['url' => 'https://8.8.8.8/a.png']]],
     'map' => [['x' => ['url' => 'https://8.8.8.8/a.png']]],
 ]);
+
+it('takes a translatable file field per locale only, refusing a bare {url} before fetching', function (): void {
+    $form = (new S)->form('doc', [(new S)->upload('file')->translatable()]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, ['file' => ['url' => 'https://8.8.8.8/a.png']]))
+        ->toThrow(AgentError::class, 'file: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.');
+    Http::assertNothingSent();
+});

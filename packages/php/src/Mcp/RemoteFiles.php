@@ -95,7 +95,7 @@ final class RemoteFiles
     private static function placed(mixed $value, bool $multiple, bool $translatable): bool
     {
         if (self::isRemote($value)) {
-            return ! $multiple;
+            return ! $multiple && ! $translatable;
         }
         if (! is_array($value) || self::count($value) === 0) {
             return true;
