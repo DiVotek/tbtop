@@ -72,8 +72,8 @@ const relationCreate: Endpoint = {
 		const fields = field.creatableFields();
 		const options = { attributes: collectAttributes(fields), hostRules: ctx.options.hostRules };
 		const values = await validated(body, collectRules(fields), options);
-		const row = await create(values, readDeps(body, field.dependsOnFields()));
 		const key = keyOf(requireDriver(ctx.options));
+		const row = await create(values, readDeps(body, field.dependsOnFields()));
 		if (
 			row === null ||
 			typeof row !== "object" ||
