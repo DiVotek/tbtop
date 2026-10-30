@@ -12,6 +12,7 @@ use Tbtop\Admin\Navigation\NavGroup;
 use Tbtop\Admin\Navigation\NavItem;
 use Tbtop\Admin\Pages\Page;
 use Tbtop\Admin\Panels\Concerns\ConfiguresAppearance;
+use Tbtop\Admin\Panels\Concerns\ConfiguresBranding;
 use Tbtop\Admin\Panels\Concerns\ConfiguresEnvironmentIndicator;
 use Tbtop\Admin\Panels\Concerns\ConfiguresMcp;
 use Tbtop\Admin\Panels\Concerns\ConfiguresMedia;
@@ -22,6 +23,7 @@ use Tbtop\Admin\Panels\Concerns\ConfiguresMedia;
 final class PanelConfig
 {
     use ConfiguresAppearance;
+    use ConfiguresBranding;
     use ConfiguresEnvironmentIndicator;
     use ConfiguresMcp;
     use ConfiguresMedia;
@@ -57,8 +59,6 @@ final class PanelConfig
     private bool $unsavedGuard = true;
 
     private bool $breadcrumbs = true;
-
-    private ?string $brand = null;
 
     private string $navigation = 'sidebar';
 
@@ -170,14 +170,6 @@ final class PanelConfig
     public function breadcrumbs(bool $enabled = true): static
     {
         $this->breadcrumbs = $enabled;
-
-        return $this;
-    }
-
-    /** Brand name shown in the chrome (sidebar/topbar header). */
-    public function brand(string $brand): static
-    {
-        $this->brand = $brand;
 
         return $this;
     }
@@ -404,11 +396,6 @@ final class PanelConfig
     public function hasBreadcrumbs(): bool
     {
         return $this->breadcrumbs;
-    }
-
-    public function getBrand(): ?string
-    {
-        return $this->brand;
     }
 
     /** @return 'sidebar'|'topbar'|'topbar-sidebar'|'rail-sidebar' */

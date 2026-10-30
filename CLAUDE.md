@@ -98,7 +98,7 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
 - **Panel-level:** multi-panel config, navigation (layouts sidebar/topbar/topbar-sidebar/rail-sidebar,
   groups with sections, nested items), chrome-as-DSL, command
   palette, database notifications (header bell), appearance (theme/density/max-width),
-  UI + content locales. In `Panels/PanelConfig.php` and its traits in `Panels/Concerns/`
+  UI + content locales, branding (brand name, logo, favicon). In `Panels/PanelConfig.php` and its traits in `Panels/Concerns/`
   (appearance: `ConfiguresAppearance.php`); see `docs/ai/api/panel.md`.
 - **Auth:** sign-in, password reset, email verification and the profile page are package base pages
   (`packages/php/src/Auth/`) that `admin:install --auth` (or `--profile` alone) publishes into

@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import type { ReactNode } from "react";
+import { PanelFavicon } from "../app/PanelFavicon";
 import { useTranslation } from "../i18n/i18n";
 import { LayoutDispatcher } from "./AdminPage";
 
@@ -25,6 +26,7 @@ export function AdminErrorPage() {
 	return (
 		<>
 			<Head title={props.title} />
+			<PanelFavicon />
 			<div
 				className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center gap-4 p-6 text-center"
 				data-testid="admin-error-page"

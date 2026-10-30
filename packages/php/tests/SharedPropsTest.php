@@ -16,3 +16,12 @@ it('shares a hidden environment indicator as a null tbtop.environment', function
     expect($response->json('props.tbtop'))->toHaveKey('environment')
         ->and($response->json('props.tbtop.environment'))->toBeNull();
 });
+
+it('shares a null brand logo and favicon when the panel sets none', function () {
+    $response = $this->get('/admin/posts/1/edit', ['X-Inertia' => 'true']);
+
+    $response->assertOk();
+    expect($response->json('props.tbtop'))->toHaveKeys(['brandLogo', 'favicon'])
+        ->and($response->json('props.tbtop.brandLogo'))->toBeNull()
+        ->and($response->json('props.tbtop.favicon'))->toBeNull();
+});

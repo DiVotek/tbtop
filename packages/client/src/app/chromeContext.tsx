@@ -29,6 +29,15 @@ export interface NavGroup {
 	sections?: { key: string; label: string }[];
 }
 
+/** Panel logo image from PanelConfig::brandLogo(); replaces the brand name in the logo block. */
+export interface BrandLogo {
+	src: string;
+	/** Shown instead of `src` while the panel is dark. */
+	darkSrc?: string;
+	/** CSS length (px/rem/em); the block defaults to 1.5rem. */
+	height?: string;
+}
+
 export interface ChromeUser {
 	name?: string;
 	email?: string;
@@ -44,6 +53,8 @@ export interface ChromeData {
 	user: ChromeUser | null;
 	currentUrl: string;
 	brand: string | null;
+	/** Logo image shown instead of the brand name; the name becomes its alt text. */
+	brandLogo?: BrandLogo | null;
 	/**
 	 * How the nav menu lays itself out. "vertical" is the sidebar default;
 	 * "horizontal" is the topbar layout; "rail" is the collapsed sidebar — a

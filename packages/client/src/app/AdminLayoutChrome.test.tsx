@@ -95,6 +95,48 @@ describe("AdminLayout chrome trees", () => {
 		expect(queryByTestId("admin-sidebar")).toBeNull();
 	});
 
+	test("a brand logo replaces the brand name and keeps it as alt text", () => {
+		const { getByAltText, queryByText } = renderShell(defaultChrome(), {
+			brand: "EasyCar",
+			brandLogo: { src: "/img/logo.svg", height: "2rem" },
+			homeUrl: "/admin",
+		});
+
+		const logo = getByAltText("EasyCar") as HTMLImageElement;
+		expect(logo.getAttribute("src")).toBe("/img/logo.svg");
+		expect(logo.style.height).toBe("2rem");
+		expect(logo.closest("a")?.getAttribute("href")).toBe("/admin");
+		expect(queryByText("EasyCar")).toBeNull();
+	});
+
+	test("a dark-mode brand logo renders beside the light one, swapped by the dark class", () => {
+		const { getAllByAltText } = renderShell(defaultChrome(), {
+			brand: "EasyCar",
+			brandLogo: { src: "/img/logo.svg", darkSrc: "/img/logo-dark.svg" },
+		});
+
+		const [light, dark] = getAllByAltText("EasyCar") as HTMLImageElement[];
+		expect(light?.getAttribute("src")).toBe("/img/logo.svg");
+		expect(light?.className).toContain("dark:hidden");
+		expect(light?.style.height).toBe("1.5rem");
+		expect(dark?.getAttribute("src")).toBe("/img/logo-dark.svg");
+		expect(dark?.className).toContain("hidden dark:block");
+	});
+
+	test("the rail-sidebar fits the brand logo into its square instead of the first letter", () => {
+		const { getAllByAltText } = renderShell(defaultChrome(), {
+			brand: "EasyCar",
+			brandLogo: { src: "/img/logo.svg" },
+			navigation: "rail-sidebar",
+		});
+
+		const logos = getAllByAltText("EasyCar") as HTMLImageElement[];
+		expect(logos.length).toBeGreaterThan(0);
+		for (const logo of logos) {
+			expect(logo.className).toContain("size-9 object-contain");
+		}
+	});
+
 	test("the logo block prefers the panel brand over the default title", () => {
 		const { getByText, queryByText } = renderShell(defaultChrome(), { brand: "EasyCar" });
 

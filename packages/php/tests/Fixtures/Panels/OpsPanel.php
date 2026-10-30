@@ -23,6 +23,8 @@ class OpsPanel extends Panel
             ->locales(['fr', 'en'])
             ->defaultLocale('fr')
             ->navigation('topbar')
+            ->brandLogo('/img/ops-logo.svg')
+            ->favicon('/img/ops-favicon.svg')
             ->chrome(HeaderActionChrome::class);
     }
 }

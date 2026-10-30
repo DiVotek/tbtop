@@ -412,7 +412,7 @@ from shared Inertia props.
 |---|---|
 | `navMenu()` | Sidebar navigation groups |
 | `userMenu(array $opts = [])` | Profile dropdown (identity, theme, locale, logout); `['locales' => false]` drops the locale row |
-| `logo()` | Panel brand text |
+| `logo()` | Panel brand: the `brandLogo()` image, else the `brand()` name |
 | `localeSwitcher(?string $variant = null)` | UI-locale switcher; hidden when the panel has one locale. `'dropdown'` renders it as a menu instead of buttons |
 | `notifications()` | Notification bell — unread count, list, mark-read. Backed by the notification endpoints; polling interval from `PanelConfig::notificationsPolling()` |
 | `themeToggle()` | Light/dark/system toggle. Renders nothing when the panel sets `darkMode(false)` |
@@ -859,8 +859,7 @@ A modal has no footer slot: `modal()` takes one body node and renders it in a sc
 area. Put the Save/Cancel buttons in an `actionsRow` as the **last child of the body** —
 they scroll with the content (on short viewports the user scrolls down to reach them).
 The prebuilt `EditAction`/`CreateAction` append that row for you; a hand-rolled
-`->modal($form)` must include its own. A sticky footer is a tracked backlog item
-(`docs/backlog.md`, Modal), not a DSL option.
+`->modal($form)` must include its own.
 
 #### Authorization — `authorize()`
 

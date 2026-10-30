@@ -21,11 +21,7 @@
 
 Each fits the minor-fix loop: one change, one test.
 
-- **`simplePagination()` docblock** — says the footer shows "only previous/next"; it
-  also shows "Page N" and the per-page selector (`TableBuilder.php`). The next
-  `ApiReference` regeneration picks the wording up.
-- **Slug transliteration gaps** — `LATIN_MAP` in `packages/client/src/fields/slugify.ts`
-  covers ł đ ø ß æ œ; ı ð þ ħ still fold to dashes.
+None open.
 
 ## Tables
 
@@ -78,14 +74,6 @@ Each fits the minor-fix loop: one change, one test.
   against an empty context on non-form surfaces, so a condition on a page-level layout
   node never fires (static `hidden: true` works). Needs a page-level condition context
   (record + user) before conditions are promised outside forms.
-
-## Modal
-
-- **Footer actions slot** — `ModalShell` supports a sticky footer (every built-in dialog
-  uses it) but the DSL modal renders one body only; an `actionsRow` at the end of the body
-  scrolls with the content. Design: `ActionBuilder::footer([...])` → `spec.footer`, the
-  footer must render inside `ModalProvider`/`ModalDataProvider`. Promote when a consumer
-  hits the short-viewport case again.
 
 ## DX
 

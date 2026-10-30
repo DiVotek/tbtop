@@ -5,6 +5,7 @@ import { AdminLayout } from "../app/AdminLayout";
 import { type Appearance, MAX_WIDTH_CLASS } from "../app/appearance";
 import { AuthUserProvider } from "../app/authUser";
 import { CenterLayout } from "../app/CenterLayout";
+import { PanelFavicon } from "../app/PanelFavicon";
 import { PageParamsProvider } from "../app/pageParams";
 import { StylePresetSync } from "../app/ThemeSync";
 import { ClientProvider } from "../data/client";
@@ -118,6 +119,7 @@ export function AdminPage() {
 							<ModalStackProvider>
 								<FlashEffects flash={flash} />
 								<Head title={title} />
+								<PanelFavicon />
 								<div className={`mx-auto flex ${maxWidth} flex-col gap-6 p-6`}>
 									{showPageHeader && breadcrumbs && (
 										<Breadcrumbs items={breadcrumbs} />
