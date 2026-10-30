@@ -216,7 +216,7 @@ describe("page-scoped endpoints", () => {
 	});
 
 	test("relation-create refuses a row without its key", async () => {
-		expect(call("relation-create/keyless_id", { name: "Di" })).rejects.toThrow(
+		await expect(call("relation-create/keyless_id", { name: "Di" })).rejects.toThrow(
 			'creatable() must return the created row with its "id"',
 		);
 	});
