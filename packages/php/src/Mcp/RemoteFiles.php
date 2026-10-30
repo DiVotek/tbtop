@@ -177,8 +177,10 @@ final class RemoteFiles
         } catch (MediaIngestException $e) {
             throw new AgentError("{$path}: ".__('tbtop-admin::admin.media.errors.'.$e->reason));
         }
+        // MediaPicker::accept() takes a list; a comma string is split too, so no shape skips the check.
         $accept = $field->toNode()->options['accept'] ?? [];
-        if (is_array($accept) && ! MimePolicy::allows((string) $media->mime, array_values(array_map('strval', $accept)))) {
+        $accept = is_string($accept) ? array_map('trim', explode(',', $accept)) : array_map('strval', (array) $accept);
+        if (! MimePolicy::allows((string) $media->mime, array_values(array_filter($accept)))) {
             MediaResource::deleteFiles($media);
             $media->delete();
             throw new AgentError("{$path}: ".__('tbtop-admin::admin.media.errors.mime_not_allowed'));
