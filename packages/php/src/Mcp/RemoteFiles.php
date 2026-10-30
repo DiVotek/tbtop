@@ -12,6 +12,7 @@ use Tbtop\Admin\Dsl\FormBuilder;
 use Tbtop\Admin\Dsl\RuleWalker;
 use Tbtop\Admin\Media\MediaIngest;
 use Tbtop\Admin\Media\MediaIngestException;
+use Tbtop\Admin\Media\MediaResource;
 use Tbtop\Admin\Media\MimePolicy;
 use Tbtop\Admin\Media\SvgSanitizeException;
 use Tbtop\Admin\Media\UrlFetcher;
@@ -175,6 +176,7 @@ final class RemoteFiles
         }
         $accept = $field->toNode()->options['accept'] ?? [];
         if (is_array($accept) && ! MimePolicy::allows((string) $media->mime, array_values(array_map('strval', $accept)))) {
+            MediaResource::deleteFiles($media);
             $media->delete();
             throw new AgentError("{$path}: ".__('tbtop-admin::admin.media.errors.mime_not_allowed'));
         }

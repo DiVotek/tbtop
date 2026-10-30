@@ -11,6 +11,7 @@ use Tbtop\Admin\Mcp\FormArguments;
 use Tbtop\Admin\Mcp\RemoteFiles;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Panels\PanelRegistry;
 use Tbtop\Admin\Tests\Fixtures\McpPage;
 use Tbtop\Admin\Tests\McpHttpTestCase;
 
@@ -166,4 +167,23 @@ it('keeps a file field inside a richtext embed excluded: fetchInto only walks th
 
     expect(array_column($embed['fields'], 'name'))->toBe(['caption'])
         ->and($embed['excludedFields'])->toBe([['name' => 'image', 'kind' => 'upload', 'reason' => 'a file inside a richtext embed cannot be sent as {url} over MCP']]);
+});
+
+it('removes the imported file when a media {url} fails the field accept list', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    app()->instance(CurrentPanel::class, new CurrentPanel(app(PanelRegistry::class)->get('admin')));
+    $s = new S;
+    $form = $s->form('doc', [$s->media('scan')->accept(['application/pdf'])]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, ['scan' => ['url' => 'https://8.8.8.8/a.png']]))
+        ->toThrow(AgentError::class, 'scan: ');
+    expect(Media::query()->count())->toBe(0)
+        ->and(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('imports a media {url} on a panel with no mediaGate(), as its media endpoints allow every panel user', function (): void {
+    $panel = app(PanelRegistry::class)->get('admin')->mediaGate(null);
+    app()->instance(CurrentPanel::class, new CurrentPanel($panel));
+
+    expect(RemoteFiles::accepts(MediaPicker::make('logo')))->toBeTrue();
 });
