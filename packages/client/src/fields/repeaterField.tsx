@@ -3,13 +3,15 @@ import { useTranslation } from "../i18n/i18n";
 import { safeUuid } from "../lib/safeUuid";
 import type { StructureNode } from "../structure/structure";
 import { Button } from "../ui/button";
-import type { FieldCellProps, FieldFormProps } from "./fieldProps";
+import { groupLabelledBy } from "./fieldChrome";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 import { addItem, moveItem, removeAt, removeItem, swapAt } from "./repeaterItems";
 import { RepeaterRow } from "./repeaterRow";
 
 type Item = Record<string, unknown>;
 
 interface RepeaterOptions {
+	label?: string;
 	fields?: StructureNode[];
 	minItems?: number;
 	maxItems?: number;
@@ -31,10 +33,12 @@ export function RepeaterCell({ value }: FieldCellProps<Item[]>) {
 }
 
 export function RepeaterForm({
+	id,
 	name,
 	value,
 	onChange,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<Item[], RepeaterOptions>) {
 	const t = useTranslation();
@@ -55,7 +59,13 @@ export function RepeaterForm({
 	}
 
 	return (
-		<div data-field={name} className="flex flex-col gap-2">
+		<div
+			role="group"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
+			aria-describedby={describedBy}
+			data-field={name}
+			className="flex flex-col gap-2"
+		>
 			{items.map((item, index) => (
 				<RepeaterRow
 					key={keys.current[index]}

@@ -80,6 +80,7 @@ function StaticSingleSelect({
 	onBlur,
 	disabled,
 	invalid,
+	describedBy,
 	options,
 	resolvedLabels,
 }: StaticSelectProps) {
@@ -100,6 +101,7 @@ function StaticSingleSelect({
 				id={fieldId({ id, name })}
 				onBlur={onBlur}
 				aria-invalid={invalid || undefined}
+				aria-describedby={describedBy}
 				data-testid={`select-${name}`}
 				className="w-full"
 			>
@@ -146,6 +148,7 @@ function SearchableStaticSelect({
 	onBlur,
 	disabled,
 	invalid,
+	describedBy,
 	options,
 	resolvedLabels,
 }: StaticSelectProps) {
@@ -170,6 +173,7 @@ function SearchableStaticSelect({
 			onBlur={onBlur}
 			disabled={disabled}
 			invalid={invalid}
+			describedBy={describedBy}
 			onQueryChange={setQuery}
 			listState={filtered.length === 0 ? "empty" : "rows"}
 		>
@@ -239,6 +243,7 @@ function AsyncSingleSelectInner(props: AsyncSingleSelectInnerProps) {
 			onBlur={props.onBlur}
 			disabled={props.disabled}
 			invalid={props.invalid}
+			describedBy={props.describedBy}
 			opts={opts}
 			labels={props.resolved.labels}
 			dep={props.dep}
