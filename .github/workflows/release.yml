@@ -1,10 +1,11 @@
-# Manual release button — one run ships both packages in lockstep.
+# Manual release button — one run ships all three packages in lockstep.
 #
 # Bump packages/client/package.json in a PR first (the single source of truth),
 # merge to main, then run this workflow from main. It:
 #   1. reads the version from package.json
 #   2. fails if that tag already exists
-#   3. npm publish (Trusted Publishing / OIDC, no token) -> @tbtop/inertia-admin
+#   3. npm publish (Trusted Publishing / OIDC, no token) -> @tbtop/inertia-admin,
+#      then packages/node -> @tbtop/admin (same version, checked)
 #   4. creates and pushes the tag  -> Packagist publishes tbtop/admin via webhook
 #   5. creates a GitHub Release with notes rendered by git-cliff (cliff.toml)
 #
@@ -128,6 +129,19 @@ jobs:
           echo "tag=v$v" >> "$GITHUB_OUTPUT"
           echo "resolved version $v"
 
+      # Checked before anything is published: a mismatch found after the
+      # client publish would leave the client on npm with no tag.
+      - name: Require the same version in packages/node
+        working-directory: packages/node
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$TAG" ]; then
+            echo "::error::packages/node is $v, the client is $TAG — bump both"
+            exit 1
+          fi
+
       # git ls-remote --exit-code returns 0 (ref matched), 2 (remote contacted,
       # no match), or other nonzero codes for real failures (network, auth).
       # Only 2 means "tag is free" — anything else must not be treated as such.
@@ -157,8 +171,34 @@ jobs:
 
       # npm first: if this fails, no tag is pushed, so a re-run stays clean.
       # OIDC is auto-detected; provenance is generated automatically.
+      # Skips a version already on npm, so a re-run after a later step failed
+      # (e.g. the node package below) does not die here.
       - name: Publish to npm
-        run: npm publish
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          v="$(node -p "require('./package.json').version")"
+          if npm view "$name@$v" version >/dev/null 2>&1; then
+            echo "$name@$v is already on npm, skipping"
+          else
+            npm publish
+          fi
+
+      # @tbtop/admin (node) ships lockstep with the client (version checked
+      # above). Published after the client and still before the
+      # tag, so a failure leaves no tag.
+      - name: Install @tbtop/admin (node)
+        working-directory: packages/node
+        run: bun install --frozen-lockfile
+
+      - name: Publish @tbtop/admin (node) to npm
+        working-directory: packages/node
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          if npm view "@tbtop/admin@$v" version >/dev/null 2>&1; then
+            echo "@tbtop/admin@$v is already on npm, skipping"
+          else
+            npm publish
+          fi
 
       # Re-check right before tagging: the earlier check ran before npm publish,
       # and a full publication sits in the gap between the two. This can't
