@@ -1,13 +1,16 @@
-import type { FieldFormProps } from "./fieldProps";
+import { type FieldFormProps, fieldId } from "./fieldProps";
 import type { TagsOptionsBag } from "./tagsShared";
 
 export function ClosedTagsForm({
+	id,
 	name,
 	value,
 	onChange,
 	onBlur,
 	options,
 	disabled,
+	invalid,
+	describedBy,
 }: FieldFormProps<string[], TagsOptionsBag>) {
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
@@ -17,8 +20,11 @@ export function ClosedTagsForm({
 	}
 	return (
 		<div
+			id={fieldId({ id, name })}
 			role="listbox"
 			aria-multiselectable="true"
+			aria-invalid={invalid || undefined}
+			aria-describedby={describedBy}
 			className="flex flex-wrap gap-2"
 			data-testid={`tags-${name}`}
 			onBlur={onBlur}
