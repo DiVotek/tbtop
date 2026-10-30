@@ -9,12 +9,13 @@ const actingAs = new WeakMap<Request, unknown>();
 const versions = new WeakMap<object, string | null>();
 
 export function actAs(request: Request, user: unknown): Request {
-	actingAs.set(request, user);
+	actingAs.set(request, user ?? null);
 	return request;
 }
 
-export function actingUser(request: Request): unknown {
-	return actingAs.get(request);
+/** The user a test request acts as (null for a guest); any other request reads it with `read`. */
+export function userFor(request: Request, read: () => unknown): unknown {
+	return actingAs.has(request) ? actingAs.get(request) : read();
 }
 
 export function registerVersion<T extends object>(version: string | null, admin: T): T {

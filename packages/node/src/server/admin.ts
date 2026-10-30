@@ -20,7 +20,7 @@ import { type AdminPageProps, buildPageProps } from "./pageProps";
 import { type PanelView, pageResponse } from "./pageResponse";
 import { assertPanelLook } from "./panel";
 import { findPage, resolvePage } from "./resolve";
-import { actingUser, registerVersion } from "./testing";
+import { registerVersion, userFor } from "./testing";
 
 export type { AdminConfig } from "./config";
 export type { AdminPageProps } from "./pageProps";
@@ -62,7 +62,7 @@ class AdminServer {
 		as?: unknown,
 	): Promise<T | Response> {
 		const session = await this.sessions(request);
-		const user = as ?? actingUser(request) ?? (await this.readUser(request, session)) ?? null;
+		const user = as ?? (await userFor(request, () => this.readUser(request, session))) ?? null;
 		const locale = localeContext(this.config, await currentLocale(this.config, session, user));
 		const extra = (await this.config.context?.(request)) ?? {};
 		const unsavedGuard = this.config.unsavedGuard ?? true;
@@ -112,9 +112,8 @@ class AdminServer {
 	}
 
 	async hasUser(request: Request): Promise<boolean> {
-		const user =
-			actingUser(request) ?? (await this.readUser(request, await this.sessions(request)));
-		return user != null;
+		const read = async () => this.readUser(request, await this.sessions(request));
+		return (await userFor(request, read)) != null;
 	}
 
 	async endpoint(request: Request, path: string): Promise<Response | null> {

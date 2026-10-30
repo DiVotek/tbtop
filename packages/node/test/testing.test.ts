@@ -180,6 +180,14 @@ describe("testing API: the page", () => {
 
 	test("a guest is a guest: no implicit login", async () => {
 		(await testAdmin(admin).page(testingPage, { post: 1 })).assertStatus(401);
+		const signedIn = createAdmin({
+			prefix: "/admin",
+			pages: [testingPage],
+			driver: memoryDriver(),
+			user: () => editor,
+		});
+		(await testAdmin(signedIn).page(testingPage, { post: 1 })).assertStatus(401);
+		(await testAdmin(signedIn, { as: editor }).page(testingPage, { post: 1 })).assertOk();
 	});
 
 	test("names what is on the page when a name is wrong", async () => {
