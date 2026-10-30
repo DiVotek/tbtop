@@ -193,3 +193,16 @@ it('treats a {url} with a non-string name or alt as an ordinary value', function
         ->and(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'name' => $name]))->toBeFalse()
         ->and(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'alt' => $name]))->toBeFalse();
 })->with([5, [['x']], null]);
+
+it('refuses a file value without the field shape before fetching: a bag on a single field, a nested list', function (string $name, mixed $value): void {
+    $s = new S;
+    $form = $s->form('doc', [$s->upload('cover'), $s->upload('pics')->multiple()]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, [$name => $value]))
+        ->toThrow(AgentError::class, "{$name}: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.");
+    Http::assertNothingSent();
+})->with([
+    'empty bag on a single upload' => ['cover', []],
+    'map on a single upload' => ['cover', ['a' => 'x.png']],
+    'nested list on a multiple upload' => ['pics', [['x.png']]],
+]);

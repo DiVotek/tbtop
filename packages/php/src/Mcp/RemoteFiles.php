@@ -105,17 +105,20 @@ final class RemoteFiles
         return is_array($value) && array_any($value, self::hasAlt(...));
     }
 
-    /** Whether every `{url}` in $value is the value, a list entry (multiple) or a locale's value (translatable). */
+    /** Whether $value has the field's shape: a value, a list of them (multiple) or one per locale (translatable); `{url}` only as a value. */
     private static function placed(mixed $value, bool $multiple, bool $translatable): bool
     {
         if (self::isRemote($value)) {
             return ! $multiple && ! $translatable;
         }
-        if (! is_array($value) || self::count($value) === 0) {
+        if (! is_array($value)) {
             return true;
         }
+        if ($value === []) {
+            return $multiple || $translatable;
+        }
         if (array_is_list($value)) {
-            return $multiple && array_all($value, static fn (mixed $entry): bool => self::isRemote($entry) || self::count($entry) === 0);
+            return $multiple && array_all($value, static fn (mixed $entry): bool => self::isRemote($entry) || ! is_array($entry));
         }
 
         return $translatable
