@@ -96,7 +96,7 @@ The testing API: `tbtop(Page::class, $params)` (or `$this->tbtop()` with the `In
 | `assertForbidden(): self` | 403 from the page gate or an authorize() check. |
 | `assertHalted(?string $message = null): self` | The modal stayed open with a message — haltModal. |
 | `assertHasErrors(array\|string $keys = []): self` | Validation failed for these fields. A list names fields; a map also checks the failure — a rule (`'required'`, `'max:200'`) matched by the message it renders, or the message itself. |
-| `assertHasNoErrors(array\|string $keys = []): self` | Validation passed — or, given field names, none of these fields failed. |
+| `assertHasNoErrors(array\|string $keys = []): self` | Validation passed — or, given field names, none of these fields failed. A 403, 404 or 5xx fails it. |
 | `assertModalClosed(): self` | A closeModal effect: the modal the call came from closes. |
 | `assertNoEffects(?string $kind = null): self` | No effect of this kind arrived — or, without a kind, no effect at all. |
 | `assertNotified(string $message, ?string $level = null): self` | A toast with this message, at this level when given. |

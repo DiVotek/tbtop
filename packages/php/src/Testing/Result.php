@@ -57,11 +57,12 @@ final class Result
         return $this;
     }
 
-    /** Validation passed — or, given field names, none of these fields failed. */
+    /** Validation passed — or, given field names, none of these fields failed. A 403, 404 or 5xx fails it. */
     public function assertHasNoErrors(string|array $keys = []): self
     {
         $status = $this->response->getStatusCode();
-        Assert::assertLessThan(500, $status, "{$this->subject} failed with {$status}: ".mb_substr((string) $this->response->getContent(), 0, 500));
+        // A refused or failed call has no errors to show but did not go through either; 422 is the validation answer.
+        Assert::assertTrue($status < 400 || $status === 422, "{$this->subject} failed with {$status}: ".mb_substr((string) $this->response->getContent(), 0, 500));
         if ($keys === []) {
             Assert::assertSame([], $this->errors, "{$this->subject} has validation errors: ".json_encode($this->errors));
 

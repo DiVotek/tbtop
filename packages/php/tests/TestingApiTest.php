@@ -166,3 +166,10 @@ it('does not let a missing key pass for an expected false', function (): void {
     expect(fn () => testingApiPage()->assertFieldValue('title.missing', false))
         ->toThrow(AssertionFailedError::class, 'has no value in the form');
 });
+
+it('does not read a refused call as one without errors', function (): void {
+    $this->actingAs($this->userWithRole('guest'));
+
+    expect(fn () => testingApiPage()->form('post')->submit()->assertHasNoErrors())
+        ->toThrow(AssertionFailedError::class, 'failed with 403');
+});
