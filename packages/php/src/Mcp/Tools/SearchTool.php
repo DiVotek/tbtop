@@ -22,12 +22,14 @@ final class SearchTool extends Tool
     protected string $name = 'search';
 
     protected string $description = <<<'TXT'
-        Discover what you can do in this admin panel. Without arguments: every page you may open, plus the
-        executables (actions/forms) and tables of pages that take no params. With `page` (+ `params` for a
-        page whose path has params, e.g. a record id, as strings): that page's executables and tables. Each
-        executable lists its `needs` (form/row/selection) and form fields with Laravel validation rules;
-        a `translatable` field takes an object keyed by locale (see its nestedRules). A form's `values` are
-        its current data — build edits from them, not from query() rows, which are formatted for display.
+        Discover what you can do in this admin panel. Without arguments: an index of every page you may
+        open, with the executable ids (actions/forms) and table names of pages that take no params. With
+        `page` (+ `params` for a page whose path has params, e.g. a record id, as strings): that page's
+        executables with their arguments, and its tables. Each executable lists its `needs`
+        (form/row/selection) and form fields with Laravel validation rules and `help` text;
+        a `translatable` field takes an object keyed by locale (see its nestedRules).
+        Pass `values: true` to get each form's current data as `values` — do that before an edit: build
+        it from `values`, not from query() rows, which are formatted for display.
         A field you omit is absent from the handler's input; resend `values` for fields you keep.
         A container's row fields follow it as `name.*.child`; send rows as a list of objects.
         Fields listed in a form's `excludedFields` cannot be changed: omit them, or send the value `values`
@@ -46,6 +48,7 @@ final class SearchTool extends Tool
         return [
             'page' => $schema->string()->description('Page slug from a previous search().'),
             'params' => $schema->object()->description('Route params of the page as strings, e.g. {"post": "12"}.'),
+            'values' => $schema->boolean()->description('With `page`: include each form\'s current `values`.'),
         ];
     }
 
@@ -57,7 +60,7 @@ final class SearchTool extends Tool
             if (is_string($slug) && $slug !== '') {
                 $class = $pages->find($slug);
 
-                return self::page($pages, $class, self::objectArg($request->get('params')));
+                return self::page($pages, $class, self::objectArg($request->get('params')), $request->get('values') === true);
             }
 
             return ['pages' => array_values(array_filter(array_map(
@@ -72,15 +75,15 @@ final class SearchTool extends Tool
      * @param  array<string, mixed>  $params
      * @return array<string, mixed>
      */
-    private static function page(PanelPages $pages, string $class, array $params): array
+    private static function page(PanelPages $pages, string $class, array $params, bool $withValues): array
     {
         $resolved = $pages->resolve($class, $params);
 
-        return ['page' => $class::slug(), 'title' => $resolved->page->title(), ...PageSurface::describe($resolved)];
+        return ['page' => $class::slug(), 'title' => $resolved->page->title(), ...PageSurface::describe($resolved, $withValues)];
     }
 
     /**
-     * A page in the bare listing; a page one of whose view()s fails is listed
+     * A page in the bare listing, as an index (PageSurface::brief()); a page one of whose view()s fails is listed
      * with an error rather than failing the whole search.
      *
      * @param  class-string<Page>  $class
@@ -96,7 +99,9 @@ final class SearchTool extends Tool
             return ['page' => $class::slug(), 'title' => Str::headline(class_basename($class)), 'params' => $params];
         }
         try {
-            return self::page($pages, $class, []);
+            $resolved = $pages->resolve($class, []);
+
+            return ['page' => $class::slug(), 'title' => $resolved->page->title(), ...PageSurface::brief($resolved)];
         } catch (Throwable $e) {
             report($e);
 

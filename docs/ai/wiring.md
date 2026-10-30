@@ -264,8 +264,10 @@ return $panel
   `Page::middleware()`**: gates (`Page::can()`, `->authorize()` on actions, `when()`)
   live in the controllers and run for MCP; page middleware is for transport (public
   pages, sessions) and does not.
-- **Three tools.** `search` lists pages, and for each page without route params its
-  executables and tables; `search(page, params)` describes one record page. `query` reads
+- **Three tools.** `search` is an index: every page, and for each page without route
+  params its executable ids (with kind and label) and table names. `search(page, params)`
+  describes one page: each executable's arguments (fields, rules, `help` from
+  `helperText()`) and its tables. `query` reads
   a table's rows (the table endpoint's payload: the record key and the formatted visible
   columns) — read-only. `query` also lists the choices of a field or filter `search()`
   marks `options: "dynamic"`: `executable` + `field` (with `deps` for the names in the
@@ -281,8 +283,9 @@ return $panel
   the log and answered `Server error; see the application log.` without its text, while an
   HTTP 4xx message is passed on. A form's effects are read from its `tbtop.effects` flash; a handler
   that returns a URL reports `redirect`, plus the `page`/`params` it opens when it is a page
-  of this panel. A described form carries its current `values` (what the UI prefills), so an
-  agent can resend the fields it keeps.
+  of this panel. `search(page, params, values: true)` adds each form's current `values` (what
+  the UI prefills), so an agent can resend the fields it keeps; without the flag they are
+  left out, as they are the bulk of a record form.
 - **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
   `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
   actions, and `upload`/`media` fields, are listed as excluded with a reason — inside a

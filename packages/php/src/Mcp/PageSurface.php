@@ -14,8 +14,12 @@ use Tbtop\Admin\Http\ResolvedPage;
  */
 final class PageSurface
 {
-    /** @return array{executables: list<array<string, mixed>>, tables: list<array<string, mixed>>, excluded: list<array<string, string>>} */
-    public static function describe(ResolvedPage $resolved): array
+    /**
+     * $withValues adds each form's current `values` (see FormArguments::describe()).
+     *
+     * @return array{executables: list<array<string, mixed>>, tables: list<array<string, mixed>>, excluded: list<array<string, string>>}
+     */
+    public static function describe(ResolvedPage $resolved, bool $withValues = false): array
     {
         $slug = $resolved->page::slug();
         $tableOf = self::actionTables([$resolved->tree, ...$resolved->headerActionSources], null);
@@ -35,7 +39,7 @@ final class PageSurface
                 if ($reason !== null) {
                     $excluded[] = ['id' => "{$slug}:{$name}", 'reason' => $reason];
                 } else {
-                    $executables[] = self::action($slug, $action, $form, $tableOf[$name] ?? null);
+                    $executables[] = self::action($slug, $action, $form, $tableOf[$name] ?? null, $withValues);
                 }
             }
         }
@@ -49,7 +53,7 @@ final class PageSurface
             if ($reason !== null) {
                 $excluded[] = ['id' => "{$slug}:{$name}", 'reason' => $reason];
             } else {
-                $executables[] = ['id' => "{$slug}:{$name}", 'kind' => 'form', ...FormArguments::describe($form)];
+                $executables[] = ['id' => "{$slug}:{$name}", 'kind' => 'form', ...FormArguments::describe($form, $withValues)];
             }
         }
 
@@ -57,6 +61,30 @@ final class PageSurface
             'executables' => $executables,
             'tables' => self::tables($resolved),
             'excluded' => [...$excluded, ...ClientOnlySurfaces::of($resolved)],
+        ];
+    }
+
+    /**
+     * describe() cut to an index for the bare search(): executables as id, kind
+     * and label, tables by name. Forms are left out — they are most of a page's
+     * description, and search(page) gives them for the one page the agent picks.
+     *
+     * @return array{executables: list<array<string, mixed>>, tables: list<string>, excluded: list<array<string, string>>}
+     */
+    public static function brief(ResolvedPage $resolved): array
+    {
+        $surface = self::describe($resolved);
+
+        return [
+            'executables' => array_map(
+                static fn (array $e): array => array_filter(
+                    ['id' => $e['id'], 'kind' => $e['kind'], 'label' => $e['label'] ?? null],
+                    static fn (mixed $v): bool => $v !== null,
+                ),
+                $surface['executables'],
+            ),
+            'tables' => array_column($surface['tables'], 'table'),
+            'excluded' => $surface['excluded'],
         ];
     }
 
@@ -123,7 +151,7 @@ final class PageSurface
     }
 
     /** @return array<string, mixed> */
-    private static function action(string $slug, ActionBuilder $action, ?FormBuilder $form, ?string $table): array
+    private static function action(string $slug, ActionBuilder $action, ?FormBuilder $form, ?string $table, bool $withValues): array
     {
         $node = StructureWalk::resolveActionNode($action);
         $needs = $action->getSpec()['needs'] ?? [];
@@ -135,7 +163,7 @@ final class PageSurface
             'confirm' => $node?->options['confirm']['title'] ?? null,
             'needs' => $needs,
             'table' => $table,
-            'form' => $form === null ? null : FormArguments::describe($form),
+            'form' => $form === null ? null : FormArguments::describe($form, $withValues),
         ], static fn (mixed $v): bool => $v !== null && $v !== []);
     }
 

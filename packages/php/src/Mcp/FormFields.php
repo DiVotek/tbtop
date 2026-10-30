@@ -108,6 +108,7 @@ final class FormFields
             'name' => $name,
             'kind' => $kind,
             'label' => $field->labelText(),
+            'help' => is_string($options['helperText'] ?? null) && $options['helperText'] !== '' ? $options['helperText'] : null,
             'rules' => $rules[$name] ?? [],
             'nestedRules' => $nested,
             'mask' => is_string($options['mask'] ?? null) ? $options['mask'] : null,

@@ -15,14 +15,21 @@ final class FormArguments
     private const ALL_EXCLUDED = 'every field of its form is one MCP cannot fill (upload/media)';
 
     /**
-     * `values` are the form's current data as the UI prefills it — an edit that
-     * omits a field may clear it, depending on the page's handler.
+     * `values` (only with $withValues) are the form's current data as the UI
+     * prefills it — an edit that omits a field may clear it, depending on the
+     * page's handler. They are the bulk of a record form, so search() sends
+     * them only when asked.
      *
      * @return array{form: string, fields: list<array<string, mixed>>, excludedFields?: list<array<string, string>>, values?: array<string, mixed>}
      */
-    public static function describe(FormBuilder $form): array
+    public static function describe(FormBuilder $form, bool $withValues = false): array
     {
-        return self::analyse($form)[0];
+        [$described] = self::analyse($form);
+        if (! $withValues) {
+            unset($described['values']);
+        }
+
+        return $described;
     }
 
     /**
