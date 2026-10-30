@@ -1,17 +1,21 @@
+import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { FieldSkeleton } from "../structure/defaults";
 import { AsyncOptionCombobox } from "./asyncOptionCombobox";
 import type { AsyncSingleOptionsBag } from "./asyncOptions";
 import { nullableCell } from "./cellHelpers";
-import type { DependencyConfig } from "./fieldDependencies";
+import { CreateAffordance } from "./createAffordance";
+import type { DependencyConfig, DependencyState } from "./fieldDependencies";
 import type { FieldCellProps, FieldFormProps } from "./fieldProps";
-import { type AffixOptions, InputGroup } from "./inputGroup";
-import { coerceSelectValue } from "./selectShared";
+import type { AffixOptions } from "./inputGroup";
+import { coerceSelectValue, type SelectCreateConfig } from "./selectShared";
 import { useRemoteOptions } from "./useRemoteOptions";
 
 export interface RelationOptionsBag extends AsyncSingleOptionsBag, DependencyConfig, AffixOptions {
 	searchable?: boolean;
 	labelKey?: string;
+	/** Set by `creatable()`: a "+ Create" link opens this mini-form. */
+	create?: SelectCreateConfig;
 }
 
 export function RelationCell({ value }: FieldCellProps<unknown>) {
@@ -65,16 +69,25 @@ export function RelationForm({
 		value: current,
 		opts: options ?? {},
 	});
+	const [refetchKey, setRefetchKey] = useState(0);
 
 	if (remote.isFirstLoad) {
 		return <FieldSkeleton />;
 	}
 
+	const isDisabled = disabled || remote.dep.disabledByParent;
 	return (
-		<InputGroup
-			options={options}
-			disabled={disabled || remote.dep.disabledByParent}
+		<CreateAffordance
+			name={name}
+			onChange={onChange}
+			disabled={isDisabled}
 			invalid={invalid}
+			options={bindCreateDeps(remote.opts, remote.dep)}
+			onCreated={(option) => {
+				// The new row carries its label; the refetch lists it next time.
+				remote.noteRowsSeen({ [option.value]: option });
+				setRefetchKey((k) => k + 1);
+			}}
 		>
 			<AsyncOptionCombobox
 				id={id}
@@ -82,13 +95,26 @@ export function RelationForm({
 				value={current}
 				onChange={onChange}
 				onBlur={onBlur}
-				disabled={disabled || remote.dep.disabledByParent}
+				disabled={isDisabled}
 				invalid={invalid}
 				opts={remote.opts}
 				labels={remote.labels}
 				dep={remote.dep}
+				refetchKey={refetchKey}
 				onRowsSeen={remote.noteRowsSeen}
 			/>
-		</InputGroup>
+		</CreateAffordance>
 	);
+}
+
+/** The dialog posts only the mini-form; a dependent relation's closure also needs the parents. */
+function bindCreateDeps(opts: RelationOptionsBag, dep: DependencyState): RelationOptionsBag {
+	const create = opts.create;
+	if (!create || !dep.hasDeps) {
+		return opts;
+	}
+	return {
+		...opts,
+		create: { ...create, post: (ctx, data) => create.post(ctx, data, dep.deps) },
+	};
 }

@@ -36,7 +36,8 @@ class DependentFieldsDemoPage extends Page
             $s->displayText('Cascading async fields')->variant('heading'),
             $s->displayText(
                 'Country, City and User options are all backend queries. City depends on '.
-                'Country; User depends on City. Changing a parent resets every field below it.',
+                'Country; User depends on City. Changing a parent resets every field below it. '.
+                'Country and City can be created from the picker.',
             )->variant('muted'),
             $this->form($s),
         ]);
@@ -48,6 +49,9 @@ class DependentFieldsDemoPage extends Page
             $s->relation('country_id')->label('Country')
                 ->query(fn () => Country::query()->orderBy('name'))
                 ->labelKey('name')->searchable()
+                ->creatable([
+                    $s->text('name')->label('Name')->required()->rules('max:255|unique:countries,name'),
+                ])
                 ->rules('nullable|exists:countries,id'),
             $s->relation('city_id')->label('City')
                 ->query(fn (array $deps) => City::query()
@@ -55,6 +59,17 @@ class DependentFieldsDemoPage extends Page
                     ->orderBy('name'))
                 ->labelKey('name')->searchable()
                 ->dependsOn('country_id')
+                // A new city belongs to the picked country, so the closure sets it.
+                ->creatable(
+                    [$s->text('name')->label('Name')->required()->rules('max:255')],
+                    function (array $validated, array $deps) {
+                        // $deps is client input: resolve the parent through its own query.
+                        $country = Country::query()->find($deps['country_id'] ?? 0)
+                            ?? abort(422, 'Pick a country first.');
+
+                        return $country->cities()->create($validated);
+                    },
+                )
                 ->whenParentEmpty('disabled')
                 ->helperText('Disabled until a country is selected.')
                 ->rules('nullable|exists:cities,id'),

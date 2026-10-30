@@ -202,6 +202,7 @@ notification action is a **link only** — it can never carry a server closure.
 | `POST` | `{page-path}/tables/{tbtopTable}/filters/{tbtopFilter}/options` | `{slug}.tableFilterOptions` | `TableFilterOptionsController` | JSON | same responder and shape as `selectOptions`, for an async `select()->query()` used as a table filter |
 | `POST` | `{page-path}/daterange-ranges/{tbtopField}` | `{slug}.daterangeRanges` | `DaterangeRangesController` | JSON | `{ranges: [{from?, to?}]}` — re-runs `disabledRanges()` with the posted `{deps}` |
 | `POST` | `{page-path}/relation-search/{tbtopField}` | `{slug}.relationSearch` | `RelationSearchController` | JSON | search mode: `{options: [{value, label}]}` · resolve mode: `{option: {value, label}\|null}` |
+| `POST` | `{page-path}/relation-create/{tbtopField}` | `{slug}.relationCreate` | `RelationCreateController` | JSON | `{value, label}` — validates the `creatable()` mini-form, saves the related record; `{deps}` reach the closure filtered to `dependsOn()` |
 | `POST` | `{page-path}/live-region/{tbtopRegion}` | `{slug}.liveRegion` | `LiveRegionController` | JSON | `{nodes: Node[]}` — re-runs the region's render closure with `{deps}` filtered to its `dependsOn()` list |
 | `POST` | `{page-path}/uploads/{tbtopField}` | `{slug}.upload` | `FieldUploadController` | JSON | `{data: {path, url}}` |
 | `GET` | `{page-path}/uploads/{tbtopField}/view` | `{slug}.uploadView` | `FieldUploadViewController` | signed URL | streams private file |
