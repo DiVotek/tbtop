@@ -32,7 +32,9 @@ test("lists and deletes posts", async () => {
 - **Acting as a user:** `{ as }` on `testAdmin()` sets the user for every page,
   `t.page(def, params, { as })` overrides it for one. Leave it out to test as a guest;
   there is no implicit login. The user goes straight into the request context, so the
-  panel's `user` resolver and the session are not consulted.
+  panel's `user` resolver and the session's user are not consulted; the session still
+  carries the flash, form errors and locale. `@tbtop/admin/testing` is for test code
+  only: keep it out of server routes and production bundles.
 - **Async only where a request is made:** `t.page()`, `submit()`, `fetch()`,
   `call*Action()`, `openAction()` and `openRowAction()` return promises. Every assertion
   is synchronous and chains.
