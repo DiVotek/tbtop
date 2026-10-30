@@ -130,7 +130,7 @@ export function AdminPage() {
 											data-testid="page-header"
 										>
 											<div className="min-w-0">
-												<h1 className="text-2xl font-semibold tracking-tight">
+												<h1 className="text-2xl font-semibold tracking-tight break-words">
 													{title}
 												</h1>
 												<PageSubtitle staticSubtitle={subtitle} />
