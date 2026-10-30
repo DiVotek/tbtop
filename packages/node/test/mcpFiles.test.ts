@@ -57,6 +57,7 @@ const docsPage = definePage({
 					.upload("scan")
 					.accept("image/*")
 					.saveUsing(async () => ({ path: "custom/scan.png", url: "/custom/scan.png" })),
+				s.upload("pics").multiple(),
 				s
 					.richtext("body")
 					.embeds([Embed.make("figure").fields([s.upload("image"), s.text("caption")])]),
@@ -304,6 +305,21 @@ describe("MCP upload fields by URL", () => {
 		const result = await execute(withFetch, { cover: { url: "https://cdn.example/sync.png" } });
 		expect(result.data.message).toBe("cover: Could not download the file from the given URL.");
 		expect(String(reported[0])).toContain("refused synchronously");
+	});
+
+	test("a file value must have the field's shape, refused before any fetch", async () => {
+		const placement =
+			"send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.";
+		const cases: [Record<string, unknown>, string][] = [
+			[{ scan: {} }, `scan: ${placement}`],
+			[{ scan: [] }, `scan: ${placement}`],
+			[{ pics: {} }, `pics: ${placement}`],
+		];
+		for (const [form, message] of cases) {
+			const result = await call(withFetch, "execute", { id: "docs:doc", form });
+			expect(result.data.message).toBe(message);
+		}
+		expect(fetched).toEqual([]);
 	});
 
 	test("a field's saveUsing() gets only a type the field accepts", async () => {

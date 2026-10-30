@@ -80,16 +80,22 @@ function assertPlaced(at: Target, value: unknown): void {
 	}
 }
 
-/** Whether every `{url}` in `value` is the value, a list entry (multiple) or a locale's value (translatable). */
+const isScalar = (value: unknown): value is string | number | boolean | null | undefined =>
+	value === null || typeof value !== "object";
+
+/** Whether `value` has the field's shape: a value, a list (multiple) or one per locale (translatable); `{url}` only as a value. */
 function placed(value: unknown, multiple: boolean, translatable: boolean): boolean {
 	if (isRemote(value)) {
 		return !(multiple || translatable);
 	}
-	if (value === null || typeof value !== "object" || references(value) === 0) {
+	if (isScalar(value)) {
 		return true;
 	}
+	if (Object.keys(value).length === 0) {
+		return translatable || (multiple && Array.isArray(value));
+	}
 	if (Array.isArray(value)) {
-		return multiple && value.every((entry) => isRemote(entry) || references(entry) === 0);
+		return multiple && value.every((entry) => isRemote(entry) || isScalar(entry));
 	}
 	return translatable && Object.values(value).every((entry) => placed(entry, multiple, false));
 }
