@@ -18,6 +18,13 @@ export interface McpConfig {
 	allowedOrigins?: string[];
 	/** Where unexpected tool failures go; default console.error. The agent gets a generic message. */
 	report?: (error: unknown) => void;
+	/**
+	 * Fetches a `{url}` an agent sends for an upload field; without it upload
+	 * fields are excluded. The host owns the SSRF policy here (private ranges,
+	 * redirects, DNS pinning): a Worker's fetch() cannot pin DNS, so the
+	 * runtime ships no guard of its own.
+	 */
+	fetchRemote?: (url: string) => Promise<Response>;
 }
 
 export function mcpPath(config: McpConfig): string {
@@ -77,6 +84,7 @@ export function serveMcp(
 		pages: new McpPages(env.pages, env.prefix, origin),
 		options: env.options,
 		report: env.config.report ?? ((error) => console.error("MCP tool failed:", error)),
+		fetchRemote: env.config.fetchRemote,
 	});
 	return serveRpc(request, {
 		name: "Tabletop Admin",

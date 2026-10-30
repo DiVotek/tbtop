@@ -32,6 +32,9 @@ export interface ExecutionTarget {
  * reaches (gate, reachability, validation), on a request bound to its endpoint URL.
  */
 export class Execution {
+	/** One scratch session per execute(): a file fetched before it is issued on the same one. */
+	readonly session = scratchSession();
+
 	constructor(private readonly target: ExecutionTarget) {}
 
 	private ctx(tail: string, body: unknown): EndpointCtx {
@@ -41,7 +44,7 @@ export class Execution {
 			headers: { "content-type": "application/json", accept: "application/json" },
 			body: JSON.stringify(body),
 		});
-		return { resolved, request, args: [], options, session: scratchSession() };
+		return { resolved, request, args: [], options, session: this.session };
 	}
 
 	/** `payload` is `{form?, row?, selection?}`; a redirect effect gains the page it opens. */

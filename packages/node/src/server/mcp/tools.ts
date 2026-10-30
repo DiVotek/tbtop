@@ -8,15 +8,18 @@ import { assertSendable } from "./formInput";
 import { assertNeedsSent, selectionKeys } from "./needs";
 import { type McpPages, pathParams, routeParams } from "./pages";
 import { optionsLookup } from "./queryOptions";
+import { type FetchRemote, fetchInto } from "./remoteFiles";
 import type { McpTool } from "./rpc";
 import { SCHEMAS } from "./schemas";
-import { describeSurface, executable } from "./surface";
+import { briefSurface, describeSurface, executable } from "./surface";
 import { checkTableArgs } from "./tableArgs";
 
 export interface ToolEnv {
 	pages: McpPages;
 	options: ServerOptions;
 	report: (error: unknown) => void;
+	/** McpConfig.fetchRemote: with it, upload fields take `{url}`. */
+	fetchRemote?: FetchRemote;
 }
 
 type Args = Record<string, unknown>;
@@ -35,14 +38,21 @@ async function search(env: ToolEnv, args: Args): Promise<Record<string, unknown>
 	if (typeof args.page === "string" && args.page !== "") {
 		const { page, resolved } = await open(env, args);
 		const title = typeof page.title === "function" ? page.title(resolved.ctx) : page.title;
-		return { page: page.path, title, ...(await describeSurface(resolved)) };
+		return {
+			page: page.path,
+			title,
+			...(await describeSurface(resolved, {
+				withValues: args.values === true,
+				files: env.fetchRemote !== undefined,
+			})),
+		};
 	}
 	const pages = await Promise.all(env.pages.all().map((page) => listed(env, page)));
 	return { pages: pages.filter((entry) => entry !== null) };
 }
 
 /**
- * A page in the bare listing. One with route params is listed with them: its
+ * A page in the bare listing, as an index (briefSurface). One with route params is listed with them: its
  * gate runs when the agent opens it with real params. One whose gate or view()
  * fails is listed with an error, never failing the whole search.
  */
@@ -57,7 +67,13 @@ async function listed(env: ToolEnv, page: PageDef): Promise<Record<string, unkno
 		if (!((await page.authorize?.({ params: {}, request })) ?? true)) {
 			return null;
 		}
-		return await search(env, { page: page.path });
+		const { resolved } = await open(env, { page: page.path });
+		const title = typeof page.title === "function" ? page.title(resolved.ctx) : page.title;
+		return {
+			page: page.path,
+			title,
+			...(await briefSurface(resolved, env.fetchRemote !== undefined)),
+		};
 	} catch (error) {
 		env.report(error);
 		return { page: page.path, error: "This page failed to build; see the application log." };
@@ -78,7 +94,10 @@ const QUERY_KEYS: Record<string, string> = {
 
 async function query(env: ToolEnv, args: Args) {
 	const { resolved } = await open(env, args);
-	const options = await optionsLookup(resolved, args, env.options);
+	const options = await optionsLookup(resolved, args, {
+		options: env.options,
+		files: env.fetchRemote !== undefined,
+	});
 	if (options !== null) {
 		return options;
 	}
@@ -99,16 +118,26 @@ async function query(env: ToolEnv, args: Args) {
 async function execute(env: ToolEnv, args: Args) {
 	const [slug = "", name = ""] = String(args.id ?? "").split(/:(.*)/s);
 	const target = await open(env, { page: slug, params: args.params });
-	const { action, form } = await executable(target.resolved, name);
+	const { fetchRemote } = env;
+	const { action, form } = await executable(target.resolved, name, fetchRemote !== undefined);
 	if (action !== null) {
 		const needs = (action.getSpec()?.needs as string[] | undefined) ?? [];
 		assertNeedsSent(`${slug}:${name}`, needs, args);
 	}
-	const input = bag(args.form);
-	if (form !== null) {
-		assertSendable(form, input);
-	}
 	const execution = new Execution({ ...target, pages: env.pages, options: env.options });
+	let input = bag(args.form);
+	if (form !== null) {
+		assertSendable(form, input, fetchRemote !== undefined);
+		if (fetchRemote !== undefined) {
+			const remote = {
+				fetchRemote,
+				options: env.options,
+				session: execution.session,
+				report: env.report,
+			};
+			input = await fetchInto(form, input, remote);
+		}
+	}
 	if (action === null) {
 		return execution.form(name, input);
 	}

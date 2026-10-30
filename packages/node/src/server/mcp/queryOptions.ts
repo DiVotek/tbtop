@@ -29,7 +29,7 @@ function assertShape(args: Args): void {
 export async function optionsLookup(
 	resolved: Resolved,
 	args: Args,
-	options: ServerOptions,
+	env: { options: ServerOptions; files: boolean },
 ): Promise<unknown> {
 	assertShape(args);
 	if (!given(args.executable) && !given(args.filter)) {
@@ -44,9 +44,13 @@ export async function optionsLookup(
 		throw new AgentError("Row arguments do not apply to an options lookup.");
 	}
 	const deps = args.deps !== null && typeof args.deps === "object" ? (args.deps as Args) : {};
-	const lookup = { search: String(args.search ?? ""), deps, options };
+	const lookup = { search: String(args.search ?? ""), deps, options: env.options };
 	if (given(args.executable)) {
-		const at = { executable: String(args.executable), field: String(args.field) };
+		const at = {
+			executable: String(args.executable),
+			field: String(args.field),
+			files: env.files,
+		};
 		return fieldOptions(resolved, at, lookup);
 	}
 	const table = resolved.s.reachableTable(String(args.table));

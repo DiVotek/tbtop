@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { db, driver, hostRules, pages } from "../example/posts";
-import { createAdmin, definePage, Effects } from "../src";
+import { Column, CreateAction, createAdmin, definePage, Effects, type Row } from "../src";
+import { memoryQuery } from "../src/adapters/memory";
 
 const seed = structuredClone(db.posts);
 beforeEach(() => {
@@ -8,6 +9,7 @@ beforeEach(() => {
 });
 
 const reported: unknown[] = [];
+const ran: Record<string, unknown> = {};
 
 const extra = [
 	definePage({
@@ -44,6 +46,55 @@ const extra = [
 					.mcp(false),
 				s.action("ping").handle(() => Effects.make().notify("pong")),
 				s.action("copy").custom("copyLink"),
+			]),
+	}),
+	definePage({
+		path: "mcp-modal",
+		title: "Modals",
+		view: (s) =>
+			s.stack([
+				s.actionsRow([
+					s
+						.action("invite")
+						.label("Invite")
+						.modal(
+							"Invite",
+							s.form("inviteForm", [
+								s
+									.text("email")
+									.label("Email")
+									.helperText("Work address")
+									.required()
+									.rules("email"),
+								s.actionsRow([
+									s
+										.action("inviteSend")
+										.label("Send")
+										.handle(
+											(ctx) => {
+												ran.inviteSend = ctx.form;
+												return Effects.make().closeModal();
+											},
+											["form"],
+										),
+								]),
+							]),
+						),
+				]),
+				s
+					.table("items")
+					.headerActions([
+						CreateAction.make(s, {
+							form: s.form("createItem", [s.text("name").label("Name").required()]),
+							storeUsing: (ctx) => {
+								ran.createStore = ctx.form;
+								return Effects.make().notify("Created");
+							},
+							defaultRecord: { name: "" },
+						}).slideOver(),
+					])
+					.columns([Column.make("name").label("Name")])
+					.query(() => memoryQuery(() => [] as Row[])),
 			]),
 	}),
 ];
@@ -172,6 +223,7 @@ describe("search", () => {
 			"fragile",
 			"broken",
 			"tools",
+			"mcp-modal",
 		]);
 		expect(listed[2]).toEqual({
 			page: "posts/$post/edit",
@@ -186,6 +238,32 @@ describe("search", () => {
 			page: "broken",
 			error: "This page failed to build; see the application log.",
 		});
+	});
+
+	test("the bare search is an index: executable ids and table names, no forms", async () => {
+		const { data } = await call("search");
+		const posts = (data.pages as Record<string, unknown>[]).find(
+			(entry) => entry.page === "posts",
+		);
+		expect(posts).toEqual({
+			page: "posts",
+			title: "Posts",
+			executables: [
+				{ id: "posts:edit", kind: "action", label: "Edit" },
+				{ id: "posts:delete", kind: "action", label: "Delete" },
+			],
+			tables: ["posts"],
+			excluded: [],
+		});
+		expect(JSON.stringify(data)).not.toContain('"fields"');
+	});
+
+	test("a field's helper text is listed as help", async () => {
+		const { data } = await call("search", { page: "mcp-modal" });
+		const invite = (data.executables as { id: string; form: { fields: unknown[] } }[]).find(
+			(entry) => entry.id === "mcp-modal:inviteSend",
+		);
+		expect(invite?.form.fields[0]).toMatchObject({ name: "email", help: "Work address" });
 	});
 
 	test("a table page lists its row actions, the table and what it accepts", async () => {
@@ -220,8 +298,10 @@ describe("search", () => {
 		});
 	});
 
-	test("a record page describes its form with rules and current values", async () => {
-		const { data } = await call("search", { page: "posts/$post/edit", params: { post: "2" } });
+	test("a record page describes its form with rules, and current values when asked", async () => {
+		const page = { page: "posts/$post/edit", params: { post: "2" } };
+		expect((await call("search", page)).data.executables[0].values).toBeUndefined();
+		const { data } = await call("search", { ...page, values: true });
 		const [form] = data.executables;
 		expect(form).toMatchObject({ id: "posts/$post/edit:post", kind: "form", form: "post" });
 		expect(form.fields[0]).toEqual({
@@ -337,5 +417,40 @@ describe("execute", () => {
 			"Server error; see the application log.",
 		);
 		expect(reported.length).toBe(before + 1);
+	});
+});
+
+describe("MCP forms in modals", () => {
+	beforeEach(() => {
+		for (const key of Object.keys(ran)) {
+			delete ran[key];
+		}
+	});
+
+	test("search lists the save action of a form inside a modal, with that form", async () => {
+		const { data } = await call("search", { page: "mcp-modal" });
+		type Listed = { id: string; needs: string[]; form: { fields: { name: string }[] } };
+		const byId = Object.fromEntries(
+			(data.executables as Listed[]).map((entry) => [entry.id, entry]),
+		);
+		expect(Object.keys(byId)).toEqual(
+			expect.arrayContaining(["mcp-modal:createStore", "mcp-modal:inviteSend"]),
+		);
+		expect(byId["mcp-modal:createStore"]?.needs).toEqual(["form"]);
+		expect(byId["mcp-modal:createStore"]?.form.fields.map((f) => f.name)).toEqual(["name"]);
+		expect(byId["mcp-modal:inviteSend"]?.form.fields.map((f) => f.name)).toEqual(["email"]);
+	});
+
+	test("execute runs a modal form action with its form validated", async () => {
+		const ok = await call("execute", { id: "mcp-modal:createStore", form: { name: "Lisbon" } });
+		const invalid = await call("execute", {
+			id: "mcp-modal:inviteSend",
+			form: { email: "nope" },
+		});
+		expect(ok.isError).toBe(false);
+		expect(ran.createStore).toEqual({ name: "Lisbon" });
+		expect(invalid.isError).toBe(true);
+		expect(Object.keys(invalid.data.errors)).toContain("email");
+		expect(ran.inviteSend).toBeUndefined();
 	});
 });
