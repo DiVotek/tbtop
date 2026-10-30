@@ -859,8 +859,7 @@ A modal has no footer slot: `modal()` takes one body node and renders it in a sc
 area. Put the Save/Cancel buttons in an `actionsRow` as the **last child of the body** —
 they scroll with the content (on short viewports the user scrolls down to reach them).
 The prebuilt `EditAction`/`CreateAction` append that row for you; a hand-rolled
-`->modal($form)` must include its own. A sticky footer is a tracked backlog item
-(`docs/backlog.md`, Modal), not a DSL option.
+`->modal($form)` must include its own.
 
 #### Authorization — `authorize()`
 
