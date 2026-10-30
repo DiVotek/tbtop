@@ -824,7 +824,23 @@
                                         "kind": "relation",
                                         "options": {
                                             "labelKey": "name",
-                                            "searchable": true
+                                            "searchable": true,
+                                            "create": {
+                                                "fields": [
+                                                    {
+                                                        "kind": "text",
+                                                        "options": {
+                                                            "label": "Name",
+                                                            "required": true,
+                                                            "constraints": {
+                                                                "required": true
+                                                            }
+                                                        },
+                                                        "meta": {},
+                                                        "name": "name"
+                                                    }
+                                                ]
+                                            }
                                         },
                                         "meta": {},
                                         "name": "category_id"

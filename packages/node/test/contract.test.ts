@@ -38,3 +38,23 @@ describe("per-locale placeholder (#385)", () => {
 		).toThrow("locale keys and string values");
 	});
 });
+
+describe("relation creatable()", () => {
+	const s = new S();
+
+	test("serializes the mini-form and never the closure", () => {
+		const node = s
+			.relation("author_id")
+			.query(() => null)
+			.creatable([s.text("name").required()], () => ({ id: 1 }))
+			.toNode() as unknown as { options: { create: { fields: { name: string }[] } } };
+		expect(node.options.create.fields.map((f) => f.name)).toEqual(["name"]);
+		expect(JSON.stringify(node)).not.toContain("=>");
+	});
+
+	test("rejects a mini-form field named deps", () => {
+		expect(() =>
+			s.relation("author_id").creatable([s.text("deps")], () => ({ id: 1 })),
+		).toThrow('cannot be named "deps"');
+	});
+});

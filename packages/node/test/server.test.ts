@@ -57,6 +57,18 @@ function view(s: S) {
 				.labelKey("name")
 				.query(() => memoryQuery(() => people)),
 			s
+				.relation("buddy_id")
+				.dependsOn("name")
+				.query(() => memoryQuery(() => people))
+				.creatable([s.text("name").label("Name").required()], (v, deps) => ({
+					id: 99,
+					name: `${String(v.name)} via ${deps.name ?? "?"}`,
+				})),
+			s
+				.relation("keyless_id")
+				.query(() => memoryQuery(() => people))
+				.creatable([s.text("name")], (v) => ({ name: v.name })),
+			s
 				.daterange("window")
 				.dependsOn("name")
 				.disabledRanges((deps) => [
@@ -191,6 +203,22 @@ describe("page-scoped endpoints", () => {
 		expect((await call("relation-search/manager_id", { value: "3" })).body).toEqual({
 			option: { value: "3", label: "Cy" },
 		});
+	});
+
+	test("relation-create validates, passes the declared deps and answers {value, label}", async () => {
+		expect((await call("relation-create/buddy_id", {})).status).toBe(422);
+		const created = await call("relation-create/buddy_id", {
+			name: "Di",
+			deps: { name: "Ada", other: "x" },
+		});
+		expect(created.body).toEqual({ value: "99", label: "Di via Ada" });
+		expect((await call("relation-create/manager_id", { name: "Di" })).status).toBe(404);
+	});
+
+	test("relation-create refuses a row without its key", async () => {
+		await expect(call("relation-create/keyless_id", { name: "Di" })).rejects.toThrow(
+			'creatable() must return the created row with its "id"',
+		);
 	});
 
 	test("daterange-ranges and live-region re-run with the declared deps", async () => {

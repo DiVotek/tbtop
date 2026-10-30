@@ -203,7 +203,8 @@ class KitchenSinkPage extends Page
                     $s->relation('category_id')
                         ->labelKey('name')
                         ->searchable()
-                        ->query(fn () => null),
+                        ->query(fn () => null)
+                        ->creatable([$s->text('name')->label('Name')->required()]),
                     $s->repeater('sections')->rules('array|max:10')->minItems(1)->defaultItems(2)->set('fields', [
                         $s->text('heading')->required(),
                         $s->textarea('text'),

@@ -14,6 +14,10 @@ page exists.
 - `memoryDriver()` with `memoryQuery(() => rows)` from `/memory`: for tests.
 - Anything else (Drizzle, Prisma, a REST API): implement the six methods.
 
+A `relation(...).creatable(fields, (validated, deps) => row)` saves its own
+record too: the closure inserts it and returns the row, which must carry the
+driver's key column (and the `labelKey()` column for the label shown).
+
 Form loading and saving is the page's code: read the record in `view`, fill
 the form with `.record(row)`, write it in `onSubmit`.
 

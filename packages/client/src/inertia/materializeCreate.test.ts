@@ -75,4 +75,34 @@ describe("Materialize: create.fields walker", () => {
 		expect(fields[0]?.meta?.hidden).toBeUndefined();
 		expect(fields[0]?.name).toBe("name");
 	});
+
+	it("Materialize: relation create posts the mini-form and deps to relation-create", async () => {
+		const relationNode = node(
+			"relation",
+			{ labelKey: "name", create: { fields: [node("text", { label: "Name" }, "name")] } },
+			"author_id",
+		);
+		const formNode = node("form", { name: "post", children: [relationNode] }, "post");
+
+		const out = materialize(formNode, BASE);
+		const children = (out.options as Record<string, unknown>).children as StructureNode[];
+		const create = ((children[0] as StructureNode).options as Record<string, unknown>)
+			.create as {
+			fields: StructureNode[];
+			post: (
+				ctx: unknown,
+				data: Record<string, unknown>,
+				deps?: Record<string, string>,
+			) => unknown;
+		};
+		const calls: [string, unknown][] = [];
+		const client = { post: async (url: string, body: unknown) => calls.push([url, body]) };
+
+		await create.post({ client }, { name: "Ada" }, { country_id: "3" });
+
+		expect(create.fields[0]?.name).toBe("name");
+		expect(calls).toEqual([
+			["/admin/posts/relation-create/author_id", { name: "Ada", deps: { country_id: "3" } }],
+		]);
+	});
 });
