@@ -12,19 +12,40 @@ use Tbtop\Admin\Dsl\RuleWalker;
  */
 final class FormFields
 {
-    /** Kinds whose value is a server-side upload an agent cannot produce. */
-    public const UNSUPPORTED_KINDS = ['upload', 'media'];
+    /** Kinds whose value is a stored file: sent as `{url}` (RemoteFiles), or excluded where that is not allowed. */
+    public const FILE_KINDS = ['upload', 'media'];
+
+    /** Whether $field is listed as excluded: a file field this user cannot fill by URL. */
+    public static function excludes(Field $field): bool
+    {
+        return in_array($field->toNode()->kind, self::FILE_KINDS, true) && ! RemoteFiles::accepts($field);
+    }
+
+    /** Why $field cannot be filled over MCP, or null when it can. */
+    private static function exclusionReason(Field $field, bool $embedded): ?string
+    {
+        if ($embedded && in_array($field->toNode()->kind, self::FILE_KINDS, true)) {
+            return 'a file inside a richtext embed cannot be sent as {url} over MCP';
+        }
+
+        return self::excludes($field)
+            ? 'the media library is closed to this user (mediaGate), so this field cannot be filled over MCP'
+            : null;
+    }
 
     /**
      * $fields as RuleWalker::fieldsByKey() keys them. An excluded field counts as
      * required only when its row must exist: at the top level, or in a container
      * that is required or has a minimum row count.
      *
+     * $embedded: the fields of a richtext embed's `data`, where RemoteFiles fetches
+     * nothing, so every file field there is excluded.
+     *
      * @param  array<string, Field>  $fields
      * @param  array<string, list<mixed>>  $rules
      * @return array{fields: list<array<string, mixed>>, excluded: list<array<string, string>>, required: list<array<string, string>>}
      */
-    public static function describe(array $fields, array $rules): array
+    public static function describe(array $fields, array $rules, bool $embedded = false): array
     {
         $out = ['fields' => [], 'excluded' => [], 'required' => []];
         $rowMandatory = [];
@@ -32,8 +53,9 @@ final class FormFields
             $parent = str_contains($name, '.*.') ? substr($name, 0, (int) strrpos($name, '.*.')) : null;
             $mandatory = $parent === null || ($rowMandatory[$parent] ?? false);
             $node = $field->toNode();
-            if (in_array($node->kind, self::UNSUPPORTED_KINDS, true)) {
-                $out['excluded'][] = ['name' => $name, 'kind' => $node->kind, 'reason' => "{$node->kind} fields cannot be filled over MCP"];
+            $reason = self::exclusionReason($field, $embedded);
+            if ($reason !== null) {
+                $out['excluded'][] = ['name' => $name, 'kind' => $node->kind, 'reason' => $reason];
                 if ($mandatory && self::isRequired($name, $rules)) {
                     $out['required'][] = ['name' => $name, 'kind' => $node->kind];
                 }
@@ -108,12 +130,31 @@ final class FormFields
             'name' => $name,
             'kind' => $kind,
             'label' => $field->labelText(),
+            'help' => is_string($options['helperText'] ?? null) && $options['helperText'] !== '' ? $options['helperText'] : null,
             'rules' => $rules[$name] ?? [],
             'nestedRules' => $nested,
             'mask' => is_string($options['mask'] ?? null) ? $options['mask'] : null,
             'dependsOn' => is_array($options['dependsOn'] ?? null) ? array_values($options['dependsOn']) : null,
             'options' => self::optionsOf($field, $options),
+            ...(in_array($kind, self::FILE_KINDS, true) ? self::file($options) : []),
         ], static fn (mixed $v): bool => $v !== null && $v !== []);
+    }
+
+    /**
+     * What a file field takes: `{url}` (media: plus `alt`, `name`), within `accept`.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
+    private static function file(array $options): array
+    {
+        $accept = $options['accept'] ?? null;
+
+        return [
+            'value' => '{url}',
+            'accept' => is_string($accept) ? array_values(array_filter(array_map('trim', explode(',', $accept)))) : $accept,
+            'multiple' => ($options['multiple'] ?? false) === true ? true : null,
+        ];
     }
 
     /**
@@ -126,7 +167,7 @@ final class FormFields
         $embeds = [];
         foreach ($field->getEmbeds() as $embed) {
             $fields = $embed->includedFields();
-            $described = self::describe(RuleWalker::fieldsByKey($fields), RuleWalker::collect($fields));
+            $described = self::describe(RuleWalker::fieldsByKey($fields), RuleWalker::collect($fields), embedded: true);
             $embeds[] = array_filter([
                 'kind' => $embed->kind,
                 'label' => $embed->labelText(),
