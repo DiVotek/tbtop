@@ -9,25 +9,14 @@ import { storeUpload } from "../uploads/store";
 import { dataSet } from "../validation/data";
 import { AgentError } from "./answer";
 import { formShape } from "./formArgs";
+import { isRemote } from "./formFields";
 import { sent } from "./formInput";
 
 /** The host's fetch for `{url}` values (McpConfig.fetchRemote): it owns the SSRF policy. */
 export type FetchRemote = (url: string) => Promise<Response>;
 
-/** Keys a remote reference may carry; any other key makes the value an ordinary one. */
-const KEYS = ["url", "alt", "name"];
-
 /** Downloads one execute() may trigger, counted before the first one starts. */
 const MAX_PER_CALL = 20;
-
-/** RemoteFiles::isRemote(): a `{url: "https://…"}` reference. */
-export function isRemote(value: unknown): value is { url: string; name?: string } {
-	if (value === null || typeof value !== "object" || Array.isArray(value)) {
-		return false;
-	}
-	const ref = value as Record<string, unknown>;
-	return typeof ref.url === "string" && Object.keys(ref).every((key) => KEYS.includes(key));
-}
 
 export interface RemoteEnv {
 	fetchRemote: FetchRemote;
@@ -51,6 +40,11 @@ export async function fetchInto(
 			? sent(key, input).map(([path, value]) => ({ at: { field, path, env }, value }))
 			: [],
 	);
+	for (const { at, value } of targets) {
+		if (at.field.toNode().options.multiple === true && isRemote(value)) {
+			throw new AgentError(`${at.path}: a multiple upload takes a list; send [{url}].`);
+		}
+	}
 	const count = targets.reduce((sum, target) => sum + references(target.value), 0);
 	if (count > MAX_PER_CALL) {
 		throw new AgentError(
@@ -137,16 +131,41 @@ const httpUrl = (raw: string): URL | null => {
 	return url !== null && ["http:", "https:"].includes(url.protocol) ? url : null;
 };
 
-/** The response body, or the error key when it is over `maxSize` or breaks off. */
-async function body(response: Response, maxSize: number): Promise<ArrayBuffer | string> {
+/** The response body, or the error key when it is over `maxSize` or breaks off; read until the cap, no further. */
+async function body(
+	response: Response,
+	maxSize: number,
+): Promise<Uint8Array<ArrayBuffer> | string> {
 	if (Number(response.headers.get("content-length") ?? 0) > maxSize) {
 		return "file_too_large";
 	}
-	const bytes = await response.arrayBuffer().catch(() => null);
-	if (bytes === null) {
-		return "download_failed";
+	const chunks = await readCapped(response, maxSize).catch(() => "download_failed");
+	if (typeof chunks === "string") {
+		return chunks;
 	}
-	return bytes.byteLength > maxSize ? "file_too_large" : bytes;
+	const bytes = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0));
+	let offset = 0;
+	for (const chunk of chunks) {
+		bytes.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return bytes;
+}
+
+/** The body's chunks, or "file_too_large" once they pass `maxSize` (the rest is never downloaded). */
+async function readCapped(response: Response, maxSize: number): Promise<Uint8Array[] | string> {
+	const reader = response.body?.getReader();
+	const chunks: Uint8Array[] = [];
+	let size = 0;
+	for (let read = await reader?.read(); read && !read.done; read = await reader?.read()) {
+		size += read.value.byteLength;
+		if (size > maxSize) {
+			await reader?.cancel();
+			return "file_too_large";
+		}
+		chunks.push(read.value);
+	}
+	return chunks;
 }
 
 /** The URL's last path segment, as a browser names a download. */

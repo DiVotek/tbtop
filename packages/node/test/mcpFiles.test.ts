@@ -51,6 +51,17 @@ async function fetchRemote(url: string): Promise<Response> {
 	if (url.endsWith("/huge.png")) {
 		return new Response(new Uint8Array(5000), { headers: { "content-type": "image/png" } });
 	}
+	if (url.endsWith("/stream.png")) {
+		const chunk = new Uint8Array(400);
+		let sent = 0;
+		const stream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				sent += 1;
+				return sent > 50 ? controller.close() : controller.enqueue(chunk);
+			},
+		});
+		return new Response(stream, { headers: { "content-type": "image/png" } });
+	}
 	if (url.endsWith("/page.html")) {
 		return new Response("<html></html>", { headers: { "content-type": "text/html" } });
 	}
@@ -184,6 +195,7 @@ describe("MCP upload fields by URL", () => {
 				"cover: Could not download the file from the given URL.",
 			],
 			["https://cdn.example/huge.png", "cover: The file exceeds the maximum allowed size."],
+			["https://cdn.example/stream.png", "cover: The file exceeds the maximum allowed size."],
 			["https://cdn.example/page.html", "cover: File type text/html is not allowed."],
 		];
 		for (const [url, message] of cases) {
@@ -200,6 +212,12 @@ describe("MCP upload fields by URL", () => {
 		expect(result.data.message).toBe(
 			"At most 20 files may be sent as {url} in one call; this one has 21.",
 		);
+		expect(fetched).toEqual([]);
+	});
+
+	test("a bare {url} on a multiple upload is refused before any fetch", async () => {
+		const result = await execute(withFetch, { gallery: { url: "https://cdn.example/b.png" } });
+		expect(result.data.message).toBe("gallery: a multiple upload takes a list; send [{url}].");
 		expect(fetched).toEqual([]);
 	});
 });

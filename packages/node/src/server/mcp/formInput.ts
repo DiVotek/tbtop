@@ -2,8 +2,7 @@ import { type FormBuilder, Richtext } from "../../dsl";
 import { dataGet, dataHas, expandKey } from "../validation/data";
 import { AgentError } from "./answer";
 import { formShape } from "./formArgs";
-import { excludesKind, FILE_KINDS } from "./formFields";
-import { isRemote } from "./remoteFiles";
+import { excludesKind, FILE_KINDS, isRemote } from "./formFields";
 import { assertRichtextDocument } from "./richtext";
 
 /**
