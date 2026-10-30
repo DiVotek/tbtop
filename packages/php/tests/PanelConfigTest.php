@@ -100,7 +100,7 @@ it('keeps the brand name when only a dark-mode logo is set', function () {
 
 it('rejects a brand logo height that is not a px, rem or em length', function (string $height) {
     (new PanelConfig)->brandLogoHeight($height);
-})->with(['2', 'auto', '10%', '1rem; color: red'])->throws(InvalidArgumentException::class, 'Invalid brand logo height');
+})->with(['2', 'auto', '10%', '1rem; color: red', "2rem\n"])->throws(InvalidArgumentException::class, 'Invalid brand logo height');
 
 it('rejects an empty logo or favicon URL', function (string $method) {
     (new PanelConfig)->{$method}('  ');

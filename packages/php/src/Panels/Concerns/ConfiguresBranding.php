@@ -12,7 +12,7 @@ use InvalidArgumentException;
 trait ConfiguresBranding
 {
     /** A CSS length in px, rem or em, e.g. '2rem' or '32px'. */
-    private const LOGO_HEIGHT_PATTERN = '/^\d+(\.\d+)?(px|rem|em)$/';
+    private const LOGO_HEIGHT_PATTERN = '/^\d+(\.\d+)?(px|rem|em)\z/';
 
     private ?string $brand = null;
 
