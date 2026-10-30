@@ -152,6 +152,12 @@ describe("Slug field", () => {
 		expect(slugify("Straße Øre")).toBe("strasse-ore");
 	});
 
+	test("slugify maps Turkish ı, Icelandic ð/þ and Maltese ħ", () => {
+		expect(slugify("Işık")).toBe("isik");
+		expect(slugify("Þórður")).toBe("thordur");
+		expect(slugify("Ħamrun")).toBe("hamrun");
+	});
+
 	test("slugify drops Cyrillic soft/hard signs (ъ, ь) with no Latin output", () => {
 		expect(slugify("подъезд")).toBe("podezd");
 	});

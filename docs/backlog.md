@@ -21,11 +21,7 @@
 
 Each fits the minor-fix loop: one change, one test.
 
-- **`simplePagination()` docblock** — says the footer shows "only previous/next"; it
-  also shows "Page N" and the per-page selector (`TableBuilder.php`). The next
-  `ApiReference` regeneration picks the wording up.
-- **Slug transliteration gaps** — `LATIN_MAP` in `packages/client/src/fields/slugify.ts`
-  covers ł đ ø ß æ œ; ı ð þ ħ still fold to dashes.
+None open.
 
 ## Tables
 

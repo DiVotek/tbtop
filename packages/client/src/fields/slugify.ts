@@ -43,7 +43,7 @@ const CYRILLIC_MAP: Record<string, string> = {
 
 // Latin letters NFKD leaves whole: their stroke or ligature is part of the
 // letter, not a combining mark, so the fold below would turn them into dashes
-// (Polish "płatnik" -> "p-atnik").
+// (Polish "płatnik" -> "p-atnik"). Turkish ı, Icelandic ð/þ, Maltese ħ too.
 const LATIN_MAP: Record<string, string> = {
 	ł: "l",
 	đ: "d",
@@ -51,6 +51,10 @@ const LATIN_MAP: Record<string, string> = {
 	ß: "ss",
 	æ: "ae",
 	œ: "oe",
+	ı: "i",
+	ð: "d",
+	þ: "th",
+	ħ: "h",
 };
 
 function transliterate(lower: string): string {
