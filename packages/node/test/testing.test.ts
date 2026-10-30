@@ -241,7 +241,9 @@ describe("testing API: forms", () => {
 	});
 
 	test("tells a redirect away from the way back", async () => {
-		(await (await page()).fill({ title: "leave" }).submit()).assertRedirect("/admin/elsewhere");
+		const leave = await (await page()).fill({ title: "leave" }).submit();
+		leave.assertRedirect("/admin/elsewhere");
+		expect(() => leave.assertOk()).toThrow("to [/admin/elsewhere]");
 		const stay = await (await page()).fill({ title: "stay" }).submit();
 		expect(() => stay.assertRedirect()).toThrow("redirected nowhere");
 	});

@@ -138,12 +138,17 @@ export class Result {
 		return this.assertStatus(403);
 	}
 
-	/** The call went through: a 2xx, or a form's redirect with no validation errors. */
+	/**
+	 * The call went through: a 2xx, or a form's way back with no validation
+	 * errors. Any other redirect (a login page, a handler's URL) is not ok;
+	 * assert a handler's redirect with assertRedirect().
+	 */
 	assertOk(): this {
 		const { status } = this.init.response;
-		const redirected =
-			status >= 300 && status < 400 && Object.keys(this.init.errors).length === 0;
-		check(status < 300 || redirected, `${this.init.subject} responded ${status}.`);
+		const { redirect, errors, subject } = this.init;
+		const back = status >= 300 && status < 400 && !redirect && Object.keys(errors).length === 0;
+		const to = redirect ? ` to [${redirect}]` : "";
+		check(status < 300 || back, `${subject} responded ${status}${to}.`);
 		return this;
 	}
 
