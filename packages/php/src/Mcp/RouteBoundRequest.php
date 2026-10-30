@@ -70,6 +70,7 @@ final class RouteBoundRequest
         $route->bind($request);
         $request->setRouteResolver(static fn () => $route);
         $request->setUserResolver($outer->getUserResolver());
+        $request->setLaravelSession(CallSession::store());
 
         return $request;
     }

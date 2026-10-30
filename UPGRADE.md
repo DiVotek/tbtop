@@ -46,3 +46,11 @@ Only call `trusted()` on markup the author controls. Never on record data.
 boolean, so `meta('disabled', 0)` now serializes as `false` and `meta('disabled', 'yes')`
 as `true`. A client block that read a non-boolean `meta.disabled` gets a boolean instead.
 Nothing changes for `disabled()` / `disabled(false)` or `meta('disabled', true)`.
+
+### MCP `search` returns a short index; form values are opt-in
+
+A bare `search()` call now returns an index (pages, executable ids with kind and label,
+table names) instead of every form. `search` with a `page` lists the forms but sends their
+current `values` only when the call passes `values: true`. An MCP client that read form
+values from the bare search must call `search({ page, values: true })` instead.
+Nothing changes for a host's PHP code.

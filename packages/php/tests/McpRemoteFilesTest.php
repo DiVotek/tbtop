@@ -1,0 +1,208 @@
+<?php
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Dsl\Fields\Embed;
+use Tbtop\Admin\Dsl\Fields\MediaPicker;
+use Tbtop\Admin\Dsl\Fields\Upload;
+use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Mcp\AgentError;
+use Tbtop\Admin\Mcp\FormArguments;
+use Tbtop\Admin\Mcp\RemoteFiles;
+use Tbtop\Admin\Media\Models\Media;
+use Tbtop\Admin\Panels\CurrentPanel;
+use Tbtop\Admin\Panels\PanelRegistry;
+use Tbtop\Admin\Tests\Fixtures\McpPage;
+use Tbtop\Admin\Tests\McpHttpTestCase;
+
+uses(McpHttpTestCase::class);
+
+const MCP_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+beforeEach(function (): void {
+    Storage::fake('public');
+    // 8.8.8.8 is a public literal: SsrfGuard lets it through, Http::fake answers it.
+    Http::fake(['*' => fn () => Http::response(base64_decode(MCP_PNG), 200, ['Content-Type' => 'image/png'])]);
+});
+
+it('stores an upload sent as {url} and hands the handler its path', function (string $id): void {
+    $result = $this->toolResult($this->callTool('execute', ['id' => $id, 'form' => [
+        'name' => 'Ada',
+        'avatar' => ['url' => 'https://8.8.8.8/ada.png'],
+    ]]));
+
+    $tool = $id === 'mcp-page:main' ? 'main' : 'save';
+    $path = McpPage::$ran[$tool]['avatar'] ?? null;
+    expect($result['isError'])->toBeFalse()
+        ->and($path)->toBeString()
+        ->and(Storage::disk('public')->exists($path))->toBeTrue();
+})->with([
+    'onSubmit form' => 'mcp-page:main',
+    'action with needs form' => 'mcp-page:save',
+]);
+
+it('refuses a {url} the SSRF guard blocks, naming the field, and runs nothing', function (): void {
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-page:main', 'form' => [
+        'name' => 'Ada',
+        'avatar' => ['url' => 'http://127.0.0.1/secret.png'],
+    ]]));
+
+    expect($result['isError'])->toBeTrue()
+        ->and($result['json']['message'])->toStartWith('avatar: ')
+        ->and($result['json']['message'])->toContain('not allowed')
+        ->and(McpPage::$ran)->toBe([]);
+});
+
+it('imports media sent as {url} into the library when the media gate allows it', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    $page = $this->toolResult($this->callTool('search', ['page' => 'mcp-edges-page']))['json'];
+
+    $photo = $this->toolResult($this->callTool('execute', ['id' => 'mcp-edges-page:photo', 'form' => [
+        'caption' => 'Lisbon',
+        'file' => ['url' => 'https://8.8.8.8/lisbon.png', 'alt' => 'Tram 28'],
+    ]]));
+    $gallery = $this->toolResult($this->callTool('execute', ['id' => 'mcp-edges-page:gallery', 'form' => [
+        'heading' => 'Trip',
+        'images' => [['url' => 'https://8.8.8.8/a.png'], ['url' => 'https://8.8.8.8/b.png']],
+    ]]));
+
+    expect(array_column($page['executables'], 'id'))->toContain('mcp-edges-page:photo', 'mcp-edges-page:gallery')
+        ->and($photo['isError'])->toBeFalse()
+        ->and($gallery['isError'])->toBeFalse()
+        ->and(Media::query()->count())->toBe(3)
+        ->and(Media::query()->find(McpPage::$ran['photo']['file'])?->alt)->toBe('Tram 28')
+        ->and(McpPage::$ran['gallery']['images'])->toHaveCount(2);
+});
+
+it('keeps a closed media library closed: a media {url} is refused and nothing is imported', function (): void {
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-edges-page:retouch', 'form' => [
+        'alt' => 'x',
+        'original' => ['url' => 'https://8.8.8.8/x.png'],
+    ]]));
+
+    expect($result['isError'])->toBeTrue()
+        ->and(Media::query()->count())->toBe(0)
+        ->and(McpPage::$ran)->toBe([]);
+});
+
+it('takes a {url} in a new repeater row beside a stored row echoed whole', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
+        'sections' => [
+            ['heading' => 'Intro', 'image' => 'intro.png', 'content' => null],
+            ['heading' => 'More', 'image' => ['url' => 'https://8.8.8.8/more.png']],
+        ],
+    ]]));
+    $swapped = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
+        'sections' => [['heading' => 'Intro', 'image' => 'other.png', 'content' => null]],
+    ]]));
+
+    $sections = McpPage::$ran['post']['sections'] ?? [];
+    expect($result['isError'])->toBeFalse()
+        ->and($sections[0]['image'] ?? null)->toBe('intro.png')
+        ->and(Media::query()->whereKey($sections[1]['image'] ?? 0)->exists())->toBeTrue()
+        ->and($swapped['isError'])->toBeTrue();
+});
+
+it('refuses media {url} when no panel is bound, even with the gate open', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    app()->forgetInstance(CurrentPanel::class);
+
+    expect(RemoteFiles::accepts(MediaPicker::make('logo')))->toBeFalse()
+        ->and(RemoteFiles::accepts(Upload::make('cover')))->toBeTrue();
+});
+
+it('refuses more than 20 {url} references in one call before fetching any', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    $images = array_fill(0, 21, ['url' => 'https://8.8.8.8/a.png']);
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-edges-page:gallery', 'form' => ['heading' => 'Trip', 'images' => $images]]));
+
+    expect($result['json']['message'])->toBe('At most 20 files may be sent as {url} in one call; this one has 21.');
+    Http::assertNothingSent();
+});
+
+it('refuses a bare {url} on a multiple field before fetching', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-edges-page:gallery', 'form' => ['heading' => 'Trip', 'images' => ['url' => 'https://8.8.8.8/a.png']]]));
+
+    expect($result['json']['message'])->toBe('images: a multiple field takes a list; send [{url}].');
+    Http::assertNothingSent();
+});
+
+it('refuses a {url} nested where the field takes no file, before fetching', function (array $image): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
+        'sections' => [['heading' => 'Intro', 'image' => 'intro.png'], ['heading' => 'New', 'image' => $image]],
+    ]]));
+
+    expect($result['json']['message'])->toBe('sections.1.image: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.');
+    Http::assertNothingSent();
+})->with([
+    'list' => [[['url' => 'https://8.8.8.8/a.png']]],
+    'map' => [['x' => ['url' => 'https://8.8.8.8/a.png']]],
+]);
+
+it('takes a translatable file field per locale only, refusing a bare {url} before fetching', function (): void {
+    $form = (new S)->form('doc', [(new S)->upload('file')->translatable()]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, ['file' => ['url' => 'https://8.8.8.8/a.png']]))
+        ->toThrow(AgentError::class, 'file: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.');
+    Http::assertNothingSent();
+});
+
+it('refuses alt on an upload {url}, which only media stores', function (): void {
+    $form = (new S)->form('doc', [(new S)->upload('file')]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, ['file' => ['url' => 'https://8.8.8.8/a.png', 'alt' => 'A']]))
+        ->toThrow(AgentError::class, 'file: alt applies to media fields only; send an upload as {url} (optionally name).');
+    Http::assertNothingSent();
+});
+
+it('keeps a file field inside a richtext embed excluded: fetchInto only walks the form fields', function (): void {
+    $s = new S;
+    $form = $s->form('doc', [$s->richtext('body')->embeds([Embed::make('figure')->fields([$s->upload('image'), $s->text('caption')])])]);
+
+    $embed = FormArguments::describe($form)['fields'][0]['embeds'][0];
+
+    expect(array_column($embed['fields'], 'name'))->toBe(['caption'])
+        ->and($embed['excludedFields'])->toBe([['name' => 'image', 'kind' => 'upload', 'reason' => 'a file inside a richtext embed cannot be sent as {url} over MCP']]);
+});
+
+it('removes the imported file when a media {url} fails the field accept list', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    app()->instance(CurrentPanel::class, new CurrentPanel(app(PanelRegistry::class)->get('admin')));
+    $s = new S;
+    $form = $s->form('doc', [$s->media('scan')->accept(['application/pdf'])]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, ['scan' => ['url' => 'https://8.8.8.8/a.png']]))
+        ->toThrow(AgentError::class, 'scan: ');
+    expect(Media::query()->count())->toBe(0)
+        ->and(Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('imports a media {url} on a panel with no mediaGate(), as its media endpoints allow every panel user', function (): void {
+    $panel = app(PanelRegistry::class)->get('admin')->mediaGate(null);
+    app()->instance(CurrentPanel::class, new CurrentPanel($panel));
+
+    expect(RemoteFiles::accepts(MediaPicker::make('logo')))->toBeTrue();
+});
+
+it('treats a {url} with a non-string name or alt as an ordinary value', function (mixed $name): void {
+    expect(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'name' => 'a.png']))->toBeTrue()
+        ->and(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'name' => $name]))->toBeFalse()
+        ->and(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'alt' => $name]))->toBeFalse();
+})->with([5, [['x']], null]);
+
+it('refuses a file value without the field shape before fetching: a bag on a single field, a nested list', function (string $name, mixed $value): void {
+    $s = new S;
+    $form = $s->form('doc', [$s->upload('cover'), $s->upload('pics')->multiple()]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, [$name => $value]))
+        ->toThrow(AgentError::class, "{$name}: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.");
+    Http::assertNothingSent();
+})->with([
+    'empty bag on a single upload' => ['cover', []],
+    'map on a single upload' => ['cover', ['a' => 'x.png']],
+    'nested list on a multiple upload' => ['pics', [['x.png']]],
+]);

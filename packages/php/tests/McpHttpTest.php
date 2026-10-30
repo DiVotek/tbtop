@@ -28,13 +28,13 @@ it('returns validation errors and runs nothing for invalid form input', function
     'onSubmit form' => 'mcp-page:main',
 ]);
 
-it('refuses a field search lists as excluded instead of passing it to the handler', function (string $id): void {
-    $listing = array_column($this->toolResult($this->callTool('search'))['json']['pages'], null, 'page');
-    $main = array_column($listing['mcp-page']['executables'], null, 'id')['mcp-page:main'];
+it('refuses a file field value that is neither a {url} nor its stored value', function (string $id): void {
+    $page = $this->toolResult($this->callTool('search', ['page' => 'mcp-page']))['json'];
+    $main = array_column($page['executables'], null, 'id')['mcp-page:main'];
 
     $result = $this->toolResult($this->callTool('execute', ['id' => $id, 'form' => ['name' => 'ok', 'avatar' => '../../.env']]));
 
-    expect(array_column($main['excludedFields'], 'name'))->toBe(['avatar'])
+    expect(array_column($main['fields'], null, 'name')['avatar'])->toMatchArray(['kind' => 'upload', 'value' => '{url}'])
         ->and($result['isError'])->toBeTrue()
         ->and($result['json']['message'])->toContain('avatar')
         ->and(McpPage::$ran)->toBe([]);
@@ -73,6 +73,8 @@ it('lists a parameterised page\'s actions only with params, and hides opted-out 
         ->and($ids)->not->toContain('mcp-page:hidden')
         ->and($ids)->not->toContain('mcp-page:clientOnly')
         ->and(array_column($bySlug['mcp-page']['excluded'], 'id'))->toBe(['mcp-page:clientOnly'])
+        ->and($bySlug['mcp-page']['tables'])->toBe(['items'])
+        ->and(array_column($bySlug['mcp-page']['executables'], null, 'id')['mcp-page:main'])->toBe(['id' => 'mcp-page:main', 'kind' => 'form'])
         ->and(array_column($record['executables'], 'id'))->toBe(['mcp-record-page:archive']);
 });
 

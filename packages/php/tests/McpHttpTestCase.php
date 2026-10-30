@@ -14,6 +14,9 @@ class McpHttpTestCase extends TestCase
 {
     public static bool $pageAllowed = true;
 
+    /** The panel's mediaGate(): closed by default, so media fields are the excluded kind. */
+    public static bool $mediaAllowed = false;
+
     protected function getPackageProviders($app)
     {
         return [McpServiceProvider::class, ...parent::getPackageProviders($app)];
@@ -26,12 +29,20 @@ class McpHttpTestCase extends TestCase
         $app['config']->set('tbtop-admin.panels', [McpPanel::class]);
     }
 
+    /** The media tables: a media field sent as {url} imports into the library. */
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
         McpPage::$ran = [];
         self::$pageAllowed = true;
+        self::$mediaAllowed = false;
         Gate::define('view-mcp-page', fn (): bool => self::$pageAllowed);
+        Gate::define('manage-media', fn (): bool => self::$mediaAllowed);
         $this->actingAs(new AuthUser);
 
         Schema::create('items', function ($table): void {

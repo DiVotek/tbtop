@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Tests\Fixtures\Panels;
 use Tbtop\Admin\Panels\PanelConfig;
 use Tbtop\Admin\Tests\Fixtures\McpContentPage;
 use Tbtop\Admin\Tests\Fixtures\McpEdgesPage;
+use Tbtop\Admin\Tests\Fixtures\McpModalPage;
 use Tbtop\Admin\Tests\Fixtures\McpOptionsPage;
 use Tbtop\Admin\Tests\Fixtures\McpPage;
 use Tbtop\Admin\Tests\Fixtures\McpRecordPage;
@@ -15,11 +16,12 @@ class McpPanel extends TestPanel
     public function configure(PanelConfig $panel): PanelConfig
     {
         return parent::configure($panel)->mcp(['auth:web'])
-            ->mcpAllowedOrigins(['https://agent.example.com']);
+            ->mcpAllowedOrigins(['https://agent.example.com'])
+            ->mediaGate('manage-media');
     }
 
     protected function pages(): array
     {
-        return [McpPage::class, McpRecordPage::class, McpRecordSecretPage::class, McpEdgesPage::class, McpOptionsPage::class, McpContentPage::class];
+        return [McpPage::class, McpRecordPage::class, McpRecordSecretPage::class, McpEdgesPage::class, McpOptionsPage::class, McpContentPage::class, McpModalPage::class];
     }
 }

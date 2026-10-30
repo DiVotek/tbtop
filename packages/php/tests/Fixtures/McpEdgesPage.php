@@ -36,14 +36,14 @@ class McpEdgesPage extends Page
                 $s->text('title'),
                 $s->action('saveRow')->handle(self::records('saveRow'), needs: ['row', 'form']),
             ]),
-            $s->form('photo', [$s->text('caption'), $s->upload('file')->required()])->onSubmit(self::records('photo')),
-            $s->form('gallery', [$s->text('heading'), $s->upload('images')->multiple()->required()])->onSubmit(self::records('gallery')),
-            $s->form('article', [$s->upload('cover')->required(), $s->upload('banner')->required(), $s->text('note')])
+            $s->form('photo', [$s->text('caption'), $s->media('file')->required()])->onSubmit(self::records('photo')),
+            $s->form('gallery', [$s->text('heading'), $s->media('images')->multiple()->required()])->onSubmit(self::records('gallery')),
+            $s->form('article', [$s->media('cover')->required(), $s->media('banner')->required(), $s->text('note')])
                 ->onSubmit(self::records('article')),
-            $s->form('retouch', [$s->text('alt'), $s->upload('original')->required()->rules('sometimes')])->onSubmit(self::records('retouch')),
+            $s->form('retouch', [$s->text('alt'), $s->media('original')->required()->rules('sometimes')])->onSubmit(self::records('retouch')),
             $s->form('draft', [
                 $s->text('remark'),
-                $s->upload('scan')->required(),
+                $s->media('scan')->required(),
                 $s->action('saveDraft')->withoutValidation()->handle(self::records('saveDraft'), needs: ['form']),
                 $s->action('submitDraft')->handle(self::records('submitDraft'), needs: ['form']),
             ]),

@@ -12,17 +12,19 @@ use Tbtop\Admin\Dsl\RuleWalker;
  */
 final class FormArguments
 {
-    private const ALL_EXCLUDED = 'every field of its form is one MCP cannot fill (upload/media)';
+    private const ALL_EXCLUDED = 'every field of its form is a file field MCP cannot fill (see its excludedFields)';
 
     /**
-     * `values` are the form's current data as the UI prefills it — an edit that
-     * omits a field may clear it, depending on the page's handler.
+     * `values` (only with $withValues) are the form's current data as the UI
+     * prefills it — an edit that omits a field may clear it, depending on the
+     * page's handler. They are the bulk of a record form, so search() sends
+     * them only when asked.
      *
      * @return array{form: string, fields: list<array<string, mixed>>, excludedFields?: list<array<string, string>>, values?: array<string, mixed>}
      */
-    public static function describe(FormBuilder $form): array
+    public static function describe(FormBuilder $form, bool $withValues = false): array
     {
-        return self::analyse($form)[0];
+        return self::analyse($form, $withValues)[0];
     }
 
     /**
@@ -52,12 +54,15 @@ final class FormArguments
      *
      * @return array{0: array{form: string, fields: list<array<string, mixed>>, excludedFields?: list<array<string, string>>, values?: array<string, mixed>}, 1: list<array<string, string>>}
      */
-    private static function analyse(FormBuilder $form): array
+    private static function analyse(FormBuilder $form, bool $withValues = false): array
     {
         $described = FormFields::describe(RuleWalker::fieldsByKey($form->getFields()), $form->collectRules());
         $out = ['form' => $form->name, 'fields' => $described['fields']];
         if ($described['excluded'] !== []) {
             $out['excludedFields'] = $described['excluded'];
+        }
+        if (! $withValues) {
+            return [$out, $described['required']];
         }
         $shown = array_column(array_filter($described['fields'], static fn (array $f): bool => $f['kind'] !== 'password'), 'name');
         $values = array_intersect_key($form->recordData(), array_flip($shown));
