@@ -62,10 +62,13 @@ class DependentFieldsDemoPage extends Page
                 // A new city belongs to the picked country, so the closure sets it.
                 ->creatable(
                     [$s->text('name')->label('Name')->required()->rules('max:255')],
-                    fn (array $validated, array $deps) => City::create([
-                        ...$validated,
-                        'country_id' => $deps['country_id'] ?? abort(422, 'Pick a country first.'),
-                    ]),
+                    function (array $validated, array $deps) {
+                        // $deps is client input: resolve the parent through its own query.
+                        $country = Country::query()->find($deps['country_id'] ?? 0)
+                            ?? abort(422, 'Pick a country first.');
+
+                        return $country->cities()->create($validated);
+                    },
                 )
                 ->whenParentEmpty('disabled')
                 ->helperText('Disabled until a country is selected.')

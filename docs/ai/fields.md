@@ -300,7 +300,8 @@ validated data and saves it, so the model's `$fillable` must cover the mini-form
 Pass `$using` — `fn(array $validated, array $deps): Model` — when the new row needs more
 than the form gives it. A `dependsOn()` relation requires it (the default path throws a
 `LogicException`), because only the closure can set the parent key. `$deps` holds only
-the declared parents, and the closure must return the created model (anything else is a
+the declared parents and is client input, so resolve the parent through a query rather than
+writing the raw key. The closure must return the created model (anything else is a
 server error); its `labelKey()` column becomes the label.
 
 ```php
@@ -318,10 +319,13 @@ $s->relation('city_id')->label('City')
     ->query(fn (array $deps) => City::where('country_id', $deps['country_id'] ?? 0))
     ->creatable(
         [$s->text('name')->label('Name')->required()],
-        fn (array $data, array $deps) => City::create([
-            ...$data,
-            'country_id' => $deps['country_id'] ?? abort(422, 'Pick a country first.'),
-        ]),
+        function (array $data, array $deps) {
+            // $deps is client input: resolve the parent through its own query.
+            $country = Country::query()->find($deps['country_id'] ?? 0)
+                ?? abort(422, 'Pick a country first.');
+
+            return $country->cities()->create($data);
+        },
     ),
 ```
 
