@@ -20,7 +20,7 @@ export interface Lookup {
  */
 export async function fieldOptions(
 	resolved: Resolved,
-	at: { executable: string; field: string },
+	at: { executable: string; field: string; files: boolean },
 	lookup: Lookup,
 ) {
 	const [page, name = ""] = at.executable.split(/:(.*)/s);
@@ -29,7 +29,7 @@ export async function fieldOptions(
 			`Executable "${at.executable}" is not on page "${resolved.page.path}".`,
 		);
 	}
-	const { form } = await executable(resolved, name);
+	const { form } = await executable(resolved, name, at.files);
 	const field = form === null ? undefined : formShape(form).fields[at.field];
 	if (field === undefined) {
 		throw new AgentError(`Field "${at.field}" is not in the form of "${at.executable}".`);

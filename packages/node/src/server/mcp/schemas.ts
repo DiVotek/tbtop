@@ -74,7 +74,9 @@ label}]}, capped like the UI's type-ahead: narrow with search.`,
 		description: `Run an executable found by search(), with the user's own permissions. Pass \`params\` (the route
 params of the page the executable lives on, for every executable of that page) and what it \`needs\`: \`form\` (field values), \`row\` (a row from query(),
 unchanged: it must keep its \`_key\`) or \`selection\` (the rows' \`_key\` values). A call missing what it needs is
-refused. Invalid input returns validation errors and runs nothing;
+refused. An upload field search() lists takes {"url": "https://…"} (the server downloads and stores
+the file) or its current value; a multiple one a list mixing both.
+Invalid input returns validation errors and runs nothing;
 every error is JSON {message, errors?}. Returns the effects the UI would show; a redirect (form
 \`redirect\`, or a \`redirect\` effect) carries the \`page\`/\`params\` it opens so you can search() it next.`,
 		inputSchema: {

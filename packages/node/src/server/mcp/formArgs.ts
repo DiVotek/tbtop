@@ -4,6 +4,12 @@ import { describeFields } from "./formFields";
 
 const ALL_EXCLUDED = "every field of its form is one MCP cannot fill (upload/media)";
 
+/** How a surface is described: form `values` on request, upload fields when the host fetches URLs. */
+export interface SurfaceOptions {
+	withValues?: boolean;
+	files?: boolean;
+}
+
 export interface FormDescription {
 	form: string;
 	fields: Record<string, unknown>[];
@@ -18,9 +24,9 @@ export function formShape(form: FormBuilder): { fields: Record<string, Field>; r
 	return { fields: fieldsByKey(children), rules: collectRules(children) };
 }
 
-async function analyse(form: FormBuilder) {
+async function analyse(form: FormBuilder, files: boolean) {
 	const { fields, rules } = formShape(form);
-	const described = await describeFields(fields, rules);
+	const described = await describeFields(fields, rules, files);
 	const shown = new Set(
 		described.fields.filter((f) => f.kind !== "password").map((f) => String(f.name)),
 	);
@@ -38,14 +44,15 @@ async function analyse(form: FormBuilder) {
 
 /**
  * FormArguments::describe(): kind, label, options and Laravel rules per field.
- * `values` only with `withValues`: they are the bulk of a record form.
+ * `values` only with `withValues`: they are the bulk of a record form. `files`:
+ * the host fetches `{url}` values (mcp.fetchRemote), so upload fields are listed.
  */
 export async function describeForm(
 	form: FormBuilder,
-	withValues = false,
+	at: SurfaceOptions = {},
 ): Promise<FormDescription> {
-	const { values, ...rest } = (await analyse(form)).described;
-	return withValues && values !== undefined ? { ...rest, values } : rest;
+	const { values, ...rest } = (await analyse(form, at.files === true)).described;
+	return at.withValues === true && values !== undefined ? { ...rest, values } : rest;
 }
 
 /**
@@ -55,11 +62,12 @@ export async function describeForm(
 export async function unfillableReason(
 	form: FormBuilder | null,
 	validated: boolean,
+	files = false,
 ): Promise<string | null> {
 	if (form === null) {
 		return null;
 	}
-	const { described, required } = await analyse(form);
+	const { described, required } = await analyse(form, files);
 	if (described.fields.length === 0 && described.excludedFields !== undefined) {
 		return ALL_EXCLUDED;
 	}

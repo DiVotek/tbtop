@@ -11,8 +11,12 @@ import {
 import { fieldsByKey } from "../../dsl/ruleWalker";
 import { RICHTEXT_NODE_TYPES } from "./richtext";
 
-/** Kinds whose value is a server-side upload an agent cannot produce. */
-export const UNSUPPORTED_KINDS = ["upload", "media"];
+/** Kinds whose value is a stored file: sent as `{url}` when the host fetches them (mcp.fetchRemote). */
+export const FILE_KINDS = ["upload", "media"];
+
+/** Whether a field of `kind` is excluded: a file field, unless `files` (the host fetches URLs) and it is an upload. */
+export const excludesKind = (kind: string, files: boolean) =>
+	FILE_KINDS.includes(kind) && !(files && kind === "upload");
 
 type Described = Record<string, unknown>;
 type Named = { name: string; kind: string };
@@ -54,18 +58,15 @@ export function optionsOf(field: Field, options: Record<string, unknown>): unkno
  * container's children follow it as `name.*.child`; an excluded field counts
  * as required only when its row must exist.
  */
-export async function describeFields(fields: Record<string, Field>, rules: Rules) {
+export async function describeFields(fields: Record<string, Field>, rules: Rules, files: boolean) {
 	const out: FieldList = { fields: [], excluded: [], required: [] };
 	const rowMandatory = new Map<string, boolean>();
 	for (const [name, field] of Object.entries(fields)) {
 		const cut = name.lastIndexOf(".*.");
 		const mandatory = cut === -1 || rowMandatory.get(name.slice(0, cut)) === true;
 		const node = await materialize<WireNode>(field.toNode());
-		if (UNSUPPORTED_KINDS.includes(node.kind)) {
-			const reason = `${node.kind} fields cannot be filled over MCP`;
-			out.excluded.push({ name, kind: node.kind, reason });
-			const blocking = mandatory && isRequired(name, rules);
-			out.required.push(...(blocking ? [{ name, kind: node.kind }] : []));
+		if (excludesKind(node.kind, files)) {
+			exclude(out, { name, kind: node.kind }, mandatory && isRequired(name, rules));
 			continue;
 		}
 		const minItems = Number(node.options.minItems ?? 0);
@@ -74,9 +75,21 @@ export async function describeFields(fields: Record<string, Field>, rules: Rules
 			mandatory && ((rules[name] ?? []).includes("required") || minItems > 0),
 		);
 		const container = Object.keys(fields).some((key) => key.startsWith(`${name}.*.`));
-		out.fields.push(await describeField(field, { name, node, rules, nested: !container }));
+		out.fields.push(
+			await describeField(field, { name, node, rules, nested: !container, files }),
+		);
 	}
 	return out;
+}
+
+/** Lists an excluded field, and among the required ones when its absence blocks validation. */
+function exclude(out: FieldList, field: Named, blocking: boolean): void {
+	const reason =
+		field.kind === "upload"
+			? "upload fields need the host's mcp.fetchRemote to be filled over MCP"
+			: `${field.kind} fields cannot be filled over MCP`;
+	out.excluded.push({ ...field, reason });
+	out.required.push(...(blocking ? [field] : []));
 }
 
 /** `required` without `sometimes` on the same key (`name`, `name.*`, `name.en`); rule objects do not count. */
@@ -91,7 +104,7 @@ function isRequired(name: string, rules: Rules): boolean {
 
 async function describeField(
 	field: Field,
-	at: { name: string; node: WireNode; rules: Rules; nested: boolean },
+	at: { name: string; node: WireNode; rules: Rules; nested: boolean; files: boolean },
 ): Promise<Described> {
 	const { name, node, rules } = at;
 	const { options } = node;
@@ -103,27 +116,45 @@ async function describeField(
 			name,
 			kind: node.kind,
 			label: field.labelText(),
-			help:
-				typeof options.helperText === "string" && options.helperText !== ""
-					? options.helperText
-					: undefined,
+			help: options.helperText || undefined,
 			rules: rules[name] ?? [],
 			nestedRules: Object.keys(nested).length > 0 ? nested : undefined,
 			mask: typeof options.mask === "string" ? options.mask : undefined,
 			dependsOn: Array.isArray(options.dependsOn) ? options.dependsOn : undefined,
 			options: optionsOf(field, options),
+			...file(node.kind, options),
 		}),
 		...(field.isTranslatableField() ? { translatable: true } : {}),
-		...(field instanceof Richtext ? await richtext(field) : {}),
+		...(field instanceof Richtext ? await richtext(field, at.files) : {}),
+	};
+}
+
+/** What a file field takes (FormFields::file()): `{url}`, within `accept`; nothing for other kinds. */
+function file(kind: string, options: Record<string, unknown>): Described {
+	if (!FILE_KINDS.includes(kind)) {
+		return {};
+	}
+	const { accept } = options;
+	return {
+		value: "{url}",
+		accept:
+			typeof accept === "string"
+				? accept.split(",").flatMap((part) => (part.trim() === "" ? [] : [part.trim()]))
+				: accept,
+		multiple: options.multiple === true ? true : undefined,
 	};
 }
 
 /** The node types a document may hold, and each embed kind with the fields of its `data`. */
-async function richtext(field: Richtext): Promise<Described> {
+async function richtext(field: Richtext, files: boolean): Promise<Described> {
 	const embeds = await Promise.all(
 		field.getEmbeds().map(async (embed) => {
 			const children = embed.includedFields();
-			const described = await describeFields(fieldsByKey(children), collectRules(children));
+			const described = await describeFields(
+				fieldsByKey(children),
+				collectRules(children),
+				files,
+			);
 			return present({
 				kind: embed.kind,
 				label: embed.labelText(),

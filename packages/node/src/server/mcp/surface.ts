@@ -3,7 +3,7 @@ import { actionSearchDescendants, collect, resolveActionNode } from "../../dsl/w
 import { enclosingForm } from "../enclosingForm";
 import type { Resolved } from "../resolve";
 import { AgentError } from "./answer";
-import { describeForm, unfillableReason } from "./formArgs";
+import { describeForm, type SurfaceOptions, unfillableReason } from "./formArgs";
 import { describeTable } from "./tableArgs";
 
 type Entry = Record<string, unknown>;
@@ -20,10 +20,10 @@ export function exposedAction(resolved: Resolved, name: string): ActionBuilder |
  * and onSubmit forms are one kind, executables; then the queryable tables and
  * what was left out, and why.
  */
-export async function describeSurface(resolved: Resolved, withValues = false) {
+export async function describeSurface(resolved: Resolved, at: SurfaceOptions = {}) {
 	const listing: Listing = { executables: [], excluded: [] };
-	await listActions(resolved, listing, withValues);
-	await listForms(resolved, listing, withValues);
+	await listActions(resolved, listing, at);
+	await listForms(resolved, listing, at);
 	return {
 		executables: listing.executables,
 		tables: await tables(resolved),
@@ -52,7 +52,7 @@ async function list(
 async function listActions(
 	resolved: Resolved,
 	listing: Listing,
-	withValues: boolean,
+	at: SurfaceOptions,
 ): Promise<void> {
 	const tableOf = actionTables([resolved.tree, ...resolved.headerActions], null);
 	for (const name of resolved.s.collectedActions().keys()) {
@@ -69,25 +69,25 @@ async function listActions(
 			continue;
 		}
 		const form = enclosingForm(resolved, name);
-		const reason = await unfillableReason(form, !action.skipsFormValidation());
+		const reason = await unfillableReason(form, !action.skipsFormValidation(), at.files);
 		await list(listing, { id, reason }, () =>
-			describeAction(id, action, { form, table: tableOf.get(name), withValues }),
+			describeAction(id, action, { form, table: tableOf.get(name), surface: at }),
 		);
 	}
 }
 
-async function listForms(resolved: Resolved, listing: Listing, withValues: boolean): Promise<void> {
+async function listForms(resolved: Resolved, listing: Listing, at: SurfaceOptions): Promise<void> {
 	for (const name of resolved.s.collectedForms().keys()) {
 		const form = resolved.s.reachableForm(name);
 		if (form?.submitHandler() === undefined || resolved.s.collectedActions().has(name)) {
 			continue;
 		}
 		const id = `${resolved.page.path}:${name}`;
-		const reason = await unfillableReason(form, true);
+		const reason = await unfillableReason(form, true, at.files);
 		await list(listing, { id, reason }, async () => ({
 			id,
 			kind: "form",
-			...(await describeForm(form, withValues)),
+			...(await describeForm(form, at)),
 		}));
 	}
 }
@@ -96,8 +96,8 @@ async function listForms(resolved: Resolved, listing: Listing, withValues: boole
  * PageSurface::brief(): describeSurface() cut to an index for the bare
  * search(): executables as id, kind and label, tables by name, no forms.
  */
-export async function briefSurface(resolved: Resolved) {
-	const surface = await describeSurface(resolved);
+export async function briefSurface(resolved: Resolved, files = false) {
+	const surface = await describeSurface(resolved, { files });
 	return {
 		executables: surface.executables.map((entry) =>
 			Object.fromEntries(
@@ -115,21 +115,24 @@ export async function briefSurface(resolved: Resolved) {
  * The executable `name` as execute() runs it: its action (null for an onSubmit
  * form) and the form it submits. Throws for what search() does not list.
  */
-export async function executable(resolved: Resolved, name: string) {
+export async function executable(resolved: Resolved, name: string, files: boolean) {
 	const id = `${resolved.page.path}:${name}`;
 	const refused = new AgentError(`"${id}" is not executable here. Call search() for this page.`);
 	if (resolved.s.collectedActions().has(name)) {
 		const action = exposedAction(resolved, name);
 		const form = enclosingForm(resolved, name);
 		const validated = action !== null && !action.skipsFormValidation();
-		if (action?.handler() === undefined || (await unfillableReason(form, validated)) !== null) {
+		if (
+			action?.handler() === undefined ||
+			(await unfillableReason(form, validated, files)) !== null
+		) {
 			throw refused;
 		}
 		return { action, form };
 	}
 	const form = resolved.s.reachableForm(name);
 	if (form?.submitHandler() !== undefined) {
-		if ((await unfillableReason(form, true)) !== null) {
+		if ((await unfillableReason(form, true, files)) !== null) {
 			throw refused;
 		}
 		return { action: null, form };
@@ -143,7 +146,7 @@ export async function executable(resolved: Resolved, name: string) {
 async function describeAction(
 	id: string,
 	action: ActionBuilder,
-	at: { form: FormBuilder | null; table: string | undefined; withValues: boolean },
+	at: { form: FormBuilder | null; table: string | undefined; surface: SurfaceOptions },
 ): Promise<Entry> {
 	const options = resolveActionNode(action)?.options ?? {};
 	const confirm = options.confirm as { title?: unknown } | undefined;
@@ -156,7 +159,7 @@ async function describeAction(
 			confirm: confirm?.title,
 			needs: needs.length > 0 ? needs : undefined,
 			table: at.table,
-			form: at.form === null ? undefined : await describeForm(at.form, at.withValues),
+			form: at.form === null ? undefined : await describeForm(at.form, at.surface),
 		}).filter(([, v]) => v !== undefined && v !== null),
 	);
 }
