@@ -1,7 +1,7 @@
 import type { FieldConfig } from "../uploads/config";
 import { allowsMime, sniffMime } from "../uploads/mime";
 
-/* A `{url}` download over the host's fetchRemote: the URL check, the capped body, the accepted type. */
+/* A `{url}` download over the host's fetchRemote: URL check, capped body, accepted type. */
 
 /** The body and its sniffed type, or the error key; typed here so saveUsing() gets an accepted type too. */
 export async function content(
