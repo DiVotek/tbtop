@@ -28,7 +28,8 @@ final class ExecuteTool extends Tool
         unchanged: it must keep its `_key`) or `selection` (the rows' `_key` values). A call missing what it needs is
         refused. An upload or media field takes {"url": "https://…"} (media also `alt`, `name`) — the server
         downloads and stores the file — or its current value; a multiple one a list mixing both.
-        Invalid input returns validation errors and runs nothing;
+        Invalid input returns validation errors and runs no handler (a file already fetched from a {url}
+        stays stored, as a browser upload does);
         every error is JSON {message, errors?}. Returns the effects the UI would show; a redirect (form
         `redirect`, or a `redirect` effect) carries the `page`/`params` it opens so you can search() it next.
         TXT;

@@ -2,7 +2,11 @@
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Dsl\Fields\MediaPicker;
+use Tbtop\Admin\Dsl\Fields\Upload;
+use Tbtop\Admin\Mcp\RemoteFiles;
 use Tbtop\Admin\Media\Models\Media;
+use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Tests\Fixtures\McpPage;
 use Tbtop\Admin\Tests\McpHttpTestCase;
 
@@ -94,4 +98,12 @@ it('takes a {url} in a new repeater row beside a stored row echoed whole', funct
         ->and($sections[0]['image'] ?? null)->toBe('intro.png')
         ->and(Media::query()->whereKey($sections[1]['image'] ?? 0)->exists())->toBeTrue()
         ->and($swapped['isError'])->toBeTrue();
+});
+
+it('refuses media {url} when no panel is bound, even with the gate open', function (): void {
+    $this->mediaAllowed = true;
+    app()->forgetInstance(CurrentPanel::class);
+
+    expect(RemoteFiles::accepts(MediaPicker::make('logo')))->toBeFalse()
+        ->and(RemoteFiles::accepts(Upload::make('cover')))->toBeTrue();
 });

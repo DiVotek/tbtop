@@ -129,11 +129,14 @@ final class RemoteFiles
         }
     }
 
-    /** The media import endpoint runs behind the panel's mediaGate(); so does an import from a form. */
+    /** The media import endpoint runs behind the panel's mediaGate(); so does an import from a form. No panel bound: refused. */
     private static function mayImportMedia(): bool
     {
         $panel = CurrentPanel::current();
-        $gate = $panel === null ? null : app(PanelRegistry::class)->get($panel->id())->getMediaGate();
+        if ($panel === null) {
+            return false;
+        }
+        $gate = app(PanelRegistry::class)->get($panel->id())->getMediaGate();
 
         return $gate === null || Gate::allows($gate);
     }
