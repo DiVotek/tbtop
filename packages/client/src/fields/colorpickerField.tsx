@@ -1,9 +1,11 @@
 import { HexAlphaColorPicker, HexColorPicker } from "react-colorful";
 import { useTranslation } from "../i18n/i18n";
 import { nullableCell } from "./cellHelpers";
-import { asString, type FieldCellProps, type FieldFormProps } from "./fieldProps";
+import { groupLabelledBy } from "./fieldChrome";
+import { asString, type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
 
 interface ColorpickerOptionsBag {
+	label?: string;
 	palette?: string[];
 }
 
@@ -29,10 +31,12 @@ export function ColorpickerCell({ value }: FieldCellProps<string>) {
 }
 
 export function ColorpickerForm({
+	id,
 	name,
 	value,
 	onChange,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<string, ColorpickerOptionsBag>) {
 	const t = useTranslation();
@@ -40,7 +44,13 @@ export function ColorpickerForm({
 	const Picker = hasAlpha(current) ? HexAlphaColorPicker : HexColorPicker;
 	const palette = options?.palette ?? [];
 	return (
-		<div data-field={name} className="flex flex-col gap-3">
+		<div
+			role="group"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
+			aria-describedby={describedBy}
+			data-field={name}
+			className="flex flex-col gap-3"
+		>
 			<Picker
 				color={current}
 				onChange={(next) => (disabled ? undefined : onChange(next === "" ? null : next))}
