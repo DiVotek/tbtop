@@ -5,6 +5,7 @@ import {
 	assertAppearance,
 	type NavigationLayout,
 } from "./chrome/appearance";
+import { assertBranding, type BrandingConfig, brandLogoProp } from "./chrome/branding";
 import { type ChromeDef, serializeChrome } from "./chrome/chrome";
 import {
 	assertEnvironment,
@@ -16,8 +17,8 @@ import { allowedLinks, buildNav, linkItem, type NavLink } from "./chrome/navigat
 import { type PaletteConfig, paletteProp } from "./chrome/palette";
 import type { PageDef } from "./page";
 
-/** The shell knobs of a panel (PanelConfig.php): layout, nav, chrome, palette, appearance. */
-export interface PanelLook {
+/** The shell knobs of a panel (PanelConfig.php): layout, nav, chrome, palette, appearance, branding. */
+export interface PanelLook extends BrandingConfig {
 	/** Default `sidebar`. All layouts collapse to a burger drawer on mobile. */
 	navigation?: NavigationLayout;
 	/** Meta and order of the sidebar groups that pages name in `nav.group`. */
@@ -43,6 +44,7 @@ export interface PanelLook {
 export function assertPanelLook(look: PanelLook): void {
 	assertAppearance(look.navigation, look.appearance);
 	assertEnvironment(look.environment, look.environmentIndicator);
+	assertBranding(look);
 }
 
 export interface PanelInfo extends PanelLook {
@@ -69,6 +71,8 @@ export async function sharedProps(
 		userMenuItems: (await allowedLinks(panel.userMenuItems ?? [], request)).map(linkItem),
 		chrome: await serializeChrome(panel.chrome),
 		brand: panel.brand ?? null,
+		brandLogo: brandLogoProp(panel),
+		favicon: panel.favicon ?? null,
 		navigation: panel.navigation ?? "sidebar",
 		appearance: appearanceProp(panel.appearance),
 		environment: await environmentProp(request, panel.environment, panel.environmentIndicator),

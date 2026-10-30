@@ -63,20 +63,39 @@ it('paints resolved chart colors in dark mode and captures the dashboard', funct
     assertResolvedChartFill($fill, 'dark');
 });
 
-it('renders different chart palettes in light vs dark mode', function () {
-    $light = visit('/admin/dashboard')
-        ->inLightMode()
-        ->assertVisible('.recharts-bar')
-        ->script(CHART_FILL_PROBE);
+// The demo's shadcn presets give charts the same palette in both modes, so two
+// page loads can't tell a re-resolve from a stale colour. Instead, flip `.dark`
+// live under a stylesheet with its own dark palette: the painted fill must follow.
+const DARK_FLIP_PROBE = <<<'JS'
+async () => {
+    const palette = ['rgb(11, 22, 33)', 'rgb(44, 55, 66)', 'rgb(77, 88, 99)', 'rgb(111, 122, 133)', 'rgb(144, 155, 166)'];
+    const style = document.createElement('style');
+    style.textContent = 'html.dark {' + palette.map((c, i) => `--chart-${i + 1}: ${c};`).join(' ') + '}';
+    document.head.appendChild(style);
+    document.documentElement.classList.add('dark');
+    const read = () => {
+        const el = document.querySelector('.recharts-rectangle, .recharts-sector');
+        return el ? getComputedStyle(el).fill : 'NO_CHART_PATH';
+    };
+    // The observer re-resolves, then React and recharts repaint: poll, bounded at 3s.
+    for (let waited = 0; waited < 3000 && !palette.includes(read()); waited += 50) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return { fill: read(), palette };
+}
+JS;
 
-    $dark = visit('/admin/dashboard')
-        ->inDarkMode()
-        ->assertVisible('.recharts-bar')
-        ->script(CHART_FILL_PROBE);
+it('re-resolves chart colors when the theme flips to dark', function () {
+    $page = visit('/admin/dashboard')
+        ->inLightMode()
+        ->assertVisible('.recharts-bar');
+
+    $light = $page->script(CHART_FILL_PROBE);
+    $flip = $page->script(DARK_FLIP_PROBE);
 
     assertResolvedChartFill($light, 'light');
-    assertResolvedChartFill($dark, 'dark');
-    expect($dark)->not->toBe($light);
+    expect($flip['palette'])->toContain($flip['fill'])
+        ->and($flip['fill'])->not->toBe($light);
 });
 
 it('captures the richtext toolbar in light and dark mode for review', function () {

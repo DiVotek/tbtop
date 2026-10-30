@@ -116,3 +116,16 @@ it('clears the current panel after a panel request', function () {
         ->assertOk()
         ->assertJsonPath('panel', null);
 });
+
+it('shares each panel its own brand logo and favicon', function () {
+    $this->actingAs(new AuthUser);
+    $adminProps = $this->get('/admin/nav-demo', ['X-Inertia' => 'true'])->assertOk()->json('props.tbtop');
+
+    $this->actingAs(new AuthUser, 'staff');
+    $opsProps = $this->get('/ops/nav-demo', ['X-Inertia' => 'true'])->assertOk()->json('props.tbtop');
+
+    expect($adminProps['brandLogo'])->toBeNull()
+        ->and($adminProps['favicon'])->toBeNull()
+        ->and($opsProps['brandLogo'])->toBe(['src' => '/img/ops-logo.svg'])
+        ->and($opsProps['favicon'])->toBe('/img/ops-favicon.svg');
+});

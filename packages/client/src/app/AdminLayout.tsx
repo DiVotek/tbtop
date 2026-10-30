@@ -7,6 +7,7 @@ import type { StructureNode } from "../structure/types";
 import { type Appearance, MAX_WIDTH_CLASS } from "./appearance";
 import { LogoBlock, NavMenuBlock, UserMenuBlock } from "./chromeBlocks";
 import {
+	type BrandLogo,
 	type ChromeData,
 	ChromeDataContext,
 	type ChromeUser,
@@ -43,6 +44,7 @@ interface SharedProps {
 		userMenuItems?: NavItem[];
 		chrome?: ChromeTrees;
 		brand?: string | null;
+		brandLogo?: BrandLogo | null;
 		navigation?: NavigationLayout;
 		notifications?: { pollInterval?: number | null };
 		appearance?: Appearance | null;
@@ -82,6 +84,7 @@ interface AdminLayoutShellProps {
 	slots?: AdminLayoutSlots;
 	chrome?: ChromeTrees | null;
 	brand?: string | null;
+	brandLogo?: BrandLogo | null;
 	navigation?: NavigationLayout;
 	notificationsPollInterval?: number | null;
 	appearance?: Appearance | null;
@@ -116,6 +119,7 @@ export function AdminLayoutShell({
 	slots,
 	chrome,
 	brand,
+	brandLogo,
 	navigation = "sidebar",
 	notificationsPollInterval,
 	appearance,
@@ -140,6 +144,7 @@ export function AdminLayoutShell({
 		user,
 		currentUrl,
 		brand: brand ?? null,
+		brandLogo,
 		orientation: "vertical",
 		logoSlot: slots?.logo?.(slotProps),
 		homeUrl,
@@ -200,6 +205,7 @@ export function AdminLayout({ children, slots }: AdminLayoutProps) {
 				slots={slots}
 				chrome={props.tbtop?.chrome}
 				brand={props.tbtop?.brand}
+				brandLogo={props.tbtop?.brandLogo}
 				navigation={props.tbtop?.navigation ?? "sidebar"}
 				notificationsPollInterval={props.tbtop?.notifications?.pollInterval}
 				appearance={props.tbtop?.appearance}

@@ -369,9 +369,10 @@ final class TableBuilder implements JsonSerializable
 
     /**
      * Page without a total: skip the count() query and fetch perPage + 1 rows to
-     * know whether a next page exists. The footer shows only previous/next, with
-     * no "X–Y of Z" range. For large tables where count() is the slow query;
-     * tab counts still run their own count per tab.
+     * know whether a next page exists. The footer shows previous/next, the
+     * current "Page N" and the per-page selector, with no "X–Y of Z" range or
+     * page-number list. For large tables where count() is the slow query; tab
+     * counts still run their own count per tab.
      */
     public function simplePagination(bool $value = true): self
     {

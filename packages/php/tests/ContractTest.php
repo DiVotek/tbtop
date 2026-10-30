@@ -326,3 +326,15 @@ it('environment indicator serialization conforms to its contract', function () {
     app()['env'] = 'production';
     validateAgainstSchema(json_decode(json_encode($panel->environmentIndicator())), '#/$defs/environmentIndicator');
 });
+
+it('brand logo serialization conforms to its contract', function () {
+    $full = new CurrentPanel(
+        (new PanelConfig)->brandLogo('/img/logo.svg')->darkModeBrandLogo('/img/logo-dark.svg')->brandLogoHeight('2rem')
+    );
+    validateAgainstSchema(json_decode(json_encode($full->brandLogo())), '#/$defs/brandLogo');
+
+    $bare = new CurrentPanel((new PanelConfig)->brandLogo('/img/logo.svg'));
+    validateAgainstSchema(json_decode(json_encode($bare->brandLogo())), '#/$defs/brandLogo');
+
+    validateAgainstSchema(json_decode(json_encode((new CurrentPanel(new PanelConfig))->brandLogo())), '#/$defs/brandLogo');
+});
