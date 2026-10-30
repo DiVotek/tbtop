@@ -30,6 +30,8 @@ final class PanelSharedProps
             'userMenuItems' => $panel->userMenuItems(),
             'chrome' => ChromeSerializer::forPanel($panel),
             'brand' => $panel->brand(),
+            'brandLogo' => $panel->brandLogo(),
+            'favicon' => $panel->favicon(),
             'navigation' => $panel->navigation(),
             'appearance' => $panel->appearance() ?: null,
             'environment' => $panel->environmentIndicator(),

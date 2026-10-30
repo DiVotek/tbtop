@@ -16,16 +16,20 @@ Panel-level configuration: routing, appearance, navigation, chrome and the comma
 | Method | What it does |
 |---|---|
 | `authStack(): array` | The panel's auth/app middleware layer a page spreads to add to it, e.g. middleware(PanelConfig $p): array { return [...$p->authStack(), 'throttle:30,1']; }. Access rules belong in Page::can(), which MCP calls also enforce. Excludes SetCurrentPanel/SetAdminLocale — the route layer always applies those. AuthenticateSession follows auth: it reads the user that `auth:{guard}` resolves, and ends a session whose password hash no longer matches the user's (a reset elsewhere). RequireTwoFactor follows it: while the panel serves a TwoFactorChallengePage subclass, a user with a second factor who has not passed it in this session goes to the challenge. RequireVerifiedEmail comes last: while the panel serves an EmailVerificationPage, a MustVerifyEmail user with an unverified email is sent there. |
-| `brand(string $brand): static` | Brand name shown in the chrome (sidebar/topbar header). |
+| `brand(string $brand): static` | Brand name shown in the chrome (sidebar/topbar header); the logo's alt text when a logo is set. |
+| `brandLogo(string $url): static` | Logo image URL shown in the chrome's logo block instead of the brand name. |
+| `brandLogoHeight(string $height): static` | Rendered logo height as a CSS length in px, rem or em (default '1.5rem'). |
 | `breadcrumbs(bool $enabled = true): static` | Whether pages build and send the breadcrumbs prop. |
 | `chrome(string $chrome): static` | Class-string of a Chrome subclass that authors the shell (header/sidebar/ footer). Override headerItems()/sidebarItems() and spread the parent to append to the stock shell; override header()/sidebar()/footer() to replace an area outright. |
 | `commandPalette(Closure\|bool $config = true): static` | Enable (default), disable with false, or configure the ⌘K command palette via a closure. The closure receives the CommandPaletteConfig to mutate (->commands([Command::make(...)...])) and returns nothing. |
 | `darkMode(bool $enabled = true): static` | Allow or disable the dark-mode toggle entirely (default: allowed). |
+| `darkModeBrandLogo(string $url): static` | Logo image URL used while the panel is in dark mode; falls back to brandLogo(). |
 | `defaultLocale(string $locale): static` | Default admin UI locale, overriding the first entry of locales(). |
 | `defaultThemeMode(string $mode): static` | Initial theme when the visitor has no saved preference. |
 | `density(string $mode): static` | Shell density: 'compact' tightens control heights, spacing, and the sidebar width. |
 | `discoverPages(string $in, string $for): static` | Adds a recursive page discovery directory and its Composer-autoloadable namespace; rebuild the page cache after adding pages. |
 | `environmentIndicator(Closure\|array\|bool $indicator = true): static` | Show the app environment as a colored header badge and top strip; hidden in production. Pass an array to override per environment (`['staging' => 'warning', 'qa' => ['label' => 'QA', 'color' => 'info'], 'local' => false]` — listing `production` shows it), or a Closure returning `['label' => …, 'color' => …]` or null, called per request. Colors are the badge names: gray, primary, success, warning, danger, info. |
+| `favicon(string $url): static` | Browser-tab icon URL (.ico, .png or .svg) for every page of the panel. |
 | `guard(string $guard): static` | Auth guard checked by authStack(). Defaults to 'web'. |
 | `id(string $id): static` | Feeds the route-name namespace (`tbtop.{id}.*`) — changing it on an existing panel renames every route. |
 | `locales(array $locales): static` | Admin UI locales. First entry is the default unless defaultLocale() is set. |

@@ -9,7 +9,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { useChromeData } from "./chromeContext";
+import { type BrandLogo, type ChromeData, useChromeData } from "./chromeContext";
 import { NavGroupDropdown } from "./navGroupDropdown";
 import { NavGroupSection } from "./navGroupSection";
 import { ProfileDropdown } from "./ProfileDropdown";
@@ -73,18 +73,13 @@ export function UserMenuBlock({ options }: { options?: UserMenuOptions }) {
 
 export function LogoBlock() {
 	const t = useTranslation();
-	const { brand, logoSlot, homeUrl, orientation } = useChromeData();
+	const { brand, brandLogo, logoSlot, homeUrl, orientation } = useChromeData();
 	const title = brand ?? t("nav.title");
-	// The rail-sidebar column is narrow: a brand name would overflow it.
-	const content =
-		logoSlot ??
-		(orientation === "rail-sidebar" ? (
-			<span className="flex size-9 items-center justify-center rounded-surface bg-primary text-primary-foreground">
-				{title.charAt(0)}
-			</span>
-		) : (
-			title
-		));
+	// The rail-sidebar column is narrow: a brand name would overflow it, and a
+	// logo is fitted into the same square the first letter otherwise fills.
+	const content = logoSlot ?? (
+		<LogoContent title={title} logo={brandLogo} orientation={orientation} />
+	);
 	if (homeUrl) {
 		return (
 			<Link href={homeUrl} className="text-lg font-semibold">
@@ -94,6 +89,58 @@ export function LogoBlock() {
 	}
 	// No home URL on the wire (older server / shell used standalone) — plain text.
 	return <div className="text-lg font-semibold">{content}</div>;
+}
+
+function LogoContent({
+	title,
+	logo,
+	orientation,
+}: {
+	title: string;
+	logo: BrandLogo | null | undefined;
+	orientation: ChromeData["orientation"];
+}) {
+	if (logo) {
+		// The collapsed topbar-sidebar rail is as narrow as the rail-sidebar column.
+		const fitSquare = orientation === "rail-sidebar" || orientation === "rail";
+		return <BrandLogoImage logo={logo} alt={title} fitSquare={fitSquare} />;
+	}
+	if (orientation === "rail-sidebar") {
+		return (
+			<span className="flex size-9 items-center justify-center rounded-surface bg-primary text-primary-foreground">
+				{title.charAt(0)}
+			</span>
+		);
+	}
+	return <>{title}</>;
+}
+
+/** The panel logo; a dark variant swaps in under the `.dark` root class, so a theme flip needs no re-render. */
+function BrandLogoImage({
+	logo,
+	alt,
+	fitSquare,
+}: {
+	logo: BrandLogo;
+	alt: string;
+	fitSquare: boolean;
+}) {
+	const className = fitSquare ? "size-9 object-contain" : "w-auto max-w-full object-contain";
+	const style = fitSquare ? undefined : { height: logo.height ?? "1.5rem" };
+	if (!logo.darkSrc) {
+		return <img src={logo.src} alt={alt} className={className} style={style} />;
+	}
+	return (
+		<>
+			<img src={logo.src} alt={alt} className={`${className} dark:hidden`} style={style} />
+			<img
+				src={logo.darkSrc}
+				alt={alt}
+				className={`${className} hidden dark:block`}
+				style={style}
+			/>
+		</>
+	);
 }
 
 interface LocaleSwitcherOptions {

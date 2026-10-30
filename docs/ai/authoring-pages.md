@@ -412,7 +412,7 @@ from shared Inertia props.
 |---|---|
 | `navMenu()` | Sidebar navigation groups |
 | `userMenu(array $opts = [])` | Profile dropdown (identity, theme, locale, logout); `['locales' => false]` drops the locale row |
-| `logo()` | Panel brand text |
+| `logo()` | Panel brand: the `brandLogo()` image, else the `brand()` name |
 | `localeSwitcher(?string $variant = null)` | UI-locale switcher; hidden when the panel has one locale. `'dropdown'` renders it as a menu instead of buttons |
 | `notifications()` | Notification bell — unread count, list, mark-read. Backed by the notification endpoints; polling interval from `PanelConfig::notificationsPolling()` |
 | `themeToggle()` | Light/dark/system toggle. Renders nothing when the panel sets `darkMode(false)` |
