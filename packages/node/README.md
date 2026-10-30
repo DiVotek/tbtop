@@ -2,7 +2,7 @@
 
 The tbtop admin server on Bun/Node: the PHP DSL in TypeScript, the same wire
 grammar (`packages/contracts`), the same React client (`packages/client`) on the
-real `@inertiajs/react`. Private and not on npm yet (internal test). Host guide:
+real `@inertiajs/react`. Published to npm in lockstep with `@tbtop/inertia-admin`. Host guide:
 [`docs/`](docs/README.md).
 
 ## What exists

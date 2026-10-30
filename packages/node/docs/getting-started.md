@@ -2,12 +2,16 @@
 
 ## Install
 
-Until the package is published, build it from this repo and install the tarball:
+```bash
+npm install @tbtop/admin @tbtop/inertia-admin @inertiajs/react react react-dom
+```
+
+Keep `@tbtop/admin` and `@tbtop/inertia-admin` on the same version. To try
+unreleased changes, build the package from this repo and install the tarball:
 
 ```bash
 cd packages/node && bun install && bun run build && npm pack
 cd /path/to/app && npm install /path/to/tbtop/packages/node/tbtop-admin-*.tgz
-npm install @tbtop/inertia-admin @inertiajs/react react react-dom
 ```
 
 The package is ESM only and needs Node 22+, Bun or Cloudflare Workers
