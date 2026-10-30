@@ -141,7 +141,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Slug** | `$s->slug('x')` / `Slug::make('x')` | `slug` | `fromField(string $fieldName)` — source field that drives auto-generation; a translatable source uses the default content locale (`title.en` pins one). The slug follows the source while it is typed and is fixed once focus leaves the source; after that only Generate re-derives it. A saved non-empty slug starts fixed | No |
 | **Upload** | `$s->upload('x')` / `Upload::make('x')` | `upload` | `accept(string\|list<string> $accept)` — MIME types/extensions e.g. `'image/*'` or `['application/pdf', 'image/*']`; `disk(string $disk)` — Laravel filesystem disk (default `'public'`) | Upload endpoint (JSON, not Inertia) — see [./wiring.md](./wiring.md) |
 | **Media picker** | `$s->media('x')` / `MediaPicker::make('x')` | `media` | `multiple(bool)` — allow selecting more than one; `reorderable(bool)` — opt-in drag handles in multiple mode; the submitted ID array follows the preview order, so consumers that treat the first ID as the cover receive the chosen cover; `accept(list<string> $mimes)` — filter visible/uploadable types; `variant('inline'\|'preview')` — single-select display: 'inline' (default) is a Choose button with a read-only filename field, 'preview' is a fully clickable preview block (dashed placeholder when empty, large image/typed file card when filled); multiple mode always renders preview chips regardless of variant | Media-library endpoint — see [./wiring.md](./wiring.md) |
-| **Relation** | `$s->relation('x')` / `Relation::make('x')` | `relation` | `query(callable)` — Eloquent query builder for related records; `labelKey(string $column)` — display column (default `'name'`); `searchable(bool)` | Yes — relation-search endpoint. See [./wiring.md](./wiring.md) |
+| **Relation** | `$s->relation('x')` / `Relation::make('x')` | `relation` | `query(callable)` — Eloquent query builder for related records; `labelKey(string $column)` — display column (default `'name'`); `searchable(bool)`; `creatable(array $fields, ?callable $using = null)` — a `+ Create` link opens a mini-form and the saved record becomes the value, see [relation creatable](#relation-with-creatable--relation-create-endpoint) | Yes — relation-search endpoint; `creatable()` → relation-create endpoint. See [./wiring.md](./wiring.md) |
 | **Repeater** | `$s->repeater('x')` / `Repeater::make('x')` | `repeater` | `fields(list<Field> $fields)` — child field list, **may contain another `repeater` to nest rows** (validation rules prefix through every level as `x.*.child.*.field`) — a `unique()` on a row field is checked per row against the table, not against the other submitted rows, so two new rows with the same value pass; `minItems(int)` / `maxItems(int)` — item bounds; `defaultItems(int)` — empty rows to seed when the value is absent; `collapsible(bool = true)` — render each row as a one-line summary that expands to its edit form on click (off by default; existing repeaters stay fully expanded); `summary(string $field)` — sub-field whose value titles the collapsed row (falls back to "Untitled") | No |
 | **Richtext** | `$s->richtext('x')` / `Richtext::make('x')` | `richtext` | `placeholder(string $text)`; `embeds(list<Embed> $embeds)` — structured blocks inside the text, see [richtext embeds](#richtext-with-embeds--embed-apply-action); `maxEmbeds(int $max)` — server-side cap | Only with `embeds()` → the reserved `__embed` action |
 | **In filter** | `$s->inFilter('x')` / `Tbtop\Admin\Dsl\Fields\InFilter::make('x')` | `in` | `options(list<{value, label}> $options)` — fixed option list. **Filter context only** — use in `table()->filters()`, not in forms | No |
@@ -260,7 +260,7 @@ example below differs only in what the closure returns.
 ## Fields that need a server endpoint
 
 Some fields call a page endpoint at runtime instead of reading only static props:
-`relation`, `select` (with `creatable()` or `query()`), `daterange` (with `disabledRanges()` +
+`relation` (and its `creatable()`), `select` (with `creatable()` or `query()`), `daterange` (with `disabledRanges()` +
 `dependsOn()`) and `richtext` (with `embeds()`). `upload` posts to its own endpoint too — see
 the [Upload field cookbook](#upload-field-cookbook).
 
@@ -286,6 +286,40 @@ See [./wiring.md](./wiring.md) for the endpoint request/response shape.
 
 > The relation field ships full async type-ahead (server search endpoint + client
 > combobox) as of PR #2 — the field is fully wired.
+
+### Relation with `creatable()` — `relation-create` endpoint
+
+`creatable(array $fields, ?callable $using = null)` adds a `+ Create` link under the
+relation. It opens a dialog with the `$fields` mini-form; submitting posts to the
+relation-create endpoint, which validates the payload with those fields' own rules (422
+keeps the dialog open with the errors), saves the record and returns `{value, label}`.
+The new record becomes the field's value and its label shows at once.
+
+Without `$using`, the endpoint fills a new instance of the `query()` model with the
+validated data and saves it, so the model's `$fillable` must cover the mini-form fields.
+Pass `$using` — `fn(array $validated, array $deps): Model` — when the new row needs more
+than the form gives it, typically the scope of a `dependsOn()` parent. `$deps` holds only
+the declared parents, and the closure must return the created model (anything else is a
+server error); its `labelKey()` column becomes the label.
+
+```php
+$s->relation('author_id')->label('Author')
+    ->query(fn () => User::query()->orderBy('name'))
+    ->searchable()
+    ->creatable([
+        $s->text('name')->label('Name')->required()->rules('max:255'),
+        $s->text('email')->label('Email')->required()->rules('email|unique:users,email'),
+    ]),
+
+// Scoped by a parent: put the parent key on the new row yourself.
+$s->relation('city_id')->label('City')
+    ->dependsOn('country_id')
+    ->query(fn (array $deps) => City::where('country_id', $deps['country_id'] ?? 0))
+    ->creatable(
+        [$s->text('name')->label('Name')->required()],
+        fn (array $data, array $deps) => City::create([...$data, 'country_id' => $deps['country_id']]),
+    ),
+```
 
 ### Select with `creatable()` — `select-create` endpoint
 

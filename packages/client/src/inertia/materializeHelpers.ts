@@ -3,6 +3,7 @@ import { unwrapData } from "../data/envelope";
 import type { OptionDisplay, StaticOption } from "../fields/selectShared";
 import type { ClientActionContext, ListQueryParams, StructureNode } from "../structure/types";
 import { chartQueryFor } from "./chartQueryCache";
+import { bindCreatePost } from "./createEndpoint";
 
 type Bag = Record<string, unknown>;
 
@@ -101,9 +102,16 @@ function asyncMultiOptionsBag(endpoint: string): Bag {
 export function materializeRelation(node: StructureNode, basePath: string): StructureNode {
 	const opts = node.options as Bag;
 	const fieldName = node.name as string;
+	const create = opts.create as Bag | undefined;
 	return {
 		...node,
-		options: { ...opts, ...asyncOptionsBag(`${basePath}/relation-search/${fieldName}`) },
+		options: {
+			...opts,
+			...asyncOptionsBag(`${basePath}/relation-search/${fieldName}`),
+			...(create && {
+				create: bindCreatePost(create, `${basePath}/relation-create/${fieldName}`),
+			}),
+		},
 	};
 }
 

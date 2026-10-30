@@ -29,6 +29,7 @@ use Tbtop\Admin\Http\Media\MediaUploadController;
 use Tbtop\Admin\Http\NotificationsController;
 use Tbtop\Admin\Http\PageController;
 use Tbtop\Admin\Http\PanelErrorController;
+use Tbtop\Admin\Http\RelationCreateController;
 use Tbtop\Admin\Http\RelationSearchController;
 use Tbtop\Admin\Http\SelectCreateController;
 use Tbtop\Admin\Http\SelectOptionsController;
@@ -105,6 +106,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/relation-search/{tbtopField}", RelationSearchController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.relationSearch');
+        Route::post("{$path}/relation-create/{tbtopField}", RelationCreateController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.relationCreate');
         Route::post("{$path}/uploads/{tbtopField}", FieldUploadController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.upload');
