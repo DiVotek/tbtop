@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Testing;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Assert;
 
@@ -44,7 +45,7 @@ final class TableTester
     public function search(string $text): self
     {
         $columns = array_filter($this->options()['columns'] ?? [], static fn (mixed $c): bool => is_array($c) && ($c['searchable'] ?? false) === true);
-        Assert::assertTrue(! empty($this->options()['searchable']) || $columns !== [], "Table [{$this->name}] is not searchable.");
+        Assert::assertTrue($this->blind() || ! empty($this->options()['searchable']) || $columns !== [], "Table [{$this->name}] is not searchable.");
 
         return $this->with('search', $text);
     }
@@ -62,7 +63,7 @@ final class TableTester
     {
         $filters = Wire::nodes([$this->options()['filters'] ?? []]);
         $names = array_map(static fn (array $e): mixed => $e['node']['name'] ?? null, $filters);
-        if (! in_array($name, $names, true)) {
+        if (! $this->blind() && ! in_array($name, $names, true)) {
             Assert::fail("Table [{$this->name}] has no filter [{$name}]. Filters: ".Wire::nameList($filters).'.');
         }
 
@@ -74,7 +75,7 @@ final class TableTester
     {
         $this->column($column);
         $sortable = array_filter($this->options()['columns'] ?? [], static fn (mixed $c): bool => is_array($c) && ($c['name'] ?? null) === $column && ($c['sortable'] ?? false) === true);
-        if ($sortable === [] && ($this->options()['defaultSort']['field'] ?? null) !== $column) {
+        if (! $this->blind() && $sortable === [] && ($this->options()['defaultSort']['field'] ?? null) !== $column) {
             Assert::fail("Column [{$column}] of table [{$this->name}] is not sortable: the server would ignore the sort.");
         }
 
@@ -85,7 +86,7 @@ final class TableTester
     public function tab(string $name): self
     {
         $tabs = array_column($this->options()['tabs'] ?? [], 'name');
-        if (! in_array($name, $tabs, true)) {
+        if (! $this->blind() && ! in_array($name, $tabs, true)) {
             Assert::fail("Table [{$this->name}] has no tab [{$name}]. Tabs: ".($tabs === [] ? 'none' : implode(', ', $tabs)).'.');
         }
 
@@ -181,7 +182,9 @@ final class TableTester
     public function assertCell(mixed $record, string $column, mixed $value): self
     {
         $this->column(explode('.', $column)[0]);
-        Assert::assertEquals($value, data_get($this->row($record), $column), "Cell [{$column}] of record [".Records::key($record).'] differs.');
+        $row = $this->row($record);
+        Assert::assertTrue($value === null || Arr::has($row, $column), "Cell [{$column}] of record [".Records::key($record).'] is missing.');
+        Assert::assertEquals($value, data_get($row, $column), "Cell [{$column}] of record [".Records::key($record).'] differs.');
 
         return $this;
     }
@@ -291,7 +294,7 @@ final class TableTester
 
     private function column(string $name): void
     {
-        if (! in_array($name, $this->columnNames(), true)) {
+        if (! $this->blind() && ! in_array($name, $this->columnNames(), true)) {
             Assert::fail("Table [{$this->name}] has no visible column [{$name}]. Columns: ".implode(', ', $this->columnNames()).'.');
         }
     }
@@ -306,6 +309,12 @@ final class TableTester
     }
 
     /** @return array<string, mixed> */
+    /** The page did not render, so the table's declarations are unknown: the query goes out unchecked. */
+    private function blind(): bool
+    {
+        return $this->visit->response->getStatusCode() !== 200;
+    }
+
     private function options(): array
     {
         return $this->node['options'] ?? [];

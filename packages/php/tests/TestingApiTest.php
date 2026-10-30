@@ -45,6 +45,7 @@ it('answers 403 from the page gate, and still sends calls so the endpoints are c
     testingApiPage()->assertForbidden();
     testingApiPage()->callAction('archive')->assertForbidden();
     testingApiPage()->table('posts')->assertForbidden();
+    testingApiPage()->table('posts')->search('a')->tab('live')->sort('title')->filter('published', '1')->assertForbidden();
 });
 
 it('names what is on the page when a name is wrong', function (): void {
@@ -158,4 +159,9 @@ it('reads a single row as one record, not a list of keys', function (): void {
     $table->assertCanSeeRecords($row)->assertCanSeeRecords([$row]);
     expect(fn () => $table->assertCanNotSeeRecords($row))
         ->toThrow(AssertionFailedError::class, 'shows records it should not');
+});
+
+it('does not let a missing key pass for an expected false', function (): void {
+    expect(fn () => testingApiPage()->assertFieldValue('title.missing', false))
+        ->toThrow(AssertionFailedError::class, 'has no value in the form');
 });

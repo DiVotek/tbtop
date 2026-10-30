@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Testing;
 
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Assert;
 
@@ -53,6 +54,7 @@ final class ModalTester
     public function assertFormData(array $expected): self
     {
         foreach ($expected as $key => $value) {
+            Assert::assertTrue($value === null || Arr::has($this->data, (string) $key), "Modal [{$this->name}] opens without [{$key}]. Data: ".json_encode($this->data));
             Assert::assertEquals($value, data_get($this->data, (string) $key), "Modal [{$this->name}] opens with a different [{$key}]. Data: ".json_encode($this->data));
         }
 

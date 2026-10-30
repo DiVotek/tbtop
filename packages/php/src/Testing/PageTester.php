@@ -3,6 +3,7 @@
 namespace Tbtop\Admin\Testing;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Assert;
 use Tbtop\Admin\Pages\Page;
@@ -114,7 +115,9 @@ final class PageTester
     public function assertFieldValue(string $name, mixed $value): self
     {
         $form = $this->visit->field(explode('.', $name)[0])['form'];
-        Assert::assertEquals($value, data_get($this->visit->record($form), $name), "Field [{$name}] holds a different value.");
+        $record = $this->visit->record($form);
+        Assert::assertTrue($value === null || Arr::has($record, $name), "Field [{$name}] has no value in the form's record.");
+        Assert::assertEquals($value, data_get($record, $name), "Field [{$name}] holds a different value.");
 
         return $this;
     }
