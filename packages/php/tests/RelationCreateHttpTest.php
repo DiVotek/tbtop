@@ -69,6 +69,12 @@ it('Relation create: a scoped query() without a closure refuses to save outside 
     $this->postJson('/admin/relation-search-page/relation-create/scoped_default_id', ['name' => 'Zed']);
 })->throws(LogicException::class, 'has a where() in query()');
 
+it('Relation create: a where()-adding global scope refuses the default path too', function (): void {
+    $this->withoutExceptionHandling();
+
+    $this->postJson('/admin/relation-search-page/relation-create/tenant_author_id', ['name' => 'Zed']);
+})->throws(LogicException::class, 'has a where() in query()');
+
 it('Relation create: a global scope (SoftDeletes) is not a where() and still uses the default path', function (): void {
     $this->postJson('/admin/relation-search-page/relation-create/soft_author_id', ['name' => 'Ada'])
         ->assertOk()

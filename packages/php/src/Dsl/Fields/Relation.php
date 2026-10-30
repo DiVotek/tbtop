@@ -72,8 +72,9 @@ final class Relation extends Field
      * $fields: the mini-form; each field's own rules validate it server-side.
      * $using: fn(array $validated, array $deps): Model — omit it to fill a new
      *         instance of the query() model with the validated data and save it
-     *         (force-filled: only the validated fields). Required with dependsOn() or a where()
-     *         in query(): those constraints are not copied onto the new row,
+     *         (force-filled: only the validated fields, guarded or not). Required
+     *         with dependsOn() or a where() in query(), a global scope's included:
+     *         those constraints are not copied onto the new row,
      *         so the closure sets them; the default path refuses otherwise.
      *
      * @param  list<Field>  $fields

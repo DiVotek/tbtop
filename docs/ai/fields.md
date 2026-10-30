@@ -297,9 +297,12 @@ The new record becomes the field's value and its label shows at once.
 
 Without `$using`, the endpoint fills a new instance of the `query()` model with the
 validated data and saves it. Only the mini-form's validated keys are written, and they are
-force-filled, so `$fillable` does not drop a field the form declares.
+force-filled, so `$fillable` does not drop a field the form declares. The flip side:
+`$guarded` does not protect a column you put in the mini-form, so leave columns like
+`role` or `owner_id` out of it, or set them in `$using`.
 Only the model class is taken from `query()`: its `where()` constraints (a tenant, an
-`active` flag) are not applied to the new row, so a query with a `where()` needs `$using`
+`active` flag, a global scope that adds a `where()`; `SoftDeletes` does not count) are
+not applied to the new row, so a query with a `where()` needs `$using`
 too — the default path throws a `LogicException` rather than save outside the scope.
 Pass `$using` — `fn(array $validated, array $deps): Model` — when the new row needs more
 than the form gives it. A `dependsOn()` relation requires it (the default path throws a

@@ -64,6 +64,9 @@ class RelationSearchPage extends Page
                 $s->relation('soft_author_id')
                     ->query(fn () => SoftAuthorModel::query())
                     ->creatable([$s->text('name')->required()]),
+                $s->relation('tenant_author_id')
+                    ->query(fn () => TenantAuthorModel::query())
+                    ->creatable([$s->text('name')]),
                 $s->relation('scoped_default_id')
                     ->query(fn () => AuthorModel::query()->where('name', 'like', 'A%'))
                     ->creatable([$s->text('name')]),

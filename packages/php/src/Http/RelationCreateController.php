@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Http;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use LogicException;
@@ -88,8 +89,11 @@ final class RelationCreateController
         $builder = $query($deps);
         assert($builder instanceof Builder);
         // The where() clauses are not copied onto the new row, so a scoped query
-        // would save outside its own scope (a tenant, an active flag).
-        if ($builder->getQuery()->wheres !== []) {
+        // would save outside its own scope (a tenant, an active flag). Global
+        // scopes add theirs only in applyScopes(); SoftDeletes is left out, since
+        // a new row is never trashed.
+        $scoped = (clone $builder)->withoutGlobalScope(SoftDeletingScope::class)->applyScopes();
+        if ($scoped->getQuery()->wheres !== []) {
             throw new LogicException(
                 "Relation field \"{$field->name}\" has a where() in query(): pass creatable() a closure that sets those columns.",
             );
@@ -97,7 +101,8 @@ final class RelationCreateController
 
         $model = $builder->getModel()->newInstance();
         // Only the declared, validated mini-form keys are here, so $fillable
-        // would add nothing but a silent drop of a field it forgot.
+        // would add nothing but a silent drop of a field it forgot. The flip side:
+        // a guarded column the author puts in the mini-form is written too.
         $model->forceFill($validated)->save();
 
         return $model;
