@@ -163,7 +163,7 @@ describe("testing API: the page", () => {
 			.assertFieldDisabled("slug")
 			.assertFieldEnabled("title")
 			.assertFieldHidden("internal_notes")
-			.assertFieldValue("title", "Alpha")
+			.assertFieldValue("title", "Alpha") // the page form's title, not the modal's
 			.assertActionHidden("archive");
 		(
 			await t.page(testingPage, { post: 1 }, { as: { id: 2, role: "admin" } })

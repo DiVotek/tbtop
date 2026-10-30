@@ -122,7 +122,9 @@ export class PageVisit {
 	}
 
 	field(name: string): wire.Entry {
-		const found = wire.fields(this.trees(), name)[0];
+		// A page form's field wins over a modal form's field of the same name.
+		const all = wire.fields(this.trees(), name);
+		const found = all.find((e) => e.modal === null) ?? all[0];
 		return found ?? fail(this.missing("Field", name, wire.fields(this.trees())));
 	}
 
