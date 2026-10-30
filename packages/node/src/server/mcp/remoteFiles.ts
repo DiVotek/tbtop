@@ -41,9 +41,7 @@ export async function fetchInto(
 			: [],
 	);
 	for (const { at, value } of targets) {
-		if (at.field.toNode().options.multiple === true && isRemote(value)) {
-			throw new AgentError(`${at.path}: a multiple field takes a list; send [{url}].`);
-		}
+		assertPlaced(at, value);
 	}
 	const count = targets.reduce((sum, target) => sum + references(target.value), 0);
 	if (count > MAX_PER_CALL) {
@@ -55,6 +53,35 @@ export async function fetchInto(
 		dataSet(input, at.path, await resolve(at, value));
 	}
 	return input;
+}
+
+/** RemoteFiles::assertPlaced(): a `{url}` only where the field takes a file, refused before any fetch. */
+function assertPlaced(at: Target, value: unknown): void {
+	const multiple = at.field.toNode().options.multiple === true;
+	if (multiple && isRemote(value)) {
+		throw new AgentError(`${at.path}: a multiple field takes a list; send [{url}].`);
+	}
+	if (!placed(value, multiple, at.field.isTranslatableField())) {
+		throw new AgentError(
+			`${at.path}: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.`,
+		);
+	}
+}
+
+/** Whether every `{url}` in `value` is the value, a list entry (multiple) or a locale's value (translatable). */
+function placed(value: unknown, multiple: boolean, translatable: boolean): boolean {
+	if (isRemote(value)) {
+		return !multiple;
+	}
+	if (value === null || typeof value !== "object") {
+		return true;
+	}
+	if (Array.isArray(value)) {
+		return multiple && value.every((entry) => isRemote(entry) || references(entry) === 0);
+	}
+	return translatable
+		? Object.values(value).every((entry) => placed(entry, multiple, false))
+		: references(value) === 0;
 }
 
 /** The remote references in `value`: itself, or those in its list or locale map. */

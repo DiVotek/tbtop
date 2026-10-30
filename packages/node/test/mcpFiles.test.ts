@@ -220,4 +220,20 @@ describe("MCP upload fields by URL", () => {
 		expect(result.data.message).toBe("gallery: a multiple field takes a list; send [{url}].");
 		expect(fetched).toEqual([]);
 	});
+
+	test("a {url} nested where the field takes no file is refused before any fetch", async () => {
+		const ref = { url: "https://cdn.example/a.png" };
+		for (const image of [[ref], { x: ref }]) {
+			const result = await execute(withFetch, {
+				sections: [
+					{ heading: "Intro", image: "uploads/intro.png" },
+					{ heading: "New", image },
+				],
+			});
+			expect(result.data.message).toBe(
+				"sections.1.image: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.",
+			);
+		}
+		expect(fetched).toEqual([]);
+	});
 });
