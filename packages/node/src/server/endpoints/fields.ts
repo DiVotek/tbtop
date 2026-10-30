@@ -56,6 +56,47 @@ const relationSearch: Endpoint = {
 	},
 };
 
+/** POST relation-create/{field}: validate the mini-form, save through creatable(), answer `{value, label}`. */
+const relationCreate: Endpoint = {
+	method: "POST",
+	pattern: ["relation-create", ":field"],
+	async run(ctx) {
+		const field = ctx.resolved.s.findRelationField(arg(ctx, 0));
+		const create = field?.creatableClosure();
+		if (field === null || create === undefined) {
+			throw notFound(
+				`Relation field "${arg(ctx, 0)}" with creatable() is not defined on this page.`,
+			);
+		}
+		const body = await readInput(ctx);
+		const fields = field.creatableFields();
+		const options = { attributes: collectAttributes(fields), hostRules: ctx.options.hostRules };
+		const values = await validated(body, collectRules(fields), options);
+		const row = await create(values, readDeps(body, field.dependsOnFields()));
+		const key = keyOf(requireDriver(ctx.options));
+		if (
+			row === null ||
+			typeof row !== "object" ||
+			row[key] === undefined ||
+			row[key] === null
+		) {
+			throw new Error(
+				`Relation field "${field.name}": creatable() must return the created row with its "${key}".`,
+			);
+		}
+		return relationOption(row, key, field.getLabelKey());
+	},
+};
+
+/** One row as the picker's `{value, label}` (RelationSearchResponder::toOption). */
+function relationOption(
+	row: Record<string, unknown>,
+	key: string,
+	labelKey: string,
+): { value: string; label: string } {
+	return { value: String(row[key]), label: String(pickTranslation(row[labelKey]) ?? "") };
+}
+
 /** RelationSearchResponder: `{search}` → options, `{value}` → option, over the driver. */
 export async function relationOptions(
 	field: Relation,
@@ -68,10 +109,7 @@ export async function relationOptions(
 	}
 	const base = query(readDeps(body, field.dependsOnFields()));
 	const labelKey = field.getLabelKey();
-	const option = (row: Record<string, unknown>) => ({
-		value: String(row[keyOf(driver)]),
-		label: String(pickTranslation(row[labelKey]) ?? ""),
-	});
+	const option = (row: Record<string, unknown>) => relationOption(row, keyOf(driver), labelKey);
 	if ("value" in body) {
 		const scoped = driver.where(base, {
 			field: keyOf(driver),
@@ -128,6 +166,7 @@ export const FIELD_ENDPOINTS = [
 	selectOptions,
 	selectCreate,
 	relationSearch,
+	relationCreate,
 	daterangeRanges,
 	liveRegion,
 ];

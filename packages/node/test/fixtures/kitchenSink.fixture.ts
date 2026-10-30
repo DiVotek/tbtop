@@ -339,7 +339,8 @@ function postForm(s: S) {
 				.relation("category_id")
 				.labelKey("name")
 				.searchable()
-				.query(() => null),
+				.query(() => null)
+				.creatable([s.text("name").label("Name").required()], (v) => ({ id: 1, ...v })),
 			s
 				.repeater("sections")
 				.rules("array|max:10")

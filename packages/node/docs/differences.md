@@ -10,6 +10,10 @@ Same wire grammar, same React client, same DSL method names. What differs:
   An auth library on top (`@tbtop/cms/better-auth`) may ship its own.
 - **Data** goes through a `QueryDriver`, not Eloquent. Model binding,
   `relationship()` auto-loading and soft-delete macros are the host's code.
+- **Creatable relations** take a required closure:
+  `relation(...).creatable(fields, (validated, deps) => row)` saves the record
+  and returns it with its key and label column. PHP's default save of a new
+  `query()` model has no twin, since the driver does not insert.
 - **Validation** knows Laravel's built-in rules; `unique`/`exists` and anything
   database-bound are `hostRules`. An unknown rule throws. Input is trimmed
   and empty strings become null first, as Laravel's middleware does; a
