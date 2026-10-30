@@ -100,7 +100,7 @@ The testing API: `tbtop(Page::class, $params)` (or `$this->tbtop()` with the `In
 | `assertModalClosed(): self` | A closeModal effect: the modal the call came from closes. |
 | `assertNoEffects(?string $kind = null): self` | No effect of this kind arrived — or, without a kind, no effect at all. |
 | `assertNotified(string $message, ?string $level = null): self` | A toast with this message, at this level when given. |
-| `assertOk(): self` | The call went through: a 2xx, or a form's redirect with no validation errors. |
+| `assertOk(): self` | The call went through: a 2xx, or a form's way back with no validation errors. Any other redirect (a login page, a handler's URL) is not ok; assert a handler's redirect with assertRedirect(). |
 | `assertRedirect(?string $url = null): self` | The client is sent elsewhere: a `redirect` effect or an HTTP redirect other than the form's own way back. Without $url, any destination. |
 | `assertStatus(int $status): self` | The call answered this HTTP status — 422 for an action's validation failure. |
 | `assertTableRefreshed(?string $table = null): self` | A refreshTable effect — for this table when named, else any. |

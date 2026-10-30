@@ -98,7 +98,8 @@ it('reads session validation errors, by field, rule or message', function (): vo
 });
 
 it('tells a redirect away from the way back', function (): void {
-    testingApiPage()->fill(['title' => 'leave'])->submit()->assertRedirect('/admin/elsewhere');
+    $leave = testingApiPage()->fill(['title' => 'leave'])->submit()->assertRedirect('/admin/elsewhere');
+    expect(fn () => $leave->assertOk())->toThrow(AssertionFailedError::class, 'to [');
 
     expect(fn () => testingApiPage()->fill(['title' => 'stay'])->submit()->assertRedirect())
         ->toThrow(AssertionFailedError::class, 'redirected nowhere');

@@ -150,11 +150,16 @@ final class Result
         return $this;
     }
 
-    /** The call went through: a 2xx, or a form's redirect with no validation errors. */
+    /**
+     * The call went through: a 2xx, or a form's way back with no validation
+     * errors. Any other redirect (a login page, a handler's URL) is not ok;
+     * assert a handler's redirect with assertRedirect().
+     */
     public function assertOk(): self
     {
         $status = $this->response->getStatusCode();
-        Assert::assertTrue($status < 300 || ($this->response->isRedirect() && $this->errors === []), "{$this->subject} responded {$status}.");
+        $back = $this->response->isRedirect() && $this->redirect === null && $this->errors === [];
+        Assert::assertTrue($status < 300 || $back, "{$this->subject} responded {$status}".($this->redirect === null ? '.' : " to [{$this->redirect}]."));
 
         return $this;
     }
