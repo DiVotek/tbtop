@@ -193,4 +193,13 @@ describe("MCP upload fields by URL", () => {
 		expect(ran).toBeNull();
 		expect(disk.files.size).toBe(0);
 	});
+
+	test("more than 20 {url} references in one call are refused before any fetch", async () => {
+		const gallery = Array.from({ length: 21 }, () => ({ url: "https://cdn.example/b.png" }));
+		const result = await execute(withFetch, { gallery: ["uploads/a.png", ...gallery] });
+		expect(result.data.message).toBe(
+			"At most 20 files may be sent as {url} in one call; this one has 21.",
+		);
+		expect(fetched).toEqual([]);
+	});
 });

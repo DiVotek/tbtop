@@ -17,6 +17,9 @@ export type FetchRemote = (url: string) => Promise<Response>;
 /** Keys a remote reference may carry; any other key makes the value an ordinary one. */
 const KEYS = ["url", "alt", "name"];
 
+/** Downloads one execute() may trigger, counted before the first one starts. */
+const MAX_PER_CALL = 20;
+
 /** RemoteFiles::isRemote(): a `{url: "https://…"}` reference. */
 export function isRemote(value: unknown): value is { url: string; name?: string } {
 	if (value === null || typeof value !== "object" || Array.isArray(value)) {
@@ -43,15 +46,31 @@ export async function fetchInto(
 	input: Record<string, unknown>,
 	env: RemoteEnv,
 ): Promise<Record<string, unknown>> {
-	for (const [key, field] of Object.entries(formShape(form).fields)) {
-		if (!(field instanceof Upload)) {
-			continue;
-		}
-		for (const [path, value] of sent(key, input)) {
-			dataSet(input, path, await resolve({ field, path, env }, value));
-		}
+	const targets = Object.entries(formShape(form).fields).flatMap(([key, field]) =>
+		field instanceof Upload
+			? sent(key, input).map(([path, value]) => ({ at: { field, path, env }, value }))
+			: [],
+	);
+	const count = targets.reduce((sum, target) => sum + references(target.value), 0);
+	if (count > MAX_PER_CALL) {
+		throw new AgentError(
+			`At most ${MAX_PER_CALL} files may be sent as {url} in one call; this one has ${count}.`,
+		);
+	}
+	for (const { at, value } of targets) {
+		dataSet(input, at.path, await resolve(at, value));
 	}
 	return input;
+}
+
+/** The remote references in `value`: itself, or those in its list or locale map. */
+function references(value: unknown): number {
+	if (isRemote(value)) {
+		return 1;
+	}
+	return value !== null && typeof value === "object"
+		? Object.values(value).reduce((sum: number, entry) => sum + references(entry), 0)
+		: 0;
 }
 
 /** Where a reference is stored: the field, its concrete input path (for errors), the env. */

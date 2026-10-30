@@ -2,7 +2,8 @@ import { collectRules, type Field, type FormBuilder, type Rules } from "../../ds
 import { fieldsByKey } from "../../dsl/ruleWalker";
 import { describeFields } from "./formFields";
 
-const ALL_EXCLUDED = "every field of its form is one MCP cannot fill (upload/media)";
+const ALL_EXCLUDED =
+	"every field of its form is a file field MCP cannot fill (see its excludedFields)";
 
 /** How a surface is described: form `values` on request, upload fields when the host fetches URLs. */
 export interface SurfaceOptions {
