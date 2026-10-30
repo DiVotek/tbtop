@@ -100,10 +100,15 @@ final class RelationCreateController
         }
 
         $model = $builder->getModel()->newInstance();
-        // Only the declared, validated mini-form keys are here, so $fillable
-        // would add nothing but a silent drop of a field it forgot. The flip side:
-        // a guarded column the author puts in the mini-form is written too.
-        $model->forceFill($validated)->save();
+        // The model's mass-assignment rules stay in force, but loudly: fill()
+        // would drop a guarded key in silence and save a row without it.
+        $guarded = array_values(array_filter(array_keys($validated), fn (string $key) => ! $model->isFillable($key)));
+        if ($guarded !== []) {
+            throw new LogicException(
+                "Relation field \"{$field->name}\": ".implode(', ', $guarded).' is not fillable on '.$model::class.': add it to $fillable or pass creatable() a closure.',
+            );
+        }
+        $model->fill($validated)->save();
 
         return $model;
     }

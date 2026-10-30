@@ -17,13 +17,11 @@ it('Relation create: without a closure it saves a new query() model and returns 
         ->assertExactJson(['value' => (string) $author->getKey(), 'label' => 'Ada Lovelace']);
 });
 
-it('Relation create: a validated field outside $fillable is still written', function (): void {
-    $this->postJson('/admin/relation-search-page/relation-create/guarded_author_id', ['name' => 'Ada'])
-        ->assertOk()
-        ->assertJsonPath('label', 'Ada');
+it('Relation create: a mini-form field outside $fillable refuses the default path', function (): void {
+    $this->withoutExceptionHandling();
 
-    expect(AuthorModel::query()->value('name'))->toBe('Ada');
-});
+    $this->postJson('/admin/relation-search-page/relation-create/guarded_author_id', ['name' => 'Ada']);
+})->throws(LogicException::class, 'name is not fillable on');
 
 it('Relation create: validation failure returns 422 and saves nothing', function (): void {
     $this->postJson('/admin/relation-search-page/relation-create/created_author_id', [])

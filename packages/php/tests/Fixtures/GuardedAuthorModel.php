@@ -2,7 +2,7 @@
 
 namespace Tbtop\Admin\Tests\Fixtures;
 
-/** AuthorModel with nothing fillable — proves relation create does not rely on $fillable. */
+/** AuthorModel with nothing fillable — relation create refuses to write a guarded column. */
 class GuardedAuthorModel extends AuthorModel
 {
     protected $fillable = [];
