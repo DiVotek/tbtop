@@ -129,7 +129,12 @@ async function execute(env: ToolEnv, args: Args) {
 	if (form !== null) {
 		assertSendable(form, input, fetchRemote !== undefined);
 		if (fetchRemote !== undefined) {
-			const remote = { fetchRemote, options: env.options, session: execution.session };
+			const remote = {
+				fetchRemote,
+				options: env.options,
+				session: execution.session,
+				report: env.report,
+			};
 			input = await fetchInto(form, input, remote);
 		}
 	}

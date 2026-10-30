@@ -23,6 +23,8 @@ export interface RemoteEnv {
 	options: EndpointCtx["options"];
 	/** The session execute() runs on, so the issued path passes the upload rule. */
 	session: SessionStore;
+	/** Where a throwing fetchRemote goes (McpConfig.report); the agent gets download_failed. */
+	report: (error: unknown) => void;
 }
 
 /**
@@ -139,8 +141,12 @@ async function fetchFile(at: Target, ref: Reference, maxSize: number): Promise<F
 	if (url === null) {
 		throw refuse("blocked_url");
 	}
-	const response = await at.env.fetchRemote(url.href).catch(() => null);
+	const response = await at.env.fetchRemote(url.href).catch((error: unknown) => {
+		at.env.report(error);
+		return null;
+	});
 	if (response?.ok !== true) {
+		await response?.body?.cancel().catch(() => null);
 		throw refuse("download_failed");
 	}
 	const bytes = await body(response, maxSize);

@@ -7,11 +7,13 @@ const PNG = new Uint8Array([
 
 const disk = memoryDisk();
 const fetched: string[] = [];
+const reported: unknown[] = [];
 let ran: Record<string, unknown> | null = null;
 
 beforeEach(() => {
 	disk.files.clear();
 	fetched.length = 0;
+	reported.length = 0;
 	ran = null;
 });
 
@@ -55,6 +57,9 @@ const docsPage = definePage({
 /** A stand-in for the host's guarded fetch: one PNG, a 404, a too-large body and a non-image. */
 async function fetchRemote(url: string): Promise<Response> {
 	fetched.push(url);
+	if (url.endsWith("/blocked.png")) {
+		throw new Error("private address refused");
+	}
 	if (url.endsWith("/missing.png")) {
 		return new Response("nope", { status: 404 });
 	}
@@ -89,6 +94,7 @@ function adminWith(remote: boolean) {
 		disks: { public: disk },
 		mcp: {
 			authenticate: () => ({ name: "agent" }),
+			report: (error: unknown) => reported.push(error),
 			...(remote ? { fetchRemote } : {}),
 		},
 	});
@@ -263,5 +269,13 @@ describe("MCP upload fields by URL", () => {
 			"file: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.",
 		);
 		expect(fetched).toEqual([]);
+	});
+
+	test("a fetchRemote that throws is reported and answered as a failed download", async () => {
+		const result = await execute(withFetch, {
+			cover: { url: "https://cdn.example/blocked.png" },
+		});
+		expect(result.data.message).toBe("cover: Could not download the file from the given URL.");
+		expect(String(reported[0])).toContain("private address refused");
 	});
 });
