@@ -150,3 +150,12 @@ it('sends a row action the row as the table shows it', function (): void {
         ->and(fn () => testingApiPage()->table()->callRowAction('rename', CaPost::where('title', 'Gamma')->first()))
         ->toThrow(AssertionFailedError::class, 'is not on the current page');
 });
+
+it('reads a single row as one record, not a list of keys', function (): void {
+    $table = testingApiPage()->table();
+    $row = $table->rows()[0];
+
+    $table->assertCanSeeRecords($row)->assertCanSeeRecords([$row]);
+    expect(fn () => $table->assertCanNotSeeRecords($row))
+        ->toThrow(AssertionFailedError::class, 'shows records it should not');
+});

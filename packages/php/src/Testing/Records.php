@@ -41,7 +41,9 @@ final class Records
      */
     public static function keys(iterable|Model|int|string $records): array
     {
-        $list = is_iterable($records) ? $records : [$records];
+        // A row is one record, not a list of them.
+        $single = ! is_iterable($records) || (is_array($records) && (array_key_exists('_key', $records) || array_key_exists('id', $records)));
+        $list = $single ? [$records] : $records;
         $keys = [];
         foreach ($list as $record) {
             $keys[] = self::key($record);
