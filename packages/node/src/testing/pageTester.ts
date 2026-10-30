@@ -102,6 +102,7 @@ export class PageTester {
 
 	/** The action is on the wire and not hidden. */
 	assertActionVisible(name: string): this {
+		this.visit.props(); // a page that did not render shows no actions
 		check(this.visit.action(name).node.meta?.hidden !== true, `Action [${name}] is hidden.`);
 		return this;
 	}

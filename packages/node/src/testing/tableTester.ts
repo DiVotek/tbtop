@@ -91,12 +91,14 @@ export class TableTester {
 
 	/** The column ships to the client. */
 	assertColumnVisible(name: string): this {
+		this.visit.props(); // a page that did not render shows no columns
 		this.shape.column(name);
 		return this;
 	}
 
 	/** The column is off the wire: hidden() or excluded. */
 	assertColumnHidden(name: string): this {
+		this.visit.props();
 		check(!this.shape.columnNames().includes(name), `Column [${name}] is visible.`);
 		return this;
 	}

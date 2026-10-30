@@ -184,6 +184,8 @@ describe("testing API: the page", () => {
 			.sort("title")
 			.filter("published", "1");
 		(await narrowed.fetch()).assertForbidden();
+		expect(() => viewer.assertActionVisible("archive")).toThrow("responded 403");
+		expect(() => viewer.table("posts").assertColumnHidden("title")).toThrow("responded 403");
 		(await viewer.callAction("quickSave")).assertForbidden();
 	});
 
