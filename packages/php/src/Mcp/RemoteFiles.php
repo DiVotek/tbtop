@@ -63,6 +63,9 @@ final class RemoteFiles
         foreach (RuleWalker::fieldsByKey($form->getFields()) as $key => $field) {
             if (($field instanceof Upload || $field instanceof MediaPicker) && self::accepts($field)) {
                 foreach (FormInput::sent($key, $input) as $path => $value) {
+                    if (self::isRemote($value) && ($field->toNode()->options['multiple'] ?? false) === true) {
+                        throw new AgentError("{$path}: a multiple field takes a list; send [{url}].");
+                    }
                     $sent[] = [$field, $path, $value];
                 }
             }

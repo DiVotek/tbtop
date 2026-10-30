@@ -116,3 +116,11 @@ it('refuses more than 20 {url} references in one call before fetching any', func
     expect($result['json']['message'])->toBe('At most 20 files may be sent as {url} in one call; this one has 21.');
     Http::assertNothingSent();
 });
+
+it('refuses a bare {url} on a multiple field before fetching', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-edges-page:gallery', 'form' => ['heading' => 'Trip', 'images' => ['url' => 'https://8.8.8.8/a.png']]]));
+
+    expect($result['json']['message'])->toBe('images: a multiple field takes a list; send [{url}].');
+    Http::assertNothingSent();
+});
