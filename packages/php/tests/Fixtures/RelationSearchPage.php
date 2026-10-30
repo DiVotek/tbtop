@@ -58,6 +58,9 @@ class RelationSearchPage extends Page
                     ->dependsOn('author_id')
                     ->query(fn () => AuthorModel::query())
                     ->creatable([$s->text('name')]),
+                $s->relation('guarded_author_id')
+                    ->query(fn () => GuardedAuthorModel::query())
+                    ->creatable([$s->text('name')->required()]),
                 $s->relation('scoped_default_id')
                     ->query(fn () => AuthorModel::query()->where('name', 'like', 'A%'))
                     ->creatable([$s->text('name')]),

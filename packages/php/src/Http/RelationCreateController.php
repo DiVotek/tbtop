@@ -96,7 +96,9 @@ final class RelationCreateController
         }
 
         $model = $builder->getModel()->newInstance();
-        $model->fill($validated)->save();
+        // Only the declared, validated mini-form keys are here, so $fillable
+        // would add nothing but a silent drop of a field it forgot.
+        $model->forceFill($validated)->save();
 
         return $model;
     }

@@ -17,6 +17,14 @@ it('Relation create: without a closure it saves a new query() model and returns 
         ->assertExactJson(['value' => (string) $author->getKey(), 'label' => 'Ada Lovelace']);
 });
 
+it('Relation create: a validated field outside $fillable is still written', function (): void {
+    $this->postJson('/admin/relation-search-page/relation-create/guarded_author_id', ['name' => 'Ada'])
+        ->assertOk()
+        ->assertJsonPath('label', 'Ada');
+
+    expect(AuthorModel::query()->value('name'))->toBe('Ada');
+});
+
 it('Relation create: validation failure returns 422 and saves nothing', function (): void {
     $this->postJson('/admin/relation-search-page/relation-create/created_author_id', [])
         ->assertStatus(422)

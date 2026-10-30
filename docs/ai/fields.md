@@ -296,7 +296,8 @@ keeps the dialog open with the errors), saves the record and returns `{value, la
 The new record becomes the field's value and its label shows at once.
 
 Without `$using`, the endpoint fills a new instance of the `query()` model with the
-validated data and saves it, so the model's `$fillable` must cover the mini-form fields.
+validated data and saves it. Only the mini-form's validated keys are written, and they are
+force-filled, so `$fillable` does not drop a field the form declares.
 Only the model class is taken from `query()`: its `where()` constraints (a tenant, an
 `active` flag) are not applied to the new row, so a query with a `where()` needs `$using`
 too — the default path throws a `LogicException` rather than save outside the scope.
