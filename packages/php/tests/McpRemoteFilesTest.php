@@ -101,7 +101,7 @@ it('takes a {url} in a new repeater row beside a stored row echoed whole', funct
 });
 
 it('refuses media {url} when no panel is bound, even with the gate open', function (): void {
-    $this->mediaAllowed = true;
+    McpHttpTestCase::$mediaAllowed = true;
     app()->forgetInstance(CurrentPanel::class);
 
     expect(RemoteFiles::accepts(MediaPicker::make('logo')))->toBeFalse()
