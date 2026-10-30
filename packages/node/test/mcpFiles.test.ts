@@ -68,6 +68,17 @@ const docsPage = definePage({
 			}),
 });
 
+const lockedPage = definePage({
+	path: "locked",
+	title: "Locked",
+	authorize: () => false,
+	view: (s) =>
+		s.form("doc", [s.upload("file")]).onSubmit(({ form }) => {
+			ran = form;
+			return Effects.make().notify("Saved");
+		}),
+});
+
 /** A stand-in for the host's guarded fetch: one PNG, a 404, a too-large body and a non-image. */
 async function fetchRemote(url: string): Promise<Response> {
 	fetched.push(url);
@@ -112,7 +123,7 @@ function adminWith(remote: boolean) {
 	return createAdmin({
 		allowGuests: true,
 		prefix: "/admin",
-		pages: [filesPage, docsPage],
+		pages: [filesPage, docsPage, lockedPage],
 		disks: { public: disk },
 		mcp: {
 			authenticate: () => ({ name: "agent" }),
@@ -320,6 +331,16 @@ describe("MCP upload fields by URL", () => {
 			expect(result.data.message).toBe(message);
 		}
 		expect(fetched).toEqual([]);
+	});
+
+	test("a caller the page gate refuses triggers no download", async () => {
+		const result = await call(withFetch, "execute", {
+			id: "locked:doc",
+			form: { file: { url: "https://cdn.example/a.png" } },
+		});
+		expect(result.data.message).toBe("Forbidden: This action is unauthorized.");
+		expect(fetched).toEqual([]);
+		expect(disk.files.size).toBe(0);
 	});
 
 	test("a field's saveUsing() gets only a type the field accepts", async () => {
