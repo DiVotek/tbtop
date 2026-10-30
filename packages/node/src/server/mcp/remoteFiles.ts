@@ -42,7 +42,7 @@ export async function fetchInto(
 	);
 	for (const { at, value } of targets) {
 		if (at.field.toNode().options.multiple === true && isRemote(value)) {
-			throw new AgentError(`${at.path}: a multiple upload takes a list; send [{url}].`);
+			throw new AgentError(`${at.path}: a multiple field takes a list; send [{url}].`);
 		}
 	}
 	const count = targets.reduce((sum, target) => sum + references(target.value), 0);

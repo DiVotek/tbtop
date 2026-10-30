@@ -217,7 +217,7 @@ describe("MCP upload fields by URL", () => {
 
 	test("a bare {url} on a multiple upload is refused before any fetch", async () => {
 		const result = await execute(withFetch, { gallery: { url: "https://cdn.example/b.png" } });
-		expect(result.data.message).toBe("gallery: a multiple upload takes a list; send [{url}].");
+		expect(result.data.message).toBe("gallery: a multiple field takes a list; send [{url}].");
 		expect(fetched).toEqual([]);
 	});
 });
