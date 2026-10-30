@@ -124,3 +124,16 @@ it('refuses a bare {url} on a multiple field before fetching', function (): void
     expect($result['json']['message'])->toBe('images: a multiple field takes a list; send [{url}].');
     Http::assertNothingSent();
 });
+
+it('refuses a {url} nested where the field takes no file, before fetching', function (array $image): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
+        'sections' => [['heading' => 'Intro', 'image' => 'intro.png'], ['heading' => 'New', 'image' => $image]],
+    ]]));
+
+    expect($result['json']['message'])->toBe('sections.1.image: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.');
+    Http::assertNothingSent();
+})->with([
+    'list' => [[['url' => 'https://8.8.8.8/a.png']]],
+    'map' => [['x' => ['url' => 'https://8.8.8.8/a.png']]],
+]);

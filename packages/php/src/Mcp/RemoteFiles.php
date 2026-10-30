@@ -63,9 +63,7 @@ final class RemoteFiles
         foreach (RuleWalker::fieldsByKey($form->getFields()) as $key => $field) {
             if (($field instanceof Upload || $field instanceof MediaPicker) && self::accepts($field)) {
                 foreach (FormInput::sent($key, $input) as $path => $value) {
-                    if (self::isRemote($value) && ($field->toNode()->options['multiple'] ?? false) === true) {
-                        throw new AgentError("{$path}: a multiple field takes a list; send [{url}].");
-                    }
+                    self::assertPlaced($field, $path, $value);
                     $sent[] = [$field, $path, $value];
                 }
             }
@@ -79,6 +77,35 @@ final class RemoteFiles
         }
 
         return $input;
+    }
+
+    /** A `{url}` only where the field takes a file, refused before any fetch. */
+    private static function assertPlaced(Field $field, string $path, mixed $value): void
+    {
+        $multiple = ($field->toNode()->options['multiple'] ?? false) === true;
+        if ($multiple && self::isRemote($value)) {
+            throw new AgentError("{$path}: a multiple field takes a list; send [{url}].");
+        }
+        if (! self::placed($value, $multiple, $field->isTranslatableField())) {
+            throw new AgentError("{$path}: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.");
+        }
+    }
+
+    /** Whether every `{url}` in $value is the value, a list entry (multiple) or a locale's value (translatable). */
+    private static function placed(mixed $value, bool $multiple, bool $translatable): bool
+    {
+        if (self::isRemote($value)) {
+            return ! $multiple;
+        }
+        if (! is_array($value) || self::count($value) === 0) {
+            return true;
+        }
+        if (array_is_list($value)) {
+            return $multiple && array_all($value, static fn (mixed $entry): bool => self::isRemote($entry) || self::count($entry) === 0);
+        }
+
+        return $translatable
+            && array_all($value, static fn (mixed $entry): bool => self::placed($entry, $multiple, false));
     }
 
     /** The remote references in $value: itself, or those in its list or locale map. */
