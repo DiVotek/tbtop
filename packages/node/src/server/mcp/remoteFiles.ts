@@ -1,13 +1,14 @@
-import { type FormBuilder, Upload } from "../../dsl";
+import { type FormBuilder, materialize, Upload, type WireNode } from "../../dsl";
 import { trans } from "../../i18n";
 import type { EndpointCtx } from "../endpoints/types";
 import { HttpError } from "../http";
 import type { SessionStore } from "../inertia/session";
-import { fieldConfig } from "../uploads/config";
+import { type FieldConfig, fieldConfig } from "../uploads/config";
 import { rememberIssued } from "../uploads/issued";
 import { storeUpload } from "../uploads/store";
 import { dataSet } from "../validation/data";
 import { AgentError } from "./answer";
+import { content, httpUrl } from "./download";
 import { formShape } from "./formArgs";
 import { isRemote } from "./formFields";
 import { sent } from "./formInput";
@@ -37,11 +38,20 @@ export async function fetchInto(
 	input: Record<string, unknown>,
 	env: RemoteEnv,
 ): Promise<Record<string, unknown>> {
-	const targets = Object.entries(formShape(form).fields).flatMap(([key, field]) =>
-		field instanceof Upload
-			? sent(key, input).map(([path, value]) => ({ at: { field, path, env }, value }))
-			: [],
-	);
+	const targets: { at: Target; value: unknown }[] = [];
+	for (const [key, field] of Object.entries(formShape(form).fields)) {
+		if (field instanceof Upload) {
+			// The materialized node, as describeFields() reads it for the schema.
+			const node = await materialize<WireNode>(field.toNode());
+			const multiple = node.options.multiple === true;
+			targets.push(
+				...sent(key, input).map(([path, value]) => ({
+					at: { field, path, env, multiple },
+					value,
+				})),
+			);
+		}
+	}
 	for (const { at, value } of targets) {
 		assertPlaced(at, value);
 	}
@@ -59,7 +69,7 @@ export async function fetchInto(
 
 /** RemoteFiles::assertPlaced(): a `{url}` only where the field takes a file, refused before any fetch. */
 function assertPlaced(at: Target, value: unknown): void {
-	const multiple = at.field.toNode().options.multiple === true;
+	const { multiple } = at;
 	if (multiple && isRemote(value)) {
 		throw new AgentError(`${at.path}: a multiple field takes a list; send [{url}].`);
 	}
@@ -99,6 +109,7 @@ interface Target {
 	field: Upload;
 	path: string;
 	env: RemoteEnv;
+	multiple: boolean;
 }
 
 type Reference = { url: string; name?: string };
@@ -121,7 +132,7 @@ async function resolve(at: Target, value: unknown): Promise<unknown> {
 async function upload(at: Target, ref: Reference): Promise<string> {
 	const { field, path, env } = at;
 	const config = fieldConfig(field);
-	const file = await fetchFile(at, ref, config.maxSize);
+	const file = await fetchFile(at, ref, config);
 	const saver = field.saveClosure();
 	try {
 		const stored = saver
@@ -134,8 +145,8 @@ async function upload(at: Target, ref: Reference): Promise<string> {
 	}
 }
 
-/** UrlFetcher::fetch() over the host's fetch: http(s) only, a 2xx answer, within the size cap. */
-async function fetchFile(at: Target, ref: Reference, maxSize: number): Promise<File> {
+/** UrlFetcher::fetch() over the host's fetch: http(s) only, a 2xx answer, within the size cap, of a type the field accepts. */
+async function fetchFile(at: Target, ref: Reference, config: FieldConfig): Promise<File> {
 	const refuse = (key: string) => new AgentError(`${at.path}: ${trans(`media.errors.${key}`)}`);
 	const url = httpUrl(ref.url);
 	if (url === null) {
@@ -152,58 +163,11 @@ async function fetchFile(at: Target, ref: Reference, maxSize: number): Promise<F
 		await response?.body?.cancel().catch(() => null);
 		throw refuse("download_failed");
 	}
-	const bytes = await body(response, maxSize);
-	if (typeof bytes === "string") {
-		throw refuse(bytes);
+	const file = await content(response, config);
+	if (typeof file === "string") {
+		throw refuse(file);
 	}
-	const type = response.headers.get("content-type") ?? "";
-	return new File([bytes], ref.name ?? fileName(url), { type: type.split(";")[0]?.trim() });
-}
-
-const httpUrl = (raw: string): URL | null => {
-	const url = URL.canParse(raw) ? new URL(raw) : null;
-	return url !== null && ["http:", "https:"].includes(url.protocol) ? url : null;
-};
-
-/** The response body, or the error key when it is over `maxSize`, empty or breaks off; read until the cap, no further. */
-async function body(
-	response: Response,
-	maxSize: number,
-): Promise<Uint8Array<ArrayBuffer> | string> {
-	if (Number(response.headers.get("content-length") ?? 0) > maxSize) {
-		await response.body?.cancel().catch(() => null);
-		return "file_too_large";
-	}
-	const chunks = await readCapped(response, maxSize).catch(() => "download_failed");
-	if (typeof chunks === "string") {
-		return chunks;
-	}
-	if (chunks.length === 0) {
-		return "download_failed";
-	}
-	const bytes = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0));
-	let offset = 0;
-	for (const chunk of chunks) {
-		bytes.set(chunk, offset);
-		offset += chunk.byteLength;
-	}
-	return bytes;
-}
-
-/** The body's chunks, or "file_too_large" once they pass `maxSize` (the rest is never downloaded). */
-async function readCapped(response: Response, maxSize: number): Promise<Uint8Array[] | string> {
-	const reader = response.body?.getReader();
-	const chunks: Uint8Array[] = [];
-	let size = 0;
-	for (let read = await reader?.read(); read && !read.done; read = await reader?.read()) {
-		size += read.value.byteLength;
-		if (size > maxSize) {
-			await reader?.cancel();
-			return "file_too_large";
-		}
-		chunks.push(read.value);
-	}
-	return chunks;
+	return new File([file.bytes], ref.name ?? fileName(url), { type: file.type });
 }
 
 /** The URL's last path segment, as a browser names a download. */

@@ -7,6 +7,7 @@ const PNG = new Uint8Array([
 ]);
 
 const disk = memoryDisk();
+const MIME_REFUSED = "This file type is not allowed.";
 const fetched: string[] = [];
 const reported: unknown[] = [];
 let ran: Record<string, unknown> | null = null;
@@ -52,6 +53,10 @@ const docsPage = definePage({
 		s
 			.form("doc", [
 				s.upload("file").translatable(),
+				s
+					.upload("scan")
+					.accept("image/*")
+					.saveUsing(async () => ({ path: "custom/scan.png", url: "/custom/scan.png" })),
 				s
 					.richtext("body")
 					.embeds([Embed.make("figure").fields([s.upload("image"), s.text("caption")])]),
@@ -235,7 +240,7 @@ describe("MCP upload fields by URL", () => {
 				"https://cdn.example/empty.png",
 				"cover: Could not download the file from the given URL.",
 			],
-			["https://cdn.example/page.html", "cover: File type text/html is not allowed."],
+			["https://cdn.example/page.html", `cover: ${MIME_REFUSED}`],
 		];
 		for (const [url, message] of cases) {
 			const result = await execute(withFetch, { cover: { url } });
@@ -299,6 +304,20 @@ describe("MCP upload fields by URL", () => {
 		const result = await execute(withFetch, { cover: { url: "https://cdn.example/sync.png" } });
 		expect(result.data.message).toBe("cover: Could not download the file from the given URL.");
 		expect(String(reported[0])).toContain("refused synchronously");
+	});
+
+	test("a field's saveUsing() gets only a type the field accepts", async () => {
+		const refused = await call(withFetch, "execute", {
+			id: "docs:doc",
+			form: { scan: { url: "https://cdn.example/page.html" } },
+		});
+		expect(refused.data.message).toBe(`scan: ${MIME_REFUSED}`);
+		const stored = await call(withFetch, "execute", {
+			id: "docs:doc",
+			form: { scan: { url: "https://cdn.example/scan.png" } },
+		});
+		expect(stored.isError).toBe(false);
+		expect(ran?.scan).toBe("custom/scan.png");
 	});
 
 	test("a file field inside a richtext embed stays excluded: only form fields are fetched", async () => {
