@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { createAdmin, definePage, Effects, Embed, memoryDisk } from "../src";
+import { isRemote } from "../src/server/mcp/formFields";
 
 const PNG = new Uint8Array([
 	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52,
@@ -312,4 +313,10 @@ describe("MCP upload fields by URL", () => {
 			},
 		]);
 	});
+});
+
+test("a {url} whose name is not a string is an ordinary value, not a reference", () => {
+	expect(isRemote({ url: "https://cdn.example/a.png", name: "a.png" })).toBe(true);
+	expect(isRemote({ url: "https://cdn.example/a.png", name: 5 })).toBe(false);
+	expect(isRemote({ url: "https://cdn.example/a.png", name: { x: 1 } })).toBe(false);
 });

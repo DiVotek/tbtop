@@ -20,7 +20,10 @@ export function isRemote(value: unknown): value is { url: string; name?: string 
 		return false;
 	}
 	const ref = value as Record<string, unknown>;
-	return typeof ref.url === "string" && Object.keys(ref).every((key) => KEYS.includes(key));
+	return (
+		typeof ref.url === "string" &&
+		Object.entries(ref).every(([key, part]) => KEYS.includes(key) && typeof part === "string")
+	);
 }
 
 /** Kinds whose value is a stored file: sent as `{url}` when the host fetches them (mcp.fetchRemote). */
