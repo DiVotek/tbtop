@@ -17,8 +17,9 @@ real `@inertiajs/react`. Published to npm in lockstep with `@tbtop/inertia-admin
 - **Session**: `SessionStore { get, set, forget, commit? }`, the only view of the
   host's session. The default reads the user from `SESSION_USER`; a login page
   puts it there (`admin.session(request)`). `cookieSessions({ secret })` keeps
-  it in one AES-GCM cookie (no store, runs on Workers); `memorySessions()` is a
-  one-server reference store.
+  it in one AES-GCM cookie (no store, runs on Workers), so logout cannot revoke
+  a copied cookie before its `maxAge` (7200 s by default); `memorySessions()` is
+  a one-server reference store.
 - **i18n**: UI locales switched through the session (`POST {prefix}/locale`),
   bundled `tbtop-admin::admin` strings (`lang/*.json`, generated from the PHP
   lang files by `bun run sync:lang`), host strings and validation templates
