@@ -298,7 +298,8 @@ The new record becomes the field's value and its label shows at once.
 Without `$using`, the endpoint fills a new instance of the `query()` model with the
 validated data and saves it, so the model's `$fillable` must cover the mini-form fields.
 Only the model class is taken from `query()`: its `where()` constraints (a tenant, an
-`active` flag) are not applied to the new row, so a scoped query needs `$using` too.
+`active` flag) are not applied to the new row, so a query with a `where()` needs `$using`
+too — the default path throws a `LogicException` rather than save outside the scope.
 Pass `$using` — `fn(array $validated, array $deps): Model` — when the new row needs more
 than the form gives it. A `dependsOn()` relation requires it (the default path throws a
 `LogicException`), because only the closure can set the parent key. `$deps` holds only

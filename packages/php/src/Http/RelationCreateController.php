@@ -87,6 +87,13 @@ final class RelationCreateController
         assert($query instanceof Closure);
         $builder = $query($deps);
         assert($builder instanceof Builder);
+        // The where() clauses are not copied onto the new row, so a scoped query
+        // would save outside its own scope (a tenant, an active flag).
+        if ($builder->getQuery()->wheres !== []) {
+            throw new LogicException(
+                "Relation field \"{$field->name}\" has a where() in query(): pass creatable() a closure that sets those columns.",
+            );
+        }
 
         $model = $builder->getModel()->newInstance();
         $model->fill($validated)->save();

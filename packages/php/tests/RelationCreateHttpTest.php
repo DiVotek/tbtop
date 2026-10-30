@@ -55,6 +55,12 @@ it('Relation create: a dependent relation without a closure refuses to save outs
     $this->postJson('/admin/relation-search-page/relation-create/dependent_default_id', ['name' => 'x']);
 })->throws(LogicException::class, 'pass creatable() a closure that sets the parent');
 
+it('Relation create: a scoped query() without a closure refuses to save outside its scope', function (): void {
+    $this->withoutExceptionHandling();
+
+    $this->postJson('/admin/relation-search-page/relation-create/scoped_default_id', ['name' => 'Zed']);
+})->throws(LogicException::class, 'has a where() in query()');
+
 it('Relation create: a relation without creatable() returns 404', function (): void {
     $this->postJson('/admin/relation-search-page/relation-create/author_id', ['name' => 'Ada'])
         ->assertNotFound();
