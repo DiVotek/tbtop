@@ -79,6 +79,22 @@ const lockedPage = definePage({
 		}),
 });
 
+const gatedPage = definePage({
+	path: "gated",
+	title: "Gated",
+	view: (s) =>
+		s.form("doc", [
+			s.upload("file"),
+			s
+				.action("save")
+				.authorize("an-ability-nobody-has")
+				.handle(({ form }) => {
+					ran = form ?? null;
+					return Effects.make().notify("Saved");
+				}),
+		]),
+});
+
 /** A stand-in for the host's guarded fetch: one PNG, a 404, a too-large body and a non-image. */
 async function fetchRemote(url: string): Promise<Response> {
 	fetched.push(url);
@@ -123,7 +139,7 @@ function adminWith(remote: boolean) {
 	return createAdmin({
 		allowGuests: true,
 		prefix: "/admin",
-		pages: [filesPage, docsPage, lockedPage],
+		pages: [filesPage, docsPage, lockedPage, gatedPage],
 		disks: { public: disk },
 		mcp: {
 			authenticate: () => ({ name: "agent" }),
@@ -333,12 +349,19 @@ describe("MCP upload fields by URL", () => {
 		expect(fetched).toEqual([]);
 	});
 
-	test("a caller the page gate refuses triggers no download", async () => {
+	test("a caller the page or action gate refuses triggers no download", async () => {
 		const result = await call(withFetch, "execute", {
 			id: "locked:doc",
 			form: { file: { url: "https://cdn.example/a.png" } },
 		});
 		expect(result.data.message).toBe("Forbidden: This action is unauthorized.");
+		const action = await call(withFetch, "execute", {
+			id: "gated:save",
+			form: { file: { url: "https://cdn.example/a.png" } },
+		});
+		expect(action.data.message).toBe(
+			'"gated:save" is not executable here. Call search() for this page.',
+		);
 		expect(fetched).toEqual([]);
 		expect(disk.files.size).toBe(0);
 	});
