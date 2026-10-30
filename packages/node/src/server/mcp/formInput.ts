@@ -44,8 +44,8 @@ const isBag = (value: unknown): value is Bag => value !== null && typeof value =
 
 /**
  * Whether a file field's `value` keeps what is `stored`: the same value, or
- * (when `remote`) new `{url}` references beside every stored entry. Dropping
- * a stored entry is a change.
+ * (when `remote`) every stored entry kept or replaced by a `{url}`, new `{url}`
+ * entries beside them. Dropping a stored entry is a change.
  */
 function unchanged(value: unknown, stored: unknown, remote: boolean): boolean {
 	if (canonical(value) === canonical(stored) || (remote && isRemote(value))) {
