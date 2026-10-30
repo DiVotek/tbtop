@@ -48,8 +48,9 @@ final class FormInput
 
     /**
      * Whether a file field's $value keeps what is $stored: the same value, or — when
-     * $remote — new `{url}` references beside every stored entry (a file added to a
-     * multiple upload, one locale's file replaced). Dropping a stored entry is a change.
+     * $remote — every stored entry kept or replaced by a `{url}`, new `{url}` entries
+     * beside them (a file added to a multiple upload, one locale's file replaced).
+     * Dropping a stored entry is a change.
      */
     private static function unchanged(mixed $value, mixed $stored, bool $remote): bool
     {

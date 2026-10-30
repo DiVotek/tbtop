@@ -86,9 +86,22 @@ final class RemoteFiles
         if ($multiple && self::isRemote($value)) {
             throw new AgentError("{$path}: a multiple field takes a list; send [{url}].");
         }
+        if ($field instanceof Upload && self::hasAlt($value)) {
+            throw new AgentError("{$path}: alt applies to media fields only; send an upload as {url} (optionally name).");
+        }
         if (! self::placed($value, $multiple, $field->isTranslatableField())) {
             throw new AgentError("{$path}: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.");
         }
+    }
+
+    /** Whether a `{url}` in $value carries `alt`, which only the media library stores. */
+    private static function hasAlt(mixed $value): bool
+    {
+        if (self::isRemote($value)) {
+            return isset($value['alt']);
+        }
+
+        return is_array($value) && array_any($value, self::hasAlt(...));
     }
 
     /** Whether every `{url}` in $value is the value, a list entry (multiple) or a locale's value (translatable). */

@@ -147,3 +147,11 @@ it('takes a translatable file field per locale only, refusing a bare {url} befor
         ->toThrow(AgentError::class, 'file: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.');
     Http::assertNothingSent();
 });
+
+it('refuses alt on an upload {url}, which only media stores', function (): void {
+    $form = (new S)->form('doc', [(new S)->upload('file')]);
+
+    expect(fn () => RemoteFiles::fetchInto($form, ['file' => ['url' => 'https://8.8.8.8/a.png', 'alt' => 'A']]))
+        ->toThrow(AgentError::class, 'file: alt applies to media fields only; send an upload as {url} (optionally name).');
+    Http::assertNothingSent();
+});
