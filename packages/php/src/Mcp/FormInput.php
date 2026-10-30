@@ -28,11 +28,12 @@ final class FormInput
             if ($field instanceof Richtext) {
                 self::assertDocuments($field, $key, $input);
             }
-            if (! in_array($field->toNode()->kind, FormFields::UNSUPPORTED_KINDS, true)) {
+            if (! in_array($field->toNode()->kind, FormFields::FILE_KINDS, true)) {
                 continue;
             }
+            $remote = RemoteFiles::accepts($field);
             foreach (self::sent($key, $input) as $path => $value) {
-                if (self::canonical($value) !== self::canonical(Arr::get($stored, $path))) {
+                if (! self::unchanged($value, Arr::get($stored, $path), $remote)) {
                     $changed[] = $path;
                 }
             }
@@ -42,7 +43,35 @@ final class FormInput
         }
         $names = implode(', ', $changed);
 
-        throw new AgentError("Fields listed in excludedFields cannot be changed over MCP; omit them or send their current value: {$names}.");
+        throw new AgentError("Send a file field as {url} or its current value; fields listed in excludedFields only as their current value: {$names}.");
+    }
+
+    /**
+     * Whether a file field's $value keeps what is $stored: the same value, or — when
+     * $remote — new `{url}` references beside every stored entry (a file added to a
+     * multiple upload, one locale's file replaced). Dropping a stored entry is a change.
+     */
+    private static function unchanged(mixed $value, mixed $stored, bool $remote): bool
+    {
+        if (self::canonical($value) === self::canonical($stored) || ($remote && RemoteFiles::isRemote($value))) {
+            return true;
+        }
+        if (! $remote || ! is_array($value) || ! (is_array($stored) || $stored === null)) {
+            return false;
+        }
+        $stored ??= [];
+        foreach ($stored as $key => $entry) {
+            if (! array_key_exists($key, $value)) {
+                return false;
+            }
+        }
+        foreach ($value as $key => $entry) {
+            if (! self::unchanged($entry, $stored[$key] ?? null, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -71,7 +100,7 @@ final class FormInput
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    private static function sent(string $pattern, array $input): array
+    public static function sent(string $pattern, array $input): array
     {
         $regex = '/^'.str_replace('\*', '[^\.]+', preg_quote($pattern, '/')).'\z/';
         $out = [];

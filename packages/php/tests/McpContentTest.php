@@ -66,7 +66,7 @@ it('refuses a richtext document the editor could not open, before the handler ru
 it('an excluded child of a repeater is listed and refused', function (): void {
     $form = $this->toolResult($this->callTool('search', ['page' => 'mcp-content-page']))['json']['executables'][0];
     expect(array_column($form['fields'], 'name'))->toBe(['body', 'sections', 'sections.*.heading', 'sections.*.content'])
-        ->and($form['excludedFields'])->toBe([['name' => 'sections.*.image', 'kind' => 'upload', 'reason' => 'upload fields cannot be filled over MCP']]);
+        ->and($form['excludedFields'])->toBe([['name' => 'sections.*.image', 'kind' => 'media', 'reason' => 'the media library is closed to this user (mediaGate), so this field cannot be filled over MCP']]);
 
     $echo = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
         'sections' => [['heading' => 'Renamed', 'image' => 'intro.png', 'content' => null]],
@@ -79,13 +79,13 @@ it('an excluded child of a repeater is listed and refused', function (): void {
         'sections' => [['heading' => 'Intro', 'image' => 'intro.png'], ['heading' => 'More', 'image' => 'agent.png']],
     ]]));
     expect($changed['json']['message'])
-        ->toBe('Fields listed in excludedFields cannot be changed over MCP; omit them or send their current value: sections.1.image.')
+        ->toBe('Send a file field as {url} or its current value; fields listed in excludedFields only as their current value: sections.1.image.')
         ->and(McpPage::$ran)->not->toHaveKey('post');
 
     $coerced = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
         'sections' => [['heading' => 'Intro', 'image' => true]],
     ]]));
     expect($coerced['json']['message'])
-        ->toBe('Fields listed in excludedFields cannot be changed over MCP; omit them or send their current value: sections.0.image.')
+        ->toBe('Send a file field as {url} or its current value; fields listed in excludedFields only as their current value: sections.0.image.')
         ->and(McpPage::$ran)->not->toHaveKey('post');
 });

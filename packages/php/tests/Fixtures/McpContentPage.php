@@ -32,7 +32,7 @@ class McpContentPage extends Page
                 $s->richtext('body')->translatable()->embeds([
                     Embed::make('pullQuote')->label('Pull quote')->fields([$s->text('author')->required()]),
                 ]),
-                $s->repeater('sections')->fields([$s->text('heading'), $s->upload('image'), $s->richtext('content')]),
+                $s->repeater('sections')->fields([$s->text('heading'), $s->media('image'), $s->richtext('content')]),
             ])
                 ->record(['sections' => [['heading' => 'Intro', 'image' => 'intro.png', 'content' => null]]])
                 ->onSubmit(static function (ActionCtx $ctx): Effects {

@@ -28,13 +28,13 @@ it('returns validation errors and runs nothing for invalid form input', function
     'onSubmit form' => 'mcp-page:main',
 ]);
 
-it('refuses a field search lists as excluded instead of passing it to the handler', function (string $id): void {
+it('refuses a file field value that is neither a {url} nor its stored value', function (string $id): void {
     $page = $this->toolResult($this->callTool('search', ['page' => 'mcp-page']))['json'];
     $main = array_column($page['executables'], null, 'id')['mcp-page:main'];
 
     $result = $this->toolResult($this->callTool('execute', ['id' => $id, 'form' => ['name' => 'ok', 'avatar' => '../../.env']]));
 
-    expect(array_column($main['excludedFields'], 'name'))->toBe(['avatar'])
+    expect(array_column($main['fields'], null, 'name')['avatar'])->toMatchArray(['kind' => 'upload', 'value' => '{url}'])
         ->and($result['isError'])->toBeTrue()
         ->and($result['json']['message'])->toContain('avatar')
         ->and(McpPage::$ran)->toBe([]);

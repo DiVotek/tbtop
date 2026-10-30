@@ -286,17 +286,24 @@ return $panel
   of this panel. `search(page, params, values: true)` adds each form's current `values` (what
   the UI prefills), so an agent can resend the fields it keeps; without the flag they are
   left out, as they are the bulk of a record form.
+- **Files by URL.** An `upload` or `media` field takes `{"url": "https://…"}` (media also
+  `alt` and `name`), a list of them for a multiple field, mixed with stored values. Before
+  validation the server downloads it through the media import's SSRF guard and size cap,
+  then stores it as the field's own upload endpoint would (an upload: a path issued to the
+  call; media: imported into the library, id). A media field needs the panel's
+  `mediaGate()` ability, like the library's import endpoint; without it the field is excluded.
 - **What is exposed.** Everything the user can do, minus `->mcp(false)` on an action and
   `Page::mcp(): false` on a page (server-only; never on the wire). `custom` client-only
-  actions, and `upload`/`media` fields, are listed as excluded with a reason — inside a
-  repeater too, under the row name (`sections.*.image`); so
+  actions, and `media` fields of a user the `mediaGate()` refuses, are listed as excluded
+  with a reason — inside a repeater too, under the row name (`sections.*.image`); so
   is a form (or an action submitting it) whose every field is excluded, or — when the form
   is validated (an `onSubmit` form, an action without `->withoutValidation()`) — one with a
   required excluded field: a rule key of the field holding `required` without `sometimes`
   (in a repeater, only when the repeater is required or has `minItems`).
   An edit form whose file already exists stays executable with `->required()->rules('sometimes')`.
-  `execute` refuses input that changes an excluded field instead of passing it to the handler;
-  the stored value sent back unchanged (a repeater row resent whole) passes.
+  `execute` refuses input that changes an excluded field instead of passing it to the handler,
+  and a file field value that is neither `{url}` nor stored; the stored value sent back
+  unchanged (a repeater row resent whole) passes.
   A `richtext` value is checked before the handler: a Lexical state `{root: …}` whose nodes
   are the editor's own types with the keys Lexical reads on import, per locale and per row.
   `search()` lists the node types and each embed kind with its `data` fields.

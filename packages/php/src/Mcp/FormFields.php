@@ -12,8 +12,14 @@ use Tbtop\Admin\Dsl\RuleWalker;
  */
 final class FormFields
 {
-    /** Kinds whose value is a server-side upload an agent cannot produce. */
-    public const UNSUPPORTED_KINDS = ['upload', 'media'];
+    /** Kinds whose value is a stored file: sent as `{url}` (RemoteFiles), or excluded where that is not allowed. */
+    public const FILE_KINDS = ['upload', 'media'];
+
+    /** Whether $field is listed as excluded: a file field this user cannot fill by URL. */
+    public static function excludes(Field $field): bool
+    {
+        return in_array($field->toNode()->kind, self::FILE_KINDS, true) && ! RemoteFiles::accepts($field);
+    }
 
     /**
      * $fields as RuleWalker::fieldsByKey() keys them. An excluded field counts as
@@ -32,8 +38,8 @@ final class FormFields
             $parent = str_contains($name, '.*.') ? substr($name, 0, (int) strrpos($name, '.*.')) : null;
             $mandatory = $parent === null || ($rowMandatory[$parent] ?? false);
             $node = $field->toNode();
-            if (in_array($node->kind, self::UNSUPPORTED_KINDS, true)) {
-                $out['excluded'][] = ['name' => $name, 'kind' => $node->kind, 'reason' => "{$node->kind} fields cannot be filled over MCP"];
+            if (self::excludes($field)) {
+                $out['excluded'][] = ['name' => $name, 'kind' => $node->kind, 'reason' => 'the media library is closed to this user (mediaGate), so this field cannot be filled over MCP'];
                 if ($mandatory && self::isRequired($name, $rules)) {
                     $out['required'][] = ['name' => $name, 'kind' => $node->kind];
                 }
@@ -114,7 +120,25 @@ final class FormFields
             'mask' => is_string($options['mask'] ?? null) ? $options['mask'] : null,
             'dependsOn' => is_array($options['dependsOn'] ?? null) ? array_values($options['dependsOn']) : null,
             'options' => self::optionsOf($field, $options),
+            ...(in_array($kind, self::FILE_KINDS, true) ? self::file($options) : []),
         ], static fn (mixed $v): bool => $v !== null && $v !== []);
+    }
+
+    /**
+     * What a file field takes: `{url}` (media: plus `alt`, `name`), within `accept`.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
+    private static function file(array $options): array
+    {
+        $accept = $options['accept'] ?? null;
+
+        return [
+            'value' => '{url}',
+            'accept' => is_string($accept) ? array_values(array_filter(array_map('trim', explode(',', $accept)))) : $accept,
+            'multiple' => ($options['multiple'] ?? false) === true ? true : null,
+        ];
     }
 
     /**

@@ -12,6 +12,7 @@ use Tbtop\Admin\Mcp\Execution;
 use Tbtop\Admin\Mcp\FormInput;
 use Tbtop\Admin\Mcp\PageSurface;
 use Tbtop\Admin\Mcp\PanelPages;
+use Tbtop\Admin\Mcp\RemoteFiles;
 
 /** Always destructive: actions are author-written, so a delete cannot be told from an edit. */
 #[IsDestructive]
@@ -25,7 +26,9 @@ final class ExecuteTool extends Tool
         Run an executable found by search(), with the user's own permissions. Pass `params` — the route
         params of the page the executable lives on, for every executable of that page — and what it `needs`: `form` (field values), `row` (a row from query(),
         unchanged: it must keep its `_key`) or `selection` (the rows' `_key` values). A call missing what it needs is
-        refused. Invalid input returns validation errors and runs nothing;
+        refused. An upload or media field takes {"url": "https://…"} (media also `alt`, `name`) — the server
+        downloads and stores the file — or its current value; a multiple one a list mixing both.
+        Invalid input returns validation errors and runs nothing;
         every error is JSON {message, errors?}. Returns the effects the UI would show; a redirect (form
         `redirect`, or a `redirect` effect) carries the `page`/`params` it opens so you can search() it next.
         TXT;
@@ -60,6 +63,7 @@ final class ExecuteTool extends Tool
             $input = self::objectArg($request->get('form'));
             if ($form !== null) {
                 FormInput::assertSendable($form, $input);
+                $input = RemoteFiles::fetchInto($form, $input);
             }
             if ($action === null) {
                 return $execution->form($name, $input);

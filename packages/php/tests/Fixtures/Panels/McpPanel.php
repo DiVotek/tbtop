@@ -16,7 +16,8 @@ class McpPanel extends TestPanel
     public function configure(PanelConfig $panel): PanelConfig
     {
         return parent::configure($panel)->mcp(['auth:web'])
-            ->mcpAllowedOrigins(['https://agent.example.com']);
+            ->mcpAllowedOrigins(['https://agent.example.com'])
+            ->mediaGate('manage-media');
     }
 
     protected function pages(): array

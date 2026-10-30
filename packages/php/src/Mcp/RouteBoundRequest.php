@@ -70,6 +70,9 @@ final class RouteBoundRequest
         $route->bind($request);
         $request->setRouteResolver(static fn () => $route);
         $request->setUserResolver($outer->getUserResolver());
+        // One store for the whole MCP call: upload paths RemoteFiles issued must be
+        // seen by IssuedUploadPath, and form effects are read back from its flash.
+        $request->setLaravelSession(app('session')->driver());
 
         return $request;
     }
