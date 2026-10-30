@@ -40,8 +40,8 @@ final class RemoteFiles
     /** Whether $value is a `{url: "https://…"}` reference (media: plus `alt`, `name`). */
     public static function isRemote(mixed $value): bool
     {
-        return is_array($value) && is_string($value['url'] ?? null)
-            && array_diff(array_keys($value), self::KEYS) === [];
+        return is_array($value) && array_diff(array_keys($value), self::KEYS) === []
+            && array_all($value, static fn (mixed $part): bool => is_string($part)) && isset($value['url']);
     }
 
     /** Whether $field's value may be sent as a remote reference. */

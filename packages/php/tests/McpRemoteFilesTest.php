@@ -187,3 +187,9 @@ it('imports a media {url} on a panel with no mediaGate(), as its media endpoints
 
     expect(RemoteFiles::accepts(MediaPicker::make('logo')))->toBeTrue();
 });
+
+it('treats a {url} with a non-string name or alt as an ordinary value', function (mixed $name): void {
+    expect(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'name' => 'a.png']))->toBeTrue()
+        ->and(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'name' => $name]))->toBeFalse()
+        ->and(RemoteFiles::isRemote(['url' => 'https://8.8.8.8/a.png', 'alt' => $name]))->toBeFalse();
+})->with([5, [['x']], null]);
