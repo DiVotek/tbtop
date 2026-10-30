@@ -73,15 +73,13 @@ function placed(value: unknown, multiple: boolean, translatable: boolean): boole
 	if (isRemote(value)) {
 		return !multiple;
 	}
-	if (value === null || typeof value !== "object") {
+	if (value === null || typeof value !== "object" || references(value) === 0) {
 		return true;
 	}
 	if (Array.isArray(value)) {
 		return multiple && value.every((entry) => isRemote(entry) || references(entry) === 0);
 	}
-	return translatable
-		? Object.values(value).every((entry) => placed(entry, multiple, false))
-		: references(value) === 0;
+	return translatable && Object.values(value).every((entry) => placed(entry, multiple, false));
 }
 
 /** The remote references in `value`: itself, or those in its list or locale map. */
