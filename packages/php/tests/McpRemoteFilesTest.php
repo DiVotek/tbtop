@@ -2,10 +2,12 @@
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Fields\MediaPicker;
 use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Mcp\AgentError;
+use Tbtop\Admin\Mcp\FormArguments;
 use Tbtop\Admin\Mcp\RemoteFiles;
 use Tbtop\Admin\Media\Models\Media;
 use Tbtop\Admin\Panels\CurrentPanel;
@@ -154,4 +156,14 @@ it('refuses alt on an upload {url}, which only media stores', function (): void 
     expect(fn () => RemoteFiles::fetchInto($form, ['file' => ['url' => 'https://8.8.8.8/a.png', 'alt' => 'A']]))
         ->toThrow(AgentError::class, 'file: alt applies to media fields only; send an upload as {url} (optionally name).');
     Http::assertNothingSent();
+});
+
+it('keeps a file field inside a richtext embed excluded: fetchInto only walks the form fields', function (): void {
+    $s = new S;
+    $form = $s->form('doc', [$s->richtext('body')->embeds([Embed::make('figure')->fields([$s->upload('image'), $s->text('caption')])])]);
+
+    $embed = FormArguments::describe($form)['fields'][0]['embeds'][0];
+
+    expect(array_column($embed['fields'], 'name'))->toBe(['caption'])
+        ->and($embed['excludedFields'])->toBe([['name' => 'image', 'kind' => 'upload', 'reason' => 'a file inside a richtext embed cannot be sent as {url} over MCP']]);
 });

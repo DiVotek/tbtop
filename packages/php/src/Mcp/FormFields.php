@@ -21,16 +21,31 @@ final class FormFields
         return in_array($field->toNode()->kind, self::FILE_KINDS, true) && ! RemoteFiles::accepts($field);
     }
 
+    /** Why $field cannot be filled over MCP, or null when it can. */
+    private static function exclusionReason(Field $field, bool $embedded): ?string
+    {
+        if ($embedded && in_array($field->toNode()->kind, self::FILE_KINDS, true)) {
+            return 'a file inside a richtext embed cannot be sent as {url} over MCP';
+        }
+
+        return self::excludes($field)
+            ? 'the media library is closed to this user (mediaGate), so this field cannot be filled over MCP'
+            : null;
+    }
+
     /**
      * $fields as RuleWalker::fieldsByKey() keys them. An excluded field counts as
      * required only when its row must exist: at the top level, or in a container
      * that is required or has a minimum row count.
      *
+     * $embedded: the fields of a richtext embed's `data`, where RemoteFiles fetches
+     * nothing, so every file field there is excluded.
+     *
      * @param  array<string, Field>  $fields
      * @param  array<string, list<mixed>>  $rules
      * @return array{fields: list<array<string, mixed>>, excluded: list<array<string, string>>, required: list<array<string, string>>}
      */
-    public static function describe(array $fields, array $rules): array
+    public static function describe(array $fields, array $rules, bool $embedded = false): array
     {
         $out = ['fields' => [], 'excluded' => [], 'required' => []];
         $rowMandatory = [];
@@ -38,8 +53,9 @@ final class FormFields
             $parent = str_contains($name, '.*.') ? substr($name, 0, (int) strrpos($name, '.*.')) : null;
             $mandatory = $parent === null || ($rowMandatory[$parent] ?? false);
             $node = $field->toNode();
-            if (self::excludes($field)) {
-                $out['excluded'][] = ['name' => $name, 'kind' => $node->kind, 'reason' => 'the media library is closed to this user (mediaGate), so this field cannot be filled over MCP'];
+            $reason = self::exclusionReason($field, $embedded);
+            if ($reason !== null) {
+                $out['excluded'][] = ['name' => $name, 'kind' => $node->kind, 'reason' => $reason];
                 if ($mandatory && self::isRequired($name, $rules)) {
                     $out['required'][] = ['name' => $name, 'kind' => $node->kind];
                 }
@@ -151,7 +167,7 @@ final class FormFields
         $embeds = [];
         foreach ($field->getEmbeds() as $embed) {
             $fields = $embed->includedFields();
-            $described = self::describe(RuleWalker::fieldsByKey($fields), RuleWalker::collect($fields));
+            $described = self::describe(RuleWalker::fieldsByKey($fields), RuleWalker::collect($fields), embedded: true);
             $embeds[] = array_filter([
                 'kind' => $embed->kind,
                 'label' => $embed->labelText(),
