@@ -3,10 +3,13 @@
 namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
+use InvalidArgumentException;
+use LogicException;
 use Tbtop\Admin\Dsl\Concerns\HasAffixes;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
 use Tbtop\Admin\Dsl\Concerns\HasDependencies;
 use Tbtop\Admin\Dsl\Concerns\HasServerQuery;
+use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\RelationSearchLimit;
 use Tbtop\Admin\Dsl\S;
 
@@ -76,6 +79,13 @@ final class Relation extends Field
      */
     public function creatable(array $fields, ?callable $using = null): static
     {
+        foreach ($fields as $field) {
+            // The endpoint reads the dependsOn() parents from the body's `deps` key.
+            if ($field->name === 'deps') {
+                throw new InvalidArgumentException("Relation \"{$this->name}\": a creatable() field cannot be named \"deps\".");
+            }
+        }
+
         $this->creatableUsing = $using === null ? null : Closure::fromCallable($using);
         $this->creatableFieldList = $fields;
 
@@ -107,5 +117,17 @@ final class Relation extends Field
     public function creatableFields(): array
     {
         return $this->creatableFieldList;
+    }
+
+    /** A dependent relation without a creatable() closure fails when the page renders, not on submit. */
+    public function toNode(): Node
+    {
+        if ($this->isCreatable() && $this->creatableUsing === null && $this->dependsOnFields() !== []) {
+            throw new LogicException(
+                "Relation field \"{$this->name}\" uses dependsOn(): pass creatable() a closure that sets the parent.",
+            );
+        }
+
+        return parent::toNode();
     }
 }

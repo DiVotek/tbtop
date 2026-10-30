@@ -71,3 +71,17 @@ it('Relation create: serializes the mini-form and never the closure', function (
     expect($node['options']['create']['fields'][0])->toMatchArray(['kind' => 'text', 'name' => 'name'])
         ->and(json_encode($node))->not->toContain('Closure');
 });
+
+it('Relation create: a dependent relation without a closure fails when it renders', function (): void {
+    $s = new S;
+    $s->relation('city_id')
+        ->query(fn () => AuthorModel::query())
+        ->creatable([$s->text('name')])
+        ->dependsOn('country_id')
+        ->toNode();
+})->throws(LogicException::class, 'pass creatable() a closure that sets the parent');
+
+it('Relation create: a mini-form field cannot be named deps', function (): void {
+    $s = new S;
+    $s->relation('author_id')->creatable([$s->text('deps')]);
+})->throws(InvalidArgumentException::class, 'cannot be named "deps"');
