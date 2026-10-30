@@ -24,12 +24,7 @@ final class FormArguments
      */
     public static function describe(FormBuilder $form, bool $withValues = false): array
     {
-        [$described] = self::analyse($form);
-        if (! $withValues) {
-            unset($described['values']);
-        }
-
-        return $described;
+        return self::analyse($form, $withValues)[0];
     }
 
     /**
@@ -59,12 +54,15 @@ final class FormArguments
      *
      * @return array{0: array{form: string, fields: list<array<string, mixed>>, excludedFields?: list<array<string, string>>, values?: array<string, mixed>}, 1: list<array<string, string>>}
      */
-    private static function analyse(FormBuilder $form): array
+    private static function analyse(FormBuilder $form, bool $withValues = false): array
     {
         $described = FormFields::describe(RuleWalker::fieldsByKey($form->getFields()), $form->collectRules());
         $out = ['form' => $form->name, 'fields' => $described['fields']];
         if ($described['excluded'] !== []) {
             $out['excludedFields'] = $described['excluded'];
+        }
+        if (! $withValues) {
+            return [$out, $described['required']];
         }
         $shown = array_column(array_filter($described['fields'], static fn (array $f): bool => $f['kind'] !== 'password'), 'name');
         $values = array_intersect_key($form->recordData(), array_flip($shown));
