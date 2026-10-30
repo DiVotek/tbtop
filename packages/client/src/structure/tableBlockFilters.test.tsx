@@ -24,6 +24,8 @@ describe("TableToolbar: search", () => {
 		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
 		const input = await findByTestId("table-search-input");
 		expect(input).toBeTruthy();
+		// Named for assistive tech, not by the placeholder alone.
+		expect(input.getAttribute("aria-label")).toBe("Search…");
 	});
 
 	test("TableToolbar: search input absent when no searchable option", async () => {

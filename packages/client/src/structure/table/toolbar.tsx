@@ -133,6 +133,7 @@ export function TableToolbar(props: TableToolbarProps) {
 	// if none are marked toggleable (backward compat with old wire format).
 	const toggleableCols = columns.filter((c) => c.toggleable !== false);
 	const dropdownCols = toggleableCols.length > 0 ? toggleableCols : columns;
+	const searchPlaceholder = props.searchPlaceholder ?? t("table.search.placeholder");
 
 	return (
 		<div className="flex items-end gap-2 flex-wrap" data-testid="table-toolbar">
@@ -140,7 +141,9 @@ export function TableToolbar(props: TableToolbarProps) {
 				<Input
 					type="search"
 					defaultValue={props.searchValue}
-					placeholder={props.searchPlaceholder ?? t("table.search.placeholder")}
+					placeholder={searchPlaceholder}
+					// A placeholder vanishes on input and is no accessible name on its own.
+					aria-label={searchPlaceholder}
 					className="w-full sm:max-w-xs"
 					data-testid="table-search-input"
 					onChange={(e) => handleSearchChange(e.target.value)}
