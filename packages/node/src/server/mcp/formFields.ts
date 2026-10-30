@@ -176,7 +176,7 @@ async function richtext(field: Richtext): Promise<Described> {
 				label: embed.labelText(),
 				fields: described.fields,
 				excludedFields: described.excluded.map((entry) =>
-					FILE_KINDS.includes(entry.kind) ? { ...entry, reason: EMBED_FILE } : entry,
+					entry.kind === "upload" ? { ...entry, reason: EMBED_FILE } : entry,
 				),
 			});
 		}),
