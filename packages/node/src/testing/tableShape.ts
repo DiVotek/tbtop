@@ -6,12 +6,21 @@ type Column = { name?: string; sortable?: boolean; searchable?: boolean };
 
 /** What a table node declares: the columns, filters, tabs and sorts a query may use. */
 export class TableShape {
+	/** The page did not render, so the declarations are unknown: queries go out unchecked. */
+	private readonly blind: boolean;
+
 	constructor(
 		private readonly name: string,
 		private readonly node: wire.WireNode,
-	) {}
+		rendered: boolean,
+	) {
+		this.blind = !rendered;
+	}
 
 	searchable(): void {
+		if (this.blind) {
+			return;
+		}
 		const columns = this.columns().filter((c) => c.searchable === true);
 		check(
 			Boolean(this.options().searchable) || columns.length > 0,
@@ -20,6 +29,9 @@ export class TableShape {
 	}
 
 	filter(name: string): void {
+		if (this.blind) {
+			return;
+		}
 		const filters = wire.nodes([this.options().filters ?? []]);
 		if (!filters.some((e) => e.node.name === name)) {
 			fail(
@@ -29,6 +41,9 @@ export class TableShape {
 	}
 
 	sortable(column: string): void {
+		if (this.blind) {
+			return;
+		}
 		this.column(column);
 		const sortable = this.columns().some((c) => c.name === column && c.sortable === true);
 		const fallback =
@@ -41,6 +56,9 @@ export class TableShape {
 	}
 
 	tab(name: string): void {
+		if (this.blind) {
+			return;
+		}
 		const tabs = ((this.options().tabs ?? []) as { name?: string }[]).map((t) => t.name);
 		if (!tabs.includes(name)) {
 			fail(
@@ -51,6 +69,9 @@ export class TableShape {
 
 	/** The column is on the wire. */
 	column(name: string): void {
+		if (this.blind) {
+			return;
+		}
 		if (!this.columnNames().includes(name)) {
 			fail(
 				`Table [${this.name}] has no visible column [${name}]. Columns: ${this.columnNames().join(", ")}.`,

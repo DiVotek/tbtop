@@ -175,6 +175,13 @@ describe("testing API: the page", () => {
 		viewer.assertForbidden();
 		(await viewer.form("post").submit()).assertForbidden();
 		(await viewer.table("posts").fetch()).assertForbidden();
+		const narrowed = viewer
+			.table("posts")
+			.search("a")
+			.tab("live")
+			.sort("title")
+			.filter("published", "1");
+		(await narrowed.fetch()).assertForbidden();
 		(await viewer.callAction("quickSave")).assertForbidden();
 	});
 

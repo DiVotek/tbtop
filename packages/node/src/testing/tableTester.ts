@@ -25,7 +25,7 @@ export class TableTester {
 		private readonly name: string,
 		private readonly node: wire.WireNode,
 	) {
-		this.shape = new TableShape(name, node);
+		this.shape = new TableShape(name, node, visit.rendered);
 	}
 
 	/** Fetch the rows for the current query. */
