@@ -54,6 +54,10 @@ class RelationSearchPage extends Page
                             'name' => $validated['name'].' #'.($deps['author_id'] ?? '-'),
                         ]),
                     ),
+                $s->relation('dependent_default_id')
+                    ->dependsOn('author_id')
+                    ->query(fn () => AuthorModel::query())
+                    ->creatable([$s->text('name')]),
                 $s->relation('broken_author_id')
                     ->query(fn () => AuthorModel::query())
                     ->creatable([$s->text('name')], fn () => ['value' => '1']),

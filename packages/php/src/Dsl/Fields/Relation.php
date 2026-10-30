@@ -69,8 +69,8 @@ final class Relation extends Field
      * $fields: the mini-form; each field's own rules validate it server-side.
      * $using: fn(array $validated, array $deps): Model — omit it to fill a new
      *         instance of the query() model with the validated data and save it
-     *         (its $fillable applies). Pass it when query() is scoped, e.g. by a
-     *         dependsOn() parent, so the new row lands inside that scope.
+     *         (its $fillable applies). Required with dependsOn(): the closure
+     *         sets the parent key so the new row lands inside the query() scope.
      *
      * @param  list<Field>  $fields
      */

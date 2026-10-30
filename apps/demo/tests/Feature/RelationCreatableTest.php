@@ -49,4 +49,11 @@ class RelationCreatableTest extends TestCase
 
         $this->assertSame($country->id, City::query()->where('name', 'Poseidonia')->value('country_id'));
     }
+
+    public function test_a_city_without_a_country_is_rejected(): void
+    {
+        $this->postJson(self::BASE.'/city_id', ['name' => 'Nowhere'])->assertStatus(422);
+
+        $this->assertFalse(City::query()->where('name', 'Nowhere')->exists());
+    }
 }

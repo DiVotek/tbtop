@@ -180,7 +180,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 
 | Method | What it does |
 |---|---|
-| `creatable(array $fields, ?callable $using = null): static` | Create a related record from the picker: a "+ Create" link under the field opens a mini-form, and the saved record becomes the field's value. $fields: the mini-form; each field's own rules validate it server-side. $using: fn(array $validated, array $deps): Model — omit it to fill a new instance of the query() model with the validated data and save it (its $fillable applies). Pass it when query() is scoped, e.g. by a dependsOn() parent, so the new row lands inside that scope. |
+| `creatable(array $fields, ?callable $using = null): static` | Create a related record from the picker: a "+ Create" link under the field opens a mini-form, and the saved record becomes the field's value. $fields: the mini-form; each field's own rules validate it server-side. $using: fn(array $validated, array $deps): Model — omit it to fill a new instance of the query() model with the validated data and save it (its $fillable applies). Required with dependsOn(): the closure sets the parent key so the new row lands inside the query() scope. |
 | `dependsOn(array\|string $fields): static` | Declare the parent field(s) whose value this field's options depend on. Their current values reach the query() closure as ['field' => value]. |
 | `exists(string $table, ?string $column = null): static` | Value must exist in $table.$column (defaults column to field name). |
 | `ignore(string\|int $id, string $idColumn = 'id'): static` | Skip the given record when checking uniqueness (edit pages). Appends ",{id},{idColumn}" to the most recent unique rule. |

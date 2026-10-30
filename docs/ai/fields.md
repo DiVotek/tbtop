@@ -298,7 +298,8 @@ The new record becomes the field's value and its label shows at once.
 Without `$using`, the endpoint fills a new instance of the `query()` model with the
 validated data and saves it, so the model's `$fillable` must cover the mini-form fields.
 Pass `$using` — `fn(array $validated, array $deps): Model` — when the new row needs more
-than the form gives it, typically the scope of a `dependsOn()` parent. `$deps` holds only
+than the form gives it. A `dependsOn()` relation requires it (the default path throws a
+`LogicException`), because only the closure can set the parent key. `$deps` holds only
 the declared parents, and the closure must return the created model (anything else is a
 server error); its `labelKey()` column becomes the label.
 

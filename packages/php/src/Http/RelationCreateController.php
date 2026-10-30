@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use LogicException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tbtop\Admin\Dsl\Fields\Relation;
 use Tbtop\Admin\Dsl\RuleWalker;
@@ -73,6 +74,14 @@ final class RelationCreateController
      */
     private static function fillAndSave(Relation $field, array $validated, array $deps): Model
     {
+        // A dependent query is scoped by its parents, and a bare fill would
+        // save the row outside that scope; only the author knows the parent key.
+        if ($field->dependsOnFields() !== []) {
+            throw new LogicException(
+                "Relation field \"{$field->name}\" uses dependsOn(): pass creatable() a closure that sets the parent.",
+            );
+        }
+
         $query = $field->queryClosure();
         // findRelationField() only returns a field that has a query closure.
         assert($query instanceof Closure);
