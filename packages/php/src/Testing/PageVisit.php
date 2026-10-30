@@ -146,6 +146,13 @@ final class PageVisit
             Assert::fail($this->missing('Field', $name, Wire::fields($this->trees())));
         }
 
+        // A page form's field wins over a modal form's field of the same name.
+        foreach ($found as $entry) {
+            if ($entry['modal'] === null) {
+                return $entry;
+            }
+        }
+
         return $found[0];
     }
 
