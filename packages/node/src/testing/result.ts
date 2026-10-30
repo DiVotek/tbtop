@@ -49,13 +49,12 @@ export class Result {
 		return this;
 	}
 
-	/** Validation passed — or, given field names, none of these fields failed. */
+	/** Validation passed — or, given field names, none of these fields failed. A 403, 404 or 5xx fails it. */
 	assertHasNoErrors(keys: string | string[] = []): this {
 		const { errors, subject, response } = this.init;
-		check(
-			response.status < 500,
-			`${subject} failed with ${response.status}: ${response.text.slice(0, 500)}`,
-		);
+		// A refused or failed call did not go through; 422 is the validation answer.
+		const failed = response.status >= 400 && response.status !== 422;
+		check(!failed, `${subject} failed with ${response.status}: ${response.text.slice(0, 500)}`);
 		const fields = [keys].flat();
 		if (fields.length === 0) {
 			check(

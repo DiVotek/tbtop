@@ -174,6 +174,8 @@ describe("testing API: the page", () => {
 		const viewer = await t.page(testingPage, { post: 1 }, { as: { id: 3, role: "viewer" } });
 		viewer.assertForbidden();
 		(await viewer.form("post").submit()).assertForbidden();
+		const refused = await viewer.form("post").submit();
+		expect(() => refused.assertHasNoErrors()).toThrow("failed with 403");
 		(await viewer.table("posts").fetch()).assertForbidden();
 		const narrowed = viewer
 			.table("posts")
