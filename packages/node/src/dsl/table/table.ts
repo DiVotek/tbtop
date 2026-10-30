@@ -181,7 +181,8 @@ export class TableBuilder<Q = unknown> {
 	}
 
 	/**
-	 * Page without a total: no count() query, only previous/next in the footer.
+	 * Page without a total: no count() query. The footer shows previous/next,
+	 * the current "Page N" and the per-page selector, with no "X–Y of Z" range.
 	 * For large tables where count() is the slow query; tab counts still run.
 	 */
 	simplePagination(value = true): this {
