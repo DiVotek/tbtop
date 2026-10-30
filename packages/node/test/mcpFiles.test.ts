@@ -42,6 +42,16 @@ const filesPage = definePage({
 			}),
 });
 
+const docsPage = definePage({
+	path: "docs",
+	title: "Docs",
+	view: (s) =>
+		s.form("doc", [s.upload("file").translatable()]).onSubmit(({ form }) => {
+			ran = form;
+			return Effects.make().notify("Saved");
+		}),
+});
+
 /** A stand-in for the host's guarded fetch: one PNG, a 404, a too-large body and a non-image. */
 async function fetchRemote(url: string): Promise<Response> {
 	fetched.push(url);
@@ -72,7 +82,7 @@ function adminWith(remote: boolean) {
 	return createAdmin({
 		allowGuests: true,
 		prefix: "/admin",
-		pages: [filesPage],
+		pages: [filesPage, docsPage],
 		disks: { public: disk },
 		mcp: {
 			authenticate: () => ({ name: "agent" }),
@@ -234,6 +244,17 @@ describe("MCP upload fields by URL", () => {
 				"sections.1.image: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.",
 			);
 		}
+		expect(fetched).toEqual([]);
+	});
+
+	test("a translatable file field takes {url} per locale only", async () => {
+		const result = await call(withFetch, "execute", {
+			id: "docs:doc",
+			form: { file: { url: "https://cdn.example/a.png" } },
+		});
+		expect(result.data.message).toBe(
+			"file: send {url} as the value, in a list when the field is multiple, or per locale when it is translatable.",
+		);
 		expect(fetched).toEqual([]);
 	});
 });

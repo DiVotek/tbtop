@@ -71,7 +71,7 @@ function assertPlaced(at: Target, value: unknown): void {
 /** Whether every `{url}` in `value` is the value, a list entry (multiple) or a locale's value (translatable). */
 function placed(value: unknown, multiple: boolean, translatable: boolean): boolean {
 	if (isRemote(value)) {
-		return !multiple;
+		return !(multiple || translatable);
 	}
 	if (value === null || typeof value !== "object" || references(value) === 0) {
 		return true;
