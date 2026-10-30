@@ -317,7 +317,10 @@ $s->relation('city_id')->label('City')
     ->query(fn (array $deps) => City::where('country_id', $deps['country_id'] ?? 0))
     ->creatable(
         [$s->text('name')->label('Name')->required()],
-        fn (array $data, array $deps) => City::create([...$data, 'country_id' => $deps['country_id']]),
+        fn (array $data, array $deps) => City::create([
+            ...$data,
+            'country_id' => $deps['country_id'] ?? abort(422, 'Pick a country first.'),
+        ]),
     ),
 ```
 

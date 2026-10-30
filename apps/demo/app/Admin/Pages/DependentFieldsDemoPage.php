@@ -64,7 +64,7 @@ class DependentFieldsDemoPage extends Page
                     [$s->text('name')->label('Name')->required()->rules('max:255')],
                     fn (array $validated, array $deps) => City::create([
                         ...$validated,
-                        'country_id' => $deps['country_id'],
+                        'country_id' => $deps['country_id'] ?? abort(422, 'Pick a country first.'),
                     ]),
                 )
                 ->whenParentEmpty('disabled')
