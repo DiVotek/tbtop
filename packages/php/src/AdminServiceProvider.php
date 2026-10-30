@@ -18,6 +18,7 @@ use Tbtop\Admin\Commands\MakePageCommand;
 use Tbtop\Admin\Commands\MakeResourceCommand;
 use Tbtop\Admin\Commands\RegenerateMediaCommand;
 use Tbtop\Admin\Http\PanelErrorPage;
+use Tbtop\Admin\Mcp\CallSession;
 use Tbtop\Admin\Panels\CurrentPanel;
 use Tbtop\Admin\Panels\PanelRegistry;
 
@@ -48,6 +49,7 @@ class AdminServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->app->singleton(PanelRegistry::class, static fn (): PanelRegistry => PanelRegistry::fromConfig());
+        $this->app->scoped(CallSession::class, static fn (): CallSession => CallSession::make());
     }
 
     public function packageBooted(): void

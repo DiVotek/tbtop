@@ -12,7 +12,7 @@ use Tbtop\Admin\Dsl\RuleWalker;
  */
 final class FormArguments
 {
-    private const ALL_EXCLUDED = 'every field of its form is one MCP cannot fill (upload/media)';
+    private const ALL_EXCLUDED = 'every field of its form is a file field MCP cannot fill (see its excludedFields)';
 
     /**
      * `values` (only with $withValues) are the form's current data as the UI

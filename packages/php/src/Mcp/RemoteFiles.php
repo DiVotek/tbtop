@@ -33,6 +33,9 @@ final class RemoteFiles
     /** Keys a remote reference may carry; any other key makes the value an ordinary one. */
     private const KEYS = ['url', 'alt', 'name'];
 
+    /** Downloads one execute() may trigger, counted before the first one starts. */
+    private const MAX_PER_CALL = 20;
+
     /** Whether $value is a `{url: "https://…"}` reference (media: plus `alt`, `name`). */
     public static function isRemote(mixed $value): bool
     {
@@ -56,16 +59,33 @@ final class RemoteFiles
      */
     public static function fetchInto(FormBuilder $form, array $input): array
     {
+        $sent = [];
         foreach (RuleWalker::fieldsByKey($form->getFields()) as $key => $field) {
-            if (! ($field instanceof Upload || $field instanceof MediaPicker) || ! self::accepts($field)) {
-                continue;
+            if (($field instanceof Upload || $field instanceof MediaPicker) && self::accepts($field)) {
+                foreach (FormInput::sent($key, $input) as $path => $value) {
+                    $sent[] = [$field, $path, $value];
+                }
             }
-            foreach (FormInput::sent($key, $input) as $path => $value) {
-                data_set($input, $path, self::resolve($field, $path, $value));
-            }
+        }
+        $count = array_sum(array_map(static fn (array $entry): int => self::count($entry[2]), $sent));
+        if ($count > self::MAX_PER_CALL) {
+            throw new AgentError('At most '.self::MAX_PER_CALL." files may be sent as {url} in one call; this one has {$count}.");
+        }
+        foreach ($sent as [$field, $path, $value]) {
+            data_set($input, $path, self::resolve($field, $path, $value));
         }
 
         return $input;
+    }
+
+    /** The remote references in $value: itself, or those in its list or locale map. */
+    private static function count(mixed $value): int
+    {
+        if (self::isRemote($value)) {
+            return 1;
+        }
+
+        return is_array($value) ? array_sum(array_map(self::count(...), $value)) : 0;
     }
 
     /** $value with its remote references stored: a single one, a list of them, or one per locale. */
@@ -141,11 +161,11 @@ final class RemoteFiles
         return $gate === null || Gate::allows($gate);
     }
 
-    /** A request on the store the route-bound requests share (RouteBoundRequest), for IssuedUploadPath. */
+    /** A request on the store the route-bound requests share (CallSession), for IssuedUploadPath. */
     private static function sessionRequest(): Request
     {
         $request = Request::create('/');
-        $request->setLaravelSession(app('session')->driver());
+        $request->setLaravelSession(CallSession::store());
 
         return $request;
     }

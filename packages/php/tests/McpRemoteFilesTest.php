@@ -107,3 +107,12 @@ it('refuses media {url} when no panel is bound, even with the gate open', functi
     expect(RemoteFiles::accepts(MediaPicker::make('logo')))->toBeFalse()
         ->and(RemoteFiles::accepts(Upload::make('cover')))->toBeTrue();
 });
+
+it('refuses more than 20 {url} references in one call before fetching any', function (): void {
+    McpHttpTestCase::$mediaAllowed = true;
+    $images = array_fill(0, 21, ['url' => 'https://8.8.8.8/a.png']);
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-edges-page:gallery', 'form' => ['heading' => 'Trip', 'images' => $images]]));
+
+    expect($result['json']['message'])->toBe('At most 20 files may be sent as {url} in one call; this one has 21.');
+    Http::assertNothingSent();
+});

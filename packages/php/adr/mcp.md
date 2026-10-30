@@ -71,8 +71,9 @@ domain: mcp
 - **Files arrive as `{url}`.** An `upload`/`media` value may be `{url}` (media: `alt`,
   `name`); `RemoteFiles` fetches it before validation through `UrlFetcher` (SSRF guard,
   size cap, mime from content) and stores it as the browser path would: an upload through
-  the field's saver with its path issued to the call's session, media through
-  `MediaIngest::import()` behind `mediaGate()`. Base64 content was rejected: it puts the
+  the field's saver with its path issued to the call's session (`CallSession`: in memory,
+  request-scoped, never the app's store), media through `MediaIngest::import()` behind
+  `mediaGate()`; at most 20 `{url}` per call, counted before any fetch. Base64 content was rejected: it puts the
   file in the agent's context; a URL keeps it out.
   > Replaces previous decision (see git history): upload and media fields were excluded.
 - **A form is unfillable when every field is excluded or a required one is.** Required is
