@@ -75,14 +75,6 @@ None open.
   node never fires (static `hidden: true` works). Needs a page-level condition context
   (record + user) before conditions are promised outside forms.
 
-## Modal
-
-- **Footer actions slot** — `ModalShell` supports a sticky footer (every built-in dialog
-  uses it) but the DSL modal renders one body only; an `actionsRow` at the end of the body
-  scrolls with the content. Design: `ActionBuilder::footer([...])` → `spec.footer`, the
-  footer must render inside `ModalProvider`/`ModalDataProvider`. Promote when a consumer
-  hits the short-viewport case again.
-
 ## DX
 
 - **Consumer testing kit** — Pest/PHPUnit helpers for host apps to test their own pages
