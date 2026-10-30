@@ -141,10 +141,13 @@ async function fetchFile(at: Target, ref: Reference, maxSize: number): Promise<F
 	if (url === null) {
 		throw refuse("blocked_url");
 	}
-	const response = await at.env.fetchRemote(url.href).catch((error: unknown) => {
-		at.env.report(error);
-		return null;
-	});
+	// Through a promise step, so a fetchRemote that throws synchronously is reported too.
+	const response = await Promise.resolve(url.href)
+		.then(at.env.fetchRemote)
+		.catch((error: unknown) => {
+			at.env.report(error);
+			return null;
+		});
 	if (response?.ok !== true) {
 		await response?.body?.cancel().catch(() => null);
 		throw refuse("download_failed");

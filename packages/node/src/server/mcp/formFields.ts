@@ -87,9 +87,7 @@ export async function describeFields(fields: Record<string, Field>, rules: Rules
 			mandatory && ((rules[name] ?? []).includes("required") || minItems > 0),
 		);
 		const container = Object.keys(fields).some((key) => key.startsWith(`${name}.*.`));
-		out.fields.push(
-			await describeField(field, { name, node, rules, nested: !container, files }),
-		);
+		out.fields.push(await describeField(field, { name, node, rules, nested: !container }));
 	}
 	return out;
 }
@@ -116,7 +114,7 @@ function isRequired(name: string, rules: Rules): boolean {
 
 async function describeField(
 	field: Field,
-	at: { name: string; node: WireNode; rules: Rules; nested: boolean; files: boolean },
+	at: { name: string; node: WireNode; rules: Rules; nested: boolean },
 ): Promise<Described> {
 	const { name, node, rules } = at;
 	const { options } = node;
@@ -137,7 +135,7 @@ async function describeField(
 			...file(node.kind, options),
 		}),
 		...(field.isTranslatableField() ? { translatable: true } : {}),
-		...(field instanceof Richtext ? await richtext(field, at.files) : {}),
+		...(field instanceof Richtext ? await richtext(field) : {}),
 	};
 }
 
@@ -158,20 +156,25 @@ function file(kind: string, options: Record<string, unknown>): Described {
 }
 
 /** The node types a document may hold, and each embed kind with the fields of its `data`. */
-async function richtext(field: Richtext, files: boolean): Promise<Described> {
+const EMBED_FILE = "a file inside a richtext embed cannot be sent as {url} over MCP";
+
+async function richtext(field: Richtext): Promise<Described> {
 	const embeds = await Promise.all(
 		field.getEmbeds().map(async (embed) => {
 			const children = embed.includedFields();
+			// fetchInto() walks only the form's own fields: a file in an embed stays excluded.
 			const described = await describeFields(
 				fieldsByKey(children),
 				collectRules(children),
-				files,
+				false,
 			);
 			return present({
 				kind: embed.kind,
 				label: embed.labelText(),
 				fields: described.fields,
-				excludedFields: described.excluded,
+				excludedFields: described.excluded.map((entry) =>
+					FILE_KINDS.includes(entry.kind) ? { ...entry, reason: EMBED_FILE } : entry,
+				),
 			});
 		}),
 	);

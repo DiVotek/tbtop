@@ -54,5 +54,5 @@ mcp: {
 The SSRF policy is the host's: refuse private and link-local ranges, pin the
 resolved address, do not follow redirects. A Worker's `fetch()` cannot pin
 DNS, so the runtime ships no guard of its own; without `fetchRemote` upload
-fields stay in `excludedFields`. Media fields are always excluded: the Node
+fields stay in `excludedFields`. So does a file field inside a richtext embed. Media fields are always excluded: the Node
 runtime has no media library to import into.

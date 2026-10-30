@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createAdmin, definePage, Effects, memoryDisk } from "../src";
+import { createAdmin, definePage, Effects, Embed, memoryDisk } from "../src";
 
 const PNG = new Uint8Array([
 	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52,
@@ -48,10 +48,17 @@ const docsPage = definePage({
 	path: "docs",
 	title: "Docs",
 	view: (s) =>
-		s.form("doc", [s.upload("file").translatable()]).onSubmit(({ form }) => {
-			ran = form;
-			return Effects.make().notify("Saved");
-		}),
+		s
+			.form("doc", [
+				s.upload("file").translatable(),
+				s
+					.richtext("body")
+					.embeds([Embed.make("figure").fields([s.upload("image"), s.text("caption")])]),
+			])
+			.onSubmit(({ form }) => {
+				ran = form;
+				return Effects.make().notify("Saved");
+			}),
 });
 
 /** A stand-in for the host's guarded fetch: one PNG, a 404, a too-large body and a non-image. */
@@ -86,6 +93,14 @@ async function fetchRemote(url: string): Promise<Response> {
 	return new Response(PNG, { headers: { "content-type": "image/png" } });
 }
 
+/** The host's hook as configured: a plain function that may throw before returning a promise. */
+function hostFetch(url: string): Promise<Response> {
+	if (url.endsWith("/sync.png")) {
+		throw new Error("refused synchronously");
+	}
+	return fetchRemote(url);
+}
+
 function adminWith(remote: boolean) {
 	return createAdmin({
 		allowGuests: true,
@@ -95,7 +110,7 @@ function adminWith(remote: boolean) {
 		mcp: {
 			authenticate: () => ({ name: "agent" }),
 			report: (error: unknown) => reported.push(error),
-			...(remote ? { fetchRemote } : {}),
+			...(remote ? { fetchRemote: hostFetch } : {}),
 		},
 	});
 }
@@ -277,5 +292,24 @@ describe("MCP upload fields by URL", () => {
 		});
 		expect(result.data.message).toBe("cover: Could not download the file from the given URL.");
 		expect(String(reported[0])).toContain("private address refused");
+	});
+
+	test("a fetchRemote that throws synchronously is reported the same way", async () => {
+		const result = await execute(withFetch, { cover: { url: "https://cdn.example/sync.png" } });
+		expect(result.data.message).toBe("cover: Could not download the file from the given URL.");
+		expect(String(reported[0])).toContain("refused synchronously");
+	});
+
+	test("a file field inside a richtext embed stays excluded: only form fields are fetched", async () => {
+		const { data } = await call(withFetch, "search", { page: "docs" });
+		const body = data.executables[0].fields.find((f: { name: string }) => f.name === "body");
+		expect(body.embeds[0].fields.map((f: { name: string }) => f.name)).toEqual(["caption"]);
+		expect(body.embeds[0].excludedFields).toEqual([
+			{
+				name: "image",
+				kind: "upload",
+				reason: "a file inside a richtext embed cannot be sent as {url} over MCP",
+			},
+		]);
 	});
 });
