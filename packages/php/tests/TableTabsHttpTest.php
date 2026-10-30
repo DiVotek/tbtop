@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Tbtop\Admin\Testing\TableTester;
+use Tbtop\Admin\Tests\Fixtures\TabbedPostsPage;
 
 beforeEach(function () {
     Schema::create('posts', function ($table): void {
@@ -17,40 +19,37 @@ beforeEach(function () {
     ]);
 });
 
-it('scopes rows to the requested tab', function () {
-    $rows = $this->getJson('/admin/tab-posts/tables/posts?tab=draft')->json('data.data');
+// Rows are addressed by key: Alpha 1, Beta 2, Gamma 3.
+function tabPosts(): TableTester
+{
+    return tbtop(TabbedPostsPage::class)->table('posts');
+}
 
-    expect(array_column($rows, 'title'))->toBe(['Beta']);
+it('scopes rows to the requested tab', function () {
+    tabPosts()->tab('draft')->assertCanSeeRecords([2])->assertCountRecords(1);
 });
 
 it('applies the first declared tab when no tab param is sent', function () {
-    $response = $this->getJson('/admin/tab-posts/tables/posts');
-
-    expect($response->json('data.total'))->toBe(2)
-        ->and(array_column($response->json('data.data'), 'title'))->toBe(['Alpha', 'Gamma']);
+    tabPosts()->assertTotal(2)->assertCanSeeRecords([1, 3], inOrder: true)->assertCanNotSeeRecords(2);
 });
 
 it('returns all rows for an unscoped tab', function () {
-    $response = $this->getJson('/admin/tab-posts/tables/posts?tab=all');
-
-    expect($response->json('data.total'))->toBe(3);
+    tabPosts()->tab('all')->assertTotal(3);
 });
 
 it('rejects an unknown tab name with 422', function () {
-    $this->getJson('/admin/tab-posts/tables/posts?tab=nope')->assertUnprocessable();
+    $this->getJson(tbtop(TabbedPostsPage::class)->url('table', 'posts').'?tab=nope')->assertUnprocessable();
 });
 
 it('composes the tab scope with runtime search', function () {
-    $rows = $this->getJson('/admin/tab-posts/tables/posts?tab=published&search=Alpha')->json('data.data');
-
-    expect(array_column($rows, 'title'))->toBe(['Alpha']);
+    tabPosts()->tab('published')->search('Alpha')->assertCanSeeRecords([1])->assertCountRecords(1);
 });
 
 it('reports counts for count-enabled tabs, unaffected by the active search', function () {
-    $response = $this->getJson('/admin/tab-posts/tables/posts?tab=published&search=Alpha');
-
-    expect($response->json('data.tabCounts'))->toBe(['published' => 2, 'draft' => 1])
-        ->and($response->json('data.total'))->toBe(1);
+    tabPosts()->tab('published')->search('Alpha')
+        ->assertTabCount('published', 2)
+        ->assertTabCount('draft', 1)
+        ->assertTotal(1);
 });
 
 it('simplePagination() pages without a total and reports hasMore from one extra row', function () {

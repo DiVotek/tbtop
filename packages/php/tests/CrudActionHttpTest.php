@@ -18,75 +18,58 @@ beforeEach(function (): void {
 });
 
 // ---------------------------------------------------------------------------
-// CreateAction — inner store action
+// CreateAction — a header modal: the tester opens it and submits through its
+// one form action (createStore), the way the client does.
 // ---------------------------------------------------------------------------
 
 it('CreateAction store creates the record and returns closeModal + refreshTable (void closure default tail)', function (): void {
-    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
-        'payload' => ['form' => ['title' => 'Third']],
-    ]);
+    tbtop(CrudActionsPage::class)
+        ->callAction('create', form: ['title' => 'Third'])
+        ->assertHasNoErrors()
+        ->assertModalClosed()
+        ->assertTableRefreshed()
+        ->assertNotified('Created');
 
-    $response->assertOk();
-    expect(CaPost::where('title', 'Third')->exists())->toBeTrue()
-        ->and($response->json('effects'))->toContain(['kind' => 'closeModal'])
-        ->and($response->json('effects'))->toContain(['kind' => 'refreshTable']);
+    expect(CaPost::where('title', 'Third')->exists())->toBeTrue();
 });
 
-// ---------------------------------------------------------------------------
-// CreateAction — Cancel action only closes the modal
-// ---------------------------------------------------------------------------
-
 it('CreateAction cancel action returns only closeModal and mutates nothing', function (): void {
-    $response = $this->postJson('/admin/crud-actions/actions/createCancel', [
-        'payload' => [],
-    ]);
+    $result = tbtop(CrudActionsPage::class)->openAction('create')->callAction('createCancel');
 
-    $response->assertOk();
-    expect($response->json('effects'))->toBe([['kind' => 'closeModal']])
+    expect($result->assertModalClosed()->effects())->toBe([['kind' => 'closeModal']])
         ->and(CaPost::count())->toBe(2);
 });
 
 // ---------------------------------------------------------------------------
-// DeleteAction — single row
+// DeleteAction
 // ---------------------------------------------------------------------------
 
 it('DeleteAction removes the row and returns refreshTable + notify (void closure default tail)', function (): void {
     $post = CaPost::where('title', 'First')->first();
 
-    $response = $this->postJson('/admin/crud-actions/actions/delete', [
-        'payload' => ['row' => ['id' => $post->id]],
-    ]);
+    tbtop(CrudActionsPage::class)->table()
+        ->callRowAction('delete', $post)
+        ->assertTableRefreshed()
+        ->assertNotified('Record deleted', 'success');
 
-    $response->assertOk();
-    expect(CaPost::find($post->id))->toBeNull()
-        ->and($response->json('effects'))->toContain(['kind' => 'refreshTable'])
-        ->and($response->json('effects'))->toContain(['kind' => 'notify', 'message' => 'Record deleted', 'level' => 'success']);
+    expect(CaPost::find($post->id))->toBeNull();
 });
 
-// ---------------------------------------------------------------------------
-// DeleteAction — bulk
-// ---------------------------------------------------------------------------
-
 it('DeleteAction bulk removes the selected rows', function (): void {
-    $ids = CaPost::pluck('id')->all();
+    tbtop(CrudActionsPage::class)->table()
+        ->callBulkAction('delete-selected', CaPost::all())
+        ->assertTableRefreshed();
 
-    $response = $this->postJson('/admin/crud-actions/actions/delete-selected', [
-        'payload' => ['selection' => $ids],
-    ]);
-
-    $response->assertOk();
-    expect(CaPost::count())->toBe(0)
-        ->and($response->json('effects'))->toContain(['kind' => 'refreshTable']);
+    expect(CaPost::count())->toBe(0);
 });
 
 it('DeleteAction bulk with an empty selection is a benign no-op', function (): void {
-    $response = $this->postJson('/admin/crud-actions/actions/delete-selected', [
-        'payload' => ['selection' => []],
-    ]);
+    tbtop(CrudActionsPage::class)->table()
+        ->callBulkAction('delete-selected', [])
+        ->assertOk()
+        ->assertNotified('Nothing selected.', 'warning');
 
-    $response->assertOk();
-    expect(CaPost::count())->toBe(2)
-        ->and($response->json('effects'))->toContain(['kind' => 'notify', 'message' => 'Nothing selected.', 'level' => 'warning']);
+    expect(CaPost::count())->toBe(2);
 });
 
 // ---------------------------------------------------------------------------
@@ -94,66 +77,45 @@ it('DeleteAction bulk with an empty selection is a benign no-op', function (): v
 // ---------------------------------------------------------------------------
 
 it('ReplicateAction clones the row, incrementing the count', function (): void {
-    $post = CaPost::where('title', 'First')->first();
+    tbtop(CrudActionsPage::class)->table()
+        ->callRowAction('replicate', CaPost::where('title', 'First')->first())
+        ->assertTableRefreshed();
 
-    $response = $this->postJson('/admin/crud-actions/actions/replicate', [
-        'payload' => ['row' => ['id' => $post->id]],
-    ]);
-
-    $response->assertOk();
     expect(CaPost::where('title', 'First')->count())->toBe(2)
-        ->and(CaPost::count())->toBe(3)
-        ->and($response->json('effects'))->toContain(['kind' => 'refreshTable']);
+        ->and(CaPost::count())->toBe(3);
 });
 
 // ---------------------------------------------------------------------------
-// EditAction — modal load endpoint
+// EditAction — a row modal with a query(): it opens prefilled, then saves
+// through editSave with the same row.
 // ---------------------------------------------------------------------------
 
 it('EditAction load endpoint returns the record only() keys for prefill', function (): void {
-    $post = CaPost::where('title', 'Second')->first();
-
-    $response = $this->postJson('/admin/crud-actions/actions/edit/data', [
-        'payload' => ['row' => ['id' => $post->id]],
-    ]);
-
-    $response->assertOk();
-    expect($response->json('data'))->toBe(['title' => 'Second', 'published' => true]);
+    tbtop(CrudActionsPage::class)->table()
+        ->openRowAction('edit', CaPost::where('title', 'Second')->first())
+        ->assertFormData(['title' => 'Second', 'published' => true]);
 });
-
-// ---------------------------------------------------------------------------
-// EditAction — inner save action
-// ---------------------------------------------------------------------------
 
 it('EditAction save updates the DB and returns closeModal + refreshTable (void closure default tail)', function (): void {
     $post = CaPost::where('title', 'First')->first();
 
-    $response = $this->postJson('/admin/crud-actions/actions/editSave', [
-        'payload' => [
-            'row' => ['id' => $post->id],
-            'form' => ['title' => 'Renamed', 'published' => true],
-        ],
-    ]);
+    tbtop(CrudActionsPage::class)->table()
+        ->openRowAction('edit', $post)
+        ->fill(['title' => 'Renamed', 'published' => true])
+        ->submit()
+        ->assertHasNoErrors()
+        ->assertModalClosed()
+        ->assertTableRefreshed();
 
-    $response->assertOk();
     $fresh = CaPost::find($post->id);
     expect($fresh->title)->toBe('Renamed')
-        ->and($fresh->published)->toBeTrue()
-        ->and($response->json('effects'))->toContain(['kind' => 'closeModal'])
-        ->and($response->json('effects'))->toContain(['kind' => 'refreshTable']);
+        ->and($fresh->published)->toBeTrue();
 });
 
-// ---------------------------------------------------------------------------
-// EditAction — Cancel action only closes the modal
-// ---------------------------------------------------------------------------
-
 it('EditAction cancel action returns only closeModal and mutates nothing', function (): void {
-    $response = $this->postJson('/admin/crud-actions/actions/editCancel', [
-        'payload' => [],
-    ]);
+    $result = tbtop(CrudActionsPage::class)->table()->openRowAction('edit', CaPost::first())->callAction('editCancel');
 
-    $response->assertOk();
-    expect($response->json('effects'))->toBe([['kind' => 'closeModal']])
+    expect($result->effects())->toBe([['kind' => 'closeModal']])
         ->and(CaPost::count())->toBe(2);
 });
 
@@ -164,43 +126,40 @@ it('EditAction cancel action returns only closeModal and mutates nothing', funct
 // ---------------------------------------------------------------------------
 
 it('rejects an action submission missing a key its form declares required', function (): void {
-    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
-        'payload' => ['form' => []],
-    ]);
+    tbtop(CrudActionsPage::class)
+        ->callAction('create', form: ['title' => null])
+        ->assertStatus(422)
+        ->assertHasErrors(['title' => 'required'])
+        ->assertNoEffects();
 
-    $response->assertStatus(422)
-        ->assertJsonValidationErrors('title');
     expect(CaPost::count())->toBe(2);
 });
 
 it('rejects an action submission violating a rule its form declares', function (): void {
-    $response = $this->postJson('/admin/crud-actions/actions/createStore', [
-        'payload' => ['form' => ['title' => str_repeat('x', 201)]],
-    ]);
+    tbtop(CrudActionsPage::class)
+        ->callAction('create', form: ['title' => str_repeat('x', 201)])
+        ->assertHasErrors(['title' => 'max:200']);
 
-    $response->assertStatus(422);
     expect(CaPost::count())->toBe(2);
 });
 
 it('validates a form nested in a row action', function (): void {
     $post = CaPost::where('title', 'First')->firstOrFail();
 
-    $response = $this->postJson('/admin/crud-actions/actions/editSave', [
-        'payload' => ['row' => ['id' => $post->id], 'form' => []],
-    ]);
+    tbtop(CrudActionsPage::class)->table()
+        ->openRowAction('edit', $post)
+        ->fill(['title' => ''])
+        ->submit()
+        ->assertHasErrors(['title' => 'required']);
 
-    $response->assertStatus(422)
-        ->assertJsonValidationErrors('title');
     expect($post->fresh()->title)->toBe('First');
 });
 
 it('validates a form nested in a bulk action', function (): void {
-    $response = $this->postJson('/admin/crud-actions/actions/bulkCreateStore', [
-        'payload' => ['form' => []],
-    ]);
+    tbtop(CrudActionsPage::class)->table()
+        ->callBulkAction('bulkCreate', [], form: ['title' => ''])
+        ->assertHasErrors('title');
 
-    $response->assertStatus(422)
-        ->assertJsonValidationErrors('title');
     expect(CaPost::count())->toBe(2);
 });
 
