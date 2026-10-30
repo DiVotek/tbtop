@@ -108,6 +108,7 @@ final class TableTester
     /** The column ships to the client: declared, and kept by when() and visibility checks. */
     public function assertColumnVisible(string $name): self
     {
+        $this->visit->props(); // a page that did not render shows no columns
         $this->column($name);
 
         return $this;
@@ -116,6 +117,7 @@ final class TableTester
     /** The column is off the wire: hidden(), visible() or never declared. */
     public function assertColumnHidden(string $name): self
     {
+        $this->visit->props();
         Assert::assertNotContains($name, $this->columnNames(), "Column [{$name}] is visible.");
 
         return $this;

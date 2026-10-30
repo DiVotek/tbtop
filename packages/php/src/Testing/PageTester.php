@@ -125,6 +125,7 @@ final class PageTester
     /** The action is on the wire — authorize() and when() kept it — and not hidden(). */
     public function assertActionVisible(string $name): self
     {
+        $this->visit->props(); // a page that did not render shows no actions
         Assert::assertNotTrue($this->visit->action($name)['node']['meta']['hidden'] ?? false, "Action [{$name}] is hidden.");
 
         return $this;

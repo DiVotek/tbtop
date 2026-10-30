@@ -46,6 +46,9 @@ it('answers 403 from the page gate, and still sends calls so the endpoints are c
     testingApiPage()->callAction('archive')->assertForbidden();
     testingApiPage()->table('posts')->assertForbidden();
     testingApiPage()->table('posts')->search('a')->tab('live')->sort('title')->filter('published', '1')->assertForbidden();
+
+    expect(fn () => testingApiPage()->assertActionVisible('archive'))->toThrow(AssertionFailedError::class, 'responded 403')
+        ->and(fn () => testingApiPage()->table('posts')->assertColumnHidden('title'))->toThrow(AssertionFailedError::class, 'responded 403');
 });
 
 it('names what is on the page when a name is wrong', function (): void {
