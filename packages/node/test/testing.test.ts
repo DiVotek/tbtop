@@ -204,7 +204,7 @@ describe("testing API: the page", () => {
 		(await testAdmin(signedIn, { as: editor }).page(testingPage, { post: 1 })).assertOk();
 		// An ordinary request is never marked: the resolver decides, and actAs is not public.
 		const plain = await signedIn.handle(new Request("http://localhost/admin/testing/1"));
-		expect(plain.status).toBe(200);
+		expect(plain?.status).toBe(200);
 		expect("actAs" in root).toBe(false);
 	});
 
