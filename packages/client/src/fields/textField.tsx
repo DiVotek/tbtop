@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { applyMask } from "../lib/mask";
 import type { CopyableConfig } from "../structure/copyable";
 import { CopyButton } from "../ui/copyButton";
@@ -10,6 +11,8 @@ import { MaskedInput } from "./maskedInput";
 
 interface TextOptions extends AffixOptions {
 	mask?: string;
+	/** Virtual keyboard hint; rendered as the `inputmode` attribute. */
+	inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
 	copyable?: CopyableConfig;
 	/** A string, or one per content locale. */
 	placeholder?: string | Record<string, string>;
@@ -35,6 +38,7 @@ export function TextForm({
 	const mask = options?.mask;
 	const copyable = options?.copyable;
 	const placeholder = useLocalePlaceholder(options?.placeholder);
+	const inputMode = options?.inputMode;
 	const inputClass = copyable ? "pr-9" : undefined;
 	const display = mask ? applyMask(asString(value), mask) : asString(value);
 
@@ -52,6 +56,7 @@ export function TextForm({
 			aria-describedby={describedBy}
 			className={inputClass}
 			placeholder={placeholder}
+			inputMode={inputMode}
 		/>
 	) : (
 		<Input
@@ -66,6 +71,7 @@ export function TextForm({
 			aria-describedby={describedBy}
 			className={inputClass}
 			placeholder={placeholder}
+			inputMode={inputMode}
 		/>
 	);
 

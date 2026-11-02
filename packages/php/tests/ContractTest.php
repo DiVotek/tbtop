@@ -139,6 +139,28 @@ it('copyable and mask options conform to the wire grammar schema', function () {
     );
 });
 
+it('text and number inputMode conform to the wire grammar schema', function () {
+    $s = new S;
+    $form = $s->form('pricing', [
+        $s->text('price')->inputMode('decimal'),
+        $s->text('phone')->mask('(999) 999-9999')->inputMode('tel'),
+        $s->text('title'),
+        $s->number('quantity')->inputMode('numeric'),
+    ]);
+
+    validateAgainstSchema(json_decode(json_encode($form)));
+
+    $children = json_decode(json_encode($form), true)['options']['children'];
+    expect($children[0]['options']['inputMode'])->toBe('decimal')
+        ->and($children[1]['options']['inputMode'])->toBe('tel')
+        ->and($children[2]['options'])->not->toHaveKey('inputMode')
+        ->and($children[3]['options']['inputMode'])->toBe('numeric');
+});
+
+it('inputMode rejects a value the schema does not allow', function () {
+    (new S)->number('price')->inputMode('digits');
+})->throws(InvalidArgumentException::class, 'Number::inputMode() expects one of none, text, decimal, numeric, tel, search, email, url, got "digits".');
+
 it('field affixes conform to the wire grammar schema', function () {
     $s = new S;
     $form = $s->form('pricing', [
