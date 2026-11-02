@@ -42,6 +42,9 @@ test("lists and deletes posts", async () => {
   `perPage()` collect the query; `await table.fetch()` loads the rows the assertions read.
   An assertion after a query change without a new `fetch()` fails. A row action fetches
   on its own when nothing was fetched yet.
+- **Hidden means off the wire or `hidden()`.** `assertFieldHidden()`, `assertActionHidden()`
+  and `assertColumnHidden()` also pass for a name the page never declared, so pair each
+  with the matching `*Visible()` check as a user who sees it to catch a typo.
 - **Records** are a key, a projected row (`_key`) or a stored record (`id`).
 - **Failures** throw `TbtopAssertionError`, which any test runner reports. Assertions
   do not count towards `expect()` totals.

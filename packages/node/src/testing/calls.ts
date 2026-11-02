@@ -61,7 +61,7 @@ export async function postAction(
 	return new Result({
 		response,
 		effects: response.status === 200 ? ((body.effects ?? []) as Effect[]) : [],
-		errors: response.status === 422 ? (bag(body.errors) as Record<string, string[]>) : {},
+		errors: response.status === 422 ? messages(bag(body.errors)) : {},
 		subject: `Action [${name}]`,
 		labels: visit.labels(action.form),
 	});
@@ -73,12 +73,7 @@ export async function submitForm(visit: PageVisit, form: string, data: Bag): Pro
 	const location = response.headers.get("location");
 	const back = location !== null && sameUrl(location, visit.url);
 	const followed = back ? bag((await visit.http.visit(visit.url)).json) : {};
-	const errors = Object.fromEntries(
-		Object.entries(bag(bag(followed.props).errors)).map(([k, v]) => [
-			k,
-			[v].flat().map(String),
-		]),
-	);
+	const errors = messages(bag(bag(followed.props).errors));
 	const effects = (bag(followed.flash)["tbtop.effects"] ?? []) as Effect[];
 	return new Result({
 		response,
@@ -126,6 +121,10 @@ function loadedData(response: TestResponse | null): Bag | null {
 	const data = response?.status === 200 ? bag(response.json).data : null;
 	return data !== null && typeof data === "object" ? (data as Bag) : null;
 }
+
+/** Each field's messages as a list: the session holds one string, a 422 an array. */
+const messages = (errors: Bag): Record<string, string[]> =>
+	Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, [v].flat().map(String)]));
 
 const sameUrl = (a: string, b: string) =>
 	new URL(a, "http://localhost").href === new URL(b, "http://localhost").href;
