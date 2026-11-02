@@ -58,3 +58,31 @@ describe("relation creatable()", () => {
 		).toThrow('cannot be named "deps"');
 	});
 });
+
+describe("inputMode on Text and Number", () => {
+	const s = new S();
+
+	test("emits the option only when set, valid against the schema", () => {
+		const form = s.form("pricing", [
+			s.text("price").inputMode("decimal"),
+			s.text("phone").mask("(999) 999-9999").inputMode("tel"),
+			s.text("title"),
+			s.number("quantity").inputMode("numeric"),
+		]);
+		const json = JSON.parse(JSON.stringify(form));
+		expect(validateNode(json)).toBe(true);
+		const opts = json.options.children.map(
+			(c: { options: Record<string, unknown> }) => c.options,
+		);
+		expect(opts[0].inputMode).toBe("decimal");
+		expect(opts[1].inputMode).toBe("tel");
+		expect(opts[2]).not.toHaveProperty("inputMode");
+		expect(opts[3].inputMode).toBe("numeric");
+	});
+
+	test("rejects a value the schema does not allow", () => {
+		expect(() => s.number("price").inputMode("digits" as never)).toThrow(
+			'Number::inputMode() expects one of none, text, decimal, numeric, tel, search, email, url, got "digits".',
+		);
+	});
+});

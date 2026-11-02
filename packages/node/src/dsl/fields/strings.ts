@@ -1,5 +1,5 @@
 import { Affixes } from "./affix";
-import { DatabaseRules, mixin, StringRules } from "./concerns";
+import { DatabaseRules, InputMode, mixin, StringRules } from "./concerns";
 import { Field } from "./field";
 
 /** One placeholder, or one per content locale (HasLocalePlaceholder.php). */
@@ -38,8 +38,12 @@ export class Text<N extends string = string> extends Field<N, string | null> {
 		return this.set("placeholder", checkedPlaceholder(text));
 	}
 }
-export interface Text<N extends string = string> extends Affixes, DatabaseRules, StringRules {}
-mixin(Text, [Affixes, DatabaseRules, StringRules]);
+export interface Text<N extends string = string>
+	extends Affixes,
+		DatabaseRules,
+		InputMode,
+		StringRules {}
+mixin(Text, [Affixes, DatabaseRules, InputMode, StringRules]);
 
 /** Multi-line text input (Textarea.php). */
 export class Textarea<N extends string = string> extends Field<N, string | null> {

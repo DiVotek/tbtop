@@ -1,5 +1,5 @@
 import { Affixes } from "./affix";
-import { mixin, NumericRules } from "./concerns";
+import { InputMode, mixin, NumericRules } from "./concerns";
 import { Field } from "./field";
 
 /** Numeric input (Number.php). */
@@ -19,8 +19,8 @@ export class NumberField<N extends string = string> extends Field<N, number | nu
 		return this.set("step", step);
 	}
 }
-export interface NumberField<N extends string = string> extends Affixes, NumericRules {}
-mixin(NumberField, [Affixes, NumericRules]);
+export interface NumberField<N extends string = string> extends Affixes, InputMode, NumericRules {}
+mixin(NumberField, [Affixes, InputMode, NumericRules]);
 
 /** Range slider (Slider.php). */
 export class Slider<N extends string = string> extends Field<N, number | null> {

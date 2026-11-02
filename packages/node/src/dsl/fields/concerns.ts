@@ -191,3 +191,36 @@ function toggle<T>(field: T, key: string, on: boolean): T {
 }
 
 export type AnyField = Field<string, unknown>;
+
+/** The values HTML allows for the `inputmode` attribute (HasInputMode.php). */
+const INPUT_MODES = [
+	"none",
+	"text",
+	"decimal",
+	"numeric",
+	"tel",
+	"search",
+	"email",
+	"url",
+] as const;
+export type InputModeValue = (typeof INPUT_MODES)[number];
+
+/** The opt-in `inputmode` keyboard hint shared by Text and Number (HasInputMode.php). */
+export class InputMode {
+	/**
+	 * Virtual keyboard hint for touch devices, rendered as the input's
+	 * `inputmode` attribute. It only picks the keyboard; it does not validate
+	 * the value — pair it with rules such as `rules(["numeric"])`.
+	 */
+	inputMode(mode: InputModeValue): this {
+		if (!(INPUT_MODES as readonly string[]).includes(mode)) {
+			const kind = (this as unknown as { kind: string }).kind;
+			const owner = kind.charAt(0).toUpperCase() + kind.slice(1);
+			throw new Error(
+				`${owner}::inputMode() expects one of ${INPUT_MODES.join(", ")}, got "${String(mode)}".`,
+			);
+		}
+		bag(this).set("inputMode", mode);
+		return this;
+	}
+}
