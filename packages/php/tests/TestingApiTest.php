@@ -55,7 +55,7 @@ it('names what is on the page when a name is wrong', function (): void {
     expect(fn () => testingApiPage()->assertFieldVisible('nope'))
         ->toThrow(AssertionFailedError::class, 'Field [nope] is not on page')
         ->and(fn () => testingApiPage()->callAction('nope'))
-        ->toThrow(AssertionFailedError::class, 'actions quickSave, rename')
+        ->toThrow(AssertionFailedError::class, 'actions quickSave, note, rename')
         ->and(fn () => testingApiPage()->fill(['nope' => 1]))
         ->toThrow(AssertionFailedError::class, 'Form [post] has no field [nope]');
 });
@@ -168,6 +168,11 @@ it('reads a single row as one record, not a list of keys', function (): void {
 it('does not let a missing key pass for an expected false', function (): void {
     expect(fn () => testingApiPage()->assertFieldValue('title.missing', false))
         ->toThrow(AssertionFailedError::class, 'has no value in the form');
+});
+
+it('points a modal field to the modal tester', function (): void {
+    expect(fn () => testingApiPage()->assertFieldValue('note', null))
+        ->toThrow(AssertionFailedError::class, 'sits in modal [note]');
 });
 
 it('does not read a refused call as one without errors', function (): void {

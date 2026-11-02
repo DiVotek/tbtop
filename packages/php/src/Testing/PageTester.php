@@ -114,7 +114,8 @@ final class PageTester
     /** The value the field is prefilled with, from its form's record. Dotted names reach into arrays. */
     public function assertFieldValue(string $name, mixed $value): self
     {
-        $form = $this->visit->field(explode('.', $name)[0])['form'];
+        ['form' => $form, 'modal' => $modal] = $this->visit->field(explode('.', $name)[0]);
+        Assert::assertNull($modal, "Field [{$name}] sits in modal [{$modal}]: open it with openAction() or openRowAction() and use assertFormData().");
         $record = $this->visit->record($form);
         Assert::assertTrue($value === null || Arr::has($record, $name), "Field [{$name}] has no value in the form's record.");
         Assert::assertEquals($value, data_get($record, $name), "Field [{$name}] holds a different value.");

@@ -58,6 +58,7 @@ class TestingApiPage extends Page
                 }),
             $s->action('archive')->label('Archive')->authorize('archive-posts')
                 ->handle(fn (): Effects => Effects::make()->notify('Archived'), needs: ['row']),
+            $s->action('note')->modal('Add a note', $s->form('noteForm', [$s->text('note')])),
             $s->table('posts')
                 ->columns([Column::make('title')->sortable(), Column::make('published')->label('Published')])
                 ->searchable(['title'])
