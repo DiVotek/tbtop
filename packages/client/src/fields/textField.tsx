@@ -28,6 +28,7 @@ export function TextForm({
 	disabled,
 	invalid,
 	describedBy,
+	required,
 	options,
 }: FieldFormProps<string, TextOptions>) {
 	const inputId = fieldId({ id, name });
@@ -47,6 +48,7 @@ export function TextForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			aria-invalid={invalid || undefined}
+			aria-required={required || undefined}
 			aria-describedby={describedBy}
 			className={inputClass}
 			placeholder={placeholder}
@@ -60,6 +62,7 @@ export function TextForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			aria-invalid={invalid || undefined}
+			aria-required={required || undefined}
 			aria-describedby={describedBy}
 			className={inputClass}
 			placeholder={placeholder}

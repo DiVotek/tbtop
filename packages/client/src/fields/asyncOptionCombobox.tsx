@@ -25,6 +25,7 @@ export interface AsyncOptionComboboxProps<TBag extends AsyncOptionsBase> {
 	disabled?: boolean;
 	invalid?: boolean;
 	describedBy?: string;
+	required?: boolean;
 	/** query/optionValue/optionLabel/optionRow, already bound with parent deps. */
 	opts: TBag;
 	/** The current value's resolved label, from useRemoteOptions. */
@@ -47,6 +48,7 @@ export function AsyncOptionCombobox<TBag extends AsyncOptionsBase>({
 	disabled,
 	invalid,
 	describedBy,
+	required,
 	opts,
 	labels,
 	dep,
@@ -110,6 +112,7 @@ export function AsyncOptionCombobox<TBag extends AsyncOptionsBase>({
 			disabled={disabled}
 			invalid={invalid}
 			describedBy={describedBy}
+			required={required}
 			onQueryChange={setQuery}
 			listState={listState}
 		>

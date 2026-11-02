@@ -116,7 +116,9 @@ Manual pages come first; discovered classes follow in alphabetical fully qualifi
 order, with duplicates removed. `pages()` replaces only the manual list, regardless of its
 position relative to `discoverPages()`. Keep the dashboard first in `pages()` to retain the
 panel-root redirect: absent a page owning the root, the first static page path is the destination.
-Discovery-enabled panels reject duplicate slugs and identical normalized paths. Distinct
+Every panel rejects duplicate slugs and identical normalized paths, because a slug names the
+page's routes. The default slug is the kebab-cased class basename, so two pages with the same
+class name from different packages collide: override `slug()` on one of them. Distinct
 parameterized patterns can still overlap: order those pages explicitly in `pages()`.
 
 To exclude a concrete page from discovery, override `public static function isDiscovered(): bool`

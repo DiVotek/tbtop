@@ -1,3 +1,4 @@
+import { groupLabelledBy } from "./fieldChrome";
 import { type FieldFormProps, fieldId } from "./fieldProps";
 import type { TagsOptionsBag } from "./tagsShared";
 
@@ -11,6 +12,7 @@ export function ClosedTagsForm({
 	disabled,
 	invalid,
 	describedBy,
+	required,
 }: FieldFormProps<string[], TagsOptionsBag>) {
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
@@ -22,8 +24,10 @@ export function ClosedTagsForm({
 		<div
 			id={fieldId({ id, name })}
 			role="listbox"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
 			aria-multiselectable="true"
 			aria-invalid={invalid || undefined}
+			aria-required={required || undefined}
 			aria-describedby={describedBy}
 			className="flex flex-wrap gap-2"
 			data-testid={`tags-${name}`}

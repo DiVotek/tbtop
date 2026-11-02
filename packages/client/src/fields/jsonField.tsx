@@ -13,12 +13,14 @@ export function JsonForm({
 	onChange,
 	invalid,
 	describedBy,
+	required,
 }: FieldFormProps<unknown>) {
 	return (
 		<Textarea
 			id={fieldId({ id, name })}
 			name={name}
 			aria-invalid={invalid || undefined}
+			aria-required={required || undefined}
 			aria-describedby={describedBy}
 			defaultValue={
 				value === null || value === undefined ? "" : JSON.stringify(value, null, 2)

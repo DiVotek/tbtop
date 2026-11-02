@@ -120,6 +120,34 @@ describe("TableToolbar: inline filters", () => {
 // Scenario 5d: modal filters trigger button
 // ---------------------------------------------------------------------------
 describe("TableToolbar: modal filters", () => {
+	test("a filter label names its control", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "Alpha" }],
+			columns: [{ name: "title" }],
+			filters: [
+				{
+					kind: "select",
+					name: "supplier",
+					options: { label: "Supplier", options: [{ value: "a", label: "A" }] },
+					meta: {},
+				},
+				{ kind: "daterange", name: "period", options: { label: "Period" }, meta: {} },
+				{
+					kind: "in",
+					name: "status",
+					options: { label: "Status", options: [{ value: "a", label: "A" }] },
+					meta: {},
+				},
+			],
+			filtersIn: "inline",
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByLabelText } = render(<Wrap>{renderNode(node)}</Wrap>);
+		expect((await findByLabelText("Supplier")).getAttribute("role")).toBe("combobox");
+		expect((await findByLabelText("Period")).tagName).toBe("BUTTON");
+		expect((await findByLabelText("Status")).getAttribute("role")).toBe("listbox");
+	});
+
 	test("TableToolbar: modal filtersIn renders a Filters trigger button", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", title: "Alpha" }],

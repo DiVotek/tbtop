@@ -37,4 +37,4 @@ function Input({ className, type, ref, ...props }: React.ComponentProps<"input">
 	);
 }
 
-export { Input, inputCompactFontClass, inputFontClass, inputTextClass };
+export { Input, inputCompactFontClass, inputFontClass, inputMobileFontClass, inputTextClass };
