@@ -4,8 +4,9 @@
  * - reorder disabled: no drag handles, disabled hint shown
  * - colSpan accounts for the handle column only when reorder is active
  */
-import { describe, expect, test } from "bun:test";
-import { fireEvent, render } from "@testing-library/react";
+import { describe, expect, spyOn, test } from "bun:test";
+import { router } from "@inertiajs/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
 import { wrapForStructure } from "../testFixtures";
 import type { TableColumn } from "../types";
@@ -123,7 +124,81 @@ describe("TableGrid record URL + empty-state config", () => {
 		});
 		const row = getByTestId("table-row-1");
 		expect(row.className).toContain("cursor-pointer");
-		expect(row.getAttribute("tabindex")).toBe("0");
+	});
+
+	test("the record link sits on the first named cell and takes the row's tab stop", () => {
+		const { getByRole, getByTestId } = renderGrid({
+			columns: [
+				{ name: "id" },
+				{ name: "number" },
+				{ name: "cover", kind: "image" },
+				{ name: "color", kind: "color" },
+				{ name: "empty" },
+				{ name: "title", copyable: true },
+				{ name: "status" },
+			] as TableColumn[],
+			rows: [
+				{
+					id: "1",
+					number: "#42",
+					cover: "/a.png",
+					color: "#22aa33",
+					empty: "",
+					title: "Hello",
+					status: "draft",
+					_recordUrl: "/admin/posts/1",
+				},
+			],
+			recordUrl: true,
+		});
+		const link = getByRole("link", { name: "Hello" });
+		expect(link.getAttribute("href")).toBe("/admin/posts/1");
+		expect(link.querySelector("button")).toBeNull();
+		expect(getByTestId("table-row-1").getAttribute("tabindex")).toBeNull();
+	});
+
+	test("an emphasized column wins the link; a bare id is the last resort", () => {
+		const link = (columns: TableColumn[], row: Record<string, unknown>) =>
+			renderGrid({
+				columns,
+				rows: [{ _recordUrl: "/r", ...row }],
+				recordUrl: true,
+			}).getByRole("link").textContent;
+		expect(
+			link([{ name: "sku" }, { name: "title", emphasized: true }], {
+				id: "1",
+				sku: "A-1",
+				title: "Hello",
+			}),
+		).toBe("Hello");
+		cleanup();
+		expect(link([{ name: "id" }], { id: "7" })).toBe("7");
+	});
+
+	test("a row with no linkable cell stays keyboard-focusable", () => {
+		const { getByTestId, queryByRole } = renderGrid({
+			rows: [{ id: "1", title: "", _recordUrl: "/admin/posts/1" }],
+			recordUrl: true,
+		});
+		expect(queryByRole("link")).toBeNull();
+		expect(getByTestId("table-row-1").getAttribute("tabindex")).toBe("0");
+	});
+
+	test("a plain click visits the record once; a modified click is left to the browser", () => {
+		const visit = spyOn(router, "visit").mockImplementation(() => {});
+		const { getByRole } = renderGrid({
+			rows: [{ id: "1", title: "Hello", _recordUrl: "/admin/posts/1" }],
+			recordUrl: true,
+		});
+		const link = getByRole("link", { name: "Hello" });
+		fireEvent.pointerDown(link);
+		fireEvent.click(link, { metaKey: true });
+		expect(visit).toHaveBeenCalledTimes(0);
+		fireEvent.pointerDown(link);
+		fireEvent.click(link);
+		expect(visit).toHaveBeenCalledTimes(1);
+		expect(visit).toHaveBeenCalledWith("/admin/posts/1");
+		visit.mockRestore();
 	});
 
 	test("rows stay non-clickable without recordUrl even if a url is present", () => {

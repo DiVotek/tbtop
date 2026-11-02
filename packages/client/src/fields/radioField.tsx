@@ -35,6 +35,7 @@ export function RadioForm({
 	onBlur,
 	disabled,
 	describedBy,
+	required,
 	options,
 }: FieldFormProps<string, RadioOptionsBag>) {
 	const choices = options?.options ?? [];
@@ -49,6 +50,7 @@ export function RadioForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			aria-labelledby={groupLabelledBy(groupId, options?.label)}
+			aria-required={required || undefined}
 			aria-describedby={describedBy}
 			className={cn(options?.inline && "flex flex-row flex-wrap gap-4")}
 			data-testid={`radio-${name}`}

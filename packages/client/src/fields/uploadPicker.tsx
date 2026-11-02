@@ -55,7 +55,7 @@ export function UploadError({ error }: { error: string | null }) {
 		return null;
 	}
 	return (
-		<p role="alert" className="text-sm text-destructive">
+		<p role="alert" className="text-sm text-destructive-text">
 			{error}
 		</p>
 	);
@@ -81,7 +81,7 @@ export function UploadPicker({ busy, disabled, error, ...input }: PickerProps) {
 		<div className="space-y-2">
 			<label
 				htmlFor={input.id}
-				className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-surface border border-dashed text-sm text-muted-foreground hover:border-foreground"
+				className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-surface border border-dashed text-sm text-muted-foreground hover:border-foreground has-[:focus-visible]:border-ring has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50"
 			>
 				<UploadIcon className="h-5 w-5" aria-hidden />
 				<span>{busy ? t("field.upload.uploading") : t("field.upload.prompt")}</span>

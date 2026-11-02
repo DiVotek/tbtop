@@ -136,7 +136,7 @@ function ExpandedRow({
 						aria-label={t("field.repeater.remove")}
 						disabled={disabled || itemCount <= minItems}
 						onClick={onRemove}
-						className="text-destructive hover:text-destructive"
+						className="text-destructive-text hover:text-destructive-text"
 					>
 						{t("field.repeater.remove")}
 					</Button>
@@ -297,6 +297,7 @@ function renderSubField(input: RenderSubFieldInput) {
 				value: itemValue[subName],
 				fieldDisabled,
 				describedBy: description,
+				required,
 				locales,
 				onChange,
 			})
@@ -313,6 +314,7 @@ function renderSubField(input: RenderSubFieldInput) {
 						disabled: fieldDisabled,
 						invalid: fieldError !== undefined,
 						describedBy: description,
+						required,
 					},
 				},
 				children: undefined,
@@ -344,6 +346,7 @@ interface RenderTranslatableSubFieldInput {
 	value: unknown;
 	fieldDisabled: boolean;
 	describedBy: string | undefined;
+	required: boolean;
 	locales: string[];
 	onChange: (next: unknown) => void;
 }
@@ -363,6 +366,7 @@ function renderTranslatableSubField(input: RenderTranslatableSubFieldInput) {
 		value,
 		fieldDisabled,
 		describedBy: description,
+		required,
 		locales,
 		onChange,
 	} = input;
@@ -383,6 +387,7 @@ function renderTranslatableSubField(input: RenderTranslatableSubFieldInput) {
 		onChange,
 		disabled: fieldDisabled,
 		describedBy: description,
+		required,
 		locales,
 	});
 }

@@ -259,7 +259,7 @@ function postForm(s: S) {
 				]),
 			s.time("opensAt").label("Opening time").minuteStep(15),
 			s.time("closesAt").label("Closing time").seconds().secondStep(5),
-			s.text("video_url").hiddenIf("type", "!=", "video"),
+			s.text("video_url").inputMode("url").hiddenIf("type", "!=", "video"),
 			s.text("company_name").label("Company name").requiredIf("type", "=", "company"),
 			s
 				.text("caption")

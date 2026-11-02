@@ -100,6 +100,23 @@ describe("AdminPage: headerActions", () => {
 		expect(actions.querySelector("a")?.getAttribute("href")).toBe("/admin/posts/create");
 	});
 
+	test("header actions stack and wrap below md, keep one row from md up", () => {
+		currentProps = {
+			...BASE_PROPS,
+			headerActions: [
+				{ kind: "action", name: "a", options: { label: "A" }, meta: {} },
+				{ kind: "action", name: "b", options: { label: "B" }, meta: {} },
+			],
+		};
+		const { getByTestId } = render(<AdminPage />);
+		// happy-dom has no layout; the classes are the reflow contract (WCAG 1.4.10).
+		const header = getByTestId("page-header").className.split(" ");
+		expect(header).toEqual(expect.arrayContaining(["flex-col", "md:flex-row"]));
+		const actions = getByTestId("page-header-actions").className.split(" ");
+		expect(actions).toEqual(expect.arrayContaining(["flex-wrap", "md:shrink-0"]));
+		expect(actions).not.toContain("shrink-0");
+	});
+
 	test("renders nothing extra when headerActions is absent", () => {
 		currentProps = { ...BASE_PROPS };
 		const { queryByTestId } = render(<AdminPage />);

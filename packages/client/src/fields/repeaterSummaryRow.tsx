@@ -82,7 +82,7 @@ export function RepeaterSummaryRow(props: RepeaterSummaryRowProps) {
 						aria-label={t("field.repeater.remove")}
 						disabled={disabled || itemCount <= minItems}
 						onClick={props.onRemove}
-						className="text-destructive hover:text-destructive"
+						className="text-destructive-text hover:text-destructive-text"
 					>
 						<Trash2Icon className="size-4" />
 					</Button>

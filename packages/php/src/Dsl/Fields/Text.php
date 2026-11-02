@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl\Fields;
 use Closure;
 use Tbtop\Admin\Dsl\Concerns\HasAffixes;
 use Tbtop\Admin\Dsl\Concerns\HasDatabaseRules;
+use Tbtop\Admin\Dsl\Concerns\HasInputMode;
 use Tbtop\Admin\Dsl\Concerns\HasLocalePlaceholder;
 use Tbtop\Admin\Dsl\Concerns\HasStringRules;
 
@@ -12,6 +13,7 @@ final class Text extends Field
 {
     use HasAffixes;
     use HasDatabaseRules;
+    use HasInputMode;
     use HasLocalePlaceholder;
     use HasStringRules;
 

@@ -1,4 +1,4 @@
-import { type ChangeEvent, useLayoutEffect, useRef } from "react";
+import { type ChangeEvent, type HTMLAttributes, useLayoutEffect, useRef } from "react";
 import { applyMask } from "../lib/mask";
 import { Input } from "../ui/input";
 
@@ -12,6 +12,7 @@ interface MaskedInputProps {
 	disabled?: boolean;
 	className?: string;
 	placeholder?: string;
+	inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
 	"aria-invalid"?: boolean;
 	"aria-describedby"?: string;
 }

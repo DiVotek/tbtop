@@ -59,6 +59,9 @@ export function AsyncTagsForm(props: FieldFormProps<string[], TagsOptionsBag>) {
 				/>
 				<input
 					id={fieldId({ id: props.id, name: props.name })}
+					aria-invalid={props.invalid || undefined}
+					aria-required={props.required || undefined}
+					aria-describedby={props.describedBy}
 					value={search}
 					disabled={props.disabled}
 					onChange={(e) => setSearch(e.target.value)}

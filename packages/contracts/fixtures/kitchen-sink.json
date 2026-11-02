@@ -579,7 +579,9 @@
                                     },
                                     {
                                         "kind": "text",
-                                        "options": {},
+                                        "options": {
+                                            "inputMode": "url"
+                                        },
                                         "meta": {
                                             "hiddenIf": {
                                                 "op": "neq",

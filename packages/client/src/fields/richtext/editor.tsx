@@ -24,7 +24,16 @@ interface RichtextEditorProps {
 	placeholder?: string;
 	disabled?: boolean;
 	embeds?: EmbedDef[];
+	/** A11y wiring for the contenteditable: a `<label for>` can't name it, so it is labelled by id. */
+	a11y?: EditorA11y;
 	onChange: (state: SerializedEditorState) => void;
+}
+
+export interface EditorA11y {
+	id?: string;
+	labelledBy?: string;
+	describedBy?: string;
+	invalid?: boolean;
 }
 
 const NO_EMBEDS: EmbedDef[] = [];
@@ -34,6 +43,7 @@ export function RichtextEditor({
 	placeholder,
 	disabled,
 	embeds = NO_EMBEDS,
+	a11y,
 	onChange,
 }: RichtextEditorProps) {
 	const t = useTranslation();
@@ -60,7 +70,14 @@ export function RichtextEditor({
 					<Toolbar />
 					<div className="relative">
 						<RichTextPlugin
-							contentEditable={<ContentEditable />}
+							contentEditable={
+								<ContentEditable
+									id={a11y?.id}
+									ariaLabelledBy={a11y?.labelledBy}
+									ariaDescribedBy={a11y?.describedBy}
+									ariaInvalid={a11y?.invalid || undefined}
+								/>
+							}
 							placeholder={
 								<div className="tabletop-editor-placeholder">
 									{placeholder ?? t("field.richtext.placeholder")}

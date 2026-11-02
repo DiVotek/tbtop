@@ -126,6 +126,7 @@ export function MediaGrid({
 				<Input
 					type="search"
 					placeholder={t("media.search.placeholder")}
+					aria-label={t("media.search.placeholder")}
 					className="max-w-xs"
 					value={search}
 					onChange={(e) => handleSearch(e.target.value)}

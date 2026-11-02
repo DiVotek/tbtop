@@ -38,6 +38,7 @@ export function DateTimeForm({
 	onChange,
 	disabled,
 	describedBy,
+	required,
 }: FieldFormProps<string>) {
 	const local = toLocalDateTime(value);
 	return (
@@ -48,6 +49,7 @@ export function DateTimeForm({
 			defaultValue={local}
 			onChange={(e) => onChange(localToIso(e.target.value))}
 			disabled={disabled}
+			aria-required={required || undefined}
 			aria-describedby={describedBy}
 		/>
 	);

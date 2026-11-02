@@ -13,6 +13,9 @@ export function OpenTagsForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
+	describedBy,
+	required,
 }: FieldFormProps<string[], TagsOptionsBag>) {
 	const t = useTranslation();
 	const density = useDensity();
@@ -57,6 +60,9 @@ export function OpenTagsForm({
 			/>
 			<input
 				id={fieldId({ id, name })}
+				aria-invalid={invalid || undefined}
+				aria-required={required || undefined}
+				aria-describedby={describedBy}
 				value={input}
 				disabled={disabled}
 				onChange={(e) => setInput(e.target.value)}

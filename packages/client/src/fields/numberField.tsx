@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type HTMLAttributes, useState } from "react";
 import { Input } from "../ui/input";
 import { nullableCell } from "./cellHelpers";
 import { type FieldCellProps, type FieldFormProps, fieldId } from "./fieldProps";
@@ -7,6 +7,8 @@ import { type AffixOptions, InputGroup } from "./inputGroup";
 interface NumberOptions extends AffixOptions {
 	placeholder?: string;
 	step?: number | "any";
+	/** Virtual keyboard hint; rendered as the `inputmode` attribute. */
+	inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
 }
 
 export function NumberCell({ value }: FieldCellProps<number>) {
@@ -36,6 +38,7 @@ export function NumberForm({
 	disabled,
 	invalid,
 	describedBy,
+	required,
 	options,
 }: FieldFormProps<number, NumberOptions>) {
 	const display = numberDisplay(value as number | string | null);
@@ -63,9 +66,11 @@ export function NumberForm({
 				onBlur={onBlur}
 				disabled={disabled}
 				aria-invalid={invalid || undefined}
+				aria-required={required || undefined}
 				aria-describedby={describedBy}
 				placeholder={options?.placeholder}
 				step={options?.step}
+				inputMode={options?.inputMode}
 			/>
 		</InputGroup>
 	);

@@ -60,6 +60,8 @@ export function RelationForm({
 	onBlur,
 	disabled,
 	invalid,
+	describedBy,
+	required,
 	options,
 }: FieldFormProps<string, RelationOptionsBag>) {
 	const coerced = coerceSelectValue(value);
@@ -97,6 +99,8 @@ export function RelationForm({
 				onBlur={onBlur}
 				disabled={isDisabled}
 				invalid={invalid}
+				describedBy={describedBy}
+				required={required}
 				opts={remote.opts}
 				labels={remote.labels}
 				dep={remote.dep}

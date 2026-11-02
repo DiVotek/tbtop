@@ -15,7 +15,7 @@ export function TableError({ message, onRetry }: TableErrorProps) {
 	const t = useTranslation();
 	return (
 		<div
-			className="flex items-center gap-3 rounded-surface border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+			className="flex items-center gap-3 rounded-surface border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-text"
 			data-testid="table-error"
 		>
 			<AlertTriangle className="size-4 shrink-0" aria-hidden />

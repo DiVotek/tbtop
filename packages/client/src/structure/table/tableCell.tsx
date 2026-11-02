@@ -12,6 +12,7 @@ import { ImageCell, LinkCell } from "./cellHelpers";
 import { cellWidthStyle, useColumnSizing } from "./columnResize";
 import { formatColumnValue } from "./columnValueFormat";
 import { EditableCell } from "./editableCell";
+import { RecordLink, type RecordLinkTarget } from "./recordLink";
 import { useStickyCell } from "./stickyColumns";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -76,10 +77,12 @@ export function RowDataCell({
 	col,
 	row,
 	saveCell,
+	recordLink,
 }: {
 	col: TableColumn;
 	row: Record<string, unknown>;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+	recordLink?: RecordLinkTarget;
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	const pin = useStickyCell({ column: col.name });
@@ -103,7 +106,7 @@ export function RowDataCell({
 			{col.kind === "group" ? (
 				<GroupCell col={col} row={row} saveCell={saveCell} />
 			) : (
-				<CellInner col={col} row={row} saveCell={saveCell} />
+				<CellInner col={col} row={row} saveCell={saveCell} recordLink={recordLink} />
 			)}
 		</td>
 	);
@@ -137,10 +140,12 @@ function CellInner({
 	col,
 	row,
 	saveCell,
+	recordLink,
 }: {
 	col: TableColumn;
 	row: Record<string, unknown>;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+	recordLink?: RecordLinkTarget;
 }) {
 	const tooltip = readRowTooltip(row, col) ?? col.tooltip;
 	const rendered = renderCell({ col, row, tooltip, saveCell });
@@ -150,7 +155,8 @@ function CellInner({
 		col.uppercase && "uppercase tracking-wide",
 	);
 	const content = textClass ? <span className={textClass}>{rendered}</span> : rendered;
-	const withTooltip = <CellTooltip tooltip={tooltip}>{content}</CellTooltip>;
+	const linked = recordLink ? <RecordLink target={recordLink}>{content}</RecordLink> : content;
+	const withTooltip = <CellTooltip tooltip={tooltip}>{linked}</CellTooltip>;
 	const description = cellDescription(row, col);
 	return (
 		<>

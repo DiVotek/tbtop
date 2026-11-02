@@ -37,7 +37,7 @@ export function FieldChrome({
 	const labelNode = label && (
 		<Label id={fieldLabelId(fieldId)} htmlFor={fieldId}>
 			{label}
-			{required && <span className="text-destructive">*</span>}
+			{required && <span className="text-destructive-text">*</span>}
 			{tooltip && <FieldTooltip text={tooltip} />}
 		</Label>
 	);
@@ -117,7 +117,7 @@ export function FieldError({ id, name, message }: { id?: string; name: string; m
 		<p
 			id={id}
 			role="alert"
-			className="text-sm text-destructive"
+			className="text-sm text-destructive-text"
 			data-testid={`field-error-${name}`}
 		>
 			{message}

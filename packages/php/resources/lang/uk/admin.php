@@ -21,7 +21,7 @@ return [
             'title' => 'Вхід',
             'email' => 'Електронна пошта',
             'password' => 'Пароль',
-            'remember' => 'Запам\'ятати мене',
+            'remember' => 'Запам’ятати мене',
             'submit' => 'Увійти',
             'forgot' => 'Забули пароль?',
         ],
@@ -91,7 +91,7 @@ return [
         ],
     ],
     'validation' => [
-        'required' => 'Обов\'язкове поле',
+        'required' => 'Обов’язкове поле',
         'email' => 'Невірна електронна пошта',
         'minLength' => 'Занадто коротко',
         'min' => 'Мінімум {min}',
@@ -293,8 +293,8 @@ return [
         'import_url' => [
             'title' => 'Імпортувати з URL',
             'url_label' => 'URL',
-            'name_label' => 'Назва (необов\'язково)',
-            'name_placeholder' => 'Залиште порожнім, щоб використати ім\'я з URL',
+            'name_label' => 'Назва (необов’язково)',
+            'name_placeholder' => 'Залиште порожнім, щоб використати ім’я з URL',
             'submit' => 'Імпортувати',
         ],
         'detail' => [
@@ -380,7 +380,7 @@ return [
         'tags' => ['placeholder' => 'Додати тег…'],
         'search' => ['placeholder' => 'Пошук…'],
         'relation' => [
-            'placeholder' => 'ID пов\'язаного запису',
+            'placeholder' => 'ID пов’язаного запису',
             'items' => '{count} елементів',
         ],
         'select' => [

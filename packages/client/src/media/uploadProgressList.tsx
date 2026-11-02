@@ -36,7 +36,9 @@ export function UploadProgressList({ tasks }: { tasks: UploadTask[] }): ReactNod
 					<Progress value={task.pct} className="flex-1" />
 					<span
 						className={
-							task.status === "error" ? "text-destructive" : "text-muted-foreground"
+							task.status === "error"
+								? "text-destructive-text"
+								: "text-muted-foreground"
 						}
 						data-testid={`upload-task-status-${task.id}`}
 					>
