@@ -7,6 +7,7 @@ export interface TagOption {
 }
 
 export interface TagsOptionsBag extends AsyncMultiOptionsBag {
+	label?: string;
 	options?: TagOption[];
 	loading?: ReactNode;
 	error?: ReactNode | ((err: Error) => ReactNode);
