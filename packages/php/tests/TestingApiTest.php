@@ -1,8 +1,10 @@
 <?php
 
+use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\AssertionFailedError;
 use Tbtop\Admin\Testing\InteractsWithTbtop;
 use Tbtop\Admin\Testing\PageTester;
+use Tbtop\Admin\Testing\Result;
 use Tbtop\Admin\Tests\Fixtures\CaPost;
 use Tbtop\Admin\Tests\Fixtures\TestingApiPage;
 use Tbtop\Admin\Tests\TestingApiTestCase;
@@ -168,6 +170,15 @@ it('reads a single row as one record, not a list of keys', function (): void {
 it('does not let a missing key pass for an expected false', function (): void {
     expect(fn () => testingApiPage()->assertFieldValue('title.missing', false))
         ->toThrow(AssertionFailedError::class, 'has no value in the form');
+});
+
+it('matches nested effect fields as a subset', function (): void {
+    $effect = ['kind' => 'setFormData', 'form' => 'post', 'data' => ['title' => 'x', 'slug' => 'x'], 'keys' => [1, 2]];
+    $result = new Result(TestResponse::fromBaseResponse(response('')), [$effect], [], 'Action [fill]');
+
+    $result->assertEffect('setFormData', ['data' => ['title' => 'x']])->assertEffect('setFormData', ['keys' => [1, 2]]);
+    expect(fn () => $result->assertEffect('setFormData', ['data' => ['title' => 'y']]))->toThrow(AssertionFailedError::class)
+        ->and(fn () => $result->assertEffect('setFormData', ['keys' => [1]]))->toThrow(AssertionFailedError::class);
 });
 
 it('points a modal field to the modal tester', function (): void {

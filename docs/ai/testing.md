@@ -94,8 +94,8 @@ assertions:
 | Assertion | Checks |
 |---|---|
 | `assertHasErrors(['title' => 'required'])` | A failed field; a rule (matched by the message it renders) or the message itself. A list or a string names fields only |
-| `assertHasNoErrors()` | No validation errors, and no 5xx |
-| `assertEffect('setFormData', ['data' => [...]])` / `assertNoEffects()` | An effect of the closed set, its fields a subset |
+| `assertHasNoErrors()` | No validation errors, and no refusal (any 4xx/5xx but 422) |
+| `assertEffect('setFormData', ['data' => [...]])` / `assertNoEffects()` | An effect of the closed set, its fields a subset (nested maps too) |
 | `assertNotified('Saved', 'success')` | A `notify` effect |
 | `assertRedirect($url)` | A `redirect` effect, or a form handler that returned a URL |
 | `assertModalClosed()` / `assertHalted('Not yet')` | `closeModal` / `haltModal` |

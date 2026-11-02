@@ -83,7 +83,7 @@ final class Result
     public function assertEffect(string $kind, array $fields = []): self
     {
         foreach ($this->effects as $effect) {
-            if (($effect['kind'] ?? null) === $kind && array_intersect_key($effect, $fields) == $fields) {
+            if (($effect['kind'] ?? null) === $kind && self::subset($fields, $effect)) {
                 Wire::pass();
 
                 return $this;
@@ -209,5 +209,29 @@ final class Result
             }
         }
         Assert::fail("{$this->subject} error on [{$field}] is not [{$expected}]: ".json_encode($this->errors[$field]));
+    }
+
+    /**
+     * Every expected key is present with an equal value; nested maps compare
+     * as subsets too, lists as a whole.
+     *
+     * @param  array<array-key, mixed>  $expected
+     */
+    private static function subset(array $expected, mixed $actual): bool
+    {
+        if (! is_array($actual)) {
+            return false;
+        }
+        foreach ($expected as $key => $value) {
+            if (! array_key_exists($key, $actual)) {
+                return false;
+            }
+            $same = is_array($value) && ! array_is_list($value) ? self::subset($value, $actual[$key]) : $value == $actual[$key];
+            if (! $same) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
