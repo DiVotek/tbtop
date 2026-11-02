@@ -1,7 +1,7 @@
 import type { PageDef } from "../server/page";
 import { fail } from "./assert";
 import type { Client, TestResponse } from "./client";
-import type { RecordRef } from "./records";
+import { key, type RecordRef } from "./records";
 import * as wire from "./wire";
 
 /** The endpoint names url() takes, to their path segment. */
@@ -39,8 +39,7 @@ export function pageUrl(prefix: string, page: PageDef, params: Params): string {
 
 function param(page: PageDef, params: Params, name: string): string {
 	const value = params[name] ?? fail(`Page [${page.path}] needs the [${name}] param.`);
-	const raw = typeof value === "object" ? (value._key ?? value.id) : value;
-	return encodeURIComponent(String(raw));
+	return encodeURIComponent(String(key(value)));
 }
 
 export interface VisitInit {

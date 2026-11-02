@@ -221,6 +221,12 @@ describe("testing API: the page", () => {
 		);
 	});
 
+	test("refuses a record param without a key", async () => {
+		await expect(t.page(testingPage, { post: { title: "x" } })).rejects.toThrow(
+			"A record is a row with _key or id",
+		);
+	});
+
 	test("builds endpoint URLs", async () => {
 		const tester = await page();
 		expect(tester.url()).toBe("/admin/testing/1");
