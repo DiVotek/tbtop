@@ -70,6 +70,11 @@ describe("LiveRegion integration", () => {
 		expect(calls.length).toBe(0);
 	});
 
+	test("the region announces its updates to assistive tech", async () => {
+		const { findByTestId } = mountPage([]);
+		expect((await findByTestId("live-region")).getAttribute("aria-live")).toBe("polite");
+	});
+
 	test("changing a watched field posts deps to the region endpoint and swaps content", async () => {
 		const user = userEvent.setup();
 		const calls: RegionCall[] = [];
