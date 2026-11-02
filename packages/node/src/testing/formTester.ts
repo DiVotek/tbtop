@@ -36,8 +36,11 @@ export class FormTester {
 
 	/** Run an action inside the form with the filled values. */
 	callAction(name: string): Promise<Result> {
-		const form = wire.named(this.visit.rendered ? this.visit.trees() : [], "form", this.name)[0]
-			?.node;
+		// Look only inside this form; a page that did not render sends the call blind.
+		const form = this.visit.rendered
+			? (wire.named(this.visit.trees(), "form", this.name)[0]?.node ??
+				fail(`Form [${this.name}] is not on the page.`))
+			: undefined;
 		return runAction(this.visit, this.visit.action(name, form), {
 			form: this.data,
 			row: {},

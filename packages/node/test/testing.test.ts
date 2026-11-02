@@ -267,6 +267,8 @@ describe("testing API: forms", () => {
 		(
 			await (await page()).form().fill({ title: "Quick" }).callAction("quickSave")
 		).assertNotified("Quick Quick");
+		const form = (await page()).form();
+		expect(() => form.callAction("archive")).toThrow(TbtopAssertionError);
 	});
 });
 
