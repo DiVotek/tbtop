@@ -208,6 +208,9 @@ describe("testing API: the page", () => {
 		);
 		expect(() => tester.form().fill({ nope: 1 })).toThrow(TbtopAssertionError);
 		expect(() => tester.table("missing")).toThrow("On the page: tables posts.");
+		expect(() => tester.table().assertCanSeeRecords(null as never)).toThrow(
+			TbtopAssertionError,
+		);
 	});
 
 	test("builds endpoint URLs", async () => {

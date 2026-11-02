@@ -6,7 +6,8 @@ export type Key = string | number;
 export type RecordRef = Key | { _key?: unknown; id?: unknown; [field: string]: unknown };
 
 export function key(record: RecordRef): Key {
-	const value = typeof record === "object" ? (record._key ?? record.id) : record;
+	const value =
+		typeof record === "object" && record !== null ? (record._key ?? record.id) : record;
 	if (typeof value !== "string" && typeof value !== "number") {
 		fail(`A record is a row with _key or id, or a key; got ${JSON.stringify(record)}.`);
 	}
@@ -14,7 +15,7 @@ export function key(record: RecordRef): Key {
 }
 
 export function keys(records: RecordRef | Iterable<RecordRef>): Key[] {
-	if (typeof records === "object" && Symbol.iterator in records) {
+	if (typeof records === "object" && records !== null && Symbol.iterator in records) {
 		return [...(records as Iterable<RecordRef>)].map(key);
 	}
 	return [key(records as RecordRef)];
