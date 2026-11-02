@@ -24,6 +24,10 @@ export interface MultiShellProps {
 	onChange: (next: string[] | null) => void;
 	onBlur?: () => void;
 	disabled?: boolean;
+	invalid?: boolean;
+	/** `aria-describedby` for the search input: the field's error and/or helper ids. */
+	describedBy?: string;
+	required?: boolean;
 	create: SelectCreateConfig | undefined;
 	/** Resolves the option behind a selected value. */
 	getOption: (v: string) => StaticOption;
@@ -43,6 +47,9 @@ export function MultiComboboxShell({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
+	describedBy,
+	required,
 	create,
 	getOption,
 	resolvedLabels,
@@ -129,6 +136,9 @@ export function MultiComboboxShell({
 					))}
 					<Combobox.Input
 						id={fieldId({ id, name })}
+						aria-invalid={invalid || undefined}
+						aria-required={required || undefined}
+						aria-describedby={describedBy}
 						value={query}
 						onChange={(e) => handleQueryChange(e.target.value)}
 						className={cn(

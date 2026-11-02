@@ -125,9 +125,12 @@ export function AdminPage() {
 										<Breadcrumbs items={breadcrumbs} />
 									)}
 									{showPageHeader && (
-										<div className="flex items-start justify-between gap-4">
-											<div>
-												<h1 className="text-2xl font-semibold tracking-tight">
+										<div
+											className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+											data-testid="page-header"
+										>
+											<div className="min-w-0">
+												<h1 className="text-2xl font-semibold tracking-tight break-words">
 													{title}
 												</h1>
 												<PageSubtitle staticSubtitle={subtitle} />
@@ -280,13 +283,21 @@ function PageSubtitle({ staticSubtitle }: { staticSubtitle?: string }) {
 	return <p className="mt-1 text-sm text-muted-foreground">{text}</p>;
 }
 
-/** Actions rendered right of the title/subtitle block; empty renders nothing. */
+/**
+ * Actions rendered right of the title/subtitle block; empty renders nothing.
+ * Below `md` they stack under the title and wrap, so a narrow screen or 200%
+ * zoom never pushes a button off-screen (WCAG 1.4.10); from `md` up the row is
+ * unchanged.
+ */
 function PageHeaderActions({ actions }: { actions: ActionConfig[] }) {
 	if (actions.length === 0) {
 		return null;
 	}
 	return (
-		<div className="flex shrink-0 items-center gap-2" data-testid="page-header-actions">
+		<div
+			className="flex flex-wrap items-center gap-2 md:shrink-0"
+			data-testid="page-header-actions"
+		>
 			{actions.map((action) => (
 				<ActionBlock key={action.name} options={action} meta={action.meta ?? {}} />
 			))}

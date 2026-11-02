@@ -17,7 +17,7 @@ import {
 import { type DaterangeValue, formatRange, toDateRange, toIsoDay } from "./daterangeValue";
 import { DateTypedInput, focusTypedInput } from "./dateTypedInput";
 import { useFieldDependencies } from "./fieldDependencies";
-import type { FieldFormProps } from "./fieldProps";
+import { type FieldFormProps, fieldId } from "./fieldProps";
 
 export { parseDay } from "./daterangeDisabled";
 export { type DaterangeValue, toDateRange } from "./daterangeValue";
@@ -71,10 +71,13 @@ interface DaterangeControlProps extends DaterangeFormProps {
 }
 
 function DaterangeControl({
+	id,
 	name,
 	value,
 	onChange,
 	disabled,
+	invalid,
+	describedBy,
 	fallback,
 	ranges,
 }: DaterangeControlProps) {
@@ -161,8 +164,11 @@ function DaterangeControl({
 				<Button
 					type="button"
 					variant="outline"
+					id={fieldId({ id, name })}
 					disabled={disabled}
 					name={name}
+					aria-invalid={invalid || undefined}
+					aria-describedby={describedBy}
 					data-testid="daterange-trigger"
 					className="justify-start font-normal"
 				>

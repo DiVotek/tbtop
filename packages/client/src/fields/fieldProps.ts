@@ -11,6 +11,9 @@ export interface FieldFormProps<P = unknown, TOptions = Record<string, unknown>>
 	/** Spread onto the control as `aria-describedby` — the id(s) of the error and/or
 	 * helper text so a screen reader announces why the field is invalid or what it expects. */
 	describedBy?: string;
+	/** Spread onto the control as `aria-required` where its role allows it; the chrome's
+	 * asterisk is visual only. */
+	required?: boolean;
 	options?: TOptions;
 }
 

@@ -4,6 +4,7 @@
  */
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
+import { fieldLabelId } from "../../fields/fieldChrome";
 import { FieldDependencyProvider } from "../../fields/fieldDependencies";
 import { useTranslation } from "../../i18n/i18n";
 import { cn } from "../../lib/cn";
@@ -207,7 +208,11 @@ export function renderFilterField(node: StructureNode, opts: RenderFilterFieldOp
 			className={cn("flex flex-col gap-1.5", !grid && "min-w-48 shrink-0")}
 		>
 			{label && (
-				<label className="text-sm font-medium" htmlFor={`filter-${name}`}>
+				<label
+					id={fieldLabelId(`filter-${name}`)}
+					className="text-sm font-medium"
+					htmlFor={`filter-${name}`}
+				>
 					{label}
 				</label>
 			)}
@@ -215,7 +220,8 @@ export function renderFilterField(node: StructureNode, opts: RenderFilterFieldOp
 				{renderDescriptor(descriptor, {
 					kind: node.kind,
 					options,
-					meta: node.meta,
+					// The label above targets this id; without it the control takes the bare name.
+					meta: { ...node.meta, id: `filter-${name}` },
 					ctx: {
 						surface: "form",
 						binding: {

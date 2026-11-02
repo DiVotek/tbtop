@@ -73,6 +73,13 @@ it('rejects duplicate slugs with both class names', function () {
     expect(fn () => $this->panel()->getPages())->toThrow(InvalidArgumentException::class, "duplicate page slug [index]: [{$a}] and [{$b}]");
 });
 
+it('rejects duplicate slugs on a panel with an explicit page list', function () {
+    $a = $this->writePage('A/Index');
+    $b = $this->writePage('B/Index');
+    $panel = (new PanelConfig)->id('explicit')->pages([$a, $b]);
+    expect(fn () => $panel->getPages())->toThrow(InvalidArgumentException::class, "duplicate page slug [index]: [{$a}] and [{$b}]");
+});
+
 it('rejects normalized duplicate paths', function () {
     $this->writePage('A');
     $this->writePage('B', path: '/A/');

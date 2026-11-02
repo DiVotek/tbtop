@@ -197,7 +197,7 @@ function DetailShell({
 					type="button"
 					variant="ghost"
 					size="sm"
-					className="text-destructive hover:text-destructive"
+					className="text-destructive-text hover:text-destructive-text"
 					onClick={() => setConfirmDelete(true)}
 					disabled={busy}
 					data-testid="detail-delete-btn"
@@ -326,7 +326,11 @@ function DetailShell({
 			</div>
 
 			{error && (
-				<p role="alert" className="text-sm text-destructive" data-testid="detail-error">
+				<p
+					role="alert"
+					className="text-sm text-destructive-text"
+					data-testid="detail-error"
+				>
 					{error}
 				</p>
 			)}

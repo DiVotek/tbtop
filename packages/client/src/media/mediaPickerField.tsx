@@ -30,7 +30,8 @@ import {
 } from "@dnd-kit/sortable";
 import { FileIcon, ImageIcon, XIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
-import type { FieldCellProps, FieldFormProps } from "../fields/fieldProps";
+import { groupLabelledBy } from "../fields/fieldChrome";
+import { type FieldCellProps, type FieldFormProps, fieldId } from "../fields/fieldProps";
 import { useTranslation } from "../i18n/i18n";
 import { cn } from "../lib/cn";
 import { useLatest } from "../lib/useLatest";
@@ -55,6 +56,7 @@ import {
 // ─── Options ──────────────────────────────────────────────────────────────────
 
 interface MediaPickerOptions {
+	label?: string;
 	multiple?: boolean;
 	reorderable?: boolean;
 	/** client-side MIME filter, e.g. ['image/*', 'application/pdf'] */
@@ -96,10 +98,12 @@ function filterByAccept(items: MediaItem[], accept: string[] | undefined): Media
 // ─── MediaPickerForm ──────────────────────────────────────────────────────────
 
 export function MediaPickerForm({
+	id,
 	name,
 	value,
 	onChange,
 	disabled,
+	describedBy,
 	options,
 }: FieldFormProps<MediaPickerValue, MediaPickerOptions>): ReactNode {
 	const t = useTranslation();
@@ -257,7 +261,13 @@ export function MediaPickerForm({
 		);
 
 	return (
-		<div className="flex flex-col gap-2" data-testid={`media-picker-${name}`}>
+		<div
+			role="group"
+			aria-labelledby={groupLabelledBy(fieldId({ id, name }), options?.label)}
+			aria-describedby={describedBy}
+			className="flex flex-col gap-2"
+			data-testid={`media-picker-${name}`}
+		>
 			{multiple ? (
 				<>
 					{resolvedItems.length > 0 && (

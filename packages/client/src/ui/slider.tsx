@@ -9,7 +9,14 @@ import { cn } from "../lib/cn";
 // `data-[orientation=…]` sizing duplicates the preset's orientation rules
 // for Radix, which emits `data-orientation` (see the `data-horizontal` /
 // `data-vertical` variants in core.css).
-function Slider({ className, ...props }: React.ComponentProps<typeof SliderPrimitive.Root>) {
+function Slider({
+	className,
+	thumbProps,
+	...props
+}: React.ComponentProps<typeof SliderPrimitive.Root> & {
+	/** Spread onto the thumb, which carries role="slider" (aria-describedby etc.). */
+	thumbProps?: React.ComponentProps<typeof SliderPrimitive.Thumb>;
+}) {
 	return (
 		<SliderPrimitive.Root
 			data-slot="slider"
@@ -31,6 +38,7 @@ function Slider({ className, ...props }: React.ComponentProps<typeof SliderPrimi
 			<SliderPrimitive.Thumb
 				data-slot="slider-thumb"
 				className="cn-slider-thumb block shrink-0 select-none disabled:pointer-events-none disabled:opacity-50"
+				{...thumbProps}
 			/>
 		</SliderPrimitive.Root>
 	);

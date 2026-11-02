@@ -21,6 +21,9 @@ export interface SingleShellProps {
 	onBlur?: () => void;
 	disabled?: boolean;
 	invalid?: boolean;
+	/** `aria-describedby` for the search input: the field's error and/or helper ids. */
+	describedBy?: string;
+	required?: boolean;
 	onQueryChange: (q: string) => void;
 	/**
 	 * "rows" while options are listed or still loading; the other states each
@@ -39,6 +42,8 @@ export function SingleComboboxShell({
 	onBlur,
 	disabled,
 	invalid,
+	describedBy,
+	required,
 	onQueryChange,
 	listState,
 	children,
@@ -97,6 +102,8 @@ export function SingleComboboxShell({
 							id={fieldId({ id, name })}
 							onBlur={onBlur}
 							aria-invalid={invalid || undefined}
+							aria-required={required || undefined}
+							aria-describedby={describedBy}
 							data-testid={`select-search-${name}`}
 							placeholder={showLabel ? "" : t("field.select.placeholder")}
 							className="pr-8"

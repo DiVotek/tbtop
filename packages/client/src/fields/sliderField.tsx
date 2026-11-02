@@ -22,6 +22,8 @@ export function SliderForm({
 	onChange,
 	onBlur,
 	disabled,
+	invalid,
+	describedBy,
 	options,
 }: FieldFormProps<number, SliderBag>) {
 	const min = options?.min ?? DEFAULT_MIN;
@@ -38,6 +40,10 @@ export function SliderForm({
 				disabled={disabled}
 				onValueChange={([next]) => onChange(next ?? null)}
 				aria-label={name}
+				thumbProps={{
+					"aria-invalid": invalid || undefined,
+					"aria-describedby": describedBy,
+				}}
 			/>
 			<output className="w-10 text-right text-sm tabular-nums">{current}</output>
 		</div>

@@ -76,6 +76,7 @@ export function LiveRegionBlock({ options, renderChild }: RenderProps<LiveRegion
 	return (
 		<div
 			data-testid="live-region"
+			aria-live="polite"
 			aria-busy={reloading || undefined}
 			className={`transition-opacity ${reloading ? "opacity-60" : ""}`}
 		>
