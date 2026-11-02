@@ -32,6 +32,23 @@ export function looseEqual(a: unknown, b: unknown): boolean {
 	);
 }
 
+/** Every expected key is present and loosely equal; nested maps compare as subsets, lists whole. */
+export function looseSubset(expected: Record<string, unknown>, actual: unknown): boolean {
+	if (typeof actual !== "object" || actual === null) {
+		return false;
+	}
+	const bag = actual as Record<string, unknown>;
+	return Object.entries(expected).every(([key, value]) => {
+		if (!(key in bag)) {
+			return false;
+		}
+		const nested = typeof value === "object" && value !== null && !Array.isArray(value);
+		return nested
+			? looseSubset(value as Record<string, unknown>, bag[key])
+			: looseEqual(value, bag[key]);
+	});
+}
+
 const isScalar = (v: unknown) => ["string", "number", "bigint"].includes(typeof v);
 
 export const show = (value: unknown): string => JSON.stringify(value) ?? String(value);

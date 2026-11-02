@@ -1,4 +1,4 @@
-import { check, fail, looseEqual, show } from "./assert";
+import { check, fail, looseSubset, show } from "./assert";
 import type { TestResponse } from "./client";
 import { ruleMessages } from "./ruleMessages";
 
@@ -74,8 +74,7 @@ export class Result {
 
 	/** An effect of this kind arrived, its fields including `fields`. */
 	assertEffect(kind: string, fields: Record<string, unknown> = {}): this {
-		const matches = (e: Effect) =>
-			e.kind === kind && Object.entries(fields).every(([k, v]) => looseEqual(e[k], v));
+		const matches = (e: Effect) => e.kind === kind && looseSubset(fields, e);
 		if (!this.init.effects.some(matches)) {
 			fail(
 				`${this.init.subject} sent no [${kind}] effect matching ${show(fields)}. Effects: ${show(this.init.effects)}`,

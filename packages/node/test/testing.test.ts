@@ -12,6 +12,7 @@ import {
 } from "../src";
 import { type MemoryQuery, memoryDriver, memoryQuery } from "../src/adapters/memory";
 import { TbtopAssertionError, testAdmin } from "../src/testing";
+import { looseSubset } from "../src/testing/assert";
 
 type Post = { id: number; title: string; published: boolean };
 type User = { id: number; role: "editor" | "viewer" | "admin" };
@@ -316,5 +317,15 @@ describe("testing API: tables", () => {
 			"2 published",
 		);
 		expect(posts.every((p) => p.published)).toBe(true);
+	});
+});
+
+describe("testing API: effect fields", () => {
+	test("match nested maps as a subset and lists as a whole", () => {
+		const effect = { kind: "setFormData", data: { title: "x", slug: "x" }, keys: [1, 2] };
+		expect(looseSubset({ data: { title: "x" } }, effect)).toBe(true);
+		expect(looseSubset({ keys: [1, 2] }, effect)).toBe(true);
+		expect(looseSubset({ data: { title: "y" } }, effect)).toBe(false);
+		expect(looseSubset({ keys: [1] }, effect)).toBe(false);
 	});
 });
