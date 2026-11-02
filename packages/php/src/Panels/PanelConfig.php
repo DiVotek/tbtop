@@ -340,12 +340,8 @@ final class PanelConfig
     /** @return list<class-string<Page>> */
     public function getPages(): array
     {
-        if ($this->pageDiscoveryRoots === []) {
-            return $this->pages;
-        }
-
         return $this->resolvedPages ??= $this->getPagesWithDiscovered(
-            app(PageDiscovery::class)->getPages($this->pageDiscoveryRoots),
+            $this->pageDiscoveryRoots === [] ? [] : app(PageDiscovery::class)->getPages($this->pageDiscoveryRoots),
         );
     }
 
@@ -365,7 +361,7 @@ final class PanelConfig
             $slug = $class::slug();
             $path = trim($class::path(), '/');
             if (isset($slugs[$slug])) {
-                throw new InvalidArgumentException("Panel [{$this->id}] has duplicate page slug [{$slug}]: [{$slugs[$slug]}] and [{$class}].");
+                throw new InvalidArgumentException("Panel [{$this->id}] has duplicate page slug [{$slug}]: [{$slugs[$slug]}] and [{$class}]. Override slug() on one of them.");
             }
             if (isset($paths[$path])) {
                 throw new InvalidArgumentException("Panel [{$this->id}] has duplicate page path [{$path}]: [{$paths[$path]}] and [{$class}].");
