@@ -14,8 +14,8 @@ export function actAs(request: Request, user: unknown): Request {
 }
 
 /** The user a test request acts as (null for a guest); any other request reads it with `read`. */
-export function userFor(request: Request, read: () => unknown): unknown {
-	return actingAs.has(request) ? actingAs.get(request) : read();
+export async function userFor(request: Request, read: () => unknown): Promise<unknown> {
+	return actingAs.has(request) ? actingAs.get(request) : await read();
 }
 
 export function registerVersion<T extends object>(version: string | null, admin: T): T {

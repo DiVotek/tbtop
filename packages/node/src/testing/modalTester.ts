@@ -84,7 +84,11 @@ export class ModalTester {
 		const spec = wire.spec(entry.node);
 		const { data, row, selection, form } = this.modal;
 		if (spec.type === "submit") {
-			return new FormTester(this.visit, spec.form ?? form ?? "", data).submit();
+			const owner =
+				spec.form ??
+				form ??
+				fail(`Submit action [${entry.node.name ?? ""}] sits in no form.`);
+			return new FormTester(this.visit, owner, data).submit();
 		}
 		const call = { form: data, row, selection };
 		if (spec.type !== "server") {
