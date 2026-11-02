@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import * as root from "../src";
 import {
 	Column,
 	createAdmin,
@@ -201,6 +202,10 @@ describe("testing API: the page", () => {
 		});
 		(await testAdmin(signedIn).page(testingPage, { post: 1 })).assertStatus(401);
 		(await testAdmin(signedIn, { as: editor }).page(testingPage, { post: 1 })).assertOk();
+		// An ordinary request is never marked: the resolver decides, and actAs is not public.
+		const plain = await signedIn.handle(new Request("http://localhost/admin/testing/1"));
+		expect(plain.status).toBe(200);
+		expect("actAs" in root).toBe(false);
 	});
 
 	test("names what is on the page when a name is wrong", async () => {
