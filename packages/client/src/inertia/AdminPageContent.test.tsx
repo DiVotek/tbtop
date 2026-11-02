@@ -9,7 +9,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
-import { render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { registerBlock } from "../render/blockRegistry";
 
 type PageProps = Record<string, unknown>;
@@ -158,6 +158,42 @@ describe("AdminPage: headerActions", () => {
 			(a) => a.textContent,
 		);
 		expect(labels).toEqual(["New item", "Export"]);
+	});
+
+	test("a dropdown group in headerActions opens a menu of its actions", async () => {
+		currentProps = {
+			...BASE_PROPS,
+			headerActions: [
+				{
+					kind: "actionGroup",
+					options: {
+						label: "More",
+						as: "dropdown",
+						children: [
+							{
+								kind: "action",
+								name: "export",
+								options: {
+									label: "Export",
+									spec: { type: "visit", href: "/admin/posts/export" },
+								},
+								meta: {},
+							},
+						],
+					},
+					meta: {},
+				},
+			],
+		};
+		const { getByTestId, findByTestId } = render(<AdminPage />);
+		const trigger = getByTestId("action-group-trigger");
+		expect(trigger.textContent).toContain("More");
+		await act(async () => {
+			fireEvent.pointerDown(trigger, { bubbles: true, cancelable: true, isPrimary: true });
+			fireEvent.click(trigger);
+		});
+		const menu = await findByTestId("action-group-menu");
+		expect(menu.querySelector("a")?.getAttribute("href")).toBe("/admin/posts/export");
 	});
 });
 
