@@ -94,7 +94,8 @@ export function TableRow(props: TableRowProps) {
 	}
 
 	function handleRowKeyDown(e: React.KeyboardEvent<HTMLTableRowElement>) {
-		if (e.key === "Enter") {
+		// Enter on a control inside the row belongs to that control.
+		if (e.key === "Enter" && e.target === e.currentTarget) {
 			armedRef.current = true;
 			e.currentTarget.click();
 		}
