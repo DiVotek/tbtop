@@ -114,6 +114,7 @@ it('runs a form action with the filled values', function (): void {
     testingApiPage()->form()->fill(['title' => 'Draft'])->callAction('quickSave')->assertNotified('Quick Draft');
     testingApiPage()->callAction('quickSave', form: ['title' => 'Inline'])->assertNotified('Quick Inline');
     testingApiPage()->callAction('quickSave', form: ['title' => ''])->assertStatus(422)->assertHasErrors(['title' => 'required']);
+    expect(fn () => testingApiPage()->form()->callAction('archive'))->toThrow(AssertionFailedError::class);
 });
 
 // ---------------------------------------------------------------------------
