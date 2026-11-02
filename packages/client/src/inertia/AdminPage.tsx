@@ -13,8 +13,8 @@ import { setRoutesBase } from "../data/entityRoutes";
 import { I18nProvider, useTranslation } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
+import { ActionBlock } from "../structure/actionBlock";
 import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
-import { HeaderActionList } from "../structure/headerActionList";
 import { ModalStackProvider, useModalStack } from "../structure/modalStack";
 import {
 	PageContentErrorBoundary,
@@ -282,11 +282,14 @@ function PageSubtitle({ staticSubtitle }: { staticSubtitle?: string }) {
 
 /** Actions rendered right of the title/subtitle block; empty renders nothing. */
 function PageHeaderActions({ actions }: { actions: ActionConfig[] }) {
+	if (actions.length === 0) {
+		return null;
+	}
 	return (
-		<HeaderActionList
-			actions={actions}
-			className="flex shrink-0 items-center gap-2"
-			testId="page-header-actions"
-		/>
+		<div className="flex shrink-0 items-center gap-2" data-testid="page-header-actions">
+			{actions.map((action) => (
+				<ActionBlock key={action.name} options={action} meta={action.meta ?? {}} />
+			))}
+		</div>
 	);
 }
