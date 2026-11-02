@@ -2,6 +2,7 @@ import type * as React from "react";
 
 import { useDensity } from "../app/densityContext";
 import { cn } from "../lib/cn";
+import { inputMobileFontClass } from "./input";
 
 // New-gen shape: visuals come from `cn-textarea` in
 // `ui/presets/style-preset-*.css`. Our delta: compact density shrinks the
@@ -13,6 +14,7 @@ function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
 			data-slot="textarea"
 			className={cn(
 				"cn-textarea flex field-sizing-content min-h-16 w-full outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+				inputMobileFontClass,
 				density === "compact" && "md:text-xs",
 				className,
 			)}
