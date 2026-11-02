@@ -64,6 +64,7 @@ export async function postAction(
 		errors: response.status === 422 ? messages(bag(body.errors)) : {},
 		subject: `Action [${name}]`,
 		labels: visit.labels(action.form),
+		redirect: isRedirect(response.status) ? response.headers.get("location") : null,
 	});
 }
 
@@ -100,7 +101,11 @@ export async function openModal(
 	const form = wire.ofKind([body], "form")[0]?.node.name ?? null;
 	const { row, selection } = call;
 	const response = spec.query === true ? await loadModal(visit, name, call) : null;
-	const data = loadedData(response) ?? visit.record(form);
+	// A refused query() opens nothing: the record is no stand-in for it.
+	const data =
+		response !== null && response.status !== 200
+			? {}
+			: (loadedData(response) ?? visit.record(form));
 	return new ModalTester(visit, { name, body, form, data, row, selection, response });
 }
 
@@ -125,6 +130,8 @@ function loadedData(response: TestResponse | null): Bag | null {
 /** Each field's messages as a list: the session holds one string, a 422 an array. */
 const messages = (errors: Bag): Record<string, string[]> =>
 	Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, [v].flat().map(String)]));
+
+const isRedirect = (status: number) => status >= 300 && status < 400;
 
 const sameUrl = (a: string, b: string) =>
 	new URL(a, "http://localhost").href === new URL(b, "http://localhost").href;
