@@ -2,17 +2,16 @@
  * TableRow + cell rendering. Row-click arming (pointerdown → click)
  * with DOM-containment guards so portal clicks never count.
  */
-import { router } from "@inertiajs/react";
 import type { CSSProperties, ReactNode } from "react";
 import { useRef, useState } from "react";
 import { cn } from "../../lib/cn";
 import { Checkbox } from "../../ui/checkbox";
-import { isExternalUrl } from "../actionBlock";
 import { useClientActionContext } from "../actionContext";
 import { ActionModal } from "../modalActionBlock";
 import { RowProvider } from "../rowContext";
 import type { ActionConfig, TableColumn } from "../types";
 import { readId } from "./normalize";
+import { navigateToRecord, type RecordLinkTarget, recordLinkColumn } from "./recordLink";
 import { isActionGroupEntry, type RowActionEntry, RowActionsCell } from "./rowActions";
 import { useStickyCell } from "./stickyColumns";
 import { RowDataCell } from "./tableCell";
@@ -62,6 +61,10 @@ export function TableRow(props: TableRowProps) {
 		props.recordUrl && typeof props.row._recordUrl === "string"
 			? props.row._recordUrl
 			: undefined;
+	const recordLink: RecordLinkTarget | undefined = recordHref
+		? { href: recordHref, newTab: props.recordUrlNewTab ?? false }
+		: undefined;
+	const linkColumn = recordLink ? recordLinkColumn(props.columns, props.row) : undefined;
 
 	function handleRowPointerDown(e: React.PointerEvent<HTMLTableRowElement>) {
 		if (!isDomInsideRow(e)) {
@@ -82,8 +85,8 @@ export function TableRow(props: TableRowProps) {
 		if (!target.isConnected || target.closest(INTERACTIVE_SELECTOR)) {
 			return;
 		}
-		if (recordHref) {
-			navigateToRecord(recordHref, props.recordUrlNewTab ?? false);
+		if (recordLink) {
+			navigateToRecord(recordLink);
 			return;
 		}
 		if (rowClickModal) {
@@ -102,6 +105,8 @@ export function TableRow(props: TableRowProps) {
 	}
 
 	const isClickable = Boolean(props.rowClick) || Boolean(recordHref);
+	// With a link in the row, the keyboard reaches the record through the link.
+	const isRowFocusable = isClickable && !linkColumn;
 	const bulkPin = useStickyCell("bulk");
 
 	// New-gen shape: border, hover tint and the selected tint come from
@@ -119,8 +124,8 @@ export function TableRow(props: TableRowProps) {
 			data-testid={id ? `table-row-${id}` : undefined}
 			onPointerDown={isClickable ? handleRowPointerDown : undefined}
 			onClick={isClickable ? handleRowClick : undefined}
-			onKeyDown={isClickable ? handleRowKeyDown : undefined}
-			tabIndex={isClickable ? 0 : undefined}
+			onKeyDown={isRowFocusable ? handleRowKeyDown : undefined}
+			tabIndex={isRowFocusable ? 0 : undefined}
 		>
 			<RowProvider value={props.row}>
 				{props.leadingCell}
@@ -144,6 +149,7 @@ export function TableRow(props: TableRowProps) {
 						col={col}
 						row={props.row}
 						saveCell={props.saveCell}
+						recordLink={col.name === linkColumn ? recordLink : undefined}
 					/>
 				))}
 				{props.hasRowActions && (
@@ -185,16 +191,4 @@ function runRowClick(
 	if ("handler" in rowClickAction && rowClickAction.handler) {
 		void Promise.resolve(rowClickAction.handler({ ...ctx, row: props.row })).catch(() => {});
 	}
-}
-
-function navigateToRecord(href: string, newTab: boolean): void {
-	if (newTab) {
-		window.open(href, "_blank", "noopener");
-		return;
-	}
-	if (isExternalUrl(href)) {
-		window.location.assign(href);
-		return;
-	}
-	router.visit(href);
 }
