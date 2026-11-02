@@ -129,6 +129,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | Method | What it does |
 |---|---|
 | `between(int\|float $min, int\|float $max): static` | Value must fall within the inclusive range. |
+| `inputMode(string $mode): static` | Virtual keyboard hint for touch devices, rendered as the input's `inputmode` attribute: none, text, decimal, numeric, tel, search, email or url. It only picks the keyboard; it does not validate the value — pair it with rules such as rules(['numeric']). |
 | `integer(): static` | Value must be an integer. |
 | `maxValue(int\|float $value): static` | Largest accepted value. |
 | `minValue(int\|float $value): static` | Smallest accepted value. |
@@ -289,6 +290,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `endsWith(string ...$values): static` | Value must end with one of the given substrings. |
 | `exists(string $table, ?string $column = null): static` | Value must exist in $table.$column (defaults column to field name). |
 | `ignore(string\|int $id, string $idColumn = 'id'): static` | Skip the given record when checking uniqueness (edit pages). Appends ",{id},{idColumn}" to the most recent unique rule. |
+| `inputMode(string $mode): static` | Virtual keyboard hint for touch devices, rendered as the input's `inputmode` attribute: none, text, decimal, numeric, tel, search, email or url. It only picks the keyboard; it does not validate the value — pair it with rules such as rules(['numeric']). |
 | `length(int $length): static` | Exact character count. |
 | `mask(Closure\|string $pattern): static` | Static input mask, Filament token alphabet: `9` = digit, `a` = letter, `*` = alphanumeric; any other character is a literal that the client inserts automatically (e.g. '(999) 999-9999'). No support for optional or repeating tokens — it's a fixed-length pattern only. |
 | `maxLength(int $length): static` | Maximum character count. |
