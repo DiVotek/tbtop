@@ -160,8 +160,9 @@ endpoint answers on its own, which is how a test proves the gate holds there too
 list (and search), create (and a required field left empty), edit, delete one and a
 selection, plus view, restore and force delete, and a policy-refusal case when the flags ask
 for them. Records come from the model's factory; without one, the file ends with a helper of
-sample values to check. Under `--policy` a `Gate::before` stands in for the policy stub, so
-the cases pass before it is written.
+sample values to check. Under `--policy` a `Gate::before` returning `$this->allowed` stands in
+for the policy stub, so the cases pass before it is written; the refusal case sets it to
+`false`.
 
 ## Not covered yet
 
