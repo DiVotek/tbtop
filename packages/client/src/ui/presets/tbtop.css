@@ -57,6 +57,11 @@
 	@apply text-destructive-text;
 }
 
+/* The presets' ring-ring/50 lands under the 3:1 a focus indicator needs (WCAG 1.4.11). */
+.cn-button.cn-button:focus-visible {
+	@apply ring-ring;
+}
+
 /* Upstream's CLI rewrites `cn-font-heading` to the heading font at install;
    at runtime it reads the preset's --font-heading, falling back to body. */
 .cn-font-heading {
