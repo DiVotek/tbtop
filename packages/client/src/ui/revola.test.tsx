@@ -66,6 +66,23 @@ describe("ResponsiveDialog", () => {
 		expect(getByText("Hello")).toBeTruthy();
 	});
 
+	test("only a modal dialog announces itself as modal", () => {
+		const popup = (modal: boolean) => {
+			const { getByRole, unmount } = render(
+				<ResponsiveDialog open={true} modal={modal} onlyDialog>
+					<ResponsiveDialogContent>
+						<ResponsiveDialogTitle>Hello</ResponsiveDialogTitle>
+					</ResponsiveDialogContent>
+				</ResponsiveDialog>,
+			);
+			const value = getByRole("dialog").getAttribute("aria-modal");
+			unmount();
+			return value;
+		};
+		expect(popup(true)).toBe("true");
+		expect(popup(false)).toBeNull();
+	});
+
 	test("ResponsiveDialog: onlyDialog bypasses media query and renders immediately", () => {
 		// onlyDialog=true skips the isDesktop null guard entirely — content must appear
 		// even when matchMedia is present, proving the guard only fires on the responsive path.
