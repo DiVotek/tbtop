@@ -29,6 +29,17 @@
 	@apply border-primary/20 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/20;
 }
 
+/* The presets' muted description is tuned for the plain surface and misses 4.5:1
+   on a status tint (4.35:1 on warning). Tripled to beat `.style-preset-X .cn-alert-description`. */
+.cn-alert.cn-alert-variant-info .cn-alert-description,
+.cn-alert.cn-alert-variant-success .cn-alert-description,
+.cn-alert.cn-alert-variant-warning .cn-alert-description,
+.cn-alert.cn-alert-variant-danger .cn-alert-description,
+.cn-alert.cn-alert-variant-gray .cn-alert-description,
+.cn-alert.cn-alert-variant-primary .cn-alert-description {
+	@apply text-foreground;
+}
+
 /* Destructive text on the presets' tinted surfaces: upstream draws
    text-destructive on bg-destructive/10–/30, which lands near 4:1 (3.3:1 on
    hover). The text-destructive-text mix (core.css) clears 4.5:1 in both themes. Doubled
