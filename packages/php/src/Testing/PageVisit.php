@@ -205,7 +205,9 @@ final class PageVisit
         $errors = $response->getStatusCode() === 422 ? (array) ($response->json('errors') ?? []) : [];
         $effects = $response->isOk() ? (array) ($response->json('effects') ?? []) : [];
 
-        return new Result($response, array_values($effects), $errors, "Action [{$name}]", $this->labels($formName));
+        $location = $response->isRedirect() ? (string) $response->headers->get('Location') : null;
+
+        return new Result($response, array_values($effects), $errors, "Action [{$name}]", $this->labels($formName), $location);
     }
 
     /**
@@ -246,7 +248,8 @@ final class PageVisit
         $response = null;
         if (($spec['query'] ?? false) === true) {
             $response = $this->http->action($this->endpoint('action', $name).'/data', array_filter(['row' => $row, 'selection' => $selection]));
-            $loaded = $response->isOk() ? $response->json('data') : null;
+            // A refused query() opens nothing: the record is no stand-in for it.
+            $loaded = $response->isOk() ? $response->json('data') : [];
             $data = is_array($loaded) ? $loaded : $data;
         }
 
