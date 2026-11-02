@@ -91,7 +91,11 @@ export class PageTester {
 
 	/** The form's record() holds this value; dotted names reach nested fields. */
 	assertFieldValue(name: string, value: unknown): this {
-		const { form } = this.visit.field(name.split(".")[0] ?? name);
+		const { form, modal } = this.visit.field(name.split(".")[0] ?? name);
+		check(
+			modal === null,
+			`Field [${name}] sits in modal [${modal}]: open it with openAction() or openRowAction() and use assertFormData().`,
+		);
 		const got = dataGet(this.visit.record(form), name);
 		check(
 			looseEqual(got, value),

@@ -68,6 +68,7 @@ const testingPage = definePage({
 				.label("Archive")
 				.authorize("archive-posts")
 				.handle(() => Effects.make().notify("Archived"), ["row"]),
+			s.action("note").modal("Add a note", s.form("noteForm", [s.text("note")])),
 			s
 				.table<MemoryQuery>("posts")
 				.columns([
@@ -208,6 +209,7 @@ describe("testing API: the page", () => {
 		);
 		expect(() => tester.form().fill({ nope: 1 })).toThrow(TbtopAssertionError);
 		expect(() => tester.table("missing")).toThrow("On the page: tables posts.");
+		expect(() => tester.assertFieldValue("note", null)).toThrow("sits in modal [note]");
 		expect(() => tester.table().assertCanSeeRecords(null as never)).toThrow(
 			TbtopAssertionError,
 		);
