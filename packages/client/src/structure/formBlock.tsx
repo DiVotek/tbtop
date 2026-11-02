@@ -278,6 +278,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 				fieldId,
 				disabled,
 				describedBy: description,
+				required,
 				formCtx,
 			})
 		: renderDescriptor(descriptor, {
@@ -297,6 +298,7 @@ function renderFieldNode(input: RenderFieldInput): ReactNode {
 						disabled,
 						invalid: fieldError !== undefined,
 						describedBy: description,
+						required,
 					},
 				},
 				children: undefined,
@@ -327,6 +329,7 @@ interface TranslatableFieldInput {
 	fieldId: string;
 	disabled: boolean;
 	describedBy: string | undefined;
+	required: boolean;
 	formCtx: FormRenderCtx;
 }
 
@@ -357,6 +360,7 @@ function renderTranslatableFieldNode(input: TranslatableFieldInput): ReactNode {
 		},
 		disabled,
 		describedBy: input.describedBy,
+		required: input.required,
 		locales,
 		renderChild: (child) => renderFormChild(child, formCtx),
 	});

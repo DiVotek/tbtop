@@ -29,6 +29,7 @@ interface TranslatableWrapperProps {
 	options?: Record<string, unknown>;
 	/** aria-describedby value shared by every locale panel — see formBlock.describedBy. */
 	describedBy?: string;
+	required?: boolean;
 	/**
 	 * Render function, NOT a component type: it is invoked, never mounted,
 	 * so a fresh closure per parent render cannot change element identity
@@ -54,6 +55,7 @@ export function TranslatableWrapper({
 	onBlur,
 	options,
 	describedBy,
+	required,
 	renderInner,
 	locales,
 }: TranslatableWrapperProps) {
@@ -73,6 +75,7 @@ export function TranslatableWrapper({
 					onBlur,
 					options,
 					describedBy,
+					required,
 					renderInner,
 				}),
 			)}
@@ -90,12 +93,24 @@ interface PanelInput {
 	onBlur?: () => void;
 	options?: Record<string, unknown>;
 	describedBy?: string;
+	required?: boolean;
 	renderInner: (props: FieldFormProps<unknown>) => ReactNode;
 }
 
 function renderLocalePanel(input: PanelInput) {
-	const { locale, active, name, id, value, onChange, onBlur, options, describedBy, renderInner } =
-		input;
+	const {
+		locale,
+		active,
+		name,
+		id,
+		value,
+		onChange,
+		onBlur,
+		options,
+		describedBy,
+		required,
+		renderInner,
+	} = input;
 	const localeId = id ? `${id}-${locale}` : `${name}-${locale}`;
 	const localeValue = (value?.[locale] ?? null) as unknown;
 	const handleChange = (next: unknown) => {
@@ -111,6 +126,7 @@ function renderLocalePanel(input: PanelInput) {
 		onBlur,
 		options,
 		describedBy,
+		required,
 	};
 
 	return (

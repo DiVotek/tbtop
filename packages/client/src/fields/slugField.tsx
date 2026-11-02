@@ -65,6 +65,7 @@ export function SlugForm({
 	onChange,
 	disabled,
 	describedBy,
+	required,
 	options,
 }: FieldFormProps<string, SlugOptionsBag>) {
 	const fromField = options?.fromField ?? "";
@@ -142,6 +143,7 @@ export function SlugForm({
 				<Input
 					id={fieldId({ id, name })}
 					type="text"
+					aria-required={required || undefined}
 					aria-describedby={describedBy}
 					value={currentSlug}
 					readOnly
