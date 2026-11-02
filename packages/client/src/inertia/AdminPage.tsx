@@ -13,8 +13,8 @@ import { setRoutesBase } from "../data/entityRoutes";
 import { I18nProvider, useTranslation } from "../i18n/i18n";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import { renderNode } from "../render/structureRenderer";
-import { ActionBlock } from "../structure/actionBlock";
 import { ContentLocaleConfigProvider } from "../structure/contentLocaleContext";
+import { HeaderActionList } from "../structure/headerActionList";
 import { ModalStackProvider, useModalStack } from "../structure/modalStack";
 import {
 	PageContentErrorBoundary,
@@ -290,17 +290,11 @@ function PageSubtitle({ staticSubtitle }: { staticSubtitle?: string }) {
  * unchanged.
  */
 function PageHeaderActions({ actions }: { actions: ActionConfig[] }) {
-	if (actions.length === 0) {
-		return null;
-	}
 	return (
-		<div
+		<HeaderActionList
+			actions={actions}
 			className="flex flex-wrap items-center gap-2 md:shrink-0"
-			data-testid="page-header-actions"
-		>
-			{actions.map((action) => (
-				<ActionBlock key={action.name} options={action} meta={action.meta ?? {}} />
-			))}
-		</div>
+			testId="page-header-actions"
+		/>
 	);
 }
