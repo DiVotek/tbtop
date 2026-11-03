@@ -825,6 +825,7 @@
 					"sticky": { "type": "boolean" },
 					"wrap": { "type": "boolean" },
 					"noWrap": { "type": "boolean" },
+					"lineClamp": { "type": "integer", "minimum": 1 },
 					"tooltip": { "type": "string" },
 					"description": { "type": "string" },
 					"emphasized": { "type": "boolean" },

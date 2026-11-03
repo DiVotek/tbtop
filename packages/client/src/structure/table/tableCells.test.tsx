@@ -362,6 +362,44 @@ describe("TableCell: column display properties", () => {
 		expect(td?.className).not.toContain("truncate");
 	});
 
+	test("lineClamp column clamps the value but not the description", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", excerpt: "A long excerpt that wraps" }],
+			columns: [{ name: "excerpt", label: "Excerpt", lineClamp: 2, description: "Summary" }],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const clamp = container.querySelector<HTMLElement>("td [data-line-clamp]");
+		expect(clamp?.dataset.lineClamp).toBe("2");
+		expect(clamp?.textContent).toContain("A long excerpt");
+		expect(clamp?.textContent).not.toContain("Summary");
+		expect(container.querySelector("td")?.className).toContain("whitespace-normal");
+	});
+
+	test("group column lineClamp reaches its children", async () => {
+		const node = s.table({
+			query: async () => [{ id: "1", title: "T", excerpt: "E" }],
+			columns: [
+				{
+					name: "post",
+					label: "Post",
+					kind: "group",
+					lineClamp: 3,
+					columns: [
+						{ name: "title", label: "Title" },
+						{ name: "excerpt", label: "Excerpt", lineClamp: 1 },
+					],
+				},
+			],
+		} as Parameters<typeof s.table>[0]);
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, container } = render(<Wrap>{renderNode(node)}</Wrap>);
+		await findByTestId("table-block");
+		const clamps = [...container.querySelectorAll<HTMLElement>("td [data-line-clamp]")];
+		expect(clamps.map((el) => el.dataset.lineClamp)).toEqual(["3", "1"]);
+	});
+
 	test("column content keeps its existing wrapping behavior by default", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", reference: "A long reference value" }],

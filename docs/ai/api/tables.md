@@ -74,6 +74,7 @@ The table builder, its columns, and filter tabs.
 | `individuallySearchable(bool $value = true): static` | Enable a per-column search input in the table toolbar/header. |
 | `kind(string $kind): static` | Raw kind string; prefer a dedicated kind method (money(), badge(), image(), ...) when one exists. |
 | `label(string $label): static` | Column header text; defaults to a humanized $name when unset. |
+| `lineClamp(int $lines): static` | Wrap the cell value onto at most $lines lines, ending the last one with an ellipsis. Mutually exclusive with wrap()/truncate()/noWrap() — last call wins. |
 | `link(Closure $url, bool $external = false, ?string $icon = null): static` | Render the column as a link. $url receives the row (the Eloquent model, or the stdClass for DB::table() rows) and returns a URL or null (null → empty cell). Never serialized. Like every kind method, exclusive with the other kinds — the last one called wins. |
 | `money(string $currency): static` | Money kind: takes the stored value in MINOR units (integer cents), divides by 100 and appends $currency — store 1999, not 19.99. Output only: for an inline-editable decimal amount use numberInput()->step('0.01')->suffix('USD'), and on forms number()->step('0.01')->prefix('$') with conversion in onSubmit. |
 | `muted(bool $value = true): static` | Style the cell text small and muted — for secondary metadata columns (dates, parents, counts). |

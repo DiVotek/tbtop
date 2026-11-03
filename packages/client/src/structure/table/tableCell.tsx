@@ -73,6 +73,26 @@ function CellTooltip({ tooltip, children }: { tooltip?: string; children: ReactN
 	);
 }
 
+/**
+ * `lineClamp(n)`: the value wraps onto at most `n` lines, ellipsis on the last.
+ * Inline style rather than a `line-clamp-*` class — Tailwind can't generate an
+ * arbitrary `n` at runtime. The description line stays outside the clamp.
+ */
+function LineClamp({ lines, children }: { lines?: number; children: ReactNode }) {
+	if (!lines) {
+		return <>{children}</>;
+	}
+	return (
+		<div
+			data-line-clamp={lines}
+			className="overflow-hidden break-words"
+			style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: lines }}
+		>
+			{children}
+		</div>
+	);
+}
+
 export function RowDataCell({
 	col,
 	row,
@@ -127,7 +147,11 @@ function GroupCell({
 			<div className="flex flex-col gap-0.5">
 				{(col.columns ?? []).map((child) => (
 					<div key={child.name}>
-						<CellInner col={child} row={row} saveCell={saveCell} />
+						<CellInner
+							col={{ ...child, lineClamp: child.lineClamp ?? col.lineClamp }}
+							row={row}
+							saveCell={saveCell}
+						/>
 					</div>
 				))}
 			</div>
@@ -156,7 +180,11 @@ function CellInner({
 	);
 	const content = textClass ? <span className={textClass}>{rendered}</span> : rendered;
 	const linked = recordLink ? <RecordLink target={recordLink}>{content}</RecordLink> : content;
-	const withTooltip = <CellTooltip tooltip={tooltip}>{linked}</CellTooltip>;
+	const withTooltip = (
+		<LineClamp lines={col.lineClamp}>
+			<CellTooltip tooltip={tooltip}>{linked}</CellTooltip>
+		</LineClamp>
+	);
 	const description = cellDescription(row, col);
 	return (
 		<>

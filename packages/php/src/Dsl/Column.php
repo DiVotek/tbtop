@@ -59,6 +59,9 @@ final class Column implements JsonSerializable
 
     private ?bool $noWrap = null;
 
+    /** Max visible lines of the cell value; null = no clamp. */
+    private ?int $lineClamp = null;
+
     private ?string $tooltip = null;
 
     /** Server-only: per-row tooltip resolver — never serialized. Receives the row, returns a scalar or null. */
@@ -284,13 +287,14 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    // wrap/truncate/noWrap are three mutually exclusive line-break modes sharing
-    // two wire keys, so each setter clears the others: the last call wins.
+    // wrap/truncate/noWrap/lineClamp are four mutually exclusive line-break modes
+    // sharing three wire keys, so each setter clears the others: the last call wins.
     /** Allow cell content to wrap onto multiple lines. Mutually exclusive with truncate()/noWrap() — last call wins. */
     public function wrap(): static
     {
         $this->wrap = true;
         $this->noWrap = null;
+        $this->lineClamp = null;
 
         return $this;
     }
@@ -300,6 +304,7 @@ final class Column implements JsonSerializable
     {
         $this->wrap = false;
         $this->noWrap = null;
+        $this->lineClamp = null;
 
         return $this;
     }
@@ -310,7 +315,24 @@ final class Column implements JsonSerializable
         $this->noWrap = $value;
         if ($value) {
             $this->wrap = null;
+            $this->lineClamp = null;
         }
+
+        return $this;
+    }
+
+    /**
+     * Wrap the cell value onto at most $lines lines, ending the last one with an ellipsis.
+     * Mutually exclusive with wrap()/truncate()/noWrap() — last call wins.
+     */
+    public function lineClamp(int $lines): static
+    {
+        if ($lines < 1) {
+            throw new InvalidArgumentException("Column [{$this->name}]: lineClamp() needs at least 1 line, got {$lines}.");
+        }
+        $this->lineClamp = $lines;
+        $this->wrap = null;
+        $this->noWrap = null;
 
         return $this;
     }
@@ -913,6 +935,9 @@ final class Column implements JsonSerializable
         }
         if ($this->noWrap === true) {
             $out['noWrap'] = true;
+        }
+        if ($this->lineClamp !== null) {
+            $out['lineClamp'] = $this->lineClamp;
         }
         if ($this->tooltip !== null) {
             $out['tooltip'] = $this->tooltip;
