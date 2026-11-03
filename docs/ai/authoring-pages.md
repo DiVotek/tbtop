@@ -800,6 +800,28 @@ Column::make('published_time')
     ->noWrap(),
 ```
 
+#### Line breaks — `wrap()`, `truncate()`, `noWrap()`, `lineClamp()`
+
+A cell wraps by default. Four modes change that; they are mutually exclusive and the last call
+wins:
+
+| Method | Cell |
+|---|---|
+| `wrap()` | wraps onto as many lines as it needs (the default) |
+| `truncate()` | one line, cut with an ellipsis |
+| `noWrap()` | one line, never cut — the column widens instead |
+| `lineClamp(2)` | wraps onto at most 2 lines, ellipsis on the last |
+
+```php
+Column::make('intro')->label('Intro')->translatable()->lineClamp(2)->width('320px'),
+```
+
+- `lineClamp()` cuts the value only: `description()` still shows under it in full. On a group
+  column it applies to each child that picks no line-break mode of its own.
+- The clamped text is not repeated on hover — add `tooltip(fn ($row) => …)` if the full text
+  matters. `lineClamp(0)` throws `InvalidArgumentException`.
+- Without `width()` the table may give the column room enough that it never reaches the limit.
+
 #### `sticky()` — columns pinned on horizontal scroll
 
 A wide table scrolls sideways inside its frame. `sticky()` pins a column to the left edge so

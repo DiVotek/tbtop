@@ -65,6 +65,8 @@ export interface TableColumn<TRow = unknown> {
 	wrap?: boolean;
 	/** Keeps the complete cell content on one line without truncating it. */
 	noWrap?: boolean;
+	/** Wraps the cell value onto at most this many lines, ellipsis on the last. */
+	lineClamp?: number;
 	tooltip?: string;
 	/** Muted secondary line under the cell's primary content. */
 	description?: string;
