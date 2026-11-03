@@ -255,6 +255,7 @@ class KitchenSinkPage extends Page
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
                     Column::make('brand_color')->color()->rounded()->label('Color'),
+                    Column::make('excerpt')->label('Excerpt')->lineClamp(2),
                     Column::make('status')->badge(['in_progress' => ['label' => 'In progress', 'color' => 'warning']]),
                     Column::make('published')
                         ->label('Published')

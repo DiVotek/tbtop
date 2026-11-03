@@ -1335,6 +1335,11 @@
                             "shape": "rounded"
                         },
                         {
+                            "name": "excerpt",
+                            "label": "Excerpt",
+                            "lineClamp": 2
+                        },
+                        {
                             "name": "status",
                             "kind": "badge",
                             "badge": {

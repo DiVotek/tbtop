@@ -74,10 +74,11 @@ The table builder, its columns, and filter tabs.
 | `individuallySearchable(bool $value = true): static` | Enable a per-column search input in the table toolbar/header. |
 | `kind(string $kind): static` | Raw kind string; prefer a dedicated kind method (money(), badge(), image(), ...) when one exists. |
 | `label(string $label): static` | Column header text; defaults to a humanized $name when unset. |
+| `lineClamp(int $lines): static` | Wrap the cell value onto at most $lines lines, ending the last one with an ellipsis. Mutually exclusive with wrap()/truncate()/noWrap() — last call wins. |
 | `link(Closure $url, bool $external = false, ?string $icon = null): static` | Render the column as a link. $url receives the row (the Eloquent model, or the stdClass for DB::table() rows) and returns a URL or null (null → empty cell). Never serialized. Like every kind method, exclusive with the other kinds — the last one called wins. |
 | `money(string $currency): static` | Money kind: takes the stored value in MINOR units (integer cents), divides by 100 and appends $currency — store 1999, not 19.99. Output only: for an inline-editable decimal amount use numberInput()->step('0.01')->suffix('USD'), and on forms number()->step('0.01')->prefix('$') with conversion in onSubmit. |
 | `muted(bool $value = true): static` | Style the cell text small and muted — for secondary metadata columns (dates, parents, counts). |
-| `noWrap(bool $value = true): static` | Prevent cell content from wrapping (single line, may overflow). Mutually exclusive with wrap()/truncate() — last call wins. |
+| `noWrap(bool $value = true): static` | Prevent cell content from wrapping (single line, may overflow). Mutually exclusive with wrap()/truncate()/lineClamp() — last call wins. |
 | `number(?int $decimals = null): static` | Kind sugar: sets kind = 'number' and stores $decimals; formatting (number_format) is applied server-side by KindFormat, not here. Omitting $decimals leaves the raw value unformatted. |
 | `numberInput(): static` | Make the column an inline number input; sets kind = 'number' when no kind is already set. The cell ships the stored value raw (no number_format) so the editor can round-trip it; add prefix()/suffix() for a unit and step() for decimals. Incompatible with formatUsing() — throws at serialization. |
 | `onSave(Closure $fn): static` | Consumer-provided save closure — REQUIRED when column is editable. |
@@ -100,11 +101,11 @@ The table builder, its columns, and filter tabs.
 | `toggleable(bool $toggleable = true, bool $hiddenByDefault = false): static` | Lets the user show/hide this column via the column-visibility dropdown. $hiddenByDefault only sets the initial state — the column still ships on the wire and the user can re-enable it. Contrast with hidden(), which excludes the column from the wire entirely and no UI can undo it. |
 | `tooltip(Closure\|string $tooltip): static` | String → static tooltip, serialized as-is. Closure → per-row resolver, run server-side in ColumnProjection and never serialized (mirrors link()'s linkResolver pattern). |
 | `translatable(bool $value = true): static` | Read the cell value from the record's per-locale map for the active locale, instead of a scalar. |
-| `truncate(): static` | Truncate overflowing cell content with an ellipsis. Mutually exclusive with wrap()/noWrap() — last call wins. |
+| `truncate(): static` | Truncate overflowing cell content with an ellipsis. Mutually exclusive with wrap()/noWrap()/lineClamp() — last call wins. |
 | `uppercase(bool $value = true): static` | Style the cell text uppercase with wide tracking — for short code-like values (types, statuses). |
 | `visible(Closure $closure): static` | Pass a closure returning bool; false → column excluded from wire & projection. |
 | `width(string $width): static` | Column width as a CSS length (e.g. '120px', '10%'). |
-| `wrap(): static` | Allow cell content to wrap onto multiple lines. Mutually exclusive with truncate()/noWrap() — last call wins. |
+| `wrap(): static` | Allow cell content to wrap onto multiple lines. Mutually exclusive with truncate()/noWrap()/lineClamp() — last call wins. |
 
 ## Tab
 

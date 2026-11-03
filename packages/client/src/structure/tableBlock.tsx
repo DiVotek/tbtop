@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMediaQuery } from "../lib/useMediaQuery";
-import { ActionBlock } from "./actionBlock";
 import { useClientActionContext } from "./actionContext";
 import { TableSkeleton } from "./defaults";
+import { HeaderActionList } from "./headerActionList";
 import { useSetPageSubtitle } from "./pageSubtitleContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { ASIDE_MIN_WIDTH, AsideFilters, AsideFiltersLayout } from "./table/asideFilters";
@@ -248,17 +248,11 @@ function TableBody(props: TableBodyProps) {
 	return (
 		<TableControllerProvider value={ctrl}>
 			<div className="flex flex-col gap-2" data-testid="table-block">
-				{(props.headerActions ?? []).length > 0 && (
-					<div className="flex justify-end gap-2" data-testid="table-header-actions">
-						{(props.headerActions ?? []).map((action) => (
-							<ActionBlock
-								key={action.name}
-								options={action}
-								meta={action.meta ?? {}}
-							/>
-						))}
-					</div>
-				)}
+				<HeaderActionList
+					actions={props.headerActions ?? []}
+					className="flex justify-end gap-2"
+					testId="table-header-actions"
+				/>
 				{tabs.length > 0 && (
 					<TableTabBar
 						tabs={tabs}

@@ -87,6 +87,12 @@ class PostsIndexPage extends Page
                         ->sortable()
                         ->searchable()
                         ->individuallySearchable(),
+                    Column::make('intro')
+                        ->label('Intro')
+                        ->kind('text')
+                        ->translatable()
+                        ->lineClamp(2)
+                        ->width('240px'),
                     Column::make('slug')
                         ->label('Slug')
                         ->kind('text')
