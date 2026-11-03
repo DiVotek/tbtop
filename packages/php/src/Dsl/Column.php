@@ -289,7 +289,7 @@ final class Column implements JsonSerializable
 
     // wrap/truncate/noWrap/lineClamp are four mutually exclusive line-break modes
     // sharing three wire keys, so each setter clears the others: the last call wins.
-    /** Allow cell content to wrap onto multiple lines. Mutually exclusive with truncate()/noWrap() — last call wins. */
+    /** Allow cell content to wrap onto multiple lines. Mutually exclusive with truncate()/noWrap()/lineClamp() — last call wins. */
     public function wrap(): static
     {
         $this->wrap = true;
@@ -299,7 +299,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** Truncate overflowing cell content with an ellipsis. Mutually exclusive with wrap()/noWrap() — last call wins. */
+    /** Truncate overflowing cell content with an ellipsis. Mutually exclusive with wrap()/noWrap()/lineClamp() — last call wins. */
     public function truncate(): static
     {
         $this->wrap = false;
@@ -309,7 +309,7 @@ final class Column implements JsonSerializable
         return $this;
     }
 
-    /** Prevent cell content from wrapping (single line, may overflow). Mutually exclusive with wrap()/truncate() — last call wins. */
+    /** Prevent cell content from wrapping (single line, may overflow). Mutually exclusive with wrap()/truncate()/lineClamp() — last call wins. */
     public function noWrap(bool $value = true): static
     {
         $this->noWrap = $value;

@@ -377,7 +377,7 @@ describe("TableCell: column display properties", () => {
 		expect(container.querySelector("td")?.className).toContain("whitespace-normal");
 	});
 
-	test("group column lineClamp reaches its children", async () => {
+	test("group column lineClamp reaches children without their own line-break mode", async () => {
 		const node = s.table({
 			query: async () => [{ id: "1", title: "T", excerpt: "E" }],
 			columns: [
@@ -389,6 +389,8 @@ describe("TableCell: column display properties", () => {
 					columns: [
 						{ name: "title", label: "Title" },
 						{ name: "excerpt", label: "Excerpt", lineClamp: 1 },
+						{ name: "code", label: "Code", noWrap: true },
+						{ name: "slug", label: "Slug", wrap: false },
 					],
 				},
 			],

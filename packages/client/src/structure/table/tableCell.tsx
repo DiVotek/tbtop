@@ -93,6 +93,12 @@ function LineClamp({ lines, children }: { lines?: number; children: ReactNode })
 	);
 }
 
+/** A group's clamp reaches a child that picked no line-break mode of its own. */
+function inheritLineClamp(child: TableColumn, lines: number | undefined): TableColumn {
+	const ownMode = child.lineClamp !== undefined || child.wrap !== undefined || child.noWrap;
+	return ownMode || lines === undefined ? child : { ...child, lineClamp: lines };
+}
+
 export function RowDataCell({
 	col,
 	row,
@@ -148,7 +154,7 @@ function GroupCell({
 				{(col.columns ?? []).map((child) => (
 					<div key={child.name}>
 						<CellInner
-							col={{ ...child, lineClamp: child.lineClamp ?? col.lineClamp }}
+							col={inheritLineClamp(child, col.lineClamp)}
 							row={row}
 							saveCell={saveCell}
 						/>

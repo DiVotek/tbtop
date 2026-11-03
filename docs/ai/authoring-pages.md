@@ -817,7 +817,7 @@ Column::make('intro')->label('Intro')->translatable()->lineClamp(2)->width('320p
 ```
 
 - `lineClamp()` cuts the value only: `description()` still shows under it in full. On a group
-  column it applies to each child that sets no clamp of its own.
+  column it applies to each child that picks no line-break mode of its own.
 - The clamped text is not repeated on hover — add `tooltip(fn ($row) => …)` if the full text
   matters. `lineClamp(0)` throws `InvalidArgumentException`.
 - Without `width()` the table may give the column room enough that it never reaches the limit.
