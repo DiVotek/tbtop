@@ -39,7 +39,7 @@ export function columnWire(column: Column): Record<string, unknown> {
 	return out;
 }
 
-/** align, icon, width, sticky, wrap, noWrap — in Column::jsonSerialize order. */
+/** align, icon, width, sticky, wrap, noWrap, lineClamp — in Column::jsonSerialize order. */
 function copyLayout(out: Record<string, unknown>, st: ColumnState): void {
 	copyDefined(out, st, ["align", "icon", "width"]);
 	if (st.sticky === true) {
@@ -49,6 +49,7 @@ function copyLayout(out: Record<string, unknown>, st: ColumnState): void {
 	if (st.noWrap === true) {
 		out.noWrap = true;
 	}
+	copyDefined(out, st, ["lineClamp"]);
 }
 
 function copyDefined(

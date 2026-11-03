@@ -130,6 +130,35 @@ describe("sticky()", () => {
 	});
 });
 
+describe("lineClamp()", () => {
+	const wire = (col: Column) =>
+		(
+			new S().table("t").columns([col]).toNode().options as {
+				columns: Record<string, unknown>[];
+			}
+		).columns[0];
+
+	test("ships the line count; absent by default", () => {
+		expect(wire(Column.make("e").lineClamp(2))).toMatchObject({ lineClamp: 2 });
+		expect(wire(Column.make("e"))).not.toHaveProperty("lineClamp");
+	});
+
+	test("last of wrap/truncate/noWrap/lineClamp wins", () => {
+		const clamped = wire(Column.make("e").truncate().noWrap().lineClamp(3));
+		expect(clamped).toMatchObject({ lineClamp: 3 });
+		expect(clamped).not.toHaveProperty("wrap");
+		expect(clamped).not.toHaveProperty("noWrap");
+		for (const mode of ["wrap", "truncate", "noWrap"] as const) {
+			expect(wire(Column.make("e").lineClamp(2)[mode]())).not.toHaveProperty("lineClamp");
+		}
+	});
+
+	test("rejects fewer than one line", () => {
+		expect(() => Column.make("e").lineClamp(0)).toThrow("lineClamp() needs at least 1 line");
+		expect(() => Column.make("e").lineClamp(1.5)).toThrow("lineClamp() needs at least 1 line");
+	});
+});
+
 describe("group children (#391)", () => {
 	const people = [
 		{ id: 1, name: { en: "Zed", uk: "Зед" }, email: "b@x" },

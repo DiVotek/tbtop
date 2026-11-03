@@ -26,6 +26,7 @@ export interface ColumnState {
 	sticky?: boolean;
 	wrap?: boolean;
 	noWrap?: boolean;
+	lineClamp?: number;
 	tooltip?: string;
 	tooltipFn?: RowFn;
 	description?: string;
@@ -149,19 +150,31 @@ export class Column {
 		return this.st.sticky === true;
 	}
 
-	/** Wrap onto multiple lines; last of wrap/truncate/noWrap wins. */
+	/** Wrap onto multiple lines; last of wrap/truncate/noWrap/lineClamp wins. */
 	wrap(): this {
-		return this.with({ wrap: true, noWrap: undefined });
+		return this.with({ wrap: true, noWrap: undefined, lineClamp: undefined });
 	}
 
-	/** Truncate with an ellipsis; last of wrap/truncate/noWrap wins. */
+	/** Truncate with an ellipsis; last of wrap/truncate/noWrap/lineClamp wins. */
 	truncate(): this {
-		return this.with({ wrap: false, noWrap: undefined });
+		return this.with({ wrap: false, noWrap: undefined, lineClamp: undefined });
 	}
 
-	/** Single line, may overflow; last of wrap/truncate/noWrap wins. */
+	/** Single line, may overflow; last of wrap/truncate/noWrap/lineClamp wins. */
 	noWrap(value = true): this {
-		return value ? this.with({ noWrap: true, wrap: undefined }) : this.with({ noWrap: false });
+		return value
+			? this.with({ noWrap: true, wrap: undefined, lineClamp: undefined })
+			: this.with({ noWrap: false });
+	}
+
+	/** Wrap onto at most `lines` lines, ellipsis on the last; last of wrap/truncate/noWrap/lineClamp wins. */
+	lineClamp(lines: number): this {
+		if (!Number.isInteger(lines) || lines < 1) {
+			throw new Error(
+				`Column [${this.name}]: lineClamp() needs at least 1 line, got ${lines}.`,
+			);
+		}
+		return this.with({ lineClamp: lines, wrap: undefined, noWrap: undefined });
 	}
 
 	/** Static tooltip, or a per-row `(row) => text` resolved server-side. */
