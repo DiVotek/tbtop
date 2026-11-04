@@ -754,6 +754,10 @@
 					}
 				},
 				"mask": { "type": "string" },
+				"inputMode": {
+					"type": "string",
+					"enum": ["none", "text", "decimal", "numeric", "tel", "search", "email", "url"]
+				},
 				"collapsed": { "type": "boolean" },
 				"dependsOn": { "type": "array", "items": { "type": "string" } },
 				"keepValue": { "type": "boolean" },
@@ -821,6 +825,7 @@
 					"sticky": { "type": "boolean" },
 					"wrap": { "type": "boolean" },
 					"noWrap": { "type": "boolean" },
+					"lineClamp": { "type": "integer", "minimum": 1 },
 					"tooltip": { "type": "string" },
 					"description": { "type": "string" },
 					"emphasized": { "type": "boolean" },

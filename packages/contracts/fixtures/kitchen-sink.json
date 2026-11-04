@@ -579,7 +579,9 @@
                                     },
                                     {
                                         "kind": "text",
-                                        "options": {},
+                                        "options": {
+                                            "inputMode": "url"
+                                        },
                                         "meta": {
                                             "hiddenIf": {
                                                 "op": "neq",
@@ -1331,6 +1333,11 @@
                             "label": "Color",
                             "kind": "color",
                             "shape": "rounded"
+                        },
+                        {
+                            "name": "excerpt",
+                            "label": "Excerpt",
+                            "lineClamp": 2
                         },
                         {
                             "name": "status",

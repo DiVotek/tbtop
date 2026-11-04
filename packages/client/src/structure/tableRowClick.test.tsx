@@ -289,4 +289,30 @@ describe("Table rowClick", () => {
 		});
 		expect(triggered).toBe(true);
 	});
+
+	test("rowClick: Enter on a control inside the row does not trigger the action", async () => {
+		let triggered = false;
+		const node = s.table({
+			query: async () => [{ id: "3", title: "Z" }],
+			columns: [{ name: "title" }],
+			rowActions: [
+				{
+					name: "edit",
+					label: "Edit",
+					handler: async () => {
+						triggered = true;
+					},
+				},
+				{ name: "other", label: "Other", handler: async () => {} },
+			],
+			rowClick: "edit",
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const button = await findByRole("button", { name: "Other" });
+		await act(async () => {
+			fireEvent.keyDown(button, { key: "Enter" });
+		});
+		expect(triggered).toBe(false);
+	});
 });

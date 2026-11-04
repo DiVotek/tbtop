@@ -14,6 +14,23 @@ heading has none.
 
 0.8.0 is the first release under this policy.
 
+### Duplicate page slugs fail at boot on every panel
+
+A panel with an explicit `pages()` list now rejects duplicate slugs and paths, as
+`discoverPages()` panels already did. Two pages with the same class basename, say
+`ReceiptPage` from two packages, used to share route names: `route()` silently went to the
+first page and `route:cache` threw a `LogicException`. Override `slug()` on one of them:
+
+```php
+public static function slug(): string
+{
+    return 'inventory-'.parent::slug();
+}
+```
+
+The slug is part of the page's route names and endpoint URLs, so update any hard-coded
+`route('tbtop.{panel}.{slug}')` calls for the renamed page.
+
 ### Laravel 11 is no longer supported
 
 `tbtop/admin` now requires `illuminate/contracts ^12.0||^13.0`. Upgrade the host to

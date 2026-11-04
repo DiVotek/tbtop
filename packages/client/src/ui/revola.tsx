@@ -224,7 +224,7 @@ export const ResponsiveDialogContent = forwardRef<HTMLDivElement, ResponsiveDial
 		},
 		ref,
 	) => {
-		const { direction, alert, useDialog, dismissHooks } = useResponsiveDialog();
+		const { direction, alert, modal, useDialog, dismissHooks } = useResponsiveDialog();
 		const t = useTranslation();
 
 		useLayoutEffect(() => {
@@ -239,6 +239,7 @@ export const ResponsiveDialogContent = forwardRef<HTMLDivElement, ResponsiveDial
 				ref={ref}
 				data-slot={useDialog ? "dialog-content" : "drawer-content"}
 				data-swipe-axis={useDialog ? undefined : SWIPE_AXIS[direction]}
+				aria-modal={modal || undefined}
 				{...props}
 				initialFocus={onOpenAutoFocus && (() => runAutoFocusHook(onOpenAutoFocus))}
 				finalFocus={onCloseAutoFocus && (() => runAutoFocusHook(onCloseAutoFocus))}

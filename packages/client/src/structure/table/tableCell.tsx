@@ -12,6 +12,7 @@ import { ImageCell, LinkCell } from "./cellHelpers";
 import { cellWidthStyle, useColumnSizing } from "./columnResize";
 import { formatColumnValue } from "./columnValueFormat";
 import { EditableCell } from "./editableCell";
+import { RecordLink, type RecordLinkTarget } from "./recordLink";
 import { useStickyCell } from "./stickyColumns";
 
 type SaveCellArgs = { column: string; id: string; value: unknown };
@@ -72,14 +73,42 @@ function CellTooltip({ tooltip, children }: { tooltip?: string; children: ReactN
 	);
 }
 
+/**
+ * `lineClamp(n)`: the value wraps onto at most `n` lines, ellipsis on the last.
+ * Inline style rather than a `line-clamp-*` class — Tailwind can't generate an
+ * arbitrary `n` at runtime. The description line stays outside the clamp.
+ */
+function LineClamp({ lines, children }: { lines?: number; children: ReactNode }) {
+	if (!lines) {
+		return <>{children}</>;
+	}
+	return (
+		<div
+			data-line-clamp={lines}
+			className="overflow-hidden break-words"
+			style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: lines }}
+		>
+			{children}
+		</div>
+	);
+}
+
+/** A group's clamp reaches a child that picked no line-break mode of its own. */
+function inheritLineClamp(child: TableColumn, lines: number | undefined): TableColumn {
+	const ownMode = child.lineClamp !== undefined || child.wrap !== undefined || child.noWrap;
+	return ownMode || lines === undefined ? child : { ...child, lineClamp: lines };
+}
+
 export function RowDataCell({
 	col,
 	row,
 	saveCell,
+	recordLink,
 }: {
 	col: TableColumn;
 	row: Record<string, unknown>;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+	recordLink?: RecordLinkTarget;
 }) {
 	const alignClass = rowColAlignClass(col.align);
 	const pin = useStickyCell({ column: col.name });
@@ -103,7 +132,7 @@ export function RowDataCell({
 			{col.kind === "group" ? (
 				<GroupCell col={col} row={row} saveCell={saveCell} />
 			) : (
-				<CellInner col={col} row={row} saveCell={saveCell} />
+				<CellInner col={col} row={row} saveCell={saveCell} recordLink={recordLink} />
 			)}
 		</td>
 	);
@@ -124,7 +153,11 @@ function GroupCell({
 			<div className="flex flex-col gap-0.5">
 				{(col.columns ?? []).map((child) => (
 					<div key={child.name}>
-						<CellInner col={child} row={row} saveCell={saveCell} />
+						<CellInner
+							col={inheritLineClamp(child, col.lineClamp)}
+							row={row}
+							saveCell={saveCell}
+						/>
 					</div>
 				))}
 			</div>
@@ -137,10 +170,12 @@ function CellInner({
 	col,
 	row,
 	saveCell,
+	recordLink,
 }: {
 	col: TableColumn;
 	row: Record<string, unknown>;
 	saveCell?: (args: SaveCellArgs) => Promise<unknown>;
+	recordLink?: RecordLinkTarget;
 }) {
 	const tooltip = readRowTooltip(row, col) ?? col.tooltip;
 	const rendered = renderCell({ col, row, tooltip, saveCell });
@@ -150,7 +185,12 @@ function CellInner({
 		col.uppercase && "uppercase tracking-wide",
 	);
 	const content = textClass ? <span className={textClass}>{rendered}</span> : rendered;
-	const withTooltip = <CellTooltip tooltip={tooltip}>{content}</CellTooltip>;
+	const linked = recordLink ? <RecordLink target={recordLink}>{content}</RecordLink> : content;
+	const withTooltip = (
+		<LineClamp lines={col.lineClamp}>
+			<CellTooltip tooltip={tooltip}>{linked}</CellTooltip>
+		</LineClamp>
+	);
 	const description = cellDescription(row, col);
 	return (
 		<>

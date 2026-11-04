@@ -122,11 +122,11 @@ the `KitchenSinkPage`/`ContractTest` gate.
 
 | Field | `S` factory | Wire `kind` | Field-specific methods | Needs server endpoint? |
 |---|---|---|---|---|
-| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string\|array $text)` — a locale map (`['en' => …, 'uk' => …]`) on a translatable field shows each locale's text on its tab; `mask(string $pattern)` — input mask where `9` is a digit, `a` a letter, `*` alphanumeric and anything else a literal (fixed length; no optional or repeating tokens); `prefix()`/`suffix()` for inline affixes | No |
+| **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string\|array $text)` — a locale map (`['en' => …, 'uk' => …]`) on a translatable field shows each locale's text on its tab; `mask(string $pattern)` — input mask where `9` is a digit, `a` a letter, `*` alphanumeric and anything else a literal (fixed length; no optional or repeating tokens); `prefix()`/`suffix()` for inline affixes; `inputMode(string $mode)` — mobile keyboard hint (see below) | No |
 | **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | `placeholder(string\|array $text)` — a locale map on a translatable field, as for Text | No |
 | **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
 | **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
-| **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes. Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
+| **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes; `inputMode(string $mode)` — opt-in mobile keyboard hint (see below). Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | `yearPicker(bool $state = true)` — swaps the calendar caption's year label for a year dropdown, offering the years within the bounds below (a narrow band around today without them); `minDate(DateTimeInterface\|string $date)` / `maxDate(...)` — earliest/latest selectable day. Value is a `Y-m-d` day: `record()` cuts an ISO instant (what `$model->toArray()` gives for a date/datetime cast) or a `DateTimeInterface` to its day in the app timezone. Bind it to a date-only column; on a datetime column whose time matters use `datetime()`, since saving a day writes midnight | No |
 | **Datetime** | `$s->datetime('x')` / `Datetime::make('x')` | `datetime` | none | No |
 | **Time** | `$s->time('x')` / `Time::make('x')` | `time` | `minuteStep(int $minutes)` — `HH:MM` interval from 1 to 60 minutes; `seconds()` enables `HH:MM:SS` (combining it with `minuteStep()` throws); call `secondStep(int $seconds)` after it for a 1 to 59 second interval | No |
@@ -151,6 +151,25 @@ for the client component each kind renders through — it is the one table kept 
 `registerFields.ts`.
 
 ---
+
+### Mobile keyboard — `inputMode()` on Text and Number
+
+A `text` field opens the letter keyboard on phones, even for prices or codes, and a `number`
+field on iOS opens the full keyboard on its digits tab. `inputMode()` renders the HTML
+`inputmode` attribute on the input (the masked text variant included) so the device shows the
+right keyboard:
+
+```php
+$s->text('price')->inputMode('decimal')->rules(['numeric']);
+$s->text('phone')->mask('(999) 999-9999')->inputMode('tel');
+$s->number('quantity')->inputMode('numeric');
+```
+
+Allowed: `none`, `text`, `decimal`, `numeric`, `tel`, `search`, `email`, `url`; anything else
+throws `InvalidArgumentException`. It is a keyboard hint only: it neither validates the value
+nor is inferred from `rules()` or `mask()`, so set both. It is opt-in on `number` too: the
+field keeps `type="number"` and sets no mode by default — the iOS `decimal` keypad has no
+minus key, so a default would block negative values.
 
 ## Canonical field-kind inventory (PHP ↔ client ↔ schema)
 

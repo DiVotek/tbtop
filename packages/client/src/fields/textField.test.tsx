@@ -143,3 +143,27 @@ test("a locale map on a non-translatable text reads the default content locale",
 	);
 	expect((getByRole("textbox") as HTMLInputElement).placeholder).toBe("Назва сторінки");
 });
+
+test("inputMode reaches the plain input", () => {
+	const { getByRole } = render(
+		<TextForm name="price" value="" onChange={() => {}} options={{ inputMode: "decimal" }} />,
+	);
+	expect(getByRole("textbox").getAttribute("inputmode")).toBe("decimal");
+});
+
+test("inputMode reaches the masked input", () => {
+	const { getByRole } = render(
+		<TextForm
+			name="phone"
+			value=""
+			onChange={() => {}}
+			options={{ mask: "(999) 999-9999", inputMode: "tel" }}
+		/>,
+	);
+	expect(getByRole("textbox").getAttribute("inputmode")).toBe("tel");
+});
+
+test("no inputMode option renders no inputmode attribute", () => {
+	const { getByRole } = render(<TextForm name="title" value="" onChange={() => {}} />);
+	expect(getByRole("textbox").hasAttribute("inputmode")).toBe(false);
+});

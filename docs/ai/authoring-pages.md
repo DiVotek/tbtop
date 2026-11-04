@@ -116,7 +116,9 @@ Manual pages come first; discovered classes follow in alphabetical fully qualifi
 order, with duplicates removed. `pages()` replaces only the manual list, regardless of its
 position relative to `discoverPages()`. Keep the dashboard first in `pages()` to retain the
 panel-root redirect: absent a page owning the root, the first static page path is the destination.
-Discovery-enabled panels reject duplicate slugs and identical normalized paths. Distinct
+Every panel rejects duplicate slugs and identical normalized paths, because a slug names the
+page's routes. The default slug is the kebab-cased class basename, so two pages with the same
+class name from different packages collide: override `slug()` on one of them. Distinct
 parameterized patterns can still overlap: order those pages explicitly in `pages()`.
 
 To exclude a concrete page from discovery, override `public static function isDiscovered(): bool`
@@ -797,6 +799,28 @@ Column::make('published_time')
     ->label('Published time')
     ->noWrap(),
 ```
+
+#### Line breaks — `wrap()`, `truncate()`, `noWrap()`, `lineClamp()`
+
+A cell wraps by default. Four modes change that; they are mutually exclusive and the last call
+wins:
+
+| Method | Cell |
+|---|---|
+| `wrap()` | wraps onto as many lines as it needs (the default) |
+| `truncate()` | one line, cut with an ellipsis |
+| `noWrap()` | one line, never cut — the column widens instead |
+| `lineClamp(2)` | wraps onto at most 2 lines, ellipsis on the last |
+
+```php
+Column::make('intro')->label('Intro')->translatable()->lineClamp(2)->width('320px'),
+```
+
+- `lineClamp()` cuts the value only: `description()` still shows under it in full. On a group
+  column it applies to each child that picks no line-break mode of its own.
+- The clamped text is not repeated on hover — add `tooltip(fn ($row) => …)` if the full text
+  matters. `lineClamp(0)` throws `InvalidArgumentException`.
+- Without `width()` the table may give the column room enough that it never reaches the limit.
 
 #### `sticky()` — columns pinned on horizontal scroll
 

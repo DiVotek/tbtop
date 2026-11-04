@@ -151,6 +151,27 @@ it('Column: wrap after noWrap wins, dropping noWrap from wire', function (): voi
         ->and($json)->not->toHaveKey('noWrap');
 });
 
+it('Column: lineClamp emits the line count and is absent by default', function (): void {
+    expect(encodeColumn(Column::make('excerpt')->lineClamp(2))['lineClamp'])->toBe(2)
+        ->and(encodeColumn(Column::make('excerpt')))->not->toHaveKey('lineClamp');
+});
+
+it('Column: lineClamp below 1 throws', function (): void {
+    Column::make('excerpt')->lineClamp(0);
+})->throws(InvalidArgumentException::class, 'lineClamp() needs at least 1 line');
+
+it('Column: lineClamp after truncate/noWrap wins, dropping both from wire', function (): void {
+    $json = encodeColumn(Column::make('excerpt')->truncate()->noWrap()->lineClamp(3));
+    expect($json['lineClamp'])->toBe(3)
+        ->and($json)->not->toHaveKey('wrap')
+        ->and($json)->not->toHaveKey('noWrap');
+});
+
+it('Column: wrap/truncate/noWrap after lineClamp win, dropping lineClamp from wire', function (string $mode): void {
+    $json = encodeColumn(Column::make('excerpt')->lineClamp(2)->{$mode}());
+    expect($json)->not->toHaveKey('lineClamp');
+})->with(['wrap', 'truncate', 'noWrap']);
+
 it('Column: tooltip emits tooltip string', function (): void {
     $json = encodeColumn(Column::make('views')->tooltip('Total views'));
     expect($json['tooltip'])->toBe('Total views');

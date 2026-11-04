@@ -43,6 +43,7 @@ export interface RenderTranslatableFieldInput {
 	disabled: boolean;
 	/** aria-describedby value shared by every locale panel's control — see TranslatableWrapper. */
 	describedBy?: string;
+	required?: boolean;
 	locales: string[];
 	/** How to render a descriptor's declared children, if any (form-level only; repeater subfields have none). */
 	renderChild?: (child: StructureNode) => ReactNode;
@@ -66,6 +67,7 @@ export function renderTranslatableField(input: RenderTranslatableFieldInput): Re
 		onBlur,
 		disabled,
 		describedBy,
+		required,
 		locales,
 		renderChild,
 	} = input;
@@ -85,6 +87,7 @@ export function renderTranslatableField(input: RenderTranslatableFieldInput): Re
 		onBlur,
 		options: innerOptions,
 		describedBy,
+		required,
 		renderInner,
 		locales,
 	});
@@ -128,6 +131,7 @@ function makeInnerRenderer({
 					onBlur: props.onBlur,
 					disabled,
 					describedBy: props.describedBy,
+					required: props.required,
 				},
 			},
 			children: undefined,

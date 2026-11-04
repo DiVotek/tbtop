@@ -71,3 +71,18 @@ describe("Number field", () => {
 		expect(input.value).toBe("10");
 	});
 });
+
+test("inputMode is opt-in on the number input", () => {
+	const { getByRole, rerender } = render(
+		<NumberForm
+			name="qty"
+			value={null}
+			onChange={() => {}}
+			options={{ inputMode: "numeric" }}
+		/>,
+	);
+	expect(getByRole("spinbutton").getAttribute("inputmode")).toBe("numeric");
+
+	rerender(<NumberForm name="qty" value={null} onChange={() => {}} />);
+	expect(getByRole("spinbutton").hasAttribute("inputmode")).toBe(false);
+});

@@ -1,0 +1,30 @@
+# Differences from the PHP package
+
+Same wire grammar, same React client, same DSL method names. What differs:
+
+- **Pages** are objects (`definePage`) with TanStack-style paths
+  (`posts/$post/edit`), not classes with routes. The MCP page id is the path.
+- **Auth** is the host's: this package publishes no login or profile page
+  and has no guard. A login page writes the user into the session; the
+  profile page is a recipe ([Getting started](getting-started.md#profile)).
+  An auth library on top (`@tbtop/cms/better-auth`) may ship its own.
+- **Data** goes through a `QueryDriver`, not Eloquent. Model binding,
+  `relationship()` auto-loading and soft-delete macros are the host's code.
+- **Creatable relations** take a required closure:
+  `relation(...).creatable(fields, (validated, deps) => row)` saves the record
+  and returns it with its key and label column. PHP's default save of a new
+  `query()` model has no twin, since the driver does not insert.
+- **Validation** knows Laravel's built-in rules; `unique`/`exists` and anything
+  database-bound are `hostRules`. An unknown rule throws. Input is trimmed
+  and empty strings become null first, as Laravel's middleware does; a
+  richtext document is not trimmed (`trimStrings` in [Data](data.md#validation)).
+- **No media library**: the `upload` field only. Image conversion is optional
+  through `sharp`.
+- **Translations** are copied from the PHP lang files (`bun run sync:lang`).
+- **Presentation closures**: PHP setters such as `label()`, `tooltip()` or
+  `Stat::description()` also take a closure resolved at serialization (#388).
+  Here `view` already runs per request, so pass the computed value. Only
+  `disabled()` takes a closure, as in PHP.
+- **Parity is soft**: the node package catches up with PHP releases, never
+  blocks them. The DSL is held to PHP by the kitchen-sink fixture and a
+  method-parity test.

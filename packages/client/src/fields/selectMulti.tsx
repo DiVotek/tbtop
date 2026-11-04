@@ -25,7 +25,8 @@ export function SelectMultiForm(props: FieldFormProps<SelectValueType, SelectOpt
 }
 
 function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptionsBag>) {
-	const { id, name, value, onChange, onBlur, disabled, invalid, describedBy, options } = props;
+	const { id, name, value, onChange, onBlur, disabled, invalid, describedBy, required, options } =
+		props;
 	const choices = options?.options ?? [];
 	const current = Array.isArray(value) ? value : [];
 	const create = options?.create as SelectCreateConfig | undefined;
@@ -46,6 +47,7 @@ function StaticMultiCombobox(props: FieldFormProps<SelectValueType, SelectOption
 			disabled={disabled}
 			invalid={invalid}
 			describedBy={describedBy}
+			required={required}
 			create={create}
 			getOption={staticGetOption}
 			resolvedLabels={resolvedLabels}
@@ -130,6 +132,7 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 			disabled={props.disabled}
 			invalid={props.invalid}
 			describedBy={props.describedBy}
+			required={props.required}
 			create={create}
 			getOption={(v) => resolvedLabels[v] ?? { value: v, label: v }}
 			resolvedLabels={resolvedLabels}

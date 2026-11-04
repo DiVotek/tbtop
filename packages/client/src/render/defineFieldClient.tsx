@@ -65,6 +65,7 @@ function formPropsFrom<P>(props: RenderProps<P>): FieldFormProps<P> {
 		disabled: binding.disabled,
 		invalid: binding.invalid,
 		describedBy: binding.describedBy,
+		required: binding.required,
 		options: props.options as unknown as Record<string, unknown>,
 	};
 }

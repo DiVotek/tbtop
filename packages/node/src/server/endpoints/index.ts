@@ -1,0 +1,52 @@
+import type { PageDef } from "../page";
+import { findPage } from "../resolve";
+import { DATA_ENDPOINTS } from "./data";
+import { FIELD_ENDPOINTS } from "./fields";
+import { FORM_ENDPOINTS } from "./forms";
+import { TABLE_ENDPOINTS } from "./tables";
+import type { Endpoint } from "./types";
+import { UPLOAD_ENDPOINTS } from "./uploads";
+
+export type { EndpointCtx, ServerOptions } from "./types";
+
+/** The page-scoped endpoint cluster (routes/admin.php), minus the media library. */
+export const ENDPOINTS: Endpoint[] = [
+	...FORM_ENDPOINTS,
+	...TABLE_ENDPOINTS,
+	...FIELD_ENDPOINTS,
+	...DATA_ENDPOINTS,
+	...UPLOAD_ENDPOINTS,
+];
+
+export interface EndpointMatch {
+	endpoint: Endpoint;
+	pagePath: string;
+	args: string[];
+}
+
+/** Every endpoint whose pattern ends the path; the rest is the page path. */
+export function matchEndpoints(path: string): EndpointMatch[] {
+	const segments = path.split("/").filter(Boolean);
+	return ENDPOINTS.flatMap((endpoint) => {
+		const tail = segments.slice(segments.length - endpoint.pattern.length);
+		if (tail.length !== endpoint.pattern.length || segments.length < tail.length) {
+			return [];
+		}
+		const fits = endpoint.pattern.every((p, i) => p.startsWith(":") || p === tail[i]);
+		if (!fits) {
+			return [];
+		}
+		const args = endpoint.pattern.flatMap((p, i) =>
+			p.startsWith(":") ? [decodeURIComponent(tail[i] ?? "")] : [],
+		);
+		return [{ endpoint, pagePath: segments.slice(0, -tail.length).join("/"), args }];
+	});
+}
+
+/** Every endpoint the path could be, paired with the page that owns it. */
+export function routeEndpoints(pages: PageDef[], path: string) {
+	return matchEndpoints(path).flatMap((m) => {
+		const found = findPage(pages, m.pagePath);
+		return found === null ? [] : [{ ...m, ...found }];
+	});
+}

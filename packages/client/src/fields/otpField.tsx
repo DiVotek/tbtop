@@ -25,6 +25,7 @@ export function OtpForm({
 	disabled,
 	invalid,
 	describedBy,
+	required,
 	options,
 }: FieldFormProps<string, OtpOptionsBag>) {
 	const t = useTranslation();
@@ -42,6 +43,7 @@ export function OtpForm({
 			onBlur={onBlur}
 			disabled={disabled}
 			aria-label={t("field.otp.label")}
+			aria-required={required || undefined}
 			aria-describedby={describedBy}
 			aria-invalid={invalid || undefined}
 		>

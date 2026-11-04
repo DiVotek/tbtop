@@ -149,7 +149,7 @@ class KitchenSinkPage extends Page
                         ]),
                     $s->time('opensAt')->label('Opening time')->minuteStep(15),
                     $s->time('closesAt')->label('Closing time')->seconds()->secondStep(5),
-                    $s->text('video_url')->hiddenIf('type', '!=', 'video'),
+                    $s->text('video_url')->inputMode('url')->hiddenIf('type', '!=', 'video'),
                     $s->text('company_name')->label('Company name')->requiredIf('type', '=', 'company'),
                     $s->text('caption')->disabledIf(
                         Cond::all(Cond::eq('status', 'archived'), Cond::empty('published_at'))
@@ -255,6 +255,7 @@ class KitchenSinkPage extends Page
                     Column::make('published_at')->time('H:i')->label('Published time'),
                     Column::make('cover')->image()->circular()->alt('Avatar'),
                     Column::make('brand_color')->color()->rounded()->label('Color'),
+                    Column::make('excerpt')->label('Excerpt')->lineClamp(2),
                     Column::make('status')->badge(['in_progress' => ['label' => 'In progress', 'color' => 'warning']]),
                     Column::make('published')
                         ->label('Published')
