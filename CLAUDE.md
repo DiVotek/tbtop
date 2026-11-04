@@ -169,6 +169,7 @@ Demo (`cd apps/demo`, setup in the README quickstart):
 
 **Run only tests for what you changed.** CI covers the two packages — `packages/php`
 (pest, phpstan, contract-fixture drift), `packages/client` (bun test, tsc) and lint.
+The `packages/node` jobs run only when a path they read changed (the `changes` job's filter).
 **`apps/demo` is not in CI**, so its Pest and browser suites only ever run locally:
 touch the demo and you have to run them yourself.
 
@@ -247,9 +248,11 @@ What a patch vs. a minor may carry, what is public API, and the deprecation rule
 `!` (`feat(php)!: …`), and it adds its steps to `UPGRADE.md`.
 
 Process (manual button, one run does both):
-1. Bump `version` in `packages/client/package.json` in a PR, run `bun run changelog` (git-cliff,
-   `cliff.toml`) to regenerate `CHANGELOG.md` with the release, review it; merge to `main`. The script
-   refuses a patch bump over a breaking commit.
+1. Bump `version` in `packages/client/package.json` in a PR, and the same in
+   `packages/node/package.json` (`@tbtop/admin` for Bun/Node, published in the same run; a node
+   test fails when the two differ); run `bun run changelog` (git-cliff, `cliff.toml`) to regenerate
+   `CHANGELOG.md` with the release, review it; merge to `main`. The script refuses a patch bump
+   over a breaking commit.
 2. GitHub → Actions → **Release** → Run (from `main`). The `release.yml` workflow reads the
    version, refuses if that tag exists, pushes `vX.Y.Z`, then:
    - **npm** publishes inside the workflow via **Trusted Publishing (OIDC)** — no token. The
