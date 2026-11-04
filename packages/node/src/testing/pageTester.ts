@@ -129,9 +129,14 @@ export class PageTester {
 		if (picked === undefined) {
 			fail(`The page has ${forms.length} forms; name one: ${wire.nameList(forms)}.`);
 		}
-		if (wire.named(this.visit.trees(), "form", picked).length === 0) {
+		const named = wire.named(this.visit.trees(), "form", picked);
+		if (named.length === 0) {
 			fail(this.visit.missing("Form", picked, forms));
 		}
+		check(
+			named.some((e) => e.modal === null),
+			`Form [${picked}] sits in modal [${named[0]?.modal}]: open it with openAction() or openRowAction().`,
+		);
 		return new FormTester(this.visit, picked, this.visit.record(picked));
 	}
 

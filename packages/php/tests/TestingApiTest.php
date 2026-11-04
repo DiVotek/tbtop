@@ -185,6 +185,8 @@ it('matches nested effect fields as a subset', function (): void {
 it('points a modal field to the modal tester', function (): void {
     expect(fn () => testingApiPage()->assertFieldValue('note', null))
         ->toThrow(AssertionFailedError::class, 'sits in modal [note]');
+    expect(fn () => testingApiPage()->form('noteForm'))
+        ->toThrow(AssertionFailedError::class, 'Form [noteForm] sits in modal [note]');
 });
 
 it('does not read a refused call as one without errors', function (): void {

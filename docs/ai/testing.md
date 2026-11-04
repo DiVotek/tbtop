@@ -47,6 +47,9 @@ tbtop(EditPostPage::class, ['post' => $post])
     ->assertActionHidden('delete');         // authorize() dropped it
 ```
 
+`assertFieldHidden()` and `assertActionHidden()` pass for any name that is not on the wire,
+so a typo passes too: pair them with a `*Visible()` check in the case where the item shows.
+
 Client-side conditions (`hiddenIf`, `disabledIf`) are not evaluated: the tester reads what
 the server sends. Rendering, clicks and the client's zod checks belong in browser tests.
 
