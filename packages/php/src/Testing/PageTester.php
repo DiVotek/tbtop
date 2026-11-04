@@ -154,9 +154,12 @@ final class PageTester
         if ($name === null) {
             Assert::fail('The page has '.count($forms).' forms; name one: '.Wire::nameList($forms).'.');
         }
-        if (Wire::named($this->visit->trees(), 'form', $name) === []) {
+        $named = Wire::named($this->visit->trees(), 'form', $name);
+        if ($named === []) {
             Assert::fail($this->visit->missing('Form', $name, $forms));
         }
+        $modal = $named[0]['modal'];
+        Assert::assertTrue(array_filter($named, static fn (array $e): bool => $e['modal'] === null) !== [], "Form [{$name}] sits in modal [{$modal}]: open it with openAction() or openRowAction().");
 
         return new FormTester($this->visit, $name, $this->visit->record($name));
     }

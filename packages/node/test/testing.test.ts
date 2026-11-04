@@ -216,6 +216,7 @@ describe("testing API: the page", () => {
 		expect(() => tester.form().fill({ nope: 1 })).toThrow(TbtopAssertionError);
 		expect(() => tester.table("missing")).toThrow("On the page: tables posts.");
 		expect(() => tester.assertFieldValue("note", null)).toThrow("sits in modal [note]");
+		expect(() => tester.form("noteForm")).toThrow("Form [noteForm] sits in modal [note]");
 		expect(() => tester.table().assertCanSeeRecords(null as never)).toThrow(
 			TbtopAssertionError,
 		);
