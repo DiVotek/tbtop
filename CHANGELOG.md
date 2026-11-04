@@ -26,6 +26,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 - inputMode() on Text and Number fields ([#435](https://github.com/DiVotek/tbtop/pull/435))
 - **php,client:** lineClamp(n) on table columns ([#438](https://github.com/DiVotek/tbtop/pull/438))
 - **node:** @tbtop/admin on Bun/Node/Workers: DSL port, Inertia server, panel shell, MCP, packaging ([#373](https://github.com/DiVotek/tbtop/pull/373))
+- testing API for admin pages, tbtop() in PHP and testAdmin() in Node, make:tbtop-resource --tests ([#432](https://github.com/DiVotek/tbtop/pull/432))
 
 ### Fixes
 
@@ -34,6 +35,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 - **client:** readable destructive text in both themes ([#430](https://github.com/DiVotek/tbtop/pull/430))
 - **client:** page header actions stack and wrap below md ([#431](https://github.com/DiVotek/tbtop/pull/431))
 - **client:** a dropdown group in headerActions opens its menu ([#437](https://github.com/DiVotek/tbtop/pull/437))
+- **testing:** form(name) refuses a form that sits in a modal ([#441](https://github.com/DiVotek/tbtop/pull/441))
 
 ### Documentation
 
