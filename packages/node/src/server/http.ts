@@ -96,3 +96,13 @@ function assign(target: Record<string, unknown>, path: string[], value: string):
 	}
 	assign(container, rest, value);
 }
+
+/** A path segment like `%E0` would throw in every decodeURIComponent: a 400, not a 500. */
+export function decodable(path: string): boolean {
+	try {
+		decodeURIComponent(path);
+		return true;
+	} catch {
+		return false;
+	}
+}
