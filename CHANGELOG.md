@@ -1,8 +1,47 @@
 # Changelog
 
-Every release of `tbtop/admin` (Packagist) and `@tbtop/inertia-admin` (npm) —
-both ship in lockstep from one tag. Versioning rules: [VERSIONING.md](VERSIONING.md).
+Every release of `tbtop/admin` (Packagist), `@tbtop/inertia-admin` (npm) and
+`@tbtop/admin` (npm, Node) — all three ship in lockstep from one tag. Versioning rules: [VERSIONING.md](VERSIONING.md).
 Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
+
+## [0.8.1](https://github.com/DiVotek/tbtop/releases/tag/v0.8.1) — 2026-11-04
+
+### ⚠ Breaking changes
+
+- **php:** drop Laravel 11 and sanitize displayHtml by default ([#412](https://github.com/DiVotek/tbtop/pull/412)) — tbtop/admin requires Laravel 12 or 13 (illuminate/contracts ^12.0||^13.0).
+- **dsl:** accept server closures for presentation option values ([#388](https://github.com/DiVotek/tbtop/pull/388))
+- **mcp:** compact search index and files by URL ([#427](https://github.com/DiVotek/tbtop/pull/427))
+- **panel:** reject duplicate page slugs, plus accessibility and table fixes ([#434](https://github.com/DiVotek/tbtop/pull/434))
+
+### Features
+
+- **php:** email verification page for the auth scaffold ([#410](https://github.com/DiVotek/tbtop/pull/410))
+- **stat:** Stat::params() filter fields, like ChartBuilder::params() ([#411](https://github.com/DiVotek/tbtop/pull/411))
+- **client:** active-filter chips under the table toolbar ([#415](https://github.com/DiVotek/tbtop/pull/415))
+- **tables:** collapsible row groups, groups($column, collapsible: true, collapsed: true) ([#414](https://github.com/DiVotek/tbtop/pull/414))
+- **tables:** aside filters panel, filtersIn('aside') + filtersCollapsed() ([#416](https://github.com/DiVotek/tbtop/pull/416))
+- **auth:** two-factor sign-in with admin:install --2fa ([#413](https://github.com/DiVotek/tbtop/pull/413))
+- **panel:** brandLogo(), darkModeBrandLogo(), brandLogoHeight() and favicon() ([#421](https://github.com/DiVotek/tbtop/pull/421))
+- **fields:** relation()->creatable() — create the related record from the picker ([#422](https://github.com/DiVotek/tbtop/pull/422))
+- inputMode() on Text and Number fields ([#435](https://github.com/DiVotek/tbtop/pull/435))
+- **php,client:** lineClamp(n) on table columns ([#438](https://github.com/DiVotek/tbtop/pull/438))
+- **node:** @tbtop/admin on Bun/Node/Workers: DSL port, Inertia server, panel shell, MCP, packaging ([#373](https://github.com/DiVotek/tbtop/pull/373))
+- testing API for admin pages, tbtop() in PHP and testAdmin() in Node, make:tbtop-resource --tests ([#432](https://github.com/DiVotek/tbtop/pull/432))
+
+### Fixes
+
+- **client:** transliterate ı ð þ ħ in slugify; correct simplePagination() docblock ([#420](https://github.com/DiVotek/tbtop/pull/420))
+- **client:** tie helper and error text to every field control, name the search inputs ([#429](https://github.com/DiVotek/tbtop/pull/429))
+- **client:** readable destructive text in both themes ([#430](https://github.com/DiVotek/tbtop/pull/430))
+- **client:** page header actions stack and wrap below md ([#431](https://github.com/DiVotek/tbtop/pull/431))
+- **client:** a dropdown group in headerActions opens its menu ([#437](https://github.com/DiVotek/tbtop/pull/437))
+- **testing:** form(name) refuses a form that sits in a modal ([#441](https://github.com/DiVotek/tbtop/pull/441))
+
+### Documentation
+
+- **backlog:** sweep shipped items after 0.7.3 ([#408](https://github.com/DiVotek/tbtop/pull/408))
+- **release:** 0.7 → 0.8 upgrade steps for Laravel 11 and displayHtml ([#417](https://github.com/DiVotek/tbtop/pull/417))
+- drop the modal footer-slot backlog item ([#423](https://github.com/DiVotek/tbtop/pull/423))
 
 ## [0.7.3](https://github.com/DiVotek/tbtop/releases/tag/v0.7.3) — 2026-10-29
 

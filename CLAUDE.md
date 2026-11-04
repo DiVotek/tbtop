@@ -238,8 +238,10 @@ into the PR body, push, and don't rebase past those two commits.
 
 ## Releasing
 
-Both packages ship **lockstep** from one tag — `@tbtop/inertia-admin` (npm) and `tbtop/admin`
-(Packagist) always carry the same version. The single source of truth is the `version` field in
+All three packages ship **lockstep** from one tag — `tbtop/admin` (Packagist),
+`@tbtop/inertia-admin` (npm) and `@tbtop/admin` (npm, Node) always carry the same version.
+The 0.8, 0.9 and 0.10 lines start at `.1` (their `.0` is never published); from 0.11.0
+numbering is the usual one. The single source of truth is the `version` field in
 `packages/client/package.json`; the git tag is derived from it (PHP has no version field — its
 version *is* the tag).
 

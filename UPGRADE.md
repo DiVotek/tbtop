@@ -12,7 +12,7 @@ heading has none.
 
 ## 0.7 → 0.8
 
-0.8.0 is the first release under this policy.
+0.8.1 is the first release under this policy (the 0.8 line starts at `.1`; 0.8.0 was never published).
 
 ### Duplicate page slugs fail at boot on every panel
 
