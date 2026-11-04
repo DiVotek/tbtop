@@ -197,7 +197,10 @@ jobs:
           if npm view "@tbtop/admin@$v" version >/dev/null 2>&1; then
             echo "@tbtop/admin@$v is already on npm, skipping"
           else
-            npm publish
+            # The earlier, unrelated @tbtop/admin left 0.10.0 on npm; npm 11
+            # refuses to move "latest" to a lower version unless --tag is
+            # explicit. Our release is always the new latest.
+            npm publish --tag latest
           fi
 
       # Re-check right before tagging: the earlier check ran before npm publish,
