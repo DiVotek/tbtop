@@ -25,6 +25,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 - **fields:** relation()->creatable() — create the related record from the picker ([#422](https://github.com/DiVotek/tbtop/pull/422))
 - inputMode() on Text and Number fields ([#435](https://github.com/DiVotek/tbtop/pull/435))
 - **php,client:** lineClamp(n) on table columns ([#438](https://github.com/DiVotek/tbtop/pull/438))
+- **node:** @tbtop/admin on Bun/Node/Workers: DSL port, Inertia server, panel shell, MCP, packaging ([#373](https://github.com/DiVotek/tbtop/pull/373))
 
 ### Fixes
 
