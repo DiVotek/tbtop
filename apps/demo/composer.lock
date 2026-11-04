@@ -6504,11 +6504,11 @@
         },
         {
             "name": "tbtop/admin",
-            "version": "dev-chore/deps-security-bumps",
+            "version": "dev-claude/project-thread-yq62zv",
             "dist": {
                 "type": "path",
                 "url": "../../packages/php",
-                "reference": "c4f12c852964911bd7c07476f185e7c6d05da103"
+                "reference": "a7ff0cebb513be8f46555d9ce93b23c2d6732e8f"
             },
             "require": {
                 "enshrined/svg-sanitize": "^1.0",
@@ -6555,7 +6555,10 @@
                 "psr-4": {
                     "Tbtop\\Admin\\": "src/",
                     "Tbtop\\Admin\\Database\\Factories\\": "database/factories/"
-                }
+                },
+                "files": [
+                    "src/Testing/functions.php"
+                ]
             },
             "autoload-dev": {
                 "psr-4": {

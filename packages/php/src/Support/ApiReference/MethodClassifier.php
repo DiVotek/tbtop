@@ -31,6 +31,11 @@ final class MethodClassifier
         'Tbtop\Admin\Notifications\Notification' => ['sendToDatabase'],
         'Tbtop\Admin\Panels\Chrome' => ['header', 'sidebar', 'footer'],
         'Tbtop\Admin\Panels\PanelConfig' => ['authStack'],
+        'Tbtop\Admin\Testing\PageTester' => ['response', 'url', 'form', 'fill', 'table', 'callAction', 'openAction'],
+        'Tbtop\Admin\Testing\FormTester' => ['submit', 'callAction'],
+        'Tbtop\Admin\Testing\ModalTester' => ['response', 'submit', 'callAction'],
+        'Tbtop\Admin\Testing\TableTester' => ['response', 'rows', 'callAction', 'callRowAction', 'callBulkAction', 'openRowAction'],
+        'Tbtop\Admin\Testing\Result' => ['response', 'effects', 'errors'],
     ];
 
     /** Internals the HTTP layer and serializer call; never authoring surface. */

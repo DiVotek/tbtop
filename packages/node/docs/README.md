@@ -9,6 +9,7 @@ docs site later.
 - [The panel](panel.md): navigation, chrome, palette, appearance, locales, several panels.
 - [MCP](mcp.md): exposing a panel to AI agents.
 - [Porting a PHP page](porting.md): typed tables, host rules, uploads, records.
+- [Testing](testing.md): `testAdmin()` from `@tbtop/admin/testing`, page, form, modal and table testers.
 - [Differences from the PHP package](differences.md).
 
 The DSL itself (`S`, fields, tables, actions, effects) is the PHP one with the

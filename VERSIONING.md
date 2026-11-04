@@ -46,7 +46,8 @@ major after 1.0).
 - PHP: public classes, methods, constants and interfaces under `Tbtop\Admin\`
   that a host calls, extends or implements: the DSL (`S`, fields, columns,
   actions, tables, layout blocks), panel configuration, base pages, facades,
-  and the classes `admin:install` publishes into the host.
+  the testing API (`tbtop()`, `InteractsWithTbtop` and the testers), and the
+  classes `admin:install` publishes into the host.
 - The config keys in `config/tbtop-admin.php` and what they do.
 - Artisan commands, their arguments and options.
 - Route names, translation keys a host can override, and the database schema

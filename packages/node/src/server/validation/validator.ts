@@ -203,7 +203,7 @@ function display(value: unknown): string {
 }
 
 /** Laravel's fallback attribute name: snake_case, underscores as spaces. */
-function humanize(key: string): string {
+export function humanize(key: string): string {
 	return key
 		.replaceAll(/([a-z\d])([A-Z])/g, "$1_$2")
 		.toLowerCase()

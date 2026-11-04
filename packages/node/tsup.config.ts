@@ -9,6 +9,7 @@ export default defineConfig({
 		memory: "src/adapters/memory.ts",
 		"local-disk": "src/adapters/localDisk.ts",
 		sharp: "src/adapters/sharp.ts",
+		testing: "src/testing/index.ts",
 	},
 	format: ["esm"],
 	target: "es2022",

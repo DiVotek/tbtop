@@ -1,0 +1,5 @@
+it('shows a {{ labelLower }}', function () {
+    $record = {{ record }};
+
+    tbtop(ViewPage::class, ['{{ var }}' => $record])->assertOk();
+});

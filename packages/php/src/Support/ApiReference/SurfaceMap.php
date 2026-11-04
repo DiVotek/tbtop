@@ -29,6 +29,11 @@ use Tbtop\Admin\Notifications\Notification;
 use Tbtop\Admin\Notifications\NotificationAction;
 use Tbtop\Admin\Panels\Chrome;
 use Tbtop\Admin\Panels\PanelConfig;
+use Tbtop\Admin\Testing\FormTester;
+use Tbtop\Admin\Testing\ModalTester;
+use Tbtop\Admin\Testing\PageTester;
+use Tbtop\Admin\Testing\Result;
+use Tbtop\Admin\Testing\TableTester;
 
 /**
  * Which classes are documented, and which generated file each lands in.
@@ -99,6 +104,17 @@ final class SurfaceMap
                     'ListBuilder' => ListBuilder::class,
                     'ListItem' => ListItem::class,
                     'LiveRegionBuilder' => LiveRegionBuilder::class,
+                ],
+            ],
+            'testing' => [
+                'title' => 'Testing',
+                'intro' => 'The testing API: `tbtop(Page::class, $params)` (or `$this->tbtop()` with the `InteractsWithTbtop` trait) visits a page through its real endpoints and asserts on the wire. Guide in [testing.md](../testing.md).',
+                'classes' => [
+                    'PageTester' => PageTester::class,
+                    'FormTester' => FormTester::class,
+                    'ModalTester' => ModalTester::class,
+                    'TableTester' => TableTester::class,
+                    'Result' => Result::class,
                 ],
             ],
             'notifications' => [

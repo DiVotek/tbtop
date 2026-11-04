@@ -3,7 +3,7 @@
 > This is the authoring guide for an AI agent (or a developer) building admin pages on
 > the `tbtop/admin` (PHP) + `@tbtop/inertia-admin` (React) stack. It is reference
 > material: short, lookup-shaped, and verified against source. Read the doc that matches
-> your task; you do not need to read all four front-to-back.
+> your task; you do not need to read them all front-to-back.
 
 > **Installing into a host app is documented elsewhere.** Both packages are published
 > (`composer require tbtop/admin`, `npm install @tbtop/inertia-admin`); `php artisan
@@ -86,6 +86,9 @@ need "does this method exist and what does it take"; reach for the prose when yo
 4. **[recipes.md](./recipes.md)** — compositions indexed by intent: how to build the thing
    you think is missing out of parts that exist. **Read before concluding a feature needs
    new framework code.**
+5. **[testing.md](./testing.md)** — testing admin pages from the host's feature tests with
+   `tbtop(Page::class)`: forms, modals, actions and tables through their real endpoints.
+   **Read before writing a test for a page.**
 
 ### Generated — the exhaustive method lists
 
@@ -102,6 +105,7 @@ Built from PHP docblocks by `ApiReferenceTest`, so they cannot drift from the co
 | [api/panel.md](./api/panel.md) | `PanelConfig`, `Chrome`, nav, command palette |
 | [api/blocks.md](./api/blocks.md) | Display blocks, `Stat`, `ChartBuilder`, `ListBuilder`, `LiveRegionBuilder` |
 | [api/notifications.md](./api/notifications.md) | `Notification`, `NotificationAction` |
+| [api/testing.md](./api/testing.md) | `PageTester`, `FormTester`, `ModalTester`, `TableTester`, `Result` |
 
 ## Ground rules for every page
 

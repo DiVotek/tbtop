@@ -12,6 +12,7 @@ use Tbtop\Admin\Commands\Resource\ResourceCode;
 use Tbtop\Admin\Commands\Resource\ResourceNames;
 use Tbtop\Admin\Commands\Resource\ResourceOptions;
 use Tbtop\Admin\Commands\Resource\ResourceStubs;
+use Tbtop\Admin\Commands\Resource\ResourceTests;
 use Tbtop\Admin\Commands\Resource\RouteClashes;
 use Tbtop\Admin\Commands\Resource\SchemaReader;
 use Tbtop\Admin\Commands\Resource\UnfilledColumns;
@@ -29,7 +30,7 @@ class MakeResourceCommand extends Command
         {--view : Add a read-only view page the rows link to}
         {--soft-deletes : Trashed tabs plus restore and force delete (automatic for SoftDeletes models; refused without the trait)}
         {--policy : Gate the pages through the model policy, creating it when missing}
-        {--tests : Write a feature test for the list page}
+        {--tests : Write CRUD feature tests for the pages on the tbtop() testing API}
         {--group=Main : Nav group label}
         {--no-nav : Leave the list page out of the sidebar}
         {--force : Overwrite existing files}';
@@ -57,7 +58,8 @@ class MakeResourceCommand extends Command
 
         $stubs = new ResourceStubs($names, new ResourceCode($columns, $model->getTable(), $model->getKeyName(), $model->usesTimestamps() ? $model->getCreatedAtColumn() : null, $class), $this->resourceOptions($class));
         $dir = app_path('Admin/Pages/'.$names->folder);
-        $files = $this->targets($dir, $stubs);
+        $tests = $this->option('tests') ? ResourceTests::for($class, $names, $this->resourceOptions($class), $columns) : null;
+        $files = $this->targets($dir, $stubs, $tests);
         if ($files === null) {
             return self::FAILURE;
         }
@@ -67,6 +69,9 @@ class MakeResourceCommand extends Command
         }
         $this->policy($class);
         $this->warnColumns($model, $columns);
+        if ($tests?->usesSampleValues()) {
+            $this->components->warn("[{$class}] has no factory: the tests build records from sample values at the end of the file. Check them against your rules.");
+        }
         $this->reportDiscovery($dir, $names);
 
         return self::SUCCESS;
@@ -124,15 +129,14 @@ class MakeResourceCommand extends Command
      *
      * @return array<string, string>|null
      */
-    private function targets(string $dir, ResourceStubs $stubs): ?array
+    private function targets(string $dir, ResourceStubs $stubs, ?ResourceTests $tests): ?array
     {
         $files = [];
         foreach ($stubs->files() as $name => $contents) {
             $files[$dir.'/'.$name] = $contents;
         }
-        if ($this->option('tests')) {
-            $user = (string) (config('auth.providers.users.model') ?: 'App\\Models\\User');
-            $files[base_path('tests/Feature/Admin/'.basename($dir).'Test.php')] = $stubs->test($user);
+        if ($tests !== null) {
+            $files[base_path('tests/Feature/Admin/'.basename($dir).'Test.php')] = $tests->render();
         }
 
         $existing = array_filter(array_keys($files), 'file_exists');

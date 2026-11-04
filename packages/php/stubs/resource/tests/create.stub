@@ -1,0 +1,9 @@
+it('creates a {{ labelLower }}', function () {
+    tbtop(CreatePage::class)
+        ->fill({{ attributes }})
+        ->submit()
+        ->assertHasNoErrors()
+        ->assertRedirect();
+
+    expect({{ model }}::query()->count())->toBe(1);
+});{{ requiredCase }}

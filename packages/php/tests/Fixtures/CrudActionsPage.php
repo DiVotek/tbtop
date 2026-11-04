@@ -54,21 +54,21 @@ class CrudActionsPage extends Page
                             $s->boolean('published')->label('Published'),
                         ]),
                         loadUsing: fn (ActionCtx $ctx): array => CaPost::query()
-                            ->whereKey($ctx->row['id'] ?? null)
+                            ->whereKey($ctx->key())
                             ->firstOrFail()
                             ->only(['title', 'published']),
                         saveUsing: function (ActionCtx $ctx): void {
-                            CaPost::whereKey($ctx->row['id'] ?? null)->update([
+                            CaPost::whereKey($ctx->key())->update([
                                 'title' => $ctx->form['title'] ?? '',
                                 'published' => (bool) ($ctx->form['published'] ?? false),
                             ]);
                         },
                     ),
                     DeleteAction::make($s, using: function (ActionCtx $ctx): void {
-                        CaPost::whereKey($ctx->row['id'] ?? null)->delete();
+                        CaPost::whereKey($ctx->key())->delete();
                     }),
                     ReplicateAction::make($s, using: function (ActionCtx $ctx): void {
-                        CaPost::query()->whereKey($ctx->row['id'] ?? null)->firstOrFail()
+                        CaPost::query()->whereKey($ctx->key())->firstOrFail()
                             ->replicate()->save();
                     }),
                 ])
