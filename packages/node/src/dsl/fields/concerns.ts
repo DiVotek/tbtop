@@ -1,5 +1,5 @@
 import { type Choice, choicesOf, type EnumSource, normalizeOptions } from "../options";
-import type { Field } from "./field";
+import type { Field, WithFlag } from "./field";
 
 export { mixin } from "../mixin";
 
@@ -166,6 +166,8 @@ export class Options {
 /** More than one value (HasMultiple.php). */
 export class Multiple {
 	/** Allow selecting more than one value. */
+	multiple(value?: true): WithFlag<this, "multiple">;
+	multiple(value: boolean): this;
 	multiple(value = true): this {
 		bag(this).set("multiple", value);
 		return this;

@@ -3,6 +3,9 @@ import { Affixes } from "./affix";
 import { DatabaseRules, Dependencies, mixin } from "./concerns";
 import { Field } from "./field";
 
+/** Records the row fields a form reads to type a repeater's rows. */
+export type WithRows<F, C extends readonly unknown[]> = F & { readonly __rows: C };
+
 const DEFAULT_SEARCH_LIMIT = 50;
 
 /** Rows of sub-fields; may nest another repeater (Repeater.php). */
@@ -12,9 +15,9 @@ export class Repeater<N extends string = string, R = Record<string, unknown>> ex
 > {
 	readonly kind = "repeater";
 
-	/** The sub-fields making up one row. */
-	fields(fields: unknown[]): this {
-		return this.set("fields", fields);
+	/** The sub-fields making up one row; their values type the row. */
+	fields<const C extends readonly unknown[]>(fields: C): WithRows<this, C> {
+		return this.set("fields", fields) as WithRows<this, C>;
 	}
 
 	/** Client-enforced cap on row count. */

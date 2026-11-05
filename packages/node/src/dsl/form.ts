@@ -17,8 +17,35 @@ type UnionToIntersection<U> = (U extends unknown ? (x: U) => void : never) exten
 
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
+type Flagged<C, K extends string> = C extends { readonly __flags: { readonly [P in K]: true } }
+	? true
+	: false;
+
+/** `translatable()` on a repeater cascades to its sub-fields instead of wrapping the rows. */
+type Cascaded<R extends readonly unknown[]> = {
+	[I in keyof R]: R[I] extends { readonly __field: unknown }
+		? R[I] & { readonly __flags: { readonly translatable: true } }
+		: R[I];
+};
+
+type Rows<C, R extends readonly unknown[]> =
+	Flagged<C, "translatable"> extends true
+		? FormValues<Cascaded<R>>[] | null
+		: FormValues<R>[] | null;
+
+/** One value per selection, then one per locale: `translatable()` keeps `nullable|array` on the key. */
+type Shaped<C, V> = C extends { readonly __rows: infer R extends readonly unknown[] }
+	? Rows<C, R>
+	: Flagged<C, "translatable"> extends true
+		? Record<string, NonNullable<Listed<C, V>> | null> | null
+		: Listed<C, V>;
+
+type Listed<C, V> = Flagged<C, "multiple"> extends true ? NonNullable<V>[] | null : V;
+
+type ValueOf<C, V> = Flagged<C, "required"> extends true ? NonNullable<Shaped<C, V>> : Shaped<C, V>;
+
 type ValuesOf<C> = C extends { readonly __field: { name: infer N extends string; value: infer V } }
-	? { [K in N]: V }
+	? { [K in N]: ValueOf<C, V> }
 	: C extends { readonly __children: infer CC extends readonly unknown[] }
 		? ValuesOf<CC[number]>
 		: never;

@@ -1,11 +1,11 @@
 import { Multiple, mixin } from "./concerns";
-import { Field } from "./field";
+import { Field, type WithFlag } from "./field";
 
 export type StoredFile = { path: string; url: string };
 export type SaveUpload = (file: File, config: Record<string, unknown>) => Promise<StoredFile>;
 
 /** File upload to a storage disk (Upload.php). */
-export class Upload<N extends string = string> extends Field<N, string | string[] | null> {
+export class Upload<N extends string = string> extends Field<N, string | null> {
 	readonly kind = "upload";
 	private saveFn?: SaveUpload;
 
@@ -73,13 +73,12 @@ export interface Upload<N extends string = string> extends Multiple {}
 mixin(Upload, [Multiple]);
 
 /** Media-library picker; the value is an id or a list of ids (MediaPicker.php). */
-export class MediaPicker<N extends string = string> extends Field<
-	N,
-	string | number | (string | number)[] | null
-> {
+export class MediaPicker<N extends string = string> extends Field<N, string | number | null> {
 	readonly kind = "media";
 
 	/** Allow selecting more than one item. */
+	multiple(value?: true): WithFlag<this, "multiple">;
+	multiple(value: boolean): this;
 	multiple(value = true): this {
 		return this.set("multiple", value);
 	}

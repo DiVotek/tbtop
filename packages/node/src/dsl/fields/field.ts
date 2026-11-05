@@ -10,6 +10,14 @@ import { cascadeTranslatable } from "./translatable";
 /** Narrows the submitted value type a form reads off a field. */
 export type WithValue<F, V> = F & { readonly __field: { value: V } };
 
+/** What shapes a field's submitted value beyond its kind; `FormValues` applies them in one order. */
+export type FieldFlag = "required" | "translatable" | "multiple";
+
+/** Marks a phantom flag on a field, so the order of the calls does not change the value type. */
+export type WithFlag<F, K extends FieldFlag> = F & {
+	readonly __flags: { readonly [P in K]: true };
+};
+
 /**
  * Base of every field builder (Field.php). `N` and `V` are phantom types:
  * the field's name and submitted value, which a form reads to type its payload.
@@ -44,9 +52,9 @@ export abstract class Field<N extends string = string, V = unknown> {
 	}
 
 	/** Flags the field required on the wire and adds a `required` rule. */
-	required(): WithValue<this, NonNullable<V>> {
+	required(): WithFlag<this, "required"> {
 		this.opts.required = true;
-		return this.rules("required") as WithValue<this, NonNullable<V>>;
+		return this.rules("required") as WithFlag<this, "required">;
 	}
 
 	/** Required only while the condition holds: meta.requiredIf plus the matching server rule. */
@@ -74,9 +82,11 @@ export abstract class Field<N extends string = string, V = unknown> {
 	}
 
 	/** Store the value as a per-locale map; on a repeater it cascades to the sub-fields. */
-	translatable(value = true): WithValue<this, Record<string, V>> {
+	translatable(value?: true): WithFlag<this, "translatable">;
+	translatable(value: boolean): this;
+	translatable(value = true): this {
 		this.translatableFlag = value;
-		return this as WithValue<this, Record<string, V>>;
+		return this;
 	}
 
 	/** Rule set for one locale of a translatable field, replacing rules() there. */
