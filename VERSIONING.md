@@ -1,8 +1,8 @@
 # Versioning
 
-`tbtop/admin` (Packagist), `@tbtop/inertia-admin` (npm, the React client) and
-`@tbtop/admin` (npm, the Node/Bun server) ship in lockstep from one git tag,
-`vX.Y.Z`: the same number always means the same release on every side. This page says what a version number promises, what the promise
+`tbtop/admin` (Packagist) and `@tbtop/inertia-admin` (npm) ship in lockstep
+from one git tag, `vX.Y.Z`: the same number always means the same release on
+both sides. This page says what a version number promises, what the promise
 covers, and how an API is retired.
 
 ## What a bump means
@@ -11,31 +11,26 @@ covers, and how an API is retired.
 
 | Bump                | May contain                                                                   |
 | ------------------- | ----------------------------------------------------------------------------- |
-| Patch — 0.8.**2**   | Fixes, new features and options, deprecations. Nothing that breaks documented behaviour. |
-| Minor — 0.**9**.1   | Everything a patch may contain, plus breaking changes.                        |
-
-The 0.8, 0.9 and 0.10 lines start at `.1` (0.8.1, 0.9.1, 0.10.1): their
-`.0` is never published. From 0.11.0 numbering is the usual one.
+| Patch — 0.7.**3**   | Fixes, new features and options, deprecations. Nothing that breaks documented behaviour. |
+| Minor — 0.**8**.0   | Everything a patch may contain, plus breaking changes.                        |
 
 A breaking change waits for the next minor. Every breaking minor comes with a
 section in [UPGRADE.md](UPGRADE.md) that says what to change in the host; the
 release tooling refuses a breaking release without one.
 
-Keep the packages on the same version: they speak one wire format, and a
-mixed set is not supported. Pin them exactly and bump them in one change:
+Keep the two packages on the same version: they speak one wire format, and
+a mixed pair is not supported. Pin both exactly and bump them in one change:
 
 ```json
-"tbtop/admin": "0.8.1"
+"tbtop/admin": "0.7.3"
 ```
 
 ```json
-"@tbtop/inertia-admin": "0.8.1"
+"@tbtop/inertia-admin": "0.7.3"
 ```
-
-A Node host pins `"@tbtop/admin": "0.8.1"` next to the client the same way.
 
 A caret range is safe against breaking changes but not against drift:
-Composer's `^0.8.1` and npm's `^0.8.1` both stop before the 0.9 line, yet a
+Composer's `^0.7.3` and npm's `^0.7.3` both stop before 0.8.0, yet a
 `composer update` alone can move PHP to a newer patch while npm stays put.
 
 ### Skipped versions

@@ -1,7 +1,7 @@
 # Backlog
 
 > The open-work list for this repo. Items get built when a real consumer (EasyCar
-> first) or adoption pain demands them. Last revised: 2026-11-04 (for 0.8.1).
+> first) or adoption pain demands them. Last revised: 2026-11-05 (after 0.8.1).
 >
 > **This file lags the code.** Shipped items are removed in periodic sweeps (git history
 > keeps them), so never conclude a feature is missing from this file alone. The source of
