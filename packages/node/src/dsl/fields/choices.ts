@@ -53,13 +53,13 @@ export class CheckboxList<N extends string = string> extends Field<N, string[] |
 }
 
 /** Segmented buttons, single or multiple (ToggleButtons.php). */
-export class ToggleButtons<N extends string = string> extends Field<N, string | string[] | null> {
+export class ToggleButtons<N extends string = string> extends Field<N, string | null> {
 	readonly kind = "togglebuttons";
 
 	/** `{value, label, description?, disabled?}` entries, or an enum source. */
-	options<const O extends OptionsArg>(options: O): this {
+	options<const O extends OptionsArg>(options: O): WithValue<this, Picked<O, string> | null> {
 		setOptions(this, options);
-		return this;
+		return this as WithValue<this, Picked<O, string> | null>;
 	}
 }
 export interface ToggleButtons<N extends string = string> extends Multiple {}

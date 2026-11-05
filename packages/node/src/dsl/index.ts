@@ -31,7 +31,7 @@ export { DisplayValueBlock, type IconMap } from "./displayValue";
 export { type Effect, Effects } from "./effects";
 export { builtInKinds, makeField, registerField } from "./fieldKinds";
 export * from "./fields/choices";
-export { Field, type WithValue } from "./fields/field";
+export { Field, type FieldFlag, type WithFlag, type WithValue } from "./fields/field";
 export * from "./fields/files";
 export * from "./fields/nested";
 export * from "./fields/numbers";
