@@ -1,21 +1,11 @@
 # Backlog
 
 > The open-work list for this repo. Items get built when a real consumer (EasyCar
-> first) or adoption pain demands them. Last revised: 2026-10-29 (after 0.7.3).
+> first) or adoption pain demands them. Last revised: 2026-11-05 (after 0.8.1).
 >
 > **This file lags the code.** Shipped items are removed in periodic sweeps (git history
 > keeps them), so never conclude a feature is missing from this file alone. The source of
 > truth for what exists is `docs/ai/api/` (generated) and the code itself.
-
-## Planned for 0.8.0
-
-- **Drop Laravel 11** — `illuminate/contracts` still allows `^11.0`. Breaking. CI keeps
-  testing one cell (latest PHP × latest Laravel); no version matrix for now.
-- **`displayHtml()` sanitized by default** — `S::displayHtml()` renders its string as-is
-  ("the author owns escaping"). Sanitize by default, keep raw output behind an explicit
-  opt-in. Breaking.
-- **Semver and deprecation policy + changelog** — write the policy down and generate the
-  release notes with git-cliff (no `cliff.toml` yet).
 
 ## Small fixes
 
