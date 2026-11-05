@@ -38,6 +38,14 @@ A caret range is safe against breaking changes but not against drift:
 Composer's `^0.8.1` and npm's `^0.8.1` both stop before the 0.9 line, yet a
 `composer update` alone can move PHP to a newer patch while npm stays put.
 
+### Skipped versions
+
+The npm name `@tbtop/admin` (the Bun/Node server) was used by an earlier,
+unrelated project, and npm never lets a version number be published twice.
+Its taken numbers are 0.0.1 and every `0.N.0` from 0.1.0 to 0.10.0, so the
+lockstep minors 0.8, 0.9 and 0.10 start at `.1` (0.8.1, 0.9.1, 0.10.1) on
+all three packages. From 0.11.0 numbering is normal.
+
 ### From 1.0
 
 Plain [SemVer](https://semver.org): a major may break, a minor adds features
