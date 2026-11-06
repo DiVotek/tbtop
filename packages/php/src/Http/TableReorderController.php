@@ -21,6 +21,7 @@ use Tbtop\Admin\Dsl\TableBuilder;
 final class TableReorderController
 {
     use AuthorizesPage;
+    use RespondsWithEffects;
 
     public function __invoke(Request $request): JsonResponse
     {
@@ -33,9 +34,16 @@ final class TableReorderController
 
         $builder = $this->resolveBuilder($table);
         $this->assertIdsInScope($builder, $ids);
+        $default = Effects::make()->refreshTable($tableName);
+
+        $using = $table->reorderClosure();
+        if ($using !== null) {
+            return $this->respondWithEffects($using($ids, clone $builder), $default);
+        }
+
         $this->persistOrder($builder, $ids, $column);
 
-        return response()->json(['effects' => Effects::make()->refreshTable($tableName)]);
+        return $this->respondWithEffects(null, $default);
     }
 
     private function resolveTable(Request $request, string $tableName): TableBuilder

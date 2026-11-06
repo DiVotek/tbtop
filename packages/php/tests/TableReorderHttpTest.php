@@ -2,11 +2,13 @@
 
 use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Tests\Fixtures\EcPost;
+use Tbtop\Admin\Tests\Fixtures\ReorderPostsPage;
 use Tbtop\Admin\Tests\ReorderHttpTestCase;
 
 uses(ReorderHttpTestCase::class);
 
 beforeEach(function (): void {
+    ReorderPostsPage::$calls = [];
     Schema::create('ecposts', function ($table): void {
         $table->id();
         $table->string('title');
@@ -113,4 +115,40 @@ it('Reorder: duplicate ids fail validation as duplicates, not as out of scope', 
         ->assertJsonValidationErrors(['ids.1']);
 
     expect(EcPost::pluck('sort_order', 'title')->all())->toBe($original);
+});
+
+// ---------------------------------------------------------------------------
+// reorderable($column, $using) — the closure replaces the package write
+// ---------------------------------------------------------------------------
+
+it('Reorder: a $using closure receives the ids in order and the package writes nothing', function (): void {
+    $ids = reorderIdsByTitle(['c', 'a', 'b']);
+    $original = EcPost::pluck('sort_order', 'title')->all();
+
+    $response = $this->postJson('/admin/reorder-posts/tables/ecposts_custom/reorder', ['ids' => $ids]);
+
+    $response->assertOk();
+    expect(ReorderPostsPage::$calls)->toBe([['ids' => $ids, 'scoped' => 3]]);
+    expect(EcPost::pluck('sort_order', 'title')->all())->toBe($original);
+    expect($response->json('effects.0.kind'))->toBe('notify');
+    expect($response->json('effects'))->not->toContain(['kind' => 'refreshTable', 'table' => 'ecposts_custom']);
+});
+
+it('Reorder: a $using closure that returns nothing gets the default refreshTable', function (): void {
+    $ids = reorderIdsByTitle(['b', 'a']);
+
+    $response = $this->postJson('/admin/reorder-posts/tables/ecposts_custom_published/reorder', ['ids' => $ids]);
+
+    $response->assertOk();
+    expect($response->json('effects'))->toContain(['kind' => 'refreshTable', 'table' => 'ecposts_custom_published']);
+    expect(ReorderPostsPage::$calls)->toBe([['ids' => $ids, 'scoped' => 2]]);
+});
+
+it('Reorder: ids outside the scope never reach a $using closure', function (): void {
+    $ids = reorderIdsByTitle(['a', 'b', 'c']);
+
+    $this->postJson('/admin/reorder-posts/tables/ecposts_custom_published/reorder', ['ids' => $ids])
+        ->assertStatus(422);
+
+    expect(ReorderPostsPage::$calls)->toBe([]);
 });

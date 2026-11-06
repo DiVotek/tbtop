@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { Kysely } from "kysely";
 import { BunSqliteDialect } from "kysely-bun-sqlite";
-import { Column, createAdmin, definePage, validate } from "../src";
+import { Column, createAdmin, definePage, Effects, validate } from "../src";
 import { kyselyDriver, kyselyRules } from "../src/adapters/kysely";
 
 interface DB {
@@ -30,6 +30,7 @@ function seededDb(): Kysely<DB> {
 }
 
 const db = seededDb();
+const reorderCalls: { ids: (string | number)[]; scoped: number }[] = [];
 const admin = createAdmin({
 	allowGuests: true,
 	prefix: "/admin",
@@ -48,6 +49,20 @@ const admin = createAdmin({
 					.paginate(2, [2, 10])
 					.reorderable("sort_order")
 					.query(() => db.selectFrom("posts").where("published", "=", 1)),
+		}),
+		definePage({
+			path: "custom",
+			title: "Custom reorder",
+			view: (s) =>
+				s
+					.table("posts")
+					.columns([Column.make("title")])
+					.query(() => db.selectFrom("posts").where("published", "=", 1))
+					.reorderable("sort_order", async (ids, query) => {
+						const scoped = await query.selectAll().execute();
+						reorderCalls.push({ ids, scoped: scoped.length });
+						return Effects.make().notify("Order saved");
+					}),
 		}),
 	],
 });
@@ -99,6 +114,30 @@ describe("kyselyDriver", () => {
 			.orderBy("sort_order")
 			.execute();
 		expect(order.map((r) => r.id)).toEqual([5, 4, 2, 1]);
+	});
+
+	test("reorderable(column, using) hands the scoped ids to using instead of writing", async () => {
+		const reorder = (ids: number[]) =>
+			admin.handle(
+				new Request("http://x/admin/custom/tables/posts/reorder", {
+					method: "POST",
+					body: JSON.stringify({ ids }),
+					headers: { "content-type": "application/json" },
+				}),
+			);
+		const before = await db.selectFrom("posts").select(["id", "sort_order"]).execute();
+		expect((await reorder([3, 1]))?.status).toBe(422);
+		expect(reorderCalls).toEqual([]);
+		const res = await reorder([1, 2, 4, 5]);
+		if (res === null) {
+			throw new TypeError("not an admin endpoint");
+		}
+		expect(res.status).toBe(200);
+		expect((await res.json()).effects).toEqual([
+			{ kind: "notify", message: "Order saved", level: "success" },
+		]);
+		expect(reorderCalls).toEqual([{ ids: [1, 2, 4, 5], scoped: 4 }]);
+		expect(await db.selectFrom("posts").select(["id", "sort_order"]).execute()).toEqual(before);
 	});
 });
 
