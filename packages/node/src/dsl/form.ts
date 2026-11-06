@@ -17,6 +17,25 @@ type UnionToIntersection<U> = (U extends unknown ? (x: U) => void : never) exten
 
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
+declare const translations: unique symbol;
+
+/**
+ * A translatable field's value: one entry per content locale. Structurally a
+ * `Record<string, V>`; the phantom brand tells it apart from a plain record such
+ * as a keyvalue field's, so `T extends Translations<infer V>` maps it back to `V`.
+ */
+export type Translations<V> = Record<string, V> & { readonly [translations]: V };
+
+/** The same payload without the phantom brand, as plain data is written. */
+type Unbranded<T> =
+	T extends Translations<infer V>
+		? Record<string, Unbranded<V>>
+		: T extends readonly (infer E)[]
+			? Unbranded<E>[]
+			: T extends object
+				? { [K in keyof T]: Unbranded<T[K]> }
+				: T;
+
 type Flagged<C, K extends string> = C extends { readonly __flags: { readonly [P in K]: true } }
 	? true
 	: false;
@@ -37,7 +56,7 @@ type Rows<C, R extends readonly unknown[]> =
 type Shaped<C, V> = C extends { readonly __rows: infer R extends readonly unknown[] }
 	? Rows<C, R>
 	: Flagged<C, "translatable"> extends true
-		? Record<string, NonNullable<Listed<C, V>> | null> | null
+		? Translations<NonNullable<Listed<C, V>> | null> | null
 		: Listed<C, V>;
 
 type Listed<C, V> = Flagged<C, "multiple"> extends true ? NonNullable<V>[] | null : V;
@@ -68,7 +87,7 @@ export class FormBuilder<C extends readonly unknown[] = readonly unknown[]> {
 	) {}
 
 	/** Initial data (page props); explicit keys win over field defaults. */
-	record(record: Partial<FormValues<C>> & Record<string, unknown>): this {
+	record(record: Partial<Unbranded<FormValues<C>>> & Record<string, unknown>): this {
 		this.recordValue = record;
 		return this;
 	}
