@@ -1,4 +1,4 @@
-import { type FormValues, S } from "../src";
+import { type FormValues, S, type Translations } from "../src";
 import { type MemoryQuery, memoryQuery } from "../src/adapters/memory";
 
 const s = new S();
@@ -91,9 +91,9 @@ const shaped = s.form("shaped", [
 ]);
 
 type ShapedExpected = {
-	title: Record<string, string | null> | null;
-	name: Record<string, string | null>;
-	slug: Record<string, string | null>;
+	title: Translations<string | null> | null;
+	name: Translations<string | null>;
+	slug: Translations<string | null>;
 	plain: string | null;
 	tags: string[] | null;
 	sizes: ("s" | "m")[];
@@ -105,8 +105,27 @@ type ShapedExpected = {
 	images: (string | number)[] | null;
 	faq: { q: string; a: string | null }[] | null;
 	steps: { label: string; items: { qty: number | null }[] | null }[];
-	blurbs: { body: Record<string, string | null> }[] | null;
+	blurbs: { body: Translations<string | null> }[] | null;
 	loose: Record<string, unknown>[] | null;
 };
 const shapedExact: Same<FormValues<typeof shaped.children>, ShapedExpected> = true;
 void shapedExact;
+
+// Compile-time only: a translatable value maps back to its field value, a keyvalue does not.
+type Untranslated<T> = T extends Translations<infer V> ? V : T;
+const branded = s.form("branded", [
+	s.text("title").translatable().required(),
+	s.keyvalue("attrs"),
+	s.repeater("items").fields([s.text("label").required()]),
+]);
+type Branded = FormValues<typeof branded.children>;
+const untranslated: Same<Untranslated<Branded["title"]>, string | null> = true;
+const plainRecord: Same<Untranslated<Branded["attrs"]>, Record<string, string> | null> = true;
+const rows: Same<Branded["items"], { label: string }[] | null> = true;
+void [untranslated, plainRecord, rows];
+// Plain data still fits record(): the brand is phantom.
+branded.record({ title: { en: "Hi", uk: null }, items: [{ label: "a" }] });
+// A plain record is not a Translations value.
+// @ts-expect-error the brand is required
+const notTranslations: Translations<string> = { en: "x" };
+void notTranslations;
