@@ -12,6 +12,9 @@ const FILTERS_IN = ["modal", "inline", "aside"];
 const FILTER_WIDTHS = ["sm", "md", "lg", "full"];
 const MIN_POLL_SECONDS = 5;
 
+/** reorderable()'s `using`: the ids in their new order, checked against the query scope. */
+export type ReorderUsing<Q = unknown> = (ids: (string | number)[], query: Q) => unknown;
+
 /** A Column, or the `{name: "Label"}` text-column shorthand. */
 export type ColumnEntry = Column | Record<string, string>;
 
@@ -29,6 +32,7 @@ export class TableBuilder<Q = unknown> {
 	private filtersInMode: string | null = null;
 	private recordUrlFn?: (row: Row) => unknown;
 	private queryFn?: () => Q;
+	private reorderFn?: ReorderUsing<Q>;
 	private perPage = 25;
 	private perPageOptions = [10, 25, 50, 100];
 	private simple = false;
@@ -254,10 +258,16 @@ export class TableBuilder<Q = unknown> {
 		return this.set("recordUrlNewTab", newTab);
 	}
 
-	/** Drag-and-drop reordering persisted to a column, which becomes the default sort. */
-	reorderable(column = "sort_order"): this {
+	/**
+	 * Drag-and-drop reordering persisted to a column, which becomes the default sort.
+	 * Without `using` the driver writes each id's index to the column. `using(ids, query)`
+	 * replaces that write (a repository call, a cache flush); return Effects to replace
+	 * the default refreshTable. Call it after query() for a typed `query`.
+	 */
+	reorderable(column = "sort_order", using?: ReorderUsing<Q>): this {
 		this.opts.reorder = { column };
 		this.opts.defaultSort ??= { field: column, dir: "asc" };
+		this.reorderFn = using;
 		return this;
 	}
 
@@ -307,6 +317,10 @@ export class TableBuilder<Q = unknown> {
 
 	queryClosure(): (() => Q) | undefined {
 		return this.queryFn;
+	}
+
+	reorderClosure(): ReorderUsing<Q> | undefined {
+		return this.reorderFn;
 	}
 
 	recordUrlResolver(): ((row: Row) => unknown) | undefined {

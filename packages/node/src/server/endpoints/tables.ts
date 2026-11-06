@@ -76,7 +76,7 @@ async function findRow(ctx: EndpointCtx, query: unknown, id: unknown): Promise<R
 	return row;
 }
 
-/** POST tables/{name}/reorder: each id's index to the reorder column, ids checked against the scope. */
+/** POST tables/{name}/reorder: ids checked against the scope, then reorderable()'s `using` or each id's index to the column. */
 const reorder: Endpoint = {
 	method: "POST",
 	pattern: ["tables", ":name", "reorder"],
@@ -102,10 +102,15 @@ const reorder: Endpoint = {
 		if (inScope !== ids.length || new Set(ids.map(String)).size !== ids.length) {
 			throw unprocessable("One or more ids are outside the table scope.");
 		}
+		const fallback = Effects.make().refreshTable(found.name);
+		const using = found.reorderClosure();
+		if (using !== undefined) {
+			return effectsBody(await using(ids, query), fallback);
+		}
 		for (const [index, id] of ids.entries()) {
 			await driver.update(query, id, { [column]: index });
 		}
-		return { effects: Effects.make().refreshTable(found.name) };
+		return effectsBody(undefined, fallback);
 	},
 };
 

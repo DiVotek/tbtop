@@ -56,6 +56,8 @@ final class TableBuilder implements JsonSerializable
 
     private ?Closure $recordUrlResolver = null;
 
+    private ?Closure $reorderClosure = null;
+
     private int $paginatePerPage = 25;
 
     /** @var list<int> */
@@ -506,11 +508,20 @@ final class TableBuilder implements JsonSerializable
      * Enable drag-and-drop row reordering, persisting order to $column.
      * The reorder column becomes the default sort so the persisted order
      * survives a reload — an explicit defaultSort() set earlier still wins.
+     *
+     * Without $using the package writes each id's index to $column itself,
+     * as a query update in one transaction: no model events fire. Pass
+     * $using to persist the order yourself (a repository method, a cache
+     * flush): fn (list<int|string> $ids, Builder $query) receives the ids in
+     * their new order, already checked against the table's query scope, and
+     * replaces the package's write. Return Effects to replace the default
+     * refreshTable. Never serialized.
      */
-    public function reorderable(string $column = 'sort_order'): self
+    public function reorderable(string $column = 'sort_order', ?Closure $using = null): self
     {
         $this->opts['reorder'] = ['column' => $column];
         $this->opts['defaultSort'] ??= ['field' => $column, 'dir' => 'asc'];
+        $this->reorderClosure = $using;
 
         return $this;
     }
@@ -519,6 +530,12 @@ final class TableBuilder implements JsonSerializable
     public function reorderColumn(): ?string
     {
         return $this->opts['reorder']['column'] ?? null;
+    }
+
+    /** The reorderable() $using closure, or null when the package writes the order itself. */
+    public function reorderClosure(): ?Closure
+    {
+        return $this->reorderClosure;
     }
 
     /** Actions available for a selection of rows, shown once at least one row is checked. @param  list<ActionBuilder>  $actions */

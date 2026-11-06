@@ -18,6 +18,12 @@ A `relation(...).creatable(fields, (validated, deps) => row)` saves its own
 record too: the closure inserts it and returns the row, which must carry the
 driver's key column (and the `labelKey()` column for the label shown).
 
+Drag-reorder writes each id's index with `update` unless the table owns the
+write: `.query(q).reorderable("sort_order", (ids, query) => …)` gets the ids
+in their new order, already checked against the scope, and the driver writes
+nothing (call it after `.query()` for a typed `query`). Use it to go through
+your repository or flush a cache; return `Effects` to replace `refreshTable`.
+
 Form loading and saving is the page's code: read the record in `view`, fill
 the form with `.record(row)`, write it in `onSubmit`.
 
