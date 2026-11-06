@@ -74,6 +74,22 @@ export type FormValues<C extends readonly unknown[]> = Simplify<
 	UnionToIntersection<ValuesOf<C[number]>>
 >;
 
+/** One locale picked: a translatable value becomes its field value, required keeps it non-null. */
+type Picked<T> =
+	T extends Translations<infer V>
+		? NonNullable<Picked<V>>
+		: T extends readonly (infer E)[]
+			? Picked<E>[]
+			: T extends object
+				? { [K in keyof T]: Picked<T[K]> }
+				: T;
+
+/**
+ * `FormValues` with each translatable field resolved to one locale's value, as a
+ * reader that picks the visitor's language sees it; repeater sub-fields included.
+ */
+export type LocalizedFormValues<C extends readonly unknown[]> = Picked<FormValues<C>>;
+
 /** A form: fields and layout, a record, an onSubmit handler (FormBuilder.php). */
 export class FormBuilder<C extends readonly unknown[] = readonly unknown[]> {
 	declare readonly __children: C;

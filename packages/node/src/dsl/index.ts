@@ -38,7 +38,12 @@ export * from "./fields/numbers";
 export { Embed, Richtext } from "./fields/richtext";
 export * from "./fields/strings";
 export * from "./fields/temporal";
-export { FormBuilder, type FormValues, type Translations } from "./form";
+export {
+	FormBuilder,
+	type FormValues,
+	type LocalizedFormValues,
+	type Translations,
+} from "./form";
 export { applyKindFormat } from "./kindFormat";
 export type { BadgeMap, BooleanStyle } from "./kindMeta";
 export type { FlexOpts, LayoutOpts, SectionOpts } from "./layout";

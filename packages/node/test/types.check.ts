@@ -1,4 +1,4 @@
-import { type FormValues, S, type Translations } from "../src";
+import { type FormValues, type LocalizedFormValues, S, type Translations } from "../src";
 import { type MemoryQuery, memoryQuery } from "../src/adapters/memory";
 
 const s = new S();
@@ -129,3 +129,27 @@ branded.record({ title: { en: "Hi", uk: null }, items: [{ label: "a" }] });
 // @ts-expect-error the brand is required
 const notTranslations: Translations<string> = { en: "x" };
 void notTranslations;
+
+// Compile-time only: one locale picked, translatable fields read as their field value.
+const localized = s.form("localized", [
+	s.text("title").translatable().required(),
+	s.text("subtitle").translatable(),
+	s.keyvalue("attrs"),
+	s
+		.repeater("faq")
+		.translatable()
+		.fields([s.text("q").required()]),
+	s.select("tags").multiple().translatable(),
+]);
+type LocalizedExpected = {
+	title: string;
+	subtitle: string | null;
+	attrs: Record<string, string> | null;
+	faq: { q: string }[] | null;
+	tags: string[] | null;
+};
+const localizedExact: Same<
+	LocalizedFormValues<typeof localized.children>,
+	LocalizedExpected
+> = true;
+void localizedExact;
