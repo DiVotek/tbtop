@@ -1,7 +1,7 @@
 # Backlog
 
 > The open-work list for this repo. Items get built when a real consumer (EasyCar
-> first) or adoption pain demands them. Last revised: 2026-11-05 (after 0.8.1).
+> first) or adoption pain demands them. Last revised: 2026-11-10 (after 0.8.1).
 >
 > **This file lags the code.** Shipped items are removed in periodic sweeps (git history
 > keeps them), so never conclude a feature is missing from this file alone. The source of
@@ -15,13 +15,7 @@ None open.
 
 ## Tables
 
-- **Collapsible row groups** — `rowGroups.tsx` renders group headers without a
-  collapse toggle.
-- Filter chips, saved filters.
-- **Sidebar filter placement** — `filtersIn()` is `modal|inline` (validated). A left
-  sidebar variant needs the filter panel outside the toolbar row: a two-column shell in
-  `tableBlock`, collapsing to `modal` under `md`. Wanted for attribute filters on catalog
-  tables (ecom).
+- Saved filters (per-user storage).
 - **`Column::moneyInput()` / minor-units editing** — inline editing ships as
   `numberInput()->step(...)->suffix(...)` over the raw stored value. If a consumer stores
   minor units, the framework would own ÷100 on projection and ×100 before `onSave`,
@@ -64,13 +58,6 @@ None open.
   against an empty context on non-form surfaces, so a condition on a page-level layout
   node never fires (static `hidden: true` works). Needs a page-level condition context
   (record + user) before conditions are promised outside forms.
-
-## DX
-
-- **Consumer testing kit** — Pest/PHPUnit helpers for host apps to test their own pages
-  through the wire contract, e.g. `page(CarsPage::class)->assertColumn('vin')
-  ->callAction('delete', $car)->assertEffect('refreshTable')`, plus `--tests` output of
-  `make:tbtop-resource` built on it.
 
 ## Auth
 
