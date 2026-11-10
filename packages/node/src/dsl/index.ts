@@ -60,6 +60,6 @@ export { type Container, S } from "./s";
 export { Stat, type StatParams } from "./stat";
 export { Column, type Row, type RowFn } from "./table/column";
 export { Tab } from "./table/tab";
-export { type ColumnEntry, TableBuilder } from "./table/table";
+export { type ColumnEntry, type ReorderUsing, TableBuilder } from "./table/table";
 export type { TabSpec } from "./tabs";
 export * as walk from "./walk";

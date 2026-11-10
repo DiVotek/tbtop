@@ -611,6 +611,27 @@ reorder, inline edit and `$ctx->key()` identify rows by `_key`, so a uuid or cus
 format) no longer changes the key. Read `$ctx->key()`, not `$ctx->row['id']`: the latter
 carries the formatted column value. A URL template takes the key as `{row._key}`.
 
+#### `reorderable()` — drag-reorder
+
+`->reorderable('sort_order')` adds drag handles and makes the column the default sort.
+On drop the endpoint checks every id against the table's `query()` scope (422 otherwise),
+then writes each id's index with one query update per row in a transaction. That is a
+builder `update()`: Eloquent model events and observers do not fire, so a cache keyed on
+them goes stale. When the host owns the write, pass it as the second argument:
+
+```php
+$s->table('pages')
+    ->reorderable('sort_order', function (array $ids, Builder $query) {
+        Pages::reorder($ids);           // your write: events, cache flush, audit log
+        return Effects::make()->refreshTable('pages')->notify('Order saved');
+    })
+    ->query(fn () => Page::query());
+```
+
+The closure replaces the package's write (no transaction is opened for it), receives the
+ids in their new order and a fresh scoped query, and may return `Effects`; anything else
+falls back to `refreshTable`. Node: same call, `.reorderable("sort_order", (ids, query) => …)`.
+
 #### `groups()` — row grouping
 
 `->groups(string $column, bool $collapsible = false, bool $collapsed = false)` partitions
