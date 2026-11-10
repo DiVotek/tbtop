@@ -632,6 +632,45 @@ The closure replaces the package's write (no transaction is opened for it), rece
 ids in their new order and a fresh scoped query, and may return `Effects`; anything else
 falls back to `refreshTable`. Node: same call, `.reorderable("sort_order", (ids, query) => …)`.
 
+#### Export — `ExportAction` + `Column::export()`
+
+Put `ExportAction::make($s)` in a table's `headerActions()` (whole table) or
+`bulkActions()` (the selection, with an "all matching rows" switch). It opens a dialog to
+tick columns and pick a format, then downloads the rows with the table's current tab,
+search, column search, filters and sort applied. The last pick is remembered per table.
+
+```php
+use Tbtop\Admin\Dsl\Actions\ExportAction;
+use Tbtop\Admin\Dsl\ExportFormat;
+
+$s->table('orders')
+    ->columns([
+        Column::make('number')->label('Order'),
+        Column::make('total')->money('USD')
+            ->export(as: fn ($cents) => $cents / 100),   // a number, not "12.50 USD"
+        Column::make('note')->export(label: 'Internal note', enabled: false),
+    ])
+    ->headerActions([ExportAction::make($s)->authorize('export-orders')])
+    ->bulkActions([ExportAction::make($s, [ExportFormat::Csv], filename: 'orders', name: 'exportSelected')])
+    ->query(fn () => Order::query());
+```
+
+- **Values are what the table shows**, in CSV and XLSX alike: formatted dates, numbers and
+  money, badge and select labels, booleans as Yes/No. `export(as:)` replaces the value,
+  `fn(mixed $value, Model|object $row)`, `$value` being the raw column value.
+- `export(label:)` renames the file header; `export(enabled: false)` leaves the column
+  unticked in the dialog (the user can still tick it). A column without `export()` is
+  ticked when visible.
+- The file streams without queues. `maxRows` (default 50 000) caps it: a larger export
+  is refused with a message to narrow it down. CSV is UTF-8 with a BOM; a text cell that
+  starts with `= + - @` gets a leading `'`.
+- Who may export is the action's `->authorize()`; the endpoint answers 404 to anyone else,
+  and to an export action asked for another table's rows.
+- An export is a custom action on the wire, so the MCP server lists it as excluded.
+
+Node: `ExportAction.make(s, { formats: [ExportFormat.Csv], filename, maxRows, name })` and
+`Column.make("note").export({ label, as, enabled })`.
+
 #### `groups()` — row grouping
 
 `->groups(string $column, bool $collapsible = false, bool $collapsed = false)` partitions
@@ -952,6 +991,7 @@ for a server action; always go through `$s->action()` or a preset that does.
 | `ReplicateAction` | `make(S $s, Closure $using, string $name = 'replicate'): ActionBuilder` | Server action; `$using` clones. No auto-redirect — return a `redirect` effect from `$using` for edit-after-clone |
 | `RestoreAction` / `ForceDeleteAction` | `make(S $s, string $model): ActionBuilder`, `::bulk(...)` | Soft-delete row/bulk actions; usually applied for you by `->softDeletes()` |
 | `FormActions` | `save(S $s, string $label = 'Save'): ActionBuilder` · `saveCancel(S $s, string $cancelUrl, string $saveLabel = 'Save', array $extra = []): Node` | Form-footer button presets — a single submit, or a Save+Cancel row |
+| `ExportAction` | `make(S $s, array $formats = [ExportFormat::Csv, ExportFormat::Xlsx], ?string $filename = null, int $maxRows = 50_000, string $name = 'export'): ActionBuilder` | Table header or bulk action: column-picker modal, then a streamed CSV/XLSX download of the table's rows as filtered and sorted. See [Export](#export--exportaction--columnexport) |
 
 `DeleteAction` in a row and a bulk action, straight from the demo:
 

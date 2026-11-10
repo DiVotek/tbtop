@@ -20,7 +20,7 @@ None open.
   `numberInput()->step(...)->suffix(...)` over the raw stored value. If a consumer stores
   minor units, the framework would own ÷100 on projection and ×100 before `onSave`,
   mirroring `KindFormat`. Not needed while consumers store decimals.
-- CSV export / import (queued).
+- CSV/XLSX import, and queued export runs (progress, cancel) — export v1 streams synchronously.
 
 ## Fields / forms
 
