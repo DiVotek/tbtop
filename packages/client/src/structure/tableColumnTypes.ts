@@ -67,6 +67,8 @@ export interface TableColumn<TRow = unknown> {
 	noWrap?: boolean;
 	/** Wraps the cell value onto at most this many lines, ellipsis on the last. */
 	lineClamp?: number;
+	/** Export dialog settings: the file's header, and `on: false` to leave it unticked. */
+	export?: { label?: string; on?: false };
 	tooltip?: string;
 	/** Muted secondary line under the cell's primary content. */
 	description?: string;

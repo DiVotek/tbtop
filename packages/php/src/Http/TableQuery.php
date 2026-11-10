@@ -22,11 +22,7 @@ final class TableQuery
      */
     public static function run(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): array
     {
-        self::applyTab($table, $request, $builder);
-        self::applySearch($table, $request, $builder);
-        self::applyColumnSearch($table, $request, $builder);
-        self::applyFilters($table, $request, $builder);
-        TableSortApplier::apply($table, $request, $builder);
+        self::applyState($table, $request, $builder);
 
         $pagination = $table->paginationSpec();
         $allowedPerPage = $pagination['options'];
@@ -47,6 +43,20 @@ final class TableQuery
             'page' => $page,
             'perPage' => $perPage,
         ];
+    }
+
+    /**
+     * The table's request state — tab, search, per-column search, filters and
+     * sort — applied to $builder, without pagination. Shared with the export
+     * endpoint so a download holds exactly the rows the table shows.
+     */
+    public static function applyState(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): void
+    {
+        self::applyTab($table, $request, $builder);
+        self::applySearch($table, $request, $builder);
+        self::applyColumnSearch($table, $request, $builder);
+        self::applyFilters($table, $request, $builder);
+        TableSortApplier::apply($table, $request, $builder);
     }
 
     /** @return array{data: mixed, hasMore: bool, page: int, perPage: int} */

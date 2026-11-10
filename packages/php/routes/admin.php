@@ -36,6 +36,7 @@ use Tbtop\Admin\Http\SelectOptionsController;
 use Tbtop\Admin\Http\SetAdminLocale;
 use Tbtop\Admin\Http\SetCurrentPanel;
 use Tbtop\Admin\Http\TableController;
+use Tbtop\Admin\Http\TableExportController;
 use Tbtop\Admin\Http\TableFilterOptionsController;
 use Tbtop\Admin\Http\TableReorderController;
 use Tbtop\Admin\Http\VerifyEmailController;
@@ -122,6 +123,9 @@ $registerPageRoutes = static function (array $pages): void {
         Route::post("{$path}/tables/{tbtopTable}/reorder", TableReorderController::class)
             ->defaults('tbtopPage', $class)
             ->name($class::slug().'.tableReorder');
+        Route::get("{$path}/tables/{tbtopTable}/export/{tbtopAction}", TableExportController::class)
+            ->defaults('tbtopPage', $class)
+            ->name($class::slug().'.tableExport');
         // The signed link from the verification mail; the hash pattern keeps it off the cluster's two-segment routes.
         if (is_subclass_of($class, EmailVerificationPage::class)) {
             Route::get("{$path}/{id}/{hash}", VerifyEmailController::class)

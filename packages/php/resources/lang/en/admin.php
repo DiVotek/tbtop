@@ -14,7 +14,14 @@ return [
         'done' => 'Done',
         'replicate' => 'Replicate',
         'restore' => 'Restore',
+        'export' => 'Export',
         'force_delete' => 'Delete permanently',
+    ],
+    'export' => [
+        'yes' => 'Yes',
+        'no' => 'No',
+        'too_many_rows' => 'This export has :count rows, over the :max limit. Narrow it down with filters or a selection.',
+        'unknown_format' => 'Unsupported export format ":format".',
     ],
     'auth' => [
         'login' => [
@@ -173,6 +180,19 @@ return [
         'unsaved' => 'Unsaved changes',
     ],
     'table' => [
+        'export' => [
+            'title' => 'Export',
+            'columns' => 'Columns',
+            'select_all' => 'Select all',
+            'format' => 'Format',
+            'rows' => 'Rows',
+            'all_rows' => 'All matching rows ({count})',
+            'all_rows_unknown' => 'All matching rows',
+            'selected_rows' => 'Selected rows ({count})',
+            'download' => 'Download',
+            'no_columns' => 'Pick at least one column.',
+            'failed' => 'Export failed.',
+        ],
         'search' => ['placeholder' => 'Search…'],
         'filters' => [
             'label' => 'Filters',

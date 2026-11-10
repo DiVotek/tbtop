@@ -538,6 +538,29 @@ final class TableBuilder implements JsonSerializable
         return $this->reorderClosure;
     }
 
+    /**
+     * True when an action named $name sits in this table's header or bulk
+     * actions, a group or dropdown there included. The export endpoint uses
+     * it to keep an export action from reading another table.
+     */
+    public function hasHeaderOrBulkAction(string $name): bool
+    {
+        $pending = [...($this->opts['headerActions'] ?? []), ...($this->opts['bulkActions'] ?? [])];
+        while ($pending !== []) {
+            $entry = array_pop($pending);
+            if ($entry instanceof ActionBuilder || ($entry instanceof Node && $entry->kind === 'action')) {
+                if ($entry->name === $name) {
+                    return true;
+                }
+
+                continue;
+            }
+            array_push($pending, ...StructureWalk::descendants($entry));
+        }
+
+        return false;
+    }
+
     /** Actions available for a selection of rows, shown once at least one row is checked. @param  list<ActionBuilder>  $actions */
     public function bulkActions(array $actions): self
     {

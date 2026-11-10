@@ -208,6 +208,7 @@ notification action is a **link only** — it can never carry a server closure.
 | `GET` | `{page-path}/uploads/{tbtopField}/view` | `{slug}.uploadView` | `FieldUploadViewController` | signed URL | streams private file |
 | `POST` | `{page-path}/cells/{tbtopTable}/{tbtopColumn}` | `{slug}.cell` | `EditableColumnController` | JSON | `{effects: Effect[]}` |
 | `POST` | `{page-path}/tables/{tbtopTable}/reorder` | `{slug}.tableReorder` | `TableReorderController` | JSON | `{effects: Effect[]}` (refreshTable) |
+| `GET` | `{page-path}/tables/{tbtopTable}/export/{tbtopAction}` | `{slug}.tableExport` | `TableExportController` | file | streamed CSV or XLSX (`attachment`); 422 JSON `{message}` over `maxRows` or for an unoffered `format` |
 
 **`RelationSearchController` modes** — distinguished by request body: send
 `{search: string}` for a search, or `{value: string}` to resolve a single
@@ -231,6 +232,17 @@ client POSTs `{ids: [...]}`; `TableReorderController` validates every id is
 inside the table's query scope (rejects 422 otherwise — the reorder analogue of
 the editable-cell scope guard), then writes each id's index to `column` in one
 transaction. Hitting a non-reorderable table is a 422.
+
+**Table export** — `ExportAction::make($s)` in a table's `headerActions()` or
+`bulkActions()` serializes as a `custom` action with handler `tbtop.export` and
+params `{formats, maxRows, filename?}`; the client turns it into a modal with
+a column picker and fetches `.../tables/{table}/export/{action}` with the
+table's state (`tab`, `search`, `colSearch`, `filters`, `sort`/`dir`) plus
+`format`, `columns[]` and, for a selection, `ids[]`. The endpoint 404s unless
+the action is a reachable, authorized ExportAction of that same table; it
+counts the rows first and refuses over `maxRows`, then streams. `ids[]` only
+narrow the table's own query. A column's `export()` call adds
+`export: {label?, on?: false}` to its wire entry; `as:` stays on the server.
 
 **Form submit effects** — `FormSubmitController` flashes a `tbtop.effects`
 array via `Inertia::flash`. The effect set is closed; see

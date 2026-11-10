@@ -46,6 +46,7 @@ export function materializeTable(node: StructureNode, ctx: TableMaterializeCtx):
 						payload: { id: args.id, value: args.value },
 					})
 					.then((body) => (body as { effects?: unknown }).effects),
+			exportUrl: (action: string) => `${ctx.basePath}/tables/${name}/export/${action}`,
 			reorderRows: (actionCtx: ClientActionContext, ids: string[]) =>
 				actionCtx.client
 					.post(`${ctx.basePath}/tables/${name}/reorder`, { ids })

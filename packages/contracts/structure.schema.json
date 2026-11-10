@@ -826,6 +826,14 @@
 					"wrap": { "type": "boolean" },
 					"noWrap": { "type": "boolean" },
 					"lineClamp": { "type": "integer", "minimum": 1 },
+					"export": {
+						"type": "object",
+						"properties": {
+							"label": { "type": "string" },
+							"on": { "const": false }
+						},
+						"additionalProperties": false
+					},
 					"tooltip": { "type": "string" },
 					"description": { "type": "string" },
 					"emphasized": { "type": "boolean" },
