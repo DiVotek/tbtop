@@ -160,9 +160,10 @@ function ColumnPicker({ available, picked, onChange }: PickerProps) {
 				/>
 				{t("table.export.select_all")}
 			</Label>
-			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+			{/* CSS columns fill top to bottom, so the list reads in declared order. */}
+			<div className="gap-x-6 sm:columns-2">
 				{available.map((col) => (
-					<Label key={col.name} className="gap-2 font-normal">
+					<Label key={col.name} className="mb-2 gap-2 font-normal break-inside-avoid">
 						<Checkbox
 							checked={picked.includes(col.name)}
 							onCheckedChange={(v) => toggle(col.name, v === true)}
