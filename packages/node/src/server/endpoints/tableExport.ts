@@ -66,7 +66,10 @@ function selectionIds(raw: unknown): string[] | null {
 	return raw as string[];
 }
 
-/** Rows in chunks, in the table's order with the key as a tiebreak, so no row repeats across pages. */
+/**
+ * Rows in chunks, in the table's order with the key as a tiebreak so the order is total.
+ * Pages are offsets: rows written or deleted mid-download can shift a page boundary.
+ */
 async function* chunks<Q>(driver: QueryDriver<Q>, query: Q): AsyncGenerator<Row[]> {
 	const ordered = driver.orderBy(query, keyOf(driver as QueryDriver), "asc");
 	for (let page = 1; ; page++) {

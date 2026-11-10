@@ -146,7 +146,8 @@ final class TableExportController
     /**
      * Rows in chunks, in the table's sort order. An Eloquent query reads
      * page by page with its eager loads, ordered by the key as a tiebreak so
-     * no row repeats or goes missing across pages; a plain query streams.
+     * the order is total; pages are offsets, so rows written mid-download can
+     * shift a page boundary. A plain query streams from one cursor.
      *
      * @return iterable<int, iterable<int, mixed>>
      */
