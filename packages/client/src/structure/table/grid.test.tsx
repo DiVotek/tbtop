@@ -4,13 +4,23 @@
  * - reorder disabled: no drag handles, disabled hint shown
  * - colSpan accounts for the handle column only when reorder is active
  */
-import { describe, expect, spyOn, test } from "bun:test";
-import { router } from "@inertiajs/react";
+import { describe, expect, mock, test } from "bun:test";
+import * as inertiaReact from "@inertiajs/react";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
 import { wrapForStructure } from "../testFixtures";
 import type { TableColumn } from "../types";
 import { TableGrid } from "./grid";
+
+// Other files mock @inertiajs/react process-wide, some with a router that has no
+// visit(), and each mock factory call builds a new router object, so spying on
+// the imported router misses the one recordLink holds. Re-mock with this file's
+// own visit; everything else stays whatever is in effect.
+const routerVisit = mock((_url: string) => {});
+mock.module("@inertiajs/react", () => ({
+	...inertiaReact,
+	router: Object.assign(Object.create(inertiaReact.router), { visit: routerVisit }),
+}));
 
 // Real provider chain (not a global module mock) so rows resolve the action
 // context without leaking a stub into other files — mock.module is process-wide.
@@ -185,7 +195,8 @@ describe("TableGrid record URL + empty-state config", () => {
 	});
 
 	test("a plain click visits the record once; a modified click is left to the browser", () => {
-		const visit = spyOn(router, "visit").mockImplementation(() => {});
+		routerVisit.mockClear();
+		const visit = routerVisit;
 		const { getByRole } = renderGrid({
 			rows: [{ id: "1", title: "Hello", _recordUrl: "/admin/posts/1" }],
 			recordUrl: true,
@@ -198,7 +209,6 @@ describe("TableGrid record URL + empty-state config", () => {
 		fireEvent.click(link);
 		expect(visit).toHaveBeenCalledTimes(1);
 		expect(visit).toHaveBeenCalledWith("/admin/posts/1");
-		visit.mockRestore();
 	});
 
 	test("rows stay non-clickable without recordUrl even if a url is present", () => {
