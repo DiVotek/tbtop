@@ -3,6 +3,7 @@ import { findPage } from "../resolve";
 import { DATA_ENDPOINTS } from "./data";
 import { FIELD_ENDPOINTS } from "./fields";
 import { FORM_ENDPOINTS } from "./forms";
+import { EXPORT_ENDPOINTS } from "./tableExport";
 import { TABLE_ENDPOINTS } from "./tables";
 import type { Endpoint } from "./types";
 import { UPLOAD_ENDPOINTS } from "./uploads";
@@ -13,6 +14,7 @@ export type { EndpointCtx, ServerOptions } from "./types";
 export const ENDPOINTS: Endpoint[] = [
 	...FORM_ENDPOINTS,
 	...TABLE_ENDPOINTS,
+	...EXPORT_ENDPOINTS,
 	...FIELD_ENDPOINTS,
 	...DATA_ENDPOINTS,
 	...UPLOAD_ENDPOINTS,

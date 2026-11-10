@@ -6,6 +6,7 @@ import {
 	EditAction,
 	Effects,
 	Embed,
+	ExportAction,
 	type Node,
 	S,
 	Tab,
@@ -412,7 +413,10 @@ function postsTable(s: S) {
 			Column.make("published_at").time("H:i").label("Published time"),
 			Column.make("cover").image().circular().alt("Avatar"),
 			Column.make("brand_color").color().rounded().label("Color"),
-			Column.make("excerpt").label("Excerpt").lineClamp(2),
+			Column.make("excerpt")
+				.label("Excerpt")
+				.lineClamp(2)
+				.export({ label: "Summary", enabled: false }),
 			Column.make("status").badge({
 				in_progress: { label: "In progress", color: "warning" },
 			}),
@@ -465,6 +469,7 @@ function postsTable(s: S) {
 		.emptyState("No posts yet", "Create your first post to get started.", "file-text")
 		.headerActions([
 			s.action("createPost").label("New post").icon("pencil").url("/admin/posts/create"),
+			ExportAction.make(s, { filename: "posts" }),
 		])
 		.recordUrl(() => "/admin/posts/1")
 		.openRecordUrlInNewTab()

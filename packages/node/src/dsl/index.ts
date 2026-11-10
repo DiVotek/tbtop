@@ -9,6 +9,11 @@ export {
 	ReplicateAction,
 	ViewAction,
 } from "./actions/crud";
+export {
+	ExportAction,
+	type ExportActionOptions,
+	ExportFormat,
+} from "./actions/export";
 export { closeButton, RecordAction, type RecordFn } from "./actions/record";
 export {
 	ForceDeleteAction,
@@ -58,7 +63,7 @@ export { modalData, recordData, seedDefaults } from "./record";
 export { collectAttributes, collectRules, type Rules } from "./ruleWalker";
 export { type Container, S } from "./s";
 export { Stat, type StatParams } from "./stat";
-export { Column, type Row, type RowFn } from "./table/column";
+export { Column, type ColumnExport, type Row, type RowFn } from "./table/column";
 export { Tab } from "./table/tab";
 export { type ColumnEntry, type ReorderUsing, TableBuilder } from "./table/table";
 export type { TabSpec } from "./tabs";
