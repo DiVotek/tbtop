@@ -181,6 +181,61 @@ describe("materialize actions", () => {
 		expect(notifications).toEqual(["done"]);
 	});
 
+	it("sends the table a selection came from, and its state when every matching row is picked", async () => {
+		const bodies: unknown[] = [];
+		const client = {
+			post: async (_path: string, body: unknown) => {
+				bodies.push(body);
+				return { effects: [] };
+			},
+		} as unknown as AdminClient;
+		const out = materialize(
+			node("action", { spec: { type: "server", needs: ["selection"] } }, "archive"),
+			BASE,
+		);
+		const handler = opts(out).handler as (ctx: ClientActionContext) => Promise<void>;
+		const table = (allMatching: boolean) => ({
+			name: "posts",
+			rows: [],
+			selectedIds: ["1", "2"],
+			allMatching,
+			queryParams: {
+				page: 3,
+				perPage: 25,
+				search: "alpha",
+				tab: "live",
+				sort: "title:desc",
+				filters: { status: "draft" },
+			},
+			refresh: () => {},
+			setQuery: () => {},
+		});
+
+		await handler(fakeCtx({ client, table: table(false) }));
+		await handler(fakeCtx({ client, table: table(true) }));
+
+		expect(bodies).toEqual([
+			{
+				payload: {
+					selection: ["1", "2"],
+					bulk: { table: "posts", all: false },
+					params: {},
+				},
+			},
+			{
+				payload: {
+					selection: ["1", "2"],
+					bulk: {
+						table: "posts",
+						all: true,
+						query: "sort=title&dir=desc&search=alpha&tab=live&filters%5Bstatus%5D=draft",
+					},
+					params: {},
+				},
+			},
+		]);
+	});
+
 	it("runs a registered custom action with its params", async () => {
 		const calls: unknown[] = [];
 		defineCustomAction("materialize-test-custom", async (_ctx, params) => {

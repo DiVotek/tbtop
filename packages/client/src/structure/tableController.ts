@@ -6,6 +6,7 @@ function toggleId(prev: string[], id: string): string[] {
 }
 
 interface UseTableControllerInput {
+	name?: string;
 	rows: unknown[];
 	/** Total record count from paginated response; undefined for non-paginated. */
 	total?: number;
@@ -17,22 +18,60 @@ interface UseTableControllerInput {
 interface TableControllerInternal extends TableController {
 	toggleSelection: (id: string) => void;
 	selectAll: (ids: string[]) => void;
+	selectAllMatching: () => void;
 	clearSelection: () => void;
 }
 
-export function useTableController(input: UseTableControllerInput): TableControllerInternal {
+/**
+ * The checked rows, and whether the pick widened to every matching row.
+ * Both reset when the rows change (page, filters, a refetch after an action).
+ */
+function useSelection(rows: unknown[]) {
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
-	const { onChangeParams, onRefresh } = input;
-	const rowsRef = useRef(input.rows);
+	const [allMatching, setAllMatching] = useState(false);
+	const rowsRef = useRef(rows);
 
 	useEffect(() => {
-		if (rowsRef.current === input.rows) {
+		if (rowsRef.current === rows) {
 			return;
 		}
-		rowsRef.current = input.rows;
+		rowsRef.current = rows;
 		setSelectedIds([]);
-	}, [input.rows]);
+		setAllMatching(false);
+	}, [rows]);
 
+	// Any change to the checked rows narrows an all-matching pick back to them.
+	const toggleSelection = useCallback((id: string) => {
+		setAllMatching(false);
+		setSelectedIds((prev) => toggleId(prev, id));
+	}, []);
+
+	const selectAll = useCallback((ids: string[]) => {
+		setAllMatching(false);
+		setSelectedIds(ids);
+	}, []);
+
+	const selectAllMatching = useCallback(() => setAllMatching(true), []);
+
+	const clearSelection = useCallback(() => {
+		setAllMatching(false);
+		setSelectedIds([]);
+	}, []);
+
+	return {
+		selectedIds,
+		allMatching,
+		toggleSelection,
+		selectAll,
+		selectAllMatching,
+		clearSelection,
+	};
+}
+
+export function useTableController(input: UseTableControllerInput): TableControllerInternal {
+	const { onChangeParams, onRefresh } = input;
+	const selection = useSelection(input.rows);
+	const { selectedIds, allMatching } = selection;
 	const refresh = useCallback(() => onRefresh(), [onRefresh]);
 
 	const setQuery = useCallback(
@@ -40,36 +79,34 @@ export function useTableController(input: UseTableControllerInput): TableControl
 		[onChangeParams],
 	);
 
-	const toggleSelection = useCallback(
-		(id: string) => setSelectedIds((prev) => toggleId(prev, id)),
-		[],
-	);
-
-	const selectAll = useCallback((ids: string[]) => setSelectedIds(ids), []);
-
-	const clearSelection = useCallback(() => setSelectedIds([]), []);
-
+	const { toggleSelection, selectAll, selectAllMatching, clearSelection } = selection;
 	return useMemo<TableControllerInternal>(
 		() => ({
+			name: input.name,
 			rows: input.rows,
 			total: input.total,
 			selectedIds,
+			allMatching,
 			queryParams: input.queryParams,
 			refresh,
 			setQuery,
 			toggleSelection,
 			selectAll,
+			selectAllMatching,
 			clearSelection,
 		}),
 		[
+			input.name,
 			input.rows,
 			input.total,
 			selectedIds,
+			allMatching,
 			input.queryParams,
 			refresh,
 			setQuery,
 			toggleSelection,
 			selectAll,
+			selectAllMatching,
 			clearSelection,
 		],
 	);

@@ -108,4 +108,96 @@ describe("TableSelectAll", () => {
 		await findByTestId("table-block");
 		expect(queryByTestId("table-select-all")).toBeNull();
 	});
+
+	test("a fully checked page offers every matching row, and the pick reaches the bulk action", async () => {
+		const seen: { selectedIds: string[]; allMatching?: boolean }[] = [];
+		const node = s.table({
+			name: "posts",
+			query: async () => ({
+				data: [
+					{ id: "a", title: "A" },
+					{ id: "b", title: "B" },
+				],
+				total: 40,
+				page: 1,
+				perPage: 2,
+			}),
+			columns: [{ name: "title", label: "Title" }],
+			pagination: { perPage: 2, options: [2] },
+			bulkActions: [
+				{
+					name: "do",
+					handler: async (ctx) => {
+						seen.push({
+							selectedIds: ctx.table?.selectedIds ?? [],
+							allMatching: ctx.table?.allMatching,
+						});
+					},
+				},
+			],
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId, queryByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const rowA = await findByTestId("table-select-a");
+		await act(async () => {
+			fireEvent.click(rowA);
+		});
+		expect(queryByTestId("bulk-select-all-matching")).toBeNull();
+
+		const selectAllBox = await findByTestId("table-select-all");
+		await act(async () => {
+			fireEvent.click(selectAllBox);
+		});
+		const offer = await findByTestId("bulk-select-all-matching");
+		expect(offer.textContent).toBe("Select all 40");
+
+		await act(async () => {
+			fireEvent.click(offer);
+		});
+		expect((await findByTestId("bulk-selected-count")).textContent).toBe("All 40 selected");
+		const doAction = await findByTestId("action-do");
+		await act(async () => {
+			fireEvent.click(doAction);
+		});
+		await waitFor(() => expect(seen).toEqual([{ selectedIds: ["a", "b"], allMatching: true }]));
+
+		const clearLink = await findByTestId("bulk-clear-selection");
+		await act(async () => {
+			fireEvent.click(clearLink);
+		});
+		expect(queryByTestId("bulk-selected-count")).toBeNull();
+	});
+
+	test("unchecking a row narrows an all-matching pick back to the checked rows", async () => {
+		const node = s.table({
+			name: "posts",
+			query: async () => ({
+				data: [{ id: "a" }, { id: "b" }],
+				total: 40,
+				page: 1,
+				perPage: 2,
+			}),
+			columns: [{ name: "id" }],
+			pagination: { perPage: 2, options: [2] },
+			bulkActions: [{ name: "do", handler: async () => {} }],
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { findByTestId } = render(<Wrap>{renderNode(node)}</Wrap>);
+
+		const selectAllBox = await findByTestId("table-select-all");
+		await act(async () => {
+			fireEvent.click(selectAllBox);
+		});
+		const offerLink = await findByTestId("bulk-select-all-matching");
+		await act(async () => {
+			fireEvent.click(offerLink);
+		});
+		const rowB = await findByTestId("table-select-b");
+		await act(async () => {
+			fireEvent.click(rowB);
+		});
+
+		expect((await findByTestId("bulk-selected-count")).textContent).toBe("1 selected");
+	});
 });

@@ -48,8 +48,11 @@ export function useClientActionContext(): ClientActionContext {
 
 function toTableController(handle: TableController): TableController {
 	return {
+		name: handle.name,
 		rows: handle.rows,
+		total: handle.total,
 		selectedIds: handle.selectedIds,
+		allMatching: handle.allMatching,
 		queryParams: handle.queryParams,
 		refresh: handle.refresh,
 		setQuery: handle.setQuery,

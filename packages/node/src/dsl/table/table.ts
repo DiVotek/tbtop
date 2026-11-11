@@ -4,7 +4,7 @@ import { Select } from "../fields/choices";
 import type { Field } from "../fields/field";
 import { HasWhen, mixin } from "../mixin";
 import { includes, Node } from "../node";
-import { descendants } from "../walk";
+import { actionSearchDescendants, descendants, resolveActionNode } from "../walk";
 import { Column, type Row } from "./column";
 import { searchableNames } from "./search";
 import { Tab } from "./tab";
@@ -308,6 +308,27 @@ export class TableBuilder<Q = unknown> {
 			if (!isActionEntry(entry)) {
 				pending.push(...descendants(entry));
 			}
+		}
+		return false;
+	}
+
+	/**
+	 * True when an action named `name` runs from this table's bulk actions: one
+	 * of them, inside a group or dropdown there, or a submit inside a bulk
+	 * action's modal (TableBuilder::hasBulkAction()). Only those may act on
+	 * all rows matching this table's query.
+	 */
+	hasBulkAction(name: string): boolean {
+		const pending = ((this.opts.bulkActions as unknown[] | undefined) ?? []).filter(includes);
+		while (pending.length > 0) {
+			const node = resolveActionNode(pending.pop());
+			if (node === null) {
+				continue;
+			}
+			if (node.kind === "action" && node.name === name) {
+				return true;
+			}
+			pending.push(...actionSearchDescendants(node));
 		}
 		return false;
 	}

@@ -109,6 +109,8 @@ export interface TableTab {
 }
 
 export interface TableController {
+	/** The table's name; bulk actions send it so the server can resolve the selection against it. */
+	name?: string;
 	rows: unknown[];
 	/** Total record count from paginated response; undefined for non-paginated. */
 	total?: number;
@@ -116,7 +118,11 @@ export interface TableController {
 	queryParams: ListQueryParams;
 	refresh: () => void;
 	setQuery: (params: Partial<ListQueryParams>) => void;
+	/** The user picked every row matching the table's state, not just `selectedIds`. */
+	allMatching?: boolean;
 	selectAll?: (ids: string[]) => void;
+	/** Widen a selection of the whole page to every matching row. */
+	selectAllMatching?: () => void;
 	clearSelection?: () => void;
 }
 

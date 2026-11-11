@@ -8,6 +8,7 @@ import {
 	materialize,
 	modalData,
 } from "../../dsl";
+import { withBulkSelection } from "../bulkSelection";
 import { applyEmbed, EMBED_ACTION } from "../embeds/apply";
 import { bindEmbeds } from "../embeds/rule";
 import { enclosingForm, enclosingQueryAction } from "../enclosingForm";
@@ -35,6 +36,11 @@ function baseCtx(ctx: EndpointCtx, payload: Bag): ActionCtx {
 			: [],
 		params: { ...(bag(payload.params) as Record<string, string>), ...ctx.resolved.ctx.params },
 	});
+}
+
+/** An action's ctx: baseCtx() with the selection resolved against its table. */
+function actionCtx(ctx: EndpointCtx, name: string, payload: Bag): Promise<ActionCtx> {
+	return withBulkSelection(ctx, { name, payload }, baseCtx(ctx, payload));
 }
 
 /**
@@ -131,7 +137,7 @@ export async function runActionWith(ctx: EndpointCtx, name: string, payload: Bag
 	if (action === null || handler === undefined) {
 		throw notFound(`Action "${name}" has no server handler on this page.`);
 	}
-	const base = baseCtx(ctx, payload);
+	const base = await actionCtx(ctx, name, payload);
 	const form = await actionForm(ctx, name, {
 		payload,
 		gate: !action.skipsFormValidation(),
@@ -189,7 +195,7 @@ async function modalRecord(ctx: EndpointCtx, name: string, payload: Bag): Promis
 	if (!action.getQueryNeeds().every(filled)) {
 		return [];
 	}
-	const data = await query(baseCtx(ctx, payload));
+	const data = await query(await actionCtx(ctx, action.name, payload));
 	return data !== null && typeof data === "object" ? [data] : [];
 }
 
@@ -226,7 +232,7 @@ const actionData: Endpoint = {
 			throw notFound(`Action "${arg(ctx, 0)}" has no data query on this page.`);
 		}
 		const payload = bag((await readInput(ctx)).payload);
-		return { data: modalData(await query(baseCtx(ctx, payload)), action) };
+		return { data: modalData(await query(await actionCtx(ctx, arg(ctx, 0), payload)), action) };
 	},
 };
 

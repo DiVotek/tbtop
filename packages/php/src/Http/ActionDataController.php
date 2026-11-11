@@ -5,7 +5,6 @@ namespace Tbtop\Admin\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Tbtop\Admin\Actions\ActionCtx;
 
 /**
  * Serves a modal action's backend data query. The action's query closure runs
@@ -28,7 +27,7 @@ final class ActionDataController
             throw new NotFoundHttpException("Action \"{$name}\" has no data query on this page.");
         }
 
-        $ctx = ActionCtx::fromRequest($request, ResolvedPage::routeParams($request));
+        $ctx = BulkSelection::ctx($request, $resolved, $name);
 
         return response()->json(['data' => $query($ctx)]);
     }

@@ -6,11 +6,12 @@ import { HeaderActionList } from "./headerActionList";
 import { useSetPageSubtitle } from "./pageSubtitleContext";
 import { renderAsyncError } from "./renderAsyncError";
 import { ASIDE_MIN_WIDTH, AsideFilters, AsideFiltersLayout } from "./table/asideFilters";
-import { BulkActionsBar } from "./table/bulkActionsBar";
+import { BulkActionsBar, type MatchingSelection } from "./table/bulkActionsBar";
 import { ColumnSizingProvider } from "./table/columnResize";
 import { FilterChips } from "./table/filterChips";
 import { activeFilters } from "./table/filterChipValue";
 import { normalizeRows, TableGrid } from "./table/grid";
+import { readId } from "./table/normalize";
 import { TablePagination } from "./table/pagination";
 import { canReorder } from "./table/reorder";
 import { SimplePagination } from "./table/simplePagination";
@@ -141,8 +142,30 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 	);
 }
 
+/**
+ * The bulk bar's "select all matching" offer: only for a named table with a
+ * known total (a simple-paginated one has none), and never for an embedded one.
+ */
+function matchingSelection(
+	props: TableBodyProps,
+	ctrl: ReturnType<typeof useTableController>,
+): MatchingSelection | undefined {
+	if (props.total === undefined || !props.tableName || props.embedded) {
+		return undefined;
+	}
+	const pageIds = props.rows.map((r) => readId(r)).filter((id): id is string => !!id);
+	return {
+		total: props.total,
+		pageSelected: pageIds.length > 0 && pageIds.every((id) => ctrl.selectedIds.includes(id)),
+		allMatching: ctrl.allMatching ?? false,
+		onSelectAll: ctrl.selectAllMatching,
+		onClear: ctrl.clearSelection,
+	};
+}
+
 function TableBody(props: TableBodyProps) {
 	const ctrl = useTableController({
+		name: props.tableName,
 		rows: props.rows,
 		total: props.total,
 		queryParams: props.queryParams,
@@ -321,6 +344,7 @@ function TableBody(props: TableBodyProps) {
 						<BulkActionsBar
 							actions={props.bulkActions ?? []}
 							selectedCount={ctrl.selectedIds.length}
+							matching={matchingSelection(props, ctrl)}
 						/>
 					)}
 
