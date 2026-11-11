@@ -671,6 +671,50 @@ $s->table('orders')
 Node: `ExportAction.make(s, { formats: [ExportFormat.Csv], filename, maxRows, name })` and
 `Column.make("note").export({ label, as, enabled })`.
 
+#### Summaries — `Column::summarize()` + `Summary`
+
+`->summarize(Summary ...$summaries)` adds a summary row under the table and closes each
+row group with a subtotal row. A collapsed group keeps its subtotal under its header.
+
+```php
+use Tbtop\Admin\Dsl\Summary;
+
+$s->table('orders')
+    ->columns([
+        Column::make('number'),
+        Column::make('total')->money('UAH')->summarize(Summary::sum('Total'), Summary::avg()),
+        Column::make('rating')->summarize(Summary::min(), Summary::max()),
+        Column::make('status')->summarize(Summary::using(
+            fn (Builder $query) => $query->where('status', 'paid')->count().' paid',
+            label: 'Paid',
+        )),
+    ])
+    ->query(fn () => Order::query());
+```
+
+- **Every matching row, not the page.** The built-ins (`sum`, `avg`, `min`, `max`, `count`)
+  run as SQL aggregates over the table's query with its tab, search, column search and
+  filters applied, sort dropped. In a group, over the whole group, including its rows on
+  other pages. Each costs one query per table request (a group subtotal is one `GROUP BY`
+  for the page's groups), so summarize columns, not every column. A column the viewer
+  toggled off still runs its summaries: the server does not see client column toggles.
+- **Formatted like the cells**: `money()`, `number()`, `date()` formats apply to
+  sum/avg/min/max, as on screen. `count` is a plain integer; an average is rounded to
+  two decimals unless `money()` or `number($decimals)` formats it. `formatUsing()` does not apply (it
+  formats a row).
+- **Labels**: the default is translated (`Sum`, `Average`, `Min`, `Max`, `Count`); pass a
+  string to override it.
+- **`Summary::using(fn, label:)`** gets a clone of the filtered query (narrowed to the group
+  in a subtotal) and shows what it returns, number or text, unformatted.
+- A built-in needs a column of the table's own query: `author.age` throws, use `using()`.
+  `summarize()` on a `group()` column throws; put it on a child. Exports carry no summary row.
+- Wire: the column carries `summaries: [{type, label?}]`; the rows response adds
+  `summaries` (column → values in declared order) and `_groupSummary` on the first row of
+  each group run.
+
+Node: `Column.make("total").summarize(Summary.sum("Total"), Summary.using((query) => …, "Paid"))`;
+the query driver needs the optional `aggregate()` for the built-ins.
+
 #### `groups()` — row grouping
 
 `->groups(string $column, bool $collapsible = false, bool $collapsed = false)` partitions

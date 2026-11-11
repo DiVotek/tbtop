@@ -128,9 +128,14 @@ interface GroupedRowsProps {
 	collapsible: boolean;
 	collapsedByDefault: boolean;
 	renderRow: (row: Record<string, unknown>) => ReactNode;
+	/** The group's summary row, read off its first row; shown under a collapsed header too. */
+	renderSummary?: (first: Record<string, unknown>, key: string) => ReactNode;
 }
 
-/** Header + rows for each contiguous group; a collapsed group renders its header only. */
+/**
+ * Header + rows (+ summary) for each contiguous group; a collapsed group
+ * renders its header and summary only.
+ */
 export function GroupedRows(props: GroupedRowsProps): ReactNode {
 	const collapse = useGroupCollapse(props.collapsedByDefault);
 	return partitionRowGroups(props.rows, props.column.name).flatMap((group, i) => {
@@ -145,6 +150,12 @@ export function GroupedRows(props: GroupedRowsProps): ReactNode {
 				onToggle={props.collapsible ? () => collapse.toggle(group.value) : undefined}
 			/>
 		);
-		return collapsed ? [header] : [header, ...group.rows.map(props.renderRow)];
+		const first = group.rows[0];
+		const summary =
+			first && props.renderSummary ? props.renderSummary(first, `group-summary-${i}`) : null;
+		const tail = summary ? [summary] : [];
+		return collapsed
+			? [header, ...tail]
+			: [header, ...group.rows.map(props.renderRow), ...tail];
 	});
 }

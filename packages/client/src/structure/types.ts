@@ -11,6 +11,7 @@ export type {
 	TableColumnIcon,
 	TableColumnIconMapEntry,
 	TableColumnLinkOptions,
+	TableColumnSummary,
 } from "./tableColumnTypes";
 
 /** The panel guard's user as the model serializes it (`tbtop.user`); `$hidden` decides the rest. */

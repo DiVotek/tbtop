@@ -18,12 +18,31 @@ final class TableQuery
      * simplePagination() table skips the count and reads one extra row to
      * answer hasMore instead of total.
      *
-     * @return array{data: mixed, total?: int, hasMore?: bool, page: int, perPage: int}
+     * A table with summarize() columns adds `summaries` (the footer) and, when
+     * grouped, `_groupSummary` on the first row of each group run.
+     *
+     * @return array{data: mixed, total?: int, hasMore?: bool, page: int, perPage: int, summaries?: array<string, list<mixed>>}
      */
     public static function run(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): array
     {
         self::applyState($table, $request, $builder);
+        $filtered = clone $builder;
+        $result = self::page($table, $request, $builder);
+        $rows = $result['rows'];
+        unset($result['rows']);
+        $summaries = TableSummaries::footer($table, $filtered);
+        if ($summaries === null) {
+            return $result;
+        }
+        $result['summaries'] = $summaries;
+        $result['data'] = TableSummaries::attachGroups($table, $filtered, $rows, $result['data']);
 
+        return $result;
+    }
+
+    /** @return array{data: list<mixed>, rows: iterable<int, mixed>, total?: int, hasMore?: bool, page: int, perPage: int} */
+    private static function page(TableBuilder $table, Request $request, EloquentBuilder|QueryBuilder $builder): array
+    {
         $pagination = $table->paginationSpec();
         $allowedPerPage = $pagination['options'];
         $defaultPerPage = $pagination['perPage'];
@@ -39,6 +58,7 @@ final class TableQuery
 
         return [
             'data' => ColumnProjection::apply($table, $rows),
+            'rows' => $rows,
             'total' => $total,
             'page' => $page,
             'perPage' => $perPage,
@@ -59,14 +79,16 @@ final class TableQuery
         TableSortApplier::apply($table, $request, $builder);
     }
 
-    /** @return array{data: mixed, hasMore: bool, page: int, perPage: int} */
+    /** @return array{data: list<mixed>, rows: iterable<int, mixed>, hasMore: bool, page: int, perPage: int} */
     private static function simplePage(TableBuilder $table, EloquentBuilder|QueryBuilder $builder, int $page, int $perPage): array
     {
         $rows = $builder->offset(($page - 1) * $perPage)->limit($perPage + 1)->get();
         $hasMore = $rows->count() > $perPage;
+        $rows = $rows->take($perPage);
 
         return [
-            'data' => ColumnProjection::apply($table, $rows->take($perPage)),
+            'data' => ColumnProjection::apply($table, $rows),
+            'rows' => $rows,
             'hasMore' => $hasMore,
             'page' => $page,
             'perPage' => $perPage,

@@ -20,6 +20,7 @@ use Tbtop\Admin\Dsl\Fields\InFilter;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\Summary;
 use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Pages\Page;
 
@@ -129,6 +130,7 @@ class PostsIndexPage extends Page
                         ->label('Published')
                         ->date('Y-m-d')
                         ->sortable()
+                        ->summarize(Summary::max('Latest'))
                         ->toggleable(true, true),
                     Column::make('published_time')
                         ->time('H:i')
@@ -137,6 +139,7 @@ class PostsIndexPage extends Page
                         ->label('Views')
                         ->number()
                         ->sortable()
+                        ->summarize(Summary::sum('Total'), Summary::avg())
                         ->align('right'),
                 ])
                 ->filters([

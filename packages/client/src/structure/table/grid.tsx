@@ -13,12 +13,13 @@ import type { TableEmptyState, TableGroupsConfig } from "../tableBlock.types";
 import type { TableColumn } from "../types";
 import { EmptyState } from "./emptyState";
 import { TableHead } from "./gridHead";
-import { isSelected, readId } from "./normalize";
+import { isSelected, readId, readSummaryValues, type SummaryValues } from "./normalize";
 import { ReorderHint } from "./reorderHint";
 import type { RowActionEntry } from "./rowActions";
 import { GroupedRows } from "./rowGroups";
 import { SortableRow } from "./sortableRow";
 import { resolveStickyLayout, StickyColumnsProvider, useStickyOffsets } from "./stickyColumns";
+import { hasSummaries, SummaryRow } from "./summaryRow";
 import { TableRow } from "./tableRow";
 import { useRowReorder } from "./useRowReorder";
 
@@ -61,6 +62,8 @@ interface TableGridProps {
 	/** Per-column search values, keyed by column name. */
 	colSearchValues?: Record<string, string>;
 	onColSearchChange?: (column: string, value: string) => void;
+	/** Footer summaries over the whole query (Column::summarize()). */
+	summaries?: SummaryValues;
 }
 
 export function TableGrid(props: TableGridProps) {
@@ -144,6 +147,17 @@ export function TableGrid(props: TableGridProps) {
 					onColSearchChange={props.onColSearchChange}
 				/>
 				<tbody className="cn-table-body">{body}</tbody>
+				{props.summaries && !isEmpty && hasSummaries(props.columns) && (
+					<tfoot>
+						<SummaryRow
+							columns={props.columns}
+							values={props.summaries}
+							leading={{ reorder: reorderActive, bulk: props.hasBulk }}
+							hasRowActions={props.hasRowActions}
+							variant="footer"
+						/>
+					</tfoot>
+				)}
 			</table>
 		</div>
 	);
@@ -258,6 +272,33 @@ function renderGroupedRows(
 			collapsible={props.groups?.collapsible === true || props.groups?.collapsed === true}
 			collapsedByDefault={props.groups?.collapsed === true}
 			renderRow={(row) => renderRow(row, props, false)}
+			renderSummary={
+				hasSummaries(props.columns)
+					? (first, key) => renderGroupSummary(first, key, props)
+					: undefined
+			}
+		/>
+	);
+}
+
+/** Groups render only while reorder is off (`groupsActive`), so the row has no drag cell. */
+function renderGroupSummary(
+	first: Record<string, unknown>,
+	key: string,
+	props: TableGridProps,
+): ReactNode {
+	const values = readSummaryValues(first._groupSummary);
+	if (!values) {
+		return null;
+	}
+	return (
+		<SummaryRow
+			key={key}
+			columns={props.columns}
+			values={values}
+			leading={{ reorder: false, bulk: props.hasBulk }}
+			hasRowActions={props.hasRowActions}
+			variant="group"
 		/>
 	);
 }

@@ -180,6 +180,13 @@ return [
         'unsaved' => 'Unsaved changes',
     ],
     'table' => [
+        'summary' => [
+            'sum' => 'Sum',
+            'avg' => 'Average',
+            'min' => 'Min',
+            'max' => 'Max',
+            'count' => 'Count',
+        ],
         'export' => [
             'title' => 'Export',
             'columns' => 'Columns',

@@ -64,6 +64,7 @@ export { collectAttributes, collectRules, type Rules } from "./ruleWalker";
 export { type Container, S } from "./s";
 export { Stat, type StatParams } from "./stat";
 export { Column, type ColumnExport, type Row, type RowFn } from "./table/column";
+export { Summary, type SummaryType, type SummaryUsing } from "./table/summary";
 export { Tab } from "./table/tab";
 export { type ColumnEntry, type ReorderUsing, TableBuilder } from "./table/table";
 export type { TabSpec } from "./tabs";
