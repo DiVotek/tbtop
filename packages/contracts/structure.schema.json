@@ -834,6 +834,19 @@
 						},
 						"additionalProperties": false
 					},
+					"summaries": {
+						"type": "array",
+						"minItems": 1,
+						"items": {
+							"type": "object",
+							"properties": {
+								"type": { "enum": ["sum", "avg", "min", "max", "count", "custom"] },
+								"label": { "type": "string" }
+							},
+							"required": ["type"],
+							"additionalProperties": false
+						}
+					},
 					"tooltip": { "type": "string" },
 					"description": { "type": "string" },
 					"emphasized": { "type": "boolean" },

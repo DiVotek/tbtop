@@ -32,14 +32,22 @@ export function columnWire(column: Column): Record<string, unknown> {
 		assertGroupSerializable(column);
 		out.columns = st.groupColumns.map(columnWire);
 	}
-	if (st.export !== undefined) {
-		out.export = exportWire(st.export);
-	}
+	copyExportAndSummaries(out, st);
 	const editable = editableWire(column);
 	if (editable !== null) {
 		out.editable = editable;
 	}
 	return out;
+}
+
+/** export, then summaries — in Column::jsonSerialize order. */
+function copyExportAndSummaries(out: Record<string, unknown>, st: ColumnState): void {
+	if (st.export !== undefined) {
+		out.export = exportWire(st.export);
+	}
+	if (st.summaries.length > 0) {
+		out.summaries = st.summaries.map((summary) => summary.toJSON());
+	}
 }
 
 /** {label?, on: false?}; the `as` closure never leaves the server. */
@@ -124,6 +132,9 @@ function assertGroupSerializable(column: Column): void {
 	}
 	if (column.isIndividuallySearchable()) {
 		fail("individuallySearchable() is not supported on a group column — put it on a child.");
+	}
+	if (column.st.summaries.length > 0) {
+		fail("summarize() is not supported on a group column — put it on a child.");
 	}
 	column.st.groupColumns.forEach(assertGroupChild);
 }

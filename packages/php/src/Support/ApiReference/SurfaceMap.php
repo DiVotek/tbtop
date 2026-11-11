@@ -20,6 +20,7 @@ use Tbtop\Admin\Dsl\LiveRegionBuilder;
 use Tbtop\Admin\Dsl\MarkdownBlock;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Dsl\Stat;
+use Tbtop\Admin\Dsl\Summary;
 use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Dsl\TableBuilder;
 use Tbtop\Admin\Dsl\TextBlock;
@@ -57,10 +58,11 @@ final class SurfaceMap
             ],
             'tables' => [
                 'title' => 'Tables',
-                'intro' => 'The table builder, its columns, and filter tabs.',
+                'intro' => 'The table builder, its columns, column summaries, and filter tabs.',
                 'classes' => [
                     'TableBuilder' => TableBuilder::class,
                     'Column' => Column::class,
+                    'Summary' => Summary::class,
                     'Tab' => Tab::class,
                 ],
             ],

@@ -426,6 +426,11 @@ export class TableBuilder<Q = unknown> {
 		);
 	}
 
+	/** Visible leaf columns that declare summarize(), in display order. */
+	summarizedColumns(): Column[] {
+		return this.visibleLeafColumns().filter((c) => c.st.summaries.length > 0);
+	}
+
 	searchableFields(): string[] {
 		return searchableNames(this.searchList, this.visibleColumns());
 	}

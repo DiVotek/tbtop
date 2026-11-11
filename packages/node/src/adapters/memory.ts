@@ -1,5 +1,5 @@
 import type { Row } from "../dsl";
-import type { Clause, QueryDriver } from "../server/driver";
+import type { AggregateFn, Clause, QueryDriver } from "../server/driver";
 
 /** An in-memory query: the source rows plus the steps applied so far. */
 export interface MemoryQuery {
@@ -13,10 +13,13 @@ export function memoryQuery(source: () => Row[]): MemoryQuery {
 }
 
 const MATCHERS: Record<Clause["op"], (cell: unknown, value: unknown) => boolean> = {
-	"=": (cell, value) => String(cell) === String(value),
+	"=": (cell, value) => (value === null ? cell == null : String(cell) === String(value)),
 	">=": (cell, value) => String(cell) >= String(value),
 	"<=": (cell, value) => String(cell) <= String(value),
-	in: (cell, value) => (value as unknown[]).map(String).includes(String(cell)),
+	in: (cell, value) =>
+		cell == null
+			? (value as unknown[]).includes(null)
+			: (value as unknown[]).map(String).includes(String(cell)),
 	contains: (cell, value) =>
 		String(cell ?? "")
 			.toLowerCase()
@@ -44,6 +47,20 @@ function compare(a: unknown, b: unknown): number {
 	return String(a ?? "").localeCompare(String(b ?? ""));
 }
 
+/** SQL aggregate semantics: nulls skipped, null over no values. */
+function aggregate(rows: Row[], fn: AggregateFn, field: string): unknown {
+	const values = rows.map((r) => r[field]).filter((v) => v !== null && v !== undefined);
+	if (values.length === 0) {
+		return null;
+	}
+	if (fn === "min" || fn === "max") {
+		const sign = fn === "min" ? 1 : -1;
+		return [...values].sort((a, b) => sign * compare(a, b))[0];
+	}
+	const sum = values.reduce<number>((acc, v) => acc + Number(v), 0);
+	return fn === "sum" ? sum : sum / values.length;
+}
+
 /** A QueryDriver over plain arrays: tests, demos, and the reference for real drivers. */
 export function memoryDriver(keyName = "id"): QueryDriver<MemoryQuery> {
 	return {
@@ -54,6 +71,7 @@ export function memoryDriver(keyName = "id"): QueryDriver<MemoryQuery> {
 			narrowed(query, (row) => fields.some((f) => MATCHERS.contains(row[f], text))),
 		orderBy: (query, field, dir) => ({ ...query, sorts: [...query.sorts, { field, dir }] }),
 		count: async (query) => run(query).length,
+		aggregate: async (query, fn, field) => aggregate(run(query), fn, field),
 		rows: async (query, { page, perPage }) =>
 			run(query).slice((page - 1) * perPage, page * perPage),
 		update: async (query, key, values) => {

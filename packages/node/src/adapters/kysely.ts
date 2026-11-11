@@ -1,6 +1,6 @@
 import { type Kysely, type SelectQueryBuilder, sql } from "kysely";
 import type { Row } from "../dsl";
-import type { Clause, QueryDriver } from "../server/driver";
+import type { AggregateFn, Clause, QueryDriver } from "../server/driver";
 import type { HostRule } from "../server/validation/validator";
 
 /** Any select over the host schema; the driver only adds clauses to it. */
@@ -25,6 +25,18 @@ export function kyselyDriver<DB>(db: Kysely<DB>, keyName = "id"): QueryDriver<Bu
 		if (clause.op === "dateLte") {
 			return qb.where(sql<boolean>`date(${ref(clause.field)}) <= ${clause.value}`);
 		}
+		if (clause.op === "=" && clause.value === null) {
+			return qb.where(ref(clause.field), "is", null);
+		}
+		if (clause.op === "in" && clause.value.includes(null)) {
+			const present = clause.value.filter((v) => v !== null);
+			return qb.where((eb) =>
+				eb.or([
+					eb(ref(clause.field), "is", null),
+					...(present.length > 0 ? [eb(ref(clause.field), "in", present)] : []),
+				]),
+			);
+		}
 		return qb.where(ref(clause.field), clause.op, clause.value);
 	};
 	return {
@@ -33,15 +45,8 @@ export function kyselyDriver<DB>(db: Kysely<DB>, keyName = "id"): QueryDriver<Bu
 		searchAny: (qb, fields, text) =>
 			qb.where((eb) => eb.or(fields.map((f) => contains(f, text)))),
 		orderBy: (qb, field, dir) => qb.orderBy(ref(field), dir),
-		// Counted as a subquery without ORDER BY: Postgres refuses an ungrouped ORDER BY beside count(*).
-		count: async (qb) => {
-			const scoped = qb.clearOrderBy().clearSelect().select(sql<number>`1`.as("one"));
-			const row = await (db as unknown as Kysely<Record<string, Row>>)
-				.selectFrom(scoped.as("scoped"))
-				.select((eb) => eb.fn.countAll<number>().as("count"))
-				.executeTakeFirst();
-			return Number((row as { count?: unknown } | undefined)?.count ?? 0);
-		},
+		count: (qb) => countScoped(db, qb),
+		aggregate: (qb, fn, field) => aggregate(qb, fn, ref(field)),
 		rows: async (qb, { page, perPage }) =>
 			(await qb
 				.selectAll()
@@ -58,6 +63,30 @@ export function kyselyDriver<DB>(db: Kysely<DB>, keyName = "id"): QueryDriver<Bu
 				.execute();
 		},
 	};
+}
+
+/** Counted as a subquery without ORDER BY: Postgres refuses an ungrouped ORDER BY beside count(*). */
+async function countScoped<DB>(db: Kysely<DB>, qb: Builder<DB>): Promise<number> {
+	const scoped = qb.clearOrderBy().clearSelect().select(sql<number>`1`.as("one"));
+	const row = await (db as unknown as Kysely<Record<string, Row>>)
+		.selectFrom(scoped.as("scoped"))
+		.select((eb) => eb.fn.countAll<number>().as("count"))
+		.executeTakeFirst();
+	return Number((row as { count?: unknown } | undefined)?.count ?? 0);
+}
+
+/** One SUM/AVG/MIN/MAX; like count, without ORDER BY (Postgres refuses it beside an ungrouped aggregate). */
+async function aggregate<DB>(
+	qb: Builder<DB>,
+	fn: AggregateFn,
+	field: ReturnType<Kysely<DB>["dynamic"]["ref"]>,
+): Promise<unknown> {
+	const row = await qb
+		.clearOrderBy()
+		.clearSelect()
+		.select(sql<unknown>`${sql.raw(fn)}(${field})`.as("value"))
+		.executeTakeFirst();
+	return (row as { value?: unknown } | undefined)?.value ?? null;
 }
 
 /** The FROM table of a select builder: reorder writes back to it. */

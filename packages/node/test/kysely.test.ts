@@ -85,6 +85,39 @@ describe("kyselyDriver", () => {
 		]);
 	});
 
+	test("aggregate() runs SUM/AVG/MIN/MAX over the scope, ignoring its sort", async () => {
+		const driver = kyselyDriver(db);
+		const scoped = db.selectFrom("posts").where("published", "=", 1).orderBy("title");
+		expect(Number(await driver.aggregate?.(scoped as never, "sum", "views"))).toBe(100);
+		expect(Number(await driver.aggregate?.(scoped as never, "avg", "views"))).toBe(25);
+		expect(await driver.aggregate?.(scoped as never, "min", "title")).toBe("Alpha");
+		expect(await driver.aggregate?.(scoped as never, "max", "views")).toBe(40);
+		const none = db.selectFrom("posts").where("published", "=", 9);
+		expect(await driver.aggregate?.(none as never, "sum", "views")).toBeNull();
+	});
+
+	test("where '=' null matches null cells, so a null row group gets its own subtotal", async () => {
+		const sqlite = new Database(":memory:");
+		sqlite.run("create table t (id integer primary key, g text, v int)");
+		sqlite.run("insert into t (g, v) values (null, 5), (null, 7), ('a', 3)");
+		const local = new Kysely<{ t: { id: number; g: string | null; v: number } }>({
+			dialect: new BunSqliteDialect({ database: sqlite }),
+		});
+		const driver = kyselyDriver(local);
+		const nullGroup = driver.where(local.selectFrom("t") as never, {
+			field: "g",
+			op: "=",
+			value: null,
+		});
+		expect(Number(await driver.aggregate?.(nullGroup, "sum", "v"))).toBe(12);
+		const mixed = driver.where(local.selectFrom("t") as never, {
+			field: "g",
+			op: "in",
+			value: [null, "a"],
+		});
+		expect(Number(await driver.aggregate?.(mixed, "sum", "v"))).toBe(15);
+	});
+
 	test("search escapes LIKE wildcards", async () => {
 		expect((await rows("search=a")).total).toBe(4);
 		expect((await rows("search=%25")).total).toBe(1);
