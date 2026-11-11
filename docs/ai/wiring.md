@@ -253,7 +253,8 @@ After "Select all N" the client sends `all: true` and `query`, the table's
 state as its own fetch encodes it (`tab`, `search`, `colSearch[…]`,
 `filters[…]`, `sort`/`dir`, no page window). The server replays it through
 `TableQuery::applyState()` (trimmed, empty strings as null, like the table's GET),
-fills `$ctx->selection` with every matching key and sets `$ctx->allMatching`.
+fills `$ctx->selection` with every matching key (PHP reads them on first access, so a
+`records()`-only handler never loads them) and sets `$ctx->allMatching`.
 An `all` for a table the action is not a bulk action of is a 422; a key
 selection naming one is ignored. Node: `withBulkSelection()` in
 `server/bulkSelection.ts`, same rules. The structure schema is unchanged:

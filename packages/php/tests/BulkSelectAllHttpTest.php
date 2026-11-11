@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\TestResponse;
 use Tbtop\Admin\Tests\BulkHttpTestCase;
@@ -103,4 +104,13 @@ it('Bulk: the testing API names the table, so records() works in a callAction() 
     tbtop(BulkPostsPage::class)->openAction('modalMark', selection: [3])->callAction('modalMarkSave')->assertOk();
 
     expect(bulkNotes())->toBe(['Alpha one' => '', 'Alpha two' => 'some:2', 'Bravo' => 'some:1', 'Alpha three' => '']);
+});
+
+it('Bulk: an all-matching handler that only uses records() never reads the keys', function (): void {
+    DB::enableQueryLog();
+    runBulk($this, 'touchOnly', [], ['table' => 'ecposts', 'all' => true, 'query' => 'search=alpha'])->assertOk();
+
+    $selects = array_filter(DB::getQueryLog(), fn (array $q) => str_starts_with($q['query'], 'select'));
+    expect($selects)->toBe([])
+        ->and(EcPost::query()->where('note', 'touched')->count())->toBe(3);
 });

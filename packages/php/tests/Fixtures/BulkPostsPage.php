@@ -32,6 +32,11 @@ class BulkPostsPage extends Page
                 ])
                 ->bulkActions([
                     $s->action('mark')->handle(fn (ActionCtx $ctx) => self::mark($ctx), needs: ['selection']),
+                    $s->action('touchOnly')->handle(function (ActionCtx $ctx): Effects {
+                        $ctx->records()->update(['note' => 'touched']);
+
+                        return Effects::make();
+                    }, needs: ['selection']),
                     $s->dropdown('More', [
                         $s->action('modalMark')->modal('Mark', $s->stack([
                             $s->action('modalMarkSave')->handle(fn (ActionCtx $ctx) => self::mark($ctx), needs: ['selection']),

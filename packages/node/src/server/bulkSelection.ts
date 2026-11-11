@@ -7,8 +7,6 @@ import { applyTableState } from "./tableQuery";
 
 type Bag = Record<string, unknown>;
 
-const PLUCK_CHUNK = 1000;
-
 /**
  * A bulk action's selection resolved against its table (BulkSelection.php).
  *
@@ -66,16 +64,17 @@ function state(raw: unknown): Bag {
 const isKey = (value: unknown): value is string | number =>
 	typeof value === "string" || typeof value === "number";
 
-/** Every key of `query`, read page by page in the key's order. */
+/**
+ * Every key of `query` in one read sized by its count: no OFFSET paging,
+ * which would re-scan the skipped rows on every page. Eager, unlike PHP's
+ * first-access read, because `ctx.selection` is a synchronous getter.
+ */
 async function pluckKeys<Q>(driver: QueryDriver<Q>, query: Q): Promise<(string | number)[]> {
-	const key = keyOf(driver as QueryDriver);
-	const ordered = driver.orderBy(query, key, "asc");
-	const keys: (string | number)[] = [];
-	for (let page = 1; ; page++) {
-		const rows = await driver.rows(ordered, { page, perPage: PLUCK_CHUNK });
-		keys.push(...rows.map((row) => row[key]).filter(isKey));
-		if (rows.length < PLUCK_CHUNK) {
-			return keys;
-		}
+	const total = await driver.count(query);
+	if (total === 0) {
+		return [];
 	}
+	const key = keyOf(driver as QueryDriver);
+	const rows = await driver.rows(query, { page: 1, perPage: total });
+	return rows.map((row) => row[key]).filter(isKey);
 }

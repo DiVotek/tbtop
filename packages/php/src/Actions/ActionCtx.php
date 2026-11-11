@@ -12,6 +12,29 @@ use LogicException;
 final class ActionCtx
 {
     /**
+     * Selected row ids when needs: ['selection']. After "select all matching"
+     * they are every matching key, read on first access: a handler that only
+     * uses records() never loads them.
+     *
+     * @var list<int|string>
+     */
+    public array $selection {
+        get {
+            if ($this->selectionKeys === null) {
+                $this->selectionKeys = $this->selectionResolver === null ? [] : ($this->selectionResolver)();
+            }
+
+            return $this->selectionKeys;
+        }
+    }
+
+    /** @var list<int|string>|null */
+    private ?array $selectionKeys;
+
+    /** @var (Closure(): list<int|string>)|null */
+    private ?Closure $selectionResolver = null;
+
+    /**
      * @param  array<string, mixed>  $form  Form data when the action declared needs: ['form'].
      * @param  list<int|string>  $selection  Selected row ids when needs: ['selection'].
      * @param  array<string, mixed>  $row  Row payload when needs: ['row'].
@@ -23,12 +46,14 @@ final class ActionCtx
         public readonly Request $request,
         public readonly ?Authenticatable $user,
         public readonly array $form = [],
-        public readonly array $selection = [],
+        array $selection = [],
         public readonly array $row = [],
         public readonly array $params = [],
         public readonly bool $allMatching = false,
         private readonly ?Closure $recordsQuery = null,
-    ) {}
+    ) {
+        $this->selectionKeys = $selection;
+    }
 
     /** @param  array<string, string>  $routeParams Server-derived params; trusted over client payload. */
     public static function fromRequest(Request $request, array $routeParams = []): self
@@ -81,21 +106,28 @@ final class ActionCtx
      * The selection resolved against its table: the keys the action acts on
      * and the query records() returns.
      *
-     * @param  list<int|string>  $selection
+     * @param  list<int|string>|(Closure(): list<int|string>)  $selection  the keys, or how to read them on first access
      * @param  Closure(): (EloquentBuilder|QueryBuilder)  $records
      */
-    public function withRecords(array $selection, bool $allMatching, Closure $records): self
+    public function withRecords(array|Closure $selection, bool $allMatching, Closure $records): self
     {
-        return new self(
+        $ctx = new self(
             request: $this->request,
             user: $this->user,
             form: $this->form,
-            selection: $selection,
             row: $this->row,
             params: $this->params,
             allMatching: $allMatching,
             recordsQuery: $records,
         );
+        if ($selection instanceof Closure) {
+            $ctx->selectionKeys = null;
+            $ctx->selectionResolver = $selection;
+        } else {
+            $ctx->selectionKeys = $selection;
+        }
+
+        return $ctx;
     }
 
     /**
@@ -111,16 +143,19 @@ final class ActionCtx
             return $this;
         }
 
-        return new self(
+        $ctx = new self(
             request: $this->request,
             user: $this->user,
             form: $validated,
-            selection: $this->selection,
             row: $this->row,
             params: $this->params,
             allMatching: $this->allMatching,
             recordsQuery: $this->recordsQuery,
         );
+        $ctx->selectionKeys = $this->selectionKeys;
+        $ctx->selectionResolver = $this->selectionResolver;
+
+        return $ctx;
     }
 
     /**

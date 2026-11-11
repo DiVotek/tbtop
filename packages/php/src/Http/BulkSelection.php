@@ -18,7 +18,8 @@ use Tbtop\Admin\Dsl\TableBuilder;
  * `payload.selection` for an action run from a table. With `all` the user
  * picked every row matching the table's state, so `query` (the table's own
  * query string: tab, search, colSearch, filters) is replayed through
- * TableQuery and $ctx->selection becomes every matching key — existing
+ * TableQuery and $ctx->selection becomes every matching key, read on first
+ * access so a records()-only handler never loads them — existing
  * `whereKey($ctx->selection)` handlers keep working. Either way
  * $ctx->records() is the table's query narrowed to the selection.
  *
@@ -59,7 +60,7 @@ final class BulkSelection
             return $builder;
         };
 
-        return $ctx->withRecords(self::keys($records()), true, $records);
+        return $ctx->withRecords(static fn (): array => self::keys($records()), true, $records);
     }
 
     /** Narrows $builder to $keys: the model key on Eloquent, `id` on a plain query. @param  list<int|string>  $keys */
