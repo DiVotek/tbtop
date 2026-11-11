@@ -696,7 +696,8 @@ $s->table('orders')
   run as SQL aggregates over the table's query with its tab, search, column search and
   filters applied, sort dropped. In a group, over the whole group, including its rows on
   other pages. Each costs one query per table request (a group subtotal is one `GROUP BY`
-  for the page's groups), so summarize columns, not every column.
+  for the page's groups), so summarize columns, not every column. A column the viewer
+  toggled off still runs its summaries: the server does not see client column toggles.
 - **Formatted like the cells**: `money()`, `number()`, `date()` formats apply to
   sum/avg/min/max, as on screen. `count` is a plain integer; an average is rounded to
   two decimals unless `money()` or `number($decimals)` formats it. `formatUsing()` does not apply (it

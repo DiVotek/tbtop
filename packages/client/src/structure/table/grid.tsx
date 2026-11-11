@@ -281,6 +281,7 @@ function renderGroupedRows(
 	);
 }
 
+/** Groups render only while reorder is off (`groupsActive`), so the row has no drag cell. */
 function renderGroupSummary(
 	first: Record<string, unknown>,
 	key: string,
