@@ -14,6 +14,12 @@ page exists.
 - `memoryDriver()` with `memoryQuery(() => rows)` from `/memory`: for tests.
 - Anything else (Drizzle, Prisma, a REST API): implement the six methods.
 
+A seventh, optional `aggregate(query, fn, field)` (`fn` is `sum`, `avg`, `min`
+or `max`) serves `Column.summarize()`: it returns that aggregate over the
+filtered query, `null` over no rows. Both bundled drivers have it; a table with
+a built-in summary throws on a driver without it, while `Summary.count()` uses
+`count` and `Summary.using()` gets the query itself.
+
 A `relation(...).creatable(fields, (validated, deps) => row)` saves its own
 record too: the closure inserts it and returns the row, which must carry the
 driver's key column (and the `labelKey()` column for the label shown).

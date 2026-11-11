@@ -9,6 +9,7 @@ import {
 	ExportAction,
 	type Node,
 	S,
+	Summary,
 	Tab,
 	ViewAction,
 } from "../../src/dsl";
@@ -417,6 +418,13 @@ function postsTable(s: S) {
 				.label("Excerpt")
 				.lineClamp(2)
 				.export({ label: "Summary", enabled: false }),
+			Column.make("amount")
+				.money("USD")
+				.summarize(
+					Summary.sum("Total"),
+					Summary.count(),
+					Summary.using(() => "n/a", "Note"),
+				),
 			Column.make("status").badge({
 				in_progress: { label: "In progress", color: "warning" },
 			}),

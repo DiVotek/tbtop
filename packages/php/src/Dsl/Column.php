@@ -138,6 +138,9 @@ final class Column implements JsonSerializable
 
     private bool $exportEnabled = true;
 
+    /** @var list<Summary> */
+    private array $summaries = [];
+
     public function __construct(public readonly string $name) {}
 
     public static function make(string $name): static
@@ -463,6 +466,27 @@ final class Column implements JsonSerializable
         $this->exportLabel = $label;
         $this->exportClosure = $as;
         $this->exportEnabled = $enabled;
+
+        return $this;
+    }
+
+    /**
+     * Summaries under the column, in a footer row and at the end of each row
+     * group: Summary::sum(), avg(), min(), max(), count() over every row the
+     * table's query matches (not just the page), formatted like the cells, or
+     * Summary::using(fn ($query) => ..., label:) for a custom value or text.
+     * A second call replaces the first.
+     */
+    public function summarize(Summary ...$summaries): static
+    {
+        foreach ($summaries as $summary) {
+            if (str_contains($this->name, '.') && in_array($summary->type, ['sum', 'avg', 'min', 'max'], true)) {
+                throw new InvalidArgumentException(
+                    "Column \"{$this->name}\": Summary::{$summary->type}() needs a column of the table's own query — use Summary::using() for a relation value.",
+                );
+            }
+        }
+        $this->summaries = array_values($summaries);
 
         return $this;
     }
@@ -925,6 +949,12 @@ final class Column implements JsonSerializable
         return $this->exportLabel ?? $this->label ?? $this->name;
     }
 
+    /** @return list<Summary> */
+    public function getSummaries(): array
+    {
+        return $this->summaries;
+    }
+
     public function isExportEnabled(): bool
     {
         return $this->exportEnabled;
@@ -1033,6 +1063,9 @@ final class Column implements JsonSerializable
         if ($this->exportDeclared) {
             $out['export'] = $this->exportWire();
         }
+        if ($this->summaries !== []) {
+            $out['summaries'] = array_map(fn (Summary $s) => $s->jsonSerialize(), $this->summaries);
+        }
 
         if ($this->editInput !== [] && $this->editAs === null) {
             throw new InvalidArgumentException(
@@ -1106,6 +1139,11 @@ final class Column implements JsonSerializable
         if ($this->isIndividuallySearchable()) {
             throw new InvalidArgumentException(
                 "Column \"{$this->name}\": individuallySearchable() is not supported on a group column — put it on a child.",
+            );
+        }
+        if ($this->summaries !== []) {
+            throw new InvalidArgumentException(
+                "Column \"{$this->name}\": summarize() is not supported on a group column — put it on a child.",
             );
         }
         foreach ($this->groupColumns as $child) {

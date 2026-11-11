@@ -3,6 +3,7 @@ import { keyOf, type QueryDriver } from "./driver";
 import { unprocessable } from "./http";
 import { projectRows } from "./projection";
 import { applyFilters } from "./tableFilters";
+import { attachGroupSummaries, footerSummaries } from "./tableSummaries";
 
 export interface TablePage {
 	data: Row[];
@@ -12,6 +13,8 @@ export interface TablePage {
 	page: number;
 	perPage: number;
 	tabCounts?: Record<string, number>;
+	/** Column.summarize() footer values by column, one per declared summary. */
+	summaries?: Record<string, unknown[]>;
 }
 
 const text = (v: unknown): string =>
@@ -33,11 +36,16 @@ export async function runTable<Q>(
 	if (base === undefined) {
 		throw new Error(`Table "${table.name}" has no query.`);
 	}
-	const query = applyTableState({ table, params, driver }, base());
+	const step = { table, params, driver };
+	const filtered = applyFilterState(step, base());
+	const query = applySort(step, filtered);
 	const { page, perPage } = pageWindow(table, params);
 	const rows = await driver.rows(query, { page, perPage });
+	const data = projectRows(table as TableBuilder, rows, keyOf(driver as QueryDriver));
+	const scope = { table, driver, filtered };
+	const summaries = await footerSummaries(scope);
 	const result: TablePage = {
-		data: projectRows(table as TableBuilder, rows, keyOf(driver as QueryDriver)),
+		data: summaries === null ? data : await attachGroupSummaries(scope, rows, data),
 		...(table.isSimplePagination()
 			? { hasMore: await hasMore(driver, query, { page, perPage, got: rows.length }) }
 			: { total: await driver.count(query) }),
@@ -45,7 +53,11 @@ export async function runTable<Q>(
 		perPage,
 	};
 	const tabCounts = await countTabs(table, driver, base);
-	return tabCounts === null ? result : { ...result, tabCounts };
+	return {
+		...result,
+		...(tabCounts === null ? {} : { tabCounts }),
+		...(summaries === null ? {} : { summaries }),
+	};
 }
 
 /**
@@ -54,11 +66,15 @@ export async function runTable<Q>(
  * download holds exactly the rows the table shows.
  */
 export function applyTableState<Q>(step: Step<Q>, query: Q): Q {
-	const filtered = applyFilters(step.table.filterFields(), record(step.params.filters), {
+	return applySort(step, applyFilterState(step, query));
+}
+
+/** Tab, search, column search and filters — the rows a summary aggregates; no sort. */
+function applyFilterState<Q>(step: Step<Q>, query: Q): Q {
+	return applyFilters(step.table.filterFields(), record(step.params.filters), {
 		driver: step.driver,
 		query: applySearch(step, applyTab(step.table, step.params.tab, query)),
 	});
-	return applySort(step, filtered);
 }
 
 function pageWindow<Q>(table: TableBuilder<Q>, params: Record<string, unknown>) {

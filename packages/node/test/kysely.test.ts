@@ -85,6 +85,17 @@ describe("kyselyDriver", () => {
 		]);
 	});
 
+	test("aggregate() runs SUM/AVG/MIN/MAX over the scope, ignoring its sort", async () => {
+		const driver = kyselyDriver(db);
+		const scoped = db.selectFrom("posts").where("published", "=", 1).orderBy("title");
+		expect(Number(await driver.aggregate?.(scoped as never, "sum", "views"))).toBe(100);
+		expect(Number(await driver.aggregate?.(scoped as never, "avg", "views"))).toBe(25);
+		expect(await driver.aggregate?.(scoped as never, "min", "title")).toBe("Alpha");
+		expect(await driver.aggregate?.(scoped as never, "max", "views")).toBe(40);
+		const none = db.selectFrom("posts").where("published", "=", 9);
+		expect(await driver.aggregate?.(none as never, "sum", "views")).toBeNull();
+	});
+
 	test("search escapes LIKE wildcards", async () => {
 		expect((await rows("search=a")).total).toBe(4);
 		expect((await rows("search=%25")).total).toBe(1);

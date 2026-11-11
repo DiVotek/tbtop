@@ -32,10 +32,19 @@ interface NormalizedRows {
 	/** Sent instead of total by a simple-paginated table. */
 	hasMore: boolean | undefined;
 	tabCounts: Record<string, number> | undefined;
+	/** Footer summaries by column name, one value per declared summary. */
+	summaries: SummaryValues | undefined;
 }
 
+export type SummaryValues = Record<string, unknown[]>;
+
 export function normalizeRows(data: unknown): NormalizedRows {
-	const empty = { total: undefined, hasMore: undefined, tabCounts: undefined };
+	const empty = {
+		total: undefined,
+		hasMore: undefined,
+		tabCounts: undefined,
+		summaries: undefined,
+	};
 	if (Array.isArray(data)) {
 		return { ...empty, rows: data as Record<string, unknown>[] };
 	}
@@ -45,6 +54,7 @@ export function normalizeRows(data: unknown): NormalizedRows {
 			total?: unknown;
 			hasMore?: unknown;
 			tabCounts?: unknown;
+			summaries?: unknown;
 		};
 		if (Array.isArray(obj.data)) {
 			return {
@@ -52,10 +62,25 @@ export function normalizeRows(data: unknown): NormalizedRows {
 				total: typeof obj.total === "number" ? obj.total : undefined,
 				hasMore: typeof obj.hasMore === "boolean" ? obj.hasMore : undefined,
 				tabCounts: readTabCounts(obj.tabCounts),
+				summaries: readSummaryValues(obj.summaries),
 			};
 		}
 	}
 	return { ...empty, rows: [] };
+}
+
+/** A `summaries` map (footer) or a row's `_groupSummary`: column name → values. */
+export function readSummaryValues(value: unknown): SummaryValues | undefined {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		return undefined;
+	}
+	const out: SummaryValues = {};
+	for (const [name, values] of Object.entries(value as Record<string, unknown>)) {
+		if (Array.isArray(values)) {
+			out[name] = values;
+		}
+	}
+	return out;
 }
 
 function readTabCounts(value: unknown): Record<string, number> | undefined {

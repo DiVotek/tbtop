@@ -6,6 +6,8 @@ export type Clause =
 	| { field: string; op: "contains"; value: string }
 	| { field: string; op: "dateLte"; value: string };
 
+export type AggregateFn = "sum" | "avg" | "min" | "max";
+
 /**
  * What the server asks of the host's query type `Q` (Eloquent's role in PHP).
  * Every step returns a new `Q`, so an immutable builder (Kysely, Drizzle) fits
@@ -22,6 +24,12 @@ export interface QueryDriver<Q = unknown> {
 	rows(query: Q, window: { page: number; perPage: number }): Promise<Row[]>;
 	/** Writes `values` to the row with this key (reorder). */
 	update(query: Q, key: string | number, values: Row): Promise<void>;
+	/**
+	 * One aggregate of `field` over `query` for Column.summarize() — the SQL
+	 * SUM/AVG/MIN/MAX, null over no rows. Optional: only a table with a
+	 * built-in summary needs it, and that table's rows request throws without it.
+	 */
+	aggregate?(query: Q, fn: AggregateFn, field: string): Promise<unknown>;
 	/** The record key column; `id` when omitted. */
 	keyName?: string;
 }

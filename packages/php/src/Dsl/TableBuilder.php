@@ -744,6 +744,16 @@ final class TableBuilder implements JsonSerializable
      *
      * @return list<Column>
      */
+    /**
+     * Visible leaf columns that declare summarize(), in display order.
+     *
+     * @return list<Column>
+     */
+    public function summarizedColumns(): array
+    {
+        return array_values(array_filter($this->visibleLeafColumns(), fn (Column $c) => $c->getSummaries() !== []));
+    }
+
     private function visibleLeafColumns(): array
     {
         $leaves = [];

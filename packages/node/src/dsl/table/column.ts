@@ -4,6 +4,7 @@ import { type BadgeMap, type BooleanStyle, badgeMeta, booleanMeta } from "../kin
 import { type Choice, choicesOf, type EnumSource, normalizeOptions } from "../options";
 import { appendRules } from "../rules";
 import { columnWire } from "./columnWire";
+import type { Summary } from "./summary";
 
 export type Row = Record<string, unknown>;
 export type RowFn<T = unknown> = (row: Row) => T;
@@ -49,6 +50,7 @@ export interface ColumnState {
 	editRules: string[];
 	onSave?: (row: Row, value: unknown) => unknown;
 	export?: ColumnExport;
+	summaries: Summary[];
 }
 
 /** Column.export(): how the column lands in an ExportAction file. */
@@ -75,6 +77,7 @@ export class Column {
 		editInput: {},
 		editOptions: [],
 		editRules: [],
+		summaries: [],
 	};
 
 	constructor(readonly name: string) {}
@@ -233,6 +236,24 @@ export class Column {
 	 */
 	export(options: ColumnExport = {}): this {
 		return this.with({ export: { ...options } });
+	}
+
+	/**
+	 * Summaries under the column, in a footer row and at the end of each row
+	 * group: Summary.sum(), avg(), min(), max(), count() over every row the
+	 * table's query matches (not just the page), formatted like the cells, or
+	 * Summary.using((query) => …, label) for a custom value or text. A second
+	 * call replaces the first.
+	 */
+	summarize(...summaries: Summary[]): this {
+		for (const summary of summaries) {
+			if (this.name.includes(".") && ["sum", "avg", "min", "max"].includes(summary.type)) {
+				throw new Error(
+					`Column "${this.name}": Summary::${summary.type}() needs a column of the table's own query — use Summary::using() for a relation value.`,
+				);
+			}
+		}
+		return this.with({ summaries: [...summaries] });
 	}
 
 	/** Copy-to-clipboard button next to the value. */

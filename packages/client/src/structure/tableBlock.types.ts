@@ -5,6 +5,7 @@
 
 import type { ModalSize } from "../ui/modal-shell";
 import type { AsyncBlock } from "./asyncBlock";
+import type { SummaryValues } from "./table/normalize";
 import type {
 	ActionConfig,
 	ClientActionContext,
@@ -83,6 +84,8 @@ export interface TableBodyProps {
 	rows: Record<string, unknown>[];
 	total: number | undefined;
 	hasMore: boolean | undefined;
+	/** Footer summaries by column (Column::summarize()). */
+	summaries?: SummaryValues;
 	isReloading: boolean;
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];

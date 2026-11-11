@@ -92,7 +92,7 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 		return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 	}
 
-	const { rows, total, hasMore, tabCounts } = normalizeRows(state.data);
+	const { rows, total, hasMore, tabCounts, summaries } = normalizeRows(state.data);
 	const exportUrl = options.exportUrl;
 	const exportTarget = exportUrl ? { tableName, columns: options.columns, exportUrl } : null;
 
@@ -117,6 +117,7 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 				filtersCollapsed={options.filtersCollapsed}
 				tabs={options.tabs}
 				tabCounts={tabCounts}
+				summaries={summaries}
 				pagination={options.pagination}
 				tableName={tableName}
 				rowClick={options.rowClick}
@@ -350,6 +351,7 @@ function TableBody(props: TableBodyProps) {
 							reorderRows={props.reorderRows}
 							onRefresh={props.onRefresh}
 							groups={props.groups}
+							summaries={props.summaries}
 							colSearchValues={colSearchValues}
 							onColSearchChange={handleColSearchChange}
 						/>

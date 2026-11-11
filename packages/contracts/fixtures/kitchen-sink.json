@@ -1364,6 +1364,24 @@
                             }
                         },
                         {
+                            "name": "amount",
+                            "kind": "money",
+                            "currency": "USD",
+                            "summaries": [
+                                {
+                                    "type": "sum",
+                                    "label": "Total"
+                                },
+                                {
+                                    "type": "count"
+                                },
+                                {
+                                    "type": "custom",
+                                    "label": "Note"
+                                }
+                            ]
+                        },
+                        {
                             "name": "status",
                             "kind": "badge",
                             "badge": {

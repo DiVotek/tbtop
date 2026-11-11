@@ -7,7 +7,7 @@
 > Back to [the AI guide](../README.md). Prose, gotchas and worked examples live in
 > the hand-written docs; this page is the exhaustive method list.
 
-The table builder, its columns, and filter tabs.
+The table builder, its columns, column summaries, and filter tabs.
 
 ## TableBuilder
 
@@ -96,6 +96,7 @@ The table builder, its columns, and filter tabs.
 | `step(string\|int\|float $step): static` | Increment granularity of the inline number editor (its step attribute). Accepts a positive number, a numeric string ('0.01' — shipped as a number, must be > 0), or 'any' for arbitrary precision. Requires numberInput() to also be called — without it, editInput is set but no editable column is emitted, so step() silently has no effect; that combination throws at serialization. |
 | `sticky(bool $value = true): static` | Pin the column to the left edge while the table scrolls horizontally. Sticky columns must lead the column list; the row-selection checkbox and drag handle stay pinned with them. |
 | `suffix(JsonSerializable\|string $content): static` | Display node rendered after the cell value (e.g. a currency code). Same rules as prefix(). |
+| `summarize(Summary ...$summaries): static` | Summaries under the column, in a footer row and at the end of each row group: Summary::sum(), avg(), min(), max(), count() over every row the table's query matches (not just the page), formatted like the cells, or Summary::using(fn ($query) => ..., label:) for a custom value or text. A second call replaces the first. |
 | `textInput(): static` | Make the column an inline text input; sets kind = 'text' when no kind is already set. Incompatible with formatUsing() — throws at serialization. |
 | `time(?string $format = null): static` | Kind sugar: sets kind = 'time' and stores $format; formatting is applied server-side by KindFormat, not here. Defaults to 'H:i'. |
 | `toggle(): static` | Make the column an inline boolean toggle; sets kind = 'boolean'. Incompatible with formatUsing() — throws at serialization. |
@@ -107,6 +108,19 @@ The table builder, its columns, and filter tabs.
 | `visible(Closure $closure): static` | Pass a closure returning bool; false → column excluded from wire & projection. |
 | `width(string $width): static` | Column width as a CSS length (e.g. '120px', '10%'). |
 | `wrap(): static` | Allow cell content to wrap onto multiple lines. Mutually exclusive with truncate()/noWrap()/lineClamp() — last call wins. |
+
+## Summary
+
+`Tbtop\Admin\Dsl\Summary`
+
+| Method | What it does |
+|---|---|
+| `avg(?string $label = null): self` | Average of the column. Default label: "Average". |
+| `count(?string $label = null): self` | Number of matching rows, shown as a plain integer. Default label: "Count". |
+| `max(?string $label = null): self` | Largest value of the column. Default label: "Max". |
+| `min(?string $label = null): self` | Smallest value of the column. Default label: "Min". |
+| `sum(?string $label = null): self` | Sum of the column. Default label: "Sum". |
+| `using(Closure $fn, string $label): self` | A custom summary: $fn receives a clone of the table's filtered query (Eloquent or query builder, sort removed) and returns the value to show, a number or text. In a row group the query is also narrowed to that group. |
 
 ## Tab
 

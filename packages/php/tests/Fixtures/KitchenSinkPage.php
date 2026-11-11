@@ -15,6 +15,7 @@ use Tbtop\Admin\Dsl\Cond;
 use Tbtop\Admin\Dsl\Fields\Embed;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\Summary;
 use Tbtop\Admin\Dsl\Tab;
 use Tbtop\Admin\Pages\Page;
 
@@ -257,6 +258,7 @@ class KitchenSinkPage extends Page
                     Column::make('cover')->image()->circular()->alt('Avatar'),
                     Column::make('brand_color')->color()->rounded()->label('Color'),
                     Column::make('excerpt')->label('Excerpt')->lineClamp(2)->export(label: 'Summary', enabled: false),
+                    Column::make('amount')->money('USD')->summarize(Summary::sum('Total'), Summary::count(), Summary::using(fn () => 'n/a', label: 'Note')),
                     Column::make('status')->badge(['in_progress' => ['label' => 'In progress', 'color' => 'warning']]),
                     Column::make('published')
                         ->label('Published')

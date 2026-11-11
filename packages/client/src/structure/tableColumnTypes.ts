@@ -43,6 +43,12 @@ export interface TableColumnLinkOptions {
 	icon?: string;
 }
 
+/** One declared summary; `custom` is a Summary::using() value, shown as returned. */
+export interface TableColumnSummary {
+	type: "sum" | "avg" | "min" | "max" | "count" | "custom";
+	label?: string;
+}
+
 export interface TableColumn<TRow = unknown> {
 	name: string;
 	label?: string;
@@ -69,6 +75,8 @@ export interface TableColumn<TRow = unknown> {
 	lineClamp?: number;
 	/** Export dialog settings: the file's header, and `on: false` to leave it unticked. */
 	export?: { label?: string; on?: false };
+	/** Summaries shown under the column (footer and row groups); values come with the rows. */
+	summaries?: TableColumnSummary[];
 	tooltip?: string;
 	/** Muted secondary line under the cell's primary content. */
 	description?: string;
