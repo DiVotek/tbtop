@@ -12,6 +12,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 - **node:** export LocalizedFormValues with one locale picked ([#446](https://github.com/DiVotek/tbtop/pull/446))
 - reorderable() takes a closure that owns the reorder write ([#447](https://github.com/DiVotek/tbtop/pull/447))
 - table export v1 (ExportAction, Column::export, CSV and XLSX) ([#449](https://github.com/DiVotek/tbtop/pull/449))
+- select all matching rows for bulk actions ([#454](https://github.com/DiVotek/tbtop/pull/454))
 
 ### Fixes
 
