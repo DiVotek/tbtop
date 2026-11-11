@@ -51,14 +51,25 @@ final class AuthScaffold
     /** @var list<string> */
     public array $clashes = [];
 
-    /** @param  array<string, class-string<Page>>  $pages  host class name => package base */
-    public function __construct(public readonly PanelConfig $panel, private readonly array $pages = self::PAGES) {}
+    public readonly AuthTarget $target;
+
+    /**
+     * @param  array<string, class-string<Page>>  $pages  host class name => package base
+     * @param  ?AuthTarget  $target  where the pages go; the panel's own target among no other panels by default
+     */
+    public function __construct(
+        public readonly PanelConfig $panel,
+        private readonly array $pages = self::PAGES,
+        ?AuthTarget $target = null,
+    ) {
+        $this->target = $target ?? AuthTarget::for($panel, [$panel->getId() => $panel]);
+    }
 
     public function publish(bool $force): self
     {
         foreach ($this->pages as $class => $base) {
-            $relative = 'app/Admin/Pages/Auth/'.$class.'.php';
-            $target = base_path($relative);
+            $relative = $this->target->relative($class.'.php');
+            $target = $this->target->dir.'/'.$class.'.php';
             if (file_exists($target) && ! $force) {
                 $this->existing[] = $relative;
 
@@ -103,19 +114,12 @@ final class AuthScaffold
     /** Whether one of the panel's discovery roots picks the published pages up. */
     public function isDiscovered(): bool
     {
-        $dir = base_path('app/Admin/Pages/Auth').'/';
-        foreach ($this->panel->getPageDiscoveryRoots() as $root) {
-            if (str_starts_with($dir, rtrim($root['in'], '/').'/')) {
-                return true;
-            }
-        }
-
-        return false;
+        return AuthTarget::discovers($this->panel, $this->target->dir);
     }
 
     public function namespace(): string
     {
-        return rtrim((string) app()->getNamespace(), '\\').'\\Admin\\Pages\\Auth';
+        return $this->target->namespace;
     }
 
     /** @param class-string<Page> $base */
