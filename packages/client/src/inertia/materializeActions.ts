@@ -8,7 +8,9 @@ import { type ConfirmSpec, confirmModal } from "./confirmModal";
 import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects, settleSubmittedForm } from "./effects";
 import { liftNestedErrors } from "./fieldErrors";
+import { fillRowTemplate } from "./rowTemplate";
 import { serializeFormData } from "./serializeFormData";
+import { isTableExport, tableExportModal } from "./tableExportAction";
 
 type Bag = Record<string, unknown>;
 type Handler = (ctx: ClientActionContext) => Promise<void | boolean>;
@@ -72,6 +74,9 @@ export function materializeActionOptions(node: StructureNode, ctx: ActionMateria
 	if (spec.type === "modal") {
 		return { ...base, modal: materializeModal(node.name ?? "", spec, ctx) };
 	}
+	if (isTableExport(spec)) {
+		return { ...base, modal: tableExportModal(node.name ?? "", base, spec.params) };
+	}
 	return handlerBag({ base, node, spec, ctx, confirm });
 }
 
@@ -99,35 +104,6 @@ function handlerBag({ base, node, spec, ctx, confirm }: HandlerBagInput): Bag {
 		return { ...bag, modal: confirmModal({ base: bag, confirm, handler }, ctx.t) };
 	}
 	return spec.type === "submit" ? { ...bag, handler, isSubmit: true } : { ...bag, handler };
-}
-
-/**
- * Row values are consumer data (slugs, titles, ids from arbitrary tables), so
- * a value containing '/', '?', '#', or '&' must not be able to reshape the
- * template's own URL structure — encode it so it fills exactly one segment.
- */
-function fillRowTemplate(template: string, ctx: ClientActionContext): string {
-	return template.replaceAll(/\{row\.([a-zA-Z0-9_]+)\}/g, (placeholder, key: string) => {
-		const value = ctx.row?.[key];
-		return value === undefined ||
-			value === null ||
-			(typeof value === "string" && value.trim() === "")
-			? placeholder
-			: encodeURIComponent(toWellFormedString(String(value)));
-	});
-}
-
-/**
- * encodeURIComponent throws a URIError on a lone UTF-16 surrogate. Row values
- * come from arbitrary JSON payloads, where a lone surrogate is a valid string
- * (e.g. `"\uD800"`), so replace unpaired surrogates with U+FFFD before
- * encoding rather than letting a malformed value crash the render.
- */
-function toWellFormedString(value: string): string {
-	return value.replaceAll(
-		/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
-		"�",
-	);
 }
 
 function buildHandler(node: StructureNode, spec: ActionSpec, ctx: ActionMaterializeCtx): Handler {

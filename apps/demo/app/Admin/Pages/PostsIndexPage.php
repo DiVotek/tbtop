@@ -9,6 +9,7 @@ use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Actions\CreateAction;
 use Tbtop\Admin\Dsl\Actions\DeleteAction;
 use Tbtop\Admin\Dsl\Actions\EditAction;
+use Tbtop\Admin\Dsl\Actions\ExportAction;
 use Tbtop\Admin\Dsl\Actions\ReplicateAction;
 use Tbtop\Admin\Dsl\Actions\ViewAction;
 use Tbtop\Admin\Dsl\Color;
@@ -70,6 +71,8 @@ class PostsIndexPage extends Page
                         name: 'quickCreate',
                         title: 'Quick create',
                     )->label('Quick create')->slideOver(),
+                    // CSV/XLSX of the rows as filtered and sorted on screen.
+                    ExportAction::make($s),
                 ])
                 ->columns([
                     Column::make('id')
@@ -77,8 +80,11 @@ class PostsIndexPage extends Page
                         // Pinned with the selection checkbox on horizontal scroll.
                         ->sticky()
                         // A formatted key column: rows stay identified by `_key`.
-                        ->formatUsing(fn ($value) => "#{$value}"),
-                    Column::make('cover_url')->image()->square()->label('Cover')->alt('Cover'),
+                        ->formatUsing(fn ($value) => "#{$value}")
+                        // The file gets the plain key, not the "#12" display.
+                        ->export(as: fn ($value) => $value),
+                    Column::make('cover_url')->image()->square()->label('Cover')->alt('Cover')
+                        ->export(label: 'Cover URL', enabled: false),
                     Column::make('color')->color()->rounded()->label('Color'),
                     Column::make('title')
                         ->label('Title')
@@ -252,6 +258,7 @@ class PostsIndexPage extends Page
                     }),
                 ])
                 ->bulkActions([
+                    ExportAction::make($s, name: 'export-selected'),
                     // The helper guards an empty selection; the closure returns its
                     // own count-aware notify, overriding the default tail.
                     DeleteAction::make($s, name: 'delete-selected', bulk: true, using: function (ActionCtx $ctx): Effects {

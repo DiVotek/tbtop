@@ -15,6 +15,7 @@ import { TablePagination } from "./table/pagination";
 import { canReorder } from "./table/reorder";
 import { SimplePagination } from "./table/simplePagination";
 import { TableError } from "./table/tableError";
+import { TableExportProvider } from "./table/tableExportContext";
 import { TableTabBar, TableToolbar, useFilterHandlers } from "./table/toolbar";
 import { useColumnLayout } from "./table/useColumnLayout";
 import { useColumnSearch } from "./table/useColumnSearch";
@@ -92,46 +93,50 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 	}
 
 	const { rows, total, hasMore, tabCounts } = normalizeRows(state.data);
+	const exportUrl = options.exportUrl;
+	const exportTarget = exportUrl ? { tableName, columns: options.columns, exportUrl } : null;
 
 	return (
-		<TableBody
-			rows={rows}
-			total={total}
-			hasMore={hasMore}
-			isReloading={state.kind === "reloading"}
-			columns={options.columns}
-			rowActions={options.rowActions}
-			bulkActions={options.bulkActions}
-			queryParams={queryParams}
-			onChangeParams={mergeParams}
-			onRefresh={refetch}
-			onPoll={refetchSilently}
-			poll={options.poll}
-			searchable={options.searchable}
-			filters={options.filters}
-			filtersIn={options.filtersIn ?? "modal"}
-			filtersCollapsed={options.filtersCollapsed}
-			tabs={options.tabs}
-			tabCounts={tabCounts}
-			pagination={options.pagination}
-			tableName={tableName}
-			rowClick={options.rowClick}
-			searchPlaceholder={options.searchPlaceholder}
-			emptyState={options.emptyState}
-			headerActions={options.headerActions}
-			recordUrl={options.recordUrl}
-			recordUrlNewTab={options.recordUrlNewTab}
-			embedded={options.embedded}
-			searchInput={options.searchInput}
-			columnToggle={options.columnToggle}
-			saveCell={saveCell}
-			reorderColumn={options.reorder?.column}
-			reorderRows={reorderRows}
-			groups={options.groups}
-			deferFilters={options.deferFilters}
-			filtersFormColumns={options.filtersFormColumns}
-			filtersFormWidth={options.filtersFormWidth}
-		/>
+		<TableExportProvider value={exportTarget}>
+			<TableBody
+				rows={rows}
+				total={total}
+				hasMore={hasMore}
+				isReloading={state.kind === "reloading"}
+				columns={options.columns}
+				rowActions={options.rowActions}
+				bulkActions={options.bulkActions}
+				queryParams={queryParams}
+				onChangeParams={mergeParams}
+				onRefresh={refetch}
+				onPoll={refetchSilently}
+				poll={options.poll}
+				searchable={options.searchable}
+				filters={options.filters}
+				filtersIn={options.filtersIn ?? "modal"}
+				filtersCollapsed={options.filtersCollapsed}
+				tabs={options.tabs}
+				tabCounts={tabCounts}
+				pagination={options.pagination}
+				tableName={tableName}
+				rowClick={options.rowClick}
+				searchPlaceholder={options.searchPlaceholder}
+				emptyState={options.emptyState}
+				headerActions={options.headerActions}
+				recordUrl={options.recordUrl}
+				recordUrlNewTab={options.recordUrlNewTab}
+				embedded={options.embedded}
+				searchInput={options.searchInput}
+				columnToggle={options.columnToggle}
+				saveCell={saveCell}
+				reorderColumn={options.reorder?.column}
+				reorderRows={reorderRows}
+				groups={options.groups}
+				deferFilters={options.deferFilters}
+				filtersFormColumns={options.filtersFormColumns}
+				filtersFormWidth={options.filtersFormWidth}
+			/>
+		</TableExportProvider>
 	);
 }
 

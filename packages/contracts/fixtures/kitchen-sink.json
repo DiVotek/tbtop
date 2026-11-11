@@ -1159,6 +1159,26 @@
                             },
                             "meta": {},
                             "name": "createPost"
+                        },
+                        {
+                            "kind": "action",
+                            "options": {
+                                "label": "Export",
+                                "spec": {
+                                    "type": "custom",
+                                    "handler": "tbtop.export",
+                                    "params": {
+                                        "formats": [
+                                            "csv",
+                                            "xlsx"
+                                        ],
+                                        "maxRows": 50000,
+                                        "filename": "posts"
+                                    }
+                                }
+                            },
+                            "meta": {},
+                            "name": "export"
                         }
                     ],
                     "recordUrl": true,
@@ -1337,7 +1357,11 @@
                         {
                             "name": "excerpt",
                             "label": "Excerpt",
-                            "lineClamp": 2
+                            "lineClamp": 2,
+                            "export": {
+                                "label": "Summary",
+                                "on": false
+                            }
                         },
                         {
                             "name": "status",

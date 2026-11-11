@@ -32,11 +32,26 @@ export function columnWire(column: Column): Record<string, unknown> {
 		assertGroupSerializable(column);
 		out.columns = st.groupColumns.map(columnWire);
 	}
+	if (st.export !== undefined) {
+		out.export = exportWire(st.export);
+	}
 	const editable = editableWire(column);
 	if (editable !== null) {
 		out.editable = editable;
 	}
 	return out;
+}
+
+/** {label?, on: false?}; the `as` closure never leaves the server. */
+function exportWire(spec: NonNullable<ColumnState["export"]>): Record<string, unknown> {
+	const wire: Record<string, unknown> = {};
+	if (spec.label !== undefined) {
+		wire.label = spec.label;
+	}
+	if (spec.enabled === false) {
+		wire.on = false;
+	}
+	return wire;
 }
 
 /** align, icon, width, sticky, wrap, noWrap, lineClamp — in Column::jsonSerialize order. */

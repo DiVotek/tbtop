@@ -126,6 +126,18 @@ final class Column implements JsonSerializable
     /** REQUIRED when editable — consumer provides the save logic. */
     private ?Closure $onSaveClosure = null;
 
+    // -------------------------------------------------------------------------
+    // Export state (exportClosure is server-only, never serialized)
+    // -------------------------------------------------------------------------
+
+    private bool $exportDeclared = false;
+
+    private ?string $exportLabel = null;
+
+    private ?Closure $exportClosure = null;
+
+    private bool $exportEnabled = true;
+
     public function __construct(public readonly string $name) {}
 
     public static function make(string $name): static
@@ -433,6 +445,24 @@ final class Column implements JsonSerializable
     public function formatUsing(Closure $fn): static
     {
         $this->formatUsing = $fn;
+
+        return $this;
+    }
+
+    /**
+     * How the column lands in an ExportAction file. Without this call the
+     * column exports under its header with the value as shown on screen.
+     * $label renames the file's header; $as, fn(mixed $value, Model|object
+     * $row): mixed, replaces the on-screen value (raw $value, before any
+     * formatting); $enabled: false leaves the column unticked in the export
+     * dialog — the user can still tick it.
+     */
+    public function export(?string $label = null, ?Closure $as = null, bool $enabled = true): static
+    {
+        $this->exportDeclared = true;
+        $this->exportLabel = $label;
+        $this->exportClosure = $as;
+        $this->exportEnabled = $enabled;
 
         return $this;
     }
@@ -818,6 +848,12 @@ final class Column implements JsonSerializable
         return $this->editRules;
     }
 
+    /** @return list<array{value: string, label?: string}> The editable select's static options. */
+    public function editOptionEntries(): array
+    {
+        return $this->editOptions;
+    }
+
     public function labelText(): ?string
     {
         return $this->label;
@@ -875,6 +911,23 @@ final class Column implements JsonSerializable
     public function getFormatUsing(): ?Closure
     {
         return $this->formatUsing;
+    }
+
+    /** The export(as:) override, fn(mixed $value, Model|object $row): mixed. */
+    public function exportClosure(): ?Closure
+    {
+        return $this->exportClosure;
+    }
+
+    /** The export file's header for this column: export(label:), else the column label. */
+    public function getExportLabel(): string
+    {
+        return $this->exportLabel ?? $this->label ?? $this->name;
+    }
+
+    public function isExportEnabled(): bool
+    {
+        return $this->exportEnabled;
     }
 
     /** @return array<string, mixed> The kind-specific format metadata (format, decimals, currency…). */
@@ -977,6 +1030,10 @@ final class Column implements JsonSerializable
             );
         }
 
+        if ($this->exportDeclared) {
+            $out['export'] = $this->exportWire();
+        }
+
         if ($this->editInput !== [] && $this->editAs === null) {
             throw new InvalidArgumentException(
                 "Column \"{$this->name}\": step() requires numberInput().",
@@ -1005,6 +1062,20 @@ final class Column implements JsonSerializable
         }
 
         return $out;
+    }
+
+    /** @return array{label?: string, on?: false}|\stdClass An empty export() call serializes as {}. */
+    private function exportWire(): array|\stdClass
+    {
+        $wire = [];
+        if ($this->exportLabel !== null) {
+            $wire['label'] = $this->exportLabel;
+        }
+        if (! $this->exportEnabled) {
+            $wire['on'] = false;
+        }
+
+        return $wire === [] ? new \stdClass : $wire;
     }
 
     private function assertGroupSerializable(): void

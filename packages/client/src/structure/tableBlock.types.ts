@@ -73,6 +73,8 @@ export interface TableBlockOptions extends AsyncBlock {
 	poll?: number;
 	/** Materialized by materialize.ts — takes actionCtx + args; bound in TableBlock. */
 	saveCell?: (ctx: ClientActionContext, args: SaveCellArgs) => Promise<unknown>;
+	/** Materialized by materialize.ts — the export endpoint of one of this table's ExportActions. */
+	exportUrl?: (action: string) => string;
 	/** Materialized by materialize.ts — POSTs the new id order; bound in TableBlock. */
 	reorderRows?: (ctx: ClientActionContext, ids: string[]) => Promise<unknown>;
 }

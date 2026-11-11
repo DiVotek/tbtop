@@ -48,6 +48,17 @@ export interface ColumnState {
 	editOptions: Record<string, unknown>[];
 	editRules: string[];
 	onSave?: (row: Row, value: unknown) => unknown;
+	export?: ColumnExport;
+}
+
+/** Column.export(): how the column lands in an ExportAction file. */
+export interface ColumnExport {
+	/** The file's header for this column. */
+	label?: string;
+	/** Replaces the on-screen value: `(value, row) => cell`, value before formatting. */
+	as?: (value: unknown, row: Row) => unknown;
+	/** false leaves the column unticked in the export dialog; the user can still tick it. */
+	enabled?: boolean;
 }
 
 /**
@@ -214,6 +225,14 @@ export class Column {
 	/** Server-side formatter `(value, row) => display`; replaces kind formatting. */
 	formatUsing(fn: (value: unknown, row: Row) => unknown): this {
 		return this.with({ formatUsing: fn });
+	}
+
+	/**
+	 * How the column lands in an ExportAction file. Without this call the
+	 * column exports under its header with the value as shown on screen.
+	 */
+	export(options: ColumnExport = {}): this {
+		return this.with({ export: { ...options } });
 	}
 
 	/** Copy-to-clipboard button next to the value. */

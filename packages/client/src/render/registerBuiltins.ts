@@ -25,6 +25,7 @@ import { DisplayValueBlock } from "../structure/displayValueBlock";
 import { FormBlock } from "../structure/formBlock";
 import { ListBlock } from "../structure/listBlock";
 import { LiveRegionBlock } from "../structure/liveRegionBlock";
+import { TableExportBlock } from "../structure/table/tableExportBlock";
 import { TableBlock } from "../structure/tableBlock";
 import {
 	renderAreaChart,
@@ -107,6 +108,7 @@ function registerLayout(): void {
 function registerDataBlocks(): void {
 	defineBlock("form", { behavior: "container", render: FormBlock });
 	defineBlock("table", { behavior: "leaf", render: TableBlock });
+	defineBlock("tableExport", { behavior: "leaf", render: TableExportBlock });
 	defineBlock("action", { behavior: "leaf", render: ActionBlock });
 	defineBlock("mediaLibrary", { behavior: "leaf", render: MediaLibraryBlock });
 	defineBlock("stat", { behavior: "leaf", render: StatBlock });

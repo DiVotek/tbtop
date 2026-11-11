@@ -17,7 +17,7 @@ export interface TablePage {
 const text = (v: unknown): string =>
 	typeof v === "string" || typeof v === "number" ? String(v).trim() : "";
 
-interface Step<Q> {
+export interface Step<Q> {
 	table: TableBuilder<Q>;
 	params: Record<string, unknown>;
 	driver: QueryDriver<Q>;
@@ -33,12 +33,7 @@ export async function runTable<Q>(
 	if (base === undefined) {
 		throw new Error(`Table "${table.name}" has no query.`);
 	}
-	const step = { table, params, driver };
-	const filtered = applyFilters(table.filterFields(), record(params.filters), {
-		driver,
-		query: applySearch(step, applyTab(table, params.tab, base())),
-	});
-	const query = applySort(step, filtered);
+	const query = applyTableState({ table, params, driver }, base());
 	const { page, perPage } = pageWindow(table, params);
 	const rows = await driver.rows(query, { page, perPage });
 	const result: TablePage = {
@@ -51,6 +46,19 @@ export async function runTable<Q>(
 	};
 	const tabCounts = await countTabs(table, driver, base);
 	return tabCounts === null ? result : { ...result, tabCounts };
+}
+
+/**
+ * The table's request state — tab, search, column search, filters, sort —
+ * on `query`, without the page window. Shared with the export endpoint so a
+ * download holds exactly the rows the table shows.
+ */
+export function applyTableState<Q>(step: Step<Q>, query: Q): Q {
+	const filtered = applyFilters(step.table.filterFields(), record(step.params.filters), {
+		driver: step.driver,
+		query: applySearch(step, applyTab(step.table, step.params.tab, query)),
+	});
+	return applySort(step, filtered);
 }
 
 function pageWindow<Q>(table: TableBuilder<Q>, params: Record<string, unknown>) {

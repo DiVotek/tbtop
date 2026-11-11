@@ -4,6 +4,7 @@ import { Select } from "../fields/choices";
 import type { Field } from "../fields/field";
 import { HasWhen, mixin } from "../mixin";
 import { includes, Node } from "../node";
+import { descendants } from "../walk";
 import { Column, type Row } from "./column";
 import { searchableNames } from "./search";
 import { Tab } from "./tab";
@@ -14,6 +15,14 @@ const MIN_POLL_SECONDS = 5;
 
 /** reorderable()'s `using`: the ids in their new order, checked against the query scope. */
 export type ReorderUsing<Q = unknown> = (ids: (string | number)[], query: Q) => unknown;
+
+/** An action builder (duck-typed: action.ts imports this module) or a serialized action node. */
+function isActionEntry(entry: unknown): entry is { name: string | null } {
+	if (entry instanceof Node) {
+		return entry.kind === "action";
+	}
+	return typeof (entry as { getSpec?: unknown } | null)?.getSpec === "function";
+}
 
 /** A Column, or the `{name: "Label"}` text-column shorthand. */
 export type ColumnEntry = Column | Record<string, string>;
@@ -280,6 +289,27 @@ export class TableBuilder<Q = unknown> {
 	query<R extends Q>(fn: () => R): TableBuilder<R> {
 		this.queryFn = fn;
 		return this as unknown as TableBuilder<R>;
+	}
+
+	/**
+	 * True when an action named `name` sits in this table's header or bulk
+	 * actions, a group or dropdown there included (the export endpoint's check).
+	 */
+	hasHeaderOrBulkAction(name: string): boolean {
+		const pending: unknown[] = [
+			...((this.opts.headerActions as unknown[] | undefined) ?? []),
+			...((this.opts.bulkActions as unknown[] | undefined) ?? []),
+		];
+		while (pending.length > 0) {
+			const entry = pending.pop();
+			if (isActionEntry(entry) && entry.name === name) {
+				return true;
+			}
+			if (!isActionEntry(entry)) {
+				pending.push(...descendants(entry));
+			}
+		}
+		return false;
 	}
 
 	/** Escape hatch: writes a key straight into the table options. */

@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { type DownloadedFile, fetchDownload } from "./download";
 import { errorFromBody } from "./envelope";
 import { defaultXhrFactory, uploadViaXhr, type XhrFactory } from "./uploadXhr";
 
@@ -19,6 +20,8 @@ export interface AdminClient {
 	patch(path: string, body?: unknown): Promise<unknown>;
 	delete(path: string): Promise<unknown>;
 	upload(path: string, formData: FormData, opts?: UploadOptions): Promise<unknown>;
+	/** GET a file (a table export). Optional so a hand-written client keeps compiling. */
+	download?(path: string): Promise<DownloadedFile>;
 }
 
 export interface CreateAdminClientOptions {
@@ -48,6 +51,7 @@ export function createAdminClient(options: CreateAdminClientOptions = {}): Admin
 				signal: opts?.signal,
 				onProgress: opts?.onProgress,
 			}),
+		download: (path) => fetchDownload(impl, `${base}${path}`),
 	};
 }
 
