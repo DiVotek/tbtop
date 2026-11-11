@@ -19,6 +19,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 
 - **node:** exact FormValues for translatable, multiple and repeater fields ([#444](https://github.com/DiVotek/tbtop/pull/444))
 - **mcp:** keep mcpAllowedOrigins() working on laravel/mcp 1.2 ([#452](https://github.com/DiVotek/tbtop/pull/452))
+- **php:** publish --auth pages for a second panel into its own directory ([#451](https://github.com/DiVotek/tbtop/pull/451))
 
 ### Documentation
 
