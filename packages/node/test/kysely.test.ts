@@ -110,6 +110,12 @@ describe("kyselyDriver", () => {
 			value: null,
 		});
 		expect(Number(await driver.aggregate?.(nullGroup, "sum", "v"))).toBe(12);
+		const mixed = driver.where(local.selectFrom("t") as never, {
+			field: "g",
+			op: "in",
+			value: [null, "a"],
+		});
+		expect(Number(await driver.aggregate?.(mixed, "sum", "v"))).toBe(15);
 	});
 
 	test("search escapes LIKE wildcards", async () => {

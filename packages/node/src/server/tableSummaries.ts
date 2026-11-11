@@ -67,11 +67,11 @@ function groupRuns(rows: Row[], projected: Row[], column: string): Map<number, u
 	return runs;
 }
 
-/** One stored value narrows with `=` (null-safe); several shown alike, with `in`. */
+/** One stored value narrows with `=`, several shown alike with `in`; both null-safe. */
 function groupClause(field: string, values: unknown[]): Clause {
 	return values.length === 1
 		? { field, op: "=", value: values[0] }
-		: { field, op: "in", value: values.filter((v) => v !== null) };
+		: { field, op: "in", value: values };
 }
 
 async function summarize<Q>(

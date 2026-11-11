@@ -16,7 +16,10 @@ const MATCHERS: Record<Clause["op"], (cell: unknown, value: unknown) => boolean>
 	"=": (cell, value) => (value === null ? cell == null : String(cell) === String(value)),
 	">=": (cell, value) => String(cell) >= String(value),
 	"<=": (cell, value) => String(cell) <= String(value),
-	in: (cell, value) => (value as unknown[]).map(String).includes(String(cell)),
+	in: (cell, value) =>
+		cell == null
+			? (value as unknown[]).includes(null)
+			: (value as unknown[]).map(String).includes(String(cell)),
 	contains: (cell, value) =>
 		String(cell ?? "")
 			.toLowerCase()

@@ -28,6 +28,15 @@ export function kyselyDriver<DB>(db: Kysely<DB>, keyName = "id"): QueryDriver<Bu
 		if (clause.op === "=" && clause.value === null) {
 			return qb.where(ref(clause.field), "is", null);
 		}
+		if (clause.op === "in" && clause.value.includes(null)) {
+			const present = clause.value.filter((v) => v !== null);
+			return qb.where((eb) =>
+				eb.or([
+					eb(ref(clause.field), "is", null),
+					...(present.length > 0 ? [eb(ref(clause.field), "in", present)] : []),
+				]),
+			);
+		}
 		return qb.where(ref(clause.field), clause.op, clause.value);
 	};
 	return {
