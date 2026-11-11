@@ -13,8 +13,9 @@ use Tbtop\Admin\Panels\PanelConfig;
  * and every other panel gets a directory of its own:
  *
  * 1. `app/Admin/Pages/Auth` — no other panel owns it, and this panel discovers it or
- *    discovers nothing (then it registers the pages itself). Files already there that
- *    no panel registers yet count as another panel's, unless this panel owns the directory.
+ *    discovers nothing (then it registers the pages itself). Among several panels,
+ *    files already there that no panel registers yet count as another panel's, unless this
+ *    panel owns the directory; a lone panel always keeps it, so a rerun reports "Exists".
  * 2. `Auth/` under the panel's first discovery root — the pages are discovered as written.
  * 3. `app/Admin/{PanelId}/Pages/Auth` — the panel discovers nothing and the shared directory is taken.
  *
@@ -36,7 +37,7 @@ final readonly class AuthTarget
         $roots = $panel->getPageDiscoveryRoots();
 
         $owned = self::ownedByAny([$panel], $shared, $sharedNamespace);
-        $free = ! self::ownedByAny($others, $shared, $sharedNamespace) && ($owned || (glob($shared.'/*.php') ?: []) === []);
+        $free = ! self::ownedByAny($others, $shared, $sharedNamespace) && ($owned || $others === [] || (glob($shared.'/*.php') ?: []) === []);
         if ($free && ($roots === [] || self::discovers($panel, $shared))) {
             return self::resolve($shared, $sharedNamespace, $others);
         }

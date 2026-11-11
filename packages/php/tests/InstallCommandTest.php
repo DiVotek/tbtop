@@ -189,6 +189,17 @@ it('names the discovery root when the panel does not pick the pages up', functio
         ->assertSuccessful();
 });
 
+it('keeps a lone panel that discovers nothing on the shared directory when run again', function () {
+    authHost($this->hostRoot, [InstallLegacyLoginPanel::class]);
+    $this->artisan('admin:install', ['--profile' => true])->assertSuccessful();
+
+    $this->artisan('admin:install', ['--profile' => true])
+        ->expectsOutputToContain('Exists, left untouched: app/Admin/Pages/Auth/ProfilePage.php')
+        ->assertSuccessful();
+
+    expect($this->hostRoot.'/app/Admin/Legacy')->not->toBeDirectory();
+});
+
 it('publishes a second panel\'s auth pages under its own discovery root', function () {
     authHost($this->hostRoot, [InstallAuthPanel::class, InstallOpsPanel::class]);
     $this->artisan('admin:install', ['--auth' => true, '--panel' => 'admin'])->assertSuccessful();

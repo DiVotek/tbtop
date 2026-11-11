@@ -73,8 +73,8 @@ check; override `middleware()` in the subclass to add an allowlist — hidden fr
   other panel owns (discovers, or serves a page from): `app/Admin/Pages/Auth` while no other
   panel owns it and this panel discovers it or discovers nothing; else `Auth/` under the
   panel's first `discoverPages()` root, so a panel whose roots leave out `app/Admin/Pages`
-  gets its pages discovered as written; else `app/Admin/{PanelId}/Pages/Auth`, with a
-  `discoverPages()` hint. When another panel still owns that directory, the command refuses
+  gets its pages discovered as written; else `app/Admin/{Id}/Pages/Auth` (the panel id in
+  StudlyCase: `ops-admin` → `OpsAdmin`), with a `discoverPages()` hint. When another panel still owns that directory, the command refuses
   and writes nothing.
 - **Guard.** Sign-in uses the panel's guard, never the app default.
 - **Guests.** The host points Laravel's guest redirect at the panel login in
