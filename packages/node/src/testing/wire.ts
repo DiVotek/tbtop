@@ -57,6 +57,20 @@ export const ofKind = (tree: unknown, kind: string): Entry[] =>
 export const named = (tree: unknown, kind: string, name: string): Entry[] =>
 	nodes(tree).filter((e) => e.node.kind === kind && e.node.name === name);
 
+/**
+ * The table whose bulk actions hold the action `name` (in a group, a dropdown
+ * or a bulk modal too), or null. A bulk action call names it, as the client
+ * does, so `ctx.records()` resolves against that table (Wire::bulkTable()).
+ */
+export function bulkTable(tree: unknown, name: string): string | null {
+	const table = ofKind(tree, "table").find(
+		(e) =>
+			typeof e.node.name === "string" &&
+			named(e.node.options?.bulkActions, "action", name).length > 0,
+	);
+	return table?.node.name ?? null;
+}
+
 /** Field nodes, inside a form; only those named `name` when given. */
 export function fields(tree: unknown, name?: string): Entry[] {
 	const kinds = new Set(builtInKinds());

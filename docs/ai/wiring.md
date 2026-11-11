@@ -244,6 +244,23 @@ counts the rows first and refuses over `maxRows`, then streams. `ids[]` only
 narrow the table's own query. A column's `export()` call adds
 `export: {label?, on?: false}` to its wire entry; `as:` stays on the server.
 
+**Bulk selection** — an action with `needs: ['selection']` run from a table also
+sends `payload.bulk = {table, all}`: the table it ran from. `BulkSelection`
+resolves it only when the action sits in that table's `bulkActions()` (a group,
+a dropdown or a bulk modal's submit included) and the table's query is a
+builder; then `$ctx->records()` is that query narrowed to `payload.selection`.
+After "Select all N" the client sends `all: true` and `query`, the table's
+state as its own fetch encodes it (`tab`, `search`, `colSearch[…]`,
+`filters[…]`, `sort`/`dir`, no page window). The server replays it through
+`TableQuery::applyState()` (trimmed, empty strings as null, like the table's GET),
+fills `$ctx->selection` with every matching key (PHP reads them on first access, so a
+`records()`-only handler never loads them) and sets `$ctx->allMatching`.
+For any other action (a header action that reads the selection, a bulk
+action of another table) `bulk` is ignored, `all` included: it gets the
+checked keys, never more, and no `records()`. Node: `withBulkSelection()` in
+`server/bulkSelection.ts`, same rules. The structure schema is unchanged:
+the offer needs only the `total` the table already sends.
+
 **Form submit effects** — `FormSubmitController` flashes a `tbtop.effects`
 array via `Inertia::flash`. The effect set is closed; see
 [./authoring-pages.md](./authoring-pages.md) for the full catalog.
