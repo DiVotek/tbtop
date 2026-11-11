@@ -4,6 +4,7 @@ namespace Tbtop\Admin\Mcp;
 
 use Illuminate\Support\Facades\Route;
 use Laravel\Mcp\Facades\Mcp;
+use Laravel\Mcp\Server\Middleware\ValidateOrigin;
 use Laravel\Mcp\Server\Registrar;
 use LogicException;
 use Tbtop\Admin\Http\SetAdminLocale;
@@ -34,7 +35,10 @@ final class McpRoute
             ->prefix($panel->getPrefix())
             ->name('tbtop.'.$panel->getId().'.')
             ->group(static function () use ($path): void {
-                Mcp::web($path, TbtopMcpServer::class)->name('mcp');
+                // laravel/mcp >= 1.2 checks Origin against config('mcp.allowed_origins')
+                // too, which would refuse the panel's mcpAllowedOrigins(). ValidateMcpOrigin
+                // above is the one check: app.url plus the panel's list.
+                Mcp::web($path, TbtopMcpServer::class)->name('mcp')->withoutMiddleware(ValidateOrigin::class);
             });
     }
 }
