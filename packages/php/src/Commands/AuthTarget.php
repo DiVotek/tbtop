@@ -92,13 +92,10 @@ final readonly class AuthTarget
         return false;
     }
 
-    /** Pages listed by hand; a panel with discovery roots owns its directories through discovers(). */
+    /** Pages listed by hand in pages(); discovered ones count through discovers(), without scanning a root that may not exist yet. */
     private static function servesFrom(PanelConfig $panel, string $namespace): bool
     {
-        if ($panel->getPageDiscoveryRoots() !== []) {
-            return false;
-        }
-        foreach ($panel->getPages() as $page) {
+        foreach ($panel->getPagesWithDiscovered([]) as $page) {
             if (str_starts_with($page, $namespace.'\\')) {
                 return true;
             }

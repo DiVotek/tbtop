@@ -284,6 +284,27 @@ it('refuses a panel whose discovery root holds the shared directory another pane
     expect($this->hostRoot.'/app/Admin/Pages/Auth/LoginPage.php')->not->toBeFile();
 });
 
+it('counts pages a discovering panel also lists by hand as its own', function () {
+    authHost($this->hostRoot, [InstallOpsHandPanel::class, InstallLegacyLoginPanel::class]);
+    // Loaded from outside the shared directory, so only the hand listing can make it owned.
+    File::put($this->hostRoot.'/OpsHandLoginPage.php', "<?php\nnamespace App\\Admin\\Pages\\Auth;\nclass OpsHandLoginPage extends \\Tbtop\\Admin\\Auth\\LoginPage {}\n");
+    require_once $this->hostRoot.'/OpsHandLoginPage.php';
+
+    $this->artisan('admin:install', ['--profile' => true, '--panel' => 'legacy'])
+        ->expectsOutputToContain('Published: app/Admin/Legacy/Pages/Auth/ProfilePage.php')
+        ->assertSuccessful();
+});
+
+final class InstallOpsHandPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('opshand')->prefix('opshand')
+            ->discoverPages(app_path('Ops/Pages'), 'App\\Ops\\Pages')
+            ->pages(['App\\Admin\\Pages\\Auth\\OpsHandLoginPage']);
+    }
+}
+
 final class InstallHandPanel extends Panel
 {
     public function configure(PanelConfig $panel): PanelConfig
