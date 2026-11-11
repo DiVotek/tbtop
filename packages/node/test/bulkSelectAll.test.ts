@@ -27,6 +27,8 @@ beforeEach(() => {
 	insert.run(4, "Alpha three", 1, "draft");
 });
 
+let seen: { all: boolean; keys: (string | number)[] } | null = null;
+
 type PostsQuery = SelectQueryBuilder<DB, "posts", object>;
 
 /** Writes how the action saw its selection onto every record it reached. */
@@ -58,7 +60,16 @@ const bulkPage = definePage({
 					Tab.make("all"),
 					Tab.make("live").query((q) => (q as PostsQuery).where("status", "=", "live")),
 				])
-				.headerActions([s.action("headerMark").handle(mark, ["selection"])])
+				.headerActions([
+					s.action("headerMark").handle(mark, ["selection"]),
+					s.action("headerSeen").handle(
+						(ctx) => {
+							seen = { all: ctx.allMatching, keys: ctx.selection };
+							return Effects.make();
+						},
+						["selection"],
+					),
+				])
 				.bulkActions([
 					s.action("mark").handle(mark, ["selection"]),
 					s.dropdown("More", [
@@ -171,11 +182,18 @@ describe("bulk select all matching (BulkSelectAllHttpTest.php)", () => {
 	});
 
 	test.each([
-		["another table", "markDrafts", "posts"],
-		["a header action", "headerMark", "posts"],
-		["unknown table", "mark", "nope"],
-	])("all matching is refused for %s", async (_label, action, table) => {
-		expect(await run(action, [], { table, all: true, query: "" })).toBe(422);
+		["its own table", "posts"],
+		["unknown table", "nope"],
+	])("all matching is ignored for an action outside the bulk actions (%s): it gets the checked keys", async (_label, table) => {
+		seen = null;
+		expect(await run("headerSeen", [1], { table, all: true, query: "" })).toBe(200);
+		expect(seen as unknown).toEqual({ all: false, keys: [1] });
+	});
+
+	test("a bulk action of another table gets no records() from it", async () => {
+		await expect(
+			run("markDrafts", [], { table: "posts", all: true, query: "" }),
+		).rejects.toThrow("only available to a table's bulk actions");
 		expect(new Set(Object.values(notes()))).toEqual(new Set([""]));
 	});
 

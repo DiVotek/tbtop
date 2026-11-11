@@ -82,15 +82,23 @@ it('Bulk: a whereKey($ctx->selection) handler acts on every matching row', funct
     expect(EcPost::query()->pluck('title')->all())->toBe(['Alpha two']);
 });
 
-it('Bulk: all matching is refused for a table the action is not a bulk action of', function (string $action, string $table): void {
-    runBulk($this, $action, [], ['table' => $table, 'all' => true, 'query' => ''])->assertStatus(422);
+it('Bulk: all matching is ignored for an action outside the table bulk actions: it gets the checked keys', function (string $table): void {
+    BulkPostsPage::$seen = null;
+    runBulk($this, 'headerSeen', [1], ['table' => $table, 'all' => true, 'query' => ''])->assertOk();
 
-    expect(array_values(array_unique(bulkNotes())))->toBe(['']);
+    expect(BulkPostsPage::$seen)->toBe(['all' => false, 'keys' => [1]]);
 })->with([
-    'another table' => ['markDrafts', 'ecposts'],
-    'a header action' => ['headerMark', 'ecposts'],
-    'unknown table' => ['mark', 'nope'],
+    'its own table' => ['ecposts'],
+    'unknown table' => ['nope'],
 ]);
+
+it('Bulk: a bulk action of another table gets no records() from it', function (): void {
+    $this->withoutExceptionHandling();
+
+    expect(fn () => runBulk($this, 'markDrafts', [], ['table' => 'ecposts', 'all' => true, 'query' => '']))
+        ->toThrow(LogicException::class);
+    expect(array_values(array_unique(bulkNotes())))->toBe(['']);
+});
 
 it('Bulk: records() outside a table bulk action is a LogicException', function (): void {
     $this->withoutExceptionHandling();

@@ -7,7 +7,6 @@ use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder as ModelBuilder;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Dsl\TableBuilder;
 
@@ -24,8 +23,9 @@ use Tbtop\Admin\Dsl\TableBuilder;
  * $ctx->records() is the table's query narrowed to the selection.
  *
  * Only a table whose bulk actions hold the action may scope it, the same rule
- * the export endpoint keeps; a table the action does not belong to is
- * ignored for a key selection and refused for an all-matching one.
+ * the export endpoint keeps. For any other action (a header action that reads
+ * the selection, say) `bulk` is ignored, `all` included: it gets the checked
+ * keys, never more, and no records().
  */
 final class BulkSelection
 {
@@ -41,10 +41,6 @@ final class BulkSelection
         $table = $resolved->s->reachableTable($bulk['table']);
         $base = self::baseQuery($table, $actionName);
         if ($table === null || $base === null) {
-            if ($all) {
-                throw new UnprocessableEntityHttpException("Action \"{$actionName}\" cannot act on all rows of table \"{$bulk['table']}\".");
-            }
-
             return $ctx;
         }
         if (! $all) {

@@ -15,6 +15,9 @@ use Tbtop\Admin\Pages\Page;
 /** Fixture page for BulkSelectAllHttpTest, over the 'ecposts' table the test creates. */
 class BulkPostsPage extends Page
 {
+    /** @var array{all: bool, keys: list<int|string>}|null */
+    public static ?array $seen = null;
+
     public static function path(): string
     {
         return 'bulk-posts';
@@ -29,6 +32,11 @@ class BulkPostsPage extends Page
                 ->tabs([Tab::make('all'), Tab::make('live')->query(fn ($q) => $q->where('status', 'live'))])
                 ->headerActions([
                     $s->action('headerMark')->handle(fn (ActionCtx $ctx) => self::mark($ctx), needs: ['selection']),
+                    $s->action('headerSeen')->handle(function (ActionCtx $ctx): Effects {
+                        self::$seen = ['all' => $ctx->allMatching, 'keys' => $ctx->selection];
+
+                        return Effects::make();
+                    }, needs: ['selection']),
                 ])
                 ->bulkActions([
                     $s->action('mark')->handle(fn (ActionCtx $ctx) => self::mark($ctx), needs: ['selection']),

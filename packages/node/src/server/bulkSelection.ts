@@ -2,7 +2,7 @@ import type { ActionCtx, TableBuilder } from "../dsl";
 import { keyOf, type QueryDriver } from "./driver";
 import { trimInput } from "./endpoints/input";
 import { type EndpointCtx, requireDriver } from "./endpoints/types";
-import { phpQuery, unprocessable } from "./http";
+import { phpQuery } from "./http";
 import { applyTableState } from "./tableQuery";
 
 type Bag = Record<string, unknown>;
@@ -16,7 +16,8 @@ type Bag = Record<string, unknown>;
  * query and `selection` becomes every matching key — existing handlers over
  * `ctx.selection` keep working. Either way `ctx.records()` is the table's
  * query narrowed to the selection. Only a table whose bulk actions hold the
- * action may scope it: anything else is ignored for keys, refused for all.
+ * action may scope it; for any other action `bulk` is ignored, `all` included,
+ * so it gets the checked keys, never more, and no `records()`.
  */
 export async function withBulkSelection(
 	ctx: EndpointCtx,
@@ -32,11 +33,6 @@ export async function withBulkSelection(
 	const table = ctx.resolved.s.reachableTable(bulk.table);
 	const query = table?.queryClosure();
 	if (table === null || query === undefined || !table.hasBulkAction(actionName)) {
-		if (all) {
-			throw unprocessable(
-				`Action "${actionName}" cannot act on all rows of table "${bulk.table}".`,
-			);
-		}
 		return base;
 	}
 	const driver = requireDriver(ctx.options);

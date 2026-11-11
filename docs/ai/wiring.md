@@ -255,8 +255,9 @@ state as its own fetch encodes it (`tab`, `search`, `colSearch[…]`,
 `TableQuery::applyState()` (trimmed, empty strings as null, like the table's GET),
 fills `$ctx->selection` with every matching key (PHP reads them on first access, so a
 `records()`-only handler never loads them) and sets `$ctx->allMatching`.
-An `all` for a table the action is not a bulk action of is a 422; a key
-selection naming one is ignored. Node: `withBulkSelection()` in
+For any other action (a header action that reads the selection, a bulk
+action of another table) `bulk` is ignored, `all` included: it gets the
+checked keys, never more, and no `records()`. Node: `withBulkSelection()` in
 `server/bulkSelection.ts`, same rules. The structure schema is unchanged:
 the offer needs only the `total` the table already sends.
 
