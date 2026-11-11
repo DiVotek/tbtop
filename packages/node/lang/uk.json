@@ -126,7 +126,6 @@
 	"table.summary.min": "Мін.",
 	"table.summary.max": "Макс.",
 	"table.summary.count": "Кількість",
-	"table.summary.footer": "Підсумок",
 	"table.export.title": "Експорт",
 	"table.export.columns": "Колонки",
 	"table.export.select_all": "Вибрати всі",

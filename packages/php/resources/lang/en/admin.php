@@ -186,7 +186,6 @@ return [
             'min' => 'Min',
             'max' => 'Max',
             'count' => 'Count',
-            'footer' => 'Summary',
         ],
         'export' => [
             'title' => 'Export',

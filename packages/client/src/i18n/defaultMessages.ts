@@ -150,7 +150,6 @@ export const defaultMessages: Messages = {
 	"table.summary.min": "Min",
 	"table.summary.max": "Max",
 	"table.summary.count": "Count",
-	"table.summary.footer": "Summary",
 	"table.export.title": "Export",
 	"table.export.columns": "Columns",
 	"table.export.select_all": "Select all",
