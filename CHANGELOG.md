@@ -13,6 +13,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 - reorderable() takes a closure that owns the reorder write ([#447](https://github.com/DiVotek/tbtop/pull/447))
 - table export v1 (ExportAction, Column::export, CSV and XLSX) ([#449](https://github.com/DiVotek/tbtop/pull/449))
 - select all matching rows for bulk actions ([#454](https://github.com/DiVotek/tbtop/pull/454))
+- column summaries (Column::summarize, Summary) in the footer and per row group ([#453](https://github.com/DiVotek/tbtop/pull/453))
 
 ### Fixes
 
