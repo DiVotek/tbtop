@@ -51,19 +51,12 @@ final class AuthScaffold
     /** @var list<string> */
     public array $clashes = [];
 
-    public readonly AuthTarget $target;
-
-    /**
-     * @param  array<string, class-string<Page>>  $pages  host class name => package base
-     * @param  ?AuthTarget  $target  where the pages go; the panel's own target among no other panels by default
-     */
+    /** @param  array<string, class-string<Page>>  $pages  host class name => package base */
     public function __construct(
         public readonly PanelConfig $panel,
+        public readonly AuthTarget $target,
         private readonly array $pages = self::PAGES,
-        ?AuthTarget $target = null,
-    ) {
-        $this->target = $target ?? AuthTarget::for($panel, [$panel->getId() => $panel]);
-    }
+    ) {}
 
     public function publish(bool $force): self
     {

@@ -86,7 +86,7 @@ class InstallCommand extends Command
         }
 
         $pages = $this->option('2fa') ? AuthScaffold::TWO_FACTOR : ($login ? AuthScaffold::PAGES : AuthScaffold::PROFILE);
-        $auth = $destination === null ? null : (new AuthScaffold($destination[0], $pages, $destination[1]))->publish((bool) $this->option('force'));
+        $auth = $destination === null ? null : (new AuthScaffold($destination[0], $destination[1], $pages))->publish((bool) $this->option('force'));
         if ($auth !== null && $this->option('2fa')) {
             $auth->publishTwoFactorMigration();
         }
