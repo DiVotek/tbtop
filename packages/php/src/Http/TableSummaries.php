@@ -142,6 +142,7 @@ final class TableSummaries
                 }
             }
         }
+        $query->columns = null; // the host's select() would leak into GROUP BY
         $query->selectRaw(implode(', ', $selects));
         self::whereValues($query, $groupColumn, $values);
         $query->groupBy($groupColumn);

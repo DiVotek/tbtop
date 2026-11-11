@@ -134,3 +134,19 @@ it('puts each group summary on the first row of its run, over the whole group', 
     $page2 = TableQuery::run($table, Request::create('/', 'GET', ['page' => 2]), DB::table('sorders'))['data'];
     expect((array) $page2[0])->toHaveKey('_groupSummary', ['total' => ['5.00 UAH'], 'rating' => [1]]);
 });
+
+it('drops the host query\'s select list from the group subtotal query', function (): void {
+    $query = fn () => DB::table('sorders')->select('sorders.*');
+    $table = (new TableBuilder('sorders'))
+        ->columns([Column::make('status'), Column::make('total')->money('UAH')->summarize(Summary::sum())])
+        ->defaultSort('status', 'desc')
+        ->groups('status')
+        ->query($query);
+
+    DB::enableQueryLog();
+    $rows = TableQuery::run($table, Request::create('/'), $query())['data'];
+    $grouped = collect(DB::getQueryLog())->pluck('query')->first(fn (string $sql) => str_contains($sql, 'group by'));
+
+    expect($grouped)->not->toContain('"sorders".*')
+        ->and((array) $rows[0])->toHaveKey('_groupSummary', ['total' => ['35.50 UAH']]);
+});

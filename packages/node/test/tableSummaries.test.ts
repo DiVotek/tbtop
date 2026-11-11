@@ -143,6 +143,26 @@ describe("Column.summarize()", () => {
 		expect((await get("page=2")).data[0]._groupSummary).toEqual({ total: ["5.00 UAH"] });
 	});
 
+	test("a null row group sums its own rows", async () => {
+		const withNull = [
+			...orders,
+			{ id: 4, status: null, total: 300, rating: 1, placed_on: "2026-04-01" },
+		];
+		const get = adminWith((s) =>
+			s
+				.table("orders")
+				.columns([
+					Column.make("status"),
+					Column.make("total").money("UAH").summarize(Summary.sum()),
+				])
+				.defaultSort("status", "asc")
+				.groups("status")
+				.query(() => memoryQuery(() => withNull)),
+		);
+		const nullRow = (await get()).data.find((r: { status: unknown }) => r.status === null);
+		expect(nullRow._groupSummary).toEqual({ total: ["3.00 UAH"] });
+	});
+
 	test("a built-in summary needs a driver with aggregate()", async () => {
 		const { aggregate: _drop, ...bare } = memoryDriver();
 		await expect(adminWith(summaryTable, bare)()).rejects.toThrow("aggregate()");

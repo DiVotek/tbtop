@@ -1,5 +1,6 @@
 import type { Row } from "../dsl";
 
+/** `=` with a `null` value means IS NULL, as in Eloquent's `where($col, null)`. */
 export type Clause =
 	| { field: string; op: "=" | ">=" | "<="; value: unknown }
 	| { field: string; op: "in"; value: unknown[] }

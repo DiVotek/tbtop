@@ -96,6 +96,22 @@ describe("kyselyDriver", () => {
 		expect(await driver.aggregate?.(none as never, "sum", "views")).toBeNull();
 	});
 
+	test("where '=' null matches null cells, so a null row group gets its own subtotal", async () => {
+		const sqlite = new Database(":memory:");
+		sqlite.run("create table t (id integer primary key, g text, v int)");
+		sqlite.run("insert into t (g, v) values (null, 5), (null, 7), ('a', 3)");
+		const local = new Kysely<{ t: { id: number; g: string | null; v: number } }>({
+			dialect: new BunSqliteDialect({ database: sqlite }),
+		});
+		const driver = kyselyDriver(local);
+		const nullGroup = driver.where(local.selectFrom("t") as never, {
+			field: "g",
+			op: "=",
+			value: null,
+		});
+		expect(Number(await driver.aggregate?.(nullGroup, "sum", "v"))).toBe(12);
+	});
+
 	test("search escapes LIKE wildcards", async () => {
 		expect((await rows("search=a")).total).toBe(4);
 		expect((await rows("search=%25")).total).toBe(1);

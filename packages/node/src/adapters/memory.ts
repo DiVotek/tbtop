@@ -13,7 +13,7 @@ export function memoryQuery(source: () => Row[]): MemoryQuery {
 }
 
 const MATCHERS: Record<Clause["op"], (cell: unknown, value: unknown) => boolean> = {
-	"=": (cell, value) => String(cell) === String(value),
+	"=": (cell, value) => (value === null ? cell == null : String(cell) === String(value)),
 	">=": (cell, value) => String(cell) >= String(value),
 	"<=": (cell, value) => String(cell) <= String(value),
 	in: (cell, value) => (value as unknown[]).map(String).includes(String(cell)),

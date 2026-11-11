@@ -25,6 +25,9 @@ export function kyselyDriver<DB>(db: Kysely<DB>, keyName = "id"): QueryDriver<Bu
 		if (clause.op === "dateLte") {
 			return qb.where(sql<boolean>`date(${ref(clause.field)}) <= ${clause.value}`);
 		}
+		if (clause.op === "=" && clause.value === null) {
+			return qb.where(ref(clause.field), "is", null);
+		}
 		return qb.where(ref(clause.field), clause.op, clause.value);
 	};
 	return {
