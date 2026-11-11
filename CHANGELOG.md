@@ -16,6 +16,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 ### Fixes
 
 - **node:** exact FormValues for translatable, multiple and repeater fields ([#444](https://github.com/DiVotek/tbtop/pull/444))
+- **mcp:** keep mcpAllowedOrigins() working on laravel/mcp 1.2 ([#452](https://github.com/DiVotek/tbtop/pull/452))
 
 ### Documentation
 
