@@ -69,6 +69,13 @@ ordinary page routes (`{prefix}/login`, `{prefix}/forgot-password`,
 `middleware(): ['web', RedirectSignedInUsers::class]` — not the panel stack, which may hold an access
 check; override `middleware()` in the subclass to add an allowlist — hidden from MCP, never the panel home.
 
+- **Where the pages go.** `--panel=<id>` publishes one panel's pages into a directory no
+  other panel owns (discovers, or serves a page from): `app/Admin/Pages/Auth` while no other
+  panel owns it and this panel discovers it or discovers nothing; else `Auth/` under the
+  panel's first `discoverPages()` root, so a panel whose roots leave out `app/Admin/Pages`
+  gets its pages discovered as written; else `app/Admin/{Id}/Pages/Auth` (the panel id in
+  StudlyCase: `ops-admin` → `OpsAdmin`), with a `discoverPages()` hint. When another panel still owns that directory, the command refuses
+  and writes nothing.
 - **Guard.** Sign-in uses the panel's guard, never the app default.
 - **Guests.** The host points Laravel's guest redirect at the panel login in
   `bootstrap/app.php` — without it a guest hits `route('login')` and gets a 500:

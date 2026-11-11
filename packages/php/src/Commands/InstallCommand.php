@@ -47,11 +47,11 @@ class InstallCommand extends Command
 
     public function handle(): int
     {
-        $panel = null;
+        $destination = null;
         $login = $this->option('auth') || $this->option('2fa');
         if ($login || $this->option('profile')) {
-            $panel = $this->authPanel();
-            if ($panel === null) {
+            $destination = $this->authTarget();
+            if ($destination === null) {
                 return self::FAILURE;
             }
         }
@@ -86,7 +86,7 @@ class InstallCommand extends Command
         }
 
         $pages = $this->option('2fa') ? AuthScaffold::TWO_FACTOR : ($login ? AuthScaffold::PAGES : AuthScaffold::PROFILE);
-        $auth = $panel === null ? null : (new AuthScaffold($panel, $pages))->publish((bool) $this->option('force'));
+        $auth = $destination === null ? null : (new AuthScaffold($destination[0], $destination[1], $pages))->publish((bool) $this->option('force'));
         if ($auth !== null && $this->option('2fa')) {
             $auth->publishTwoFactorMigration();
         }
@@ -102,10 +102,28 @@ class InstallCommand extends Command
         return self::SUCCESS;
     }
 
-    /** The panel --auth or --profile targets; null after printing why there is none. */
-    private function authPanel(): ?PanelConfig
+    /** @return ?array{PanelConfig, AuthTarget} the panel --auth or --profile targets and where its pages go; null after printing why there is none */
+    private function authTarget(): ?array
     {
         $panels = PanelRegistry::fromConfig()->all();
+        $panel = $this->authPanel($panels);
+        if ($panel === null) {
+            return null;
+        }
+        $target = AuthTarget::for($panel, $panels);
+        if ($target->conflict !== null) {
+            $this->components->error("Panel [{$target->conflict}] already discovers or serves pages from {$target->relative()}, where panel [{$panel->getId()}]'s auth pages would go.");
+            $this->line('  Give panel ['.$panel->getId().'] a discovery root outside every other panel\'s, or register its auth pages by hand.');
+
+            return null;
+        }
+
+        return [$panel, $target];
+    }
+
+    /** @param  array<string, PanelConfig>  $panels */
+    private function authPanel(array $panels): ?PanelConfig
+    {
         $id = $this->option('panel');
         if (is_string($id) && $id !== '') {
             if (! isset($panels[$id])) {
@@ -163,8 +181,10 @@ class InstallCommand extends Command
         }
         if (! $auth->isDiscovered()) {
             $this->newLine();
-            $this->line("  {$step}. Panel [{$auth->panel->getId()}] does not discover app/Admin/Pages; register the published pages:");
-            $this->line('       ->discoverPages(in: app_path(\'Admin/Pages\'), for: \''.str_replace('\\Auth', '', $auth->namespace()).'\')');
+            $dir = dirname($auth->target->relative());
+            $in = str_starts_with($dir, 'app/') ? "app_path('".substr($dir, 4)."')" : "base_path('{$dir}')";
+            $this->line("  {$step}. Panel [{$auth->panel->getId()}] does not discover {$dir}; register the published pages:");
+            $this->line("       ->discoverPages(in: {$in}, for: '".substr($auth->namespace(), 0, -strlen('\\Auth'))."')");
         }
     }
 

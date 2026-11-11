@@ -65,9 +65,6 @@ The host owns authentication; `admin:install --auth` publishes sign-in, password
 email verification and the profile page as empty subclasses of the package base pages
 (`Tbtop\Admin\Auth\*`); `--2fa` adds TOTP two-factor sign-in. Open:
 
-- **`--auth` on a second panel** — the scaffold always writes `app/Admin/Pages/Auth`, so a
-  second `--panel=` run reports "Exists" and does nothing, and its discovery hint would pull
-  the first panel's pages in. Per-panel target dir/namespace, or refuse with a manual step.
 - **Forgot-password timing** (deferred) — the reset mail is sent inline, so an existing
   account answers slower than an unknown one. Breeze has the same gap; `Timebox` or a
   queued notification closes it if a consumer asks.

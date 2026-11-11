@@ -181,11 +181,70 @@ it('refuses --auth without a panel', function () {
 });
 
 it('names the discovery root when the panel does not pick the pages up', function () {
+    authHost($this->hostRoot, [InstallLegacyLoginPanel::class]);
+
+    $this->artisan('admin:install', ['--auth' => true])
+        ->expectsOutputToContain('does not discover app/Admin/Pages;')
+        ->expectsOutputToContain("->discoverPages(in: app_path('Admin/Pages'), for: 'App\\Admin\\Pages')")
+        ->assertSuccessful();
+});
+
+it('keeps a lone panel that discovers nothing on the shared directory when run again', function () {
+    authHost($this->hostRoot, [InstallLegacyLoginPanel::class]);
+    $this->artisan('admin:install', ['--profile' => true])->assertSuccessful();
+
+    $this->artisan('admin:install', ['--profile' => true])
+        ->expectsOutputToContain('Exists, left untouched: app/Admin/Pages/Auth/ProfilePage.php')
+        ->assertSuccessful();
+
+    expect($this->hostRoot.'/app/Admin/Legacy')->not->toBeDirectory();
+});
+
+it('publishes a second panel\'s auth pages under its own discovery root', function () {
+    authHost($this->hostRoot, [InstallAuthPanel::class, InstallOpsPanel::class]);
+    $this->artisan('admin:install', ['--auth' => true, '--panel' => 'admin'])->assertSuccessful();
+
+    $this->artisan('admin:install', ['--auth' => true, '--panel' => 'ops'])
+        ->expectsOutputToContain('Published: app/Ops/Pages/Auth/LoginPage.php')
+        ->doesntExpectOutputToContain('Exists, left untouched: app/Admin')
+        ->doesntExpectOutputToContain('does not discover')
+        ->assertSuccessful();
+
+    expect(File::get($this->hostRoot.'/app/Ops/Pages/Auth/LoginPage.php'))->toContain('namespace App\\Ops\\Pages\\Auth;')
+        ->and(File::get($this->hostRoot.'/app/Admin/Pages/Auth/LoginPage.php'))->toContain('namespace App\\Admin\\Pages\\Auth;');
+});
+
+it('gives a panel that discovers nothing its own directory once another panel owns the shared one', function () {
     authHost($this->hostRoot, [InstallAuthPanel::class, InstallLegacyLoginPanel::class]);
 
     $this->artisan('admin:install', ['--auth' => true, '--panel' => 'legacy'])
-        ->expectsOutputToContain('does not discover app/Admin/Pages')
+        ->expectsOutputToContain('Published: app/Admin/Legacy/Pages/Auth/ForgotPasswordPage.php')
+        ->expectsOutputToContain("->discoverPages(in: app_path('Admin/Legacy/Pages'), for: 'App\\Admin\\Legacy\\Pages')")
         ->assertSuccessful();
+
+    expect($this->hostRoot.'/app/Admin/Pages/Auth')->not->toBeDirectory();
+});
+
+it('gives the second of two panels that discover nothing its own directory', function () {
+    authHost($this->hostRoot, [InstallManualPanel::class, InstallLegacyLoginPanel::class]);
+    $this->artisan('admin:install', ['--profile' => true, '--panel' => 'manual'])
+        ->expectsOutputToContain('Published: app/Admin/Pages/Auth/ProfilePage.php')
+        ->assertSuccessful();
+
+    $this->artisan('admin:install', ['--profile' => true, '--panel' => 'legacy'])
+        ->expectsOutputToContain('Published: app/Admin/Legacy/Pages/Auth/ProfilePage.php')
+        ->assertSuccessful();
+});
+
+it('refuses a panel whose auth pages another panel would discover too', function () {
+    authHost($this->hostRoot, [InstallWideRootPanel::class, InstallNestedRootPanel::class]);
+
+    $this->artisan('admin:install', ['--auth' => true, '--panel' => 'nested'])
+        ->expectsOutputToContain('Panel [wide] already discovers or serves pages from app/Admin/Nested/Auth')
+        ->assertFailed();
+
+    expect($this->hostRoot.'/app/Admin/Nested/Auth')->not->toBeDirectory()
+        ->and($this->hostRoot.'/resources/js/admin.tsx')->not->toBeFile();
 });
 
 it('publishes the auth pages, the challenge page and the migration once with --2fa', function () {
@@ -220,6 +279,80 @@ final class InstallAuthPanel extends Panel
     public function configure(PanelConfig $panel): PanelConfig
     {
         return $panel->id('admin')->prefix('admin')->discoverPages(app_path('Admin/Pages'), 'App\\Admin\\Pages');
+    }
+}
+
+it('refuses a panel whose discovery root holds the shared directory another panel registers pages from', function () {
+    authHost($this->hostRoot, [InstallAuthPanel::class, InstallHandPanel::class]);
+    File::makeDirectory($this->hostRoot.'/app/Admin/Pages/Auth', 0755, true);
+    File::put($this->hostRoot.'/app/Admin/Pages/Auth/HandLoginPage.php', "<?php\nnamespace App\\Admin\\Pages\\Auth;\nclass HandLoginPage extends \\Tbtop\\Admin\\Auth\\LoginPage {}\n");
+    require_once $this->hostRoot.'/app/Admin/Pages/Auth/HandLoginPage.php';
+
+    $this->artisan('admin:install', ['--auth' => true, '--panel' => 'admin'])
+        ->expectsOutputToContain('Panel [hand] already discovers or serves pages from app/Admin/Pages/Auth')
+        ->assertFailed();
+
+    expect($this->hostRoot.'/app/Admin/Pages/Auth/LoginPage.php')->not->toBeFile();
+});
+
+it('counts pages a discovering panel also lists by hand as its own', function () {
+    authHost($this->hostRoot, [InstallOpsHandPanel::class, InstallLegacyLoginPanel::class]);
+    // Loaded from outside the shared directory, so only the hand listing can make it owned.
+    File::put($this->hostRoot.'/OpsHandLoginPage.php', "<?php\nnamespace App\\Admin\\Pages\\Auth;\nclass OpsHandLoginPage extends \\Tbtop\\Admin\\Auth\\LoginPage {}\n");
+    require_once $this->hostRoot.'/OpsHandLoginPage.php';
+
+    $this->artisan('admin:install', ['--profile' => true, '--panel' => 'legacy'])
+        ->expectsOutputToContain('Published: app/Admin/Legacy/Pages/Auth/ProfilePage.php')
+        ->assertSuccessful();
+});
+
+final class InstallOpsHandPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('opshand')->prefix('opshand')
+            ->discoverPages(app_path('Ops/Pages'), 'App\\Ops\\Pages')
+            ->pages(['App\\Admin\\Pages\\Auth\\OpsHandLoginPage']);
+    }
+}
+
+final class InstallHandPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('hand')->prefix('hand')->pages(['App\\Admin\\Pages\\Auth\\HandLoginPage']);
+    }
+}
+
+final class InstallOpsPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('ops')->prefix('ops')->discoverPages(app_path('Ops/Pages'), 'App\\Ops\\Pages');
+    }
+}
+
+final class InstallManualPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('manual')->prefix('manual');
+    }
+}
+
+final class InstallWideRootPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('wide')->prefix('wide')->discoverPages(app_path('Admin'), 'App\\Admin');
+    }
+}
+
+final class InstallNestedRootPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('nested')->prefix('nested')->discoverPages(app_path('Admin/Nested'), 'App\\Admin\\Nested');
     }
 }
 
