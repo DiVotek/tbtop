@@ -229,7 +229,7 @@ it('refuses a panel whose auth pages another panel would discover too', function
     authHost($this->hostRoot, [InstallWideRootPanel::class, InstallNestedRootPanel::class]);
 
     $this->artisan('admin:install', ['--auth' => true, '--panel' => 'nested'])
-        ->expectsOutputToContain('Panel [wide] also discovers app/Admin/Nested/Auth')
+        ->expectsOutputToContain('Panel [wide] already discovers or serves pages from app/Admin/Nested/Auth')
         ->assertFailed();
 
     expect($this->hostRoot.'/app/Admin/Nested/Auth')->not->toBeDirectory()
@@ -268,6 +268,27 @@ final class InstallAuthPanel extends Panel
     public function configure(PanelConfig $panel): PanelConfig
     {
         return $panel->id('admin')->prefix('admin')->discoverPages(app_path('Admin/Pages'), 'App\\Admin\\Pages');
+    }
+}
+
+it('refuses a panel whose discovery root holds the shared directory another panel registers pages from', function () {
+    authHost($this->hostRoot, [InstallAuthPanel::class, InstallHandPanel::class]);
+    File::makeDirectory($this->hostRoot.'/app/Admin/Pages/Auth', 0755, true);
+    File::put($this->hostRoot.'/app/Admin/Pages/Auth/HandLoginPage.php', "<?php\nnamespace App\\Admin\\Pages\\Auth;\nclass HandLoginPage extends \\Tbtop\\Admin\\Auth\\LoginPage {}\n");
+    require_once $this->hostRoot.'/app/Admin/Pages/Auth/HandLoginPage.php';
+
+    $this->artisan('admin:install', ['--auth' => true, '--panel' => 'admin'])
+        ->expectsOutputToContain('Panel [hand] already discovers or serves pages from app/Admin/Pages/Auth')
+        ->assertFailed();
+
+    expect($this->hostRoot.'/app/Admin/Pages/Auth/LoginPage.php')->not->toBeFile();
+});
+
+final class InstallHandPanel extends Panel
+{
+    public function configure(PanelConfig $panel): PanelConfig
+    {
+        return $panel->id('hand')->prefix('hand')->pages(['App\\Admin\\Pages\\Auth\\HandLoginPage']);
     }
 }
 

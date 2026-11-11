@@ -112,7 +112,7 @@ class InstallCommand extends Command
         }
         $target = AuthTarget::for($panel, $panels);
         if ($target->conflict !== null) {
-            $this->components->error("Panel [{$target->conflict}] also discovers {$target->relative()}, so it would serve panel [{$panel->getId()}]'s auth pages too.");
+            $this->components->error("Panel [{$target->conflict}] already discovers or serves pages from {$target->relative()}, where panel [{$panel->getId()}]'s auth pages would go.");
             $this->line('  Give panel ['.$panel->getId().'] a discovery root outside every other panel\'s, or register its auth pages by hand.');
 
             return null;

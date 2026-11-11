@@ -18,8 +18,8 @@ use Tbtop\Admin\Panels\PanelConfig;
  * 2. `Auth/` under the panel's first discovery root — the pages are discovered as written.
  * 3. `app/Admin/{PanelId}/Pages/Auth` — the panel discovers nothing and the shared directory is taken.
  *
- * `$conflict` names another panel that would still discover the chosen
- * directory (nested discovery roots); the command refuses then.
+ * `$conflict` names another panel that still owns the chosen directory
+ * (nested discovery roots, or pages it registers from there by hand); the command refuses then.
  *
  * @internal
  */
@@ -61,7 +61,7 @@ final readonly class AuthTarget
     private static function resolve(string $dir, string $namespace, array $others): self
     {
         foreach ($others as $id => $other) {
-            if (self::discovers($other, $dir)) {
+            if (self::ownedByAny([$other], $dir, $namespace)) {
                 return new self($dir, $namespace, (string) $id);
             }
         }
