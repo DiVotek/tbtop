@@ -201,7 +201,7 @@ final class TableSummaries
 
     /**
      * Count is a plain integer; the others format like the column's cells.
-     * An average without a number/money format rounds to two decimals.
+     * An average rounds to two decimals unless money() or number($decimals) formats it.
      */
     private static function format(Column $column, string $type, mixed $raw): mixed
     {
@@ -213,11 +213,12 @@ final class TableSummaries
         }
         $value = is_numeric($raw) ? $raw + 0 : $raw;
         $kind = $column->getKind() ?? '';
-        if ($type === 'avg' && is_float($value) && ! in_array($kind, ['number', 'money'], true)) {
+        $meta = $column->getKindMeta();
+        if ($type === 'avg' && is_float($value) && $kind !== 'money' && ! isset($meta['decimals'])) {
             $value = round($value, 2);
         }
 
-        return KindFormat::apply($kind, $column->getKindMeta(), $value);
+        return KindFormat::apply($kind, $meta, $value);
     }
 
     private static function fresh(EloquentBuilder|QueryBuilder $filtered): EloquentBuilder|QueryBuilder

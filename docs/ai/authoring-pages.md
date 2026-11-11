@@ -698,8 +698,8 @@ $s->table('orders')
   other pages. Each costs one query per table request (a group subtotal is one `GROUP BY`
   for the page's groups), so summarize columns, not every column.
 - **Formatted like the cells**: `money()`, `number()`, `date()` formats apply to
-  sum/avg/min/max, as on screen. `count` is a plain integer; an average without a
-  number/money format is rounded to two decimals. `formatUsing()` does not apply (it
+  sum/avg/min/max, as on screen. `count` is a plain integer; an average is rounded to
+  two decimals unless `money()` or `number($decimals)` formats it. `formatUsing()` does not apply (it
   formats a row).
 - **Labels**: the default is translated (`Sum`, `Average`, `Min`, `Max`, `Count`); pass a
   string to override it.

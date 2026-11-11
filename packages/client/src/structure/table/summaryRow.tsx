@@ -34,7 +34,7 @@ export function SummaryRow(props: SummaryRowProps): ReactNode {
 		<tr
 			className={cn(
 				"text-xs",
-				props.variant === "footer" ? "bg-muted/50 font-medium" : "bg-muted/25",
+				props.variant === "footer" ? "border-t-2 bg-muted/50 font-medium" : "bg-muted/25",
 			)}
 			data-testid={props.variant === "footer" ? "table-summary" : "table-group-summary"}
 		>

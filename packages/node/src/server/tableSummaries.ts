@@ -90,11 +90,11 @@ async function one<Q>(
 	return format(column, summary.type, raw);
 }
 
-/** Sum of nothing is 0; an average without a number/money format rounds to two decimals. */
+/** Sum of nothing is 0; an average rounds to two decimals unless money() or number(decimals) formats it. */
 function format(column: Column, type: string, raw: unknown): unknown {
 	const value = numeric(type === "sum" ? (raw ?? 0) : (raw ?? null));
 	const kind = column.st.kind ?? "";
-	const rounds = type === "avg" && kind !== "number" && kind !== "money";
+	const rounds = type === "avg" && kind !== "money" && column.st.kindMeta.decimals === undefined;
 	const shown = rounds && typeof value === "number" ? Math.round(value * 100) / 100 : value;
 	return applyKindFormat(kind, column.st.kindMeta, shown);
 }
