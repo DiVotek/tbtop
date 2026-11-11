@@ -55,6 +55,7 @@ export async function postAction(
 		...(call.selection.length > 0 || needs.includes("selection")
 			? { selection: call.selection }
 			: {}),
+		...(needs.includes("selection") ? bulk(visit, name) : {}),
 	};
 	const response = await visit.http.action(visit.endpoint("action", name), payload);
 	const body = bag(response.json);
@@ -117,8 +118,16 @@ function loadModal(
 	const payload = {
 		...(Object.keys(row).length > 0 ? { row } : {}),
 		...(selection.length > 0 ? { selection } : {}),
+		...bulk(visit, name),
 	};
 	return visit.http.action(`${visit.endpoint("action", name)}/data`, payload);
+}
+
+/** The table a bulk action runs from, as the client sends it. */
+function bulk(visit: PageVisit, action: string): Bag {
+	// A refused page has no tree; its calls still go out, to the gate.
+	const table = visit.rendered ? wire.bulkTable(visit.trees(), action) : null;
+	return table === null ? {} : { bulk: { table, all: false } };
 }
 
 /** What a modal's query() returned, when it answered with an object. */

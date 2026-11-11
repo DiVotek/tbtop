@@ -92,7 +92,7 @@ Weak agents reinvent what exists. Before adding anything, confirm it's not alrea
   — server re-renders display nodes per change, no custom client code.
 - **Table features:** sort, pagination, table-wide search, per-column search, per-field filters
   (modal/inline), filter tabs, row grouping, drag-reorder, inline-editable cells, CSV/XLSX export (`ExportAction`), row actions,
-  bulk actions, header actions, row-click, record URLs, column visibility, empty state,
+  bulk actions (page or all matching rows, `$ctx->records()`), header actions, row-click, record URLs, column visibility, empty state,
   soft-delete macro. In `TableBuilder.php` / `Column.php`. URL-state is client-only and always
   on (`packages/client/src/structure/tableUrlState.ts`) — there is no PHP API for it.
 - **Panel-level:** multi-panel config, navigation (layouts sidebar/topbar/topbar-sidebar/rail-sidebar,

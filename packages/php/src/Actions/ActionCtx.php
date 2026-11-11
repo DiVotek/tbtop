@@ -2,8 +2,12 @@
 
 namespace Tbtop\Admin\Actions;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
+use LogicException;
 
 final class ActionCtx
 {
@@ -12,6 +16,8 @@ final class ActionCtx
      * @param  list<int|string>  $selection  Selected row ids when needs: ['selection'].
      * @param  array<string, mixed>  $row  Row payload when needs: ['row'].
      * @param  array<string, string>  $params  Route params of the page the action lives on.
+     * @param  bool  $allMatching  The user picked every row matching the table's filters, not just the checked ones.
+     * @param  (Closure(): (EloquentBuilder|QueryBuilder))|null  $recordsQuery  Builds the query records() returns.
      */
     public function __construct(
         public readonly Request $request,
@@ -20,6 +26,8 @@ final class ActionCtx
         public readonly array $selection = [],
         public readonly array $row = [],
         public readonly array $params = [],
+        public readonly bool $allMatching = false,
+        private readonly ?Closure $recordsQuery = null,
     ) {}
 
     /** @param  array<string, string>  $routeParams Server-derived params; trusted over client payload. */
@@ -52,6 +60,45 @@ final class ActionCtx
     }
 
     /**
+     * The selected records as a fresh query on the table's own query: the
+     * checked keys, or — when $allMatching — every row the table's tab,
+     * search and filters match. Use it over $selection for large selections:
+     * `$ctx->records()->update([...])` runs as one statement. Only a bulk
+     * action of a table has it.
+     *
+     * @throws LogicException outside a table's bulk actions
+     */
+    public function records(): EloquentBuilder|QueryBuilder
+    {
+        if ($this->recordsQuery === null) {
+            throw new LogicException('ActionCtx::records() is only available to a table\'s bulk actions (needs: [\'selection\']).');
+        }
+
+        return ($this->recordsQuery)();
+    }
+
+    /**
+     * The selection resolved against its table: the keys the action acts on
+     * and the query records() returns.
+     *
+     * @param  list<int|string>  $selection
+     * @param  Closure(): (EloquentBuilder|QueryBuilder)  $records
+     */
+    public function withRecords(array $selection, bool $allMatching, Closure $records): self
+    {
+        return new self(
+            request: $this->request,
+            user: $this->user,
+            form: $this->form,
+            selection: $selection,
+            row: $this->row,
+            params: $this->params,
+            allMatching: $allMatching,
+            recordsQuery: $records,
+        );
+    }
+
+    /**
      * Replace the client-sent form with its validated counterpart. Null leaves
      * the payload untouched — the action declared no form to validate against,
      * so the handler validates it itself.
@@ -71,6 +118,8 @@ final class ActionCtx
             selection: $this->selection,
             row: $this->row,
             params: $this->params,
+            allMatching: $this->allMatching,
+            recordsQuery: $this->recordsQuery,
         );
     }
 

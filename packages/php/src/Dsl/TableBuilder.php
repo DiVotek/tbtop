@@ -561,6 +561,29 @@ final class TableBuilder implements JsonSerializable
         return false;
     }
 
+    /**
+     * True when an action named $name runs from this table's bulk actions:
+     * one of them, inside a group or dropdown there, or a submit inside a bulk
+     * action's modal. A bulk action that acts on "all matching rows" reads
+     * this table's query, so only those may.
+     */
+    public function hasBulkAction(string $name): bool
+    {
+        $pending = ChildInclusion::filter(array_values($this->opts['bulkActions'] ?? []));
+        while ($pending !== []) {
+            $node = StructureWalk::resolveActionNode(array_pop($pending));
+            if ($node === null) {
+                continue;
+            }
+            if ($node->kind === 'action' && $node->name === $name) {
+                return true;
+            }
+            array_push($pending, ...StructureWalk::actionSearchDescendants($node));
+        }
+
+        return false;
+    }
+
     /** Actions available for a selection of rows, shown once at least one row is checked. @param  list<ActionBuilder>  $actions */
     public function bulkActions(array $actions): self
     {

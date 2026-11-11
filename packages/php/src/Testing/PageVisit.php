@@ -200,6 +200,7 @@ final class PageVisit
             'form' => in_array('form', $needs, true) ? $form : null,
             'row' => $row === [] ? null : $row,
             'selection' => $selection === [] && ! in_array('selection', $needs, true) ? null : $selection,
+            'bulk' => in_array('selection', $needs, true) ? $this->bulk($name) : null,
         ], static fn ($v): bool => $v !== null);
         $response = $this->http->action($this->endpoint('action', $name), $payload);
         $errors = $response->getStatusCode() === 422 ? (array) ($response->json('errors') ?? []) : [];
@@ -247,13 +248,22 @@ final class PageVisit
         $data = $this->record($form);
         $response = null;
         if (($spec['query'] ?? false) === true) {
-            $response = $this->http->action($this->endpoint('action', $name).'/data', array_filter(['row' => $row, 'selection' => $selection]));
+            $response = $this->http->action($this->endpoint('action', $name).'/data', array_filter(['row' => $row, 'selection' => $selection, 'bulk' => $this->bulk($name)]));
             // A refused query() opens nothing: the record is no stand-in for it.
             $loaded = $response->isOk() ? $response->json('data') : [];
             $data = is_array($loaded) ? $loaded : $data;
         }
 
         return new ModalTester($this, $name, $body, $form, $data, $row, $selection, $response);
+    }
+
+    /** @return array{table: string, all: false}|null the table a bulk action runs from, as the client sends it */
+    private function bulk(string $action): ?array
+    {
+        // A page the gate refused has no tree; its calls still go out, to the gate.
+        $table = $this->response->getStatusCode() === 200 ? Wire::bulkTable($this->trees(), $action) : null;
+
+        return $table === null ? null : ['table' => $table, 'all' => false];
     }
 
     private function submitAction(string $action, mixed $form): FormTester

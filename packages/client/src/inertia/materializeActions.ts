@@ -11,6 +11,7 @@ import { liftNestedErrors } from "./fieldErrors";
 import { fillRowTemplate } from "./rowTemplate";
 import { serializeFormData } from "./serializeFormData";
 import { isTableExport, tableExportModal } from "./tableExportAction";
+import { bulkPayload } from "./tableState";
 
 type Bag = Record<string, unknown>;
 type Handler = (ctx: ClientActionContext) => Promise<void | boolean>;
@@ -161,6 +162,10 @@ function actionPayload(ctx: ClientActionContext, needs: string[], formNode?: Str
 	}
 	if (needs.includes("selection")) {
 		payload.selection = ctx.table?.selectedIds ?? [];
+		const bulk = bulkPayload(ctx);
+		if (bulk) {
+			payload.bulk = bulk;
+		}
 	}
 	payload.params = ctx.params;
 	return payload;

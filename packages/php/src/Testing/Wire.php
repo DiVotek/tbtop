@@ -41,6 +41,26 @@ final class Wire
     }
 
     /**
+     * The table whose bulk actions hold the action $name — in a group, a
+     * dropdown or a bulk modal included — or null. A bulk action call names it,
+     * as the client does, so $ctx->records() resolves against that table.
+     *
+     * @param  array<mixed>  $tree
+     */
+    public static function bulkTable(array $tree, string $name): ?string
+    {
+        foreach (self::ofKind($tree, 'table') as $entry) {
+            $table = $entry['node'];
+            $bulk = $table['options']['bulkActions'] ?? [];
+            if (is_string($table['name'] ?? null) && is_array($bulk) && self::named($bulk, 'action', $name) !== []) {
+                return $table['name'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Nodes of one kind.
      *
      * @param  array<mixed>  $tree

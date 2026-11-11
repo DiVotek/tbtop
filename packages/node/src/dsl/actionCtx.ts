@@ -12,6 +12,10 @@ export class ActionCtx<F = Record<string, unknown>> {
 			selection?: (string | number)[];
 			row?: Record<string, unknown>;
 			params?: Record<string, string>;
+			/** The user picked every row matching the table's state, not just the checked ones. */
+			allMatching?: boolean;
+			/** Builds the query records() returns; set for a table's bulk actions. */
+			records?: () => unknown;
 		},
 	) {}
 
@@ -34,6 +38,35 @@ export class ActionCtx<F = Record<string, unknown>> {
 
 	get params(): Record<string, string> {
 		return this.data.params ?? {};
+	}
+
+	/** True when the user picked every row matching the table's tab, search and filters. */
+	get allMatching(): boolean {
+		return this.data.allMatching === true;
+	}
+
+	/**
+	 * The selected records as a fresh query (your driver's `Q`) on the table's
+	 * own query: the checked keys, or every matching row when `allMatching`.
+	 * Prefer it over `selection` for large selections. Only a table's bulk
+	 * actions have it; anywhere else it throws.
+	 */
+	records<Q = unknown>(): Q {
+		if (this.data.records === undefined) {
+			throw new Error(
+				"ActionCtx.records() is only available to a table's bulk actions (needs: ['selection']).",
+			);
+		}
+		return this.data.records() as Q;
+	}
+
+	/** The selection resolved against its table: the keys acted on and the records() query. */
+	withRecords(
+		selection: (string | number)[],
+		allMatching: boolean,
+		records: () => unknown,
+	): ActionCtx<F> {
+		return new ActionCtx<F>(this.request, { ...this.data, selection, allMatching, records });
 	}
 
 	/** The clicked row's key: `_key`, then `id`; null without a row. */

@@ -49,7 +49,8 @@ function ExportDialog({
 	const { visibleColumns } = useColumnVisibility(target.columns, target.tableName);
 	const ticked = defaultTicked(target.columns, visibleColumns);
 	const [choice, setChoice] = useExportChoice({ ...target, available, ticked, formats });
-	const selected = table?.selectedIds ?? [];
+	// Every matching row picked is the same rows as "all": export them that way.
+	const selected = table?.allMatching ? [] : (table?.selectedIds ?? []);
 	const [scope, setScope] = useState<"selected" | "all">(
 		selected.length > 0 ? "selected" : "all",
 	);

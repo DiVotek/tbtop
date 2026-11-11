@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Tbtop\Admin\Actions\ActionCtx;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\RuleWalker;
 use Tbtop\Admin\Validation\EmbedsRule;
@@ -34,7 +33,7 @@ final class ActionController
         }
 
         $gate = ! $action->skipsFormValidation();
-        $ctx = ActionCtx::fromRequest($request, ResolvedPage::routeParams($request))
+        $ctx = BulkSelection::ctx($request, $resolved, $tbtopAction)
             ->withValidatedForm(self::validatedForm($request, $resolved, $tbtopAction, $gate));
 
         $result = $handler($ctx);
@@ -101,7 +100,7 @@ final class ActionController
                 return [];
             }
         }
-        $data = $query(ActionCtx::fromRequest($request, ResolvedPage::routeParams($request)));
+        $data = $query(BulkSelection::ctx($request, $resolved, $action->name));
         $data = $data instanceof Arrayable ? $data->toArray() : $data;
 
         return is_array($data) ? [$data] : [];
