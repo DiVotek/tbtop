@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Http;
 
+use Closure;
 use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Model;
@@ -38,8 +39,10 @@ final class TableSummaries
 
     /**
      * Puts each row group's summaries on the first projected row of its run,
-     * under `_groupSummary`. Runs are found on the raw group value, the way
-     * the client partitions rows; a table without groups() passes through.
+     * under `_groupSummary`. Runs are found on the projected group value, the
+     * way the client partitions rows, so a formatted group column (a datetime
+     * shown as a date) keeps one subtotal per displayed group, over the stored
+     * values that make it up. A table without groups() passes through.
      *
      * @param  iterable<int, mixed>  $rows  The page's raw rows
      * @param  list<mixed>  $projected  The same rows after ColumnProjection
@@ -51,52 +54,52 @@ final class TableSummaries
         if ($groupColumn === null) {
             return $projected;
         }
-        $starts = [];
-        $previous = null;
+        $runs = [];
+        $start = 0;
         $index = 0;
         foreach ($rows as $row) {
-            $value = $row instanceof Model && array_key_exists($groupColumn, $row->getAttributes())
+            $shown = data_get($projected[$index], $groupColumn);
+            if ($index === 0 || $shown !== data_get($projected[$index - 1], $groupColumn)) {
+                $start = $index;
+            }
+            $raw = $row instanceof Model && array_key_exists($groupColumn, $row->getAttributes())
                 ? $row->getRawOriginal($groupColumn)
                 : data_get($row, $groupColumn);
-            if ($index === 0 || self::key($value) !== self::key($previous)) {
-                $starts[$index] = $value;
-            }
-            $previous = $value;
+            $runs[$start][self::key($raw)] = $raw;
             $index++;
         }
-        $unique = [];
-        foreach ($starts as $value) {
-            $unique[self::key($value)] = $value;
-        }
-        $entries = self::groups($table, $filtered, array_values($unique)) ?? [];
-        $byKey = array_combine(array_keys($unique), $entries);
-        foreach ($starts as $i => $value) {
-            data_set($projected[$i], '_groupSummary', $byKey[self::key($value)] ?? []);
+        $entries = self::groups($table, $filtered, array_map(array_values(...), array_values($runs))) ?? [];
+        foreach (array_keys($runs) as $n => $i) {
+            data_set($projected[$i], '_groupSummary', $entries[$n] ?? []);
         }
 
         return $projected;
     }
 
     /**
-     * Summaries per group value, for the group values on the current page.
-     * Built-ins come from one GROUP BY query; a custom closure runs once per
-     * group on the query narrowed to it.
+     * Summaries per row group on the current page. A group is one stored value
+     * or, for a formatted group column, the stored values shown alike. Built-ins
+     * for single-value groups come from one GROUP BY query; other groups and
+     * custom closures run on the query narrowed to the group's values.
      *
-     * @param  list<mixed>  $values  Raw group-column values present on the page
-     * @return list<array<string, list<mixed>>>|null One entry per $values item, same order
+     * @param  list<list<mixed>>  $groups  Each group's raw group-column values
+     * @return list<array<string, list<mixed>>>|null One entry per group, same order
      */
-    public static function groups(TableBuilder $table, EloquentBuilder|QueryBuilder $filtered, array $values): ?array
+    public static function groups(TableBuilder $table, EloquentBuilder|QueryBuilder $filtered, array $groups): ?array
     {
         $columns = $table->summarizedColumns();
         $groupColumn = $table->getGroupsColumn();
-        if ($columns === [] || $groupColumn === null || $values === []) {
+        if ($columns === [] || $groupColumn === null || $groups === []) {
             return null;
         }
-        $aggregates = self::groupedAggregates($columns, $filtered, $groupColumn, $values);
+        $single = array_merge(...array_filter($groups, fn (array $values) => count($values) === 1));
+        $aggregates = $single === [] ? [] : self::groupedAggregates($columns, $filtered, $groupColumn, $single);
 
         $out = [];
-        foreach ($values as $value) {
-            $out[] = self::groupEntry($columns, $filtered, $groupColumn, $value, $aggregates[self::key($value)] ?? []);
+        foreach ($groups as $values) {
+            $narrowed = fn () => self::narrow(self::fresh($filtered), $groupColumn, $values);
+            $grouped = count($values) === 1 ? ($aggregates[self::key($values[0])] ?? []) : null;
+            $out[] = self::groupEntry($columns, $narrowed, $grouped);
         }
 
         return $out;
@@ -104,21 +107,18 @@ final class TableSummaries
 
     /**
      * @param  list<Column>  $columns
-     * @param  array<string, mixed>  $aggregates  alias => raw aggregate for this group
+     * @param  Closure(): (EloquentBuilder|QueryBuilder)  $narrowed  A fresh query over this group's rows
+     * @param  array<string, mixed>|null  $aggregates  alias => raw aggregate from the GROUP BY query; null computes each one
      * @return array<string, list<mixed>>
      */
-    private static function groupEntry(array $columns, EloquentBuilder|QueryBuilder $filtered, string $groupColumn, mixed $value, array $aggregates): array
+    private static function groupEntry(array $columns, Closure $narrowed, ?array $aggregates): array
     {
         $entry = [];
         foreach ($columns as $c => $column) {
             foreach ($column->getSummaries() as $s => $summary) {
-                $using = $summary->usingClosure();
-                if ($using !== null) {
-                    $entry[$column->name][] = $using(self::narrow(self::fresh($filtered), $groupColumn, $value));
-
-                    continue;
-                }
-                $entry[$column->name][] = self::format($column, $summary->type, $aggregates[self::alias($c, $s)] ?? null);
+                $entry[$column->name][] = $aggregates === null || $summary->usingClosure() !== null
+                    ? self::one($column, $summary, $narrowed())
+                    : self::format($column, $summary->type, $aggregates[self::alias($c, $s)] ?? null);
             }
         }
 
@@ -157,11 +157,11 @@ final class TableSummaries
     }
 
     /** @param  list<mixed>  $values */
-    private static function whereValues(BaseBuilder $query, string $column, array $values): void
+    private static function whereValues(EloquentBuilder|QueryBuilder $query, string $column, array $values): void
     {
         $present = array_values(array_filter($values, fn ($v) => $v !== null));
         $hasNull = count($present) !== count($values);
-        $query->where(function (BaseBuilder $q) use ($column, $present, $hasNull): void {
+        $query->where(function ($q) use ($column, $present, $hasNull): void {
             if ($present !== []) {
                 $q->whereIn($column, $present);
             }
@@ -238,9 +238,10 @@ final class TableSummaries
         return $base;
     }
 
-    private static function narrow(EloquentBuilder|QueryBuilder $query, string $column, mixed $value): EloquentBuilder|QueryBuilder
+    /** @param  list<mixed>  $values */
+    private static function narrow(EloquentBuilder|QueryBuilder $query, string $column, array $values): EloquentBuilder|QueryBuilder
     {
-        $value === null ? $query->whereNull($column) : $query->where($column, $value);
+        self::whereValues($query, $column, $values);
 
         return $query;
     }

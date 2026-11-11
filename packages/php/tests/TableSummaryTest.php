@@ -150,3 +150,29 @@ it('drops the host query\'s select list from the group subtotal query', function
     expect($grouped)->not->toContain('"sorders".*')
         ->and((array) $rows[0])->toHaveKey('_groupSummary', ['total' => ['35.50 UAH']]);
 });
+
+it('keeps one subtotal per displayed group when the group column is formatted', function (): void {
+    Schema::create('sevents', function ($table): void {
+        $table->id();
+        $table->dateTime('at');
+        $table->integer('total');
+    });
+    DB::table('sevents')->insert([
+        ['at' => '2026-01-05 15:00:00', 'total' => 2550],
+        ['at' => '2026-01-05 10:00:00', 'total' => 1000],
+        ['at' => '2026-03-01 09:00:00', 'total' => 500],
+    ]);
+    $table = (new TableBuilder('sevents'))
+        ->columns([Column::make('at')->date('d.m.Y'), Column::make('total')->money('UAH')->summarize(Summary::sum())])
+        ->defaultSort('at', 'asc')
+        ->groups('at')
+        ->query(fn () => DB::table('sevents'));
+
+    $rows = TableQuery::run($table, Request::create('/'), DB::table('sevents'))['data'];
+
+    expect(array_map(fn ($r) => (array) $r, $rows))->sequence(
+        fn ($row) => $row->toHaveKey('_groupSummary', ['total' => ['35.50 UAH']]),
+        fn ($row) => $row->not->toHaveKey('_groupSummary'),
+        fn ($row) => $row->toHaveKey('_groupSummary', ['total' => ['5.00 UAH']]),
+    );
+});

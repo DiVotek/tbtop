@@ -163,6 +163,29 @@ describe("Column.summarize()", () => {
 		expect(nullRow._groupSummary).toEqual({ total: ["3.00 UAH"] });
 	});
 
+	test("keeps one subtotal per displayed group when the group column is formatted", async () => {
+		const events = [
+			{ id: 1, at: "2026-01-05 10:00:00", total: 1000 },
+			{ id: 2, at: "2026-01-05 15:00:00", total: 2550 },
+			{ id: 3, at: "2026-03-01 09:00:00", total: 500 },
+		];
+		const get = adminWith((s) =>
+			s
+				.table("orders")
+				.columns([
+					Column.make("at").date("d.m.Y"),
+					Column.make("total").money("UAH").summarize(Summary.sum()),
+				])
+				.defaultSort("at", "asc")
+				.groups("at")
+				.query(() => memoryQuery(() => events)),
+		);
+		const [first, second, third] = (await get()).data;
+		expect(first._groupSummary).toEqual({ total: ["35.50 UAH"] });
+		expect(second).not.toHaveProperty("_groupSummary");
+		expect(third._groupSummary).toEqual({ total: ["5.00 UAH"] });
+	});
+
 	test("a built-in summary needs a driver with aggregate()", async () => {
 		const { aggregate: _drop, ...bare } = memoryDriver();
 		await expect(adminWith(summaryTable, bare)()).rejects.toThrow("aggregate()");

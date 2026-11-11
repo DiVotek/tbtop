@@ -1,5 +1,5 @@
 import { applyKindFormat, type Column, type Row, type Summary, type TableBuilder } from "../dsl";
-import type { AggregateFn, QueryDriver } from "./driver";
+import type { AggregateFn, Clause, QueryDriver } from "./driver";
 import { dataGet } from "./validation/data";
 
 export type SummaryValues = Record<string, unknown[]>;
@@ -27,7 +27,9 @@ export async function footerSummaries<Q>(scope: SummaryScope<Q>): Promise<Summar
 /**
  * Puts each row group's summaries on the first projected row of its run,
  * under `_groupSummary`, computed over the whole group (not just its rows on
- * this page). A table without groups() passes through.
+ * this page). Runs follow the projected value, the way the client partitions
+ * rows, so a formatted group column keeps one subtotal per displayed group,
+ * over the stored values shown alike. A table without groups() passes through.
  */
 export async function attachGroupSummaries<Q>(
 	scope: SummaryScope<Q>,
@@ -39,19 +41,37 @@ export async function attachGroupSummaries<Q>(
 		return projected;
 	}
 	const columns = scope.table.summarizedColumns();
-	const cache = new Map<string, SummaryValues>();
-	for (const [i, row] of rows.entries()) {
-		const value = dataGet(row, groupColumn) ?? null;
-		if (i > 0 && sameGroup(dataGet(rows[i - 1] as Row, groupColumn) ?? null, value)) {
-			continue;
-		}
-		const key = JSON.stringify(value);
-		const narrowed = scope.driver.where(scope.filtered, { field: groupColumn, op: "=", value });
-		const entry = cache.get(key) ?? (await summarize(columns, scope.driver, narrowed));
-		cache.set(key, entry);
-		(projected[i] as Row)._groupSummary = entry;
+	for (const [start, values] of groupRuns(rows, projected, groupColumn)) {
+		const narrowed = scope.driver.where(scope.filtered, groupClause(groupColumn, values));
+		(projected[start] as Row)._groupSummary = await summarize(columns, scope.driver, narrowed);
 	}
 	return projected;
+}
+
+/** First row index of each displayed run => the distinct raw values in it. */
+function groupRuns(rows: Row[], projected: Row[], column: string): Map<number, unknown[]> {
+	const runs = new Map<number, unknown[]>();
+	let start = 0;
+	for (const [i, row] of rows.entries()) {
+		const shown = dataGet(projected[i] as Row, column);
+		if (i === 0 || !Object.is(shown, dataGet(projected[i - 1] as Row, column))) {
+			start = i;
+			runs.set(start, []);
+		}
+		const raw = dataGet(row, column) ?? null;
+		const values = runs.get(start) as unknown[];
+		if (!values.some((v) => sameGroup(v, raw))) {
+			values.push(raw);
+		}
+	}
+	return runs;
+}
+
+/** One stored value narrows with `=` (null-safe); several shown alike, with `in`. */
+function groupClause(field: string, values: unknown[]): Clause {
+	return values.length === 1
+		? { field, op: "=", value: values[0] }
+		: { field, op: "in", value: values.filter((v) => v !== null) };
 }
 
 async function summarize<Q>(
