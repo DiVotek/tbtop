@@ -1395,6 +1395,8 @@ Every server action handler and `onSubmit` closure receives an `ActionCtx`:
     // $ctx->form      — array<string, mixed>  (needs: ['form'])
     // $ctx->row       — array<string, mixed>  (needs: ['row'])
     // $ctx->selection — list<int|string>      (needs: ['selection'])
+    // $ctx->records() — Builder: the selection on the table's own query (bulk actions only)
+    // $ctx->allMatching — bool: the user picked every row matching the table's state
     // $ctx->params    — array<string, string> (route params, always present)
 }, needs: ['row'])
 ```
@@ -1430,6 +1432,33 @@ $s->action('delete-selected')->label('Delete selected')->color('danger')
             ->refreshTable('posts');
     }, needs: ['selection'])
 ```
+
+**All matching rows.** Once every row on the page is checked and the table has more,
+the bulk bar offers "Select all 1240". Picked, the next bulk action runs on every row
+the table's tab, search, column search and filters match, not just the page. Nothing
+to opt into: `$ctx->selection` then holds every matching key, so a
+`whereKey($ctx->selection)` handler like the one above keeps working, and
+`$ctx->allMatching` tells the two apart. For a large table prefer `$ctx->records()`:
+the table's own query narrowed to the selection (the checked keys, or the filtered
+query), so the work is one statement instead of a key list:
+
+```php
+$s->action('archive-selected')->label('Archive')
+    ->handle(function (ActionCtx $ctx): Effects {
+        $count = $ctx->records()->update(['archived' => true]);
+
+        return Effects::make()->notify("Archived {$count} post(s)")->refreshTable('posts');
+    }, needs: ['selection'])
+```
+
+`records()` exists only for an action in a table's `bulkActions()` (a group, a dropdown
+or a bulk modal's submit included); elsewhere it throws. In PHP the all-matching keys are
+read on first access to `$ctx->selection`, with the table's filters, so a handler that
+needs them and also writes through `records()` reads `$ctx->selection` first: once the
+write moves rows out of the tab or filter, a later read misses them. The offer needs a row total, so
+a `simplePagination()` or embedded table has none. Node: `ctx.records<Q>()` returns your
+driver's query, `ctx.allMatching` the flag. Testing: `callAction()` and `openAction()`
+name the table, so a handler over `records()` runs under test.
 
 ---
 

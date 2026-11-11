@@ -1,5 +1,5 @@
 import { fetchDownload, saveBlob } from "../../data/download";
-import { tableQueryParams } from "../../inertia/materializeHelpers";
+import { tableStateSearch } from "../../inertia/tableState";
 import type { ClientActionContext } from "../types";
 
 export interface ExportRequest {
@@ -13,12 +13,7 @@ export interface ExportRequest {
 
 /** The table's current state (no pagination) plus the dialog's pick, as a query string. */
 export function exportQuery(ctx: ClientActionContext, req: ExportRequest): string {
-	const params = new URLSearchParams();
-	for (const [key, value] of Object.entries(tableQueryParams(ctx))) {
-		if (key !== "page" && key !== "perPage" && value !== undefined && value !== null) {
-			params.append(key, String(value));
-		}
-	}
+	const params = tableStateSearch(ctx);
 	params.append("format", req.format);
 	for (const column of req.columns) {
 		params.append("columns[]", column);

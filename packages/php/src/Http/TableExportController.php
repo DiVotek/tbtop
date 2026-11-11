@@ -125,12 +125,7 @@ final class TableExportController
                 }
             }],
         ])->validate()['ids'];
-        if ($builder instanceof ModelBuilder) {
-            $builder->whereKey(array_values($ids));
-
-            return;
-        }
-        $builder->whereIn('id', array_values($ids));
+        BulkSelection::whereKeys($builder, array_values($ids));
     }
 
     private function assertWithinLimit(EloquentBuilder|QueryBuilder $builder, int $maxRows): void
