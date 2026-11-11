@@ -13,6 +13,9 @@ use Tbtop\Admin\Panels\PanelConfig;
 /** Registers `{prefix}/{mcp path}` for a panel with mcp() on; its stack replaces the panel's (adr/mcp.md). */
 final class McpRoute
 {
+    /** A string, not ::class: the middleware does not exist before laravel/mcp 1.2. */
+    private const string LARAVEL_ORIGIN_CHECK = 'Laravel\\Mcp\\Server\\Middleware\\ValidateOrigin';
+
     public static function register(PanelConfig $panel): void
     {
         if (! class_exists(Registrar::class)) {
@@ -34,7 +37,9 @@ final class McpRoute
             ->prefix($panel->getPrefix())
             ->name('tbtop.'.$panel->getId().'.')
             ->group(static function () use ($path): void {
-                Mcp::web($path, TbtopMcpServer::class)->name('mcp');
+                // laravel/mcp >= 1.2 adds its own app-wide Origin check (config mcp.allowed_origins),
+                // which would refuse the panel's mcpAllowedOrigins(); ValidateMcpOrigin above owns it.
+                Mcp::web($path, TbtopMcpServer::class)->withoutMiddleware(self::LARAVEL_ORIGIN_CHECK)->name('mcp');
             });
     }
 }
