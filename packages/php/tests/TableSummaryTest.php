@@ -176,3 +176,17 @@ it('keeps one subtotal per displayed group when the group column is formatted', 
         fn ($row) => $row->toHaveKey('_groupSummary', ['total' => ['5.00 UAH']]),
     );
 });
+
+it('keeps a text min/max as stored', function (): void {
+    Schema::create('scodes', function ($table): void {
+        $table->id();
+        $table->string('code');
+    });
+    DB::table('scodes')->insert([['code' => '007'], ['code' => '010']]);
+    $table = (new TableBuilder('scodes'))
+        ->columns([Column::make('code')->summarize(Summary::min(), Summary::max())])
+        ->query(fn () => DB::table('scodes'));
+
+    expect(TableQuery::run($table, Request::create('/'), DB::table('scodes'))['summaries'])
+        ->toBe(['code' => ['007', '010']]);
+});

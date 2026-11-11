@@ -98,7 +98,8 @@ final class TableSummaries
         $out = [];
         foreach ($groups as $values) {
             $narrowed = fn () => self::narrow(self::fresh($filtered), $groupColumn, $values);
-            $grouped = count($values) === 1 ? ($aggregates[self::key($values[0])] ?? []) : null;
+            // A value the GROUP BY keyed differently (e.g. a case-insensitive collation) runs on its own.
+            $grouped = count($values) === 1 ? ($aggregates[self::key($values[0])] ?? null) : null;
             $out[] = self::groupEntry($columns, $narrowed, $grouped);
         }
 
@@ -212,8 +213,10 @@ final class TableSummaries
         if ($type === 'sum' && $raw === null) {
             $raw = 0;
         }
-        $value = is_numeric($raw) ? $raw + 0 : $raw;
         $kind = $column->getKind() ?? '';
+        // SQL returns SUM/AVG (and DECIMAL min/max) as strings; a text min/max like '007' stays as stored.
+        $numeric = in_array($type, ['sum', 'avg'], true) || in_array($kind, ['number', 'money'], true);
+        $value = $numeric && is_numeric($raw) ? $raw + 0 : $raw;
         $meta = $column->getKindMeta();
         if ($type === 'avg' && is_float($value) && $kind !== 'money' && ! isset($meta['decimals'])) {
             $value = round($value, 2);

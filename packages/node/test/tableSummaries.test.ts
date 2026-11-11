@@ -186,6 +186,21 @@ describe("Column.summarize()", () => {
 		expect(third._groupSummary).toEqual({ total: ["5.00 UAH"] });
 	});
 
+	test("keeps a text min/max as stored", async () => {
+		const get = adminWith((s) =>
+			s
+				.table("orders")
+				.columns([Column.make("code").summarize(Summary.min(), Summary.max())])
+				.query(() =>
+					memoryQuery(() => [
+						{ id: 1, code: "007" },
+						{ id: 2, code: "010" },
+					]),
+				),
+		);
+		expect((await get()).summaries).toEqual({ code: ["007", "010"] });
+	});
+
 	test("a built-in summary needs a driver with aggregate()", async () => {
 		const { aggregate: _drop, ...bare } = memoryDriver();
 		await expect(adminWith(summaryTable, bare)()).rejects.toThrow("aggregate()");
