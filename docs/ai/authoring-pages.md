@@ -1452,7 +1452,10 @@ $s->action('archive-selected')->label('Archive')
 ```
 
 `records()` exists only for an action in a table's `bulkActions()` (a group, a dropdown
-or a bulk modal's submit included); elsewhere it throws. The offer needs a row total, so
+or a bulk modal's submit included); elsewhere it throws. In PHP the all-matching keys are
+read on first access to `$ctx->selection`, with the table's filters, so a handler that
+needs them and also writes through `records()` reads `$ctx->selection` first: once the
+write moves rows out of the tab or filter, a later read misses them. The offer needs a row total, so
 a `simplePagination()` or embedded table has none. Node: `ctx.records<Q>()` returns your
 driver's query, `ctx.allMatching` the flag. Testing: `callAction()` and `openAction()`
 name the table, so a handler over `records()` runs under test.

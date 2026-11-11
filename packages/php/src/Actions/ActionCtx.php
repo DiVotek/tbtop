@@ -14,7 +14,9 @@ final class ActionCtx
     /**
      * Selected row ids when needs: ['selection']. After "select all matching"
      * they are every matching key, read on first access: a handler that only
-     * uses records() never loads them.
+     * uses records() never loads them. That read runs the table's filters, so
+     * read the keys before writing through records() if the write changes
+     * which rows match.
      *
      * @var list<int|string>
      */
