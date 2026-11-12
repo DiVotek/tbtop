@@ -11,12 +11,13 @@ export class NumberField<N extends string = string> extends Field<N, number | nu
 		return this.set("placeholder", text);
 	}
 
-	/** Increment granularity (the input's step attribute); 'any' allows arbitrary precision. */
-	step(step: number | "any"): this {
-		if (typeof step === "string" && step !== "any") {
-			throw new Error('Number::step() only accepts a number or the string "any".');
+	/** Increment granularity (the input's step attribute): a number, a numeric string ('0.01', shipped as a number) or 'any'. */
+	step(step: number | string): this {
+		const value = step === "any" ? step : Number(String(step).trim() || Number.NaN);
+		if (value !== "any" && Number.isNaN(value)) {
+			throw new Error('Number::step() only accepts a number, a numeric string or "any".');
 		}
-		return this.set("step", step);
+		return this.set("step", value);
 	}
 }
 export interface NumberField<N extends string = string> extends Affixes, InputMode, NumericRules {}

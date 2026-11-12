@@ -29,7 +29,7 @@ final class FormSubmitController
         }
 
         $rules = RuleWalker::bindUploadPaths($form->collectRules(), $form->getFields(), $form->recordData());
-        $validator = Validator::make($request->all(), $rules, [], $form->collectAttributes());
+        $validator = Validator::make(RichtextInput::restore($request, $request->all()), $rules, [], $form->collectAttributes());
         $validated = EmbedsRule::applyDeclaredKeys($validator->getRules(), $validator->validate());
         $ctx = new ActionCtx(
             request: $request,

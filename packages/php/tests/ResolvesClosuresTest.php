@@ -176,7 +176,7 @@ it('Text-like fields: a placeholder Closure returning a bad locale map throws wh
 
 it('Number: step(Closure) resolving to a non-"any" string throws when the Node is read', function (): void {
     (new S)->number('qty')->step(fn (): string => 'big')->toNode();
-})->throws(InvalidArgumentException::class, 'Number::step() only accepts a number or the string "any".');
+})->throws(InvalidArgumentException::class, 'Number::step() only accepts a number, a numeric string or "any".');
 
 it('Repeater: defaultItems(Closure) feeds defaultItemCount()', function (): void {
     expect((new S)->repeater('rows')->defaultItems(fn (): int => 3)->defaultItemCount())->toBe(3);

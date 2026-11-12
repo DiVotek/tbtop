@@ -3,6 +3,7 @@
 use Tbtop\Admin\Dsl\Fields\CheckboxList;
 use Tbtop\Admin\Dsl\Fields\Slider;
 use Tbtop\Admin\Dsl\Fields\ToggleButtons;
+use Tbtop\Admin\Dsl\S;
 
 function encodeFieldKind(mixed $value): array
 {
@@ -57,4 +58,14 @@ it('FieldKinds: Slider rules min/max mirror into wire constraints', function () 
     $json = encodeFieldKind(Slider::make('score')->rules('min:0|max:10'));
 
     expect($json['options']['constraints'])->toBe(['min' => 0, 'max' => 10]);
+});
+
+// --- Number ---
+
+it('FieldKinds: Number::step() takes a numeric string and ships it as a number', function () {
+    $s = new S;
+
+    expect(encodeFieldKind($s->number('price')->step('0.01'))['options']['step'])->toBe(0.01)
+        ->and(encodeFieldKind($s->number('qty')->step('5'))['options']['step'])->toBe(5)
+        ->and(encodeFieldKind($s->number('rate')->step('any'))['options']['step'])->toBe('any');
 });

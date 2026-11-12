@@ -39,12 +39,27 @@ foreach (array_unique([...array_keys($rootRequire), ...array_keys($nestedRequire
     }
 }
 
+// The autoload block too: a `files` entry only the nested manifest carries (the
+// tbtop() testing function) is undefined in every Packagist install.
+$rootAutoload = json_encode($root['autoload'] ?? []);
+$nestedAutoload = json_encode(array_map(
+    fn (array $section): array => array_map(
+        fn (string|array $path): string|array => is_string($path) ? 'packages/php/'.$path : array_map(fn (string $p): string => 'packages/php/'.$p, $path),
+        $section,
+    ),
+    $nested['autoload'] ?? [],
+));
+
+if ($rootAutoload !== $nestedAutoload) {
+    $mismatches[] = "autoload: root has {$rootAutoload}, nested (prefixed with packages/php/) has {$nestedAutoload}";
+}
+
 if ($mismatches === []) {
-    echo "OK: composer.json and packages/php/composer.json require the same runtime dependencies.\n";
+    echo "OK: composer.json and packages/php/composer.json declare the same runtime dependencies and autoload.\n";
     exit(0);
 }
 
-fwrite(STDERR, "Root and nested composer.json \"require\" blocks diverge:\n");
+fwrite(STDERR, "Root and nested composer.json \"require\"/\"autoload\" blocks diverge:\n");
 foreach ($mismatches as $mismatch) {
     fwrite(STDERR, "  - {$mismatch}\n");
 }
