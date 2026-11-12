@@ -4,6 +4,27 @@ Every release of `tbtop/admin` (Packagist), `@tbtop/inertia-admin` (npm) and
 `@tbtop/admin` (npm, Node) — all three ship in lockstep from one tag. Versioning rules: [VERSIONING.md](VERSIONING.md).
 Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 
+## [0.8.2](https://github.com/DiVotek/tbtop/releases/tag/v0.8.2) — 2026-11-12
+
+### Features
+
+- **node:** brand translatable values as Translations<V> ([#445](https://github.com/DiVotek/tbtop/pull/445))
+- **node:** export LocalizedFormValues with one locale picked ([#446](https://github.com/DiVotek/tbtop/pull/446))
+- reorderable() takes a closure that owns the reorder write ([#447](https://github.com/DiVotek/tbtop/pull/447))
+- table export v1 (ExportAction, Column::export, CSV and XLSX) ([#449](https://github.com/DiVotek/tbtop/pull/449))
+- select all matching rows for bulk actions ([#454](https://github.com/DiVotek/tbtop/pull/454))
+- column summaries (Column::summarize, Summary) in the footer and per row group ([#453](https://github.com/DiVotek/tbtop/pull/453))
+
+### Fixes
+
+- **node:** exact FormValues for translatable, multiple and repeater fields ([#444](https://github.com/DiVotek/tbtop/pull/444))
+- **mcp:** keep mcpAllowedOrigins() working on laravel/mcp 1.2 ([#452](https://github.com/DiVotek/tbtop/pull/452))
+- **php:** publish --auth pages for a second panel into its own directory ([#451](https://github.com/DiVotek/tbtop/pull/451))
+
+### Documentation
+
+- sweep backlog.md of items shipped in 0.8.1 ([#448](https://github.com/DiVotek/tbtop/pull/448))
+
 ## [0.8.1](https://github.com/DiVotek/tbtop/releases/tag/v0.8.1) — 2026-11-05
 
 ### ⚠ Breaking changes
