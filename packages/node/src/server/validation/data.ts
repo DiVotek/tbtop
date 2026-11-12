@@ -66,7 +66,11 @@ export function expandKey(data: unknown, key: string): string[] {
 		.flatMap((k) => expandKey(data, `${prefix}${k}${tail}`));
 }
 
-/** Laravel's ConvertEmptyStringsToNull, so `required` means the same on both stacks. */
+/**
+ * Laravel's ConvertEmptyStringsToNull, so `required` means the same on both
+ * stacks. A richtext document is left as written: Lexical's `format: ""` and
+ * `style: ""` are not empty input. Its embeds' data is converted where it is validated.
+ */
 export function emptyToNull(value: unknown): unknown {
 	if (value === "") {
 		return null;
@@ -74,7 +78,7 @@ export function emptyToNull(value: unknown): unknown {
 	if (Array.isArray(value)) {
 		return value.map(emptyToNull);
 	}
-	if (value !== null && typeof value === "object") {
+	if (value !== null && typeof value === "object" && !isEditorState(value)) {
 		return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, emptyToNull(v)]));
 	}
 	return value;

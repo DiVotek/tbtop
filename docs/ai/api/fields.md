@@ -137,7 +137,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `numeric(): static` | Value must be numeric. |
 | `placeholder(Closure\|string $text): static` | Placeholder text shown in the empty input. |
 | `prefix(JsonSerializable\|string $content): static` | Content rendered before the input, inside the control (e.g. a currency symbol or icon block). A plain string becomes a TextBlock; any other JsonSerializable node is used as-is. Display nodes only — nesting a Field here throws (an affix decorates the control, it is not a second input, and its rules would never be collected). |
-| `step(Closure\|string\|int\|float $step): static` | Granularity of each increment (structural — drives the input's step attribute). Pass 'any' to allow arbitrary precision. A Closure's result is checked when it resolves. |
+| `step(Closure\|string\|int\|float $step): static` | Granularity of each increment (structural — drives the input's step attribute). A numeric string ('0.01') ships as a number; pass 'any' to allow arbitrary precision. A Closure's result is checked when it resolves. |
 | `suffix(JsonSerializable\|string $content): static` | Content rendered after the input, inside the control. Same rules as prefix() — display nodes only, a nested Field throws. |
 
 ## Otp (otp)

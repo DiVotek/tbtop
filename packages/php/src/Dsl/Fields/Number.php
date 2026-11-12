@@ -33,8 +33,9 @@ final class Number extends Field
 
     /**
      * Granularity of each increment (structural — drives the input's step
-     * attribute). Pass 'any' to allow arbitrary precision. A Closure's
-     * result is checked when it resolves.
+     * attribute). A numeric string ('0.01') ships as a number; pass 'any'
+     * to allow arbitrary precision. A Closure's result is checked when it
+     * resolves.
      *
      * @param  int|float|string|(Closure(): (int|float|string))  $step
      */
@@ -49,10 +50,13 @@ final class Number extends Field
 
     private static function checkedStep(mixed $step): int|float|string
     {
-        if (! is_int($step) && ! is_float($step) && $step !== 'any') {
-            throw new InvalidArgumentException('Number::step() only accepts a number or the string "any".');
+        if (is_int($step) || is_float($step) || $step === 'any') {
+            return $step;
+        }
+        if (is_string($step) && is_numeric($step)) {
+            return $step + 0;
         }
 
-        return $step;
+        throw new InvalidArgumentException('Number::step() only accepts a number, a numeric string or "any".');
     }
 }

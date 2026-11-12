@@ -108,6 +108,19 @@ describe("TrimStrings before validation", () => {
 		expect([text, embed]).toEqual(['"text":"  indented  "', '"data":{"title":"Hi"}']);
 	});
 
+	test("a richtext document keeps spaces at format boundaries and its empty strings", async () => {
+		const bio = doc({
+			...paragraph("Hello "),
+			children: [
+				{ type: "text", text: "Hello ", format: 0, detail: 0, mode: "normal", style: "" },
+				{ type: "text", text: "world", format: 1, detail: 0, mode: "normal", style: "" },
+				{ type: "text", text: " again", format: 0, detail: 0, mode: "normal", style: "" },
+			],
+		});
+		await post(panel(), "forms/profile", { email: "a@b.co", bio });
+		expect(submitted?.bio).toEqual(bio);
+	});
+
 	test("action payloads are trimmed too, password keys at any depth excepted", async () => {
 		await post(panel(), "actions/note", {
 			payload: { form: { nickname: " Max ", password: " p " } },

@@ -65,7 +65,7 @@ final class ActionController
         }
 
         $input = $request->input('payload.form', []);
-        $input = is_array($input) ? $input : [];
+        $input = is_array($input) ? RichtextInput::restore($request, $input, 'payload.form') : [];
 
         if (! $gate) {
             return self::declaredKeysOnly($input, $rules);

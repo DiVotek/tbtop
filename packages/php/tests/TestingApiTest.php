@@ -1,11 +1,14 @@
 <?php
 
+use Carbon\CarbonImmutable;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\AssertionFailedError;
 use Tbtop\Admin\Testing\InteractsWithTbtop;
 use Tbtop\Admin\Testing\PageTester;
 use Tbtop\Admin\Testing\Result;
+use Tbtop\Admin\Testing\WireValues;
 use Tbtop\Admin\Tests\Fixtures\CaPost;
+use Tbtop\Admin\Tests\Fixtures\Resource\ArticleStatus;
 use Tbtop\Admin\Tests\Fixtures\TestingApiPage;
 use Tbtop\Admin\Tests\TestingApiTestCase;
 
@@ -100,6 +103,29 @@ it('reads session validation errors, by field, rule or message', function (): vo
     expect(TestingApiPage::$submitted)->toBeNull()
         ->and(fn () => testingApiPage()->fill(['title' => ''])->submit()->assertHasErrors(['title' => 'max:20']))
         ->toThrow(AssertionFailedError::class, 'error on [title] is not [max:20]');
+});
+
+it('reads session validation errors when the session serializes as JSON', function (): void {
+    // Laravel 13's skeleton default: the errors bag comes back from the store as an array.
+    config()->set('session.serialization', 'json');
+    app('session')->forgetDrivers();
+    app()->forgetInstance('session.store');
+
+    testingApiPage()->fill(['title' => ''])->submit()
+        ->assertHasErrors(['title' => 'required'])
+        ->assertHasNoErrors('published');
+});
+
+it('posts enums, dates and models the way the client does: as scalars', function (): void {
+    testingApiPage()->fill(['title' => ArticleStatus::Live])->submit()->assertHasNoErrors();
+    testingApiPage()->callAction('quickSave', form: ['title' => ArticleStatus::Draft])->assertNotified('Quick draft');
+
+    expect(TestingApiPage::$submitted['title'])->toBe('live')
+        ->and(WireValues::of([
+            'when' => CarbonImmutable::parse('2026-01-15 10:00:00', 'Europe/Kyiv'),
+            'post' => $this->post,
+            'rows' => [['status' => ArticleStatus::Draft]],
+        ]))->toBe(['when' => '2026-01-15T10:00:00+02:00', 'post' => $this->post->id, 'rows' => [['status' => 'draft']]]);
 });
 
 it('tells a redirect away from the way back', function (): void {

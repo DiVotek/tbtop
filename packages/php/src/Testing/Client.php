@@ -41,16 +41,28 @@ final class Client
         return $response;
     }
 
-    /** @param  array<string, mixed>  $data */
+    /**
+     * A form submit: a JSON body like Inertia's router.post, but asking for
+     * HTML, so a failed validation redirects back with the session errors.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function submit(string $url, array $data, string $from): TestResponse
     {
-        return $this->from($from)->post($url, $data);
+        $content = json_encode(WireValues::of($data), JSON_THROW_ON_ERROR);
+        $server = $this->from($from)->transformHeadersToServerVars([
+            'CONTENT_LENGTH' => mb_strlen($content, '8bit'),
+            'CONTENT_TYPE' => 'application/json',
+            'Accept' => 'text/html, application/xhtml+xml',
+        ]);
+
+        return $this->call('POST', $url, [], $this->prepareCookiesForRequest(), [], $server, $content);
     }
 
     /** @param  array<string, mixed>  $payload */
     public function action(string $url, array $payload): TestResponse
     {
-        return $this->postJson($url, ['payload' => $payload]);
+        return $this->postJson($url, ['payload' => WireValues::of($payload)]);
     }
 
     /** @param  array<string, mixed>  $query */
@@ -67,8 +79,15 @@ final class Client
     public function sessionErrors(): array
     {
         $bag = $this->app['session.store']->get('errors');
+        if ($bag instanceof ViewErrorBag) {
+            return $bag->getBag('default')->toArray();
+        }
 
-        return $bag instanceof ViewErrorBag ? $bag->getBag('default')->toArray() : [];
+        // With `session.serialization` = 'json' (Laravel 13's default) the
+        // store keeps the bag as {format, messages} once the request saved it.
+        $messages = is_array($bag) ? $bag['default']['messages'] ?? [] : [];
+
+        return is_array($messages) ? $messages : [];
     }
 
     /**

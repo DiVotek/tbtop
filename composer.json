@@ -27,7 +27,10 @@
         "psr-4": {
             "Tbtop\\Admin\\": "packages/php/src/",
             "Tbtop\\Admin\\Database\\Factories\\": "packages/php/database/factories/"
-        }
+        },
+        "files": [
+            "packages/php/src/Testing/functions.php"
+        ]
     },
     "extra": {
         "laravel": {

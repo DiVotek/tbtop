@@ -64,7 +64,9 @@ tbtop(CreatePostPage::class)
 ```
 
 `fill()` starts from the record the form was prefilled with, so an edit test only names the
-fields it changes. A key that is no field of the form fails at once. `submit()` posts to the
+fields it changes. A key that is no field of the form fails at once. Values go out as the
+client sends them: an enum as its value, a date as ISO 8601 with its offset, a model as its
+key — so `Post::factory()->make()->only([...])` fills a form as is. `submit()` posts JSON to the
 form's `onSubmit()` handler like Inertia does, then reads the flashed effects or the session
 errors; `form()->callAction('quickSave')` runs a form action with the filled values instead.
 
