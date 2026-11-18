@@ -9,11 +9,14 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 ### Features
 
 - **client:** remember collapsed row groups across reloads ([#456](https://github.com/DiVotek/tbtop/pull/456))
+- show that a secret password field is set without sending its value ([#459](https://github.com/DiVotek/tbtop/pull/459))
+- **fields:** Radio::ternary() for a three-state yes/no/any filter ([#460](https://github.com/DiVotek/tbtop/pull/460))
 
 ### Fixes
 
 - testing API and richtext input bugs found on a fresh Laravel 13 install ([#455](https://github.com/DiVotek/tbtop/pull/455))
 - **client:** table skeleton replaces only the grid, toolbar stays mounted ([#457](https://github.com/DiVotek/tbtop/pull/457))
+- **client:** richtext field takes the preset's input fill in dark mode ([#461](https://github.com/DiVotek/tbtop/pull/461))
 
 ## [0.8.2](https://github.com/DiVotek/tbtop/releases/tag/v0.8.2) — 2026-11-12
 
