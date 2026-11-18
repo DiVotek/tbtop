@@ -158,11 +158,14 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `alpha(): static` | Letters only. |
 | `alphaDash(): static` | Letters, numbers, dashes and underscores only. |
 | `alphaNum(): static` | Letters and numbers only. |
+| `clearable(bool $state = true): static` | Adds a Clear button to a secret() field; clearing submits `null`. Without it a `null` for this field is dropped on the server, so the stored value can only be replaced. Implies secret(). Not shown on a required() field. |
 | `endsWith(string ...$values): static` | Value must end with one of the given substrings. |
 | `length(int $length): static` | Exact character count. |
 | `maxLength(int $length): static` | Maximum character count. |
 | `minLength(int $length): static` | Minimum character count. |
+| `preview(Closure $fn): static` | Server closure `fn (string $value): string` shown beside the "Set" badge, e.g. `fn ($v) => '…'.substr($v, -4)`. Only its result reaches the browser. Implies secret(). |
 | `regex(string $pattern): static` | Match a PCRE pattern. Passed as an array element so the rule collector does not split on '\|' inside the pattern. |
+| `secret(bool $state = true): static` | Keeps a stored value out of the browser: the record's value never ships, the form shows whether one is set with a Replace button, and a field the user leaves alone is absent from the submitted data — so `$model->update($ctx->form)` keeps the stored secret. For a top-level form field (sections and tabs included), not a repeater sub-field. |
 | `startsWith(string ...$values): static` | Value must start with one of the given substrings. |
 
 ## Radio (radio)
@@ -174,6 +177,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `boolean(): static` | Shorthand for a 2-option Yes/No radio. No-op if ->options() was already called. |
 | `inline(bool $value = true): static` | Horizontal layout instead of the default stacked list. |
 | `options(array\|string $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. An enum class expands to {value, label, description?}: value = ->value (->name for a pure enum), label from HasLabel else the case name, description from HasDescription. An int-backed enum still ships string values, so seed record()/default() with strings. No validation is implied: add Rule::enum(X::class) for a backed enum, or Rule::in(array_column(X::cases(), 'name')) for a pure one. |
+| `ternary(string $any = 'Any', string $yes = 'Yes', string $no = 'No'): static` | Shorthand for a 3-option Any/Yes/No radio, the three-state filter on a boolean column: "Any" has an empty value, so it never narrows the query and is selected when no value is set. Yes/No submit "1"/"0". No-op if ->options() was already called. |
 
 ## Relation (relation)
 

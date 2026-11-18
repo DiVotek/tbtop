@@ -21,7 +21,7 @@ final class RecordDefaults
      */
     public static function apply(array $record, array $children): array
     {
-        foreach (self::fields($children) as $field) {
+        foreach (self::topLevelFields($children) as $field) {
             if (array_key_exists($field->name, $record)) {
                 continue;
             }
@@ -43,7 +43,7 @@ final class RecordDefaults
      * @param  list<mixed>  $children
      * @return list<Field>
      */
-    private static function fields(array $children): array
+    public static function topLevelFields(array $children): array
     {
         $out = [];
         foreach ($children as $child) {
@@ -56,7 +56,7 @@ final class RecordDefaults
             if ($child instanceof Repeater) {
                 continue;
             }
-            $out = [...$out, ...self::fields(StructureWalk::descendants($child))];
+            $out = [...$out, ...self::topLevelFields(StructureWalk::descendants($child))];
         }
 
         return $out;

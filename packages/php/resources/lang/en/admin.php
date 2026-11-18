@@ -381,6 +381,15 @@ return [
             'hide' => 'Hide password',
             'show' => 'Show password',
         ],
+        'secret' => [
+            'set' => 'Set',
+            'not_set' => 'Not set',
+            'replace' => 'Replace',
+            'clear' => 'Clear',
+            'cancel' => 'Cancel',
+            'cleared' => 'Will be cleared on save',
+            'undo' => 'Undo',
+        ],
         'copyable' => [
             'copy' => 'Copy',
             'copied' => 'Copied',

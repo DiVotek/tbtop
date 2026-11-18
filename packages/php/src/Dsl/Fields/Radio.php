@@ -30,6 +30,25 @@ final class Radio extends Field
         ]);
     }
 
+    /**
+     * Shorthand for a 3-option Any/Yes/No radio, the three-state filter on a
+     * boolean column: "Any" has an empty value, so it never narrows the query
+     * and is selected when no value is set. Yes/No submit "1"/"0". No-op if
+     * ->options() was already called.
+     */
+    public function ternary(string $any = 'Any', string $yes = 'Yes', string $no = 'No'): static
+    {
+        if (isset($this->opts['options'])) {
+            return $this;
+        }
+
+        return $this->options([
+            ['value' => '', 'label' => $any],
+            ['value' => '1', 'label' => $yes],
+            ['value' => '0', 'label' => $no],
+        ]);
+    }
+
     protected function kind(): string
     {
         return 'radio';

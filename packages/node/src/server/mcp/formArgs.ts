@@ -22,6 +22,7 @@ export interface FormDescription {
 /** The form's fields and rules, as validation and the agent see them. */
 export function formShape(form: FormBuilder): { fields: Record<string, Field>; rules: Rules } {
 	const children = form.includedChildren();
+	form.seedSecrets();
 	return { fields: fieldsByKey(children), rules: collectRules(children) };
 }
 

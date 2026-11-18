@@ -124,7 +124,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 |---|---|---|---|---|
 | **Text** | `$s->text('x')` / `Text::make('x')` | `text` | `placeholder(string\|array $text)` — a locale map (`['en' => …, 'uk' => …]`) on a translatable field shows each locale's text on its tab; `mask(string $pattern)` — input mask where `9` is a digit, `a` a letter, `*` alphanumeric and anything else a literal (fixed length; no optional or repeating tokens); `prefix()`/`suffix()` for inline affixes; `inputMode(string $mode)` — mobile keyboard hint (see below) | No |
 | **Textarea** | `$s->textarea('x')` / `Textarea::make('x')` | `textarea` | `placeholder(string\|array $text)` — a locale map on a translatable field, as for Text | No |
-| **Password** | `$s->password('x')` / `Password::make('x')` | `password` | none | No |
+| **Password** | `$s->password('x')` / `Password::make('x')` | `password` | `secret()` — the stored value never reaches the browser; the form shows "Set" with Replace, and a field left alone is not submitted; `clearable()` adds Clear (submits `null`), `preview(Closure $fn)` shows `$fn($value)` beside "Set" — see [below](#stored-secrets--secret-on-password) | No |
 | **OTP** | `$s->otp('x')` / `Otp::make('x')` | `otp` | `length(int $digits = 6)` — code slots **and** a `digits:N` rule (UI + backend agree); `pattern(string $regex)` — accepted-character regex (defaults to digits-only) | No |
 | **Number** | `$s->number('x')` / `Number::make('x')` | `number` | `placeholder(string $text)`; `step(int\|float\|string $step)` — a number, a numeric string (`'0.01'`, shipped as a number) or `'any'`; first-class, no `->set()` needed; `prefix()`/`suffix()` for inline affixes; `inputMode(string $mode)` — opt-in mobile keyboard hint (see below). Value bounds are validation, not structure: use `minValue()`/`maxValue()`. There is no money input kind — for a cents column use `number()->step('0.01')->prefix('$')` and multiply by 100 in `onSubmit`; only the read side (`Column::money()`, `displayValue()->money()`) understands cents | No |
 | **Date** | `$s->date('x')` / `Date::make('x')` | `date` | `yearPicker(bool $state = true)` — swaps the calendar caption's year label for a year dropdown, offering the years within the bounds below (a narrow band around today without them); `minDate(DateTimeInterface\|string $date)` / `maxDate(...)` — earliest/latest selectable day. Value is a `Y-m-d` day: `record()` cuts an ISO instant (what `$model->toArray()` gives for a date/datetime cast) or a `DateTimeInterface` to its day in the app timezone. Bind it to a date-only column; on a datetime column whose time matters use `datetime()`, since saving a day writes midnight | No |
@@ -133,7 +133,7 @@ the `KitchenSinkPage`/`ContractTest` gate.
 | **Date range** | `$s->daterange('x')` / `Daterange::make('x')` | `daterange` | `disabledRanges(Closure $fn)` — server closure `fn (array $deps): array` returning a list of `['from' => ?string, 'to' => ?string]` ISO-day ranges (both ends inclusive-disabled; a null end makes the range open, i.e. min/max-date semantics); `dependsOn(string\|array $fields)` — parent field(s) whose changes refetch the ranges. Value shape: `{from?: string, to?: string}` | Only with `disabledRanges()` + `dependsOn()` → daterange-ranges endpoint |
 | **Boolean** | `$s->boolean('x')` / `Boolean::make('x')` | `boolean` | none | No |
 | **Checkbox** | `$s->checkbox('x')` / `Checkbox::make('x')` | `checkbox` | none | No |
-| **Radio** | `$s->radio('x')` / `Radio::make('x')` | `radio` | `options(list<{value, label, description?, disabled?}> $options)` — static option list, each option can carry its own `description` and `disabled`; `inline(bool $value = true)` — horizontal layout instead of the default stacked list; `boolean()` — shorthand for a 2-option Yes/No radio, no-op if `options()` was already called | No |
+| **Radio** | `$s->radio('x')` / `Radio::make('x')` | `radio` | `options(list<{value, label, description?, disabled?}> $options)` — static option list, each option can carry its own `description` and `disabled`; `inline(bool $value = true)` — horizontal layout instead of the default stacked list; `boolean()` — shorthand for a 2-option Yes/No radio, no-op if `options()` was already called; `ternary(string $any = 'Any', string $yes = 'Yes', string $no = 'No')` — Any/Yes/No (`''`/`'1'`/`'0'`), the three-state table filter on a boolean column (Any never narrows the query), same no-op rule | No |
 | **Select** | `$s->select('x')` / `Select::make('x')` | `select` | `options(array)`, `searchable(bool)`, `query(callable)` (async), `creatable(array $fields, callable $using)`, `multiple(bool)` — multi-value selection rendered as a searchable combobox with chips; when `creatable()` is set and the typed query has no exact match a "Create" row appears inline. Each option may carry `display` — either `{image?, subtitle?}` or `{html}` — see [rich options](#rich-options-image-subtitle-html) | `query()` → async-select endpoint; `creatable()` → select-create endpoint. See [./wiring.md](./wiring.md) |
 | **Tags** | `$s->tags('x')` / `Tags::make('x')` | `tags` | none; multi-value string array | No |
 | **Colorpicker** | `$s->colorpicker('x')` / `Colorpicker::make('x')` | `colorpicker` | none | No |
@@ -170,6 +170,47 @@ throws `InvalidArgumentException`. It is a keyboard hint only: it neither valida
 nor is inferred from `rules()` or `mask()`, so set both. It is opt-in on `number` too: the
 field keeps `type="number"` and sets no mode by default — the iOS `decimal` keypad has no
 minus key, so a default would block negative values.
+
+### Stored secrets — `secret()` on Password
+
+An API key or a token kept in an `encrypted` column must not go back to the browser, yet the
+person editing the form needs to see that one is set. `secret()` does both:
+
+```php
+$s->form('settings', [
+    $s->password('stripe_secret')
+        ->preview(fn (string $value): string => '…'.substr($value, -4)) // optional, implies secret()
+        ->clearable(),                                                   // optional, implies secret()
+    $s->password('smtp_password')->secret(),
+])
+    ->record($settings->only(['stripe_secret', 'smtp_password'])) // decrypted by the cast
+    ->onSubmit(function (ActionCtx $ctx) use ($settings) {
+        $settings->update($ctx->form); // an untouched secret is absent, so it is kept
+    });
+```
+
+- **Props.** `recordData()` drops the field's key, so its value is in neither the page props
+  nor the HTML. The node carries only `options.secret`: `{filled: bool, clearable?: true,
+  preview?: string}`. `preview()` runs on the server; only its return value ships, so the
+  author decides how much of the secret to show. Without it nothing of the value is shown.
+- **Form.** A stored secret renders as a masked "Set" row with **Replace** (opens an empty
+  input, **Cancel** goes back) and, with `clearable()`, **Clear** (marks it "Will be cleared
+  on save", **Undo** goes back). With nothing stored it is a plain input saying "Not set".
+- **Submit.** A field left alone, or opened with Replace and left empty, is not sent, so
+  `$ctx->form` has no key for it and `$model->update($ctx->form)` keeps the stored value. A
+  replacement arrives as the new string. A clear arrives as `null`, and only on a
+  `clearable()` field (a hand-made `""` counts as `null`, as empty strings become `null`
+  before validation): elsewhere the server drops a `null` for the field, so an MCP agent or a
+  hand-made request cannot wipe the secret by sending one.
+- **Rules.** `required()` holds while a stored secret is left alone (its rules gain
+  `sometimes`) and still applies to a replacement; a required secret is never clearable, even
+  with `clearable()`: it shows no Clear and the server drops its `null`. With
+  nothing stored, `required()` works as on any field.
+- **Scope.** A top-level form field, including sections and tabs. On a repeater sub-field
+  `secret()` throws when the form renders (`LogicException` in PHP, `Error` in Node) (its value would otherwise ship
+  in the row). It throws the same way in a modal form loaded by `query()`, whose data is whatever the
+  query returns, so keep the secret out of it. A field without `secret()` behaves as before: whatever `record()`
+  holds for it ships in the props.
 
 ## Canonical field-kind inventory (PHP ↔ client ↔ schema)
 

@@ -8,7 +8,7 @@ import { JsonCell, JsonForm } from "../fields/jsonField";
 import { KeyvalueCell, KeyvalueForm } from "../fields/keyvalueField";
 import { NumberCell, NumberForm } from "../fields/numberField";
 import { OtpCell, OtpForm } from "../fields/otpField";
-import { PasswordCell, PasswordForm } from "../fields/passwordField";
+import { PasswordCell, PasswordForm, serializePassword } from "../fields/passwordField";
 import { RadioCell, RadioForm } from "../fields/radioField";
 import { RelationCell, RelationForm } from "../fields/relationField";
 import { RepeaterCell, RepeaterForm } from "../fields/repeaterField";
@@ -58,6 +58,7 @@ function registerInputFields(): void {
 	defineFieldClient<"password", string>("password", {
 		form: PasswordForm,
 		cell: PasswordCell,
+		serialize: serializePassword,
 	});
 	defineFieldClient<"number", number>("number", { form: NumberForm, cell: NumberCell });
 	defineFieldClient<"date", string>("date", { form: DateForm, cell: DateCell });

@@ -9,7 +9,7 @@ import { getCustomAction } from "./customActions";
 import { executeEffects, readEffects, settleSubmittedForm } from "./effects";
 import { liftNestedErrors } from "./fieldErrors";
 import { fillRowTemplate } from "./rowTemplate";
-import { serializeFormData } from "./serializeFormData";
+import { secretFieldNames, serializeFormData } from "./serializeFormData";
 import { isTableExport, tableExportModal } from "./tableExportAction";
 import { bulkPayload } from "./tableState";
 
@@ -144,7 +144,7 @@ function submitHandler(
 				preserveScroll: true,
 				preserveState: true,
 				onSuccess: (page) => {
-					settleSubmittedForm(ctx.form, page.flash);
+					settleSubmittedForm(ctx.form, page.flash, secretFieldNames(formNode));
 					resolve();
 				},
 				onError: (errors) => reject({ errors: liftNestedErrors(errors) }),

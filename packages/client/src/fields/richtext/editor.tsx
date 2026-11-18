@@ -66,7 +66,9 @@ export function RichtextEditor({
 	return (
 		<LexicalComposer initialConfig={initialConfig}>
 			<EmbedsPlugin defs={embeds} disabled={disabled === true}>
-				<div className="relative rounded-surface border transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
+				{/* `cn-textarea` gives the frame the preset's field fill and border (e.g. the
+				    dark-mode `bg-input/30` every other input has); p-0 drops its padding. */}
+				<div className="cn-textarea relative rounded-surface p-0 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
 					<Toolbar />
 					<div className="relative">
 						<RichTextPlugin
