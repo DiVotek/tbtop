@@ -2,7 +2,7 @@
  * Row grouping: partitionRowGroups contiguous-run partitioning,
  * GroupHeaderRow's rendered label/colSpan, and GroupedRows' collapse toggle.
  */
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterEach, beforeAll, describe, expect, test } from "bun:test";
 import { fireEvent, render } from "@testing-library/react";
 import { ensureBuiltinsRegistered } from "../../render/registerBuiltins";
 import type { TableColumn } from "../types";
@@ -133,7 +133,7 @@ const GROUPED = [
 	{ id: "3", status: "published" },
 ];
 
-function renderGrouped(collapsedByDefault: boolean, collapsible = true) {
+function renderGrouped(collapsedByDefault: boolean, collapsible = true, storageKey?: string) {
 	return render(
 		<table>
 			<tbody>
@@ -143,6 +143,7 @@ function renderGrouped(collapsedByDefault: boolean, collapsible = true) {
 					colSpan={2}
 					collapsible={collapsible}
 					collapsedByDefault={collapsedByDefault}
+					storageKey={storageKey}
 					renderRow={(row) => (
 						<tr key={String(row.id)} data-testid="data-row">
 							<td>{String(row.id)}</td>
@@ -192,5 +193,57 @@ describe("GroupedRows", () => {
 		}
 		fireEvent.click(publishedToggle);
 		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+});
+
+describe("GroupedRows with a storage key", () => {
+	const KEY = "tbtop:table.posts.groups.status.v1";
+
+	afterEach(() => {
+		localStorage.clear();
+	});
+
+	function toggleAt(getAllByTestId: (id: string) => HTMLElement[], index: number): void {
+		const toggle = getAllByTestId("table-group-toggle")[index];
+		if (!toggle) {
+			throw new Error("missing toggle");
+		}
+		fireEvent.click(toggle);
+	}
+
+	test("a group the user opened stays open after a remount", () => {
+		const first = renderGrouped(true, true, KEY);
+		toggleAt(first.getAllByTestId, 1);
+		first.unmount();
+
+		const { getAllByTestId } = renderGrouped(true, true, KEY);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+
+	test("a group the user closed stays closed after a remount", () => {
+		const first = renderGrouped(false, true, KEY);
+		toggleAt(first.getAllByTestId, 0);
+		first.unmount();
+
+		const { getAllByTestId } = renderGrouped(false, true, KEY);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+
+	test("the stored state is explicit, so it survives a change of the declared default", () => {
+		localStorage.setItem(KEY, JSON.stringify({ '"published"': false }));
+		const { getAllByTestId } = renderGrouped(true, true, KEY);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+
+	test("malformed storage falls back to the declared default", () => {
+		localStorage.setItem(KEY, "not json");
+		const { queryAllByTestId } = renderGrouped(true, true, KEY);
+		expect(queryAllByTestId("data-row")).toHaveLength(0);
+	});
+
+	test("without a storage key nothing is written", () => {
+		const { getAllByTestId } = renderGrouped(false);
+		toggleAt(getAllByTestId, 0);
+		expect(localStorage.length).toBe(0);
 	});
 });

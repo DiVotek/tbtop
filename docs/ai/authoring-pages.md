@@ -721,8 +721,10 @@ the query driver needs the optional `aggregate()` for the built-ins.
 contiguous rows sharing `$column`'s value under a group header row. `collapsible: true`
 turns each header into a toggle that hides or shows its group; `collapsed: true` starts
 every group closed (and implies `collapsible`), so the table opens as a list of headers.
-The open/closed state lives in the page only: it survives a refetch, poll or page change
-for the same group value, and resets on a browser reload. It requires `->defaultSort($column, ...)` to already be set (throws
+The open/closed state survives a refetch, poll or page change for the same group value,
+and is remembered per table in the browser's localStorage (key
+`tbtop:table.<name>.groups.<column>.v1`), so a reload keeps the groups each user opened or
+closed. `collapsed: true` only sets the default for a group the user has never toggled. It requires `->defaultSort($column, ...)` to already be set (throws
 `InvalidArgumentException` otherwise) — grouping only makes sense on a sorted column,
 since it partitions *contiguous* runs, not a full re-bucketing.
 
