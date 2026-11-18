@@ -393,7 +393,9 @@ thead .tbtop-sticky-cell {
 }
 
 .tabletop-editor blockquote {
-	border-left: 3px solid var(--color-border);
+	/* --border nearly vanishes on the dark field fill; a muted-foreground tint
+	   keeps the rule visible in both themes. */
+	border-left: 3px solid color-mix(in oklab, var(--color-muted-foreground) 40%, transparent);
 	padding-left: 1rem;
 	color: var(--color-muted-foreground);
 	margin: 0.5rem 0;
