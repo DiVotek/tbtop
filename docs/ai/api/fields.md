@@ -174,6 +174,7 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `boolean(): static` | Shorthand for a 2-option Yes/No radio. No-op if ->options() was already called. |
 | `inline(bool $value = true): static` | Horizontal layout instead of the default stacked list. |
 | `options(array\|string $options): static` | Set the fixed option list. Each entry is {value, label, description?, disabled?, display?} — values are string-normalized on the wire, so seed default()/query results with string values too. 'display' (image, subtitle, html) only renders on Select; other adopters (Radio, CheckboxList, ToggleButtons, InFilter) render only description/disabled. An enum class expands to {value, label, description?}: value = ->value (->name for a pure enum), label from HasLabel else the case name, description from HasDescription. An int-backed enum still ships string values, so seed record()/default() with strings. No validation is implied: add Rule::enum(X::class) for a backed enum, or Rule::in(array_column(X::cases(), 'name')) for a pure one. |
+| `ternary(string $any = 'Any', string $yes = 'Yes', string $no = 'No'): static` | Shorthand for a 3-option Any/Yes/No radio, the three-state filter on a boolean column: "Any" has an empty value, so it never narrows the query and is selected when no value is set. Yes/No submit "1"/"0". No-op if ->options() was already called. |
 
 ## Relation (relation)
 

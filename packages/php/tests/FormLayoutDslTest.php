@@ -221,3 +221,30 @@ it('Radio boolean() does not override options already set', function () {
         ['value' => 'yes', 'label' => 'Yep'],
     ]);
 });
+
+it('Radio ternary() sets Any/Yes/No options with an empty Any value', function () {
+    $field = Radio::make('active')->ternary();
+
+    expect(encodeLayoutNode($field)['options']['options'])->toBe([
+        ['value' => '', 'label' => 'Any'],
+        ['value' => '1', 'label' => 'Yes'],
+        ['value' => '0', 'label' => 'No'],
+    ]);
+});
+
+it('Radio ternary() takes custom labels', function () {
+    $field = Radio::make('active')->ternary('Усі', 'Так', 'Ні');
+
+    expect(array_column(encodeLayoutNode($field)['options']['options'], 'label'))
+        ->toBe(['Усі', 'Так', 'Ні']);
+});
+
+it('Radio ternary() does not override options already set', function () {
+    $field = Radio::make('active')->options([
+        ['value' => 'yes', 'label' => 'Yep'],
+    ])->ternary();
+
+    expect(encodeLayoutNode($field)['options']['options'])->toBe([
+        ['value' => 'yes', 'label' => 'Yep'],
+    ]);
+});
