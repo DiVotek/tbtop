@@ -10,7 +10,7 @@ import {
 	type ElementNode,
 	type LexicalEditor,
 } from "lexical";
-import { AUTO_LINK_EXCLUDED_PARENTS, AUTO_LINK_MATCHERS } from "./autoLink";
+import { AUTO_LINK_CONFIG } from "./autoLink";
 import { RICHTEXT_NODES } from "./richtextConfig";
 
 function editorWithAutoLink(): LexicalEditor {
@@ -20,11 +20,7 @@ function editorWithAutoLink(): LexicalEditor {
 			throw e;
 		},
 	});
-	registerAutoLink(editor, {
-		matchers: AUTO_LINK_MATCHERS,
-		excludeParents: AUTO_LINK_EXCLUDED_PARENTS,
-		changeHandlers: [],
-	});
+	registerAutoLink(editor, AUTO_LINK_CONFIG);
 	return editor;
 }
 
@@ -58,6 +54,28 @@ describe("richtext auto-link", () => {
 	test("a bare www. address gets an https scheme", () => {
 		expect(linksAfterWriting("go to www.example.com.")).toEqual([
 			{ url: "https://www.example.com", text: "www.example.com" },
+		]);
+	});
+
+	test("a question mark after a URL stays outside the link", () => {
+		expect(linksAfterWriting("did you see https://example.com/a?")).toEqual([
+			{ url: "https://example.com/a", text: "https://example.com/a" },
+		]);
+	});
+
+	test("a query string inside a URL stays part of the link", () => {
+		expect(linksAfterWriting("open https://example.com/a?b=1&c=2 now")).toEqual([
+			{ url: "https://example.com/a?b=1&c=2", text: "https://example.com/a?b=1&c=2" },
+		]);
+	});
+
+	test("quoted words before an address are not swallowed into it", () => {
+		expect(linksAfterWriting('"see this" and "then"@example.com')).toEqual([]);
+	});
+
+	test("a URL in parentheses links without the closing paren", () => {
+		expect(linksAfterWriting("(see https://example.com/docs)")).toEqual([
+			{ url: "https://example.com/docs", text: "https://example.com/docs" },
 		]);
 	});
 
