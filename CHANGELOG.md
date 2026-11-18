@@ -13,6 +13,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 ### Fixes
 
 - testing API and richtext input bugs found on a fresh Laravel 13 install ([#455](https://github.com/DiVotek/tbtop/pull/455))
+- **client:** table skeleton replaces only the grid, toolbar stays mounted ([#457](https://github.com/DiVotek/tbtop/pull/457))
 
 ## [0.8.2](https://github.com/DiVotek/tbtop/releases/tag/v0.8.2) — 2026-11-12
 
