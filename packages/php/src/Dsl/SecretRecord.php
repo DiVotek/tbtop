@@ -40,8 +40,9 @@ final class SecretRecord
     }
 
     /**
-     * Submitted input with every secret field's `null` dropped unless the field
-     * is clearable(): the key is then absent, as for a field the user left alone.
+     * Submitted input with every secret field's `null` (or `''`, which counts as
+     * null even where ConvertEmptyStringsToNull does not run) dropped unless the
+     * field is clearable(): the key is then absent, as for a field left alone.
      *
      * @param  array<string, mixed>  $input
      * @param  list<mixed>  $children
@@ -50,8 +51,13 @@ final class SecretRecord
     public static function applyInput(array $input, array $children): array
     {
         foreach (self::secretFields($children) as $field) {
-            $sent = array_key_exists($field->name, $input);
-            if ($sent && $input[$field->name] === null && ! $field->isClearable()) {
+            if (! array_key_exists($field->name, $input)) {
+                continue;
+            }
+            if ($input[$field->name] === '') {
+                $input[$field->name] = null;
+            }
+            if ($input[$field->name] === null && ! $field->isClearable()) {
                 unset($input[$field->name]);
             }
         }

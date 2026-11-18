@@ -3,6 +3,7 @@
 use Illuminate\Testing\TestResponse;
 use Tbtop\Admin\Dsl\Fields\Password;
 use Tbtop\Admin\Dsl\S;
+use Tbtop\Admin\Dsl\SecretRecord;
 use Tbtop\Admin\Tests\ActionSkipValidationHttpTestCase;
 use Tbtop\Admin\Tests\Fixtures\SecretPasswordPage;
 
@@ -61,6 +62,16 @@ it('drops a null unless the field is clearable, where it clears', function (): v
     submitSecrets(['pin' => null, 'webhook' => null, 'fresh' => 'x'])->assertSessionHasNoErrors();
 
     expect(SecretPasswordPage::$submitted)->toBe(['webhook' => null, 'fresh' => 'x']);
+});
+
+it('counts an empty string as null without ConvertEmptyStringsToNull', function (): void {
+    $children = [
+        (new Password('pin'))->secret(),
+        (new Password('webhook'))->clearable(),
+    ];
+
+    expect(SecretRecord::applyInput(['pin' => '', 'webhook' => '', 'name' => ''], $children))
+        ->toBe(['webhook' => null, 'name' => '']);
 });
 
 it('validates a replacement and passes it on', function (): void {
