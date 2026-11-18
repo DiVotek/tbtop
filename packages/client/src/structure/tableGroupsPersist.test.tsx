@@ -52,11 +52,11 @@ describe("collapsible row groups on a named table", () => {
 			fireEvent.click(draft);
 		});
 		await findByText("Dune");
-		expect(JSON.parse(localStorage.getItem(KEY) ?? "{}")).toEqual({ '"draft"': false });
+		expect(JSON.parse(localStorage.getItem(KEY) ?? "[]")).toEqual([['"draft"', false]]);
 	});
 
 	test("a stored open group renders open on the next mount", async () => {
-		localStorage.setItem(KEY, JSON.stringify({ '"published"': false }));
+		localStorage.setItem(KEY, JSON.stringify([['"published"', false]]));
 		const { findByText, queryByText } = await renderTable();
 		await findByText("Emma");
 		expect(queryByText("Dune")).toBeNull();

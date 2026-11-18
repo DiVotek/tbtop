@@ -230,7 +230,7 @@ describe("GroupedRows with a storage key", () => {
 	});
 
 	test("the stored state is explicit, so it survives a change of the declared default", () => {
-		localStorage.setItem(KEY, JSON.stringify({ '"published"': false }));
+		localStorage.setItem(KEY, JSON.stringify([['"published"', false]]));
 		const { getAllByTestId } = renderGrouped(true, true, KEY);
 		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
 	});
@@ -270,12 +270,12 @@ describe("GroupedRows with a storage key", () => {
 
 	test("a toggle keeps groups another tab stored meanwhile", () => {
 		const { getAllByTestId } = renderGrouped(false, true, KEY);
-		localStorage.setItem(KEY, JSON.stringify({ '"published"': true }));
+		localStorage.setItem(KEY, JSON.stringify([['"published"', true]]));
 		toggleAt(getAllByTestId, 0);
-		expect(JSON.parse(localStorage.getItem(KEY) ?? "{}")).toEqual({
-			'"published"': true,
-			'"draft"': true,
-		});
+		expect(JSON.parse(localStorage.getItem(KEY) ?? "[]")).toEqual([
+			['"published"', true],
+			['"draft"', true],
+		]);
 	});
 
 	test("a toggle still works when storage writes fail", () => {
@@ -299,6 +299,20 @@ describe("GroupedRows with a storage key", () => {
 				Object.defineProperty(globalThis, "localStorage", real);
 			}
 		}
+	});
+
+	test("past the cap the least recently toggled group is dropped, numeric keys included", () => {
+		// 200 numeric group keys, oldest first: "200" was toggled first, "1" last.
+		const stored = Array.from({ length: 200 }, (_, i) => [String(200 - i), true]);
+		localStorage.setItem(KEY, JSON.stringify(stored));
+		const { getAllByTestId } = renderGrouped(false, true, KEY);
+		toggleAt(getAllByTestId, 0);
+		const keys = (JSON.parse(localStorage.getItem(KEY) ?? "[]") as [string, boolean][]).map(
+			([key]) => key,
+		);
+		expect(keys).toHaveLength(200);
+		expect(keys).not.toContain("200");
+		expect(keys.slice(-2)).toEqual(["1", '"draft"']);
 	});
 
 	test("without a storage key nothing is written", () => {

@@ -19,8 +19,10 @@ export interface GroupCollapse {
 	toggle: (value: unknown) => void;
 }
 
-/** Group key → collapsed, for the groups the user toggled. */
-type CollapseState = Readonly<Record<string, boolean>>;
+/** Group key → collapsed, for the groups the user toggled, oldest toggle first. */
+type CollapseState = ReadonlyMap<string, boolean>;
+
+const EMPTY: CollapseState = new Map();
 
 /**
  * Explicit per-group state wins; a group never toggled (or arriving later on
@@ -28,10 +30,13 @@ type CollapseState = Readonly<Record<string, boolean>>;
  */
 export function useGroupCollapse(collapsedByDefault: boolean, storageKey?: string): GroupCollapse {
 	// This tab's toggles, tagged with their key: they still apply when storage is unavailable.
-	const [memory, setMemory] = useState<{ key?: string; state: CollapseState }>({ state: {} });
-	const own = memory.key === storageKey ? memory.state : {};
-	const state = storageKey ? { ...readState(storageKey), ...own } : own;
-	const isCollapsed = (value: unknown): boolean => state[groupKey(value)] ?? collapsedByDefault;
+	const [memory, setMemory] = useState<{ key?: string; state: CollapseState }>({ state: EMPTY });
+	const own = memory.key === storageKey ? memory.state : EMPTY;
+	const stored = storageKey ? readState(storageKey) : EMPTY;
+	const isCollapsed = (value: unknown): boolean => {
+		const key = groupKey(value);
+		return own.get(key) ?? stored.get(key) ?? collapsedByDefault;
+	};
 	return {
 		isCollapsed,
 		toggle: (value) => {
@@ -46,32 +51,41 @@ export function useGroupCollapse(collapsedByDefault: boolean, storageKey?: strin
 	};
 }
 
-/** Re-inserts `key` last so the cap drops the least recently toggled group. */
+/**
+ * Re-inserts `key` last so the cap drops the least recently toggled group.
+ * A Map keeps insertion order even for integer-like keys, which an object does not.
+ */
 function remember(state: CollapseState, key: string, collapsed: boolean): CollapseState {
-	const { [key]: _previous, ...rest } = state;
-	const entries = [...Object.entries(rest), [key, collapsed] as const];
-	return Object.fromEntries(entries.slice(-MAX_REMEMBERED));
+	const entries = [...state].filter(([k]) => k !== key);
+	entries.push([key, collapsed]);
+	return new Map(entries.slice(-MAX_REMEMBERED));
 }
 
+/** Stored as an array of [groupKey, collapsed] pairs, oldest toggle first. */
 function readState(key: string): CollapseState {
 	try {
-		const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? "{}");
-		if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-			return {};
+		const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");
+		if (!Array.isArray(parsed)) {
+			return EMPTY;
 		}
-		return Object.fromEntries(
-			Object.entries(parsed).filter(
-				(entry): entry is [string, boolean] => typeof entry[1] === "boolean",
-			),
-		);
+		return new Map(parsed.filter(isEntry));
 	} catch {
-		return {};
+		return EMPTY;
 	}
+}
+
+function isEntry(entry: unknown): entry is [string, boolean] {
+	return (
+		Array.isArray(entry) &&
+		entry.length === 2 &&
+		typeof entry[0] === "string" &&
+		typeof entry[1] === "boolean"
+	);
 }
 
 function writeState(key: string, state: CollapseState): void {
 	try {
-		localStorage.setItem(key, JSON.stringify(state));
+		localStorage.setItem(key, JSON.stringify([...state]));
 	} catch {
 		// ignore storage errors
 	}
