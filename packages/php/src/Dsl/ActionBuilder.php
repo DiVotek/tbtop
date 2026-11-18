@@ -450,6 +450,7 @@ final class ActionBuilder implements JsonSerializable
             if (($spec['type'] ?? '') !== 'modal') {
                 throw new LogicException("query() is only valid on modal actions (action \"{$this->name}\").");
             }
+            SecretRecord::assertNoQueryModalSecret($spec['body'] ?? null, $this->name);
             $spec = [...$spec, 'query' => true, 'queryNeeds' => $this->queryNeeds];
         }
 

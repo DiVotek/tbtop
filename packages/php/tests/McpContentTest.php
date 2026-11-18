@@ -65,7 +65,7 @@ it('refuses a richtext document the editor could not open, before the handler ru
 
 it('an excluded child of a repeater is listed and refused', function (): void {
     $form = $this->toolResult($this->callTool('search', ['page' => 'mcp-content-page']))['json']['executables'][0];
-    expect(array_column($form['fields'], 'name'))->toBe(['body', 'sections', 'sections.*.heading', 'sections.*.content'])
+    expect(array_column($form['fields'], 'name'))->toBe(['body', 'sections', 'sections.*.heading', 'sections.*.content', 'token'])
         ->and($form['excludedFields'])->toBe([['name' => 'sections.*.image', 'kind' => 'media', 'reason' => 'the media library is closed to this user (mediaGate), so this field cannot be filled over MCP']]);
 
     $echo = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => [
@@ -88,4 +88,14 @@ it('an excluded child of a repeater is listed and refused', function (): void {
     expect($coerced['json']['message'])
         ->toBe('Send a file field as {url} or its current value; fields listed in excludedFields only as their current value: sections.0.image.')
         ->and(McpPage::$ran)->not->toHaveKey('post');
+});
+
+it('drops an agent\'s null for a non-clearable secret() and never shows its value', function (): void {
+    $search = $this->toolResult($this->callTool('search', ['page' => 'mcp-content-page', 'values' => true]))['json'];
+    expect(json_encode($search))->not->toContain('tok_stored');
+
+    $result = $this->toolResult($this->callTool('execute', ['id' => 'mcp-content-page:post', 'form' => ['token' => null]]));
+
+    expect($result['isError'])->toBeFalse()
+        ->and(McpPage::$ran['post'])->not->toHaveKey('token');
 });
