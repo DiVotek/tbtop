@@ -11,6 +11,7 @@ Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 - **client:** remember collapsed row groups across reloads ([#456](https://github.com/DiVotek/tbtop/pull/456))
 - show that a secret password field is set without sending its value ([#459](https://github.com/DiVotek/tbtop/pull/459))
 - **fields:** Radio::ternary() for a three-state yes/no/any filter ([#460](https://github.com/DiVotek/tbtop/pull/460))
+- **client:** richtext turns typed and pasted URLs and emails into links ([#462](https://github.com/DiVotek/tbtop/pull/462))
 
 ### Fixes
 
