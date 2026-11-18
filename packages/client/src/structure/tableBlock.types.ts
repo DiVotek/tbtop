@@ -3,6 +3,7 @@
  * Split out of tableBlock.tsx to keep that file under the size cap.
  */
 
+import type { ReactNode } from "react";
 import type { ModalSize } from "../ui/modal-shell";
 import type { AsyncBlock } from "./asyncBlock";
 import type { SummaryValues } from "./table/normalize";
@@ -87,6 +88,8 @@ export interface TableBodyProps {
 	/** Footer summaries by column (Column::summarize()). */
 	summaries?: SummaryValues;
 	isReloading: boolean;
+	/** First-load placeholder shown in place of the grid; the chrome around it stays. */
+	loadingSlot?: ReactNode;
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];
 	bulkActions?: ActionConfig[];
