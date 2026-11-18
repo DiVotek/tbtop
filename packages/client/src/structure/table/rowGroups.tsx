@@ -4,10 +4,11 @@
  * `collapsible`, a header click collapses or expands its run.
  */
 import { ChevronRightIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import type { TableColumn } from "../types";
 import { formatColumnValue } from "./columnValueFormat";
+import { useGroupCollapse } from "./useGroupCollapse";
 
 export interface RowGroup {
 	value: unknown;
@@ -30,36 +31,6 @@ export function partitionRowGroups(rows: Record<string, unknown>[], column: stri
 		}
 	}
 	return groups;
-}
-
-/** Stable key for a group value, so collapse state survives a refetch or page change. */
-export function groupKey(value: unknown): string {
-	return value === undefined ? "undefined" : JSON.stringify(value);
-}
-
-export interface GroupCollapse {
-	isCollapsed: (value: unknown) => boolean;
-	toggle: (value: unknown) => void;
-}
-
-/**
- * Tracks the groups the user flipped away from `collapsedByDefault`, so a
- * group arriving later (next page, refetch) opens in the declared default.
- */
-export function useGroupCollapse(collapsedByDefault: boolean): GroupCollapse {
-	const [flipped, setFlipped] = useState<ReadonlySet<string>>(() => new Set());
-	return {
-		isCollapsed: (value) => flipped.has(groupKey(value)) !== collapsedByDefault,
-		toggle: (value) =>
-			setFlipped((prev) => {
-				const next = new Set(prev);
-				const key = groupKey(value);
-				if (!next.delete(key)) {
-					next.add(key);
-				}
-				return next;
-			}),
-	};
 }
 
 interface GroupHeaderRowProps {
@@ -127,6 +98,8 @@ interface GroupedRowsProps {
 	/** Group headers toggle their rows; off renders every group open with plain headers. */
 	collapsible: boolean;
 	collapsedByDefault: boolean;
+	/** localStorage key that keeps the open/closed groups across reloads; omitted keeps them in memory. */
+	storageKey?: string;
 	renderRow: (row: Record<string, unknown>) => ReactNode;
 	/** The group's summary row, read off its first row; shown under a collapsed header too. */
 	renderSummary?: (first: Record<string, unknown>, key: string) => ReactNode;
@@ -137,7 +110,7 @@ interface GroupedRowsProps {
  * renders its header and summary only.
  */
 export function GroupedRows(props: GroupedRowsProps): ReactNode {
-	const collapse = useGroupCollapse(props.collapsedByDefault);
+	const collapse = useGroupCollapse(props.collapsedByDefault, props.storageKey);
 	return partitionRowGroups(props.rows, props.column.name).flatMap((group, i) => {
 		const collapsed = props.collapsible && collapse.isCollapsed(group.value);
 		const header = (
