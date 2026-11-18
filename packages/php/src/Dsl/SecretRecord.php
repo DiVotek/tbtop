@@ -2,6 +2,7 @@
 
 namespace Tbtop\Admin\Dsl;
 
+use LogicException;
 use Tbtop\Admin\Dsl\Fields\Password;
 
 /**
@@ -18,6 +19,7 @@ final class SecretRecord
      */
     public static function seed(array $record, array $children): void
     {
+        self::assertTopLevel($children);
         foreach (self::secretFields($children) as $field) {
             $field->seedStored($record[$field->name] ?? null);
         }
@@ -55,6 +57,25 @@ final class SecretRecord
         }
 
         return $input;
+    }
+
+    /**
+     * A secret() inside a repeater row is neither seeded nor stripped, so its
+     * stored value would ship in the props: refuse it instead of leaking.
+     *
+     * @param  list<mixed>  $children
+     */
+    private static function assertTopLevel(array $children): void
+    {
+        $top = self::secretFields($children);
+        foreach ($children as $child) {
+            $all = StructureWalk::collect($child, static fn (mixed $c): bool => $c instanceof Password && $c->isSecret());
+            foreach ($all as $field) {
+                if (! in_array($field, $top, true)) {
+                    throw new LogicException("password \"{$field->name}\": secret() works on a top-level form field only, not inside a repeater.");
+                }
+            }
+        }
     }
 
     /**

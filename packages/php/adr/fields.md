@@ -22,7 +22,8 @@ domain: fields
   `nullable` always and `sometimes` once a value is stored; the client drops `required`
   from a stored secret's constraints. A required secret shows no Clear.
 - **Scope: top-level form fields** (layout containers included), read with the same
-  traversal as `RecordDefaults`. Not repeater rows, not modal forms loaded by `query()`.
+  traversal as `RecordDefaults`. A `secret()` inside a repeater throws rather than leak its
+  row value; modal forms loaded by `query()` are documented as out of scope.
 
 ## Why
 

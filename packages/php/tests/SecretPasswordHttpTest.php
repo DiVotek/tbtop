@@ -2,6 +2,7 @@
 
 use Illuminate\Testing\TestResponse;
 use Tbtop\Admin\Dsl\Fields\Password;
+use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Tests\ActionSkipValidationHttpTestCase;
 use Tbtop\Admin\Tests\Fixtures\SecretPasswordPage;
 
@@ -111,3 +112,8 @@ it('previews a numeric stored value as its string form', function (): void {
 
     expect($field->toNode()->jsonSerialize()['options']['secret'])->toBe(['filled' => true, 'preview' => '…42']);
 });
+
+it('refuses secret() inside a repeater, where its value would ship in the props', function (): void {
+    $s = new S;
+    $s->form('f', [$s->repeater('rows')->set('fields', [$s->password('key')->secret()])])->record(['rows' => [['key' => 'k']]])->toNode();
+})->throws(LogicException::class, 'top-level form field only');

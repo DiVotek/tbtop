@@ -151,4 +151,21 @@ describe("Password::secret()", () => {
 			preview: "…42",
 		});
 	});
+
+	test("secret() inside a repeater is refused, as its value would ship in the props", () => {
+		const view = definePage({
+			path: "nested",
+			title: "Nested",
+			view: (s) =>
+				s
+					.form("f", [s.repeater("rows").fields([s.password("key").secret()])])
+					.record({ rows: [{ key: "k" }] }),
+		});
+		const nested = createAdmin({ allowGuests: true, prefix: "/admin", pages: [view] });
+		return expect(
+			nested.handle(
+				new Request("http://x/admin/nested", { headers: { "x-inertia": "true" } }),
+			),
+		).rejects.toThrow("top-level form field only");
+	});
 });

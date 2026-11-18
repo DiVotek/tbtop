@@ -205,8 +205,9 @@ $s->form('settings', [
   `sometimes`) and still applies to a replacement; a required secret is never clearable, even
   with `clearable()`: it shows no Clear and the server drops its `null`. With
   nothing stored, `required()` works as on any field.
-- **Scope.** A top-level form field, including sections and tabs; not a repeater sub-field
-  nor a modal form loaded by `query()` (a modal's data is whatever the query returns, so keep
+- **Scope.** A top-level form field, including sections and tabs. On a repeater sub-field
+  `secret()` throws a `LogicException` when the form renders (its value would otherwise ship
+  in the row). Not for a modal form loaded by `query()` (a modal's data is whatever the query returns, so keep
   the secret out of it). A field without `secret()` behaves as before: whatever `record()`
   holds for it ships in the props.
 

@@ -6,7 +6,7 @@ import { DateField } from "./fields/temporal";
 import { isConditionMet } from "./inclusion";
 import { Node } from "./node";
 import { formatPhpDate } from "./phpDate";
-import { actionSearchDescendants, descendants, resolveActionNode } from "./walk";
+import { actionSearchDescendants, collectAll, descendants, resolveActionNode } from "./walk";
 
 type Record_ = Record<string, unknown>;
 
@@ -24,6 +24,7 @@ export function recordData(record: Record_, children: unknown[]): Record_ {
 
 /** SecretRecord::seed(): each secret() password learns what the raw record holds for it. */
 export function seedSecrets(record: Record_, children: unknown[]): void {
+	assertTopLevelSecrets(children);
 	const seeded = seedDefaults(record, children);
 	for (const field of secretFields(children)) {
 		field.seedStored(seeded[field.name] ?? null);
@@ -51,6 +52,18 @@ export function applySecretInput(input: Record_, children: unknown[]): Record_ {
 		}
 	}
 	return out;
+}
+
+/** A secret() inside a repeater row is neither seeded nor stripped: refuse it instead of leaking. */
+function assertTopLevelSecrets(children: unknown[]): void {
+	const top = new Set<unknown>(secretFields(children));
+	const all = collectAll(children, (c) => c instanceof Password && c.isSecret()) as Password[];
+	const nested = all.find((field) => !top.has(field));
+	if (nested !== undefined) {
+		throw new Error(
+			`password "${nested.name}": secret() works on a top-level form field only, not inside a repeater.`,
+		);
+	}
 }
 
 function secretFields(children: unknown[]): Password[] {
