@@ -279,16 +279,25 @@ describe("GroupedRows with a storage key", () => {
 	});
 
 	test("a toggle still works when storage writes fail", () => {
-		const setItem = Storage.prototype.setItem;
-		Storage.prototype.setItem = () => {
-			throw new Error("quota");
+		const real = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+		const failing = {
+			getItem: () => null,
+			setItem: () => {
+				throw new Error("quota");
+			},
 		};
+		Object.defineProperty(globalThis, "localStorage", {
+			configurable: true,
+			get: () => failing,
+		});
 		try {
 			const { getAllByTestId } = renderGrouped(false, true, KEY);
 			toggleAt(getAllByTestId, 0);
 			expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
 		} finally {
-			Storage.prototype.setItem = setItem;
+			if (real) {
+				Object.defineProperty(globalThis, "localStorage", real);
+			}
 		}
 	});
 
