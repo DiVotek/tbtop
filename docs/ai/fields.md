@@ -199,14 +199,15 @@ $s->form('settings', [
 - **Submit.** A field left alone, or opened with Replace and left empty, is not sent, so
   `$ctx->form` has no key for it and `$model->update($ctx->form)` keeps the stored value. A
   replacement arrives as the new string. A clear arrives as `null`, and only on a
-  `clearable()` field: elsewhere the server drops a `null` for the field, so an MCP agent or a
+  `clearable()` field (a hand-made `""` counts as `null`, as empty strings become `null`
+  before validation): elsewhere the server drops a `null` for the field, so an MCP agent or a
   hand-made request cannot wipe the secret by sending one.
 - **Rules.** `required()` holds while a stored secret is left alone (its rules gain
   `sometimes`) and still applies to a replacement; a required secret is never clearable, even
   with `clearable()`: it shows no Clear and the server drops its `null`. With
   nothing stored, `required()` works as on any field.
 - **Scope.** A top-level form field, including sections and tabs. On a repeater sub-field
-  `secret()` throws a `LogicException` when the form renders (its value would otherwise ship
+  `secret()` throws when the form renders (`LogicException` in PHP, `Error` in Node) (its value would otherwise ship
   in the row). Not for a modal form loaded by `query()` (a modal's data is whatever the query returns, so keep
   the secret out of it). A field without `secret()` behaves as before: whatever `record()`
   holds for it ships in the props.
