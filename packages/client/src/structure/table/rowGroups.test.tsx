@@ -278,6 +278,20 @@ describe("GroupedRows with a storage key", () => {
 		});
 	});
 
+	test("a toggle still works when storage writes fail", () => {
+		const setItem = Storage.prototype.setItem;
+		Storage.prototype.setItem = () => {
+			throw new Error("quota");
+		};
+		try {
+			const { getAllByTestId } = renderGrouped(false, true, KEY);
+			toggleAt(getAllByTestId, 0);
+			expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+		} finally {
+			Storage.prototype.setItem = setItem;
+		}
+	});
+
 	test("without a storage key nothing is written", () => {
 		const { getAllByTestId } = renderGrouped(false);
 		toggleAt(getAllByTestId, 0);

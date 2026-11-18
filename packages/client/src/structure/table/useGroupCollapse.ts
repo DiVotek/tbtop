@@ -4,7 +4,7 @@
  * user opened or closed; groups(..., collapsed: true) only seeds groups the
  * user has never toggled.
  */
-import { useReducer, useState } from "react";
+import { useState } from "react";
 
 /** Groups remembered per table; the oldest toggles drop off past this. */
 const MAX_REMEMBERED = 200;
@@ -27,22 +27,21 @@ type CollapseState = Readonly<Record<string, boolean>>;
  * another page) opens in the declared default.
  */
 export function useGroupCollapse(collapsedByDefault: boolean, storageKey?: string): GroupCollapse {
-	const [memory, setMemory] = useState<CollapseState>({});
-	const [, rerender] = useReducer((n: number) => n + 1, 0);
-	// Storage is the truth for a keyed table, read each render (a small map).
-	const state = storageKey ? readState(storageKey) : memory;
+	// This tab's toggles, tagged with their key: they still apply when storage is unavailable.
+	const [memory, setMemory] = useState<{ key?: string; state: CollapseState }>({ state: {} });
+	const own = memory.key === storageKey ? memory.state : {};
+	const state = storageKey ? { ...readState(storageKey), ...own } : own;
 	const isCollapsed = (value: unknown): boolean => state[groupKey(value)] ?? collapsedByDefault;
 	return {
 		isCollapsed,
 		toggle: (value) => {
+			const key = groupKey(value);
 			const collapsed = !isCollapsed(value);
-			if (!storageKey) {
-				setMemory((prev) => remember(prev, groupKey(value), collapsed));
-				return;
+			if (storageKey) {
+				// Merge into what storage holds now, so another tab's toggles are kept.
+				writeState(storageKey, remember(readState(storageKey), key, collapsed));
 			}
-			// Merge into what storage holds now, so another tab's toggles are kept.
-			writeState(storageKey, remember(readState(storageKey), groupKey(value), collapsed));
-			rerender();
+			setMemory({ key: storageKey, state: remember(own, key, collapsed) });
 		},
 	};
 }
