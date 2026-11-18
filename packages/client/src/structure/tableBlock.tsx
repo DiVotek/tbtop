@@ -18,7 +18,7 @@ import { SimplePagination } from "./table/simplePagination";
 import { TableError } from "./table/tableError";
 import { TableExportProvider } from "./table/tableExportContext";
 import { TableTabBar, TableToolbar, useFilterHandlers } from "./table/toolbar";
-import { useColumnLayout } from "./table/useColumnLayout";
+import { tableStateKey, useColumnLayout } from "./table/useColumnLayout";
 import { useColumnSearch } from "./table/useColumnSearch";
 import { countActiveFilters, useColumnVisibility } from "./table/useColumnVisibility";
 import { useFiltersAside } from "./table/useFiltersAside";
@@ -375,6 +375,17 @@ function TableBody(props: TableBodyProps) {
 							reorderRows={props.reorderRows}
 							onRefresh={props.onRefresh}
 							groups={props.groups}
+							groupsStorageKey={
+								props.groups
+									? tableStateKey(
+											props.columns,
+											props.tableName,
+											"groups",
+											props.groups.column,
+											"v1",
+										)
+									: undefined
+							}
 							summaries={props.summaries}
 							colSearchValues={colSearchValues}
 							onColSearchChange={handleColSearchChange}

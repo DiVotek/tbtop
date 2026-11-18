@@ -59,6 +59,8 @@ interface TableGridProps {
 	recordUrlNewTab?: boolean;
 	/** Partitions contiguous rows sharing a column's value under group headers. */
 	groups?: TableGroupsConfig;
+	/** localStorage key for the collapsed groups; omitted keeps them in memory only. */
+	groupsStorageKey?: string;
 	/** Per-column search values, keyed by column name. */
 	colSearchValues?: Record<string, string>;
 	onColSearchChange?: (column: string, value: string) => void;
@@ -271,6 +273,7 @@ function renderGroupedRows(
 			colSpan={colSpan}
 			collapsible={props.groups?.collapsible === true || props.groups?.collapsed === true}
 			collapsedByDefault={props.groups?.collapsed === true}
+			storageKey={props.groupsStorageKey}
 			renderRow={(row) => renderRow(row, props, false)}
 			renderSummary={
 				hasSummaries(props.columns)

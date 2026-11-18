@@ -2,7 +2,7 @@
  * Row grouping: partitionRowGroups contiguous-run partitioning,
  * GroupHeaderRow's rendered label/colSpan, and GroupedRows' collapse toggle.
  */
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterEach, beforeAll, describe, expect, test } from "bun:test";
 import { fireEvent, render } from "@testing-library/react";
 import { ensureBuiltinsRegistered } from "../../render/registerBuiltins";
 import type { TableColumn } from "../types";
@@ -133,7 +133,7 @@ const GROUPED = [
 	{ id: "3", status: "published" },
 ];
 
-function renderGrouped(collapsedByDefault: boolean, collapsible = true) {
+function renderGrouped(collapsedByDefault: boolean, collapsible = true, storageKey?: string) {
 	return render(
 		<table>
 			<tbody>
@@ -143,6 +143,7 @@ function renderGrouped(collapsedByDefault: boolean, collapsible = true) {
 					colSpan={2}
 					collapsible={collapsible}
 					collapsedByDefault={collapsedByDefault}
+					storageKey={storageKey}
 					renderRow={(row) => (
 						<tr key={String(row.id)} data-testid="data-row">
 							<td>{String(row.id)}</td>
@@ -192,5 +193,131 @@ describe("GroupedRows", () => {
 		}
 		fireEvent.click(publishedToggle);
 		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+});
+
+describe("GroupedRows with a storage key", () => {
+	const KEY = "tbtop:table.posts.groups.status.v1";
+
+	afterEach(() => {
+		localStorage.clear();
+	});
+
+	function toggleAt(getAllByTestId: (id: string) => HTMLElement[], index: number): void {
+		const toggle = getAllByTestId("table-group-toggle")[index];
+		if (!toggle) {
+			throw new Error("missing toggle");
+		}
+		fireEvent.click(toggle);
+	}
+
+	test("a group the user opened stays open after a remount", () => {
+		const first = renderGrouped(true, true, KEY);
+		toggleAt(first.getAllByTestId, 1);
+		first.unmount();
+
+		const { getAllByTestId } = renderGrouped(true, true, KEY);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+
+	test("a group the user closed stays closed after a remount", () => {
+		const first = renderGrouped(false, true, KEY);
+		toggleAt(first.getAllByTestId, 0);
+		first.unmount();
+
+		const { getAllByTestId } = renderGrouped(false, true, KEY);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+
+	test("the stored state is explicit, so it survives a change of the declared default", () => {
+		localStorage.setItem(KEY, JSON.stringify([['"published"', false]]));
+		const { getAllByTestId } = renderGrouped(true, true, KEY);
+		expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+	});
+
+	test("malformed storage falls back to the declared default", () => {
+		localStorage.setItem(KEY, "not json");
+		const { queryAllByTestId } = renderGrouped(true, true, KEY);
+		expect(queryAllByTestId("data-row")).toHaveLength(0);
+	});
+
+	test("a new storage key on a mounted table reads its own state, not the old key's", () => {
+		const view = renderGrouped(false, true, KEY);
+		toggleAt(view.getAllByTestId, 0);
+		const otherKey = "tbtop:table.posts.groups.author.v1";
+		view.rerender(
+			<table>
+				<tbody>
+					<GroupedRows
+						rows={GROUPED}
+						column={textCol}
+						colSpan={2}
+						collapsible
+						collapsedByDefault={false}
+						storageKey={otherKey}
+						renderRow={(row) => (
+							<tr key={String(row.id)} data-testid="data-row">
+								<td>{String(row.id)}</td>
+							</tr>
+						)}
+					/>
+				</tbody>
+			</table>,
+		);
+		expect(view.getAllByTestId("data-row")).toHaveLength(3);
+		expect(localStorage.getItem(otherKey)).toBeNull();
+	});
+
+	test("a toggle keeps groups another tab stored meanwhile", () => {
+		const { getAllByTestId } = renderGrouped(false, true, KEY);
+		localStorage.setItem(KEY, JSON.stringify([['"published"', true]]));
+		toggleAt(getAllByTestId, 0);
+		expect(JSON.parse(localStorage.getItem(KEY) ?? "[]")).toEqual([
+			['"published"', true],
+			['"draft"', true],
+		]);
+	});
+
+	test("a toggle still works when storage writes fail", () => {
+		const real = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+		const failing = {
+			getItem: () => null,
+			setItem: () => {
+				throw new Error("quota");
+			},
+		};
+		Object.defineProperty(globalThis, "localStorage", {
+			configurable: true,
+			get: () => failing,
+		});
+		try {
+			const { getAllByTestId } = renderGrouped(false, true, KEY);
+			toggleAt(getAllByTestId, 0);
+			expect(getAllByTestId("data-row").map((r) => r.textContent)).toEqual(["3"]);
+		} finally {
+			if (real) {
+				Object.defineProperty(globalThis, "localStorage", real);
+			}
+		}
+	});
+
+	test("past the cap the least recently toggled group is dropped, numeric keys included", () => {
+		// 200 numeric group keys, oldest first: "200" was toggled first, "1" last.
+		const stored = Array.from({ length: 200 }, (_, i) => [String(200 - i), true]);
+		localStorage.setItem(KEY, JSON.stringify(stored));
+		const { getAllByTestId } = renderGrouped(false, true, KEY);
+		toggleAt(getAllByTestId, 0);
+		const keys = (JSON.parse(localStorage.getItem(KEY) ?? "[]") as [string, boolean][]).map(
+			([key]) => key,
+		);
+		expect(keys).toHaveLength(200);
+		expect(keys).not.toContain("200");
+		expect(keys.slice(-2)).toEqual(["1", '"draft"']);
+	});
+
+	test("without a storage key nothing is written", () => {
+		const { getAllByTestId } = renderGrouped(false);
+		toggleAt(getAllByTestId, 0);
+		expect(localStorage.length).toBe(0);
 	});
 });
