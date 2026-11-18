@@ -4,7 +4,7 @@
  * user opened or closed; groups(..., collapsed: true) only seeds groups the
  * user has never toggled.
  */
-import { useState } from "react";
+import { useReducer, useState } from "react";
 
 /** Groups remembered per table; the oldest toggles drop off past this. */
 const MAX_REMEMBERED = 200;
@@ -27,28 +27,22 @@ type CollapseState = Readonly<Record<string, boolean>>;
  * another page) opens in the declared default.
  */
 export function useGroupCollapse(collapsedByDefault: boolean, storageKey?: string): GroupCollapse {
-	const [stored, setStored] = useState(() => ({
-		key: storageKey,
-		state: storageKey ? readState(storageKey) : {},
-	}));
-	// A new key (another grouped column) reads its own stored state.
-	const current =
-		stored.key === storageKey
-			? stored
-			: { key: storageKey, state: storageKey ? readState(storageKey) : {} };
-	if (current !== stored) {
-		setStored(current);
-	}
-	const isCollapsed = (value: unknown): boolean =>
-		current.state[groupKey(value)] ?? collapsedByDefault;
+	const [memory, setMemory] = useState<CollapseState>({});
+	const [, rerender] = useReducer((n: number) => n + 1, 0);
+	// Storage is the truth for a keyed table, read each render (a small map).
+	const state = storageKey ? readState(storageKey) : memory;
+	const isCollapsed = (value: unknown): boolean => state[groupKey(value)] ?? collapsedByDefault;
 	return {
 		isCollapsed,
 		toggle: (value) => {
-			const next = remember(current.state, groupKey(value), !isCollapsed(value));
-			if (storageKey) {
-				writeState(storageKey, next);
+			const collapsed = !isCollapsed(value);
+			if (!storageKey) {
+				setMemory((prev) => remember(prev, groupKey(value), collapsed));
+				return;
 			}
-			setStored({ key: storageKey, state: next });
+			// Merge into what storage holds now, so another tab's toggles are kept.
+			writeState(storageKey, remember(readState(storageKey), groupKey(value), collapsed));
+			rerender();
 		},
 	};
 }

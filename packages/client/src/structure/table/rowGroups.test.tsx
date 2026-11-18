@@ -268,6 +268,16 @@ describe("GroupedRows with a storage key", () => {
 		expect(localStorage.getItem(otherKey)).toBeNull();
 	});
 
+	test("a toggle keeps groups another tab stored meanwhile", () => {
+		const { getAllByTestId } = renderGrouped(false, true, KEY);
+		localStorage.setItem(KEY, JSON.stringify({ '"published"': true }));
+		toggleAt(getAllByTestId, 0);
+		expect(JSON.parse(localStorage.getItem(KEY) ?? "{}")).toEqual({
+			'"published"': true,
+			'"draft"': true,
+		});
+	});
+
 	test("without a storage key nothing is written", () => {
 		const { getAllByTestId } = renderGrouped(false);
 		toggleAt(getAllByTestId, 0);

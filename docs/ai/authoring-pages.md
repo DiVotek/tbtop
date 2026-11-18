@@ -724,7 +724,8 @@ every group closed (and implies `collapsible`), so the table opens as a list of 
 The open/closed state survives a refetch, poll or page change for the same group value,
 and is remembered per table in the browser's localStorage (key
 `tbtop:table.<name>.groups.<column>.v1`), so a reload keeps the groups each user opened or
-closed. `collapsed: true` only sets the default for a group the user has never toggled. It requires `->defaultSort($column, ...)` to already be set (throws
+closed. `collapsed: true` only sets the default for a group the user has never toggled.
+It requires `->defaultSort($column, ...)` to already be set (throws
 `InvalidArgumentException` otherwise) — grouping only makes sense on a sorted column,
 since it partitions *contiguous* runs, not a full re-bucketing.
 
