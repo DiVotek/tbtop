@@ -241,6 +241,33 @@ describe("GroupedRows with a storage key", () => {
 		expect(queryAllByTestId("data-row")).toHaveLength(0);
 	});
 
+	test("a new storage key on a mounted table reads its own state, not the old key's", () => {
+		const view = renderGrouped(false, true, KEY);
+		toggleAt(view.getAllByTestId, 0);
+		const otherKey = "tbtop:table.posts.groups.author.v1";
+		view.rerender(
+			<table>
+				<tbody>
+					<GroupedRows
+						rows={GROUPED}
+						column={textCol}
+						colSpan={2}
+						collapsible
+						collapsedByDefault={false}
+						storageKey={otherKey}
+						renderRow={(row) => (
+							<tr key={String(row.id)} data-testid="data-row">
+								<td>{String(row.id)}</td>
+							</tr>
+						)}
+					/>
+				</tbody>
+			</table>,
+		);
+		expect(view.getAllByTestId("data-row")).toHaveLength(3);
+		expect(localStorage.getItem(otherKey)).toBeNull();
+	});
+
 	test("without a storage key nothing is written", () => {
 		const { getAllByTestId } = renderGrouped(false);
 		toggleAt(getAllByTestId, 0);

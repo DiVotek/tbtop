@@ -27,19 +27,28 @@ type CollapseState = Readonly<Record<string, boolean>>;
  * another page) opens in the declared default.
  */
 export function useGroupCollapse(collapsedByDefault: boolean, storageKey?: string): GroupCollapse {
-	const [state, setState] = useState<CollapseState>(() =>
-		storageKey ? readState(storageKey) : {},
-	);
-	const isCollapsed = (value: unknown): boolean => state[groupKey(value)] ?? collapsedByDefault;
+	const [stored, setStored] = useState(() => ({
+		key: storageKey,
+		state: storageKey ? readState(storageKey) : {},
+	}));
+	// A new key (another grouped column) reads its own stored state.
+	const current =
+		stored.key === storageKey
+			? stored
+			: { key: storageKey, state: storageKey ? readState(storageKey) : {} };
+	if (current !== stored) {
+		setStored(current);
+	}
+	const isCollapsed = (value: unknown): boolean =>
+		current.state[groupKey(value)] ?? collapsedByDefault;
 	return {
 		isCollapsed,
 		toggle: (value) => {
-			const key = groupKey(value);
-			const next = remember(state, key, !isCollapsed(value));
+			const next = remember(current.state, groupKey(value), !isCollapsed(value));
 			if (storageKey) {
 				writeState(storageKey, next);
 			}
-			setState(next);
+			setStored({ key: storageKey, state: next });
 		},
 	};
 }
