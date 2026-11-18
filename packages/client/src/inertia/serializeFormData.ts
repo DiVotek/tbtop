@@ -11,15 +11,45 @@ export function serializeFormData(data: Bag, formNode: StructureNode | undefined
 	return serializeScope(data, structureChildren(formNode.options as Bag));
 }
 
+/**
+ * The form's secret() passwords (top level and layout containers, as the server
+ * reads them). After a successful submit they go back to "left alone": the value
+ * typed into one is stored now, and must not stay in the input.
+ */
+export function secretFieldNames(formNode: StructureNode | undefined): string[] {
+	return formNode ? secretNamesIn(structureChildren(formNode.options as Bag)) : [];
+}
+
+function secretNamesIn(nodes: StructureNode[]): string[] {
+	return nodes.flatMap((node) => {
+		if (!node.name) {
+			return secretNamesIn(structureChildren(node.options as Bag));
+		}
+		return isSecretNode(node) ? [node.name] : [];
+	});
+}
+
+function isSecretNode(node: StructureNode): boolean {
+	return node.kind === "password" && isBag((node.options as Bag | undefined)?.secret);
+}
+
 function serializeScope(scope: Bag, nodes: StructureNode[]): Bag {
-	const out = { ...scope };
+	let out = { ...scope };
 	for (const node of nodes) {
 		if (!node.name) {
-			Object.assign(out, serializeScope(out, structureChildren(node.options as Bag)));
+			out = serializeScope(out, structureChildren(node.options as Bag));
 			continue;
 		}
-		if (node.name in out) {
-			out[node.name] = serializeNodeValue(node, out[node.name]);
+		if (!(node.name in out)) {
+			continue;
+		}
+		const value = serializeNodeValue(node, out[node.name]);
+		// A secret() password left alone serializes to undefined and is not submitted:
+		// a FormData body would otherwise send it as "", which the server reads as null.
+		if (value === undefined && isSecretNode(node)) {
+			delete out[node.name];
+		} else {
+			out[node.name] = value;
 		}
 	}
 	return out;

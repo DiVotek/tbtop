@@ -158,11 +158,14 @@ No methods beyond the shared base — see [Every field](#every-field).
 | `alpha(): static` | Letters only. |
 | `alphaDash(): static` | Letters, numbers, dashes and underscores only. |
 | `alphaNum(): static` | Letters and numbers only. |
+| `clearable(bool $state = true): static` | Adds a Clear button to a secret() field; clearing submits `null`. Without it a `null` for this field is dropped on the server, so the stored value can only be replaced. Implies secret(). Not shown on a required() field. |
 | `endsWith(string ...$values): static` | Value must end with one of the given substrings. |
 | `length(int $length): static` | Exact character count. |
 | `maxLength(int $length): static` | Maximum character count. |
 | `minLength(int $length): static` | Minimum character count. |
+| `preview(Closure $fn): static` | Server closure `fn (string $value): string` shown beside the "Set" badge, e.g. `fn ($v) => '…'.substr($v, -4)`. Only its result reaches the browser. Implies secret(). |
 | `regex(string $pattern): static` | Match a PCRE pattern. Passed as an array element so the rule collector does not split on '\|' inside the pattern. |
+| `secret(bool $state = true): static` | Keeps a stored value out of the browser: the record's value never ships, the form shows whether one is set with a Replace button, and a field the user leaves alone is absent from the submitted data — so `$model->update($ctx->form)` keeps the stored secret. For a top-level form field (sections and tabs included), not a repeater sub-field. |
 | `startsWith(string ...$values): static` | Value must start with one of the given substrings. |
 
 ## Radio (radio)

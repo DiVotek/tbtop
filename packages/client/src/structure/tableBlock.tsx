@@ -85,15 +85,15 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 		[rawReorderRows, ctx],
 	);
 
-	if (state.kind === "loading") {
-		return <>{options.loading ?? <TableSkeleton />}</>;
-	}
 	if (state.kind === "error") {
 		const fallback = <TableError message={state.message} onRetry={refetch} />;
 		return <>{renderAsyncError(options.error, state.message, fallback)}</>;
 	}
 
-	const { rows, total, hasMore, tabCounts, summaries } = normalizeRows(state.data);
+	// First load keeps the chrome (header actions, tabs, toolbar) mounted and
+	// swaps only the grid for the skeleton, so nothing jumps when rows arrive.
+	const loading = state.kind === "loading";
+	const { rows, total, hasMore, tabCounts, summaries } = normalizeRows(loading ? [] : state.data);
 	const exportUrl = options.exportUrl;
 	const exportTarget = exportUrl ? { tableName, columns: options.columns, exportUrl } : null;
 
@@ -104,6 +104,7 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 				total={total}
 				hasMore={hasMore}
 				isReloading={state.kind === "reloading"}
+				loadingSlot={loading ? (options.loading ?? <TableSkeleton />) : undefined}
 				columns={options.columns}
 				rowActions={options.rowActions}
 				bulkActions={options.bulkActions}
@@ -111,7 +112,7 @@ function StatefulTableBlock({ options }: TableRenderProps) {
 				onChangeParams={mergeParams}
 				onRefresh={refetch}
 				onPoll={refetchSilently}
-				poll={options.poll}
+				poll={loading ? undefined : options.poll}
 				searchable={options.searchable}
 				filters={options.filters}
 				filtersIn={options.filtersIn ?? "modal"}
@@ -349,48 +350,50 @@ function TableBody(props: TableBodyProps) {
 					)}
 
 					{/* Embedded tables have no toolbar to reset from, so they don't resize. */}
-					<ColumnSizingProvider value={props.embedded ? undefined : sizing}>
-						<TableGrid
-							rows={props.rows}
-							columns={visibleCols}
-							rowActions={props.rowActions ?? []}
-							selectedIds={ctrl.selectedIds}
-							onToggle={ctrl.toggleSelection}
-							onSelectAll={ctrl.selectAll}
-							onClearSelection={ctrl.clearSelection}
-							hasBulk={hasBulk}
-							hasRowActions={hasRowActions}
-							sort={props.queryParams.sort}
-							onSort={handleSort}
-							isReloading={props.isReloading}
-							hasActiveFilters={hasActiveFilters}
-							onResetFilters={handleResetFilters}
-							rowClick={props.rowClick}
-							recordUrl={props.recordUrl}
-							recordUrlNewTab={props.recordUrlNewTab}
-							emptyState={props.emptyState}
-							saveCell={props.saveCell}
-							reorderColumn={props.reorderColumn}
-							reorderEnabled={reorderEnabled}
-							reorderRows={props.reorderRows}
-							onRefresh={props.onRefresh}
-							groups={props.groups}
-							groupsStorageKey={
-								props.groups
-									? tableStateKey(
-											props.columns,
-											props.tableName,
-											"groups",
-											props.groups.column,
-											"v1",
-										)
-									: undefined
-							}
-							summaries={props.summaries}
-							colSearchValues={colSearchValues}
-							onColSearchChange={handleColSearchChange}
-						/>
-					</ColumnSizingProvider>
+					{props.loadingSlot ?? (
+						<ColumnSizingProvider value={props.embedded ? undefined : sizing}>
+							<TableGrid
+								rows={props.rows}
+								columns={visibleCols}
+								rowActions={props.rowActions ?? []}
+								selectedIds={ctrl.selectedIds}
+								onToggle={ctrl.toggleSelection}
+								onSelectAll={ctrl.selectAll}
+								onClearSelection={ctrl.clearSelection}
+								hasBulk={hasBulk}
+								hasRowActions={hasRowActions}
+								sort={props.queryParams.sort}
+								onSort={handleSort}
+								isReloading={props.isReloading}
+								hasActiveFilters={hasActiveFilters}
+								onResetFilters={handleResetFilters}
+								rowClick={props.rowClick}
+								recordUrl={props.recordUrl}
+								recordUrlNewTab={props.recordUrlNewTab}
+								emptyState={props.emptyState}
+								saveCell={props.saveCell}
+								reorderColumn={props.reorderColumn}
+								reorderEnabled={reorderEnabled}
+								reorderRows={props.reorderRows}
+								onRefresh={props.onRefresh}
+								groups={props.groups}
+								groupsStorageKey={
+									props.groups
+										? tableStateKey(
+												props.columns,
+												props.tableName,
+												"groups",
+												props.groups.column,
+												"v1",
+											)
+										: undefined
+								}
+								summaries={props.summaries}
+								colSearchValues={colSearchValues}
+								onColSearchChange={handleColSearchChange}
+							/>
+						</ColumnSizingProvider>
+					)}
 				</AsideFiltersLayout>
 
 				{showSimplePagination && (

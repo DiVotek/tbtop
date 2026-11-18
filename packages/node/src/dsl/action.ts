@@ -4,6 +4,7 @@ import { currentContext } from "./context";
 import { resolvedMeta } from "./meta";
 import { HasWhen, mixin, WithMeta } from "./mixin";
 import { includes, Node } from "./node";
+import { assertNoQueryModalSecret } from "./record";
 
 const MODAL_SIZES = ["sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "full"];
 const BUTTON_SIZES = ["sm", "md", "lg"];
@@ -244,6 +245,7 @@ export class ActionBuilder {
 		}
 		if (this.queryFn !== undefined) {
 			modalOnly("query");
+			assertNoQueryModalSecret(spec.body, this.name);
 			spec = { ...spec, query: true, queryNeeds: this.queryNeeds };
 		}
 		if (this.newTab && spec.type === "visit") {

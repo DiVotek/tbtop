@@ -41,12 +41,26 @@ function collectInto(
 	}
 	const isTranslatable = opts.translatable === true;
 	if (opts.constraints) {
-		acc[fieldKey(node.name, isTranslatable, scope)] = opts.constraints as FieldConstraints;
+		acc[fieldKey(node.name, isTranslatable, scope)] = ownConstraints(opts);
 	}
 	if (isTranslatable) {
 		return;
 	}
 	collectChildren(opts, acc, { ...scope, prefix: `${scope.prefix}${node.name}.*.` });
+}
+
+/**
+ * A stored secret() password is left out of the submit until replaced, so its
+ * `required` holds server-side (`sometimes`) — the client must not flag it either.
+ */
+function ownConstraints(opts: Bag): FieldConstraints {
+	const constraints = opts.constraints as FieldConstraints;
+	const secret = opts.secret as { filled?: unknown } | undefined;
+	if (secret?.filled !== true || !constraints.required) {
+		return constraints;
+	}
+	const { required: _required, ...rest } = constraints;
+	return rest;
 }
 
 function collectChildren(opts: Bag, acc: Record<string, FieldConstraints>, scope: Scope): void {

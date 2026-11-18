@@ -11,7 +11,8 @@ use Tbtop\Admin\Pages\Page;
 
 /**
  * McpContentTest: richtext documents at the top level and inside repeater rows, and an
- * upload inside a row whose stored value an agent may echo but not change.
+ * upload inside a row whose stored value an agent may echo but not change, and a secret()
+ * password an agent cannot wipe by sending null.
  */
 class McpContentPage extends Page
 {
@@ -33,8 +34,9 @@ class McpContentPage extends Page
                     Embed::make('pullQuote')->label('Pull quote')->fields([$s->text('author')->required()]),
                 ]),
                 $s->repeater('sections')->fields([$s->text('heading'), $s->media('image'), $s->richtext('content')]),
+                $s->password('token')->secret(),
             ])
-                ->record(['sections' => [['heading' => 'Intro', 'image' => 'intro.png', 'content' => null]]])
+                ->record(['sections' => [['heading' => 'Intro', 'image' => 'intro.png', 'content' => null]], 'token' => 'tok_stored'])
                 ->onSubmit(static function (ActionCtx $ctx): Effects {
                     McpPage::$ran['post'] = $ctx->form;
 

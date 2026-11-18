@@ -214,13 +214,26 @@ export function readEffects(raw: unknown): ServerEffect[] {
  * submitted values are committed, not reset: onSuccess can run before React
  * commits fresh Inertia props, so a plain reset would visibly roll successful
  * edits back until reload. The later props sync still replaces this baseline
- * with the canonical server record.
+ * with the canonical server record. `secretFields` are dropped from the
+ * committed values (see secretFieldNames).
  */
-export function settleSubmittedForm(form: ClientActionContext["form"], flash: unknown): void {
+export function settleSubmittedForm(
+	form: ClientActionContext["form"],
+	flash: unknown,
+	secretFields: string[] = [],
+): void {
 	const effects = readEffects((flash as Record<string, unknown> | undefined)?.["tbtop.effects"]);
 	if (effects.some((effect) => effect.kind === "resetForm")) {
 		form?.reset();
 		return;
 	}
-	form?.reset(form.data);
+	if (!form) {
+		return;
+	}
+	// A secret() password's submitted value is stored now: back to "left alone".
+	const committed = { ...form.data };
+	for (const name of secretFields) {
+		delete committed[name];
+	}
+	form.reset(committed);
 }

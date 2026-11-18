@@ -97,6 +97,24 @@ const extra = [
 					.query(() => memoryQuery(() => [] as Row[])),
 			]),
 	}),
+	definePage({
+		path: "mcp-secret",
+		title: "Keys",
+		view: (s) =>
+			s.stack([
+				s
+					.form("keys", [
+						s.password("token").secret(),
+						s.action("save").handle(
+							(ctx) => {
+								ran.secretSave = ctx.form;
+							},
+							["form"],
+						),
+					])
+					.record({ token: "tok_stored" }),
+			]),
+	}),
 ];
 
 const admin = createAdmin({
@@ -224,6 +242,7 @@ describe("search", () => {
 			"broken",
 			"tools",
 			"mcp-modal",
+			"mcp-secret",
 		]);
 		expect(listed[2]).toEqual({
 			page: "posts/$post/edit",
@@ -417,6 +436,14 @@ describe("execute", () => {
 			"Server error; see the application log.",
 		);
 		expect(reported.length).toBe(before + 1);
+	});
+
+	test("a secret()'s stored value never shows, and an agent's null for it is dropped", async () => {
+		const search = await call("search", { page: "mcp-secret", values: true });
+		expect(JSON.stringify(search.data)).not.toContain("tok_stored");
+		const saved = await call("execute", { id: "mcp-secret:save", form: { token: null } });
+		expect(saved.isError).toBe(false);
+		expect(ran.secretSave).toEqual({});
 	});
 });
 
