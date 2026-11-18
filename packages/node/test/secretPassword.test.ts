@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { createAdmin, definePage, type InertiaPage } from "../src";
+import { Password } from "../src/dsl/fields/strings";
 
 let submitted: Record<string, unknown> | null = null;
 let actionForm: Record<string, unknown> | null = null;
@@ -138,5 +139,16 @@ describe("Password::secret()", () => {
 			payload: { form: { pin: null, webhook: null, fresh: "x" } },
 		});
 		expect(actionForm).toEqual({ webhook: null, fresh: "x" });
+	});
+
+	test("a numeric stored value previews as its string form", () => {
+		const field = new Password("pin").preview((v) => `…${v.slice(-2)}`);
+		field.seedStored(4242);
+		expect(
+			(field.toNode().toJSON() as { options: { secret: unknown } }).options.secret,
+		).toEqual({
+			filled: true,
+			preview: "…42",
+		});
 	});
 });

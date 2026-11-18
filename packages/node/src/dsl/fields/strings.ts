@@ -144,8 +144,10 @@ export class Password<N extends string = string> extends Field<N, string | null>
 		if (this.isClearable()) {
 			state.clearable = true;
 		}
-		if (this.previewFn !== undefined && typeof this.stored === "string" && this.stored !== "") {
-			const text: unknown = this.previewFn(this.stored);
+		// A numeric column (a PIN) previews as its string form.
+		const stored = typeof this.stored === "number" ? String(this.stored) : this.stored;
+		if (this.previewFn !== undefined && typeof stored === "string" && stored !== "") {
+			const text: unknown = this.previewFn(stored);
 			if (typeof text !== "string") {
 				throw new TypeError(`password "${this.name}": preview() must return a string.`);
 			}

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "../i18n/i18n";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { fieldLabelId } from "./fieldChrome";
 
 /**
  * Wire state of a `secret()` password (Password.php): whether the record holds
@@ -77,7 +78,12 @@ export function SecretStoredView({
 		</>
 	);
 	return (
-		<div className="flex items-center gap-2" data-testid="secret-stored">
+		<div
+			role="group"
+			aria-labelledby={fieldLabelId(id)}
+			className="flex items-center gap-2"
+			data-testid="secret-stored"
+		>
 			<SecretStatusBox id={id}>{status}</SecretStatusBox>
 			{cleared ? (
 				<SecretButton

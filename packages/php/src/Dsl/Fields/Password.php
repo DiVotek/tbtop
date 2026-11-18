@@ -134,10 +134,12 @@ final class Password extends Field
 
     private function previewText(): ?string
     {
-        if ($this->preview === null || ! is_string($this->stored) || $this->stored === '') {
+        // An integer or float column (a numeric PIN) previews as its string form.
+        $stored = is_int($this->stored) || is_float($this->stored) ? (string) $this->stored : $this->stored;
+        if ($this->preview === null || ! is_string($stored) || $stored === '') {
             return null;
         }
-        $text = ($this->preview)($this->stored);
+        $text = ($this->preview)($stored);
         if (! is_string($text)) {
             throw new InvalidArgumentException("password \"{$this->name}\": preview() must return a string.");
         }

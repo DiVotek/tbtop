@@ -104,3 +104,10 @@ it('never clears a required secret, even one marked clearable()', function (): v
     expect(SecretPasswordPage::$submitted)->toBe(['fresh' => 'x'])
         ->and(Password::make('t')->clearable()->required()->isClearable())->toBeFalse();
 });
+
+it('previews a numeric stored value as its string form', function (): void {
+    $field = Password::make('pin')->preview(fn (string $v): string => '…'.substr($v, -2));
+    $field->seedStored(4242);
+
+    expect($field->toNode()->jsonSerialize()['options']['secret'])->toBe(['filled' => true, 'preview' => '…42']);
+});

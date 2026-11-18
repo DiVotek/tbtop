@@ -44,6 +44,8 @@ describe("secret() password", () => {
 		expect(getByText("Set")).toBeTruthy();
 		expect(getByText("…4242")).toBeTruthy();
 		expect(container.querySelector("input")).toBeNull();
+		const row = container.querySelector("[role=group]");
+		expect(row?.getAttribute("aria-labelledby")).toBe("api_key-label");
 	});
 
 	test("Replace opens an empty input; Cancel goes back to keeping the stored value", async () => {
