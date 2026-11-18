@@ -574,6 +574,13 @@ and the record-URL row link.
   plus the pagination footer, for a table sitting inside a card next to other content.
   Rows, badges, `recordUrl` and `perPage` still apply.
 
+**Yes / no / any on a boolean column** — `Radio::make('is_published')->ternary()->inline()`.
+"Any" carries an empty value, so it is selected on first load, never narrows the query and
+drops the filter from the URL; "Yes"/"No" map to `where(name, '1'|'0')`. Pass labels for a
+non-English panel (`ternary('Alle', 'Ja', 'Nein')`). A `Boolean` filter is a switch: once
+turned on and off it sends `false`, so use it only for an "only X" flag. For a yes/no that
+is a condition rather than a column, add `filterUsing()` (it receives `'1'` or `'0'`).
+
 **Active-filter chips** — every applied filter shows as a chip under the toolbar
 (`Status: Published, Draft`), with a × that drops that one filter; two or more chips add a
 "Clear filters" link that drops them all and keeps the search. There is no PHP API: the

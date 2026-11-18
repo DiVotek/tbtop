@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Schema;
 use Tbtop\Admin\Dsl\Fields\Boolean;
 use Tbtop\Admin\Dsl\Fields\Daterange;
 use Tbtop\Admin\Dsl\Fields\Field;
+use Tbtop\Admin\Dsl\Fields\Radio;
 use Tbtop\Admin\Dsl\Fields\Select;
 use Tbtop\Admin\Dsl\Fields\Tags;
 use Tbtop\Admin\Dsl\Fields\Text;
@@ -210,3 +211,15 @@ it('TableFilter: unknown kind without filterUsing throws at apply time', functio
     };
     TableFilterApplier::apply([$field], ['custom_field' => 'value'], $builder);
 })->throws(InvalidArgumentException::class);
+
+// radio ternary() → Any leaves the query alone, Yes/No narrow on the boolean column
+it('TableFilter: ternary radio filters yes, no, and any', function (string $value, array $titles): void {
+    $builder = DB::table('items');
+    TableFilterApplier::apply([Radio::make('featured')->ternary()], ['featured' => $value], $builder);
+
+    expect($builder->get()->pluck('title')->all())->toBe($titles);
+})->with([
+    'any' => ['', ['Alpha post', 'Beta draft', 'Gamma post']],
+    'yes' => ['1', ['Alpha post']],
+    'no' => ['0', ['Beta draft', 'Gamma post']],
+]);

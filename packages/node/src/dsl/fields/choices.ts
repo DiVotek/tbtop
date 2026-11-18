@@ -39,6 +39,22 @@ export class Radio<N extends string = string, T = string> extends Field<N, T | n
 		}
 		return this as WithValue<this, "1" | "0" | null>;
 	}
+
+	/**
+	 * Any/Yes/No shorthand, the three-state filter on a boolean column:
+	 * "Any" is the empty value, so it never narrows the query. A no-op once
+	 * options() is set (Radio::ternary).
+	 */
+	ternary(any = "Any", yes = "Yes", no = "No"): WithValue<this, "1" | "0" | null> {
+		if (this.optionValue("options") === undefined) {
+			this.options([
+				{ value: "", label: any },
+				{ value: "1", label: yes },
+				{ value: "0", label: no },
+			]);
+		}
+		return this as WithValue<this, "1" | "0" | null>;
+	}
 }
 
 /** A checkbox per option; submits the checked values (CheckboxList.php). */
