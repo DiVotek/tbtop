@@ -41,17 +41,41 @@ function stripSecrets(record: Record_, children: unknown[]): Record_ {
 }
 
 /**
- * SecretRecord::applyInput(): a secret() password's `null` is dropped unless the
- * field is clearable(), so the key is absent as for a field left alone.
+ * SecretRecord::applyInput(): a secret() password's `null` (or `""`, which counts
+ * as null even without emptyToNull) is dropped unless the field is clearable(),
+ * so the key is absent as for a field left alone.
  */
 export function applySecretInput(input: Record_, children: unknown[]): Record_ {
 	const out = { ...input };
 	for (const field of secretFields(children)) {
-		if (Object.hasOwn(out, field.name) && out[field.name] === null && !field.isClearable()) {
+		if (!Object.hasOwn(out, field.name)) {
+			continue;
+		}
+		if (out[field.name] === "") {
+			out[field.name] = null;
+		}
+		if (out[field.name] === null && !field.isClearable()) {
 			delete out[field.name];
 		}
 	}
 	return out;
+}
+
+/**
+ * SecretRecord::assertNoQueryModalSecret(): a query() modal's form is filled from
+ * whatever the query returns, never seeded or stripped, so a secret() there would
+ * ship its value: refuse it.
+ */
+export function assertNoQueryModalSecret(body: unknown, action: string): void {
+	const fields = (body as { getFields?: () => unknown[] } | null)?.getFields?.() ?? [];
+	const found = collectAll(fields, (c) => c instanceof Password && c.isSecret())[0] as
+		| Password
+		| undefined;
+	if (found !== undefined) {
+		throw new Error(
+			`password "${found.name}": secret() does not work in a modal form loaded by query() (action "${action}").`,
+		);
+	}
 }
 
 /** A secret() inside a repeater row is neither seeded nor stripped: refuse it instead of leaking. */

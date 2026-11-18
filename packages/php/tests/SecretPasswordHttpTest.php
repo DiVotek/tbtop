@@ -124,6 +124,15 @@ it('previews a numeric stored value as its string form', function (): void {
     expect($field->toNode()->jsonSerialize()['options']['secret'])->toBe(['filled' => true, 'preview' => '…42']);
 });
 
+it('refuses secret() in a modal form loaded by query(), where its value would ship', function (): void {
+    $s = new S;
+    $action = $s->action('edit')
+        ->modal('Edit', $s->form('edit', [$s->password('key')->secret()]))
+        ->query(fn (): array => ['key' => 'k']);
+
+    expect(fn () => $action->toNode())->toThrow(LogicException::class, 'loaded by query()');
+});
+
 it('refuses secret() inside a repeater, where its value would ship in the props', function (): void {
     $s = new S;
     $s->form('f', [$s->repeater('rows')->set('fields', [$s->password('key')->secret()])])->record(['rows' => [['key' => 'k']]])->toNode();

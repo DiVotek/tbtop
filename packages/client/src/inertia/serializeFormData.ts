@@ -25,9 +25,12 @@ function secretNamesIn(nodes: StructureNode[]): string[] {
 		if (!node.name) {
 			return secretNamesIn(structureChildren(node.options as Bag));
 		}
-		const secret = (node.options as Bag | undefined)?.secret;
-		return node.kind === "password" && isBag(secret) ? [node.name] : [];
+		return isSecretNode(node) ? [node.name] : [];
 	});
+}
+
+function isSecretNode(node: StructureNode): boolean {
+	return node.kind === "password" && isBag((node.options as Bag | undefined)?.secret);
 }
 
 function serializeScope(scope: Bag, nodes: StructureNode[]): Bag {
@@ -41,9 +44,9 @@ function serializeScope(scope: Bag, nodes: StructureNode[]): Bag {
 			continue;
 		}
 		const value = serializeNodeValue(node, out[node.name]);
-		// undefined means "not submitted" (a secret() password left alone): a FormData
-		// body would otherwise send it as "", which the server reads as null.
-		if (value === undefined) {
+		// A secret() password left alone serializes to undefined and is not submitted:
+		// a FormData body would otherwise send it as "", which the server reads as null.
+		if (value === undefined && isSecretNode(node)) {
 			delete out[node.name];
 		} else {
 			out[node.name] = value;

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { createAdmin, definePage, type InertiaPage } from "../src";
 import { Password } from "../src/dsl/fields/strings";
+import { applySecretInput } from "../src/dsl/record";
+import { S } from "../src/dsl/s";
 
 let submitted: Record<string, unknown> | null = null;
 let actionForm: Record<string, unknown> | null = null;
@@ -150,6 +152,23 @@ describe("Password::secret()", () => {
 			filled: true,
 			preview: "…42",
 		});
+	});
+
+	test("an empty string counts as null even without emptyToNull", () => {
+		const children = [new Password("pin").secret(), new Password("webhook").clearable()];
+		expect(applySecretInput({ pin: "", webhook: "", name: "" }, children)).toEqual({
+			webhook: null,
+			name: "",
+		});
+	});
+
+	test("secret() in a modal form loaded by query() is refused", () => {
+		const builder = new S();
+		const action = builder
+			.action("edit")
+			.modal("Edit", builder.form("edit", [builder.password("key").secret()]))
+			.query(() => ({ key: "k" }));
+		expect(() => action.toNode()).toThrow("loaded by query()");
 	});
 
 	test("secret() inside a repeater is refused, as its value would ship in the props", () => {

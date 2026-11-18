@@ -107,6 +107,11 @@ describe("secret() password on submit", () => {
 		expect("left" in out).toBe(false);
 	});
 
+	test("only a secret's undefined drops the key; any other field keeps it", () => {
+		const out = serializeFormData({ plain: undefined }, form);
+		expect("plain" in out).toBe(true);
+	});
+
 	test("secretFieldNames finds secrets inside layout containers only", () => {
 		expect(secretFieldNames(form).sort()).toEqual(["cleared", "left", "opened", "replaced"]);
 	});

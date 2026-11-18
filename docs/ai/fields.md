@@ -208,8 +208,8 @@ $s->form('settings', [
   nothing stored, `required()` works as on any field.
 - **Scope.** A top-level form field, including sections and tabs. On a repeater sub-field
   `secret()` throws when the form renders (`LogicException` in PHP, `Error` in Node) (its value would otherwise ship
-  in the row). Not for a modal form loaded by `query()` (a modal's data is whatever the query returns, so keep
-  the secret out of it). A field without `secret()` behaves as before: whatever `record()`
+  in the row). It throws the same way in a modal form loaded by `query()`, whose data is whatever the
+  query returns, so keep the secret out of it. A field without `secret()` behaves as before: whatever `record()`
   holds for it ships in the props.
 
 ## Canonical field-kind inventory (PHP ↔ client ↔ schema)

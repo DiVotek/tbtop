@@ -66,6 +66,21 @@ final class SecretRecord
     }
 
     /**
+     * A query() modal's form is filled from whatever the query returns, never
+     * seeded or stripped, so a secret() there would ship its value: refuse it.
+     */
+    public static function assertNoQueryModalSecret(mixed $body, string $action): void
+    {
+        $fields = $body instanceof FormBuilder ? $body->getFields() : [];
+        foreach ($fields as $field) {
+            $found = StructureWalk::collect($field, static fn (mixed $c): bool => $c instanceof Password && $c->isSecret());
+            if ($found !== []) {
+                throw new LogicException("password \"{$found[0]->name}\": secret() does not work in a modal form loaded by query() (action \"{$action}\").");
+            }
+        }
+    }
+
+    /**
      * A secret() inside a repeater row is neither seeded nor stripped, so its
      * stored value would ship in the props: refuse it instead of leaking.
      *
