@@ -45,6 +45,8 @@ class SettingsMailPage extends Page
                     $s->password('password')->label('Password')->secret(),
                     $s->password('api_key')
                         ->label('Provider API key')
+                        // Opt-in: the last four characters reach the browser. Fine for a
+                        // long provider key you need to recognise; leave preview() off a password.
                         ->preview(fn (string $key): string => '…'.substr($key, -4))
                         ->clearable()
                         ->helperText('Stored encrypted. Leave it alone to keep the current key.'),
