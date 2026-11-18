@@ -44,6 +44,20 @@ describe("Table integration", () => {
 		expect(getByTestId("table-skeleton")).toBeTruthy();
 	});
 
+	test("Table skeleton replaces only the grid: the toolbar stays mounted", () => {
+		const node = s.table({
+			name: "posts",
+			query: () => new Promise<unknown[]>(() => {}),
+			columns: [{ name: "title" }],
+			searchable: ["title"],
+		});
+		const Wrap = wrap(() => new Response("{}"));
+		const { getByTestId, getByRole } = render(<Wrap>{renderNode(node)}</Wrap>);
+		const block = getByTestId("table-block");
+		expect(block.contains(getByTestId("table-skeleton"))).toBe(true);
+		expect(block.contains(getByRole("searchbox"))).toBe(true);
+	});
+
 	test("Table error component renders when query rejects", async () => {
 		const node = s.table({
 			query: async () => Promise.reject(new Error("nope")),
