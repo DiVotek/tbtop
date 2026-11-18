@@ -39,6 +39,12 @@ export interface TableBlockOptions extends AsyncBlock {
 	/** Server-assigned table name — used to namespace URL query state. */
 	name?: string;
 	query: (ctx: ClientActionContext) => Promise<unknown>;
+	/**
+	 * Shown in place of the rows while the first page loads. Since 0.8.3 it replaces only
+	 * the grid: the toolbar, tabs and header actions stay mounted around it, so it should
+	 * not render its own table chrome. Defaults to a row skeleton.
+	 */
+	loading?: ReactNode;
 	columns: TableColumn[];
 	rowActions?: ActionConfig[];
 	bulkActions?: ActionConfig[];
