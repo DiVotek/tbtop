@@ -88,13 +88,28 @@ final class FormBuilder implements JsonSerializable
     {
         $children = $this->includedChildren();
         $seeded = RecordDefaults::apply($this->record, $children);
+        $normalized = TranslatableRecord::normalize(DateRecord::normalize($seeded, $children), $children);
 
-        return TranslatableRecord::normalize(DateRecord::normalize($seeded, $children), $children);
+        return SecretRecord::strip($normalized, $children);
+    }
+
+    /**
+     * Submitted input as the form's onSubmit sees it: a secret() password's
+     * `null` is dropped unless the field is clearable() (see SecretRecord).
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public function applySecretInput(array $input): array
+    {
+        return SecretRecord::applyInput($input, $this->includedChildren());
     }
 
     /** Laravel validation rules collected from descendant fields. @return array<string, list<string|\Illuminate\Contracts\Validation\ValidationRule>> */
     public function collectRules(): array
     {
+        $this->seedSecrets();
+
         return RuleWalker::collect($this->includedChildren());
     }
 
@@ -361,6 +376,7 @@ final class FormBuilder implements JsonSerializable
     public function toNode(): Node
     {
         EmbedFieldCollisions::assertNone($this->includedChildren());
+        $this->seedSecrets();
         $this->seedRecordDependents();
         $options = ['name' => $this->name, 'children' => $this->children];
 
@@ -371,6 +387,17 @@ final class FormBuilder implements JsonSerializable
         }
 
         return (new Node('form', $options, $this->name))->when($this->isIncluded());
+    }
+
+    /**
+     * A secret() password's state ("Set", its preview, whether `required`
+     * holds while it is left alone) comes from the raw record, which
+     * recordData() strips of it.
+     */
+    private function seedSecrets(): void
+    {
+        $children = $this->includedChildren();
+        SecretRecord::seed(RecordDefaults::apply($this->record, $children), $children);
     }
 
     /**

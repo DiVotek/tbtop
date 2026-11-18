@@ -1,6 +1,7 @@
 import { currentContext, defaultLocale } from "./context";
 import { Field } from "./fields/field";
 import { Repeater } from "./fields/nested";
+import { Password } from "./fields/strings";
 import { DateField } from "./fields/temporal";
 import { isConditionMet } from "./inclusion";
 import { Node } from "./node";
@@ -15,9 +16,46 @@ type Record_ = Record<string, unknown>;
  * to locale maps (RecordDefaults, DateRecord, TranslatableRecord).
  */
 export function recordData(record: Record_, children: unknown[]): Record_ {
-	return normalizeTranslatable(
-		normalizeDates(seedDefaults(record, children), children),
+	return stripSecrets(
+		normalizeTranslatable(normalizeDates(seedDefaults(record, children), children), children),
 		children,
+	);
+}
+
+/** SecretRecord::seed(): each secret() password learns what the raw record holds for it. */
+export function seedSecrets(record: Record_, children: unknown[]): void {
+	const seeded = seedDefaults(record, children);
+	for (const field of secretFields(children)) {
+		field.seedStored(seeded[field.name] ?? null);
+	}
+}
+
+/** SecretRecord::strip(): a secret() password's stored value never ships. */
+function stripSecrets(record: Record_, children: unknown[]): Record_ {
+	const out = { ...record };
+	for (const field of secretFields(children)) {
+		delete out[field.name];
+	}
+	return out;
+}
+
+/**
+ * SecretRecord::applyInput(): a secret() password's `null` is dropped unless the
+ * field is clearable(), so the key is absent as for a field left alone.
+ */
+export function applySecretInput(input: Record_, children: unknown[]): Record_ {
+	const out = { ...input };
+	for (const field of secretFields(children)) {
+		if (Object.hasOwn(out, field.name) && out[field.name] === null && !field.isClearable()) {
+			delete out[field.name];
+		}
+	}
+	return out;
+}
+
+function secretFields(children: unknown[]): Password[] {
+	return topLevelFields(children).filter(
+		(f): f is Password => f instanceof Password && f.isSecret(),
 	);
 }
 

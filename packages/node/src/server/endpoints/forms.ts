@@ -15,11 +15,11 @@ import { enclosingForm, enclosingQueryAction } from "../enclosingForm";
 import { asJson, effectsBody, notFound } from "../http";
 import { back, redirectOrLocation } from "../inertia/protocol";
 import { bindUploads } from "../uploads/bind";
-import { dataGet, dataHas, dataSet, emptyToNull, expandKey } from "../validation/data";
+import { emptyToNull } from "../validation/data";
 import { validate } from "../validation/validator";
 import { readInput } from "./input";
 import { arg, type Endpoint, type EndpointCtx } from "./types";
-import { validated } from "./validateWith";
+import { declaredKeysOnly, validated } from "./validateWith";
 
 type Bag = Record<string, unknown>;
 
@@ -50,6 +50,7 @@ function actionCtx(ctx: EndpointCtx, name: string, payload: Bag): Promise<Action
  */
 async function formRules(form: FormBuilder, ctx: EndpointCtx, loaded: unknown[] = []) {
 	const children = form.includedChildren();
+	form.seedSecrets();
 	const env = { session: ctx.session, records: [form.recordData(), ...loaded] };
 	const uploads = await bindUploads(collectRules(children), children, env);
 	const embeds = bindEmbeds(uploads.rules, children, {
@@ -83,7 +84,7 @@ export async function submitFormOutcome(
 		throw notFound(`Form "${name}" is not submittable on this page.`);
 	}
 	const { rules, apply, ...options } = await formRules(form, ctx);
-	const outcome = await validate(emptyToNull(body), rules, options);
+	const outcome = await validate(form.applySecretInput(emptyToNull(body) as Bag), rules, options);
 	if (!outcome.ok) {
 		return { errors: outcome.errors };
 	}
@@ -171,10 +172,11 @@ async function actionForm(
 	if (Object.keys(rules).length === 0) {
 		return null;
 	}
+	const input = form.applySecretInput(bag(emptyToNull(bag(payload.form))));
 	if (!gate) {
-		return declaredKeysOnly(emptyToNull(bag(payload.form)), rules);
+		return declaredKeysOnly(input, rules);
 	}
-	return apply(await validated(bag(payload.form), rules, options));
+	return apply(await validated(input, rules, options));
 }
 
 /**
@@ -197,28 +199,6 @@ async function modalRecord(ctx: EndpointCtx, name: string, payload: Bag): Promis
 	}
 	const data = await query(await actionCtx(ctx, action.name, payload));
 	return data !== null && typeof data === "object" ? [data] : [];
-}
-
-/** The keys the rules declare, values as-is: withoutValidation() keeps the shape, not the verdict. */
-function declaredKeysOnly(input: unknown, rules: Record<string, string[]>): Bag {
-	const keys = Object.keys(rules).flatMap((pattern) => expandKey(input, pattern));
-	const containers = new Set(
-		keys.flatMap((key) =>
-			key
-				.split(".")
-				.slice(0, -1)
-				.map((_, i, parts) => parts.slice(0, i + 1).join(".")),
-		),
-	);
-	const picked: Bag = {};
-	for (const key of keys.filter((k) => dataHas(input, k))) {
-		if (!containers.has(key)) {
-			dataSet(picked, key, dataGet(input, key));
-		} else if (!dataHas(picked, key)) {
-			dataSet(picked, key, []);
-		}
-	}
-	return picked;
 }
 
 /** POST actions/{name}/data: a modal's query() with the row/selection context. */

@@ -6,7 +6,7 @@ import { Daterange } from "./fields/temporal";
 import { LiveRegion } from "./liveRegion";
 import { HasWhen, mixin } from "./mixin";
 import { includes, Node } from "./node";
-import { recordData } from "./record";
+import { applySecretInput, recordData, seedSecrets } from "./record";
 import { collectAll, findIn } from "./walk";
 
 type UnionToIntersection<U> = (U extends unknown ? (x: U) => void : never) extends (
@@ -129,6 +129,16 @@ export class FormBuilder<C extends readonly unknown[] = readonly unknown[]> {
 		return recordData(this.recordValue, this.includedChildren());
 	}
 
+	/** Submitted input as onSubmit sees it: a secret() password's `null` dropped unless clearable(). */
+	applySecretInput(input: Record<string, unknown>): Record<string, unknown> {
+		return applySecretInput(input, this.includedChildren());
+	}
+
+	/** A secret() password's state comes from the raw record, which recordData() strips of it. */
+	seedSecrets(): void {
+		seedSecrets(this.recordValue, this.includedChildren());
+	}
+
 	/** Every field the form submits, at any depth. */
 	getFields(): Field[] {
 		return collectAll(this.includedChildren(), (c) => c instanceof Field) as Field[];
@@ -152,6 +162,7 @@ export class FormBuilder<C extends readonly unknown[] = readonly unknown[]> {
 
 	toNode(): Node {
 		assertNoEmbedCollisions(this.includedChildren());
+		this.seedSecrets();
 		this.seedRecordDependents();
 		const options: Record<string, unknown> = { name: this.name, children: [...this.children] };
 		if (this.guard !== null) {
