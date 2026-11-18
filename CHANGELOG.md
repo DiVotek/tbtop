@@ -4,6 +4,16 @@ Every release of `tbtop/admin` (Packagist), `@tbtop/inertia-admin` (npm) and
 `@tbtop/admin` (npm, Node) — all three ship in lockstep from one tag. Versioning rules: [VERSIONING.md](VERSIONING.md).
 Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 
+## [0.8.3](https://github.com/DiVotek/tbtop/releases/tag/v0.8.3) — 2026-11-18
+
+### Features
+
+- **client:** remember collapsed row groups across reloads ([#456](https://github.com/DiVotek/tbtop/pull/456))
+
+### Fixes
+
+- testing API and richtext input bugs found on a fresh Laravel 13 install ([#455](https://github.com/DiVotek/tbtop/pull/455))
+
 ## [0.8.2](https://github.com/DiVotek/tbtop/releases/tag/v0.8.2) — 2026-11-12
 
 ### Features
