@@ -65,11 +65,7 @@ class SettingsMailPage extends Page
     /** @return array<string, mixed> The settings, secrets decrypted, as an encrypted cast would give them. */
     private function stored(): array
     {
-        $out = Cache::get('demo.mail', [
-            'host' => 'smtp.example.com',
-            'password' => null,
-            'api_key' => Crypt::encryptString('re_demo_8f2a91c4'),
-        ]);
+        $out = $this->raw();
         foreach (self::SECRETS as $key) {
             $out[$key] = is_string($out[$key] ?? null) ? Crypt::decryptString($out[$key]) : null;
         }
@@ -80,10 +76,20 @@ class SettingsMailPage extends Page
     /** An absent secret key keeps the stored value; null (a clear) removes it. @param array<string, mixed> $form */
     private function store(array $form): void
     {
-        $raw = Cache::get('demo.mail', []);
+        $raw = $this->raw();
         foreach ($form as $key => $value) {
             $raw[$key] = in_array($key, self::SECRETS, true) && is_string($value) ? Crypt::encryptString($value) : $value;
         }
         Cache::forever('demo.mail', $raw);
+    }
+
+    /** @return array<string, mixed> The cached settings, secrets encrypted; seeded on first read. */
+    private function raw(): array
+    {
+        return Cache::get('demo.mail', [
+            'host' => 'smtp.example.com',
+            'password' => null,
+            'api_key' => Crypt::encryptString('re_demo_8f2a91c4'),
+        ]);
     }
 }
