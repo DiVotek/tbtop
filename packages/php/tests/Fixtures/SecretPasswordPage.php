@@ -33,13 +33,14 @@ class SecretPasswordPage extends Page
                 ]),
                 $s->password('pin')->secret()->minLength(4),
                 $s->password('fresh')->secret()->required(),
+                $s->password('token')->clearable()->required(),
                 $s->action('rotate')->handle(function (ActionCtx $ctx): Effects {
                     static::$actionForm = $ctx->form;
 
                     return Effects::make();
                 }, needs: ['form']),
             ])
-                ->record(['name' => 'Acme', 'api_key' => 'sk_live_abcd4242', 'webhook' => 'whsec_1', 'pin' => '1234'])
+                ->record(['name' => 'Acme', 'api_key' => 'sk_live_abcd4242', 'webhook' => 'whsec_1', 'pin' => '1234', 'token' => 'tok_1'])
                 ->onSubmit(function (ActionCtx $ctx): Effects {
                     static::$submitted = $ctx->form;
 

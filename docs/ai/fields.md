@@ -202,7 +202,8 @@ $s->form('settings', [
   `clearable()` field: elsewhere the server drops a `null` for the field, so an MCP agent or a
   hand-made request cannot wipe the secret by sending one.
 - **Rules.** `required()` holds while a stored secret is left alone (its rules gain
-  `sometimes`) and still applies to a replacement; a required secret shows no Clear. With
+  `sometimes`) and still applies to a replacement; a required secret is never clearable, even
+  with `clearable()`: it shows no Clear and the server drops its `null`. With
   nothing stored, `required()` works as on any field.
 - **Scope.** A top-level form field, including sections and tabs; not a repeater sub-field
   nor a modal form loaded by `query()` (a modal's data is whatever the query returns, so keep

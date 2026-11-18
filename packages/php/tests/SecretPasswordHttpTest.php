@@ -46,7 +46,8 @@ it('never ships the stored value; the node says it is set, with the preview', fu
         ->and(secretNode($props['structure'], 'api_key')['options']['secret'])->toBe(['filled' => true, 'preview' => '…4242'])
         ->and(secretNode($props['structure'], 'webhook')['options']['secret'])->toBe(['filled' => true, 'clearable' => true])
         ->and(secretNode($props['structure'], 'pin')['options']['secret'])->toBe(['filled' => true])
-        ->and(secretNode($props['structure'], 'fresh')['options']['secret'])->toBe(['filled' => false]);
+        ->and(secretNode($props['structure'], 'fresh')['options']['secret'])->toBe(['filled' => false])
+        ->and(secretNode($props['structure'], 'token')['options']['secret'])->toBe(['filled' => true]);
 });
 
 it('leaves a secret the user left alone out of the submit; a stored required one passes', function (): void {
@@ -96,3 +97,10 @@ it('refuses a preview() that does not return a string', function (): void {
     $field->seedStored('secret');
     $field->toNode();
 })->throws(InvalidArgumentException::class, 'preview() must return a string');
+
+it('never clears a required secret, even one marked clearable()', function (): void {
+    submitSecrets(['token' => null, 'fresh' => 'x'])->assertSessionHasNoErrors();
+
+    expect(SecretPasswordPage::$submitted)->toBe(['fresh' => 'x'])
+        ->and(Password::make('t')->clearable()->required()->isClearable())->toBeFalse();
+});

@@ -4,7 +4,13 @@ import { createAdmin, definePage, type InertiaPage } from "../src";
 let submitted: Record<string, unknown> | null = null;
 let actionForm: Record<string, unknown> | null = null;
 
-const stored = { name: "Acme", api_key: "sk_live_abcd4242", webhook: "whsec_1", pin: "1234" };
+const stored = {
+	name: "Acme",
+	api_key: "sk_live_abcd4242",
+	webhook: "whsec_1",
+	pin: "1234",
+	token: "tok_1",
+};
 
 const pages = [
 	definePage({
@@ -24,6 +30,7 @@ const pages = [
 						]),
 						s.password("pin").secret().minLength(4),
 						s.password("fresh").secret().required(),
+						s.password("token").clearable().required(),
 						s.action("rotate").handle(
 							(ctx) => {
 								actionForm = ctx.form;
@@ -94,6 +101,7 @@ describe("Password::secret()", () => {
 		expect(options("webhook")?.secret).toEqual({ filled: true, clearable: true });
 		expect(options("pin")?.secret).toEqual({ filled: true });
 		expect(options("fresh")?.secret).toEqual({ filled: false });
+		expect(options("token")?.secret).toEqual({ filled: true });
 	});
 
 	test("a secret left alone is absent from the submit, and a stored required one passes", async () => {
@@ -117,6 +125,11 @@ describe("Password::secret()", () => {
 		await post("forms/settings", {});
 		expect(submitted).toBeNull();
 		await post("forms/settings", { api_key: null, fresh: "x" });
+		expect(submitted).toEqual({ fresh: "x" });
+	});
+
+	test("a required secret is never cleared, even one marked clearable()", async () => {
+		await post("forms/settings", { token: null, fresh: "x" });
 		expect(submitted).toEqual({ fresh: "x" });
 	});
 

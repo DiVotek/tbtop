@@ -104,8 +104,9 @@ export class Password<N extends string = string> extends Field<N, string | null>
 		return this.secretFlag;
 	}
 
+	/** One definition for the Clear button and the server: a required() secret is never clearable. */
 	isClearable(): boolean {
-		return this.secretFlag && this.clearableFlag;
+		return this.secretFlag && this.clearableFlag && !super.ruleEntries().includes("required");
 	}
 
 	/** Whether the seeded record holds a value for this field. */
@@ -140,7 +141,7 @@ export class Password<N extends string = string> extends Field<N, string | null>
 
 	private secretState(): SecretState {
 		const state: SecretState = { filled: this.hasStoredValue() };
-		if (this.isClearable() && !super.ruleEntries().includes("required")) {
+		if (this.isClearable()) {
 			state.clearable = true;
 		}
 		if (this.previewFn !== undefined && typeof this.stored === "string" && this.stored !== "") {

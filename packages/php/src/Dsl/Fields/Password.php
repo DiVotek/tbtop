@@ -70,9 +70,10 @@ final class Password extends Field
         return $this->secret;
     }
 
+    /** One definition for the Clear button and the server: a required() secret is never clearable. */
     public function isClearable(): bool
     {
-        return $this->secret && $this->clearable;
+        return $this->secret && $this->clearable && ! $this->isRequiredField();
     }
 
     /** Whether the seeded record holds a value for this field. */
@@ -120,7 +121,7 @@ final class Password extends Field
     private function secretState(): array
     {
         $state = ['filled' => $this->hasStoredValue()];
-        if ($this->isClearable() && ! $this->isRequiredField()) {
+        if ($this->isClearable()) {
             $state['clearable'] = true;
         }
         $preview = $this->previewText();
