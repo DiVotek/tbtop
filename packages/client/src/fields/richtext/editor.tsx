@@ -12,6 +12,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, SerializedEditorState } from "lexical";
 import { useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
+import { RichtextAutoLinkPlugin } from "./autoLink";
 import type { EmbedDef } from "./embedContext";
 import { EmbedsPlugin } from "./embedsPlugin";
 import { RICHTEXT_NODES, RICHTEXT_THEME } from "./richtextConfig";
@@ -91,6 +92,7 @@ export function RichtextEditor({
 					<HistoryPlugin />
 					<ListPlugin />
 					<LinkPlugin />
+					<RichtextAutoLinkPlugin />
 					<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
 					{/* Both ignore-flags keep mount-time updates (history-merge,
 				    selection) from writing back and falsely dirtying the form. */}
