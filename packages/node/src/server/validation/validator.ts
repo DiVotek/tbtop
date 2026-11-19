@@ -78,7 +78,7 @@ async function checkKey(
 	const value = dataGet(data, target.key);
 	const present = dataHas(data, target.key);
 	const skipOptional = !present || (target.list.includes("nullable") && value === null);
-	const base = { value, data, sizeKind: sizeKind(target.list, value) };
+	const base = { key: target.key, value, data, sizeKind: sizeKind(target.list, value) };
 	const bail = target.list.includes("bail");
 	const messages: string[] = [];
 	for (const rule of target.list.filter((r) => !MARKERS.has(r))) {
