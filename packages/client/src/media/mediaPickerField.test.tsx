@@ -9,13 +9,13 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { ClientProvider, createAdminClient } from "../data/client";
 import { clearBlockRegistry } from "../render/blockRegistry";
 import { ensureBuiltinsRegistered } from "../render/registerBuiltins";
 import type { FetchHandler } from "../testFixtures";
 import { makeTestFetch } from "../testFixtures";
-import { MediaPickerForm } from "./mediaPickerField";
+import { MediaPickerForm, type MediaPickerValue } from "./mediaPickerField";
 import type { MediaItem } from "./types";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -70,6 +70,30 @@ const resolvedItemsHandler: FetchHandler = (req) => {
 	}
 	return new Response("[]");
 };
+
+/** Holds the response for `/media/:id` until the test calls `respond()`. */
+function deferredItemHandler(id: string, item: MediaItem) {
+	let release: () => void = () => {};
+	const pending = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	let requested = false;
+	const handler: FetchHandler = async (req) => {
+		if (!req.url.includes(`/media/${id}`)) {
+			return new Response(JSON.stringify(ITEM_IMG), { status: 200 });
+		}
+		requested = true;
+		await pending;
+		return new Response(JSON.stringify(item), { status: 200 });
+	};
+	return { handler, respond: release, wasRequested: () => requested };
+}
+
+async function flushResponses() {
+	await act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	});
+}
 
 function wrap(handler: FetchHandler) {
 	const client = createAdminClient({ baseUrl: "http://test", fetch: makeTestFetch(handler) });
@@ -636,5 +660,69 @@ describe("MediaPickerForm: clear single value", () => {
 		});
 		await waitFor(() => expect(changes).toHaveLength(1));
 		expect(changes[0]).toBeNull();
+	});
+});
+
+// ─── Form: a value change supersedes an in-flight id resolution ───────────────
+
+describe("MediaPickerForm: stale id resolution", () => {
+	test("clearing while the id is still resolving keeps the field empty", async () => {
+		const user = userEvent.setup({ delay: null });
+		const media = deferredItemHandler("img1", ITEM_IMG);
+		const Wrap = wrap(media.handler);
+		function Harness() {
+			const [value, setValue] = useState<MediaPickerValue | null>("img1");
+			return (
+				<MediaPickerForm
+					name="cover"
+					value={value}
+					onChange={setValue}
+					options={{ multiple: false }}
+				/>
+			);
+		}
+		const { getByTestId, queryByTestId } = render(
+			<Wrap>
+				<Harness />
+			</Wrap>,
+		);
+		await waitFor(() => expect(media.wasRequested()).toBe(true));
+		await act(async () => {
+			await user.click(getByTestId("media-picker-clear-cover"));
+		});
+
+		media.respond();
+		await flushResponses();
+
+		const input = getByTestId("media-picker-name-cover") as HTMLInputElement;
+		expect(input.value).toBe("");
+		expect(queryByTestId("media-picker-clear-cover")).toBeNull();
+	});
+
+	test("dropping a still-resolving id keeps it out of the chips", async () => {
+		const media = deferredItemHandler("pdf1", ITEM_PDF);
+		const Wrap = wrap(media.handler);
+		const gallery = (value: string[]) => (
+			<Wrap>
+				<MediaPickerForm
+					name="gallery"
+					value={value}
+					onChange={() => {}}
+					options={{ multiple: true }}
+				/>
+			</Wrap>
+		);
+		const { findByTestId, queryByTestId, rerender } = render(gallery(["img1"]));
+		await findByTestId("media-preview-img1");
+
+		rerender(gallery(["img1", "pdf1"]));
+		await waitFor(() => expect(media.wasRequested()).toBe(true));
+		rerender(gallery(["img1"]));
+
+		media.respond();
+		await flushResponses();
+
+		expect(queryByTestId("media-preview-pdf1")).toBeNull();
+		expect(queryByTestId("media-preview-img1")).not.toBeNull();
 	});
 });
