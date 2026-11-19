@@ -30,20 +30,20 @@ class PostEditPage extends Page
         $post = Post::findOrFail(request()->route('post'));
 
         return $s->stack([
-            $s->row([
-                $s->action('unpublish')->label('Unpublish')
-                    ->handle(function (ActionCtx $ctx): Effects {
-                        Post::query()->whereKey($ctx->request->route('post'))->update(
-                            [
-                                'published' => false,
-                                'published_at' => null
-                            ]
-                        );
-
-                        return Effects::make()->notify('Post unpublished');
-                    }),
-            ]),
             $s->form('post', [
+                $s->row([
+                    $s->action('unpublish')->label('Unpublish')
+                        ->withoutValidation()
+                        ->handle(function (ActionCtx $ctx): Effects {
+                            Post::query()->whereKey($ctx->request->route('post'))->update([
+                                'published' => false,
+                                'published_at' => null,
+                            ]);
+
+                            return Effects::make()->notify('Post unpublished')
+                                ->setFormData(['published' => false, 'published_at' => null]);
+                        }, needs: ['form']),
+                ]),
                 ...$this->postFormSections($s, "unique:posts,slug,{$post->id}"),
                 FormActions::saveCancel($s, '/admin/posts', extra: [
                     $s->action('delete')->label('Delete')->color('danger')
