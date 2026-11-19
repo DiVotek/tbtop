@@ -4,6 +4,7 @@ import type { UploadRow } from "../data/upload";
 import { useTranslation } from "../i18n/i18n";
 import { useClientActionContext } from "../structure/actionContext";
 import type { ClientActionContext } from "../structure/types";
+import type { CropOptions } from "./crop/cropOptions";
 
 export interface UploadValue {
 	path: string;
@@ -24,6 +25,7 @@ export interface UploadOptionsBag {
 	multiple?: boolean;
 	maxFiles?: number;
 	reorderable?: boolean;
+	image?: { crop?: CropOptions };
 }
 
 export interface RunUploadInput {

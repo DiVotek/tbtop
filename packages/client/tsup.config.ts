@@ -38,6 +38,7 @@ const external = [
 	"sonner",
 	"tailwind-merge",
 	"vaul",
+	"react-image-crop",
 ];
 
 export default defineConfig({

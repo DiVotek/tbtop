@@ -5,6 +5,7 @@ namespace Tbtop\Admin\Dsl\Fields;
 use Closure;
 use Illuminate\Http\UploadedFile;
 use Tbtop\Admin\Dsl\Concerns\HasMultiple;
+use Tbtop\Admin\Uploads\CropAspects;
 use Tbtop\Admin\Uploads\UploadFieldConfig;
 
 final class Upload extends Field
@@ -117,6 +118,44 @@ final class Upload extends Field
     public function reorderable(bool $value = true): static
     {
         return $this->set('reorderable', $value);
+    }
+
+    /**
+     * Open a crop dialog before an image uploads, locked to one aspect ratio
+     * ('16:9', '1:1') or free when omitted. The browser crops and uploads the
+     * result; the original is not kept. Client-side only: enforce a ratio
+     * server-side with Laravel's `dimensions:ratio=` rule.
+     */
+    public function crop(?string $aspect = null): static
+    {
+        return $this->cropAspects([$aspect ?? 'free']);
+    }
+
+    /**
+     * Crop with a choice of aspect ratios in the dialog, the first preselected.
+     * Each entry is 'W:H' or 'free'.
+     *
+     * @param  non-empty-list<string>  $aspects
+     */
+    public function cropAspects(array $aspects): static
+    {
+        $crop = $this->opts['image']['crop'] ?? [];
+        $crop['aspects'] = CropAspects::normalize($aspects);
+
+        return $this->setImage('crop', $crop);
+    }
+
+    /** Round crop mask (avatars); the stored file stays rectangular. Defaults the aspect to '1:1'. */
+    public function cropCircle(bool $value = true): static
+    {
+        $crop = $this->opts['image']['crop'] ?? null;
+        if ($crop === null && ! $value) {
+            return $this;
+        }
+        $crop ??= ['aspects' => ['1:1']];
+        $crop['shape'] = $value ? 'round' : 'rect';
+
+        return $this->setImage('crop', $crop);
     }
 
     /** Writes one key under the nested `image` options bag. */
