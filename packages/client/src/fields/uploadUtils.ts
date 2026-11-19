@@ -24,6 +24,11 @@ export interface UploadOptionsBag {
 	multiple?: boolean;
 	maxFiles?: number;
 	reorderable?: boolean;
+	image?: {
+		convertTo?: "webp" | "jpeg" | "png";
+		quality?: number;
+		crop?: { aspectRatio?: number };
+	};
 }
 
 export interface RunUploadInput {

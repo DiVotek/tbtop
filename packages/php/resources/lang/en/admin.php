@@ -402,6 +402,13 @@ return [
             'replace' => 'Replace',
             'reorder' => 'Reorder',
             'tooLarge' => 'File exceeds the maximum size',
+            'cropTitle' => 'Crop image',
+            'cropZoom' => 'Zoom',
+            'cropWidth' => 'Crop width',
+            'cropHeight' => 'Crop height',
+            'cropCancel' => 'Cancel',
+            'cropConfirm' => 'Crop & upload',
+            'cropError' => 'Could not crop this image. Your browser may not support encoding this format.',
         ],
         'colorpicker' => ['palette' => 'Color palette'],
         'date' => [

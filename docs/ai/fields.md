@@ -736,6 +736,8 @@ Not supported: `image`/`subtitle` on `Radio`, `CheckboxList` or `ToggleButtons` 
 The upload field's storage and image-processing config lives **inline on the field**, not in
 a config profile. `apps/demo/app/Admin/Pages/UploadDemoPage.php` exercises the full surface.
 
+Use `crop($aspectRatio)` to let users crop images in the browser before uploading (width/height, or `crop()` for free cropping). PNG, JPEG and WebP are cropped; other files upload unchanged.
+
 | Method | Signature | Default | Purpose |
 |---|---|---|---|
 | `accept` | `accept(string\|list<string>)` | — | MIME types / extensions, e.g. `'image/*'`, `'.pdf'`, or a list `['application/pdf', 'image/*']` to allow several |

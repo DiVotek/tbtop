@@ -197,6 +197,13 @@
 												"type": "integer",
 												"minimum": 1,
 												"maximum": 100
+											},
+											"crop": {
+												"type": "object",
+												"properties": {
+													"aspectRatio": { "type": "number", "exclusiveMinimum": 0 }
+												},
+												"additionalProperties": false
 											}
 										}
 									}

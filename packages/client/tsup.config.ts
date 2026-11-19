@@ -33,6 +33,7 @@ const external = [
 	"lucide-react",
 	"react-colorful",
 	"react-day-picker",
+	"react-easy-crop",
 	"react-hook-form",
 	"recharts",
 	"sonner",
