@@ -7,6 +7,34 @@ const errorsOf = async (data: unknown, rules: Record<string, string[]>) => {
 };
 
 describe("Laravel rule semantics", () => {
+	test("present rejects a missing key even with nullable", async () => {
+		for (const rules of [["present"], ["nullable", "present"]]) {
+			expect(await validate({}, { a: rules })).toEqual({
+				ok: false,
+				errors: { a: ["The a field must be present."] },
+			});
+		}
+	});
+
+	test("present accepts null and empty values", async () => {
+		for (const a of [null, "", [], "value"]) {
+			expect(await validate({ a }, { a: ["present"] })).toEqual({
+				ok: true,
+				validated: { a },
+			});
+		}
+	});
+
+	test("present checks nested and wildcard keys", async () => {
+		expect(await errorsOf({ rows: [{ a: null }, {}] }, { "rows.*.a": ["present"] })).toEqual({
+			"rows.1.a": ["The rows.1.a field must be present."],
+		});
+		expect(await errorsOf({ row: { a: "" } }, { "row.a": ["present"] })).toEqual({});
+		expect(await errorsOf({ row: {} }, { "row.a": ["present"] })).toEqual({
+			"row.a": ["The row.a field must be present."],
+		});
+	});
+
 	test("absent keys skip non-implicit rules; nullable lets null through", async () => {
 		expect(await errorsOf({}, { a: ["string", "max:3"] })).toEqual({});
 		expect(await errorsOf({ a: null }, { a: ["string"] })).toEqual({
