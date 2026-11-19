@@ -43,9 +43,10 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 	);
 
 	const refresh = useCallback(async () => {
-		await mutationQueue.current;
-		const version = mutationVersion.current;
+		let version = mutationVersion.current;
 		try {
+			await mutationQueue.current;
+			version = mutationVersion.current;
 			const parsed = parseNotificationList(await client.get(base));
 			if (version !== mutationVersion.current) {
 				return;
