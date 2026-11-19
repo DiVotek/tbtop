@@ -1,5 +1,6 @@
 <?php
 
+use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Embed;
@@ -218,6 +219,40 @@ it('section link and header actions conform to the wire grammar schema', functio
 
     validateAgainstSchema(json_decode(json_encode($node)));
 });
+
+it('section column placement conforms to the wire grammar schema', function (array $placement) {
+    $s = new S;
+    $node = $s->grid(['cols' => 8], [
+        $s->section(['title' => 'Placed section', ...$placement], [$s->displayText('Content')]),
+    ]);
+    $json = json_decode(json_encode($node));
+
+    expect(json_decode(json_encode($node), true)['options']['children'][0]['options'])->toMatchArray($placement);
+    validateAgainstSchema($json);
+})->with([
+    'no placement' => [[]],
+    'integer bounds' => [['colSpan' => 8, 'colStart' => 1]],
+    'responsive placement' => [['colSpan' => ['sm' => 1, 'md' => 2, 'lg' => 4, 'xl' => 8], 'colStart' => ['md' => 2]]],
+]);
+
+it('section column placement rejects invalid wire values', function (string $key, mixed $value) {
+    $s = new S;
+    $json = json_decode(json_encode($s->section([], [])));
+    $json->options->{$key} = $value;
+    $schema = json_decode((string) file_get_contents(SCHEMA_PATH));
+
+    expect((new Validator)->validate($json, $schema)->isValid())->toBeFalse();
+})->with(['colSpan', 'colStart'])->with([
+    'below range' => [0],
+    'above range' => [9],
+    'fraction' => [1.5],
+    'string' => ['2'],
+    'null' => [null],
+    'unknown breakpoint' => [(object) ['xxl' => 2]],
+    'responsive below range' => [(object) ['md' => 0]],
+    'responsive above range' => [(object) ['md' => 9]],
+    'responsive fraction' => [(object) ['md' => 1.5]],
+]);
 
 it('list node conforms to the wire grammar schema', function () {
     $s = new S;

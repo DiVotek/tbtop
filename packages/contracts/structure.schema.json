@@ -522,6 +522,8 @@
 									"collapsible": { "type": "boolean" },
 									"collapsed": { "type": "boolean" },
 									"columns": { "$ref": "#/$defs/columnsSpec" },
+									"colSpan": { "$ref": "#/$defs/columnsSpec" },
+									"colStart": { "$ref": "#/$defs/columnsSpec" },
 									"url": { "type": "string", "minLength": 1 },
 									"newTab": { "type": "boolean" },
 									"actions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
