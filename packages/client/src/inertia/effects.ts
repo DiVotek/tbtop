@@ -220,10 +220,7 @@ export function readEffects(raw: unknown): ServerEffect[] {
 export function settleSubmittedForm(
 	form: ClientActionContext["form"],
 	flash: unknown,
-	{
-		secretFields,
-		commit,
-	}: { secretFields: string[]; commit?: (data: Record<string, unknown>) => void },
+	secretFields: string[] = [],
 ): void {
 	const effects = readEffects((flash as Record<string, unknown> | undefined)?.["tbtop.effects"]);
 	if (effects.some((effect) => effect.kind === "resetForm")) {
@@ -238,5 +235,5 @@ export function settleSubmittedForm(
 	for (const name of secretFields) {
 		delete committed[name];
 	}
-	(commit ?? form.reset)(committed);
+	form.reset(committed);
 }

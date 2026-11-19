@@ -65,12 +65,6 @@ export interface TabItem {
 	active?: boolean;
 }
 
-export interface FormSubmission {
-	prepare: (record: Record<string, unknown> | undefined) => void;
-	commit: (saved: Record<string, unknown>) => void;
-	finish: () => void;
-}
-
 export interface FormController {
 	initial: Record<string, unknown>;
 	data: Record<string, unknown>;
@@ -82,8 +76,6 @@ export interface FormController {
 	set: (field: string, value: unknown) => void;
 	/** Reset to the current baseline, or replace it with saved values and mark the form clean. */
 	reset: (values?: Record<string, unknown>) => void;
-	/** @internal Track edits made after an Inertia submit captures its payload. */
-	beginSubmit?: () => FormSubmission;
 	/**
 	 * Sets (or clears, with null) a field-level error — the action-endpoint
 	 * field-errors channel (audit 5.20): a server action that throws a

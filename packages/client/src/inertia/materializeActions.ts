@@ -1,13 +1,15 @@
+import type { FormDataConvertible } from "@inertiajs/core";
+import { router } from "@inertiajs/react";
 import { unwrapData } from "../data/envelope";
 import type { Translate } from "../i18n/i18n";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import type { ModalSize } from "../ui/modal-shell";
 import { type ConfirmSpec, confirmModal } from "./confirmModal";
 import { getCustomAction } from "./customActions";
-import { executeEffects, readEffects } from "./effects";
+import { executeEffects, readEffects, settleSubmittedForm } from "./effects";
+import { liftNestedErrors } from "./fieldErrors";
 import { fillRowTemplate } from "./rowTemplate";
-import { serializeFormData } from "./serializeFormData";
-import { submitHandler } from "./submitForm";
+import { secretFieldNames, serializeFormData } from "./serializeFormData";
 import { isTableExport, tableExportModal } from "./tableExportAction";
 import { bulkPayload } from "./tableState";
 
@@ -127,6 +129,28 @@ function buildHandler(node: StructureNode, spec: ActionSpec, ctx: ActionMaterial
 	});
 }
 
+function submitHandler(
+	basePath: string,
+	formName: string,
+	formNode: StructureNode | undefined,
+): Handler {
+	return (ctx) =>
+		new Promise<void>((resolve, reject) => {
+			const data = serializeFormData(ctx.form?.data ?? {}, formNode) as Record<
+				string,
+				FormDataConvertible
+			>;
+			router.post(`${basePath}/forms/${formName}`, data, {
+				preserveScroll: true,
+				preserveState: true,
+				onSuccess: (page) => {
+					settleSubmittedForm(ctx.form, page.flash, secretFieldNames(formNode));
+					resolve();
+				},
+				onError: (errors) => reject({ errors: liftNestedErrors(errors) }),
+			});
+		});
+}
 /** Shape the row/selection/form payload an action endpoint expects. */
 function actionPayload(ctx: ClientActionContext, needs: string[], formNode?: StructureNode): Bag {
 	const payload: Bag = {};
