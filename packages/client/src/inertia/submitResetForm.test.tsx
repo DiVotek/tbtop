@@ -14,15 +14,24 @@ import { executeFlashEffects } from "./flashEffects";
 import { materialize } from "./materialize";
 
 let responseEffects: ServerEffect[] = [];
+interface SubmitCallbacks {
+	onBeforeUpdate?: (page: unknown) => void;
+	onSuccess?: (page: unknown) => void;
+	onFinish?: () => void;
+}
+let deferSubmit: ((callbacks: SubmitCallbacks) => void) | undefined;
 
 mock.module("@inertiajs/react", () => ({
 	...inertiaReact,
 	router: {
-		post: mock(
-			(_path: string, _data: unknown, opts?: { onSuccess?: (page: unknown) => void }) => {
+		post: mock((_path: string, _data: unknown, opts?: SubmitCallbacks) => {
+			if (deferSubmit && opts) {
+				deferSubmit(opts);
+			} else {
 				opts?.onSuccess?.({ flash: { "tbtop.effects": responseEffects } });
-			},
-		),
+				opts?.onFinish?.();
+			}
+		}),
 		on: mock(() => () => {}),
 		visit: mock(() => {}),
 	},
@@ -32,7 +41,7 @@ function node(kind: string, options: Record<string, unknown>, name?: string): St
 	return { kind, options, meta: {}, ...(name ? { name } : {}) } as StructureNode;
 }
 
-function buildForm(): StructureNode {
+function buildForm(email = ""): StructureNode {
 	const raw = node(
 		"form",
 		{
@@ -46,7 +55,7 @@ function buildForm(): StructureNode {
 	);
 	return materialize(raw, {
 		basePath: "/admin/forgot-password",
-		data: { forgot: { email: "" } },
+		data: { forgot: { email } },
 	});
 }
 
@@ -66,6 +75,7 @@ async function submitTyped(value: string): Promise<HTMLInputElement> {
 
 afterEach(() => {
 	responseEffects = [];
+	deferSubmit = undefined;
 });
 
 describe("form submit: resetForm delivered via flash", () => {
@@ -79,6 +89,48 @@ describe("form submit: resetForm delivered via flash", () => {
 		responseEffects = [{ kind: "notify", message: "Saved" }];
 		const input = await submitTyped("someone@example.com");
 		expect(input.value).toBe("someone@example.com");
+	});
+
+	test.each([
+		true,
+		false,
+	])("successful submit preserves later edits (record refresh first: %s)", async (refreshFirst) => {
+		const Wrap = wrap(() => new Response("{}"));
+		const tree = (email = "") => <Wrap>{renderNode(buildForm(email))}</Wrap>;
+		const view = render(tree());
+		const input = (await view.findByLabelText("Email")) as HTMLInputElement;
+		const saved = "saved@example.com";
+		const draft = "draft@example.com";
+		const success = new Promise<SubmitCallbacks>((resolve) => {
+			deferSubmit = resolve;
+		});
+		const user = userEvent.setup();
+		await user.type(input, saved);
+		await user.click(view.getByTestId("action-submit"));
+		const callbacks = await success;
+		await user.clear(input);
+		await user.type(input, draft);
+
+		const refresh = async () => {
+			await act(async () => view.rerender(tree(saved)));
+			expect(input.value).toBe(draft);
+		};
+		const response = {
+			url: "/admin/forgot-password",
+			props: { data: { forgot: { email: saved } } },
+		};
+		callbacks.onBeforeUpdate?.(response);
+		if (refreshFirst) {
+			await refresh();
+		}
+		await act(async () => {
+			callbacks.onSuccess?.(response);
+			callbacks.onFinish?.();
+		});
+		expect(input.value).toBe(draft);
+		if (!refreshFirst) {
+			await refresh();
+		}
 	});
 
 	test("the page-level flash dispatch skips resetForm without a warning", () => {
