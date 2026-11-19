@@ -223,10 +223,16 @@ export function settleSubmittedForm(
 	{
 		secretFields,
 		commit,
-	}: { secretFields: string[]; commit?: (data: Record<string, unknown>) => void },
+		finish,
+	}: {
+		secretFields: string[];
+		commit?: (data: Record<string, unknown>) => void;
+		finish?: () => void;
+	},
 ): void {
 	const effects = readEffects((flash as Record<string, unknown> | undefined)?.["tbtop.effects"]);
 	if (effects.some((effect) => effect.kind === "resetForm")) {
+		finish?.();
 		form?.reset();
 		return;
 	}

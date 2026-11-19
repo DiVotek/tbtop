@@ -79,6 +79,38 @@ afterEach(() => {
 });
 
 describe("form submit: resetForm delivered via flash", () => {
+	test("resetForm wins when refreshed props arrive between success and finish", async () => {
+		const Wrap = wrap(() => new Response("{}"));
+		const view = render(<Wrap>{renderNode(buildForm("original"))}</Wrap>);
+		const input = (await view.findByLabelText("Email")) as HTMLInputElement;
+		const response = new Promise<SubmitCallbacks>((resolve) => {
+			deferSubmit = resolve;
+		});
+		const user = userEvent.setup();
+		await user.clear(input);
+		await user.type(input, "submitted");
+		await user.click(view.getByTestId("action-submit"));
+		const callbacks = await response;
+		await user.clear(input);
+		await user.type(input, "pending edit");
+		expect(input.value).toBe("pending edit");
+		const page = {
+			url: "/admin/forgot-password",
+			props: { data: { forgot: { email: "saved" } } },
+			flash: { "tbtop.effects": [{ kind: "resetForm" }] },
+		};
+		callbacks.onBeforeUpdate?.(page);
+		await act(async () => {
+			callbacks.onSuccess?.(page);
+		});
+		expect(input.value).toBe("original");
+		await act(async () => view.rerender(<Wrap>{renderNode(buildForm("saved"))}</Wrap>));
+		expect(input.value).toBe("saved");
+		const clean = new Event("beforeunload", { cancelable: true });
+		window.dispatchEvent(clean);
+		expect(clean.defaultPrevented).toBe(false);
+		callbacks.onFinish?.();
+	});
 	test("an unchanged empty PHP array record keeps submitted values clean", async () => {
 		const response = new Promise<SubmitCallbacks>((resolve) => {
 			deferSubmit = resolve;

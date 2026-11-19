@@ -39,6 +39,7 @@ export function submitHandler(
 					settleSubmittedForm(ctx.form, page.flash, {
 						secretFields: secretFieldNames(formNode),
 						commit: submission?.commit,
+						finish: submission?.finish,
 					});
 					resolve();
 				},
