@@ -136,7 +136,7 @@ describe("secret() password after a successful submit", () => {
 				committed = values;
 			},
 		} as unknown as Parameters<typeof settleSubmittedForm>[0];
-		settleSubmittedForm(form, {}, ["api_key"]);
+		settleSubmittedForm(form, {}, { secretFields: ["api_key"] });
 		expect(committed).toEqual({ name: "Acme" });
 	});
 });

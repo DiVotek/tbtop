@@ -69,6 +69,7 @@ function toFormController(handle: FormControllerInternal): FormController {
 		fieldErrors: handle.fieldErrors,
 		set: handle.set,
 		reset: handle.reset,
+		beginSubmit: handle.beginSubmit,
 		setFieldError: handle.setFieldError,
 	};
 }

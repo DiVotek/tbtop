@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { act, render } from "@testing-library/react";
+import { settleSubmittedForm } from "../inertia/effects";
 import { useFormController } from "./formController";
 
 type Handle = ReturnType<typeof useFormController>;
@@ -30,6 +31,76 @@ function last(captures: Handle[]): Handle {
 }
 
 describe("useFormController", () => {
+	test("pending submits preserve a newer nested locale value", () => {
+		const captures = mount({ title: { en: "Hello", uk: "Original" } });
+		act(() => last(captures).set("title", { en: "Saved", uk: "Original" }));
+		const submission = last(captures).beginSubmit?.();
+		act(() => last(captures).set("title", { en: "Saved", uk: "Draft" }));
+		const record = { title: { en: "Canonical", uk: "Original" } };
+		submission?.prepare(record);
+		act(() => last(captures).syncInitial(record));
+		act(() => submission?.commit(record));
+		submission?.finish();
+		expect(last(captures).data).toEqual({ title: { en: "Saved", uk: "Draft" } });
+		expect(last(captures).initial).toEqual(record);
+		expect(last(captures).isDirty).toBe(true);
+	});
+
+	test.each([false, true])("submitted secrets clear unless edited while pending (%s)", (edit) => {
+		const captures = mount({});
+		act(() => last(captures).set("api_key", "submitted"));
+		const form = last(captures);
+		const submission = form.beginSubmit?.();
+		if (edit) {
+			act(() => last(captures).set("api_key", "new secret"));
+		}
+		act(() =>
+			settleSubmittedForm(
+				form,
+				{},
+				{
+					secretFields: ["api_key"],
+					commit: submission?.commit,
+				},
+			),
+		);
+		submission?.finish();
+		expect(last(captures).data).toEqual(edit ? { api_key: "new secret" } : {});
+		expect(last(captures).initial).toEqual({});
+	});
+
+	test("explicit resetForm discards edits made while pending", () => {
+		const captures = mount({ title: "" });
+		act(() => last(captures).set("title", "submitted"));
+		const form = last(captures);
+		const submission = form.beginSubmit?.();
+		act(() => last(captures).set("title", "draft"));
+		act(() =>
+			settleSubmittedForm(
+				form,
+				{ "tbtop.effects": [{ kind: "resetForm" }] },
+				{
+					secretFields: [],
+					commit: submission?.commit,
+				},
+			),
+		);
+		submission?.finish();
+		expect(last(captures).data).toEqual({ title: "" });
+		expect(last(captures).isDirty).toBe(false);
+	});
+
+	test("finishing without commit preserves edits and releases the submission", () => {
+		const captures = mount({ title: "" });
+		act(() => last(captures).set("title", "submitted"));
+		const submission = last(captures).beginSubmit?.();
+		act(() => last(captures).set("title", "draft"));
+		submission?.finish();
+		expect(last(captures).data).toEqual({ title: "draft" });
+		const record = { title: "another record" };
+		act(() => last(captures).syncInitial(record));
+		expect(last(captures).data).toEqual(record);
+	});
 	test("FormController initial mirrors the input and isDirty starts false", () => {
 		const captures = mount({ title: "Hello", body: "World" });
 		const handle = last(captures);
