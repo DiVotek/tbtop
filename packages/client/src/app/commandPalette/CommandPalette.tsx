@@ -154,10 +154,8 @@ export function CommandPalette({ nav, data }: CommandPaletteProps) {
 											data-selected={index === selected || undefined}
 											className="cn-command-item group/command-item w-full text-left"
 											onMouseEnter={() => setSelected(index)}
-											onMouseDown={(event) => {
-												event.preventDefault();
-												run(index);
-											}}
+											onMouseDown={(event) => event.preventDefault()}
+											onClick={() => run(index)}
 										>
 											<NodeIcon icon={item.icon} />
 											<span className="flex-1 truncate">{item.label}</span>
