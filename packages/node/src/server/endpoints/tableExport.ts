@@ -9,6 +9,7 @@ import { csvChunks } from "../export/csv";
 import { xlsxChunks } from "../export/xlsx";
 import { invalid, notFound, phpQuery, unprocessable } from "../http";
 import { applyTableState } from "../tableQuery";
+import { trimInput } from "./input";
 import { arg, type Endpoint, type EndpointCtx, requireDriver } from "./types";
 
 const CHUNK = 500;
@@ -117,7 +118,7 @@ const tableExport: Endpoint = {
 	pattern: ["tables", ":table", "export", ":action"],
 	async run(ctx) {
 		const { table, params } = exportParams(ctx);
-		const query = phpQuery(new URL(ctx.request.url).searchParams);
+		const query = trimInput(phpQuery(new URL(ctx.request.url).searchParams), ctx.options);
 		const format = pickFormat(query.format, params.formats);
 		const base = table.queryClosure();
 		if (base === undefined) {

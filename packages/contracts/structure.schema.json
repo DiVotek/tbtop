@@ -125,6 +125,8 @@
 								"properties": {
 									"label": { "type": "string" },
 									"collapsed": { "type": "boolean" },
+									"colSpan": { "$ref": "#/$defs/columnsSpec" },
+									"colStart": { "$ref": "#/$defs/columnsSpec" },
 									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
 								},
 								"additionalProperties": false
@@ -507,6 +509,8 @@
 							"options": {
 								"properties": {
 									"cols": { "$ref": "#/$defs/columnsSpec" },
+									"colSpan": { "$ref": "#/$defs/columnsSpec" },
+									"colStart": { "$ref": "#/$defs/columnsSpec" },
 									"gap": { "type": "integer", "minimum": 0, "maximum": 12 },
 									"class": { "type": "string" },
 									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
@@ -529,6 +533,8 @@
 									"collapsible": { "type": "boolean" },
 									"collapsed": { "type": "boolean" },
 									"columns": { "$ref": "#/$defs/columnsSpec" },
+									"colSpan": { "$ref": "#/$defs/columnsSpec" },
+									"colStart": { "$ref": "#/$defs/columnsSpec" },
 									"url": { "type": "string", "minLength": 1 },
 									"newTab": { "type": "boolean" },
 									"actions": { "type": "array", "items": { "$ref": "#/$defs/node" } },
@@ -558,6 +564,8 @@
 							"options": {
 								"properties": {
 									"variant": { "type": "string", "enum": ["grid"] },
+									"colSpan": { "$ref": "#/$defs/columnsSpec" },
+									"colStart": { "$ref": "#/$defs/columnsSpec" },
 									"gap": { "type": "integer", "minimum": 0, "maximum": 12 },
 									"class": { "type": "string" },
 									"children": { "type": "array", "items": { "$ref": "#/$defs/node" } }

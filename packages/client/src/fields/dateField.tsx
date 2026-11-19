@@ -46,7 +46,7 @@ export function DateTimeForm({
 			id={fieldId({ id, name })}
 			name={name}
 			type="datetime-local"
-			defaultValue={local}
+			value={local}
 			onChange={(e) => onChange(localToIso(e.target.value))}
 			disabled={disabled}
 			aria-required={required || undefined}
