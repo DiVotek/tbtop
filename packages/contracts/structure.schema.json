@@ -208,7 +208,7 @@
 														"minItems": 1,
 														"items": {
 															"type": "string",
-															"pattern": "^(?:free|\\d+(?:\\.\\d+)?:\\d+(?:\\.\\d+)?)$"
+															"pattern": "^(?:free|(?:\\d*[1-9]\\d*(?:\\.\\d+)?|\\d+\\.\\d*[1-9]\\d*):(?:\\d*[1-9]\\d*(?:\\.\\d+)?|\\d+\\.\\d*[1-9]\\d*))$"
 														}
 													},
 													"shape": { "type": "string", "enum": ["rect", "round"] }

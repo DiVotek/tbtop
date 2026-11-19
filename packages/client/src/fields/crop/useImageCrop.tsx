@@ -1,4 +1,4 @@
-import { lazy, type ReactNode, Suspense, useCallback, useState } from "react";
+import { lazy, type ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { type CropOptions, isCroppable } from "./cropOptions";
 
 // react-image-crop loads only when a crop dialog first opens.
@@ -19,6 +19,11 @@ export interface ImageCrop {
 /** Puts a crop step in front of an upload when the field has `image.crop`. */
 export function useImageCrop(options: CropOptions | undefined): ImageCrop {
 	const [job, setJob] = useState<CropJob | null>(null);
+	const jobRef = useRef<CropJob | null>(null);
+	jobRef.current = job;
+
+	// An upload awaiting the dialog must not hang if the field unmounts mid-crop.
+	useEffect(() => () => jobRef.current?.resolve(null), []);
 
 	const cropFile = useCallback(
 		(file: File): Promise<File | null> => {
