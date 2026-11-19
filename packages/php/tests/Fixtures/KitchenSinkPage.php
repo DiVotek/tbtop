@@ -197,7 +197,7 @@ class KitchenSinkPage extends Page
                     $s->upload('attachment')->label('Attachment')
                         ->disk('public')->directory('docs')->visibility('public')
                         ->accept('image/*')->maxSize(5 * 1024 * 1024)
-                        ->convertTo('webp')->quality(80),
+                        ->convertTo('webp')->quality(80)->crop(16 / 9),
                     $s->upload('gallery')->label('Gallery')
                         ->disk('public')->directory('gallery')
                         ->accept('image/*')->maxSize(5 * 1024 * 1024)

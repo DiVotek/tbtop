@@ -41,7 +41,7 @@ class UploadDemoPage extends Page
                 $s->upload('doc')->label('Public document')->required()
                     ->disk('public')->directory('docs')->visibility('public')
                     ->accept('image/*')->maxSize(5 * 1024 * 1024)
-                    ->convertTo('webp')->quality(80),
+                    ->convertTo('webp')->quality(80)->crop(1),
                 // Private disk: stored on `local` (storage/app/private), never
                 // symlinked to the web root — served only through the app.
                 $s->upload('secret')->label('Private document')
@@ -52,7 +52,7 @@ class UploadDemoPage extends Page
                 $s->upload('gallery')->label('Gallery (multi, reorderable)')
                     ->disk('public')->directory('gallery')->visibility('public')
                     ->accept('image/*')->maxSize(5 * 1024 * 1024)
-                    ->multiple()->maxFiles(8)->reorderable(),
+                    ->multiple()->maxFiles(8)->reorderable()->crop(),
                 $s->actionsRow([
                     FormActions::save($s),
                 ]),

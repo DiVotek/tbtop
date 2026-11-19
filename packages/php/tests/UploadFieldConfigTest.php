@@ -79,3 +79,28 @@ it('Upload: isMultiple() reads back the flag', function (): void {
     expect($field->isMultiple())->toBeTrue();
     expect(Upload::make('single')->isMultiple())->toBeFalse();
 });
+
+it('Upload: crop() serializes free cropping as an empty object', function (): void {
+    $json = json_decode(json_encode(Upload::make('avatar')->crop()->toNode()));
+
+    expect($json->options->image->crop)->toBeInstanceOf(stdClass::class)
+        ->and(get_object_vars($json->options->image->crop))->toBe([]);
+});
+
+it('Upload: crop() serializes a ratio alongside conversion options', function (): void {
+    $json = json_decode(json_encode(Upload::make('avatar')->crop(1.5)->convertTo('webp')->quality(80)->toNode()), true);
+
+    expect($json['options']['image'])->toBe([
+        'crop' => ['aspectRatio' => 1.5],
+        'convertTo' => 'webp',
+        'quality' => 80,
+    ]);
+});
+
+it('Upload: cropping is opt-in', function (): void {
+    expect(Upload::make('avatar')->toNode()->options)->not->toHaveKey('image');
+});
+
+it('Upload: crop() rejects invalid aspect ratios', function (float $ratio): void {
+    expect(fn () => Upload::make('avatar')->crop($ratio))->toThrow(InvalidArgumentException::class);
+})->with([0.0, -1.5, INF, -INF, NAN]);

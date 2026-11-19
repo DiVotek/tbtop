@@ -54,6 +54,19 @@ export class Upload<N extends string = string> extends Field<N, string | null> {
 		return this.setImage("quality", q);
 	}
 
+	/** Crop PNG, JPEG and WebP before uploading; omit the width/height ratio for free cropping. */
+	crop(aspectRatio?: number | null): this {
+		if (aspectRatio === undefined || aspectRatio === null) {
+			return this.setImage("crop", {});
+		}
+		if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+			throw new RangeError(
+				"Upload::crop() aspect ratio must be finite and greater than zero.",
+			);
+		}
+		return this.setImage("crop", { aspectRatio });
+	}
+
 	/** Maximum number of files when multiple. */
 	maxFiles(max: number): this {
 		return this.set("maxFiles", max);

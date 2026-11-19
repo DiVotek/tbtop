@@ -326,7 +326,8 @@ function postForm(s: S) {
 				.accept("image/*")
 				.maxSize(5 * 1024 * 1024)
 				.convertTo("webp")
-				.quality(80),
+				.quality(80)
+				.crop(16 / 9),
 			s
 				.upload("gallery")
 				.label("Gallery")

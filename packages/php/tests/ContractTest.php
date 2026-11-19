@@ -4,6 +4,7 @@ use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Embed;
+use Tbtop\Admin\Dsl\Fields\Upload;
 use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\NavBuilder;
@@ -18,6 +19,25 @@ use Tbtop\Admin\Tests\Fixtures\NavChildPage;
 use Tbtop\Admin\Tests\Fixtures\NavParentPage;
 
 const FIXTURE_PATH = __DIR__.'/../../contracts/fixtures/kitchen-sink.json';
+
+it('upload cropping conforms to the wire grammar schema', function (?float $ratio): void {
+    validateAgainstSchema(json_decode(json_encode(Upload::make('avatar')->crop($ratio)->toNode())));
+})->with([null, 1.5]);
+
+it('upload crop schema rejects malformed options', function (mixed $crop): void {
+    $node = json_decode(json_encode(Upload::make('avatar')->toNode()));
+    $node->options->image = (object) ['crop' => $crop];
+    $schema = json_decode((string) file_get_contents(SCHEMA_PATH));
+    $result = (new Validator)->validate($node, $schema);
+
+    expect($result->isValid())->toBeFalse();
+})->with([
+    'array' => [[]],
+    'zero' => [(object) ['aspectRatio' => 0]],
+    'negative' => [(object) ['aspectRatio' => -1]],
+    'string' => [(object) ['aspectRatio' => '1.5']],
+    'unknown key' => [(object) ['rotate' => true]],
+]);
 
 it('kitchen-sink page serialization conforms to the wire grammar schema', function () {
     $s = new S;

@@ -4,6 +4,8 @@ namespace Tbtop\Admin\Dsl\Fields;
 
 use Closure;
 use Illuminate\Http\UploadedFile;
+use InvalidArgumentException;
+use stdClass;
 use Tbtop\Admin\Dsl\Concerns\HasMultiple;
 use Tbtop\Admin\Uploads\UploadFieldConfig;
 
@@ -102,6 +104,20 @@ final class Upload extends Field
     public function quality(int|Closure $q): static
     {
         return $this->setImage('quality', self::typedDeferral($q, 'int', 'Upload::quality'));
+    }
+
+    /**
+     * Let the user crop an image in the browser before it uploads.
+     * The aspect ratio is width/height; null allows free cropping.
+     * PNG, JPEG and WebP are cropped; other files upload unchanged.
+     */
+    public function crop(?float $aspectRatio = null): static
+    {
+        if ($aspectRatio !== null && (! is_finite($aspectRatio) || $aspectRatio <= 0)) {
+            throw new InvalidArgumentException('Upload::crop() aspect ratio must be finite and greater than zero.');
+        }
+
+        return $this->setImage('crop', $aspectRatio === null ? new stdClass : ['aspectRatio' => $aspectRatio]);
     }
 
     /**
