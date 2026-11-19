@@ -1,5 +1,5 @@
 import { describe, expect, spyOn, test } from "bun:test";
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { ClientProvider } from "../data/client";
@@ -76,11 +76,41 @@ function Harness() {
 			<button type="button" data-testid="remove-a" onClick={() => void n.remove("a")} />
 			<button type="button" data-testid="remove-b" onClick={() => void n.remove("b")} />
 			<button type="button" data-testid="clear" onClick={() => void n.clearAll()} />
+			<button type="button" data-testid="refresh" onClick={() => void n.refresh()} />
 		</div>
 	);
 }
 
 describe("useNotifications", () => {
+	test.each(["remove-a", "mark-a", "clear"])("a stale refresh cannot undo %s", async (action) => {
+		const stale = Promise.withResolvers<Response>();
+		let reads = 0;
+		const rec: Recorder = { calls: [] };
+		const initial = handler([note("a")], rec);
+		const { getByTestId, queryByTestId } = render(<Harness />, {
+			wrapper: wrap((req) => {
+				if (req.method === "GET" && ++reads > 1) {
+					return stale.promise;
+				}
+				return initial(req);
+			}),
+		});
+		await waitFor(() => expect(getByTestId("count").textContent).toBe("1"));
+		fireEvent.click(getByTestId("refresh"));
+		await waitFor(() => expect(reads).toBe(2));
+		fireEvent.click(getByTestId(action));
+		await waitFor(() => expect(getByTestId("count").textContent).toBe("0"));
+		await act(async () => {
+			stale.resolve(jsonResponse({ data: [note("a")], unreadCount: 1 }));
+		});
+		expect(getByTestId("count").textContent).toBe("0");
+		if (action === "mark-a") {
+			expect(getByTestId("item-a").getAttribute("data-read")).toBe("true");
+		} else {
+			expect(queryByTestId("item-a")).toBeNull();
+		}
+	});
+
 	test("fetches on mount and exposes items with the unread count", async () => {
 		const rec: Recorder = { calls: [] };
 		const { getByTestId } = render(<Harness />, {
