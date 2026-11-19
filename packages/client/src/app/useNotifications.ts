@@ -31,6 +31,7 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 	const [error, setError] = useState(false);
 	const stateRef = useRef({ items, unreadCount });
 	const mutationQueue = useRef<Promise<void>>(Promise.resolve());
+	const mutationVersion = useRef(0);
 
 	const setNotificationState = useCallback(
 		(nextItems: AdminNotification[], nextCount: number) => {
@@ -42,8 +43,13 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 	);
 
 	const refresh = useCallback(async () => {
+		await mutationQueue.current;
+		const version = mutationVersion.current;
 		try {
 			const parsed = parseNotificationList(await client.get(base));
+			if (version !== mutationVersion.current) {
+				return;
+			}
 			if (parsed === null) {
 				setError(true);
 				return;
@@ -51,7 +57,9 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 			setNotificationState(parsed.items, parsed.unreadCount);
 			setError(false);
 		} catch {
-			setError(true);
+			if (version === mutationVersion.current) {
+				setError(true);
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -69,6 +77,7 @@ export function useNotifications(pollInterval: number | null | undefined): UseNo
 			send: () => Promise<unknown>,
 		) => {
 			const operation = mutationQueue.current.then(async () => {
+				mutationVersion.current += 1;
 				const previous = stateRef.current;
 				const next = update(previous);
 				setNotificationState(next.items, next.unreadCount);
