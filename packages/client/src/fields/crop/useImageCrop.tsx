@@ -30,7 +30,13 @@ export function useImageCrop(options: CropOptions | undefined): ImageCrop {
 			if (!options || !isCroppable(file)) {
 				return Promise.resolve(file);
 			}
-			return new Promise((resolve) => setJob({ file, resolve }));
+			return new Promise((resolve) => {
+				// A new pick replaces an open dialog; the replaced one counts as cancelled.
+				jobRef.current?.resolve(null);
+				const next = { file, resolve };
+				jobRef.current = next;
+				setJob(next);
+			});
 		},
 		[options],
 	);

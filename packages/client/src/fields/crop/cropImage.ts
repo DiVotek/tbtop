@@ -1,4 +1,4 @@
-/** Pixel rectangle on the source image, as react-easy-crop reports it. */
+/** Pixel rectangle on the image's natural (EXIF-oriented) size, as toPixelArea produces it. */
 export interface PixelArea {
 	x: number;
 	y: number;
@@ -12,7 +12,8 @@ const QUALITY = 0.92;
 
 /** Cuts `area` out of `file` and returns it as a new File, same name and (where encodable) type. */
 export async function cropImage(file: File, area: PixelArea): Promise<File> {
-	const bitmap = await createImageBitmap(file);
+	// Match the <img> preview, which applies EXIF orientation.
+	const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
 	try {
 		const canvas = document.createElement("canvas");
 		canvas.width = Math.max(1, Math.round(area.width));
@@ -32,8 +33,9 @@ export async function cropImage(file: File, area: PixelArea): Promise<File> {
 			canvas.width,
 			canvas.height,
 		);
-		const type = ENCODABLE.has(file.type) ? file.type : "image/png";
-		const blob = await toBlob(canvas, type);
+		const blob = await toBlob(canvas, ENCODABLE.has(file.type) ? file.type : "image/png");
+		// toBlob silently falls back to PNG for a type the browser cannot encode.
+		const type = blob.type || "image/png";
 		return new File([blob], renameFor(file.name, type), { type, lastModified: Date.now() });
 	} finally {
 		bitmap.close();

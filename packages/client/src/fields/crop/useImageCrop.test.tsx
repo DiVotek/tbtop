@@ -21,4 +21,16 @@ describe("useImageCrop", () => {
 		unmount();
 		expect(await pending).toBeNull();
 	});
+
+	test("a second pick cancels the dialog it replaces", async () => {
+		const { result } = renderHook(() => useImageCrop(options));
+		let first: Promise<File | null> = Promise.resolve(jpeg());
+		act(() => {
+			first = result.current.cropFile(jpeg());
+		});
+		act(() => {
+			void result.current.cropFile(jpeg());
+		});
+		expect(await first).toBeNull();
+	});
 });
