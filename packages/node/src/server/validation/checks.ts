@@ -4,6 +4,7 @@ import { dataGet, dataHas } from "./data";
 export type SizeKind = "numeric" | "array" | "string";
 
 export interface RuleInput {
+	key: string;
 	value: unknown;
 	params: string[];
 	data: unknown;
@@ -122,7 +123,7 @@ export const CHECKS: Record<string, Check> = {
 	not_regex: ({ value, params }) => !pcre(params.join(",")).test(text(value)),
 	nullable: () => true,
 	numeric: ({ value }) => isNumeric(value),
-	present: () => true,
+	present: ({ data, key }) => dataHas(data, key),
 	regex: ({ value, params }) => pcre(params.join(",")).test(text(value)),
 	required: ({ value }) => filled(value),
 	required_if: requiredWhen((input) => matchesAny(others(input)[0], input.params.slice(1))),
