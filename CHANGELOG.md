@@ -4,7 +4,7 @@ Every release of `tbtop/admin` (Packagist), `@tbtop/inertia-admin` (npm) and
 `@tbtop/admin` (npm, Node) — all three ship in lockstep from one tag. Versioning rules: [VERSIONING.md](VERSIONING.md).
 Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 
-## [0.8.3](https://github.com/DiVotek/tbtop/releases/tag/v0.8.3) — 2026-11-18
+## [0.8.3](https://github.com/DiVotek/tbtop/releases/tag/v0.8.3) — 2026-11-19
 
 ### Features
 
