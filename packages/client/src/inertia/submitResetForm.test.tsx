@@ -41,7 +41,7 @@ function node(kind: string, options: Record<string, unknown>, name?: string): St
 	return { kind, options, meta: {}, ...(name ? { name } : {}) } as StructureNode;
 }
 
-function buildForm(email = ""): StructureNode {
+function buildForm(email?: string): StructureNode {
 	const raw = node(
 		"form",
 		{
@@ -55,7 +55,7 @@ function buildForm(email = ""): StructureNode {
 	);
 	return materialize(raw, {
 		basePath: "/admin/forgot-password",
-		data: { forgot: { email } },
+		data: { forgot: email === undefined ? {} : { email } },
 	});
 }
 
@@ -79,6 +79,29 @@ afterEach(() => {
 });
 
 describe("form submit: resetForm delivered via flash", () => {
+	test("an unchanged empty PHP array record keeps submitted values clean", async () => {
+		const response = new Promise<SubmitCallbacks>((resolve) => {
+			deferSubmit = resolve;
+		});
+		const input = await submitTyped("saved@example.com");
+		const dirty = new Event("beforeunload", { cancelable: true });
+		window.dispatchEvent(dirty);
+		expect(dirty.defaultPrevented).toBe(true);
+		const callbacks = await response;
+		const page = {
+			url: "/admin/forgot-password",
+			props: { data: { forgot: [] } },
+		};
+		await act(async () => {
+			callbacks.onBeforeUpdate?.(page);
+			callbacks.onSuccess?.(page);
+			callbacks.onFinish?.();
+		});
+		expect(input.value).toBe("saved@example.com");
+		const clean = new Event("beforeunload", { cancelable: true });
+		window.dispatchEvent(clean);
+		expect(clean.defaultPrevented).toBe(false);
+	});
 	test("resetForm returns the form to its record", async () => {
 		responseEffects = [{ kind: "notify", message: "Sent" }, { kind: "resetForm" }];
 		const input = await submitTyped("someone@example.com");

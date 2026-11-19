@@ -1,12 +1,13 @@
 import type { FormDataConvertible } from "@inertiajs/core";
 import { router } from "@inertiajs/react";
+import { normalizeFormRecord } from "../structure/normalizeFormRecord";
 import type { ClientActionContext, StructureNode } from "../structure/types";
 import { settleSubmittedForm } from "./effects";
 import { liftNestedErrors } from "./fieldErrors";
 import { pageBasePath } from "./pageBasePath";
 import { secretFieldNames, serializeFormData } from "./serializeFormData";
 
-type FormRecords = Record<string, Record<string, unknown>>;
+type FormRecords = Record<string, unknown>;
 
 export function submitHandler(
 	basePath: string,
@@ -28,7 +29,9 @@ export function submitHandler(
 						submission?.finish();
 					} else if (!Object.keys(page.props.errors ?? {}).length) {
 						submission?.prepare(
-							(page.props.data as FormRecords | undefined)?.[formName],
+							normalizeFormRecord(
+								(page.props.data as FormRecords | undefined)?.[formName],
+							),
 						);
 					}
 				},
