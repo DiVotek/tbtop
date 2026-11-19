@@ -99,6 +99,34 @@ class AdminPagesTest extends TestCase
         $this->assertSame(['Draft' => 1, 'Published' => 1], $statuses);
     }
 
+    public function test_dashboard_stats_and_charts_exclude_soft_deleted_posts(): void
+    {
+        $this->makePost(['published' => true]);
+        $this->makePost(['published' => false]);
+        $this->makePost(['published' => true])->delete();
+
+        $this->get('/admin/dashboard')
+            ->assertOk()
+            ->assertInertia(function (Assert $page): void {
+                $structure = (array) json_decode((string) json_encode($page->toArray()['props']['structure']), true);
+                $values = $this->collectStatValues($structure);
+
+                $this->assertEquals(2, $values['Total Posts']);
+                $this->assertEquals(1, $values['Published']);
+                $this->assertEquals(1, $values['Drafts']);
+                $this->assertEquals(2, $values['Recent posts']);
+            });
+
+        $recent = $this->getJson('/admin/dashboard/data/'.rawurlencode('Recent posts').'?months=6')->assertOk();
+        $this->assertEquals(2, $recent->json('data.value'));
+
+        $byStatus = $this->getJson('/admin/dashboard/data/byStatus')->assertOk();
+        $this->assertSame(['Draft' => 1, 'Published' => 1], array_column($byStatus->json('data'), 'total', 'status'));
+
+        $byInterval = $this->getJson('/admin/dashboard/data/byInterval?interval=month')->assertOk();
+        $this->assertSame(2, array_sum(array_column($byInterval->json('data'), 'count')));
+    }
+
     public function test_post_edit_form_submit_updates_the_post(): void
     {
         $author = User::factory()->create();
@@ -306,6 +334,26 @@ class AdminPagesTest extends TestCase
         }
 
         return null;
+    }
+
+    /**
+     * Collect every stat node's value in the serialized structure tree, keyed by label.
+     *
+     * @param  array<string, mixed>  $node
+     * @return array<string, mixed>
+     */
+    private function collectStatValues(array $node): array
+    {
+        $values = ($node['kind'] ?? null) === 'stat'
+            ? [$node['options']['label'] => $node['options']['value']]
+            : [];
+        foreach ($node['options']['children'] ?? [] as $child) {
+            if (is_array($child)) {
+                $values = [...$values, ...$this->collectStatValues($child)];
+            }
+        }
+
+        return $values;
     }
 
     /** @param  array<string, mixed>  $overrides */

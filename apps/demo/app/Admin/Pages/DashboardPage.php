@@ -3,7 +3,6 @@
 namespace App\Admin\Pages;
 
 use App\Models\Post;
-use Illuminate\Support\Facades\DB;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Color;
 use Tbtop\Admin\Dsl\Column;
@@ -97,13 +96,12 @@ class DashboardPage extends Page
 
     private function statsRow(S $s): Node
     {
-        $totalPosts = fn () => DB::table('posts')->count();
-        $published = fn () => DB::table('posts')->where('published', true)->count();
-        $draft = fn () => DB::table('posts')->where('published', false)->count();
-        $recentTrend = fn (array $params) => DB::table('posts')
-            ->selectRaw('count(*) as n')
+        $totalPosts = fn () => Post::query()->count();
+        $published = fn () => Post::query()->where('published', true)->count();
+        $draft = fn () => Post::query()->where('published', false)->count();
+        $recentTrend = fn (array $params) => Post::query()
             ->whereRaw("created_at >= date('now', ?)", ['-'.(int) $params['months'].' months'])
-            ->value('n') ?? 0;
+            ->count();
 
         return $s->grid(['cols' => 4], [
             Stat::make('Total Posts')
@@ -187,10 +185,11 @@ class DashboardPage extends Page
                         default => '%Y-%m',
                     };
 
-                    return DB::table('posts')
+                    return Post::query()
                         ->selectRaw('strftime(?, created_at) as period, count(*) as count', [$format])
                         ->groupBy('period')
                         ->orderBy('period')
+                        ->toBase()
                         ->get();
                 })
                 ->toNode(),
@@ -199,10 +198,11 @@ class DashboardPage extends Page
                 'nameKey' => 'status',
                 'series' => [['dataKey' => 'total', 'label' => 'Posts']],
             ])
-                ->query(fn () => DB::table('posts')
+                ->query(fn () => Post::query()
                     ->selectRaw("case when published = 1 then 'Published' else 'Draft' end as status, count(*) as total")
                     ->groupBy('published')
                     ->orderBy('total')
+                    ->toBase()
                     ->get())
                 ->toNode(),
         ]);
