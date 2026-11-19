@@ -785,10 +785,10 @@ $s->upload('hero')->accept('image/*')->cropAspects(['16:9', '4:3', 'free']),
 
 - In `multiple()` mode the dialog opens for each picked image in turn; cancelling one skips
   that file, the rest still upload.
-- SVG, GIF and non-image files skip the dialog and upload as they are.
+- Only JPEG, PNG and WebP open the dialog, and they keep their type. SVG, GIF, HEIC, AVIF,
+  non-images and any image the browser fails to decode upload as they are.
 - The aspect is a client-side guide, not validation. To enforce it, add Laravel's
   `dimensions:ratio=16/9` rule.
-- JPEG, PNG and WebP keep their type; any other raster (HEIC, AVIF, BMP) comes back as PNG.
 
 The upload happens over a **page-scoped JSON endpoint** (not Inertia) before the form
 submits. The endpoint returns the minimal preview shape `{path, url}`; the field's form

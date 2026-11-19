@@ -17,12 +17,14 @@ describe("parseAspects", () => {
 });
 
 describe("isCroppable", () => {
-	test("raster images are cropped; SVG, GIF and non-images pass through", () => {
+	test("JPEG, PNG and WebP are cropped; SVG, GIF, HEIC, AVIF and non-images pass through", () => {
 		const file = (type: string) => new File(["x"], "f", { type });
 		expect(isCroppable(file("image/jpeg"))).toBe(true);
 		expect(isCroppable(file("image/webp"))).toBe(true);
 		expect(isCroppable(file("image/svg+xml"))).toBe(false);
 		expect(isCroppable(file("image/gif"))).toBe(false);
+		expect(isCroppable(file("image/heic"))).toBe(false);
+		expect(isCroppable(file("image/avif"))).toBe(false);
 		expect(isCroppable(file("application/pdf"))).toBe(false);
 	});
 });

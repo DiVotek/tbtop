@@ -10,8 +10,8 @@ export interface AspectChoice {
 	ratio: number | undefined;
 }
 
-/** Formats a browser cannot redraw without losing something (vector, animation). */
-const PASSTHROUGH_TYPES = new Set(["image/svg+xml", "image/gif"]);
+/** Rasters every browser decodes and canvas re-encodes as the same type. */
+const CROPPABLE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 /** Parses wire aspects ('16:9' | 'free') into dialog choices, dropping malformed entries. */
 export function parseAspects(aspects: readonly string[]): AspectChoice[] {
@@ -36,7 +36,10 @@ function parseAspect(raw: string): AspectChoice | undefined {
 	return { label: raw, ratio: w / h };
 }
 
-/** True when the dialog should open for this file: a raster image the browser can redraw. */
+/**
+ * True when the dialog should open for this file. SVG and GIF would lose vectors or
+ * animation; HEIC/AVIF/BMP may not decode everywhere, so they upload unchanged too.
+ */
 export function isCroppable(file: File): boolean {
-	return file.type.startsWith("image/") && !PASSTHROUGH_TYPES.has(file.type);
+	return CROPPABLE_TYPES.has(file.type);
 }

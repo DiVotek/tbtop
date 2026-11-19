@@ -134,6 +134,8 @@ export function CropDialog({ file, options, onDone }: CropDialogProps) {
 							alt={file.name}
 							className="max-h-[60vh] w-auto"
 							onLoad={() => reset(aspect.ratio)}
+							// A file the browser cannot decode uploads unchanged, like any non-croppable file.
+							onError={() => onDone(file)}
 						/>
 					</ReactCrop>
 				)}
