@@ -23,6 +23,7 @@ import { FormControllerProvider } from "./formContext";
 import { isEqual, useFormController } from "./formController";
 import { isNodeDisabled, isNodeHidden, isNodeRequired } from "./meta";
 import { useModalData } from "./modalDataContext";
+import { normalizeFormRecord } from "./normalizeFormRecord";
 import { afterPointerRelease, trackPointerPress } from "./pointerSettle";
 import { renderAsyncError } from "./renderAsyncError";
 import { scrollToFirstError } from "./scrollToFirstError";
@@ -60,7 +61,7 @@ export function FormBlock({ options }: FormRenderProps) {
 	if (hasModalData) {
 		return (
 			<FormControllerBody
-				initial={normalize(modalData)}
+				initial={normalizeFormRecord(modalData)}
 				schema={options.schema}
 				guardUnsaved={options.guardUnsaved ?? true}
 			>
@@ -77,7 +78,7 @@ export function FormBlock({ options }: FormRenderProps) {
 	}
 	return (
 		<FormControllerBody
-			initial={normalize(state.data)}
+			initial={normalizeFormRecord(state.data)}
 			schema={options.schema}
 			guardUnsaved={options.guardUnsaved ?? true}
 		>
@@ -98,7 +99,7 @@ function FormControllerBody({ initial, schema, children, guardUnsaved }: BodyPro
 	const localeConfig = useContentLocaleConfig();
 	const t = useTranslation();
 	const formCtx: FormRenderCtx = { ctrl, locales: localeConfig.locales, t };
-	useSyncInitial(initial, ctrl.reset);
+	useSyncInitial(initial, ctrl.syncInitial);
 	useDependentResets(children ?? [], ctrl, initial);
 	const guard = useUnsavedGuard(ctrl.isDirty, guardUnsaved);
 	const hasTranslatable = detectTranslatableFields(children ?? []);
@@ -401,13 +402,6 @@ function clearFieldErrors(ctrl: ControllerHandle, name: string): void {
 function mergeName(node: StructureNode): Bag {
 	const baseOptions = node.options as Bag;
 	return node.name ? { name: node.name, ...baseOptions } : baseOptions;
-}
-
-function normalize(data: unknown): Bag {
-	if (data && typeof data === "object" && !Array.isArray(data)) {
-		return data as Bag;
-	}
-	return {};
 }
 
 /**

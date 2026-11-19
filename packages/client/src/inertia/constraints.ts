@@ -7,6 +7,7 @@ export interface FieldConstraints {
 	integer?: boolean;
 	regex?: string;
 	in?: string[];
+	normalizeValue?: (value: unknown) => unknown;
 }
 
 interface Issue {
@@ -42,7 +43,8 @@ export function compileConstraints(byField: Record<string, FieldConstraints>): {
 function issuesFor(input: unknown, name: string, rules: FieldConstraints): Issue[] {
 	const issues: Issue[] = [];
 	for (const { path, value } of resolvePaths(input, name.split("."))) {
-		const message = checkField(value, rules);
+		const normalized = rules.normalizeValue ? rules.normalizeValue(value) : value;
+		const message = checkField(normalized, rules);
 		if (message) {
 			issues.push({ path, message });
 		}
