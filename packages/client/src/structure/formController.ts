@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useReconciled } from "../lib/useReconciled";
-import type { FormController } from "./types";
+import type { FormController, FormSubmission } from "./types";
 
 type Bag = Record<string, unknown>;
 
@@ -10,6 +10,7 @@ interface UseFormControllerInput {
 }
 
 export interface FormControllerInternal extends FormController {
+	syncInitial: (record: Bag) => void;
 	touched: Set<string>;
 	fieldErrors: Record<string, string>;
 	schema: { parse: (input: unknown) => unknown } | undefined;
@@ -51,14 +52,15 @@ export function useFormController(input: UseFormControllerInput): FormController
 		setData(mutate);
 	}, []);
 
-	const reset = useCallback((values?: Bag) => {
+	const reset = useCallback((values?: Bag, submitted?: Bag) => {
 		const next = values ?? baselineRef.current;
 		baselineRef.current = next;
 		setInitial({ ...next });
-		setData({ ...next });
+		setData((current) => (submitted ? rebaseEdits(next, submitted, current) : { ...next }));
 		setTouched(new Set());
 		setFieldErrors({});
 	}, []);
+	const { beginSubmit, syncInitial } = useSubmission(input.initial, data, reset);
 
 	const markTouched = useCallback((field: string) => {
 		setTouched((prev) => {
@@ -100,6 +102,8 @@ export function useFormController(input: UseFormControllerInput): FormController
 		set,
 		setMany,
 		reset,
+		beginSubmit,
+		syncInitial,
 		touched,
 		fieldErrors,
 		schema: input.schema,
@@ -109,6 +113,65 @@ export function useFormController(input: UseFormControllerInput): FormController
 		errorScrollTick,
 		notifyErrorsApplied,
 	};
+}
+
+interface PendingSubmission extends FormSubmission {
+	data: Bag;
+	record?: Bag;
+}
+
+function useSubmission(record: Bag, data: Bag, reset: (values: Bag, submitted?: Bag) => void) {
+	const active = useRef<PendingSubmission | null>(null);
+	const settledRecord = useRef<Bag | null>(null);
+	const beginSubmit = useCallback(() => {
+		const submission: PendingSubmission = {
+			data,
+			prepare(refreshed) {
+				if (refreshed && !isEqual(record, refreshed)) {
+					submission.record = refreshed;
+				}
+			},
+			commit(saved) {
+				if (active.current !== submission) {
+					return;
+				}
+				// Inertia can deliver the refreshed record on either side of onSuccess.
+				settledRecord.current = submission.record ?? null;
+				reset(submission.record ?? saved, data);
+			},
+			finish() {
+				if (active.current === submission) {
+					active.current = null;
+				}
+			},
+		};
+		active.current = submission;
+		return submission;
+	}, [data, record, reset]);
+	const syncInitial = useCallback(
+		(next: Bag) => {
+			const alreadySettled = isEqual(next, settledRecord.current);
+			settledRecord.current = null;
+			if (!alreadySettled) {
+				const pending = active.current;
+				reset(next, pending && isEqual(next, pending.record) ? pending.data : undefined);
+			}
+		},
+		[reset],
+	);
+	return { beginSubmit, syncInitial };
+}
+
+function rebaseEdits(saved: Bag, submitted: Bag, current: Bag): Bag {
+	const next = { ...saved };
+	for (const key of diffKeys(submitted, current)) {
+		if (Object.hasOwn(current, key)) {
+			next[key] = current[key];
+		} else {
+			delete next[key];
+		}
+	}
+	return next;
 }
 
 function diffKeys(initial: Bag, data: Bag): string[] {
