@@ -350,6 +350,9 @@ No methods beyond the shared base — see [Every field](#every-field).
 |---|---|
 | `accept(array\|string $accept): static` | Accepted MIME types / extensions, e.g. 'image/*', '.pdf', or a list ['application/pdf', 'image/*'] to allow several. A list is joined with commas: the wire grammar types `accept` as a string, and the client passes it straight to the DOM attribute. |
 | `convertTo(Closure\|string $format): static` | Convert the stored image to this format ('webp'\|'jpeg'\|'png'). |
+| `crop(?string $aspect = null): static` | Open a crop dialog before an image uploads, locked to one aspect ratio ('16:9', '1:1') or free when omitted. The browser crops and uploads the result; the original is not kept. Client-side only: enforce a ratio server-side with Laravel's `dimensions:ratio=` rule. |
+| `cropAspects(array $aspects): static` | Crop with a choice of aspect ratios in the dialog, the first preselected. Each entry is 'W:H' or 'free'. |
+| `cropCircle(bool $value = true): static` | Round crop mask (avatars); the stored file stays rectangular. Defaults the aspect to '1:1'. |
 | `directory(string $dir): static` | Subdirectory the file is stored under (default 'uploads'). |
 | `disk(string $disk): static` | Laravel filesystem disk name (default 'public'). |
 | `maxFiles(int $max): static` | Maximum number of files when multiple is enabled. Not Closure-resolvable: RuleWalker turns it into the server-side `max:` rule, so it stays a literal. |

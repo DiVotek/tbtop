@@ -196,7 +196,11 @@ export interface UploadOpts {
 	accept?: string;
 	maxSize?: number;
 	maxFileSize?: number; // legacy alias
-	image?: { convertTo?: "webp" | "jpeg" | "png"; quality?: number };
+	image?: {
+		convertTo?: "webp" | "jpeg" | "png";
+		quality?: number;
+		crop?: { aspects: string[]; shape?: "rect" | "round" };
+	};
 }
 
 export interface RepeaterOpts<TBuilders = unknown> {

@@ -1,6 +1,7 @@
 import { XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "../i18n/i18n";
+import { useImageCrop } from "./crop/useImageCrop";
 import { type FieldFormProps, fieldId } from "./fieldProps";
 import { UploadMultiForm } from "./uploadMultiField";
 import { HiddenFileInput, UploadError, UploadPicker } from "./uploadPicker";
@@ -61,9 +62,11 @@ function UploadSingleForm({
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const preview = normalizeUploadValue(value);
+	const { cropFile, dialog } = useImageCrop(opts.image?.crop);
 
 	const onFiles = async (files: File[]) => {
-		const file = files?.[0];
+		const picked = files?.[0];
+		const file = picked ? await cropFile(picked) : null;
 		if (!file) {
 			return;
 		}
@@ -85,11 +88,35 @@ function UploadSingleForm({
 
 	if (preview) {
 		return (
-			<UploadPreview
+			<>
+				{dialog}
+				<UploadPreview
+					id={fieldId({ id, name })}
+					name={name}
+					accept={opts.accept}
+					value={preview}
+					busy={busy}
+					disabled={disabled}
+					error={error}
+					onBlur={onBlur}
+					invalid={invalid}
+					describedBy={describedBy}
+					onFiles={onFiles}
+					onRemove={() => {
+						setError(null);
+						onChange(null);
+					}}
+				/>
+			</>
+		);
+	}
+	return (
+		<>
+			{dialog}
+			<UploadPicker
 				id={fieldId({ id, name })}
 				name={name}
 				accept={opts.accept}
-				value={preview}
 				busy={busy}
 				disabled={disabled}
 				error={error}
@@ -97,26 +124,8 @@ function UploadSingleForm({
 				invalid={invalid}
 				describedBy={describedBy}
 				onFiles={onFiles}
-				onRemove={() => {
-					setError(null);
-					onChange(null);
-				}}
 			/>
-		);
-	}
-	return (
-		<UploadPicker
-			id={fieldId({ id, name })}
-			name={name}
-			accept={opts.accept}
-			busy={busy}
-			disabled={disabled}
-			error={error}
-			onBlur={onBlur}
-			invalid={invalid}
-			describedBy={describedBy}
-			onFiles={onFiles}
-		/>
+		</>
 	);
 }
 

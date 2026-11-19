@@ -234,3 +234,38 @@ describe("UploadCell multi", () => {
 		expect(container.textContent).toContain("2");
 	});
 });
+
+describe("UploadForm multi with image.crop", () => {
+	test("crops files one at a time; a cancelled file is skipped and the next still uploads", async () => {
+		const seen: string[] = [];
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const { container, findByTestId, getByRole } = render(
+			<Wrap>
+				<UploadForm
+					name="gallery"
+					value={null}
+					onChange={() => {}}
+					options={{
+						multiple: true,
+						image: { crop: { aspects: ["1:1"] } },
+						upload: async (_ctx, file) => {
+							seen.push(file.name);
+							return uploadResponse(`uploads/${file.name}`, `/uploads/${file.name}`);
+						},
+					}}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		await userEvent.upload(input, [
+			new File(["x"], "a.jpg", { type: "image/jpeg" }),
+			new File(["x"], "b.pdf", { type: "application/pdf" }),
+		]);
+
+		await findByTestId("upload-crop-dialog");
+		expect(seen).toEqual([]);
+		fireEvent.click(getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => expect(seen).toEqual(["b.pdf"]));
+	});
+});

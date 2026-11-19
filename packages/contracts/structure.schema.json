@@ -197,6 +197,22 @@
 												"type": "integer",
 												"minimum": 1,
 												"maximum": 100
+											},
+											"crop": {
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["aspects"],
+												"properties": {
+													"aspects": {
+														"type": "array",
+														"minItems": 1,
+														"items": {
+															"type": "string",
+															"pattern": "^(?:free|\\d+(?:\\.\\d+)?:\\d+(?:\\.\\d+)?)$"
+														}
+													},
+													"shape": { "type": "string", "enum": ["rect", "round"] }
+												}
 											}
 										}
 									}

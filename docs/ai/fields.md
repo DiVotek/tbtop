@@ -745,6 +745,9 @@ a config profile. `apps/demo/app/Admin/Pages/UploadDemoPage.php` exercises the f
 | `maxSize` | `maxSize(int $bytes)` | 5 MiB | Max upload size in **bytes** |
 | `convertTo` | `convertTo(string)` | — | Re-encode the image: `'webp'` \| `'jpeg'` \| `'png'` |
 | `quality` | `quality(int)` | — | Encoder quality `1-100` for the converted image |
+| `crop` | `crop(?string $aspect = null)` | — | Crop dialog before an image uploads, locked to `'W:H'` (e.g. `'16:9'`) or free when omitted |
+| `cropAspects` | `cropAspects(list<string>)` | — | Crop with a choice of aspects in the dialog (`'W:H'` or `'free'`), the first preselected |
+| `cropCircle` | `cropCircle(bool = true)` | `false` | Round crop mask for avatars; defaults the aspect to `'1:1'`. The stored file stays rectangular |
 | `multiple` | `multiple(bool = true)` | `false` | Accept several files; the form value becomes an array of path strings |
 | `maxFiles` | `maxFiles(int)` | — | Cap on file count in `multiple()` mode |
 | `reorderable` | `reorderable(bool = true)` | `false` | Drag to reorder the uploaded files (`multiple()` only) |
@@ -766,6 +769,26 @@ $s->upload('secret')->label('Private document')
     ->accept('image/*')->maxSize(5 * 1024 * 1024)
     ->convertTo('webp')->quality(80),
 ```
+
+### Cropping
+
+`crop()` puts a crop dialog between picking an image and uploading it. The browser cuts the
+selection out and uploads only the result, so `convertTo`/`quality` and media sizes apply to
+the cropped image and the original is never stored (there is no re-crop later):
+
+```php
+$s->upload('cover')->accept('image/*')->crop('16:9')->convertTo('webp'),
+$s->upload('avatar')->accept('image/*')->crop('1:1')->cropCircle(),
+$s->upload('photo')->accept('image/*')->crop(),                     // free selection
+$s->upload('hero')->accept('image/*')->cropAspects(['16:9', '4:3', 'free']),
+```
+
+- In `multiple()` mode the dialog opens for each picked image in turn; cancelling one skips
+  that file, the rest still upload.
+- SVG, GIF and non-image files skip the dialog and upload as they are.
+- The aspect is a client-side guide, not validation. To enforce it, add Laravel's
+  `dimensions:ratio=16/9` rule.
+- JPEG, PNG and WebP keep their type; any other raster (HEIC, AVIF, BMP) comes back as PNG.
 
 The upload happens over a **page-scoped JSON endpoint** (not Inertia) before the form
 submits. The endpoint returns the minimal preview shape `{path, url}`; the field's form
