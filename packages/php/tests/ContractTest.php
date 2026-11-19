@@ -4,6 +4,7 @@ use Opis\JsonSchema\Validator;
 use Tbtop\Admin\Actions\Effects;
 use Tbtop\Admin\Dsl\Column;
 use Tbtop\Admin\Dsl\Fields\Embed;
+use Tbtop\Admin\Dsl\Node;
 use Tbtop\Admin\Dsl\S;
 use Tbtop\Admin\Navigation\NavBuilder;
 use Tbtop\Admin\Navigation\NavGroup;
@@ -220,29 +221,43 @@ it('section link and header actions conform to the wire grammar schema', functio
     validateAgainstSchema(json_decode(json_encode($node)));
 });
 
-it('section column placement conforms to the wire grammar schema', function (array $placement) {
+dataset('placement containers', ['stack', 'row', 'grid', 'section', 'collapsible', 'aside', 'tabs']);
+
+function contractPlacementNode(string $kind, array $placement): Node
+{
     $s = new S;
-    $node = $s->grid(['cols' => 8], [
-        $s->section(['title' => 'Placed section', ...$placement], [$s->displayText('Content')]),
-    ]);
+    $children = [$s->displayText('Content')];
+
+    return match ($kind) {
+        'stack', 'row', 'aside' => $s->{$kind}($children, $placement),
+        'grid', 'section' => $s->{$kind}($placement, $children),
+        'collapsible' => $s->collapsible(['label' => 'Details', ...$placement], $children),
+        'tabs' => $s->tabs([], $placement),
+    };
+}
+
+it('container column placement conforms to the wire grammar schema', function (string $kind, array $placement) {
+    $s = new S;
+    $node = $s->grid(['cols' => 8], [contractPlacementNode($kind, $placement)]);
     $json = json_decode(json_encode($node));
 
-    expect(json_decode(json_encode($node), true)['options']['children'][0]['options'])->toMatchArray($placement);
+    foreach ($placement as $key => $value) {
+        expect($json->options->children[0]->options->{$key})->toEqual(is_array($value) ? (object) $value : $value);
+    }
     validateAgainstSchema($json);
-})->with([
+})->with('placement containers')->with([
     'no placement' => [[]],
     'integer bounds' => [['colSpan' => 8, 'colStart' => 1]],
     'responsive placement' => [['colSpan' => ['sm' => 1, 'md' => 2, 'lg' => 4, 'xl' => 8], 'colStart' => ['md' => 2]]],
 ]);
 
-it('section column placement rejects invalid wire values', function (string $key, mixed $value) {
-    $s = new S;
-    $json = json_decode(json_encode($s->section([], [])));
+it('container column placement rejects invalid wire values', function (string $kind, string $key, mixed $value) {
+    $json = json_decode(json_encode(contractPlacementNode($kind, [])));
     $json->options->{$key} = $value;
     $schema = json_decode((string) file_get_contents(SCHEMA_PATH));
 
     expect((new Validator)->validate($json, $schema)->isValid())->toBeFalse();
-})->with(['colSpan', 'colStart'])->with([
+})->with('placement containers')->with(['colSpan', 'colStart'])->with([
     'below range' => [0],
     'above range' => [9],
     'fraction' => [1.5],
