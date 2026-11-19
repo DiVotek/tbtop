@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { render, waitFor } from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { renderNode } from "../render/structureRenderer";
 import { s } from "../structure/structure";
 import { wrapForStructure as wrap } from "../structure/testFixtures";
@@ -9,6 +10,28 @@ import { DateCell, DateTimeCell, DateTimeForm } from "./dateField";
 const ISO = "2026-05-17T14:30:00.000Z";
 
 describe("Datetime field", () => {
+	for (const resetValue of [null, "2027-01-02T09:15", "invalid"]) {
+		test(`edited datetime follows form data reset to ${resetValue}`, () => {
+			function Form() {
+				const [value, setFormData] = useState<string | null>(ISO);
+				return (
+					<>
+						<DateTimeForm name="publishedAt" value={value} onChange={setFormData} />
+						<button type="button" onClick={() => setFormData(resetValue)}>
+							Reset
+						</button>
+					</>
+				);
+			}
+			const view = render(<Form />);
+			const input = view.container.querySelector("input") as HTMLInputElement;
+			fireEvent.change(input, { target: { value: "2026-06-18T16:45" } });
+			expect(input.value).toBe("2026-06-18T16:45");
+			fireEvent.click(view.getByRole("button", { name: "Reset" }));
+			expect(input.value).toBe(resetValue === "invalid" ? "" : (resetValue ?? ""));
+		});
+	}
+
 	test("Datetime form renders an <input type='datetime-local'>", async () => {
 		const node = s.form({ query: async () => ({ publishedAt: null }) }, [
 			s.datetime({ name: "publishedAt", label: "Published at" }),
