@@ -7,12 +7,12 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
-import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import type { EditorState, SerializedEditorState } from "lexical";
+import type { SerializedEditorState } from "lexical";
 import { useMemo, useRef } from "react";
 import { useTranslation } from "../../i18n/i18n";
 import { RichtextAutoLinkPlugin } from "./autoLink";
+import { EditorValuePlugin } from "./editorValuePlugin";
 import type { EmbedDef } from "./embedContext";
 import { EmbedsPlugin } from "./embedsPlugin";
 import { RICHTEXT_NODES, RICHTEXT_THEME } from "./richtextConfig";
@@ -21,13 +21,13 @@ import { SlashMenuPlugin } from "./slashMenuPlugin";
 import { Toolbar } from "./toolbar";
 
 interface RichtextEditorProps {
-	initialState: SerializedEditorState | string | null;
+	value: SerializedEditorState | string | null;
 	placeholder?: string;
 	disabled?: boolean;
 	embeds?: EmbedDef[];
 	/** A11y wiring for the contenteditable: a `<label for>` can't name it, so it is labelled by id. */
 	a11y?: EditorA11y;
-	onChange: (state: SerializedEditorState) => void;
+	onChange: (state: SerializedEditorState | null) => void;
 }
 
 export interface EditorA11y {
@@ -40,7 +40,7 @@ export interface EditorA11y {
 const NO_EMBEDS: EmbedDef[] = [];
 
 export function RichtextEditor({
-	initialState,
+	value,
 	placeholder,
 	disabled,
 	embeds = NO_EMBEDS,
@@ -48,7 +48,7 @@ export function RichtextEditor({
 	onChange,
 }: RichtextEditorProps) {
 	const t = useTranslation();
-	const mountState = useRef(initialState);
+	const mountState = useRef(value);
 
 	const initialConfig = useMemo(
 		() => ({
@@ -94,13 +94,7 @@ export function RichtextEditor({
 					<LinkPlugin />
 					<RichtextAutoLinkPlugin />
 					<MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-					{/* Both ignore-flags keep mount-time updates (history-merge,
-				    selection) from writing back and falsely dirtying the form. */}
-					<OnChangePlugin
-						onChange={(state: EditorState) => onChange(state.toJSON())}
-						ignoreSelectionChange
-						ignoreHistoryMergeTagChange
-					/>
+					<EditorValuePlugin value={value} onChange={onChange} />
 					<SlashMenuPlugin />
 				</div>
 			</EmbedsPlugin>
