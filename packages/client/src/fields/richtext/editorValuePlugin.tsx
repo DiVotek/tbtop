@@ -4,8 +4,10 @@ import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import {
 	$createParagraphNode,
 	$getRoot,
+	$isParagraphNode,
 	$setSelection,
 	CLEAR_HISTORY_COMMAND,
+	type EditorState,
 	HISTORY_MERGE_TAG,
 	type LexicalEditor,
 	type SerializedEditorState,
@@ -13,13 +15,16 @@ import {
 import { useEffect, useRef } from "react";
 import { isEqual } from "../../structure/formController";
 import { resolveInitialEditorState } from "./richtextInitialState";
-import { hasEmbedNode, lexicalToPlainText } from "./textPreview";
 
 type EditorValue = SerializedEditorState | string | null;
 
 function replaceDocument(editor: LexicalEditor, value: EditorValue): void {
 	const initializer = resolveInitialEditorState(value);
 	const state = typeof initializer === "string" ? editor.parseEditorState(initializer) : null;
+	// A server echo can have different JSON but import to exactly the same document.
+	if (state && isEqual(state.toJSON(), editor.getEditorState().toJSON())) {
+		return;
+	}
 	editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
 	if (state && !state.isEmpty()) {
 		editor.setEditorState(state, { tag: HISTORY_MERGE_TAG });
@@ -38,6 +43,23 @@ function replaceDocument(editor: LexicalEditor, value: EditorValue): void {
 		},
 		{ discrete: true, tag: HISTORY_MERGE_TAG },
 	);
+}
+
+function isPlainEmpty(state: EditorState): boolean {
+	return state.read(() => {
+		const root = $getRoot();
+		const paragraph = root.getFirstChild();
+		return (
+			root.getChildrenSize() === 1 &&
+			$isParagraphNode(paragraph) &&
+			paragraph.isEmpty() &&
+			!paragraph.getFormatType() &&
+			!paragraph.getIndent() &&
+			!paragraph.getDirection() &&
+			!paragraph.getTextFormat() &&
+			!paragraph.getTextStyle()
+		);
+	});
 }
 
 export function EditorValuePlugin({
@@ -63,8 +85,7 @@ export function EditorValuePlugin({
 			ignoreSelectionChange
 			ignoreHistoryMergeTagChange
 			onChange={(state) => {
-				const doc = state.toJSON();
-				const next = !hasEmbedNode(doc) && lexicalToPlainText(doc) === "" ? null : doc;
+				const next = isPlainEmpty(state) ? null : state.toJSON();
 				// The form's echo of a local edit must not reload the document.
 				appliedValue.current = next;
 				onChange(next);
