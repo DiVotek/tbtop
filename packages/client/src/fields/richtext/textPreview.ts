@@ -26,6 +26,11 @@ export function hasEmbedNode(value: unknown): boolean {
 	return root !== undefined && containsEmbed(root);
 }
 
+/** Formatting an empty block is editor state, not content to submit. */
+export function serializeRichtext(value: unknown): unknown {
+	return rootOf(value) && !hasEmbedNode(value) && !lexicalToPlainText(value) ? null : value;
+}
+
 function isLexicalLike(value: unknown): value is LexicalLike {
 	return typeof value === "object" && value !== null;
 }

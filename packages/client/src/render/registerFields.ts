@@ -14,6 +14,7 @@ import { RelationCell, RelationForm } from "../fields/relationField";
 import { RepeaterCell, RepeaterForm } from "../fields/repeaterField";
 import { RichtextCell, type RichtextValue } from "../fields/richtext/richtextCell";
 import { RichtextFormLazy } from "../fields/richtext/richtextFormLazy";
+import { serializeRichtext } from "../fields/richtext/textPreview";
 import { SelectCell, SelectForm } from "../fields/selectField";
 import { SliderCell, SliderForm } from "../fields/sliderField";
 import { SlugCell, SlugForm } from "../fields/slugField";
@@ -129,6 +130,7 @@ function registerStructuredFields(): void {
 	defineFieldClient<"richtext", RichtextValue>("richtext", {
 		form: RichtextFormLazy,
 		cell: RichtextCell,
+		serialize: serializeRichtext,
 	});
 	defineFieldClient<"unknown", unknown>("unknown", { form: UnknownForm, cell: UnknownCell });
 }

@@ -67,6 +67,18 @@ describe("Date: picking a day", () => {
 });
 
 describe("Date: clearing an applied value", () => {
+	test("an edited date follows external resets and replacement values", async () => {
+		const { fn } = makeOnChange();
+		const { user, doc, view } = await openCalendar("2026-03-10", fn);
+		await user.click(dayButton(doc, "2026-03-15"));
+		view.rerender(<DateForm name="published_at" value="2026-03-15" onChange={fn} />);
+		expect(view.getByTestId("date-trigger").textContent).toContain("2026");
+		view.rerender(<DateForm name="published_at" value={null} onChange={fn} />);
+		expect(view.getByTestId("date-trigger").textContent).toContain("Pick a date");
+		view.rerender(<DateForm name="published_at" value="2027-01-02" onChange={fn} />);
+		expect(view.getByTestId("date-trigger").textContent).toContain("2027");
+	});
+
 	test("clear emits null so a form can return to empty", async () => {
 		const { fn, calls } = makeOnChange();
 		const { user, view } = await openCalendar("2026-03-10", fn);

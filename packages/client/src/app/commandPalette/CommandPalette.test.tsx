@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import * as inertiaReact from "@inertiajs/react";
 import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { NavGroup } from "../chromeContext";
 import { CommandPalette } from "./CommandPalette";
 
@@ -56,6 +57,20 @@ describe("CommandPalette", () => {
 		fireEvent.keyDown(input, { key: "ArrowDown" });
 		fireEvent.keyDown(input, { key: "Enter" });
 		expect(routerVisit).toHaveBeenCalledWith("/admin/posts");
+	});
+
+	test("Enter runs the result focused with Tab", async () => {
+		const user = userEvent.setup();
+		const { getByRole } = render(<CommandPalette nav={NAV} data={{ hotkey: "mod+k" }} />);
+		openPalette();
+		await user.tab();
+		await user.tab();
+		expect(document.activeElement).toBe(getByRole("button", { name: /^Posts\b/ }));
+
+		await user.keyboard("{Enter}");
+
+		expect(routerVisit).toHaveBeenCalledWith("/admin/posts");
+		expect(routerVisit).toHaveBeenCalledTimes(1);
 	});
 
 	test("closing without selecting resets the highlight for the next open", async () => {
