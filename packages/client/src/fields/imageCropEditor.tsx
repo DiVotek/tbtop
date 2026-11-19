@@ -2,11 +2,7 @@ import { useState } from "react";
 import Cropper from "react-easy-crop";
 import { useTranslation } from "../i18n/i18n";
 import type { CropArea } from "./imageCrop";
-
-interface Size {
-	width: number;
-	height: number;
-}
+import { type CropSize, freeCropSize } from "./imageCropSizing";
 
 export function CropRange({
 	label,
@@ -42,14 +38,11 @@ export function CropRange({
 function useEditor(aspectRatio?: number) {
 	const [crop, setCrop] = useState({ x: 0, y: 0 });
 	const [zoom, setZoom] = useState(1);
-	const [baseSize, setBaseSize] = useState<Size>();
+	const [mediaSize, setMediaSize] = useState<CropSize>();
 	const [width, setWidth] = useState(100);
 	const [height, setHeight] = useState(100);
 	const free = aspectRatio === undefined;
-	const cropSize =
-		free && baseSize
-			? { width: (baseSize.width * width) / 100, height: (baseSize.height * height) / 100 }
-			: undefined;
+	const cropSize = free ? freeCropSize(mediaSize, { width, height }) : undefined;
 	return {
 		free,
 		zoom,
@@ -64,7 +57,12 @@ function useEditor(aspectRatio?: number) {
 			cropSize,
 			onCropChange: setCrop,
 			onZoomChange: setZoom,
-			onCropSizeChange: (size: Size) => setBaseSize((current) => current ?? size),
+			setMediaSize: (size: CropSize) =>
+				setMediaSize((current) =>
+					current?.width === size.width && current.height === size.height
+						? current
+						: size,
+				),
 		},
 	};
 }

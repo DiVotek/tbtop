@@ -11,17 +11,28 @@ mock.module("react-easy-crop", () => ({
 	default: ({
 		aspect,
 		onCropComplete,
+		cropSize,
+		setMediaSize,
 	}: {
 		aspect?: number;
 		onCropComplete: (area: unknown, pixels: cropUtils.CropArea) => void;
+		cropSize?: { width: number; height: number };
+		setMediaSize: (size: { width: number; height: number }) => void;
 	}) => (
-		<button
-			type="button"
-			data-aspect={aspect}
-			onClick={() => onCropComplete({}, { x: 0, y: 0, width: 20, height: 10 })}
-		>
-			Set crop
-		</button>
+		<>
+			<button type="button" onClick={() => setMediaSize({ width: 512, height: 288 })}>
+				Load landscape
+			</button>
+			<button
+				type="button"
+				data-aspect={aspect}
+				data-width={cropSize?.width}
+				data-height={cropSize?.height}
+				onClick={() => onCropComplete({}, { x: 0, y: 0, width: 20, height: 10 })}
+			>
+				Set crop
+			</button>
+		</>
 	),
 }));
 
@@ -89,6 +100,8 @@ test("defers upload, locks aspect, then uploads cropped file after size check", 
 	expect(await screen.findByRole("dialog")).toBeTruthy();
 	expect(upload).not.toHaveBeenCalled();
 	expect(screen.getByText("Set crop").getAttribute("data-aspect")).toBe("1.5");
+	fireEvent.click(screen.getByText("Load landscape"));
+	expect(screen.getByText("Set crop").getAttribute("data-width")).toBeNull();
 	await confirm();
 	await waitFor(() => expect(upload).toHaveBeenCalledWith(expect.anything(), cropped));
 	expect(screen.queryByRole("dialog")).toBeNull();
@@ -164,4 +177,13 @@ test("cropped file exceeding size limit is not uploaded", async () => {
 	await confirm();
 	expect(await screen.findByText("File exceeds the maximum size")).toBeTruthy();
 	expect(upload).not.toHaveBeenCalled();
+});
+
+test("free crop sliders start at the full rendered image dimensions", async () => {
+	const { pick } = setup({ image: { crop: {} } });
+	pick([image()]);
+	fireEvent.click(await screen.findByText("Load landscape"));
+	const crop = screen.getByText("Set crop");
+	expect(crop.getAttribute("data-width")).toBe("512");
+	expect(crop.getAttribute("data-height")).toBe("288");
 });
