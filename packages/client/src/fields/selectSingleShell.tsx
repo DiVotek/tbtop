@@ -7,7 +7,7 @@ import { cn } from "../lib/cn";
 import { Input, inputCompactFontClass, inputTextClass } from "../ui/input";
 import { fieldId } from "./fieldProps";
 import { SelectOptionContent } from "./selectOptionContent";
-import type { StaticOption } from "./selectShared";
+import { preventEnterSubmit, type StaticOption } from "./selectShared";
 
 export type SingleListState = "rows" | "empty" | "failed";
 
@@ -97,6 +97,7 @@ export function SingleComboboxShell({
 		>
 			<div className="relative" data-testid={`select-${name}`}>
 				<Combobox.Input
+					onKeyDown={preventEnterSubmit}
 					render={
 						<Input
 							id={fieldId({ id, name })}
