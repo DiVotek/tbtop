@@ -20,11 +20,11 @@ uses the host's copy. One copy means one router, so a host can no longer end up 
 admin's links calling a second, uninitialised Inertia router.
 
 An Inertia React host already lists `@inertiajs/react` in its own `package.json` and needs no
-change. npm 7+, pnpm 8+ and bun install missing peers on their own; with an older package
-manager, or to make the version explicit, add it:
+change. npm 7+, pnpm 8+ and bun install missing peers on their own. Yarn does not (it only
+warns), nor do older npm and pnpm: add it yourself there, or to make the version explicit:
 
 ```bash
-npm install @inertiajs/react
+npm install @inertiajs/react   # or: yarn add @inertiajs/react
 ```
 
 Keep `@inertiajs/react` in the Vite `resolve.dedupe` list if it is there already.
