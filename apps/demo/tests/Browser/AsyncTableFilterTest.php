@@ -20,10 +20,12 @@ it('loads and applies an async Select table filter', function () {
     $this->actingAs($admin);
 
     $page = visit('/admin/posts')
+        ->assertSee('Scoped filter target')
+        ->assertSee('Scoped filter other')
         ->click('@table-filters-trigger')
         ->assertVisible('@select-search-author_id')
-        ->type('author_id', 'filter.target')
-        ->assertSee('filter.target@example.test');
+        ->type('@select-search-author_id', 'filter.target')
+        ->assertSeeIn('@select-positioner-author_id', 'filter.target@example.test');
 
     $page->script(<<<'JS'
 Array.from(document.querySelectorAll('[role="option"]'))

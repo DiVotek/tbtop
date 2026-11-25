@@ -1,3 +1,4 @@
+import { serializeRichtext } from "../fields/richtext/textPreview";
 import { getBlockDescriptor } from "../render/blockRegistry";
 import { structureChildren } from "../structure/structureChildren";
 import type { StructureNode } from "../structure/types";
@@ -41,7 +42,7 @@ function collectInto(
 	}
 	const isTranslatable = opts.translatable === true;
 	if (opts.constraints) {
-		acc[fieldKey(node.name, isTranslatable, scope)] = ownConstraints(opts);
+		acc[fieldKey(node.name, isTranslatable, scope)] = ownConstraints(node.kind, opts);
 	}
 	if (isTranslatable) {
 		return;
@@ -53,8 +54,11 @@ function collectInto(
  * A stored secret() password is left out of the submit until replaced, so its
  * `required` holds server-side (`sometimes`) — the client must not flag it either.
  */
-function ownConstraints(opts: Bag): FieldConstraints {
+function ownConstraints(kind: string, opts: Bag): FieldConstraints {
 	const constraints = opts.constraints as FieldConstraints;
+	if (kind === "richtext") {
+		return { ...constraints, normalizeValue: serializeRichtext };
+	}
 	const secret = opts.secret as { filled?: unknown } | undefined;
 	if (secret?.filled !== true || !constraints.required) {
 		return constraints;

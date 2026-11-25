@@ -58,7 +58,7 @@ const admin = createAdmin({
 								.label("Note")
 								.export({ label: "Notes", enabled: false }),
 						])
-						.filters([s.boolean("published")])
+						.filters([s.boolean("published"), s.select("status")])
 						.headerActions([
 							ExportAction.make(s),
 							ExportAction.make(s, { maxRows: 2, name: "exportSmall" }),
@@ -151,6 +151,15 @@ describe("table export", () => {
 			["Title"],
 			["Bravo"],
 		]);
+	});
+
+	test("filter values are trimmed like the table's own request", async () => {
+		const table = await get("posts?filters[status]=%20live%20");
+		const { data } = (await table.json()) as { data: { data: { title: string }[] } };
+		expect(data.data.map((row) => row.title)).toEqual(["Bravo"]);
+		expect(
+			await csv("posts/export/export?format=csv&filters[status]=%20live%20&columns[]=title"),
+		).toEqual([["Title"], ["Bravo"]]);
 	});
 
 	test("ids[] exports the selection, and only inside the table scope", async () => {

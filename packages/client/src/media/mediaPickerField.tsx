@@ -162,6 +162,8 @@ export function MediaPickerForm({
 			// silently ignore — items just won't have previews
 			onError: () => {},
 		});
+		// Any later value, even an empty or already-resolved one, supersedes this fetch.
+		return run.cancel;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ids.join(",")]);
 

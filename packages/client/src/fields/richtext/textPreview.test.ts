@@ -1,5 +1,22 @@
 import { describe, expect, it } from "bun:test";
-import { lexicalToPlainText } from "./textPreview";
+import { lexicalToPlainText, serializeRichtext } from "./textPreview";
+
+describe("serializeRichtext", () => {
+	const documentOf = (children: unknown[]) => ({ root: { type: "root", children } });
+
+	it("sends no content for a blank formatted block", () => {
+		const state = documentOf([{ type: "heading", children: [{ type: "text", text: " " }] }]);
+		expect(serializeRichtext(state)).toBeNull();
+	});
+
+	it("keeps embeds, text and legacy HTML", () => {
+		const embed = documentOf([{ type: "embed", kind: "callout" }]);
+		const text = documentOf([{ type: "paragraph", children: [{ type: "text", text: "Hi" }] }]);
+		expect(serializeRichtext(embed)).toBe(embed);
+		expect(serializeRichtext(text)).toBe(text);
+		expect(serializeRichtext("<p>Hi</p>")).toBe("<p>Hi</p>");
+	});
+});
 
 describe("lexicalToPlainText", () => {
 	it("extracts text from a single paragraph", () => {

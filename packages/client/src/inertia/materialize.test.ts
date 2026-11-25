@@ -603,6 +603,25 @@ describe("materialize form", () => {
 		expect(schema.parse({ title: "ok" })).toEqual({ title: "ok" });
 	});
 
+	it("validates required richtext against the content it submits", () => {
+		const schema = schemaOf(
+			node("form", {
+				children: [
+					node(
+						"richtext",
+						{ translatable: true, constraints: { required: true } },
+						"body",
+					),
+				],
+			}),
+		);
+		const state = (children: unknown[]) => ({ root: { type: "root", children } });
+		expect(issuesOf(schema, { body: { en: state([{ type: "heading" }]) } })).toEqual([
+			{ path: ["body", "en"], message: "validation.required" },
+		]);
+		expect(issuesOf(schema, { body: { en: state([{ type: "embed" }]) } })).toEqual([]);
+	});
+
 	it("applies required and size constraints to a translatable field's default-locale value", () => {
 		const translatable = node(
 			"form",
