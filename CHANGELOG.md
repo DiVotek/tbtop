@@ -4,6 +4,24 @@ Every release of `tbtop/admin` (Packagist), `@tbtop/inertia-admin` (npm) and
 `@tbtop/admin` (npm, Node) — all three ship in lockstep from one tag. Versioning rules: [VERSIONING.md](VERSIONING.md).
 Upgrade steps for breaking releases: [UPGRADE.md](UPGRADE.md).
 
+## [0.9.1](https://github.com/DiVotek/tbtop/releases/tag/v0.9.1) — 2026-11-26
+
+### ⚠ Breaking changes
+
+- **client:** make @inertiajs/react a peer dependency ([#478](https://github.com/DiVotek/tbtop/pull/478))
+
+### Features
+
+- **fields:** crop images before upload with Upload::crop() ([#463](https://github.com/DiVotek/tbtop/pull/463))
+
+### Fixes
+
+- **demo:** dashboard stats and charts skip soft-deleted posts ([#464](https://github.com/DiVotek/tbtop/pull/464))
+- **palette:** activate focused results with Enter ([#472](https://github.com/DiVotek/tbtop/pull/472))
+- **node:** trim table export query like the table endpoint ([#467](https://github.com/DiVotek/tbtop/pull/467))
+- **node:** make present rule fail when key is missing ([#466](https://github.com/DiVotek/tbtop/pull/466))
+- **client:** Enter in a select search no longer submits the form ([#477](https://github.com/DiVotek/tbtop/pull/477))
+
 ## [0.8.3](https://github.com/DiVotek/tbtop/releases/tag/v0.8.3) — 2026-11-19
 
 ### Features
