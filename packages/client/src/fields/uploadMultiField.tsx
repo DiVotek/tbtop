@@ -6,6 +6,7 @@ import type { UploadRow } from "../data/upload";
 import { useTranslation } from "../i18n/i18n";
 import type { UploadTask, UploadTaskStatus } from "../media/types";
 import { UploadProgressList } from "../media/uploadProgressList";
+import { useImageCrop } from "./crop/useImageCrop";
 import type { FieldFormProps } from "./fieldProps";
 import { UploadPicker } from "./uploadPicker";
 import { UploadSortableItem, UploadStaticItem } from "./uploadSortableItem";
@@ -49,6 +50,7 @@ export function UploadMultiForm({
 	const t = useTranslation();
 	const { ctx, client } = useUploadDependencies();
 	const opts = useMemo(() => options ?? {}, [options]);
+	const { cropFile, dialog } = useImageCrop(opts.image?.crop);
 
 	const items = toArray(value);
 	const canAddMore = !opts.maxFiles || items.length < opts.maxFiles;
@@ -87,9 +89,14 @@ export function UploadMultiForm({
 			setTasks((prev) => [...prev, ...newTasks]);
 
 			for (let i = 0; i < batch.length; i++) {
-				const file = batch[i];
+				const picked = batch[i];
 				const task = newTasks[i];
-				if (!file || !task) {
+				if (!picked || !task) {
+					continue;
+				}
+				const file = await cropFile(picked);
+				if (!file) {
+					setTasks((prev) => prev.filter((row) => row.id !== task.id));
 					continue;
 				}
 
@@ -113,7 +120,7 @@ export function UploadMultiForm({
 				}
 			}
 		},
-		[opts, ctx, client, t, onChange],
+		[opts, ctx, client, t, onChange, cropFile],
 	);
 
 	const handleRemove = (index: number) => {
@@ -168,6 +175,7 @@ export function UploadMultiForm({
 
 	return (
 		<div className="space-y-3">
+			{dialog}
 			{items.length > 0 && reorderable ? (
 				<DndContext
 					sensors={sensors}
