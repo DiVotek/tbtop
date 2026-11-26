@@ -1,5 +1,8 @@
 import { Multiple, mixin } from "./concerns";
+import { type CropAspect, normalizeCropAspects } from "./cropAspects";
 import { Field, type WithFlag } from "./field";
+
+export type { CropAspect } from "./cropAspects";
 
 export type StoredFile = { path: string; url: string };
 export type SaveUpload = (file: File, config: Record<string, unknown>) => Promise<StoredFile>;
@@ -62,6 +65,35 @@ export class Upload<N extends string = string> extends Field<N, string | null> {
 	/** Drag-to-reorder when multiple. */
 	reorderable(value = true): this {
 		return this.set("reorderable", value);
+	}
+
+	/**
+	 * Crop dialog before an image uploads, locked to one aspect ('16:9', '1:1')
+	 * or free when omitted. Client-side only; the original is not kept.
+	 */
+	crop(aspect?: CropAspect): this {
+		return this.cropAspects([aspect ?? "free"]);
+	}
+
+	/** Crop with a choice of aspects in the dialog, the first preselected. */
+	cropAspects(aspects: CropAspect[]): this {
+		const crop = this.cropOptions() ?? {};
+		return this.setImage("crop", { ...crop, aspects: normalizeCropAspects(aspects) });
+	}
+
+	/** Round crop mask (avatars); the stored file stays rectangular. Defaults the aspect to '1:1'. */
+	cropCircle(value = true): this {
+		const current = this.cropOptions();
+		if (!current && !value) {
+			return this;
+		}
+		const crop = current ?? { aspects: ["1:1"] };
+		return this.setImage("crop", { ...crop, shape: value ? "round" : "rect" });
+	}
+
+	private cropOptions(): Record<string, unknown> | undefined {
+		const image = this.optionValue("image") as Record<string, unknown> | undefined;
+		return image?.crop as Record<string, unknown> | undefined;
 	}
 
 	private setImage(key: string, value: unknown): this {

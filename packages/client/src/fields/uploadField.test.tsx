@@ -330,3 +330,62 @@ describe("basename", () => {
 		expect(basename("pic.png")).toBe("pic.png");
 	});
 });
+
+describe("UploadForm with image.crop", () => {
+	const cropOptions = (seen: string[]) => ({
+		image: { crop: { aspects: ["16:9", "free"] } },
+		upload: async (_ctx: unknown, file: File) => {
+			seen.push(file.name);
+			return uploadResponse(`uploads/${file.name}`, `/uploads/${file.name}`);
+		},
+	});
+
+	test("an image opens the crop dialog first; cancelling uploads nothing", async () => {
+		const seen: string[] = [];
+		const captured: unknown[] = [];
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const { container, findByTestId, getByRole } = render(
+			<Wrap>
+				<UploadForm
+					name="cover"
+					value={null}
+					onChange={(v) => captured.push(v)}
+					options={cropOptions(seen)}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		await userEvent.upload(input, new File(["x"], "photo.jpg", { type: "image/jpeg" }));
+
+		const dialog = await findByTestId("upload-crop-dialog");
+		expect(dialog.textContent).toContain("16:9");
+		expect(dialog.textContent).toContain("Free");
+		fireEvent.click(getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() =>
+			expect(document.querySelector("[data-testid=upload-crop-dialog]")).toBeNull(),
+		);
+		expect(seen).toEqual([]);
+		expect(captured).toEqual([]);
+	});
+
+	test("a non-image skips the dialog and uploads as is", async () => {
+		const seen: string[] = [];
+		const Wrap = clientWrapper(() => new Response("{}"));
+		const { container } = render(
+			<Wrap>
+				<UploadForm
+					name="doc"
+					value={null}
+					onChange={() => {}}
+					options={cropOptions(seen)}
+				/>
+			</Wrap>,
+		);
+		const input = container.querySelector("input[type=file]") as HTMLInputElement;
+		await userEvent.upload(input, new File(["x"], "terms.pdf", { type: "application/pdf" }));
+
+		await waitFor(() => expect(seen).toEqual(["terms.pdf"]));
+		expect(document.querySelector("[data-testid=upload-crop-dialog]")).toBeNull();
+	});
+});

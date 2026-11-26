@@ -8,7 +8,7 @@ import type { OptionMap } from "./asyncOptions";
 import { fieldId } from "./fieldProps";
 import { SelectCreateDialog } from "./selectCreateDialog";
 import { SelectOptionContent } from "./selectOptionContent";
-import type { SelectCreateConfig, StaticOption } from "./selectShared";
+import { preventEnterSubmit, type SelectCreateConfig, type StaticOption } from "./selectShared";
 
 export interface MultiShellRenderResult {
 	exactMatch: boolean;
@@ -36,6 +36,8 @@ export interface MultiShellProps {
 	/** Async only — fired after a successful create so the list can refetch. */
 	onCreated?: () => void;
 	onQueryChange?: (q: string) => void;
+	/** Async only — the last search failed; the list says so instead of "no options". */
+	failed?: boolean;
 	children: (query: string) => MultiShellRenderResult;
 }
 
@@ -55,6 +57,7 @@ export function MultiComboboxShell({
 	resolvedLabels,
 	onCreated,
 	onQueryChange,
+	failed = false,
 	children,
 }: MultiShellProps) {
 	const displayValues = visibleValues ?? value;
@@ -141,6 +144,7 @@ export function MultiComboboxShell({
 						aria-describedby={describedBy}
 						value={query}
 						onChange={(e) => handleQueryChange(e.target.value)}
+						onKeyDown={preventEnterSubmit}
 						className={cn(
 							"min-w-32 flex-1 bg-transparent outline-none placeholder:text-muted-foreground",
 							inputFontClass,
@@ -162,10 +166,16 @@ export function MultiComboboxShell({
 								    UI's own collection — would always consider the list empty. */}
 								{isEmpty && !showCreate && (
 									<div
-										data-testid={`select-empty-${name}`}
+										data-testid={
+											failed
+												? `select-failed-${name}`
+												: `select-empty-${name}`
+										}
 										className="px-2 py-1.5 text-muted-foreground text-sm"
 									>
-										{t("field.select.no_options")}
+										{failed
+											? t("field.select.load_failed")
+											: t("field.select.no_options")}
 									</div>
 								)}
 								{optionNodes}

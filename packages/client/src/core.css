@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Crop dialog of Upload::crop() (react-image-crop). */
+@import "react-image-crop/dist/ReactCrop.css" layer(components);
 
 /* Core styles without any style preset. Entry points: styles.css (every
    preset) and styles/<name>.css (one preset); see scripts/sync-presets.ts. */

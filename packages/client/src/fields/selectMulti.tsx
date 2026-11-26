@@ -86,9 +86,10 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 	if (isInitialLoad) {
 		return <>{opts.loading ?? <FieldSkeleton />}</>;
 	}
-	// Real query error (not a transient loading state) surfaces after initial render.
-	if (search.kind === "error") {
-		return <>{renderAsyncError(opts.error, search.message, <FieldSkeleton />)}</>;
+	// A host's own error slot replaces the control. Without one the control stays
+	// and the list says the lookup failed: a skeleton would read as still loading.
+	if (search.kind === "error" && opts.error !== undefined) {
+		return <>{renderAsyncError(opts.error, search.message, null)}</>;
 	}
 
 	// Shell is now rendering — mark it.
@@ -138,6 +139,7 @@ function AsyncMultiCombobox(props: FieldFormProps<SelectValueType, SelectOptions
 			resolvedLabels={resolvedLabels}
 			onCreated={() => setRefetchKey((k) => k + 1)}
 			onQueryChange={setQuery}
+			failed={search.kind === "error"}
 		>
 			{() => ({
 				exactMatch: searchRows.some(

@@ -53,6 +53,14 @@ class UploadDemoPage extends Page
                     ->disk('public')->directory('gallery')->visibility('public')
                     ->accept('image/*')->maxSize(5 * 1024 * 1024)
                     ->multiple()->maxFiles(8)->reorderable(),
+                // Crop before upload: a choice of aspects, and a round avatar.
+                $s->upload('cover')->label('Cover (crop)')
+                    ->disk('public')->directory('covers')->visibility('public')
+                    ->accept('image/*')->cropAspects(['16:9', '4:3', 'free'])
+                    ->convertTo('webp')->quality(80),
+                $s->upload('avatar')->label('Avatar (round crop)')
+                    ->disk('public')->directory('avatars')->visibility('public')
+                    ->accept('image/*')->crop('1:1')->cropCircle(),
                 $s->actionsRow([
                     FormActions::save($s),
                 ]),
@@ -64,6 +72,8 @@ class UploadDemoPage extends Page
                     'doc' => 'docs/sample.webp',
                     'secret' => 'private-docs/sample.webp',
                     'gallery' => [],
+                    'cover' => null,
+                    'avatar' => null,
                 ])
                 ->onSubmit(function (ActionCtx $ctx): string {
                     // Demo: no DB write — just confirm the uploads round-tripped.

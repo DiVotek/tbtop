@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import type { StructureNode } from "../structure/types";
 import type { AsyncMultiOptionsBag, AsyncSingleOptionsBag } from "./asyncOptions";
 import type { DependencyConfig } from "./fieldDependencies";
@@ -69,4 +69,17 @@ export function coerceSelectValue(value: unknown): SelectValueType | null {
 		return String(value);
 	}
 	return typeof value === "string" ? value : null;
+}
+
+/**
+ * Enter in a select's search box picks the highlighted option or does nothing.
+ * Base UI lets the keypress through to the form when no option is highlighted
+ * (e.g. right after an async search lands), and the browser then submits the
+ * whole page. Base UI's own Enter handling still runs: this blocks only the
+ * native submit.
+ */
+export function preventEnterSubmit(event: KeyboardEvent<HTMLInputElement>): void {
+	if (event.key === "Enter") {
+		event.preventDefault();
+	}
 }

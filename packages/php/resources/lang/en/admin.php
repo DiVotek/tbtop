@@ -402,6 +402,12 @@ return [
             'replace' => 'Replace',
             'reorder' => 'Reorder',
             'tooLarge' => 'File exceeds the maximum size',
+            'crop' => [
+                'title' => 'Crop image',
+                'apply' => 'Crop',
+                'aspect' => 'Aspect ratio',
+                'free' => 'Free',
+            ],
         ],
         'colorpicker' => ['palette' => 'Color palette'],
         'date' => [
