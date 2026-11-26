@@ -10,6 +10,25 @@ Each breaking change gets a `###` entry under its release's heading, in the PR
 that makes the change. The release tooling refuses a breaking release whose
 heading has none.
 
+## 0.8 → 0.9
+
+### `@inertiajs/react` is a peer dependency of `@tbtop/inertia-admin`
+
+The client package used to list `@inertiajs/react` as its own dependency. It is now a peer
+dependency (`^3.3.1`), like `react` and `react-dom`: the host installs Inertia, and the admin
+uses the host's copy. One copy means one router, so a host can no longer end up with the
+admin's links calling a second, uninitialised Inertia router.
+
+An Inertia React host already lists `@inertiajs/react` in its own `package.json` and needs no
+change. npm 7+, pnpm 8+ and bun install missing peers on their own. Yarn does not (it only
+warns), nor do older npm and pnpm: add it yourself there, or to make the version explicit:
+
+```bash
+npm install @inertiajs/react   # or: yarn add @inertiajs/react
+```
+
+Keep `@inertiajs/react` in the Vite `resolve.dedupe` list if it is there already.
+
 ## 0.7 → 0.8
 
 0.8.1 is the first release under this policy (0.8.0 is skipped, see
